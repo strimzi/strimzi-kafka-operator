@@ -91,7 +91,7 @@ class KafkaConnectConfigurationBuilderTest {
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls, "my-cluster")
-                .withAuthentication(tlsAuth)
+                .withAuthentication(tlsAuth, "my-cluster")
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -133,7 +133,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withAuthentication(authPlain)
+                .withAuthentication(authPlain, "my-cluster")
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -171,7 +171,7 @@ class KafkaConnectConfigurationBuilderTest {
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls, "my-cluster")
-                .withAuthentication(authPlain)
+                .withAuthentication(authPlain, "my-cluster")
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -209,7 +209,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withAuthentication(authScramSha256)
+                .withAuthentication(authScramSha256, "my-cluster")
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -247,7 +247,7 @@ class KafkaConnectConfigurationBuilderTest {
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls, "my-cluster")
-                .withAuthentication(authScramSha256)
+                .withAuthentication(authScramSha256, "my-cluster")
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -285,7 +285,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withAuthentication(authScramSha512)
+                .withAuthentication(authScramSha512, "my-cluster")
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -334,7 +334,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withAuthentication(authOAuth)
+                .withAuthentication(authOAuth, "my-cluster")
                 .build();
 
         String saslJaasConfig = "sasl.jaas.config=" +
@@ -343,7 +343,7 @@ class KafkaConnectConfigurationBuilderTest {
                 " oauth.refresh.token=${strimzienv:KAFKA_CONNECT_OAUTH_REFRESH_TOKEN}" +
                 " oauth.access.token=${strimzienv:KAFKA_CONNECT_OAUTH_ACCESS_TOKEN}" +
                 " oauth.password.grant.password=${strimzienv:KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD}" +
-                " oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/my-tls-trusted-certificate/pem-content\" oauth.ssl.truststore.type=\"PEM\";";
+                " oauth.ssl.truststore.certificates=\"${strimzisecrets:namespace/my-cluster-connect-oauth-trusted-certs:*.crt}\" oauth.ssl.truststore.type=\"PEM\";";
 
         assertThat(configuration, isEquivalent(
                 "bootstrap.servers=my-cluster-kafka-bootstrap:9092",

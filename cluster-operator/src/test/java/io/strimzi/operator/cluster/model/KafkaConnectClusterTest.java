@@ -1971,7 +1971,7 @@ public class KafkaConnectClusterTest {
         ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_CONNECT_OAUTH_CONFIG} oauth.client.secret=${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_SECRET} oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/first-certificate/ca.crt\" oauth.ssl.truststore.type=\"PEM\";"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_CONNECT_OAUTH_CONFIG} oauth.client.secret=${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_SECRET} oauth.ssl.truststore.certificates=\"${strimzisecrets:namespace/foo-connect-oauth-trusted-certs:*.crt}\" oauth.ssl.truststore.type=\"PEM\";"));
         assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
 
         // Check PodSet
