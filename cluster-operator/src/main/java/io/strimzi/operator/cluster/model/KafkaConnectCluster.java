@@ -148,7 +148,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected AbstractConfiguration configuration;
 
     protected ClientTls tls;
-    private KafkaClientAuthentication authentication;
+    protected KafkaClientAuthentication authentication;
 
     // Templates
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
@@ -732,6 +732,16 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the configured authentication
+     *
+     * @return Authentication configuration
+     */
+    public KafkaClientAuthentication getAuthentication() {
+        return authentication;
+    }
+
+
+    /**
      * Generates the PodDisruptionBudget
      *
      * @return The pod disruption budget.
@@ -882,11 +892,12 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * This is used for loading truststore certificates from the secret directly.
      **
      * @param secretData secret data
+     * @param secretName secret name
      *
      * @return secret for tls certificates
      */
-    public Secret generateTlsCertsSecret(Map<String, String> secretData) {
-        return ModelUtils.createSecret(KafkaConnectResources.internalTlsTrustedCertsSecretName(cluster), namespace, labels, ownerReference, secretData, Map.of(), Map.of());
+    public Secret generateTlsTrustedCertsSecret(Map<String, String> secretData, String secretName) {
+        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.of(), Map.of());
     }
 
     /**
@@ -928,7 +939,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         .withRestListeners(REST_API_PORT)
                         .withPluginPath()
                         .withTls(tls, cluster)
-                        .withAuthentication(authentication)
+                        .withAuthentication(authentication, cluster)
                         .withRackId()
                         .build()
         );

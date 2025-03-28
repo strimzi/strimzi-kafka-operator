@@ -17,6 +17,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.connect.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
@@ -262,7 +264,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
-
     /**
      * Generates or reconciles the secret that combines secrets and certificates
      * provided for Kafka Connect truststore if TLS is enabled.
@@ -279,10 +280,47 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     secretsToCopy.add(certSecretSource.getSecretName());
                 }
             });
-        } else {
+        }
+
+        if (secretsToCopy.isEmpty()) {
             return Future.succeededFuture();
         }
 
+        return reconcileTrustedCertsSecret(reconciliation, namespace, connect, secretsToCopy, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()));
+    }
+
+    /**
+     * Generates or reconciles the secret that combines secrets and certificates
+     * provided for trusted certificates for TLS connection to the OAuth server
+     * if OAuth authorization is enabled.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+        KafkaClientAuthentication authentication = connect.getAuthentication();
+        List<String> secretsToCopy = new ArrayList<>();
+
+        if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
+            oauth.getTlsTrustedCertificates().stream().forEach(certSecretSource -> {
+                if (!secretsToCopy.contains(certSecretSource.getSecretName())) {
+                    secretsToCopy.add(certSecretSource.getSecretName());
+                }
+            });
+        }
+
+        if (secretsToCopy.isEmpty()) {
+            return Future.succeededFuture();
+        }
+
+        return reconcileTrustedCertsSecret(reconciliation, namespace, connect, secretsToCopy, KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()));
+    }
+
+    /**
+     * Copies the given list of secrets to a single internal secret with the provided name.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    private Future<Void> reconcileTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect, List<String> secretsToCopy, String internalSecretName) {
         ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
         return Future.join(secretsToCopy.stream()
                 .map(secretName -> secretOperations.getAsync(namespace, secretName)
@@ -292,7 +330,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                             } else {
                                 secret.getData().entrySet().stream()
                                         .filter(e -> e.getKey().contains(".crt"))
-                                        //In case secrets contain same key, add secret name to the key
+                                        // In case secrets contain the same key, append the secret name into the key
                                         .forEach(e -> secretData.put(secretName + "-" + e.getKey(), e.getValue()));
                             }
                             return Future.succeededFuture();
@@ -301,8 +339,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 .compose(ignore -> secretOperations.reconcile(
                                 reconciliation,
                                 namespace,
-                                KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                connect.generateTlsCertsSecret(secretData))
+                                internalSecretName,
+                                connect.generateTlsTrustedCertsSecret(secretData, internalSecretName))
                         .mapEmpty());
     }
 

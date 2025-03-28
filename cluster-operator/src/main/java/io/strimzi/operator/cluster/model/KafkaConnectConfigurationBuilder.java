@@ -85,7 +85,7 @@ public class KafkaConnectConfigurationBuilder {
      * The configuration includes the trusted certificates store for TLS connection (server authentication)
      *
      * @param tls   client TLS configuration
-     * @param clusterName   name of the the cluster
+     * @param clusterName   name of the cluster
      * @return  the builder instance
      */
     public KafkaConnectConfigurationBuilder withTls(ClientTls tls, String clusterName) {
@@ -118,9 +118,10 @@ public class KafkaConnectConfigurationBuilder {
      * or the SASL configuration for client authentication to the Kafka cluster
      *
      * @param authentication authentication configuration
+     * @param clusterName name of the cluster
      * @return  the builder instance
      */
-    public KafkaConnectConfigurationBuilder withAuthentication(KafkaClientAuthentication authentication) {
+    public KafkaConnectConfigurationBuilder withAuthentication(KafkaClientAuthentication authentication, String clusterName) {
         if (authentication != null) {
             printSectionHeader("Authentication configuration");
             // configuring mTLS (client TLS authentication) if TLS client authentication is set
@@ -196,8 +197,8 @@ public class KafkaConnectConfigurationBuilder {
                     }
 
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-                        String trustStorePath = OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + oauth.getTlsTrustedCertificates().get(0).getSecretName() + "/" + oauth.getTlsTrustedCertificates().get(0).getCertificate();
-                        jaasConfig.append(" oauth.ssl.truststore.location=\"" + trustStorePath + "\" oauth.ssl.truststore.type=\"PEM\"");
+                        String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalOauthTrustedCertsSecretName(clusterName), "*.crt");
+                        jaasConfig.append(" oauth.ssl.truststore.certificates=\"" + configProviderValue + "\" oauth.ssl.truststore.type=\"PEM\"");
                     }
 
                     jaasConfig.append(";");
