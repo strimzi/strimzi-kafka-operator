@@ -165,8 +165,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "prometheus.metrics.reporter.listener.enable=true",
-                "prometheus.metrics.reporter.listener=http://0.0.0.0:" + StrimziMetricsReporterModel.METRICS_PORT,
+                "prometheus.metrics.reporter.listener=http://:" + StrimziMetricsReporterModel.METRICS_PORT,
                 "prometheus.metrics.reporter.allowlist=kafka_log.*,kafka_network.*"));
     }
 
@@ -1322,11 +1321,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(true)
                 .withNewConfiguration()
-                .withNewBrokerCertChainAndKey()
-                .withSecretName("my-secret")
-                .withKey("my.key")
-                .withCertificate("my.crt")
-                .endBrokerCertChainAndKey()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName("my-secret")
+                        .withKey("my.key")
+                        .withCertificate("my.crt")
+                    .endBrokerCertChainAndKey()
                 .endConfiguration()
                 .build();
 
@@ -1495,11 +1494,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.ROUTE)
                 .withTls(true)
                 .withNewConfiguration()
-                .withNewBrokerCertChainAndKey()
-                .withSecretName("my-secret")
-                .withKey("my.key")
-                .withCertificate("my.crt")
-                .endBrokerCertChainAndKey()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName("my-secret")
+                        .withKey("my.key")
+                        .withCertificate("my.crt")
+                    .endBrokerCertChainAndKey()
                 .endConfiguration()
                 .build();
 
@@ -2123,15 +2122,15 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
                 .withNewKafkaListenerAuthenticationOAuth()
-                .withValidIssuerUri("https://valid-issuer")
-                .withIntrospectionEndpointUri("https://intro")
-                .withCheckAudience(true)
-                .withCustomClaimCheck("'kafka-user' in @.roles.client-roles.kafka")
-                .withClientId("my-oauth-client")
-                .withNewClientSecret()
-                .withSecretName("my-secret")
-                .withKey("client-secret")
-                .endClientSecret()
+                    .withValidIssuerUri("https://valid-issuer")
+                    .withIntrospectionEndpointUri("https://intro")
+                    .withCheckAudience(true)
+                    .withCustomClaimCheck("'kafka-user' in @.roles.client-roles.kafka")
+                    .withClientId("my-oauth-client")
+                    .withNewClientSecret()
+                        .withSecretName("my-secret")
+                        .withKey("client-secret")
+                    .endClientSecret()
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 

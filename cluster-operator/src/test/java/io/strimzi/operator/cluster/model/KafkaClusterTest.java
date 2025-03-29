@@ -325,8 +325,7 @@ public class KafkaClusterTest {
 
         for (ConfigMap cm : cms) {
             assertThat(cm.getData().toString(), containsString("kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter"));
-            assertThat(cm.getData().toString(), containsString("prometheus.metrics.reporter.listener.enable=true"));
-            assertThat(cm.getData().toString(), containsString("prometheus.metrics.reporter.listener=http://0.0.0.0:9404"));
+            assertThat(cm.getData().toString(), containsString("prometheus.metrics.reporter.listener=http://:9404"));
             assertThat(cm.getData().toString(), containsString("prometheus.metrics.reporter.allowlist=kafka_log.*,kafka_network.*"));
         }
     }
@@ -349,7 +348,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
         NetworkPolicy np = kc.generateNetworkPolicy(null, null);
-        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(StrimziMetricsReporterModel.METRICS_PORT))).collect(Collectors.toList());
+        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(StrimziMetricsReporterModel.METRICS_PORT))).toList();
 
         assertThat(rules.size(), is(1));
     }

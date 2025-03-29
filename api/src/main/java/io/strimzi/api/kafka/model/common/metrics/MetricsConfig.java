@@ -40,7 +40,7 @@ public abstract class MetricsConfig implements UnknownPropertyPreserving {
 
     @Description("Metrics type. " +
             "The supported types are `jmxPrometheusExporter` and `strimziMetricsReporter`. " +
-            "Type `jmxPrometheusExporter` uses the Prometheus JMX Exporter to expose Kafka JMX metrics in Prometheus format through an HTTP endpoint. " +
+            "Type `jmxPrometheusExporter` uses the JMX Prometheus Exporter to expose Kafka JMX metrics in Prometheus format through an HTTP endpoint. " +
             "Type `strimziMetricsReporter` uses the Strimzi Metrics Reporter to directly expose Kafka metrics in Prometheus format through an HTTP endpoint.")
     public abstract String getType();
 

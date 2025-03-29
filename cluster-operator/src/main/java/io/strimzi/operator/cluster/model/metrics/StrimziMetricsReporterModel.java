@@ -45,7 +45,7 @@ public class StrimziMetricsReporterModel implements MetricsModel {
      * @return Comma separated list of allow regex expressions.
      */
     public Optional<String> getAllowList() {
-        return allowList != null ? Optional.of(String.join(",", allowList)) : Optional.empty();
+        return Optional.of(String.join(",", allowList));
     }
 
     /**
