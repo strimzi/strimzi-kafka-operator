@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
@@ -59,7 +60,6 @@ public class KafkaBrokerConfigurationBuilder {
     // Names of environment variables expanded through config providers inside the Kafka node
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET_TEMPLATE_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:STRIMZI_%s_OAUTH_CLIENT_SECRET}";
-
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
@@ -128,6 +128,24 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + ccMetricsReporter.minInSyncReplicas());
             }
 
+            writer.println();
+        }
+
+        return this;
+    }
+
+    /**
+     * Configures the Strimzi Metrics Reporter. It is set only if user enabled Strimzi Metrics Reporter.
+     *
+     * @param model     Strimzi Metrics Reporter configuration
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(StrimziMetricsReporterModel model)   {
+        if (model != null) {
+            printSectionHeader("Strimzi Metrics Reporter configuration");
+            writer.println("prometheus.metrics.reporter.listener=http://:" + StrimziMetricsReporterModel.METRICS_PORT);
+            model.getAllowList().ifPresent(allowList -> writer.println("prometheus.metrics.reporter.allowlist=" + allowList));
             writer.println();
         }
 
@@ -746,9 +764,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param userConfig    The user configuration to extract the possible user-provided config provider configuration
      *                      from it
      */
-    private void configProviders(KafkaConfiguration userConfig)    {
-        printSectionHeader("Config providers");
-
+    private void addConfigProviders(KafkaConfiguration userConfig) {
         String strimziConfigProviders;
         if (node.broker()) {
             // File and Directory providers are used only on broker nodes
@@ -757,74 +773,84 @@ public class KafkaBrokerConfigurationBuilder {
             strimziConfigProviders = "strimzienv";
         }
 
-        if (userConfig != null
-                && !userConfig.getConfiguration().isEmpty()
-                && userConfig.getConfigOption("config.providers") != null) {
-            writer.println("# Configuration providers configured by the user and by Strimzi");
-            writer.println("config.providers=" + userConfig.getConfigOption("config.providers") + "," + strimziConfigProviders);
-            userConfig.removeConfigOption("config.providers");
-        } else {
-            writer.println("# Configuration providers configured by Strimzi");
-            writer.println("config.providers=" + strimziConfigProviders);
-        }
+        createOrAddConfigList(userConfig, "config.providers", strimziConfigProviders);
 
-        writer.println("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
-        writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
+        createConfigIfMissing(userConfig, "config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        createConfigIfMissing(userConfig, "config.providers.strimzienv.param.allowlist.pattern", ".*");
 
         if (node.broker()) {
             // File and Directory providers are used only on broker nodes
-            writer.println("config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
-            writer.println("config.providers.strimzifile.param.allowed.paths=/opt/kafka");
-            writer.println("config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider");
-            writer.println("config.providers.strimzidir.param.allowed.paths=/opt/kafka");
+            createConfigIfMissing(userConfig, "config.providers.strimzifile.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
+            createConfigIfMissing(userConfig, "config.providers.strimzifile.param.allowed.paths", "/opt/kafka");
+            createConfigIfMissing(userConfig, "config.providers.strimzidir.class", "org.apache.kafka.common.config.provider.DirectoryConfigProvider");
+            createConfigIfMissing(userConfig, "config.providers.strimzidir.param.allowed.paths", "/opt/kafka");
         }
-
-        writer.println();
     }
 
     /**
-     * Configures the configuration options passed by the user in the Kafka CR.
+     * Adds the configurations passed by the user in the Kafka CR, injecting Strimzi configurations when needed.
      *
-     * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
-     * @param injectCcMetricsReporter   Inject the Cruise Control Metrics Reporter into the configuration
+     * @param userConfig                     The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
+     * @param injectCcMetricsReporter        Inject the Cruise Control Metrics Reporter into the configuration
+     * @param injectStrimziMetricsReporter   Inject the Strimzi Metrics Reporter into the configuration
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig, boolean injectCcMetricsReporter)  {
-        if (userConfig != null && !userConfig.getConfiguration().isEmpty()) {
-            // We have to create a copy of the configuration before we modify it
-            userConfig = new KafkaConfiguration(userConfig);
+    public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig,
+                                                                 boolean injectCcMetricsReporter,
+                                                                 boolean injectStrimziMetricsReporter) {
+        // we have to create a copy of the configuration before we modify it
+        userConfig = userConfig != null
+                ? new KafkaConfiguration(userConfig)
+                : new KafkaConfiguration(reconciliation, new ArrayList<>());
 
-            // Configure the configuration providers => we have to inject the Strimzi ones
-            configProviders(userConfig);
+        addConfigProviders(userConfig);
 
-            if (injectCcMetricsReporter)  {
-                // We configure the Cruise Control Metrics Reporter is needed
-                if (userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD) != null) {
-                    if (!userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD).contains(CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER)) {
-                        userConfig.setConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD, userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD) + "," + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-                    }
-                } else {
-                    userConfig.setConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD, CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-                }
-            }
+        // Adds the Kafka metric.reporters to the user configuration.
+        maybeAddMetricReporters(userConfig, injectCcMetricsReporter, injectStrimziMetricsReporter);
 
-            printSectionHeader("User provided configuration");
+        // Adds the Yammer kafka.metrics.reporters to the user configuration.
+        maybeAddYammerMetricsReporters(userConfig, injectStrimziMetricsReporter);
+
+        // print user config with Strimzi injections
+        if (!userConfig.getConfiguration().isEmpty()) {
+            printSectionHeader("User provided configuration with Strimzi injections");
             writer.println(userConfig.getConfiguration());
             writer.println();
-        } else {
-            // Configure the configuration providers => we have to inject the Strimzi ones
-            configProviders(userConfig);
-
-            if (injectCcMetricsReporter) {
-                // There is no user provided configuration. But we still need to inject the Cruise Control Metrics Reporter
-                printSectionHeader("Cruise Control Metrics Reporter");
-                writer.println(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD + "=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-                writer.println();
-            }
         }
 
         return this;
+    }
+
+    /**
+     * Adds the Kafka metric.reporters to the user configuration.
+     *
+     * @param userConfig The user configuration to which the metric reporters will be added.
+     * @param injectCcMetricsReporter Flag indicating whether to inject the Cruise Control Metrics Reporter.
+     * @param injectStrimziMetricsReporter Flag indicating whether to inject the Strimzi Metrics Reporter.
+     */
+    private void maybeAddMetricReporters(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean injectStrimziMetricsReporter) {
+        String ccReporter = CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER;
+        String strimziReporter = "io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter";
+        if (injectCcMetricsReporter && injectStrimziMetricsReporter) {
+            createOrAddConfigList(userConfig, "metric.reporters", ccReporter + "," + strimziReporter);
+        } else if (injectCcMetricsReporter) {
+            createOrAddConfigList(userConfig, "metric.reporters", ccReporter);
+        } else if (injectStrimziMetricsReporter) {
+            createOrAddConfigList(userConfig, "metric.reporters", strimziReporter);
+        }
+    }
+
+    /**
+     * Adds the Yammer kafka.metrics.reporters to the user configuration if the Strimzi Metrics Reporter is enabled.
+     *
+     * @param userConfig The user configuration to which the Yammer metrics reporter will be added.
+     * @param injectStrimziMetricsReporter Flag indicating whether to inject the Strimzi Metrics Reporter.
+     */
+    private void maybeAddYammerMetricsReporters(KafkaConfiguration userConfig, boolean injectStrimziMetricsReporter) {
+        if (injectStrimziMetricsReporter) {
+            createOrAddConfigList(userConfig, "kafka.metrics.reporters", "io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter");
+        }
     }
 
     /**
@@ -966,6 +992,38 @@ public class KafkaBrokerConfigurationBuilder {
         }
 
         writer.println(String.format("client.quota.callback.static.excluded.principal.name.list=%s", String.join(";", excludedPrincipals)));
+    }
+
+    /**
+     * Create or update configuration value.
+     *
+     * @param config Configuration.
+     * @param key Property key.
+     * @param value Property value to add or replace.
+     */
+    static void createConfigIfMissing(AbstractConfiguration config, String key, String value) {
+        if (config != null && key != null && !key.isBlank() && value != null && !value.isBlank()) {
+            String existingConfig = config.getConfigOption(key);
+            if (existingConfig == null) {
+                config.setConfigOption(key, value);
+            }
+        }
+    }
+
+    /**
+     * This method creates a configuration if it does not exist or adds a value to the list if it does exist.
+     *
+     * @param config A list that the configuration value will be appended to.
+     * @param key Property key.
+     * @param value Property value to set or add.
+     */
+    static void createOrAddConfigList(AbstractConfiguration config, String key, String value) {
+        if (config != null && key != null && !key.isBlank() && value != null && !value.isBlank()) {
+            String existingConfig = config.getConfigOption(key);
+            if (existingConfig == null || !existingConfig.contains(value)) {
+                config.setConfigOption(key, existingConfig == null ? value : existingConfig + "," + value);
+            }
+        }
     }
 
     /**
