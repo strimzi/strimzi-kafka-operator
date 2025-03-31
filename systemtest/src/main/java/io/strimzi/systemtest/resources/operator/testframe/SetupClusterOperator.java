@@ -45,7 +45,7 @@ public class SetupClusterOperator {
         install(new BundleInstallation(clusterOperatorConfiguration));
     }
 
-    private void createClusterOperatorNamespace() {
+    public void createClusterOperatorNamespace() {
         if (KubeResourceManager.get().kubeClient().namespaceExists(clusterOperatorConfiguration.getNamespaceName())) {
             Namespace coNamespace = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(clusterOperatorConfiguration.getNamespaceName()).get();
             KubeResourceManager.get().deleteResource(coNamespace);

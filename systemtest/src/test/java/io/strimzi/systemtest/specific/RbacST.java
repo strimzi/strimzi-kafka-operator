@@ -4,10 +4,17 @@
  */
 package io.strimzi.systemtest.specific;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
+import io.fabric8.kubernetes.api.model.coordination.v1.LeaseBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -18,14 +25,15 @@ import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.testframe.BundleInstallation;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.rbac.RbacUtils;
 import io.strimzi.test.ReadWriteUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -35,19 +43,23 @@ import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
-public class SpecificST extends AbstractST {
-    private static final Logger LOGGER = LogManager.getLogger(SpecificST.class);
-
+public class RbacST extends AbstractST {
     @IsolatedTest
     void testClusterWideOperatorWithLimitedAccessToSpecificNamespaceViaRbacRole() {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
+        final ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfiguration();
+
+        // create namespace, where we will be able to deploy CustomResources
+        NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved,
+            CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), ResourceManager.getTestContext().getRequiredTestMethod().getName()));
 
         // --- a) defining Role and ClusterRoles
         final Role strimziClusterOperator020 = ReadWriteUtils.readObjectFromYamlFilepath(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
@@ -56,22 +68,29 @@ public class SpecificST extends AbstractST {
         strimziClusterOperator020.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
 
         final ClusterRole strimziClusterOperator021 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml"), ClusterRole.class);
-        final ClusterRole strimziClusterOperator022 = ReadWriteUtils.readObjectFromYamlFilepath(SetupClusterOperator.getInstance().changeLeaseNameInResourceIfNeeded(new File(
-            TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml").getAbsolutePath()), ClusterRole.class);
+        final ClusterRole strimziClusterOperator022 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml"), ClusterRole.class);
         final ClusterRole strimziClusterOperator023 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-ClusterRole-strimzi-cluster-operator-role.yaml"), ClusterRole.class);
         final ClusterRole strimziClusterOperator030 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml"), ClusterRole.class);
         final ClusterRole strimziClusterOperator031 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml"), ClusterRole.class);
         final ClusterRole strimziClusterOperator033 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml"), ClusterRole.class);
 
-        final List<Role> roles = Arrays.asList(strimziClusterOperator020);
-        final List<ClusterRole> clusterRoles = Arrays.asList(strimziClusterOperator021, strimziClusterOperator022,
-                strimziClusterOperator023, strimziClusterOperator030, strimziClusterOperator031, strimziClusterOperator033);
+        KubeResourceManager.get().createResourceWithWait(
+            // Apply our ClusterRoles
+            strimziClusterOperator021,
+            strimziClusterOperator022,
+            strimziClusterOperator023,
+            strimziClusterOperator030,
+            strimziClusterOperator031,
+            strimziClusterOperator033,
+            // Apply our Role
+            strimziClusterOperator020
+        );
 
         // ---- b) defining RoleBindings
-        final RoleBinding strimziClusterOperator020Namespaced = ReadWriteUtils.readObjectFromYamlFilepath(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(
+        final RoleBinding strimziClusterOperator020Namespaced = ReadWriteUtils.readObjectFromYamlFilepath(RbacUtils.switchClusterRolesToRolesIfNeeded(new File(
             TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml"), true), RoleBinding.class);
-        final RoleBinding strimziClusterOperator022LeaderElection = ReadWriteUtils.readObjectFromYamlFilepath(SetupClusterOperator.getInstance().changeLeaseNameInResourceIfNeeded(new File(
-            TestConstants.PATH_TO_LEASE_ROLE_BINDING).getAbsolutePath()), RoleBinding.class);
+        final RoleBinding strimziClusterOperator022LeaderElection = ReadWriteUtils.readObjectFromYamlFilepath(
+            new File(TestConstants.PATH_TO_LEASE_ROLE_BINDING), RoleBinding.class);
 
         // specify explicit namespace for RoleBindings
         strimziClusterOperator020Namespaced.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
@@ -81,34 +100,24 @@ public class SpecificST extends AbstractST {
         strimziClusterOperator020Namespaced.getSubjects().stream().findFirst().get().setNamespace(clusterOperator.getDeploymentNamespace());
         strimziClusterOperator022LeaderElection.getSubjects().stream().findFirst().get().setNamespace(clusterOperator.getDeploymentNamespace());
 
-        final List<RoleBinding> roleBindings = Arrays.asList(
-                strimziClusterOperator020Namespaced,
-                strimziClusterOperator022LeaderElection
+        KubeResourceManager.get().createResourceWithWait(
+            // Apply our RoleBindings
+            strimziClusterOperator020Namespaced,
+            strimziClusterOperator022LeaderElection
         );
 
         // ---- c) defining ClusterRoleBindings
-        final List<ClusterRoleBinding> clusterRoleBindings = Arrays.asList(
+        KubeResourceManager.get().createResourceWithWait(
+            // Apply our ClusterRoleBindings
             ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()),
             ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName())
         );
 
-        clusterOperator.unInstall();
+        // Apply all CRDs, SA etc.
+        applyOtherInstallationFilesThatAreNotRbac(clusterOperatorConfiguration);
 
-        // create namespace, where we will be able to deploy CustomResources
-        NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved,
-            CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), ResourceManager.getTestContext().getRequiredTestMethod().getName()));
-
-        clusterOperator = clusterOperator.defaultInstallation()
-            // use our pre-defined Roles
-            .withRoles(roles)
-            // use our pre-defined RoleBindings
-            .withRoleBindings(roleBindings)
-            // use our pre-defined ClusterRoles
-            .withClusterRoles(clusterRoles)
-            // use our pre-defined ClusterRoleBindings
-            .withClusterRoleBindings(clusterRoleBindings)
-            .createInstallation()
-            .runBundleInstallation();
+        // Deploy CO deployment
+        BundleInstallation.deployClusterOperator(clusterOperatorConfiguration);
 
         resourceManager.createResourceWithoutWait(
             KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -135,10 +144,59 @@ public class SpecificST extends AbstractST {
         assertThat(condition.getStatus(), CoreMatchers.is("True"));
     }
 
+    private void applyOtherInstallationFilesThatAreNotRbac(ClusterOperatorConfiguration clusterOperatorConfiguration) {
+        List<File> operatorFiles = Arrays.stream(new File(BundleInstallation.CO_INSTALL_DIR).listFiles()).sorted()
+            .filter(File::isFile)
+            .filter(file ->
+                !file.getName().matches(".*(Deployment|Role)-.*"))
+            .toList();
+
+        for (File operatorFile : operatorFiles) {
+            final String resourceType = operatorFile.getName().split("-")[1];
+
+            switch (resourceType) {
+                case TestConstants.SERVICE_ACCOUNT:
+                    ServiceAccount serviceAccount = ReadWriteUtils.readObjectFromYamlFilepath(operatorFile, ServiceAccount.class);
+                    KubeResourceManager.get().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
+                        .editMetadata()
+                            .withNamespace(clusterOperatorConfiguration.getNamespaceName())
+                        .endMetadata()
+                        .build());
+                    break;
+                case TestConstants.CONFIG_MAP:
+                    ConfigMap configMap = ReadWriteUtils.readObjectFromYamlFilepath(operatorFile, ConfigMap.class);
+                    KubeResourceManager.get().createResourceWithWait(new ConfigMapBuilder(configMap)
+                        .editMetadata()
+                            .withNamespace(clusterOperatorConfiguration.getNamespaceName())
+                            .withName(clusterOperatorConfiguration.getOperatorDeploymentName())
+                        .endMetadata()
+                        .build());
+                    break;
+                case TestConstants.LEASE:
+                    // Loads the resource through Fabric8 Kubernetes Client => that way we do not need to add a direct
+                    // dependency on Jackson Datatype JSR310 to decode the Lease resource
+                    Lease lease = kubeClient().getClient().leases().load(operatorFile).item();
+                    KubeResourceManager.get().createResourceWithWait(new LeaseBuilder(lease)
+                        .editMetadata()
+                            .withNamespace(clusterOperatorConfiguration.getNamespaceName())
+                            .withName(clusterOperatorConfiguration.getOperatorDeploymentName())
+                        .endMetadata()
+                        .build());
+                    break;
+                case TestConstants.CUSTOM_RESOURCE_DEFINITION_SHORT:
+                    CustomResourceDefinition customResourceDefinition = ReadWriteUtils.readObjectFromYamlFilepath(operatorFile, CustomResourceDefinition.class);
+                    KubeResourceManager.get().createResourceWithWait(customResourceDefinition);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
     @BeforeAll
-    void setUp() {
+    void setup() {
         setupClusterOperator
             .withDefaultConfiguration()
-            .install();
+            .createClusterOperatorNamespace();
     }
 }

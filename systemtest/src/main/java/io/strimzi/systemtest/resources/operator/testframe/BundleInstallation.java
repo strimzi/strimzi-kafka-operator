@@ -271,6 +271,10 @@ public class BundleInstallation implements InstallationMethod {
     }
 
     public void deployClusterOperator() {
+        deployClusterOperator(clusterOperatorConfiguration);
+    }
+
+    public static void deployClusterOperator(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         Deployment clusterOperator = DeploymentResource.getDeploymentFromYaml(PATH_TO_CO_CONFIG);
 
         // Get env from config file
