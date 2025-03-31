@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -15,6 +16,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.ResourceType;
 
+import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 public class KafkaTopicResource implements ResourceType<KafkaTopic> {
@@ -54,8 +56,38 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
         return Crds.topicOperation(ResourceManager.kubeClient().getClient());
     }
 
+    /**
+     * Replaces a KafkaTopic CR in the given namespace using the provided editor.
+     * <p>
+     * Retries up to 3 times on 409 Conflict errors.
+     *
+     * @param namespaceName Namespace of the KafkaTopic
+     * @param resourceName  Name of the KafkaTopic
+     * @param editor        Function to edit the resource before replace
+     */
     public static void replaceTopicResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaTopic> editor) {
-        ResourceManager.replaceCrdResource(namespaceName, KafkaTopic.class, KafkaTopicList.class, resourceName, editor);
+        final int maxRetries = 3;
+        int attempt = 0;
+
+        while (true) {
+            try {
+                ResourceManager.replaceCrdResource(namespaceName, KafkaTopic.class, KafkaTopicList.class, resourceName, editor);
+                return; // success
+            } catch (CompletionException ce) {
+                Throwable cause = ce.getCause();
+                if (!isConflict(cause) || ++attempt >= maxRetries) {
+                    throw (cause instanceof RuntimeException re) ? re : new RuntimeException(cause);
+                }
+            } catch (KubernetesClientException e) {
+                if (!isConflict(e) || ++attempt >= maxRetries) {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    private static boolean isConflict(Throwable t) {
+        return t instanceof KubernetesClientException kce && kce.getCode() == 409;
     }
 
     /**
