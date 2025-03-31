@@ -170,7 +170,6 @@ class CoreFeaturesIT implements TestSeparator {
 
     private void startKafkaCluster(int brokersNum, int internalTopicReplicationFactor, Map<String, String> additionalKafkaConfiguration) {
         kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
-                .withKraft()
                 .withNumberOfBrokers(brokersNum)
                 .withInternalTopicReplicationFactor(internalTopicReplicationFactor)
                 .withAdditionalKafkaConfiguration(additionalKafkaConfiguration)
