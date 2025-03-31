@@ -22,7 +22,7 @@ public class KafkaMirrorMaker2Type implements ResourceType<KafkaMirrorMaker2> {
     private final MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> client;
 
     public KafkaMirrorMaker2Type() {
-        client = Crds.kafkaMirrorMaker2Operation(KubeResourceManager.getKubeClient().getClient());
+        client = Crds.kafkaMirrorMaker2Operation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     @Override

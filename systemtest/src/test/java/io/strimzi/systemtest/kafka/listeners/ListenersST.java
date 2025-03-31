@@ -130,7 +130,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testSendMessagesPlainAnonymous() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         kubeResourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -169,7 +169,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testSendMessagesTlsAuthenticated() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         kubeResourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -245,7 +245,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testSendMessagesPlainScramSha() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         kubeResourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -272,7 +272,7 @@ public class ListenersST extends AbstractST {
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
-        String brokerPodName = KubeResourceManager.getKubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
         String brokerPodLog = kubeClient(testStorage.getNamespaceName()).logsInSpecificNamespace(testStorage.getNamespaceName(),
             brokerPodName, "kafka");
 
@@ -320,7 +320,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testSendMessagesTlsScramSha() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int passwordLength = 50;
 
         kubeResourceManager.createResourceWithWait(
@@ -398,7 +398,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testSendMessagesCustomListenerTlsScramSha() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         kubeResourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -457,7 +457,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testNodePort() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final Map<String, String> label = Collections.singletonMap("my-label", "value");
         final Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
 
@@ -570,7 +570,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testOverrideNodePortConfiguration() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final int brokerNodePort = 32000;
         final int brokerId = 0;
@@ -647,7 +647,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testNodePortTls() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         kubeResourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -704,7 +704,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testLoadBalancer() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         kubeResourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -762,7 +762,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testLoadBalancerTls() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         kubeResourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -821,7 +821,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testClusterIp() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         kubeResourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -862,7 +862,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testClusterIpTls() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         kubeResourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -919,7 +919,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCustomSoloCertificatesForNodePort() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertManager.createBrokerCertChain(testStorage);
 
@@ -1017,7 +1017,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCustomChainCertificatesForNodePort() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
         final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
 
@@ -1122,7 +1122,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCustomSoloCertificatesForLoadBalancer() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertManager.createBrokerCertChain(testStorage);
 
@@ -1221,7 +1221,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCustomChainCertificatesForLoadBalancer() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
         final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
 
@@ -1334,7 +1334,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCustomSoloCertificatesForRoute() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertManager.createBrokerCertChain(testStorage);
 
@@ -1432,7 +1432,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCustomChainCertificatesForRoute() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
         final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
@@ -1540,7 +1540,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCustomCertLoadBalancerAndTlsRollingUpdate() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
         final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertManager.createBrokerCertChain(testStorage);
@@ -1799,7 +1799,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCustomCertNodePortAndTlsRollingUpdate() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
         final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertManager.createBrokerCertChain(testStorage);
@@ -2056,7 +2056,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCustomCertRouteAndTlsRollingUpdate() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
         final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertManager.createBrokerCertChain(testStorage);
@@ -2324,7 +2324,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testNonExistingCustomCertificate() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String nonExistingCertName = "non-existing-certificate";
 
         kubeResourceManager.createResourceWithWait(
@@ -2370,7 +2370,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCertificateWithNonExistingDataCrt() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String nonExistingCertName = "non-existing-crt";
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertManager.createBrokerCertChain(testStorage);
@@ -2421,7 +2421,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testCertificateWithNonExistingDataKey() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String nonExistingCertKey = "non-existing-key";
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final CertAndKeyFiles strimziCertAndKey1 = SystemTestCertManager.createBrokerCertChain(testStorage);
@@ -2476,7 +2476,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testMessagesTlsScramShaWithPredefinedPassword() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // FIPS needs the passwords at least 32 characters long
         final String firstUnencodedPassword = "completely_secret_password_long_enough_for_fips";
@@ -2577,7 +2577,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testAdvertisedHostNamesAppearsInBrokerCerts() throws CertificateException {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String advertHostInternal0 = "kafka-test.internal.0.net";
         final String advertHostInternal1 = "kafka-test.internal.1.net";
@@ -2686,7 +2686,7 @@ public class ListenersST extends AbstractST {
 
     @AfterEach
     void afterEach() {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, KubeResourceManager.getTestContext());
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, KubeResourceManager.get().getTestContext());
         kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 

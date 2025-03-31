@@ -22,7 +22,7 @@ public class KafkaConnectType implements ResourceType<KafkaConnect> {
     private final MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> client;
 
     public KafkaConnectType() {
-        client = Crds.kafkaConnectOperation(KubeResourceManager.getKubeClient().getClient());
+        client = Crds.kafkaConnectOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     @Override

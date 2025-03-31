@@ -8,6 +8,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,10 +30,12 @@ class AllNamespaceST extends AbstractNamespaceST {
         NamespaceManager.getInstance().createNamespaces(clusterOperator.getDeploymentNamespace(),
             CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE));
 
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withWatchingNamespaces(TestConstants.WATCH_ALL_NAMESPACES)
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withNamespacesToWatch(TestConstants.WATCH_ALL_NAMESPACES)
+                .build()
+            )
+            .install();
     }
 
     @BeforeAll

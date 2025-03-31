@@ -22,7 +22,7 @@ public class KafkaBridgeType implements ResourceType<KafkaBridge> {
     private final MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> client;
 
     public KafkaBridgeType() {
-        client = Crds.kafkaBridgeOperation(KubeResourceManager.getKubeClient().getClient());
+        client = Crds.kafkaBridgeOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     @Override

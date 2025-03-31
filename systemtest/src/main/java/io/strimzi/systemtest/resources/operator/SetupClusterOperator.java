@@ -37,8 +37,6 @@ import io.strimzi.systemtest.resources.operator.configuration.OlmConfigurationBu
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -202,22 +200,6 @@ public class SetupClusterOperator {
             .withWatchingNamespaces(TestConstants.WATCH_ALL_NAMESPACES);
     }
 
-    /**
-     * This method install Strimzi Cluster Operator based on environment variable configuration.
-     * It can install operator by classic way (apply bundle yamls) or use OLM. For OLM you need to set all other OLM env variables.
-     * Don't use this method in tests, where specific configuration of CO is needed.
-     */
-    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
-    public SetupClusterOperator runInstallation() {
-        if (Environment.isOlmInstall()) {
-            runOlmInstallation();
-        } else if (Environment.isHelmInstall()) {
-            runHelmInstallation();
-        } else {
-            runBundleInstallation();
-        }
-        return this;
-    }
 
     /**
      * Method used for configuring the {@link #testClassName} and {@link #testMethodName}.
@@ -243,20 +225,6 @@ public class SetupClusterOperator {
         LOGGER.info("Cluster Operator installation configuration:\n{}", this::toString);
         configureTestClassAndMethodNames();
         bundleInstallation();
-        return this;
-    }
-
-    public SetupClusterOperator runOlmInstallation() {
-        LOGGER.info("Cluster Operator installation configuration:\n{}", this::toString);
-        configureTestClassAndMethodNames();
-        olmInstallation();
-        return this;
-    }
-
-    public SetupClusterOperator runHelmInstallation() {
-        LOGGER.info("Cluster Operator installation configuration:\n{}", this::toString);
-        configureTestClassAndMethodNames();
-        helmInstallation();
         return this;
     }
 
@@ -324,70 +292,6 @@ public class SetupClusterOperator {
                 .buildBundleInstance()
                 .buildBundleDeployment()
                 .build());
-    }
-
-    private void olmInstallation() {
-        LOGGER.info("Install Cluster Operator via OLM");
-
-        OlmConfigurationBuilder olmConfiguration = new OlmConfigurationBuilder()
-            .withExtensionContext(extensionContext)
-            .withOperationTimeout(operationTimeout)
-            .withReconciliationInterval(reconciliationInterval)
-            .withEnvVars(extraEnvVars);
-
-        // cluster-wide olm co-operator or multi-namespaces in once we also deploy cluster-wide
-        if (IS_OLM_CLUSTER_WIDE.test(namespaceToWatch)) {
-            // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-            if (!Environment.isNamespaceRbacScope()) {
-                bindingsNamespaces = bindingsNamespaces.contains(TestConstants.CO_NAMESPACE) ? Collections.singletonList(
-                    TestConstants.CO_NAMESPACE) : bindingsNamespaces;
-
-                createClusterOperatorNamespaceIfPossible();
-                createClusterRoleBindings();
-
-                // watch all namespaces
-                olmConfiguration.withNamespaceToWatch(TestConstants.WATCH_ALL_NAMESPACES);
-
-                olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
-                olmResource.create();
-            }
-        } else {
-            // single-namespace olm co-operator
-            createClusterOperatorNamespaceIfPossible();
-
-            // watch same namespace, where operator is installed
-            olmConfiguration.withNamespaceToWatch(namespaceInstallTo);
-
-            olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
-            olmResource.create();
-        }
-    }
-
-    /**
-     * Upgrade cluster operator by updating subscription and obtaining new install plan,
-     * which has not been used yet and also approves the installation
-     */
-    public void upgradeClusterOperator(String namespaceName, OlmConfiguration olmConfiguration) {
-        if (kubeClient(namespaceName).listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).isEmpty()) {
-            throw new RuntimeException("We can not perform upgrade! Cluster Operator Pod is not present.");
-        }
-
-        updateSubscription(olmConfiguration);
-        // Because we are updating to latest available CO, we want to wait for new install plan with CSV prefix, not with the exact CSV (containing the prefix and version)
-        OlmUtils.waitForNonApprovedInstallPlanWithCsvNameOrPrefix(namespaceInstallTo, olmConfiguration.getOlmAppBundlePrefix());
-        String newDeploymentName = OlmUtils.approveNonApprovedInstallPlanAndReturnDeploymentName(namespaceInstallTo, olmConfiguration.getOlmAppBundlePrefix());
-
-        olmConfiguration.setOlmOperatorDeploymentName(kubeClient().getDeploymentNameByPrefix(olmConfiguration.getNamespaceName(), newDeploymentName));
-        DeploymentUtils.waitForCreationOfDeploymentWithPrefix(namespaceInstallTo, olmConfiguration.getOlmOperatorDeploymentName());
-
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceInstallTo, olmConfiguration.getOlmOperatorDeploymentName(), 1);
-    }
-
-    public void updateSubscription(OlmConfiguration olmConfiguration) {
-        // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
-        ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName())
-            .add(ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName()).size(), new ResourceItem(olmResource::deleteCSV));
-        olmResource.updateSubscription(olmConfiguration);
     }
 
     private void createClusterOperatorNamespaceIfPossible() {

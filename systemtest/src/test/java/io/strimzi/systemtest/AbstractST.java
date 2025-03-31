@@ -61,7 +61,7 @@ public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
     static {
         LB_FINALIZERS = Environment.LB_FINALIZERS ? List.of(TestConstants.LOAD_BALANCER_CLEANUP) : null;
-        KubeResourceManager.getInstance().setResourceTypes(
+        KubeResourceManager.get().setResourceTypes(
             new ClusterRoleBindingType(),
             new ClusterRoleType(),
             new CustomResourceDefinitionType(),
@@ -81,12 +81,12 @@ public abstract class AbstractST implements TestSeparator {
             new StrimziPodSetType()
         );
 
-        KubeResourceManager.getInstance().addCreateCallback(resource -> {
+        KubeResourceManager.get().addCreateCallback(resource -> {
             Map<String, String> labels = new HashMap<>();
-            labels.put(TestConstants.TEST_SUITE_NAME_LABEL, StUtils.removePackageName(KubeResourceManager.getTestContext().getRequiredTestClass().getName()));
+            labels.put(TestConstants.TEST_SUITE_NAME_LABEL, StUtils.removePackageName(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName()));
 
-            if (KubeResourceManager.getTestContext().getTestMethod().isPresent()) {
-                String testCaseName = KubeResourceManager.getTestContext().getRequiredTestMethod().getName();
+            if (KubeResourceManager.get().getTestContext().getTestMethod().isPresent()) {
+                String testCaseName = KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
                 labels.put(TestConstants.TEST_CASE_NAME_LABEL, testCaseName);
             }
 
@@ -95,7 +95,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     // Test-Frame integration stuff, remove everything else when not needed
-    protected final KubeResourceManager kubeResourceManager = KubeResourceManager.getInstance();
+    protected final KubeResourceManager kubeResourceManager = KubeResourceManager.get();
     protected final io.strimzi.systemtest.resources.operator.testframe.SetupClusterOperator setupClusterOperator = new io.strimzi.systemtest.resources.operator.testframe.SetupClusterOperator();
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();

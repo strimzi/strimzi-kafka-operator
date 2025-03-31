@@ -22,7 +22,7 @@ public class KafkaUserType implements ResourceType<KafkaUser> {
     private final MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> client;
 
     public KafkaUserType() {
-        client = Crds.kafkaUserOperation(KubeResourceManager.getKubeClient().getClient());
+        client = Crds.kafkaUserOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     @Override

@@ -22,7 +22,7 @@ public class KafkaRebalanceType implements ResourceType<KafkaRebalance> {
     private final MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> client;
 
     public KafkaRebalanceType() {
-        client = Crds.kafkaRebalanceOperation(KubeResourceManager.getKubeClient().getClient());
+        client = Crds.kafkaRebalanceOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     @Override

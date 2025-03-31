@@ -23,7 +23,7 @@ public class StrimziPodSetType implements ResourceType<StrimziPodSet> {
     private MixedOperation<StrimziPodSet, StrimziPodSetList, Resource<StrimziPodSet>> client;
 
     public StrimziPodSetType() {
-        client = Crds.strimziPodSetOperation(KubeResourceManager.getKubeClient().getClient());
+        client = Crds.strimziPodSetOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     @Override

@@ -91,7 +91,7 @@ public class BundleInstallation implements InstallationMethod {
             switch (resourceType) {
                 case TestConstants.ROLE:
                     Role role = ReadWriteUtils.readObjectFromYamlFilepath(operatorFile, Role.class);
-                    KubeResourceManager.getInstance().createResourceWithWait(new RoleBuilder(role)
+                    KubeResourceManager.get().createResourceWithWait(new RoleBuilder(role)
                         .editMetadata()
                             .withNamespace(clusterOperatorConfiguration.getNamespaceName())
                         .endMetadata()
@@ -100,11 +100,11 @@ public class BundleInstallation implements InstallationMethod {
                 case TestConstants.CLUSTER_ROLE:
                     ClusterRole clusterRole = ReadWriteUtils.readObjectFromYamlFilepath(
                         LeaseUtils.changeLeaseNameInResourceIfNeeded(operatorFile.getAbsolutePath(), clusterOperatorConfiguration.getExtraEnvVars()), ClusterRole.class);
-                    KubeResourceManager.getInstance().createResourceWithWait(clusterRole);
+                    KubeResourceManager.get().createResourceWithWait(clusterRole);
                     break;
                 case TestConstants.SERVICE_ACCOUNT:
                     ServiceAccount serviceAccount = ReadWriteUtils.readObjectFromYamlFilepath(operatorFile, ServiceAccount.class);
-                    KubeResourceManager.getInstance().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
+                    KubeResourceManager.get().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
                         .editMetadata()
                             .withNamespace(clusterOperatorConfiguration.getNamespaceName())
                         .endMetadata()
@@ -112,7 +112,7 @@ public class BundleInstallation implements InstallationMethod {
                     break;
                 case TestConstants.CONFIG_MAP:
                     ConfigMap configMap = ReadWriteUtils.readObjectFromYamlFilepath(operatorFile, ConfigMap.class);
-                    KubeResourceManager.getInstance().createResourceWithWait(new ConfigMapBuilder(configMap)
+                    KubeResourceManager.get().createResourceWithWait(new ConfigMapBuilder(configMap)
                         .editMetadata()
                             .withNamespace(clusterOperatorConfiguration.getNamespaceName())
                             .withName(clusterOperatorConfiguration.getOperatorDeploymentName())
@@ -123,7 +123,7 @@ public class BundleInstallation implements InstallationMethod {
                     // Loads the resource through Fabric8 Kubernetes Client => that way we do not need to add a direct
                     // dependency on Jackson Datatype JSR310 to decode the Lease resource
                     Lease lease = kubeClient().getClient().leases().load(operatorFile).item();
-                    KubeResourceManager.getInstance().createResourceWithWait(new LeaseBuilder(lease)
+                    KubeResourceManager.get().createResourceWithWait(new LeaseBuilder(lease)
                         .editMetadata()
                             .withNamespace(clusterOperatorConfiguration.getNamespaceName())
                             .withName(clusterOperatorConfiguration.getOperatorDeploymentName())
@@ -132,7 +132,7 @@ public class BundleInstallation implements InstallationMethod {
                     break;
                 case TestConstants.CUSTOM_RESOURCE_DEFINITION_SHORT:
                     CustomResourceDefinition customResourceDefinition = ReadWriteUtils.readObjectFromYamlFilepath(operatorFile, CustomResourceDefinition.class);
-                    KubeResourceManager.getInstance().createResourceWithWait(customResourceDefinition);
+                    KubeResourceManager.get().createResourceWithWait(customResourceDefinition);
                     break;
                 default:
                     LOGGER.error("Unknown installation resource type: {}", resourceType);
@@ -158,7 +158,7 @@ public class BundleInstallation implements InstallationMethod {
         // for CO and other operators, so they can watch and apply changes in all Namespaces in the whole cluster
         if (clusterOperatorConfiguration.isWatchingAllNamespaces()) {
             List<ClusterRoleBinding> clusterRoleBindings = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(clusterOperatorConfiguration.getNamespaceName());
-            KubeResourceManager.getInstance().createResourceWithWait(clusterRoleBindings.toArray(new ClusterRoleBinding[0]));
+            KubeResourceManager.get().createResourceWithWait(clusterRoleBindings.toArray(new ClusterRoleBinding[0]));
 
             applyRoleBindings(clusterOperatorConfiguration.getNamespaceName());
         } else {
@@ -184,14 +184,14 @@ public class BundleInstallation implements InstallationMethod {
         // 020-RoleBinding => Cluster Operator rights for managing operands
         File roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleBindingTemplates.roleBindingFromFile(clusterOperatorConfiguration.getNamespaceName(), namespaceToWatch, roleFile.getAbsolutePath())
         );
 
         // 022-RoleBinding => Leader election RoleBinding (is only in the operator namespace)
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-RoleBinding-strimzi-cluster-operator.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleBindingTemplates.roleBindingFromFile(clusterOperatorConfiguration.getNamespaceName(), namespaceToWatch,
                 LeaseUtils.changeLeaseNameInResourceIfNeeded(roleFile.getAbsolutePath(), clusterOperatorConfiguration.getExtraEnvVars())
             )
@@ -200,14 +200,14 @@ public class BundleInstallation implements InstallationMethod {
         // 023-RoleBinding => Leader election RoleBinding (is only in the operator namespace)
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-RoleBinding-strimzi-cluster-operator.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleBindingTemplates.roleBindingFromFile(clusterOperatorConfiguration.getNamespaceName(), namespaceToWatch, roleFile.getAbsolutePath())
         );
 
         // 031-RoleBinding => Entity Operator delegation
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleBindingTemplates.roleBindingFromFile(clusterOperatorConfiguration.getNamespaceName(), namespaceToWatch, roleFile.getAbsolutePath())
         );
     }
@@ -215,19 +215,19 @@ public class BundleInstallation implements InstallationMethod {
     public void applyRoles(String namespace) {
         File roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(),
                 LeaseUtils.changeLeaseNameInResourceIfNeeded(roleFile.getAbsolutePath(), clusterOperatorConfiguration.getExtraEnvVars())
             )
@@ -235,25 +235,25 @@ public class BundleInstallation implements InstallationMethod {
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
-        KubeResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
         );
     }
@@ -355,7 +355,7 @@ public class BundleInstallation implements InstallationMethod {
             clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setResources(resourceRequirements);
         }
 
-        KubeResourceManager.getInstance().createResourceWithWait(new DeploymentBuilder(clusterOperator)
+        KubeResourceManager.get().createResourceWithWait(new DeploymentBuilder(clusterOperator)
             .editMetadata()
                 .withName(clusterOperatorConfiguration.getOperatorDeploymentName())
                 .withNamespace(clusterOperatorConfiguration.getNamespaceName())

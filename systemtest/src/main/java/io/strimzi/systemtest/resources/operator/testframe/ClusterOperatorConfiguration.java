@@ -41,9 +41,9 @@ public class ClusterOperatorConfiguration {
     private final String olmSourceName = Environment.OLM_SOURCE_NAME;
     private final String olmSourceNamespace = Environment.OLM_SOURCE_NAMESPACE;
     private String olmOperatorDeploymentNamePrefix = Environment.OLM_OPERATOR_DEPLOYMENT_NAME;
-    private String operatorVersion;
+    private String olmOperatorVersion;
     private OlmInstallationStrategy olmInstallationStrategy = OlmInstallationStrategy.Automatic;
-    private String channelName = Environment.OLM_OPERATOR_CHANNEL;
+    private String olmChannelName = Environment.OLM_OPERATOR_CHANNEL;
 
     public String getOperatorDeploymentName() {
         return operatorDeploymentName;
@@ -145,24 +145,32 @@ public class ClusterOperatorConfiguration {
         return olmOperatorDeploymentNamePrefix;
     }
 
-    public String getOperatorVersion() {
-        return operatorVersion;
+    public String getOlmOperatorVersion() {
+        return olmOperatorVersion;
     }
 
-    public void setOperatorVersion(String operatorVersion) {
-        this.operatorVersion = operatorVersion;
+    public void setOlmOperatorVersion(String operatorVersion) {
+        this.olmOperatorVersion = operatorVersion;
     }
 
     public OlmInstallationStrategy getOlmInstallationStrategy() {
         return olmInstallationStrategy;
     }
 
-    public String getChannelName() {
-        return channelName;
+    public void setOlmInstallationStrategy(OlmInstallationStrategy olmInstallationStrategy) {
+        this.olmInstallationStrategy = olmInstallationStrategy;
+    }
+
+    public String getOlmChannelName() {
+        return olmChannelName;
+    }
+
+    public void setOlmChannelName(String olmChannelName) {
+        this.olmChannelName = olmChannelName;
     }
 
     public String getCsvName() {
-        return olmAppBundlePrefix + ".v" + operatorVersion;
+        return olmAppBundlePrefix + ".v" + olmOperatorVersion;
     }
 
     public List<EnvVar> getAllEnvVariablesForOlm() {

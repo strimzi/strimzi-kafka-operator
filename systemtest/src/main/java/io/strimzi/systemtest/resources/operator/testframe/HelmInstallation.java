@@ -108,7 +108,7 @@ public class HelmInstallation implements InstallationMethod {
             .withNamespace(clusterOperatorConfiguration.getNamespaceName())
             .call();
 
-        KubeResourceManager.getKubeClient().getClient().namespaces().withName(clusterOperatorConfiguration.getNamespaceName()).delete();
+        KubeResourceManager.get().kubeClient().getClient().namespaces().withName(clusterOperatorConfiguration.getNamespaceName()).delete();
     }
 
     /**

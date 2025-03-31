@@ -35,11 +35,11 @@ public class KafkaType implements ResourceType<Kafka> {
     private static final Predicate<Kafka> HAS_CRUISE_CONTROL_SUPPORT = resource -> resource.getSpec().getCruiseControl() != null;
 
     public KafkaType() {
-        client = Crds.kafkaOperation(KubeResourceManager.getKubeClient().getClient());
+        client = Crds.kafkaOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaClient() {
-        return Crds.kafkaOperation(KubeResourceManager.getKubeClient().getClient());
+        return Crds.kafkaOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     @Override

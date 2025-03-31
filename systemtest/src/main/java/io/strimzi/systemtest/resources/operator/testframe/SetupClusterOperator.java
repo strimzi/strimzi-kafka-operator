@@ -46,12 +46,12 @@ public class SetupClusterOperator {
     }
 
     private void createClusterOperatorNamespace() {
-        if (KubeResourceManager.getKubeClient().namespaceExists(clusterOperatorConfiguration.getNamespaceName())) {
-            Namespace coNamespace = KubeResourceManager.getKubeClient().getClient().namespaces().withName(clusterOperatorConfiguration.getNamespaceName()).get();
-            KubeResourceManager.getInstance().deleteResource(coNamespace);
+        if (KubeResourceManager.get().kubeClient().namespaceExists(clusterOperatorConfiguration.getNamespaceName())) {
+            Namespace coNamespace = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(clusterOperatorConfiguration.getNamespaceName()).get();
+            KubeResourceManager.get().deleteResource(coNamespace);
         }
 
-        KubeResourceManager.getInstance().createResourceWithWait(new NamespaceBuilder()
+        KubeResourceManager.get().createResourceWithWait(new NamespaceBuilder()
             .withNewMetadata()
                 .withName(clusterOperatorConfiguration.getNamespaceName())
             .endMetadata()

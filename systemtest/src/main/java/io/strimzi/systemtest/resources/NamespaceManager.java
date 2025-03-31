@@ -335,7 +335,7 @@ public class NamespaceManager {
      */
     public List<String> getListOfNamespacesForTestClassAndTestCase(String testClass, String testCase) {
         List<String> namespaces = new ArrayList<>();
-//        namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass)));
+        namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass)));
 
         if (testCase != null) {
             Set<String> namespacesForTestCase = getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase));

@@ -10,12 +10,10 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionBuilder;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.skodjob.testframe.installation.InstallationMethod;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
-import io.strimzi.systemtest.resources.ResourceItem;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -53,7 +51,7 @@ public class OlmInstallation implements InstallationMethod {
         // Make sure that operator will be created
         DeploymentUtils.waitForCreationOfDeploymentWithPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmOperatorDeploymentNamePrefix());
 
-        String clusterOperatorDepName = kubeClient(clusterOperatorConfiguration.getNamespaceName()).getDeploymentNameByPrefix(clusterOperatorConfiguration.getOlmOperatorDeploymentNamePrefix());
+        String clusterOperatorDepName = kubeClient().getDeploymentNameByPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmOperatorDeploymentNamePrefix());
         clusterOperatorConfiguration = new ClusterOperatorConfigurationBuilder(clusterOperatorConfiguration)
             .withOperatorDeploymentName(clusterOperatorDepName)
             .build();
@@ -81,11 +79,11 @@ public class OlmInstallation implements InstallationMethod {
         if (!clusterOperatorConfiguration.getNamespacesToWatch().equals(TestConstants.WATCH_ALL_NAMESPACES)) {
             operatorGroup
                 .editOrNewSpec()
-                .withTargetNamespaces(clusterOperatorConfiguration.getNamespacesToWatch())
+                    .withTargetNamespaces(clusterOperatorConfiguration.getNamespacesToWatch())
                 .endSpec();
         }
 
-        ResourceManager.getInstance().createResourceWithWait(operatorGroup.build());
+        KubeResourceManager.get().createResourceWithWait(operatorGroup.build());
     }
 
     /**
@@ -94,46 +92,43 @@ public class OlmInstallation implements InstallationMethod {
     private void createAndModifySubscription() {
         Subscription subscription = prepareSubscription();
 
-        ResourceManager.getInstance().createResourceWithWait(subscription);
+        KubeResourceManager.get().createResourceWithWait(subscription);
     }
 
     public void updateSubscription() {
         // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
-        ResourceManager.STORED_RESOURCES
-            .get(ResourceManager.getTestContext().getDisplayName())
-            .add(ResourceManager.STORED_RESOURCES
-                    .get(ResourceManager.getTestContext().getDisplayName()).size(),
-                new ResourceItem(this::deleteCSV));
+//        ResourceManager.STORED_RESOURCES
+//            .get(ResourceManager.getTestContext().getDisplayName())
+//            .add(ResourceManager.STORED_RESOURCES
+//                    .get(ResourceManager.getTestContext().getDisplayName()).size(),
+//                new ResourceItem(this::deleteCSV));
         Subscription subscription = prepareSubscription();
         // This is just a workaround until we implement update in ResourceManager
-        ResourceManager.kubeClient().getClient().adapt(OpenShiftClient.class).operatorHub().subscriptions()
-            .inNamespace(subscription.getMetadata().getNamespace())
-            .resource(subscription)
-            .patch();
+        KubeResourceManager.get().updateResource(subscription);
     }
 
     public Subscription prepareSubscription() {
         SubscriptionBuilder subscriptionBuilder = new SubscriptionBuilder()
             .editOrNewMetadata()
-            .withName("strimzi-sub")
-            .withNamespace(clusterOperatorConfiguration.getNamespaceName())
-            .withLabels(Collections.singletonMap("app", "strimzi"))
+                .withName("strimzi-sub")
+                .withNamespace(clusterOperatorConfiguration.getNamespaceName())
+                .withLabels(Collections.singletonMap("app", "strimzi"))
             .endMetadata()
             .editOrNewSpec()
-            .withName(clusterOperatorConfiguration.getOlmOperatorName())
-            .withSource(clusterOperatorConfiguration.getOlmSourceName())
-            .withSourceNamespace(clusterOperatorConfiguration.getOlmSourceNamespace())
-            .withChannel(clusterOperatorConfiguration.getChannelName())
-            .withInstallPlanApproval(clusterOperatorConfiguration.getOlmInstallationStrategy().toString())
-            .editOrNewConfig()
-            .withEnv(clusterOperatorConfiguration.getAllEnvVariablesForOlm())
-            .endConfig()
+                .withName(clusterOperatorConfiguration.getOlmOperatorName())
+                .withSource(clusterOperatorConfiguration.getOlmSourceName())
+                .withSourceNamespace(clusterOperatorConfiguration.getOlmSourceNamespace())
+                .withChannel(clusterOperatorConfiguration.getOlmChannelName())
+                .withInstallPlanApproval(clusterOperatorConfiguration.getOlmInstallationStrategy().toString())
+                .editOrNewConfig()
+                    .withEnv(clusterOperatorConfiguration.getAllEnvVariablesForOlm())
+                .endConfig()
             .endSpec();
 
-        if (clusterOperatorConfiguration.getOperatorVersion() != null && !clusterOperatorConfiguration.getOperatorVersion().isEmpty()) {
+        if (clusterOperatorConfiguration.getOlmOperatorVersion() != null && !clusterOperatorConfiguration.getOlmOperatorVersion().isEmpty()) {
             subscriptionBuilder
                 .editSpec()
-                .withStartingCSV(clusterOperatorConfiguration.getCsvName())
+                    .withStartingCSV(clusterOperatorConfiguration.getCsvName())
                 .endSpec();
         }
 
@@ -148,9 +143,9 @@ public class OlmInstallation implements InstallationMethod {
 
             subscriptionBuilder
                 .editSpec()
-                .editOrNewConfig()
-                .withResources(resourceRequirements)
-                .endConfig()
+                    .editOrNewConfig()
+                        .withResources(resourceRequirements)
+                    .endConfig()
                 .endSpec();
         }
 
@@ -159,7 +154,7 @@ public class OlmInstallation implements InstallationMethod {
 
     public void deleteCSV() {
         LOGGER.info("Deleting CSV {}/{}", clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmAppBundlePrefix());
-        if (clusterOperatorConfiguration.getOperatorVersion() == null) {
+        if (clusterOperatorConfiguration.getOlmOperatorVersion() == null) {
             kubeClient().deleteCsv(clusterOperatorConfiguration.getNamespaceName(), kubeClient().getCsvWithPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmAppBundlePrefix()).getMetadata().getName());
         } else {
             kubeClient().deleteCsv(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getCsvName());
