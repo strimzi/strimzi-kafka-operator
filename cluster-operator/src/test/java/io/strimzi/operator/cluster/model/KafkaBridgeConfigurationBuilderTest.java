@@ -158,6 +158,7 @@ public class KafkaBridgeConfigurationBuilderTest {
     public void testSaslMechanism() {
         // test plain authentication
         KafkaClientAuthenticationPlain authPlain = new KafkaClientAuthenticationPlainBuilder()
+                .withUsername("user1")
                 .withNewPasswordSecret()
                     .withSecretName("my-auth-secret")
                     .withPassword("my-password-key")
@@ -171,7 +172,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SASL_PLAINTEXT",
                 "kafka.sasl.mechanism=PLAIN",
-                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key}\";"
         ));
 
         // test plain authentication but with TLS as well (server authentication only, encryption)
@@ -190,7 +191,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SASL_SSL",
                 "kafka.sasl.mechanism=PLAIN",
-                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};",
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key}\";",
                 "kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12",
                 "kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
                 "kafka.ssl.truststore.type=PKCS12"
@@ -198,6 +199,7 @@ public class KafkaBridgeConfigurationBuilderTest {
 
         // test scram-sha-256 authentication
         KafkaClientAuthenticationScramSha256 authScramSha256 = new KafkaClientAuthenticationScramSha256Builder()
+                .withUsername("user1")
                 .withNewPasswordSecret()
                     .withSecretName("my-auth-secret")
                     .withPassword("my-password-key")
@@ -211,11 +213,12 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SASL_PLAINTEXT",
                 "kafka.sasl.mechanism=SCRAM-SHA-256",
-                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key}\";"
         ));
 
         // test scram-sha-512 authentication
         KafkaClientAuthenticationScramSha512 authScramSha512 = new KafkaClientAuthenticationScramSha512Builder()
+                .withUsername("user1")
                 .withNewPasswordSecret()
                     .withSecretName("my-auth-secret")
                     .withPassword("my-password-key")
@@ -229,7 +232,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SASL_PLAINTEXT",
                 "kafka.sasl.mechanism=SCRAM-SHA-512",
-                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key}\";"
         ));
 
         // test oauth authentication
@@ -266,13 +269,17 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=SASL_PLAINTEXT",
                 "kafka.sasl.mechanism=OAUTHBEARER",
-                "kafka.sasl.jaas.config=" +
-                        "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_BRIDGE_OAUTH_CONFIG}" +
-                        " oauth.client.secret=${strimzienv:KAFKA_BRIDGE_OAUTH_CLIENT_SECRET}" +
-                        " oauth.refresh.token=${strimzienv:KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN}" +
-                        " oauth.access.token=${strimzienv:KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN}" +
-                        " oauth.password.grant.password=${strimzienv:KAFKA_BRIDGE_OAUTH_PASSWORD_GRANT_PASSWORD}" +
-                        " oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" oauth.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD} oauth.ssl.truststore.type=\"PKCS12\";",
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
+                        "oauth.client.id=\"oauth-client-id\" " +
+                        "oauth.password.grant.username=\"oauth-username\" " +
+                        "oauth.token.endpoint.uri=\"http://token-endpoint-uri\" " +
+                        "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-client-secret-secret:my-client-secret-key}\" " +
+                        "oauth.refresh.token=\"${strimzidir:/opt/strimzi/oauth/my-refresh-token-secret:my-refresh-token-key}\" " +
+                        "oauth.access.token=\"${strimzidir:/opt/strimzi/oauth/my-access-token-secret:my-access-token-key}\" " +
+                        "oauth.password.grant.password=\"${strimzidir:/opt/strimzi/oauth/my-password-secret-secret:my-password-key}\" " +
+                        "oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" " +
+                        "oauth.ssl.truststore.password=\"${strimzienv:CERTS_STORE_PASSWORD}\" " +
+                        "oauth.ssl.truststore.type=\"PKCS12\";",
                 "kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
         ));
     }
