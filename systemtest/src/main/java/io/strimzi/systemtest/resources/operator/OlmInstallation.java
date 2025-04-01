@@ -4,22 +4,15 @@
  */
 package io.strimzi.systemtest.resources.operator;
 
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionBuilder;
 import io.skodjob.testframe.installation.InstallationMethod;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.templates.openshift.SubscriptionTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
-
-import java.util.Collections;
-import java.util.Map;
 
 public class OlmInstallation implements InstallationMethod {
     private ClusterOperatorConfiguration clusterOperatorConfiguration;
@@ -60,7 +53,7 @@ public class OlmInstallation implements InstallationMethod {
 
     @Override
     public void delete() {
-
+        throw new UnsupportedOperationException("delete() should not be called directly; use KubeResourceManager instead.");
     }
 
     /**
@@ -69,8 +62,8 @@ public class OlmInstallation implements InstallationMethod {
     private void createOperatorGroup() {
         OperatorGroupBuilder operatorGroup = new OperatorGroupBuilder()
             .editOrNewMetadata()
-            .withName(TestConstants.OLM_OPERATOR_GROUP_NAME)
-            .withNamespace(clusterOperatorConfiguration.getNamespaceName())
+                .withName(TestConstants.OLM_OPERATOR_GROUP_NAME)
+                .withNamespace(clusterOperatorConfiguration.getNamespaceName())
             .endMetadata();
 
         // single or multiple specific namespaces to watch
@@ -88,53 +81,8 @@ public class OlmInstallation implements InstallationMethod {
      * Creates Subscription with spec from OlmConfiguration
      */
     private void createAndModifySubscription() {
-        Subscription subscription = prepareSubscription();
+        Subscription subscription = SubscriptionTemplates.clusterOperatorSubscription(clusterOperatorConfiguration);
 
         KubeResourceManager.get().createResourceWithWait(subscription);
-    }
-
-    public Subscription prepareSubscription() {
-        SubscriptionBuilder subscriptionBuilder = new SubscriptionBuilder()
-            .editOrNewMetadata()
-                .withName("strimzi-sub")
-                .withNamespace(clusterOperatorConfiguration.getNamespaceName())
-                .withLabels(Collections.singletonMap("app", "strimzi"))
-            .endMetadata()
-            .editOrNewSpec()
-                .withName(clusterOperatorConfiguration.getOlmOperatorName())
-                .withSource(clusterOperatorConfiguration.getOlmSourceName())
-                .withSourceNamespace(clusterOperatorConfiguration.getOlmSourceNamespace())
-                .withChannel(clusterOperatorConfiguration.getOlmChannelName())
-                .withInstallPlanApproval(clusterOperatorConfiguration.getOlmInstallationStrategy().toString())
-                .editOrNewConfig()
-                    .withEnv(clusterOperatorConfiguration.getAllEnvVariablesForOlm())
-                .endConfig()
-            .endSpec();
-
-        if (clusterOperatorConfiguration.getOlmOperatorVersion() != null && !clusterOperatorConfiguration.getOlmOperatorVersion().isEmpty()) {
-            subscriptionBuilder
-                .editSpec()
-                    .withStartingCSV(clusterOperatorConfiguration.getCsvName())
-                .endSpec();
-        }
-
-        // Change default values for Cluster Operator memory when RESOURCE_ALLOCATION_STRATEGY is not set to NOT_SHARED
-        if (KubeClusterResource.getInstance().fipsEnabled()) {
-            ResourceRequirements resourceRequirements = new ResourceRequirementsBuilder()
-                .withRequests(Map.of("memory", new Quantity(TestConstants.CO_REQUESTS_MEMORY), "cpu", new Quantity(
-                    TestConstants.CO_REQUESTS_CPU)))
-                .withLimits(Map.of("memory", new Quantity(TestConstants.CO_LIMITS_MEMORY), "cpu", new Quantity(
-                    TestConstants.CO_LIMITS_CPU)))
-                .build();
-
-            subscriptionBuilder
-                .editSpec()
-                    .editOrNewConfig()
-                        .withResources(resourceRequirements)
-                    .endConfig()
-                .endSpec();
-        }
-
-        return subscriptionBuilder.build();
     }
 }

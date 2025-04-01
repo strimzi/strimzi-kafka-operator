@@ -19,6 +19,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.openshift.SubscriptionTemplates;
 import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationType;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -167,7 +168,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
     }
 
     private void updateSubscription(ClusterOperatorConfiguration clusterOperatorConfiguration) {
-        Subscription subscription = OlmUtils.prepareClusterOperatorSubscription(clusterOperatorConfiguration);
+        Subscription subscription = SubscriptionTemplates.clusterOperatorSubscription(clusterOperatorConfiguration);
         KubeResourceManager.get().updateResource(subscription);
     }
 }

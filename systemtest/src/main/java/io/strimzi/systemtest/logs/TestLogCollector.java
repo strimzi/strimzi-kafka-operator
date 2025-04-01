@@ -4,10 +4,13 @@
  */
 package io.strimzi.systemtest.logs;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.skodjob.testframe.LogCollector;
 import io.skodjob.testframe.LogCollectorBuilder;
 import io.skodjob.testframe.clients.KubeClient;
 import io.skodjob.testframe.clients.cmdClient.Kubectl;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -31,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Class for encapsulating Test-Frame's {@link LogCollector}.
@@ -259,8 +263,58 @@ public class TestLogCollector {
             .withRootFolderPath(rootPathToLogsForTestCase.toString())
             .build();
 
+        // Old way for now before complete movement to Test-Frame
         List<String> namespaces = NamespaceManager.getInstance().getListOfNamespacesForTestClassAndTestCase(testClass, testCase);
-
         testCaseCollector.collectFromNamespaces(namespaces.toArray(new String[0]));
+
+        // New way
+        testCaseCollector.collectFromNamespaces(getListOfNamespaces(testClass, testCase).toArray(new String[0]));
+    }
+
+    private List<String> getListOfNamespaces(String testClass, String testCase) {
+        List<String> namespaces = new ArrayList<>();
+
+        namespaces.addAll(
+            KubeResourceManager.get().kubeClient().getClient()
+                .namespaces()
+                .withLabelSelector(getTestClassLabelSelector(testClass))
+                .list()
+                .getItems()
+                .stream()
+                .map(namespace -> namespace.getMetadata().getName())
+                .toList()
+        );
+
+        if (testCase != null) {
+            namespaces.addAll(
+                KubeResourceManager.get().kubeClient().getClient()
+                    .namespaces()
+                    .withLabelSelector(getTestCaseLabelSelector(testClass, testCase))
+                    .list()
+                    .getItems()
+                    .stream()
+                    .map(namespace -> namespace.getMetadata().getName())
+                    .toList()
+            );
+        }
+
+        return namespaces;
+    }
+
+    private LabelSelector getTestClassLabelSelector(String testClass) {
+        return new LabelSelectorBuilder()
+            .withMatchLabels(Map.of(TestConstants.TEST_SUITE_NAME_LABEL, testClass))
+            .build();
+    }
+
+    private LabelSelector getTestCaseLabelSelector(String testClass, String testCase) {
+        return new LabelSelectorBuilder()
+            .withMatchLabels(
+                Map.of(
+                    TestConstants.TEST_SUITE_NAME_LABEL, testClass,
+                    TestConstants.TEST_CASE_NAME_LABEL, testCase
+                )
+            )
+            .build();
     }
 }
