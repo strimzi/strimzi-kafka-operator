@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.resources.operator;
 
-import com.marcnuri.helm.Helm;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.skodjob.testframe.enums.InstallType;
