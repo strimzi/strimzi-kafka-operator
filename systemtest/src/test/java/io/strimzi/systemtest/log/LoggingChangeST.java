@@ -62,6 +62,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -2193,6 +2194,10 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testChangingInternalToExternalLoggingTriggerRollingUpdate() {
+        // This test currently does not work with Kafka 4.0 due to some logging related changes and is therefore disabled when Kafka 4.0 or newer is used.
+        // This should be re-enabled once we fix the issue: https://github.com/strimzi/strimzi-kafka-operator/issues/11312
+        Assumptions.assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
+
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
