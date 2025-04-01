@@ -17,17 +17,11 @@ import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.Map;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 public class OlmInstallation implements InstallationMethod {
-    private static final Logger LOGGER = LogManager.getLogger(OlmInstallation.class);
-
     private ClusterOperatorConfiguration clusterOperatorConfiguration;
 
     public OlmInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) {
@@ -55,7 +49,7 @@ public class OlmInstallation implements InstallationMethod {
         // Make sure that operator will be created
         DeploymentUtils.waitForCreationOfDeploymentWithPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmOperatorDeploymentNamePrefix());
 
-        String clusterOperatorDepName = kubeClient().getDeploymentNameByPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmOperatorDeploymentNamePrefix());
+        String clusterOperatorDepName = KubeResourceManager.get().kubeClient().getDeploymentNameByPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmOperatorDeploymentNamePrefix());
         clusterOperatorConfiguration = new ClusterOperatorConfigurationBuilder(clusterOperatorConfiguration)
             .withOperatorDeploymentName(clusterOperatorDepName)
             .build();
