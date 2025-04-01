@@ -32,6 +32,7 @@ Supported authorization mechanisms:
 +
 * Simple authorization using ACL rules
 * OAuth 2.0 authorization (if you are using OAuth 2.0 token-based authentication)
+* Open Policy Agent (OPA) authorization (deprecated)
 * Custom authorization (supported by Kafka)
 
 Federal Information Processing Standards (FIPS):: Strimzi is designed to run on FIPS-enabled Kubernetes clusters to ensure data security and system interoperability.

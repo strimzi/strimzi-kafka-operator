@@ -15,6 +15,7 @@ The simple authorization uses the Kafka Admin API to manage the ACL rules inside
 Whether ACL management in the User Operator is enabled or not depends on your authorization configuration in the Kafka cluster.
 
 * For simple authorization, ACL management is always enabled.
+* For OPA authorization (deprecated), ACL management is always disabled.
 * For Keycloak authorization, you can manage the ACL rules directly in Keycloak.
   You can also delegate authorization to the simple authorizer as a fallback option in the configuration.
   When delegation to the simple authorizer is enabled, the User Operator will enable management of ACL rules as well.

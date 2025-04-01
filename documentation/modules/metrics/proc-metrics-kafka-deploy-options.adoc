@@ -219,4 +219,8 @@ spec:
 
 To use OAuth 2.0 metrics with Prometheus, copy the `ConfigMap` configuration from the `oauth-metrics.yaml` file to the same `Kafka` resource configuration file where you enabled metrics for OAuth 2.0 and then apply the configuration.
 
+NOTE: You can also enable metrics for the `type: opa` authorization option in the same way as for OAuth 2.0 authorization.
+However, `type: opa` is deprecated and will be removed in a future release.
+To continue using the Open Policy Agent authorizer, use the `type: custom` authorization configuration.
+
 
