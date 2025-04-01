@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * JMX Prometheus Exporter metrics config
+ * Prometheus JMX Exporter metrics config
  */
 @Buildable(
         editableEnabled = false,
@@ -29,7 +29,7 @@ public class JmxPrometheusExporterMetrics extends MetricsConfig {
 
     private ExternalConfigurationReference valueFrom;
 
-    @Description("ConfigMap entry where the JMX Prometheus Exporter configuration is stored.")
+    @Description("ConfigMap entry where the Prometheus JMX Exporter configuration is stored.")
     public ExternalConfigurationReference getValueFrom() {
         return valueFrom;
     }
