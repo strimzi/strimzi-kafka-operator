@@ -60,7 +60,6 @@ import io.strimzi.systemtest.resources.openshift.BuildConfigResource;
 import io.strimzi.systemtest.resources.openshift.ImageStreamResource;
 import io.strimzi.systemtest.resources.openshift.OperatorGroupResource;
 import io.strimzi.systemtest.resources.openshift.SubscriptionResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
@@ -142,7 +141,6 @@ public class ResourceManager {
         new KafkaResource(),
         new KafkaTopicResource(),
         new KafkaUserResource(),
-        new BundleResource(),
         new ClusterRoleBindingResource(),
         new DeploymentResource(),
         new JobResource(),
@@ -562,8 +560,6 @@ public class ResourceManager {
             DeploymentTypes deploymentTypes = DeploymentTypes.valueOf(deploymentType);
 
             switch (deploymentTypes) {
-                case BundleClusterOperator:
-                    return (ResourceType<T>) new BundleResource();
                 case KafkaClients:
                     return (ResourceType<T>) new KafkaClientsResource();
                 case DrainCleaner:

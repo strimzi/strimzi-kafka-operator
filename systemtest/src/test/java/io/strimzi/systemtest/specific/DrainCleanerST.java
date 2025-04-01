@@ -13,7 +13,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
-import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;

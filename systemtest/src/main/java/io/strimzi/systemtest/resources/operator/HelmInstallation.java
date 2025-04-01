@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.operator.testframe;
+package io.strimzi.systemtest.resources.operator;
 
 import com.marcnuri.helm.Helm;
 import com.marcnuri.helm.InstallCommand;
@@ -32,6 +32,10 @@ public class HelmInstallation implements InstallationMethod {
 
     public HelmInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         this.clusterOperatorConfiguration = clusterOperatorConfiguration;
+    }
+
+    public ClusterOperatorConfiguration getClusterOperatorConfiguration() {
+        return clusterOperatorConfiguration;
     }
 
     @Override

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.operator.testframe;
+package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.systemtest.Environment;
@@ -25,7 +25,7 @@ public class ClusterOperatorConfiguration {
     private String namespacesToWatch = Environment.isNamespaceRbacScope() ? TestConstants.CO_NAMESPACE : TestConstants.WATCH_ALL_NAMESPACES;
     private String featureGates = Environment.STRIMZI_FEATURE_GATES;
     private int replicas = 1;
-    private ClusterOperatorRBACType clusterOperatorRBACType = Environment.STRIMZI_RBAC_SCOPE_TEST_FRAME;
+    private ClusterOperatorRBACType clusterOperatorRBACType = Environment.STRIMZI_RBAC_SCOPE;
 
     private List<EnvVar> extraEnvVars;
     private Map<String, String> extraLabels;

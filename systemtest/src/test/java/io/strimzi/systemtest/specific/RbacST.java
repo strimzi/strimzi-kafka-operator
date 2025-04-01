@@ -24,9 +24,8 @@ import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.resources.operator.testframe.BundleInstallation;
-import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfiguration;
+import io.strimzi.systemtest.resources.operator.BundleInstallation;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -62,7 +61,7 @@ public class RbacST extends AbstractST {
             CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), ResourceManager.getTestContext().getRequiredTestMethod().getName()));
 
         // --- a) defining Role and ClusterRoles
-        final Role strimziClusterOperator020 = ReadWriteUtils.readObjectFromYamlFilepath(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
+        final Role strimziClusterOperator020 = ReadWriteUtils.readObjectFromYamlFilepath(RbacUtils.switchClusterRolesToRolesIfNeeded(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
 
         // specify explicit namespace for Role (for ClusterRole we do not specify namespace because ClusterRole is a non-namespaced resource
         strimziClusterOperator020.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
@@ -94,11 +93,11 @@ public class RbacST extends AbstractST {
 
         // specify explicit namespace for RoleBindings
         strimziClusterOperator020Namespaced.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
-        strimziClusterOperator022LeaderElection.getMetadata().setNamespace(clusterOperator.getDeploymentNamespace());
+        strimziClusterOperator022LeaderElection.getMetadata().setNamespace(setupClusterOperator.getOperatorNamespace());
 
         // reference Cluster Operator service account in RoleBindings
-        strimziClusterOperator020Namespaced.getSubjects().stream().findFirst().get().setNamespace(clusterOperator.getDeploymentNamespace());
-        strimziClusterOperator022LeaderElection.getSubjects().stream().findFirst().get().setNamespace(clusterOperator.getDeploymentNamespace());
+        strimziClusterOperator020Namespaced.getSubjects().stream().findFirst().get().setNamespace(setupClusterOperator.getOperatorNamespace());
+        strimziClusterOperator022LeaderElection.getSubjects().stream().findFirst().get().setNamespace(setupClusterOperator.getOperatorNamespace());
 
         KubeResourceManager.get().createResourceWithWait(
             // Apply our RoleBindings
@@ -109,8 +108,8 @@ public class RbacST extends AbstractST {
         // ---- c) defining ClusterRoleBindings
         KubeResourceManager.get().createResourceWithWait(
             // Apply our ClusterRoleBindings
-            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()),
-            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName())
+            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(setupClusterOperator.getOperatorNamespace(), setupClusterOperator.getOperatorDeploymentName()),
+            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(setupClusterOperator.getOperatorNamespace(), setupClusterOperator.getOperatorDeploymentName())
         );
 
         // Apply all CRDs, SA etc.

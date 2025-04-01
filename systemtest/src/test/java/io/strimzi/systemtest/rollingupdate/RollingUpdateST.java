@@ -297,9 +297,9 @@ class RollingUpdateST extends AbstractST {
             () -> kubeClient(Environment.TEST_SUITE_NAMESPACE).listPods(Environment.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
                     .map(pod -> pod.getStatus().getPhase()).toList().size() < kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE).size());
 
-        LabelSelector coLabelSelector = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName()).getSpec().getSelector();
+        LabelSelector coLabelSelector = kubeClient().getDeployment(setupClusterOperator.getOperatorNamespace(), ResourceManager.getCoDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator Pod with labels {}", coLabelSelector);
-        kubeClient(clusterOperator.getDeploymentNamespace()).deletePodsByLabelSelector(coLabelSelector);
+        kubeClient(setupClusterOperator.getOperatorNamespace()).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator Pod deleted");
 
         LOGGER.info("Rolling Update is taking place, starting with roll of controller Pods with labels {}", testStorage.getControllerSelector());
@@ -309,7 +309,7 @@ class RollingUpdateST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasStartedRolling(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), brokerPods);
 
         LOGGER.info("Deleting Cluster Operator Pod with labels {}, while Rolling update rolls Kafka Pods", coLabelSelector);
-        kubeClient(clusterOperator.getDeploymentNamespace()).deletePodsByLabelSelector(coLabelSelector);
+        kubeClient(setupClusterOperator.getOperatorNamespace()).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator Pod deleted");
 
         LOGGER.info("Wait until Rolling Update finish successfully despite Cluster Operator being deleted in beginning of Rolling Update and also during Kafka Pods rolling");

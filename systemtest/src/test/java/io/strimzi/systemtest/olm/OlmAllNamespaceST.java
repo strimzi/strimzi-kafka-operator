@@ -5,7 +5,8 @@
 package io.strimzi.systemtest.olm;
 
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.utils.specific.OlmUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -80,6 +81,11 @@ public class OlmAllNamespaceST extends OlmAbstractST {
                 .build()
             )
             .installUsingOlm();
+
+        exampleResources = OlmUtils.parseExamplesFromCsv(
+            setupClusterOperator.getOperatorNamespace(),
+            setupClusterOperator.getOlmClusterOperatorConfiguration().getOlmAppBundlePrefix()
+        );
 
         cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);
     }

@@ -11,14 +11,17 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionBuilder;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfiguration;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -154,5 +157,10 @@ public class OlmUtils {
         }
 
         return subscriptionBuilder.build();
+    }
+
+    public static Map<String, JsonObject> parseExamplesFromCsv(String coNamespaceName, String olmBundlePrefix) {
+        JsonArray examples = new JsonArray(kubeClient().getCsvWithPrefix(coNamespaceName, olmBundlePrefix).getMetadata().getAnnotations().get("alm-examples"));
+        return examples.stream().map(o -> (JsonObject) o).collect(Collectors.toMap(object -> object.getString("kind"), object -> object));
     }
 }

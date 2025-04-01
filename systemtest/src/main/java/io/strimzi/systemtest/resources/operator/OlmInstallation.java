@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.operator.testframe;
+package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -32,6 +32,10 @@ public class OlmInstallation implements InstallationMethod {
 
     public OlmInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         this.clusterOperatorConfiguration = clusterOperatorConfiguration;
+    }
+
+    public ClusterOperatorConfiguration getClusterOperatorConfiguration() {
+        return clusterOperatorConfiguration;
     }
 
     @Override
@@ -95,18 +99,6 @@ public class OlmInstallation implements InstallationMethod {
         KubeResourceManager.get().createResourceWithWait(subscription);
     }
 
-    public void updateSubscription() {
-        // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
-//        ResourceManager.STORED_RESOURCES
-//            .get(ResourceManager.getTestContext().getDisplayName())
-//            .add(ResourceManager.STORED_RESOURCES
-//                    .get(ResourceManager.getTestContext().getDisplayName()).size(),
-//                new ResourceItem(this::deleteCSV));
-        Subscription subscription = prepareSubscription();
-        // This is just a workaround until we implement update in ResourceManager
-        KubeResourceManager.get().updateResource(subscription);
-    }
-
     public Subscription prepareSubscription() {
         SubscriptionBuilder subscriptionBuilder = new SubscriptionBuilder()
             .editOrNewMetadata()
@@ -150,14 +142,5 @@ public class OlmInstallation implements InstallationMethod {
         }
 
         return subscriptionBuilder.build();
-    }
-
-    public void deleteCSV() {
-        LOGGER.info("Deleting CSV {}/{}", clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmAppBundlePrefix());
-        if (clusterOperatorConfiguration.getOlmOperatorVersion() == null) {
-            kubeClient().deleteCsv(clusterOperatorConfiguration.getNamespaceName(), kubeClient().getCsvWithPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmAppBundlePrefix()).getMetadata().getName());
-        } else {
-            kubeClient().deleteCsv(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getCsvName());
-        }
     }
 }

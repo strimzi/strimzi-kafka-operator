@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -27,12 +26,15 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 
+import java.util.Map;
+
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class OlmAbstractST extends AbstractST {
+    Map<String, JsonObject> exampleResources;
 
     void doTestDeployExampleKafka() {
-        JsonObject kafkaResource = OlmResource.getExampleResources().get(Kafka.RESOURCE_KIND);
+        JsonObject kafkaResource = exampleResources.get(Kafka.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaResource.toString());
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, kafkaResource.getJsonObject("metadata").getString("name"));
     }
@@ -48,32 +50,32 @@ public class OlmAbstractST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
-        JsonObject kafkaUserResource = OlmResource.getExampleResources().get(KafkaUser.RESOURCE_KIND);
+        JsonObject kafkaUserResource = exampleResources.get(KafkaUser.RESOURCE_KIND);
         kafkaUserResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, userKafkaName);
         cmdKubeClient().applyContent(kafkaUserResource.toString());
         KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, kafkaUserResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaTopic() {
-        JsonObject kafkaTopicResource = OlmResource.getExampleResources().get(KafkaTopic.RESOURCE_KIND);
+        JsonObject kafkaTopicResource = exampleResources.get(KafkaTopic.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaTopicResource.toString());
         KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, kafkaTopicResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaConnect() {
-        JsonObject kafkaConnectResource = OlmResource.getExampleResources().get(KafkaConnect.RESOURCE_KIND);
+        JsonObject kafkaConnectResource = exampleResources.get(KafkaConnect.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaConnectResource.toString());
         KafkaConnectUtils.waitForConnectReady(Environment.TEST_SUITE_NAMESPACE, kafkaConnectResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaBridge() {
-        JsonObject kafkaBridgeResource = OlmResource.getExampleResources().get(KafkaBridge.RESOURCE_KIND);
+        JsonObject kafkaBridgeResource = exampleResources.get(KafkaBridge.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaBridgeResource.toString());
         KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, kafkaBridgeResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaMirrorMaker2() {
-        JsonObject kafkaMirrorMaker2Resource = OlmResource.getExampleResources().get(KafkaMirrorMaker2.RESOURCE_KIND);
+        JsonObject kafkaMirrorMaker2Resource = exampleResources.get(KafkaMirrorMaker2.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaMirrorMaker2Resource.toString()
                 .replace("cluster-a-kafka-bootstrap", "my-cluster-kafka-bootstrap")
                 .replace("cluster-b-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
@@ -83,7 +85,7 @@ public class OlmAbstractST extends AbstractST {
     void doTestDeployExampleKafkaRebalance() {
         String cruiseControlClusterName = "cruise-control";
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(Environment.TEST_SUITE_NAMESPACE, cruiseControlClusterName, 3).build());
-        JsonObject kafkaRebalanceResource = OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND);
+        JsonObject kafkaRebalanceResource = exampleResources.get(KafkaRebalance.RESOURCE_KIND);
         kafkaRebalanceResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, cruiseControlClusterName);
         cmdKubeClient().applyContent(kafkaRebalanceResource.toString());
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(Environment.TEST_SUITE_NAMESPACE, "my-rebalance", KafkaRebalanceState.PendingProposal);
@@ -91,12 +93,12 @@ public class OlmAbstractST extends AbstractST {
 
     @AfterAll
     void teardown() {
-        cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND).toString());
-        cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaMirrorMaker2.RESOURCE_KIND).toString());
-        cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaBridge.RESOURCE_KIND).toString());
-        cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaConnect.RESOURCE_KIND).toString());
-        cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaTopic.RESOURCE_KIND).toString());
-        cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaUser.RESOURCE_KIND).toString());
-        cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(Kafka.RESOURCE_KIND).toString());
+        cmdKubeClient().deleteContent(exampleResources.get(KafkaRebalance.RESOURCE_KIND).toString());
+        cmdKubeClient().deleteContent(exampleResources.get(KafkaMirrorMaker2.RESOURCE_KIND).toString());
+        cmdKubeClient().deleteContent(exampleResources.get(KafkaBridge.RESOURCE_KIND).toString());
+        cmdKubeClient().deleteContent(exampleResources.get(KafkaConnect.RESOURCE_KIND).toString());
+        cmdKubeClient().deleteContent(exampleResources.get(KafkaTopic.RESOURCE_KIND).toString());
+        cmdKubeClient().deleteContent(exampleResources.get(KafkaUser.RESOURCE_KIND).toString());
+        cmdKubeClient().deleteContent(exampleResources.get(Kafka.RESOURCE_KIND).toString());
     }
 }

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.operator.testframe;
+package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -61,6 +61,10 @@ public class BundleInstallation implements InstallationMethod {
 
     public BundleInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         this.clusterOperatorConfiguration = clusterOperatorConfiguration;
+    }
+
+    public ClusterOperatorConfiguration getClusterOperatorConfiguration() {
+        return clusterOperatorConfiguration;
     }
 
     @Override
@@ -212,23 +216,23 @@ public class BundleInstallation implements InstallationMethod {
         );
     }
 
-    public void applyRoles(String namespace) {
+    public void applyRoles(String namespaceToWatch) {
         File roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
         KubeResourceManager.get().createResourceWithWait(
-            RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
+            RoleTemplates.roleFromFile(namespaceToWatch, roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
         KubeResourceManager.get().createResourceWithWait(
-            RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
+            RoleTemplates.roleFromFile(namespaceToWatch, roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
         KubeResourceManager.get().createResourceWithWait(
-            RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(),
+            RoleTemplates.roleFromFile(namespaceToWatch,
                 LeaseUtils.changeLeaseNameInResourceIfNeeded(roleFile.getAbsolutePath(), clusterOperatorConfiguration.getExtraEnvVars())
             )
         );
@@ -236,25 +240,25 @@ public class BundleInstallation implements InstallationMethod {
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
         KubeResourceManager.get().createResourceWithWait(
-            RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
+            RoleTemplates.roleFromFile(namespaceToWatch, roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
         KubeResourceManager.get().createResourceWithWait(
-            RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
+            RoleTemplates.roleFromFile(namespaceToWatch, roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
         KubeResourceManager.get().createResourceWithWait(
-            RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
+            RoleTemplates.roleFromFile(namespaceToWatch, roleFile.getAbsolutePath())
         );
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml");
         roleFile = RbacUtils.switchClusterRolesToRolesIfNeeded(roleFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
         KubeResourceManager.get().createResourceWithWait(
-            RoleTemplates.roleFromFile(clusterOperatorConfiguration.getNamespaceName(), roleFile.getAbsolutePath())
+            RoleTemplates.roleFromFile(namespaceToWatch, roleFile.getAbsolutePath())
         );
     }
 

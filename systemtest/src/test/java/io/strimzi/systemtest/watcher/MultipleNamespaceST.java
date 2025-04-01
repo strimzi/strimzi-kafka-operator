@@ -6,7 +6,7 @@ package io.strimzi.systemtest.watcher;
 
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,7 +25,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     private void deployTestSpecificClusterOperator() {
         LOGGER.info("Creating Cluster Operator which will watch over multiple Namespaces");
 
-        NamespaceManager.getInstance().createNamespaces(clusterOperator.getDeploymentNamespace(),
+        NamespaceManager.getInstance().createNamespaces(setupClusterOperator.getOperatorNamespace(),
             CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE));
 
         setupClusterOperator

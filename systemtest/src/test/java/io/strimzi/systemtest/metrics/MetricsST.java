@@ -691,7 +691,7 @@ public class MetricsST extends AbstractST {
         clusterOperatorCollector = new BaseMetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
             .withNamespaceName(TestConstants.CO_NAMESPACE)
-            .withComponent(ClusterOperatorMetricsComponent.create(TestConstants.CO_NAMESPACE, clusterOperator.getClusterOperatorName()))
+            .withComponent(ClusterOperatorMetricsComponent.create(TestConstants.CO_NAMESPACE, setupClusterOperator.getOperatorDeploymentName()))
             .build();
 
         kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
