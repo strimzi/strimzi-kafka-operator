@@ -361,7 +361,7 @@ public class YamlInstallation implements InstallationMethod {
             .endMetadata()
             .editSpec()
                 .withReplicas(clusterOperatorConfiguration.getReplicas())
-                .withNewSelector()
+                .editSelector()
                     .addToMatchLabels(clusterOperatorConfiguration.getExtraLabels())
                 .endSelector()
                 .editTemplate()
