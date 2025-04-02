@@ -14,7 +14,6 @@ import org.apache.kafka.common.quota.ClientQuotaFilterComponent;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,23 +50,31 @@ public class QuotasOperatorIT extends AdminApiOperatorIT<KafkaUserQuotas, Set<St
 
     @Override
     KafkaUserQuotas get(String username) {
-        ClientQuotaFilterComponent c = ClientQuotaFilterComponent.ofEntity(ClientQuotaEntity.USER, username);
-        ClientQuotaFilter f =  ClientQuotaFilter.contains(List.of(c));
+        final int retries = 3;
+        final long delay = 500L;
 
-        Map<ClientQuotaEntity, Map<String, Double>> quotas;
-        try {
-            quotas = adminClient.describeClientQuotas(f).entities().get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to get quotas", e);
+        for (int i = 0; i < retries; i++) {
+            ClientQuotaFilterComponent clientQuotaFilterComponent = ClientQuotaFilterComponent.ofEntity(ClientQuotaEntity.USER, username);
+            ClientQuotaFilter clientQuotaFilter = ClientQuotaFilter.contains(List.of(clientQuotaFilterComponent));
+
+            try {
+                Map<ClientQuotaEntity, Map<String, Double>> entities = adminClient.describeClientQuotas(clientQuotaFilter).entities().get();
+
+                for (var entry : entities.entrySet()) {
+                    if (username.equals(entry.getKey().entries().get(ClientQuotaEntity.USER))) {
+                        return QuotaUtils.fromClientQuota(entry.getValue());
+                    }
+                }
+
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while retrying to get quotas", e);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to fetch quotas for user " + username, e);
+            }
         }
-
-        ClientQuotaEntity cqe = new ClientQuotaEntity(Map.of(ClientQuotaEntity.USER, username));
-
-        if (quotas.containsKey(cqe)) {
-            return QuotaUtils.fromClientQuota(quotas.get(cqe));
-        } else {
-            return null;
-        }
+        return null;
     }
 
     @Override

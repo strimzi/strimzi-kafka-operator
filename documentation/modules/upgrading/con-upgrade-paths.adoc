@@ -9,11 +9,13 @@
 Two upgrade paths are available for Strimzi.
 
 Incremental upgrade::
-An incremental upgrade involves upgrading Strimzi from the previous minor version to version {ProductVersion}.
+An incremental upgrade moves between consecutive minor versions (such as {ProductVersionPrevious} to {ProductVersion}), following a supported upgrade path.
 
 Multi-version upgrade::
-A multi-version upgrade involves upgrading an older version of Strimzi to version {ProductVersion} within a single upgrade, skipping one or more intermediate versions. 
-Upgrading from any earlier Strimzi version to the latest version is possible. 
+A multi-version upgrade skips one or more minor versions. 
+While temporary errors due to Kafka version changes may occur, they can typically be resolved during the upgrade.  
+
+Before upgrading in production, test your specific scenario in a controlled environment to identify potential issues.
 
 [id='con-upgrade-paths-kafka-versions-{context}']
 == Support for Kafka versions when upgrading

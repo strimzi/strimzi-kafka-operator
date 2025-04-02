@@ -108,7 +108,7 @@ the documentation for more details.
 | `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `latest`                     |
 | `image.registry`                            | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                          | Override default Cluster Operator image repository                              | `nil`                        |
-| `image.name`                                | Cluster Operator image name                                                     | `cluster-operator`           |
+| `image.name`                                | Cluster Operator image name                                                     | `operator`                   |
 | `image.tag`                                 | Override default Cluster Operator image tag                                     | `nil`                        |
 | `image.digest`                              | Override Cluster Operator image tag with digest                                 | `nil`                        |
 | `image.imagePullPolicy`                     | Image pull policy for all pods deployed by Cluster Operator                     | `IfNotPresent`               |
