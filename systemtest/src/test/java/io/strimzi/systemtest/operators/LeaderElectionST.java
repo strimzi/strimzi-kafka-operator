@@ -11,9 +11,9 @@ import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.resources.operator.BundleInstallation;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.HelmInstallation;
+import io.strimzi.systemtest.resources.operator.YamlInstallation;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
@@ -120,7 +120,7 @@ public class LeaderElectionST extends AbstractST {
         if (Environment.isHelmInstall()) {
             pathToDepFile = HelmInstallation.HELM_CHART + "templates/060-Deployment-strimzi-cluster-operator.yaml";
         } else {
-            pathToDepFile = BundleInstallation.PATH_TO_CO_CONFIG;
+            pathToDepFile = YamlInstallation.PATH_TO_CO_CONFIG;
         }
 
         String clusterOperatorDep = Files.readString(Paths.get(pathToDepFile));

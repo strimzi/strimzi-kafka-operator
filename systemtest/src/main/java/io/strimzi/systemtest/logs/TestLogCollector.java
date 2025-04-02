@@ -263,12 +263,16 @@ public class TestLogCollector {
             .withRootFolderPath(rootPathToLogsForTestCase.toString())
             .build();
 
-        // Old way for now before complete movement to Test-Frame
-        List<String> namespaces = NamespaceManager.getInstance().getListOfNamespacesForTestClassAndTestCase(testClass, testCase);
-        testCaseCollector.collectFromNamespaces(namespaces.toArray(new String[0]));
+        List<String> namespaces = new ArrayList<>();
 
-        // New way
-        testCaseCollector.collectFromNamespaces(getListOfNamespaces(testClass, testCase).toArray(new String[0]));
+        // Old way of keeping the list of Namespaces - delete this once we are done with the integration
+        namespaces.addAll(NamespaceManager.getInstance().getListOfNamespacesForTestClassAndTestCase(testClass, testCase));
+        // New way using labels on the Namespaces
+        namespaces.addAll(getListOfNamespaces(testClass, testCase));
+
+        namespaces = namespaces.stream().distinct().toList();
+
+        testCaseCollector.collectFromNamespaces(namespaces.toArray(new String[0]));
     }
 
     private List<String> getListOfNamespaces(String testClass, String testCase) {

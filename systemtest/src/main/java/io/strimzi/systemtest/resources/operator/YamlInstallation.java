@@ -45,20 +45,21 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public class BundleInstallation implements InstallationMethod {
+public class YamlInstallation implements InstallationMethod {
 
-    private static final Logger LOGGER = LogManager.getLogger(BundleInstallation.class);
+    private static final Logger LOGGER = LogManager.getLogger(YamlInstallation.class);
 
     public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/";
     public static final String PATH_TO_CO_CONFIG = CO_INSTALL_DIR + "060-Deployment-strimzi-cluster-operator.yaml";
 
     private ClusterOperatorConfiguration clusterOperatorConfiguration;
 
-    public BundleInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) {
+    public YamlInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         this.clusterOperatorConfiguration = clusterOperatorConfiguration;
     }
 
@@ -319,17 +320,26 @@ public class BundleInstallation implements InstallationMethod {
             envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_SECRETS", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET, null));
         }
 
-        // adding custom evn vars specified by user in installation
+        // Map the current envVars list to Map for easier manipulation
+        Map<String, EnvVar> envVarMap = envVars.stream()
+            .collect(Collectors.toMap(EnvVar::getName, Function.identity()));
+
+        // Adding custom evn vars specified by user in installation
         if (clusterOperatorConfiguration.getExtraEnvVars() != null) {
-            envVars.addAll(clusterOperatorConfiguration.getExtraEnvVars());
+            clusterOperatorConfiguration.getExtraEnvVars().forEach(extraEnvVar -> {
+                // If we are configuring EnvVar in extraEnvVars that was already configured before, set the value of extraEnvVar
+                envVarMap.computeIfPresent(extraEnvVar.getName(), (key, existingEnvVar) -> {
+                    existingEnvVar.setValue(extraEnvVar.getValue());
+                    return existingEnvVar;
+                });
+
+                // Otherwise put the extra EnvVar to the Map - as it's not in the already configured EnvVars
+                envVarMap.putIfAbsent(extraEnvVar.getName(), extraEnvVar);
+            });
         }
-        // Remove duplicates from envVars
-        List<EnvVar> envVarsWithoutDuplicates = envVars.stream()
-            .distinct()
-            .collect(Collectors.toList());
 
         // Apply updated env variables
-        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVarsWithoutDuplicates);
+        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVarMap.values().stream().toList());
 
         // FIPS mode seems to consume more resources, so in case that we are running on FIPS cluster, we adjust the resources a bit
         if (KubeClusterResource.getInstance().fipsEnabled()) {
@@ -352,7 +362,6 @@ public class BundleInstallation implements InstallationMethod {
             .editSpec()
                 .withReplicas(clusterOperatorConfiguration.getReplicas())
                 .withNewSelector()
-                    .addToMatchLabels("name", TestConstants.STRIMZI_DEPLOYMENT_NAME)
                     .addToMatchLabels(clusterOperatorConfiguration.getExtraLabels())
                 .endSelector()
                 .editTemplate()

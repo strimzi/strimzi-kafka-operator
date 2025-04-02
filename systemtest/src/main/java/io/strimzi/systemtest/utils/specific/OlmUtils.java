@@ -106,7 +106,7 @@ public class OlmUtils {
         return kubeClient().getCsv(namespaceName, csvName).getSpec().getInstall().getSpec().getDeployments().get(0).getName();
     }
 
-    public static Map<String, JsonObject> parseExamplesFromCsv(String coNamespaceName, String olmBundlePrefix) {
+    public static Map<String, JsonObject> getExamplesFromCsv(String coNamespaceName, String olmBundlePrefix) {
         JsonArray examples = new JsonArray(kubeClient().getCsvWithPrefix(coNamespaceName, olmBundlePrefix).getMetadata().getAnnotations().get("alm-examples"));
         return examples.stream().map(o -> (JsonObject) o).collect(Collectors.toMap(object -> object.getString("kind"), object -> object));
     }

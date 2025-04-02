@@ -17,7 +17,7 @@ public class SetupClusterOperator {
 
     private HelmInstallation helmInstallation;
     private OlmInstallation olmInstallation;
-    private BundleInstallation bundleInstallation;
+    private YamlInstallation yamlInstallation;
 
     public SetupClusterOperator withDefaultConfiguration() {
         this.clusterOperatorConfiguration = new ClusterOperatorConfiguration();
@@ -80,7 +80,7 @@ public class SetupClusterOperator {
 
     private ClusterOperatorConfiguration getClusterConfiguration(InstallType installType) {
         return switch (installType) {
-            case Yaml -> bundleInstallation.getClusterOperatorConfiguration();
+            case Yaml -> yamlInstallation.getClusterOperatorConfiguration();
             case Helm -> helmInstallation.getClusterOperatorConfiguration();
             case Olm -> olmInstallation.getClusterOperatorConfiguration();
             case Unknown -> throw new RuntimeException("Unknown installation type");
@@ -90,8 +90,8 @@ public class SetupClusterOperator {
     private InstallationMethod getInstallationMethodFromEnvVariable() {
         return switch (Environment.CLUSTER_OPERATOR_INSTALL_TYPE) {
             case Yaml -> {
-                bundleInstallation = new BundleInstallation(clusterOperatorConfiguration);
-                yield bundleInstallation;
+                yamlInstallation = new YamlInstallation(clusterOperatorConfiguration);
+                yield yamlInstallation;
             }
             case Helm -> {
                 helmInstallation = new HelmInstallation(clusterOperatorConfiguration);

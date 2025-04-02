@@ -81,7 +81,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
             )
             .installUsingOlm();
 
-        exampleResources = OlmUtils.parseExamplesFromCsv(
+        exampleResources = OlmUtils.getExamplesFromCsv(
             setupClusterOperator.getOperatorNamespace(),
             setupClusterOperator.getOlmClusterOperatorConfiguration().getOlmAppBundlePrefix()
         );

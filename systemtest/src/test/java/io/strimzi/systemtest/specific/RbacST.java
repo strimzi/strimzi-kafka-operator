@@ -24,8 +24,8 @@ import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.BundleInstallation;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
+import io.strimzi.systemtest.resources.operator.YamlInstallation;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -116,7 +116,7 @@ public class RbacST extends AbstractST {
         applyOtherInstallationFilesThatAreNotRbac(clusterOperatorConfiguration);
 
         // Deploy CO deployment
-        BundleInstallation.deployClusterOperator(clusterOperatorConfiguration);
+        YamlInstallation.deployClusterOperator(clusterOperatorConfiguration);
 
         resourceManager.createResourceWithoutWait(
             KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -144,7 +144,7 @@ public class RbacST extends AbstractST {
     }
 
     private void applyOtherInstallationFilesThatAreNotRbac(ClusterOperatorConfiguration clusterOperatorConfiguration) {
-        List<File> operatorFiles = Arrays.stream(new File(BundleInstallation.CO_INSTALL_DIR).listFiles()).sorted()
+        List<File> operatorFiles = Arrays.stream(new File(YamlInstallation.CO_INSTALL_DIR).listFiles()).sorted()
             .filter(File::isFile)
             .filter(file ->
                 !file.getName().matches(".*(Deployment|Role)-.*"))

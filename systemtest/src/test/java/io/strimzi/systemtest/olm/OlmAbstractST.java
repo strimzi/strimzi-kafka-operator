@@ -31,6 +31,7 @@ import java.util.Map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class OlmAbstractST extends AbstractST {
+    // Examples are assigned in respective test classes -> OlmAllNamespaceST and OlmSingleNamespaceST
     Map<String, JsonObject> exampleResources;
 
     void doTestDeployExampleKafka() {
