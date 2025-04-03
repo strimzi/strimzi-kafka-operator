@@ -47,10 +47,10 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @SuiteDoc(
     description = @Desc("This test suite is designed for testing metrics exposed by the Strimzi Metrics Reporter."),
     beforeTestSteps = {
-        @Step(value = "Create namespaces {@namespaceFirst} and {@namespaceSecond}.", expected = "Namespaces {@namespaceFirst} and {@namespaceSecond} are created."),
+        @Step(value = "Create namespace {@namespace}.", expected = "Namespace {@namespace} is created."),
         @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed."),
-        @Step(value = "Deploy Kafka {@kafkaClusterName} with metrics.", expected = "Kafka @{kafkaClusterName} is deployed."),
-        @Step(value = "Deploy scraper Pod in namespace {@namespace} for collecting metrics from Strimzi pods.", expected = "Scraper Pods are deployed."),
+        @Step(value = "Deploy Kafka {@clusterName} with metrics.", expected = "Kafka @{clusterName} is deployed."),
+        @Step(value = "Deploy scraper Pod in namespace {@namespace} for collecting metrics from Strimzi pods.", expected = "Scraper Pods is deployed."),
         @Step(value = "Create KafkaTopic resource.", expected = "KafkaTopic resource is Ready."),
         @Step(value = "Create collector for Kafka.", expected = "Metrics collected in collectors structs.")
     },
@@ -63,6 +63,9 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 )
 public class StrimziMetricsReporterST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziMetricsReporterST.class);
+
+    private final String namespace = Environment.TEST_SUITE_NAMESPACE;
+    private final String clusterName = "my-cluster";
 
     private BaseMetricsCollector kafkaCollector;
 
@@ -93,28 +96,26 @@ public class StrimziMetricsReporterST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);
+        cluster.setNamespace(namespace);
 
-        String clusterName = "my-cluster";
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        String scraperName = Environment.TEST_SUITE_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
+        String scraperName = namespace + "-" + TestConstants.SCRAPER_NAME;
 
         // create resources without wait to deploy them simultaneously
         resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(clusterName), clusterName, 3).build(),
-            KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(clusterName), clusterName, 3).build()
+            KafkaNodePoolTemplates.brokerPool(namespace, KafkaNodePoolResource.getBrokerPoolName(clusterName), clusterName, 3).build(),
+            KafkaNodePoolTemplates.controllerPool(namespace, KafkaNodePoolResource.getControllerPoolName(clusterName), clusterName, 3).build()
         );
         resourceManager.createResourceWithoutWait(
-            KafkaTemplates.kafkaWithStrimziMetricsReporter(Environment.TEST_SUITE_NAMESPACE, clusterName, 3).build(),
-            ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, scraperName).build()
+            KafkaTemplates.kafkaWithStrimziMetricsReporter(namespace, clusterName, 3).build(),
+            ScraperTemplates.scraperPod(namespace, scraperName).build()
         );
 
         // sync resources
         resourceManager.synchronizeResources();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, topicName, clusterName, 5, 2).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(namespace, KafkaTopicUtils.generateRandomNameOfTopic(), clusterName, 5, 2).build());
 
-        String scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, scraperName).get(0).getMetadata().getName();
+        String scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespace, scraperName).get(0).getMetadata().getName();
 
         // wait some time for metrics to be stable, at least reconciliation interval + 10s
         LOGGER.info("Sleeping for {} to give operators and operands some time to stable the metrics values before collecting",
@@ -123,7 +124,7 @@ public class StrimziMetricsReporterST extends AbstractST {
 
         kafkaCollector = new BaseMetricsCollector.Builder()
             .withScraperPodName(scraperPodName)
-            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
+            .withNamespaceName(namespace)
             .withComponent(KafkaMetricsComponent.create(clusterName))
             .build();
 

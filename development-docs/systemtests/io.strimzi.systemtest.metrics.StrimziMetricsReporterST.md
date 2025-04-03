@@ -6,10 +6,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create namespaces {@namespaceFirst} and {@namespaceSecond}. | Namespaces {@namespaceFirst} and {@namespaceSecond} are created. |
+| 1. | Create namespace {@namespace}. | Namespace {@namespace} is created. |
 | 2. | Deploy Cluster Operator. | Cluster Operator is deployed. |
-| 3. | Deploy Kafka {@kafkaClusterName} with metrics. | Kafka @{kafkaClusterName} is deployed. |
-| 4. | Deploy scraper Pod in namespace {@namespace} for collecting metrics from Strimzi pods. | Scraper Pods are deployed. |
+| 3. | Deploy Kafka {@clusterName} with metrics. | Kafka @{clusterName} is deployed. |
+| 4. | Deploy scraper Pod in namespace {@namespace} for collecting metrics from Strimzi pods. | Scraper Pods is deployed. |
 | 5. | Create KafkaTopic resource. | KafkaTopic resource is Ready. |
 | 6. | Create collector for Kafka. | Metrics collected in collectors structs. |
 
