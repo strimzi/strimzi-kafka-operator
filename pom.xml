@@ -195,7 +195,7 @@
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
         <skodjob.test-frame.version>0.8.0</skodjob.test-frame.version>
-        <skodjob-doc.version>0.3.0</skodjob-doc.version>
+        <skodjob-doc.version>0.4.0</skodjob-doc.version>
         <!--
             Currently, there are no released versions in Maven repository of this module,
             using SNAPSHOT for having the `api` module available and usable in the STs.
