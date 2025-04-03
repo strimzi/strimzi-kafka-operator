@@ -39,7 +39,16 @@ public class FeatureGates {
                 boolean value = '+' == featureGate.charAt(0);
                 featureGate = featureGate.substring(1);
 
-                // TODO: Once we have new FeatureGate, we should add back the switch, as it was here before
+                // TODO: Once we have new FeatureGate, we should add back the switch, example is below
+                // The switch is not implemented here to pass the spotbugs/checkstyle check.
+                // switch (featureGate) {
+                //    case CONTINUE_ON_MANUAL_RU_FAILURE:
+                //        setValueOnlyOnce(continueOnManualRUFailure, value);
+                //        break;
+                //    default:
+                //        throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
+                // }
+
                 throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
             }
 
@@ -82,8 +91,11 @@ public class FeatureGates {
 
     @Override
     public String toString() {
-        // TODO: Once we have new FeatureGate, we should add it here
         return "FeatureGates()";
+        // TODO: Once we have new FeatureGate, we should add it here (example below)
+        // return "FeatureGates(" +
+        //                "ContinueReconciliationOnManualRollingUpdateFailure=" + continueOnManualRUFailure.isEnabled() +
+        //                ")";
     }
 
     /**
@@ -106,25 +118,26 @@ public class FeatureGates {
         return String.join(",", gateSettings);
     }
 
-    // TODO: Once we have new FeatureGate, we should implement the equals method (below is example)
-    // @Override
-    // public boolean equals(Object o) {
-    //    if (this == o)  {
-    //        return true;
-    //    } else if (o == null || getClass() != o.getClass()) {
-    //        return false;
-    //    } else {
-    //        FeatureGates other = (FeatureGates) o;
-    //        return Objects.equals(continueOnManualRUFailure, other.continueOnManualRUFailure);
-    //    }
-    //    return true;
-    // }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)  {
+            return true;
+        } else if (o == null || getClass() != o.getClass()) {
+            return false;
+        } else {
+            FeatureGates other = (FeatureGates) o;
+            return other instanceof FeatureGates;
+            // TODO: Once we have new FeatureGate, we should implement the equals method (below is example)
+            // return Objects.equals(continueOnManualRUFailure, other.continueOnManualRUFailure);
+        }
+    }
 
-    // TODO: Once we have new FeatureGate, we should implement the hashCode method (below is example)
-    // @Override
-    // public int hashCode() {
-    //   return Objects.hashCode(continueOnManualRUFailure);
-    // }
+    @Override
+    public int hashCode() {
+        return 1;
+       // TODO: Once we have new FeatureGate, we should implement the hashCode method (below is example)
+       // return Objects.hashCode(continueOnManualRUFailure);
+    }
 
     /**
      * Feature gate class represents individual feature fate

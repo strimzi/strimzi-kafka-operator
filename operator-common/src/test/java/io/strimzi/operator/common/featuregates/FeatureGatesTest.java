@@ -7,7 +7,6 @@ package io.strimzi.operator.common.featuregates;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import org.junit.jupiter.api.Disabled;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +51,6 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
-    @Disabled("Once we add new FeatureGate we should enable this test test.")
     public void testFeatureGatesParsing() {
         // TODO: Once we have new FeatureGate, we should implement the checks as shown below
         // assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
@@ -69,7 +67,6 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
-    @Disabled("Once we add new FeatureGate we should enable this test suite.")
     public void testFeatureGatesEquals() {
         // TODO: Once we have new FeatureGate, we should implement the checks as shown below
         // FeatureGates fg = new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure");
@@ -95,7 +92,6 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
-    @Disabled("Once we add new FeatureGate we should enable this test suite.")
     public void testDuplicateFeatureGateWithSameValue() {
         // TODO: Once we have new FeatureGate, we should implement the checks as shown below
         // InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,+ContinueReconciliationOnManualRollingUpdateFailure"));
@@ -103,7 +99,6 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
-    @Disabled("Once we add new FeatureGate we should enable this test suite.")
     public void testDuplicateFeatureGateWithDifferentValue() {
         // TODO: Once we have new FeatureGate, we should implement the checks as shown below
         // InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,"));
@@ -111,7 +106,6 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
-    @Disabled("Once we add new FeatureGate we should enable this test suite.")
     public void testMissingSign() {
         // TODO: Once we have new FeatureGate, we should implement the checks as shown below
         // InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("ContinueReconciliationOnManualRollingUpdateFailure"));
@@ -127,5 +121,8 @@ public class FeatureGatesTest {
     @ParallelTest
     public void testEnvironmentVariable()   {
         assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
+        // TODO: Once we have new FeatureGate, we should implement the checks as shown below
+        // assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is("-ContinueReconciliationOnManualRollingUpdateFailure"));
+        // assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is(""));
     }
 }
