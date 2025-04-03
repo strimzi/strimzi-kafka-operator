@@ -14,49 +14,6 @@
 
 <hr style="border:1px solid">
 
-## testConnectScramShaAuthWithWeirdUserName
-
-**Description:** Test verifying that Kafka Connect can authenticate with SCRAM-SHA-512 using a username with special characters and length exceeding typical constraints.
-
-**Steps:**
-
-| Step | Action | Result |
-| - | - | - |
-| 1. | Create resource with KafkaNodePools | KafkaNodePools created successfully |
-| 2. | Create KafkaNodePools using resourceManager based on the configuration | KafkaNodePools for broker and controller are created or not based on configuration |
-| 3. | Deploy Kafka cluster with SCRAM-SHA-512 authentication | Kafka cluster deployed with specified authentications |
-| 4. | Create Kafka Topic | Topic created successfully |
-| 5. | Create Kafka SCRAM-SHA-512 user with a weird username | User created successfully with SCRAM-SHA-512 credentials |
-| 6. | Deploy Kafka Connect with SCRAM-SHA-512 authentication | Kafka Connect instance deployed and configured with user credentials |
-| 7. | Deploy KafkaConnector | KafkaConnector deployed and configured successfully |
-| 8. | Send messages using the configured client | Messages sent successfully |
-| 9. | Verify that connector receives messages | Messages consumed by the connector and written to the specified sink |
-
-**Labels:**
-
-* [connect](labels/connect.md)
-
-
-## testConnectTlsAuthWithWeirdUserName
-
-**Description:** Test verifying Kafka connect TLS authentication with a username containing unusual characters.
-
-**Steps:**
-
-| Step | Action | Result |
-| - | - | - |
-| 1. | Set up a name of username containing dots and 64 characters |  |
-| 2. | Create KafkaNodePools using resourceManager based on the configuration | KafkaNodePools for broker and controller are created or not based on configuration |
-| 3. | Create Kafka broker, controller, topic, and Kafka user with the specified username | Resources are created with the expected configurations |
-| 4. | Setup Kafka Connect with the created Kafka instance and TLS authentication | Kafka Connect is set up with the expected configurations |
-| 5. | Check if the user can produce messages to Kafka | Messages are produced successfully |
-| 6. | Verify that Kafka Connect can consume messages | Messages are consumed successfully by Kafka Connect |
-
-**Labels:**
-
-* [connect](labels/connect.md)
-
-
 ## testConnectorOffsetManagement
 
 **Description:** The test verifies functionality of the connector offset management feature by going through all three operation that we can do - `list`, `alter`, `reset`. To do that, it uses one ConfigMap, that is initially created by Cluster Operator during the `list` operation, then it is used for altering the offset in the `alter` phase. For using the particular ConfigMap, we need to specify it on two places - `.spec.listOffsets.toConfigMap` and `.spec.alterOffsets.fromConfigMap`. To verify that everything is really reflected correctly, there are calls to Connect API for the particular Connector throughout the test - where the real offset is gathered. In order to do the `alter` and `reset` the offsets, the particular Connector have to be stopped - in the `.spec.state` - otherwise a warning will be raised in the status section of the Connector and the offsets will not be updated.
@@ -100,6 +57,49 @@
 | 9. | Verify task failure and auto-restart | Connector task fails and is automatically restarted |
 | 10. | Wait for task to reach running state | Connector task returns to running state after recovery |
 | 11. | Verify auto-restart count reset | Auto-restart count is reset to zero after task stability |
+
+**Labels:**
+
+* [connect](labels/connect.md)
+
+
+## testConnectScramShaAuthWithWeirdUserName
+
+**Description:** Test verifying that Kafka Connect can authenticate with SCRAM-SHA-512 using a username with special characters and length exceeding typical constraints.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Create resource with KafkaNodePools | KafkaNodePools created successfully |
+| 2. | Create KafkaNodePools using resourceManager based on the configuration | KafkaNodePools for broker and controller are created or not based on configuration |
+| 3. | Deploy Kafka cluster with SCRAM-SHA-512 authentication | Kafka cluster deployed with specified authentications |
+| 4. | Create Kafka Topic | Topic created successfully |
+| 5. | Create Kafka SCRAM-SHA-512 user with a weird username | User created successfully with SCRAM-SHA-512 credentials |
+| 6. | Deploy Kafka Connect with SCRAM-SHA-512 authentication | Kafka Connect instance deployed and configured with user credentials |
+| 7. | Deploy KafkaConnector | KafkaConnector deployed and configured successfully |
+| 8. | Send messages using the configured client | Messages sent successfully |
+| 9. | Verify that connector receives messages | Messages consumed by the connector and written to the specified sink |
+
+**Labels:**
+
+* [connect](labels/connect.md)
+
+
+## testConnectTlsAuthWithWeirdUserName
+
+**Description:** Test verifying Kafka connect TLS authentication with a username containing unusual characters.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Set up a name of username containing dots and 64 characters |  |
+| 2. | Create KafkaNodePools using resourceManager based on the configuration | KafkaNodePools for broker and controller are created or not based on configuration |
+| 3. | Create Kafka broker, controller, topic, and Kafka user with the specified username | Resources are created with the expected configurations |
+| 4. | Setup Kafka Connect with the created Kafka instance and TLS authentication | Kafka Connect is set up with the expected configurations |
+| 5. | Check if the user can produce messages to Kafka | Messages are produced successfully |
+| 6. | Verify that Kafka Connect can consume messages | Messages are consumed successfully by Kafka Connect |
 
 **Labels:**
 
