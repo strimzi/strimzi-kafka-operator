@@ -2194,8 +2194,8 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testChangingInternalToExternalLoggingTriggerRollingUpdate() {
-        // This test currently does not work with Kafka 4.0 due to some logging related changes and is therefore disabled when Kafka 4.0 or newer is used.
-        // This should be re-enabled once we fix the issue: https://github.com/strimzi/strimzi-kafka-operator/issues/11312
+        // This test only works with Kafka 3.9.0 since Kafka 4.0.0 uses Log4j2 which provides dynamic logging changes for the brokers.
+        // This test can be removed once Kafka 3.9.0 is dropped from support.
         Assumptions.assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
