@@ -68,6 +68,6 @@ kubectl annotate pod <cluster_name>-mirrormaker2-<index_number> strimzi.io/manua
 A rolling update of the annotated `Pod` is triggered, as long as the annotation was detected by the reconciliation process.
 When the rolling update of a pod is complete, the annotation is automatically removed from the `Pod`.
 
-NOTE: Unless the `ContinueReconciliationOnManualRollingUpdateFailure` feature gate is disabled, reconciliation continues even if the manual rolling update of the cluster fails.
+NOTE: Reconciliation continues even if the manual rolling update of the cluster fails.
 This allows the Cluster Operator to recover from certain rectifiable situations that can be addressed later in the reconciliation. 
 For example, it can recreate a missing Persistent Volume Claim (PVC) or Persistent Volume (PV) that caused the update to fail.

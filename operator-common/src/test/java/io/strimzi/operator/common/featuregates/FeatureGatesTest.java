@@ -7,13 +7,13 @@ package io.strimzi.operator.common.featuregates;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Disabled;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -52,14 +52,16 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
+    @Disabled("Once we add new FeatureGate we should enable this test test.")
     public void testFeatureGatesParsing() {
-        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
-        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
-        assertThat(new FeatureGates("  -ContinueReconciliationOnManualRollingUpdateFailure    ").continueOnManualRUFailureEnabled(), is(false));
+        // TODO: Once we have new FeatureGate, we should implement the checks as shown below
+        // assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
+        // assertThat(new FeatureGates("").continueOnManualRUFailureEnabled(), is(false));
+        // assertThat(new FeatureGates("      ").continueOnManualRUFailureEnabled(), is(false));
         // TODO: Add more tests with various feature gate combinations once we have multiple feature gates again.
         //       The commented out code below shows the tests we used to have with multiple feature gates.
-        //assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(false));
-        //assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
+        //assertThat(new FeatureGates("-UseKRaft,").useKRaftEnabled(), is(false));
+        //assertThat(new FeatureGates("-UseKRaft,").continueOnManualRUFailureEnabled(), is(false));
         //assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(true));
         //assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
         //assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").useKRaftEnabled(), is(false));
@@ -67,11 +69,13 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
+    @Disabled("Once we add new FeatureGate we should enable this test suite.")
     public void testFeatureGatesEquals() {
-        FeatureGates fg = new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure");
-        assertThat(fg, is(fg));
-        assertThat(fg, is(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure")));
-        assertThat(fg, is(not(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure"))));
+        // TODO: Once we have new FeatureGate, we should implement the checks as shown below
+        // FeatureGates fg = new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure");
+        // assertThat(fg, is(fg));
+        // assertThat(fg, is(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure")));
+        // assertThat(fg, is(not(new FeatureGates(""))));
     }
 
     @ParallelTest
@@ -91,21 +95,27 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
+    @Disabled("Once we add new FeatureGate we should enable this test suite.")
     public void testDuplicateFeatureGateWithSameValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,+ContinueReconciliationOnManualRollingUpdateFailure"));
-        assertThat(e.getMessage(), containsString("Feature gate ContinueReconciliationOnManualRollingUpdateFailure is configured multiple times"));
+        // TODO: Once we have new FeatureGate, we should implement the checks as shown below
+        // InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,+ContinueReconciliationOnManualRollingUpdateFailure"));
+        // assertThat(e.getMessage(), containsString("Feature gate ContinueReconciliationOnManualRollingUpdateFailure is configured multiple times"));
     }
 
     @ParallelTest
+    @Disabled("Once we add new FeatureGate we should enable this test suite.")
     public void testDuplicateFeatureGateWithDifferentValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-ContinueReconciliationOnManualRollingUpdateFailure"));
-        assertThat(e.getMessage(), containsString("Feature gate ContinueReconciliationOnManualRollingUpdateFailure is configured multiple times"));
+        // TODO: Once we have new FeatureGate, we should implement the checks as shown below
+        // InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,"));
+        // assertThat(e.getMessage(), containsString("Feature gate ContinueReconciliationOnManualRollingUpdateFailure is configured multiple times"));
     }
 
     @ParallelTest
+    @Disabled("Once we add new FeatureGate we should enable this test suite.")
     public void testMissingSign() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("ContinueReconciliationOnManualRollingUpdateFailure"));
-        assertThat(e.getMessage(), containsString("ContinueReconciliationOnManualRollingUpdateFailure is not a valid feature gate configuration"));
+        // TODO: Once we have new FeatureGate, we should implement the checks as shown below
+        // InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("ContinueReconciliationOnManualRollingUpdateFailure"));
+        // assertThat(e.getMessage(), containsString("ContinueReconciliationOnManualRollingUpdateFailure is not a valid feature gate configuration"));
     }
 
     @ParallelTest
@@ -117,7 +127,5 @@ public class FeatureGatesTest {
     @ParallelTest
     public void testEnvironmentVariable()   {
         assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
-        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is("-ContinueReconciliationOnManualRollingUpdateFailure"));
-        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is(""));
     }
 }
