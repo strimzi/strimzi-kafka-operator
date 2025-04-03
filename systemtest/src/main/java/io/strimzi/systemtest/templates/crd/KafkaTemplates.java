@@ -57,8 +57,6 @@ public class KafkaTemplates {
     public static KafkaBuilder kafkaWithStrimziMetricsReporter(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
         KafkaBuilder kafkaBuilder = kafka(namespaceName, kafkaClusterName, kafkaReplicas)
             .editSpec()
-                .withNewKafkaExporter()
-                .endKafkaExporter()
                 .editKafka()
                     .withNewStrimziMetricsReporterConfig()
                         .withNewValues()
