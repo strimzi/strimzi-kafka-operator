@@ -124,12 +124,14 @@ public class FeatureGates {
             return true;
         } else if (o == null || getClass() != o.getClass()) {
             return false;
-        } else {
-            FeatureGates other = (FeatureGates) o;
-            return other instanceof FeatureGates;
-            // TODO: Once we have new FeatureGate, we should implement the equals method (below is example)
-            // return Objects.equals(continueOnManualRUFailure, other.continueOnManualRUFailure);
         }
+        // TODO: Once we have new FeatureGate, we should implement the equals method (below is example)
+        // else {
+            // FeatureGates other = (FeatureGates) o;
+            // return Objects.equals(continueOnManualRUFailure, other.continueOnManualRUFailure);
+        // }
+
+        return true;
     }
 
     @Override
