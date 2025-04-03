@@ -94,9 +94,9 @@ public class ClusterRoleBindingTemplates {
         ClusterRoleBinding clusterRoleBinding = ReadWriteUtils.readObjectFromYamlFilepath(pathToFile, ClusterRoleBinding.class);
 
         return new ClusterRoleBindingBuilder(clusterRoleBinding)
-            .editMetadata()
+            .editFirstSubject()
                 .withNamespace(namespaceName)
-            .endMetadata()
+            .endSubject()
             .build();
     }
 }

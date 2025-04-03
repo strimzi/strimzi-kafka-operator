@@ -10,6 +10,7 @@ import com.marcnuri.helm.UninstallCommand;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.skodjob.testframe.installation.InstallationMethod;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.StUtils;
@@ -103,6 +104,8 @@ public class HelmInstallation implements InstallationMethod {
 
 
         installCommand.call();
+        // Push the delete method to KubeResourceManager's stack, so it is automatically deleted after the tests
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(this::delete));
     }
 
     @Override

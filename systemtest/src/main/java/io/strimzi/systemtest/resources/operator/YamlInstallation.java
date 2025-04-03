@@ -91,6 +91,12 @@ public class YamlInstallation implements InstallationMethod {
             .toList();
 
         for (File operatorFile : operatorFiles) {
+            // In case of Namespace-scoped we need to switch from ClusterRole to Role
+            // Doing it here so we skip issues with wrong types (ClusterRole containing Role kind in the object etc.)
+            if (operatorFile.getName().contains(TestConstants.CLUSTER_ROLE + "-")) {
+                operatorFile =  RbacUtils.switchClusterRolesToRolesIfNeeded(operatorFile, clusterOperatorConfiguration.isNamespaceScopedInstallation());
+            }
+
             final String resourceType = operatorFile.getName().split("-")[1];
 
             switch (resourceType) {

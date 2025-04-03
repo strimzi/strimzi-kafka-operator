@@ -34,7 +34,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.rbac.RbacUtils;
 import io.strimzi.test.ReadWriteUtils;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.File;
@@ -48,9 +47,15 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 public class RbacST extends AbstractST {
+
     @IsolatedTest
     void testClusterWideOperatorWithLimitedAccessToSpecificNamespaceViaRbacRole() {
         assumeFalse(Environment.isNamespaceRbacScope());
+
+        // Used here only for (re)creation of Cluster Operator's Namespace
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .createClusterOperatorNamespace();
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
@@ -93,11 +98,11 @@ public class RbacST extends AbstractST {
 
         // specify explicit namespace for RoleBindings
         strimziClusterOperator020Namespaced.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
-        strimziClusterOperator022LeaderElection.getMetadata().setNamespace(setupClusterOperator.getOperatorNamespace());
+        strimziClusterOperator022LeaderElection.getMetadata().setNamespace(clusterOperatorConfiguration.getNamespaceName());
 
         // reference Cluster Operator service account in RoleBindings
-        strimziClusterOperator020Namespaced.getSubjects().stream().findFirst().get().setNamespace(setupClusterOperator.getOperatorNamespace());
-        strimziClusterOperator022LeaderElection.getSubjects().stream().findFirst().get().setNamespace(setupClusterOperator.getOperatorNamespace());
+        strimziClusterOperator020Namespaced.getSubjects().stream().findFirst().get().setNamespace(clusterOperatorConfiguration.getNamespaceName());
+        strimziClusterOperator022LeaderElection.getSubjects().stream().findFirst().get().setNamespace(clusterOperatorConfiguration.getNamespaceName());
 
         KubeResourceManager.get().createResourceWithWait(
             // Apply our RoleBindings
@@ -108,8 +113,8 @@ public class RbacST extends AbstractST {
         // ---- c) defining ClusterRoleBindings
         KubeResourceManager.get().createResourceWithWait(
             // Apply our ClusterRoleBindings
-            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(setupClusterOperator.getOperatorNamespace(), setupClusterOperator.getOperatorDeploymentName()),
-            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(setupClusterOperator.getOperatorNamespace(), setupClusterOperator.getOperatorDeploymentName())
+            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOperatorDeploymentName()),
+            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOperatorDeploymentName())
         );
 
         // Apply all CRDs, SA etc.
@@ -190,12 +195,5 @@ public class RbacST extends AbstractST {
                     break;
             }
         }
-    }
-
-    @BeforeAll
-    void setup() {
-        setupClusterOperator
-            .withDefaultConfiguration()
-            .createClusterOperatorNamespace();
     }
 }
