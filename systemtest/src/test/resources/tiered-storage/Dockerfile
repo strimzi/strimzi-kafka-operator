@@ -10,7 +10,6 @@ RUN mkdir -p /opt/kafka/plugins/tiered-storage
 
 RUN curl -sL "$TIERED_STORAGE_URL/$AIVEN_PLUGIN_VERSION/s3-0.0.1-SNAPSHOT.tgz" | tar -xz  --strip-components=1 -C "/opt/kafka/plugins/tiered-storage"
 RUN curl -sL "$TIERED_STORAGE_URL/$AIVEN_PLUGIN_VERSION/core-0.0.1-SNAPSHOT.tgz" | tar -xz  --strip-components=1 -C "/opt/kafka/plugins/tiered-storage"
-RUN curl -sL "$TIERED_STORAGE_URL/$AIVEN_PLUGIN_VERSION/filesystem-0.0.1-SNAPSHOT.tgz" | tar -xz  --strip-components=1 -C "/opt/kafka/plugins/tiered-storage"
 
 RUN rm -rf /tmp/tiered-storage
 
