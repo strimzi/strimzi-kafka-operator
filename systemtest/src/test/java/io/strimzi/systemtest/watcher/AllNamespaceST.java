@@ -8,15 +8,11 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.logs.CollectorElement;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-
-import java.util.Arrays;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
