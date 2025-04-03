@@ -170,5 +170,6 @@ public interface TestTags {
     /**
      * Performance specific related tags
      */
-    String CAPACITY = "capacity";
+    String USER_CAPACITY = "user-capacity";
+    String TOPIC_CAPACITY = "topic-capacity";
 }
