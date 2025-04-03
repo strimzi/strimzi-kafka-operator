@@ -39,10 +39,8 @@ public class FeatureGates {
                 boolean value = '+' == featureGate.charAt(0);
                 featureGate = featureGate.substring(1);
 
-                switch (featureGate) {
-                    default:
-                        throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
-                }
+                // TODO: Once we have new FeatureGate, we should add back the switch, as it was here before
+                throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
             }
 
             validateInterDependencies();
@@ -108,27 +106,25 @@ public class FeatureGates {
         return String.join(",", gateSettings);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)  {
-            return true;
-        } else if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        // TODO: Once we have new FeatureGate, we should update this else branch (below is example)
-        // else {
-        //    FeatureGates other = (FeatureGates) o;
-        //    return Objects.equals(continueOnManualRUFailure, other.continueOnManualRUFailure);
-        // }
-        return true;
-    }
+    // TODO: Once we have new FeatureGate, we should implement the equals method (below is example)
+    // @Override
+    // public boolean equals(Object o) {
+    //    if (this == o)  {
+    //        return true;
+    //    } else if (o == null || getClass() != o.getClass()) {
+    //        return false;
+    //    } else {
+    //        FeatureGates other = (FeatureGates) o;
+    //        return Objects.equals(continueOnManualRUFailure, other.continueOnManualRUFailure);
+    //    }
+    //    return true;
+    // }
 
-    @Override
-    public int hashCode() {
-        // TODO: Once we have new FeatureGate, we should update this hashCode method (below is example)
-        // return Objects.hashCode(continueOnManualRUFailure);
-        return super.hashCode();
-    }
+    // TODO: Once we have new FeatureGate, we should implement the hashCode method (below is example)
+    // @Override
+    // public int hashCode() {
+    //   return Objects.hashCode(continueOnManualRUFailure);
+    // }
 
     /**
      * Feature gate class represents individual feature fate
