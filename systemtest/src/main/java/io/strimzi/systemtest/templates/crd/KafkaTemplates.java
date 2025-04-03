@@ -53,6 +53,23 @@ public class KafkaTemplates {
 
         return kafkaBuilder;
     }
+        
+    public static KafkaBuilder kafkaWithStrimziMetricsReporter(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
+        KafkaBuilder kafkaBuilder = kafka(namespaceName, kafkaClusterName, kafkaReplicas)
+            .editSpec()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
+                .editKafka()
+                    .withNewStrimziMetricsReporterConfig()
+                        .withNewValues()
+                            .withAllowList("kafka_server.*")
+                        .endValues()
+                    .endStrimziMetricsReporterConfig()
+                .endKafka()
+            .endSpec();
+
+        return kafkaBuilder;
+    }
 
     public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
         String ccConfigMapName = kafkaClusterName + METRICS_CC_CONFIG_MAP_SUFFIX;
