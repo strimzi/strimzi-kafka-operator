@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.watcher;
 
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.logs.CollectorElement;
@@ -27,8 +29,18 @@ class AllNamespaceST extends AbstractNamespaceST {
     private void deployTestSpecificClusterOperator() {
         LOGGER.info("Creating Cluster Operator which will watch over all Namespaces");
 
-        NamespaceManager.getInstance().createNamespaces(setupClusterOperator.getOperatorNamespace(),
-            CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE));
+        KubeResourceManager.get().createResourceWithWait(
+            new NamespaceBuilder()
+                .withNewMetadata()
+                    .withName(PRIMARY_KAFKA_WATCHED_NAMESPACE)
+                .endMetadata()
+                .build(),
+            new NamespaceBuilder()
+                .withNewMetadata()
+                    .withName(MAIN_TEST_NAMESPACE)
+                .endMetadata()
+                .build()
+        );
 
         setupClusterOperator
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
