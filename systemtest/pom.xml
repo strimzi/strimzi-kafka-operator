@@ -447,11 +447,22 @@
         </profile>
 
         <profile>
-            <id>capacity</id>
+            <id>user-capacity</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>
-                    capacity
+                    user-capacity
+                </groups>
+                <it.test>performance/**/*Performance*</it.test>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>topic-capacity</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>
+                    topic-capacity
                 </groups>
                 <it.test>performance/**/*Performance*</it.test>
             </properties>
