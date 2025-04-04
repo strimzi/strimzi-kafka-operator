@@ -276,18 +276,14 @@ public class TestLogCollector {
     }
 
     private List<String> getListOfNamespaces(String testClass, String testCase) {
-        List<String> namespaces = new ArrayList<>();
-
-        namespaces.addAll(
-            KubeResourceManager.get().kubeClient().getClient()
-                .namespaces()
-                .withLabelSelector(getTestClassLabelSelector(testClass))
-                .list()
-                .getItems()
-                .stream()
-                .map(namespace -> namespace.getMetadata().getName())
-                .toList()
-        );
+        List<String> namespaces = new ArrayList<>(KubeResourceManager.get().kubeClient().getClient()
+            .namespaces()
+            .withLabelSelector(getTestClassLabelSelector(testClass))
+            .list()
+            .getItems()
+            .stream()
+            .map(namespace -> namespace.getMetadata().getName())
+            .toList());
 
         if (testCase != null) {
             namespaces.addAll(

@@ -19,7 +19,6 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
@@ -196,17 +195,17 @@ public class TieredStorageST extends AbstractST {
         // we skip test case for kind + podman
         assumeFalse(cluster.isKind() && ContainerRuntimeUtils.getRuntime().equals(TestConstants.PODMAN));
 
-        suiteStorage = new TestStorage(ResourceManager.getTestContext());
-        
-        NamespaceManager.getInstance().createNamespaceAndPrepare(suiteStorage.getNamespaceName());
-        cluster.setNamespace(suiteStorage.getNamespaceName());
-
-        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
-        SetupMinio.deployMinio(suiteStorage.getNamespaceName());
-        SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
-
+        // for RBAC, we are creating everything in co-namespace
+        // in order to not delete the Namespace (as in the install() method) we need to install CO first and then
+        // do everything else.
         setupClusterOperator
             .withDefaultConfiguration()
             .install();
+
+        suiteStorage = new TestStorage(ResourceManager.getTestContext());
+        
+        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
+        SetupMinio.deployMinio(suiteStorage.getNamespaceName());
+        SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
 }

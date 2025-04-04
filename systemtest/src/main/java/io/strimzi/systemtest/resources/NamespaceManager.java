@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -335,14 +336,11 @@ public class NamespaceManager {
      */
     public List<String> getListOfNamespacesForTestClassAndTestCase(String testClass, String testCase) {
         List<String> namespaces = new ArrayList<>();
-        namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass)));
+
+        Optional.ofNullable(getMapWithSuiteNamespaces().get(new CollectorElement(testClass))).ifPresent(namespaces::addAll);
 
         if (testCase != null) {
-            Set<String> namespacesForTestCase = getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase));
-
-            if (namespacesForTestCase != null) {
-                namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase)));
-            }
+            Optional.ofNullable(getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase))).ifPresent(namespaces::addAll);
         }
 
         return namespaces;
