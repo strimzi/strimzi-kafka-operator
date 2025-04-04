@@ -70,6 +70,7 @@ public class TieredStorageST extends AbstractST {
     private static final String TIERED_STORAGE_DOCKERFILE = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tiered-storage/Dockerfile";
     private static final String BUCKET_NAME = "test-bucket";
     private static final String BUILT_IMAGE_TAG = "latest";
+    private static final int MESSAGE_COUNT = 10_000;
     private TestStorage suiteStorage;
 
     @ParallelTest
@@ -80,7 +81,11 @@ public class TieredStorageST extends AbstractST {
             @Step(value = "Deploy Kafka CustomResource with Tiered Storage configuration pointing to Minio S3, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions.", expected = "Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions."),
             @Step(value = "Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync).", expected = "Topic is created successfully with Tiered Storage enabled and segment size of 10mb."),
             @Step(value = "Starts continuous producer to send data to Kafka.", expected = "Continuous producer starts sending data to Kafka."),
-            @Step(value = "Wait until Minio size is not empty (contains data from Kafka).", expected = "Minio contains data from Kafka.")
+            @Step(value = "Wait until Minio size is not empty (contains data from Kafka).", expected = "Minio contains data from Kafka."),
+            @Step(value = "Wait until the earliest-local offset to be higher than 0.", expected = "The log segments uploaded to Minio are deleted locally."),
+            @Step(value = "Starts a consumer to consume all the produced messages, some of the messages should be located in Minio.", expected = "Consumer can consume all the messages successfully."),
+            @Step(value = "Alter the topic config to retention.ms=10000 to test the remote log deletion.", expected = "The topic config is altered successfully."),
+            @Step(value = "Wait until Minio size is 0.", expected = "The data in Minio are deleted.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -143,9 +148,9 @@ public class TieredStorageST extends AbstractST {
             .build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
-            .withMessageCount(10000)
+            .withMessageCount(MESSAGE_COUNT)
             .withDelayMs(1)
-            .withMessage(String.join("", Collections.nCopies(5000, "#")))
+            .withMessage(String.join("", Collections.nCopies(300, "#")))
             .build();
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
@@ -178,10 +183,11 @@ public class TieredStorageST extends AbstractST {
                 return earliestLocalOffset > 0;
             });
 
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
-
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+        // Verify we can consume messages from (a) remote storage and (b) local storage. Because we have verified earlier
+        // that the log segments are moved to remote storage (by Minio size check) and deleted locally (by earliest-local offset check),
+        // we can verify (a) and (b) by checking if we can consume all messages successfully.
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
         // Delete data
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
