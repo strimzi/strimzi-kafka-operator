@@ -349,12 +349,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
     }
 
     @Test
-    public void testManualPodRollingUpdateWithPodSetsWithError1(VertxTestContext context) {
-        testManualPodRollingUpdateWithPodSetsWithErrorConditions(context, "-ContinueReconciliationOnManualRollingUpdateFailure", true);
-    }
-
-    @Test
-    public void testManualPodRollingUpdateWithPodSetsWithError3(VertxTestContext context) {
+    public void testManualPodRollingUpdateWithPodSetsWithError(VertxTestContext context) {
         testManualPodRollingUpdateWithPodSetsWithErrorConditions(context, "", false);
     }
 

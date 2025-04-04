@@ -20,6 +20,7 @@
 * Implicit IPv4 preference when enabling JMX has been removed, and will now use JVM defaults.
   This will make the cluster boot up correctly in IPv6 only environments, where IPv4 preference will break it due to lack of IPv4 addresses.
 * Improved the MirrorMaker2 example Grafana dashboard to set metric units and include chart descriptions.
+* The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
 
 ### Major changes, deprecations and removals
 
