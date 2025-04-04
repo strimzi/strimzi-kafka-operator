@@ -7,6 +7,8 @@ package io.strimzi.systemtest.upgrade;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
@@ -30,6 +32,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -428,9 +431,12 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
                 final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
+                LOGGER.info("Deploying KafkaConnect from: {}", kafkaConnectYaml.getPath());
+
                 KafkaConnect kafkaConnect = new KafkaConnectBuilder(ReadWriteUtils.readObjectFromYamlFilepath(kafkaConnectYaml, KafkaConnect.class))
                     .editMetadata()
                         .withName(CLUSTER_NAME)
+                        .withNamespace(testStorage.getNamespaceName())
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()
                     .editSpec()
@@ -446,10 +452,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     .endSpec()
                     .build();
 
-                LOGGER.info("Deploying KafkaConnect from: {}", kafkaConnectYaml.getPath());
-
-                cmdKubeClient(testStorage.getNamespaceName()).applyContent(ReadWriteUtils.writeObjectToYamlString(kafkaConnect));
-                ResourceManager.waitForResourceReadiness(testStorage.getNamespaceName(), getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL), kafkaConnect.getMetadata().getName());
+                resourceManager.createResourceWithWait(kafkaConnect);
 
                 // in our examples is no sink connector and thus we are using the same as in HEAD verification
                 resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), CLUSTER_NAME)
@@ -685,6 +688,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}, in Namespace {}", kafkaTopicYaml.getPath(), namespaceName);
         cmdKubeClient(namespaceName).applyContent(ReadWriteUtils.readFile(kafkaTopicYaml));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName("my-topic").delete()));
     }
 
     private String getKafkaYamlWithName(String name) {

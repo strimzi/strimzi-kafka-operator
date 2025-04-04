@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.skodjob.testframe.resources.ClusterRoleBindingType;
 import io.skodjob.testframe.resources.ClusterRoleType;
 import io.skodjob.testframe.resources.CustomResourceDefinitionType;
@@ -82,15 +83,19 @@ public abstract class AbstractST implements TestSeparator {
         );
 
         KubeResourceManager.get().addCreateCallback(resource -> {
-            Map<String, String> labels = new HashMap<>();
-            labels.put(TestConstants.TEST_SUITE_NAME_LABEL, StUtils.removePackageName(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName()));
+            if (resource instanceof Namespace namespace) {
+                Map<String, String> labels = new HashMap<>(namespace.getMetadata().getLabels());
+                labels.put(TestConstants.TEST_SUITE_NAME_LABEL, StUtils.removePackageName(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName()));
 
-            if (KubeResourceManager.get().getTestContext().getTestMethod().isPresent()) {
-                String testCaseName = KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
-                labels.put(TestConstants.TEST_CASE_NAME_LABEL, testCaseName);
+                if (KubeResourceManager.get().getTestContext().getTestMethod().isPresent()) {
+                    String testCaseName = KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
+                    labels.put(TestConstants.TEST_CASE_NAME_LABEL, testCaseName);
+                }
+
+                namespace.getMetadata().setLabels(labels);
+
+                KubeResourceManager.get().kubeClient().getClient().resource(namespace).update();
             }
-
-            resource.getMetadata().setLabels(labels);
         });
     }
 

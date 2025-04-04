@@ -177,6 +177,11 @@ public class TopicST extends AbstractST {
                 .editOrNewEntityOperator()
                     .withNewTopicOperator()
                     .endTopicOperator()
+                    // create new container so all the changes will be wiped
+                    .editOrNewTemplate()
+                        .withNewTopicOperatorContainer()
+                        .endTopicOperatorContainer()
+                    .endTemplate()
                 .endEntityOperator()
             .endSpec()
             .build());
