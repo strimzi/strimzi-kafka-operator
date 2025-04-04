@@ -70,7 +70,7 @@ public class TieredStorageST extends AbstractST {
     private static final String TIERED_STORAGE_DOCKERFILE = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tiered-storage/Dockerfile";
     private static final String BUCKET_NAME = "test-bucket";
     private static final String BUILT_IMAGE_TAG = "latest";
-    private static final int MESSAGE_COUNT = 10000;
+    private static final int MESSAGE_COUNT = 10_000;
     private TestStorage suiteStorage;
 
     @ParallelTest
