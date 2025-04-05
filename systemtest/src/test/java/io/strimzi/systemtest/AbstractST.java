@@ -12,6 +12,7 @@ import io.skodjob.testframe.resources.DeploymentType;
 import io.skodjob.testframe.resources.JobType;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.skodjob.testframe.resources.NamespaceType;
+import io.skodjob.testframe.utils.KubeUtils;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
@@ -46,9 +47,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -84,17 +83,23 @@ public abstract class AbstractST implements TestSeparator {
 
         KubeResourceManager.get().addCreateCallback(resource -> {
             if (resource instanceof Namespace namespace) {
-                Map<String, String> labels = new HashMap<>(namespace.getMetadata().getLabels());
-                labels.put(TestConstants.TEST_SUITE_NAME_LABEL, StUtils.removePackageName(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName()));
+                String testClass = StUtils.removePackageName(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName());
+
+                KubeUtils.labelNamespace(
+                    namespace.getMetadata().getName(),
+                    TestConstants.TEST_SUITE_NAME_LABEL,
+                    testClass
+                );
 
                 if (KubeResourceManager.get().getTestContext().getTestMethod().isPresent()) {
                     String testCaseName = KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
-                    labels.put(TestConstants.TEST_CASE_NAME_LABEL, testCaseName);
+
+                    KubeUtils.labelNamespace(
+                        namespace.getMetadata().getName(),
+                        TestConstants.TEST_CASE_NAME_LABEL,
+                        testCaseName
+                    );
                 }
-
-                namespace.getMetadata().setLabels(labels);
-
-                KubeResourceManager.get().kubeClient().getClient().resource(namespace).update();
             }
         });
     }
