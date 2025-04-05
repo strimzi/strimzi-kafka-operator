@@ -106,7 +106,6 @@ public abstract class AbstractST implements TestSeparator {
 
     // Test-Frame integration stuff, remove everything else when not needed
     protected final KubeResourceManager kubeResourceManager = KubeResourceManager.get();
-    protected final SetupClusterOperator setupClusterOperator = new SetupClusterOperator();
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
@@ -119,7 +118,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} second(s)", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(TestConstants.DEPLOYMENT, ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
+        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(TestConstants.DEPLOYMENT, SetupClusterOperator.get().getOperatorDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
@@ -229,7 +228,7 @@ public abstract class AbstractST implements TestSeparator {
         try {
             // This method needs to be disabled for the moment, as it brings flakiness and is unstable due to regexes and current matcher checks.
             // Needs to be reworked on what errors to ignore. Better error logging should be added.
-//            assertNoCoErrorsLogged(setupClusterOperator.getOperatorNamespace(), (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY));
+//            assertNoCoErrorsLogged(SetupClusterOperator.get().getOperatorNamespace(), (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY));
         } finally {
             afterEachMayOverride();
             afterEachMustExecute();

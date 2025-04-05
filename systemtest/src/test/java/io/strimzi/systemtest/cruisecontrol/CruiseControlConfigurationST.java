@@ -23,6 +23,7 @@ import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -217,8 +218,9 @@ public class CruiseControlConfigurationST extends AbstractST {
         // Cruise Control currently does not work with Kafka 4.0 and this tests is therefore disabled when Kafka 4.0 or newer is used.
         // This should be re-enabled once Cruise Control support is fixed: https://github.com/strimzi/strimzi-kafka-operator/issues/11199
         Assumptions.assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
-        
-        setupClusterOperator
+
+        SetupClusterOperator
+            .get()
             .withDefaultConfiguration()
             .install();
     }

@@ -35,6 +35,7 @@ import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -519,7 +520,8 @@ public class KafkaRollerST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
                 .build()

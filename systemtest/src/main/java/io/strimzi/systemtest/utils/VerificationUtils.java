@@ -18,10 +18,10 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -428,7 +428,7 @@ public class VerificationUtils {
      */
     public static Map<String, String> getClusterOperatorDeploymentImages(String clusterOperatorNamespace) {
         Map<String, String> images = new HashMap<>();
-        for (Container container : kubeClient().getDeployment(clusterOperatorNamespace, ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container container : kubeClient().getDeployment(clusterOperatorNamespace, SetupClusterOperator.get().getOperatorDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : container.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }

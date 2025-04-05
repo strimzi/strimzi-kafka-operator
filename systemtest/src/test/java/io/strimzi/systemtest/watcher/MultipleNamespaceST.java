@@ -7,6 +7,7 @@ package io.strimzi.systemtest.watcher;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +37,8 @@ class MultipleNamespaceST extends AbstractNamespaceST {
                 .build()
         );
 
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(CO_NAMESPACE)
                 .withNamespacesToWatch(String.join(",", CO_NAMESPACE, PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))

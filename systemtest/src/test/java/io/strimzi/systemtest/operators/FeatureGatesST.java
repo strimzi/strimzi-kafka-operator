@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators;
 
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Disabled;
@@ -30,7 +31,8 @@ public class FeatureGatesST extends AbstractST {
      *                          enabled or disabled for the Cluster Operator.
      */
     private void setupClusterOperatorWithFeatureGate(String extraFeatureGates) {
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withFeatureGates(extraFeatureGates)
                 .build()

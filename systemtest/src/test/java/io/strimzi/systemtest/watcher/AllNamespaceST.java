@@ -9,6 +9,7 @@ import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,7 +39,8 @@ class AllNamespaceST extends AbstractNamespaceST {
                 .build()
         );
 
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespacesToWatch(TestConstants.WATCH_ALL_NAMESPACES)
                 .build()

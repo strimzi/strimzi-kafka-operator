@@ -12,6 +12,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -37,7 +38,8 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
                 .withNamespacesToWatch(TestConstants.CO_NAMESPACE + "," + Environment.TEST_SUITE_NAMESPACE)

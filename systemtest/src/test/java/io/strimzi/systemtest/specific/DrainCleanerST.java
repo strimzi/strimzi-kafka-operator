@@ -14,6 +14,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -96,7 +97,8 @@ public class DrainCleanerST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(TestConstants.DRAIN_CLEANER_NAMESPACE)
                 .withNamespacesToWatch(TestConstants.DRAIN_CLEANER_NAMESPACE)

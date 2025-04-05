@@ -17,6 +17,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -247,7 +248,8 @@ public class DynamicConfSharedST extends AbstractST {
     void setup() {
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
 
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withDefaultConfiguration()
             .install();
 

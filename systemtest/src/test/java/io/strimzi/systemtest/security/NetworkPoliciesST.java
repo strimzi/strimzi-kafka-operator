@@ -27,6 +27,7 @@ import io.strimzi.systemtest.metrics.KafkaExporterMetricsComponent;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -105,7 +106,8 @@ public class NetworkPoliciesST extends AbstractST {
         final String consumerNameDeniedTls = testStorage.getConsumerName() + "-denied-tls";
         final String consumerNameDeniedPlain = testStorage.getConsumerName() + "-denied-plain";
 
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(testStorage.getNamespaceName())
                 .build()
@@ -261,7 +263,8 @@ public class NetworkPoliciesST extends AbstractST {
                 .withValue(labels.toString().replaceAll("\\{|}", ""))
                 .build();
 
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
                 .withNamespacesToWatch(TestConstants.WATCH_ALL_NAMESPACES)
@@ -311,7 +314,8 @@ public class NetworkPoliciesST extends AbstractST {
             .withValue("false")
             .build();
 
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
                 .withExtraEnvVars(networkPolicyGenerationEnv)

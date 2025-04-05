@@ -22,6 +22,7 @@ import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -201,7 +202,8 @@ public class ReconciliationST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withDefaultConfiguration()
             .install();
     }

@@ -37,6 +37,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.SystemTestCertAndKey;
 import io.strimzi.systemtest.security.SystemTestCertManager;
@@ -2692,7 +2693,8 @@ public class ListenersST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withDefaultConfiguration()
             .install();
     }

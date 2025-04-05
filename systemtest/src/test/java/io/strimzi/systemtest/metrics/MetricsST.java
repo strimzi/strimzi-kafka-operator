@@ -48,6 +48,7 @@ import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -616,7 +617,8 @@ public class MetricsST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
         NamespaceManager.getInstance().createNamespaces(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(namespaceFirst, namespaceSecond));
 
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withDefaultConfiguration()
             .install();
 
@@ -691,7 +693,7 @@ public class MetricsST extends AbstractST {
         clusterOperatorCollector = new BaseMetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
             .withNamespaceName(TestConstants.CO_NAMESPACE)
-            .withComponent(ClusterOperatorMetricsComponent.create(TestConstants.CO_NAMESPACE, setupClusterOperator.getOperatorDeploymentName()))
+            .withComponent(ClusterOperatorMetricsComponent.create(TestConstants.CO_NAMESPACE, SetupClusterOperator.get().getOperatorDeploymentName()))
             .build();
 
         kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);

@@ -23,6 +23,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -198,7 +199,8 @@ public class TieredStorageST extends AbstractST {
         // for RBAC, we are creating everything in co-namespace
         // in order to not delete the Namespace (as in the install() method) we need to install CO first and then
         // do everything else.
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withDefaultConfiguration()
             .install();
 

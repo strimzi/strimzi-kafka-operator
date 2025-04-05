@@ -25,6 +25,7 @@ import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -208,7 +209,8 @@ public class PodSecurityProfilesST extends AbstractST {
     void beforeAll() {
         // we configure Pod Security via provider class, which sets SecurityContext to all containers (e.g., Kafka,
         // Entity Operator, Bridge). Another alternative but more complicated is to set it via .template section inside each CR.
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withExtraEnvVars(new EnvVarBuilder()
                     .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")

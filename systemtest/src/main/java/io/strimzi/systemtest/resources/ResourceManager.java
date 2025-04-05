@@ -508,14 +508,6 @@ public class ResourceManager {
         return waitForResourceStatus(operation, resource, status, resourceTimeout);
     }
 
-    public static String getCoDeploymentName() {
-        return coDeploymentName;
-    }
-
-    public static void setCoDeploymentName(String newName) {
-        coDeploymentName = newName;
-    }
-
     public static void waitForResourceReadiness(String namespaceName, String resourceType, String resourceName) {
         LOGGER.info("Waiting for " + resourceType + "/" + resourceName + " readiness");
 

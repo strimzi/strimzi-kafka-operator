@@ -61,6 +61,7 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -179,7 +180,7 @@ class ConnectST extends AbstractST {
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(exceptedConfig.entrySet()), is(true));
 
-        VerificationUtils.verifyClusterOperatorConnectDockerImage(setupClusterOperator.getOperatorNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
+        VerificationUtils.verifyClusterOperatorConnectDockerImage(SetupClusterOperator.get().getOperatorNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
 
         VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaConnectResources.componentName(testStorage.getClusterName()), testStorage.getKafkaConnectSelector());
         VerificationUtils.verifyServiceLabels(testStorage.getNamespaceName(), KafkaConnectResources.serviceName(testStorage.getClusterName()), testStorage.getKafkaConnectSelector());
@@ -1893,7 +1894,8 @@ class ConnectST extends AbstractST {
 
     @BeforeAll
     void setUp() {
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
                 .build()

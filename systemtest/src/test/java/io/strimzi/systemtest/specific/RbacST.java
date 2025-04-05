@@ -25,6 +25,7 @@ import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.operator.YamlInstallation;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -53,7 +54,8 @@ public class RbacST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         // Used here only for (re)creation of Cluster Operator's Namespace
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withDefaultConfiguration()
             .createClusterOperatorNamespace();
 

@@ -18,6 +18,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.openshift.SubscriptionTemplates;
 import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationType;
@@ -76,7 +77,8 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         // Install operator via Olm
         //  1. Create subscription with manual approval and operator group if needed
         //  2. Approve installation (get install-plan and patch it)
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withCustomConfiguration(clusterOperatorConfiguration)
             .installUsingOlm();
 

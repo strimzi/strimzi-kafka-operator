@@ -20,6 +20,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.jaeger.SetupJaeger;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -401,7 +402,8 @@ public class OpenTelemetryST extends AbstractST {
     void setup() {
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        setupClusterOperator
+        SetupClusterOperator
+            .get()
             .withDefaultConfiguration()
             .install();
 
