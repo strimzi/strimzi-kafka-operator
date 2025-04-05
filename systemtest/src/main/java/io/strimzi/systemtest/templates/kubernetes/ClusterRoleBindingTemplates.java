@@ -7,6 +7,7 @@ package io.strimzi.systemtest.templates.kubernetes;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
+import io.strimzi.test.ReadWriteUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,13 +26,11 @@ public class ClusterRoleBindingTemplates {
     public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespaceName, String coName) {
         LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
 
-        final List<ClusterRoleBinding> kCRBList = Arrays.asList(
+        return Arrays.asList(
             getClusterOperatorNamespacedCrb(namespaceName, coName),
             getClusterOperatorEntityOperatorCrb(namespaceName, coName),
             getClusterOperatorWatchedCrb(namespaceName, coName)
         );
-
-        return kCRBList;
     }
 
     public static ClusterRoleBinding getClusterOperatorNamespacedCrb(final String namespaceName, final String coName) {
@@ -89,5 +88,15 @@ public class ClusterRoleBindingTemplates {
                     .build()
                 )
                 .build();
+    }
+
+    public static ClusterRoleBinding clusterRoleBindingFromFile(String namespaceName, String pathToFile) {
+        ClusterRoleBinding clusterRoleBinding = ReadWriteUtils.readObjectFromYamlFilepath(pathToFile, ClusterRoleBinding.class);
+
+        return new ClusterRoleBindingBuilder(clusterRoleBinding)
+            .editFirstSubject()
+                .withNamespace(namespaceName)
+            .endSubject()
+            .build();
     }
 }

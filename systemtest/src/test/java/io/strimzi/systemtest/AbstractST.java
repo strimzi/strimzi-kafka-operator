@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.skodjob.testframe.resources.ClusterRoleBindingType;
 import io.skodjob.testframe.resources.ClusterRoleType;
 import io.skodjob.testframe.resources.CustomResourceDefinitionType;
@@ -11,6 +12,7 @@ import io.skodjob.testframe.resources.DeploymentType;
 import io.skodjob.testframe.resources.JobType;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.skodjob.testframe.resources.NamespaceType;
+import io.skodjob.testframe.utils.KubeUtils;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
@@ -54,11 +56,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith({TestExecutionWatcher.class})
 @DisplayNameGeneration(IndicativeSentences.class)
+@io.skodjob.testframe.annotations.ResourceManager
 public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
     static {
         LB_FINALIZERS = Environment.LB_FINALIZERS ? List.of(TestConstants.LOAD_BALANCER_CLEANUP) : null;
-        KubeResourceManager.getInstance().setResourceTypes(
+        KubeResourceManager.get().setResourceTypes(
             new ClusterRoleBindingType(),
             new ClusterRoleType(),
             new CustomResourceDefinitionType(),
@@ -77,13 +80,37 @@ public abstract class AbstractST implements TestSeparator {
             new KafkaUserType(),
             new StrimziPodSetType()
         );
+
+        KubeResourceManager.get().addCreateCallback(resource -> {
+            if (resource instanceof Namespace namespace) {
+                String testClass = StUtils.removePackageName(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName());
+
+                KubeUtils.labelNamespace(
+                    namespace.getMetadata().getName(),
+                    TestConstants.TEST_SUITE_NAME_LABEL,
+                    testClass
+                );
+
+                if (KubeResourceManager.get().getTestContext().getTestMethod().isPresent()) {
+                    String testCaseName = KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
+
+                    KubeUtils.labelNamespace(
+                        namespace.getMetadata().getName(),
+                        TestConstants.TEST_CASE_NAME_LABEL,
+                        testCaseName
+                    );
+                }
+            }
+        });
     }
 
+    // Test-Frame integration stuff, remove everything else when not needed
+    protected final KubeResourceManager kubeResourceManager = KubeResourceManager.get();
+    protected final SetupClusterOperator setupClusterOperator = new SetupClusterOperator();
+
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
-    protected final KubeResourceManager kubeResourceManager = KubeResourceManager.getInstance();
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
     private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
-    protected SetupClusterOperator clusterOperator = SetupClusterOperator.getInstance();
     protected KubeClusterResource cluster;
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
 
@@ -116,9 +143,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     private void afterAllMustExecute()  {
-        if (cluster.cluster().isClusterUp()) {
-            clusterOperator = SetupClusterOperator.getInstance();
-        } else {
+        if (!cluster.cluster().isClusterUp()) {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
@@ -204,7 +229,7 @@ public abstract class AbstractST implements TestSeparator {
         try {
             // This method needs to be disabled for the moment, as it brings flakiness and is unstable due to regexes and current matcher checks.
             // Needs to be reworked on what errors to ignore. Better error logging should be added.
-//            assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY));
+//            assertNoCoErrorsLogged(setupClusterOperator.getOperatorNamespace(), (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY));
         } finally {
             afterEachMayOverride();
             afterEachMustExecute();

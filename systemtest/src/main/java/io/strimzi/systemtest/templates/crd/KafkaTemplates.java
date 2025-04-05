@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -215,6 +216,15 @@ public class KafkaTemplates {
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
                     .endTopicOperator()
+                    .editOrNewTemplate()
+                        .editOrNewTopicOperatorContainer()
+                            .addToEnv(new ContainerEnvVarBuilder()
+                                .withName("STRIMZI_USE_FINALIZERS")
+                                .withValue("false")
+                                .build()
+                            )
+                        .endTopicOperatorContainer()
+                    .endTemplate()
                 .endEntityOperator()
             .endSpec();
     }

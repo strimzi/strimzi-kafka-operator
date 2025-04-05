@@ -115,7 +115,9 @@ public class OauthAbstractST extends AbstractST {
     };
 
     protected void setupCoAndKeycloak(String keycloakNamespace) {
-        clusterOperator.defaultInstallation().createInstallation().runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         resourceManager.createResourceWithoutWait(ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, TestConstants.SCRAPER_NAME).build());
 

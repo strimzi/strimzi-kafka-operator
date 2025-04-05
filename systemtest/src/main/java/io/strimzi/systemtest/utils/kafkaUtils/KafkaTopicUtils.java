@@ -333,7 +333,7 @@ public class KafkaTopicUtils {
     public static void waitForTopicStatusMessage(String namespaceName, String topicName, String message) {
         LOGGER.info("Waiting for KafkaTopic: {}/{} to contain message: {} in its status", namespaceName, topicName, message);
 
-        TestUtils.waitFor(String.join("KafkaTopic: %s/%s status to contain message: %s", namespaceName, topicName, message), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor(String.format("KafkaTopic: %s/%s status to contain message: %s", namespaceName, topicName, message), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
                 () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get()
                         .getStatus().getConditions().stream().anyMatch(condition -> condition.getMessage().contains(message))
         );

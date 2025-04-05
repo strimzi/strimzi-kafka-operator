@@ -616,9 +616,9 @@ public class MetricsST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
         NamespaceManager.getInstance().createNamespaces(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(this.getClass().getName()), Arrays.asList(namespaceFirst, namespaceSecond));
 
-        clusterOperator = clusterOperator.defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         final String coScraperName = TestConstants.CO_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
         final String testSuiteScraperName = Environment.TEST_SUITE_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
@@ -691,7 +691,7 @@ public class MetricsST extends AbstractST {
         clusterOperatorCollector = new BaseMetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
             .withNamespaceName(TestConstants.CO_NAMESPACE)
-            .withComponent(ClusterOperatorMetricsComponent.create(TestConstants.CO_NAMESPACE, clusterOperator.getClusterOperatorName()))
+            .withComponent(ClusterOperatorMetricsComponent.create(TestConstants.CO_NAMESPACE, setupClusterOperator.getOperatorDeploymentName()))
             .build();
 
         kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);

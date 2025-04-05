@@ -431,10 +431,9 @@ public class TopicReplicasChangeST extends AbstractST {
 
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
 
-        clusterOperator = clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         LOGGER.info("Deploying shared Kafka: {}/{} across all test cases", sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName());
 

@@ -343,8 +343,8 @@ class SecurityST extends AbstractST {
         for (int i = 1; i <= expectedRolls; i++) {
             // In case the first rolling update is finished, shut down cluster operator to see if the rolling update can be finished
             if (i == 2) {
-                Pod coPod = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).get(0);
-                kubeClient().deletePod(clusterOperator.getDeploymentNamespace(), coPod);
+                Pod coPod = kubeClient().listPodsByPrefixInName(setupClusterOperator.getOperatorNamespace(), setupClusterOperator.getOperatorDeploymentName()).get(0);
+                kubeClient().deletePod(setupClusterOperator.getOperatorNamespace(), coPod);
             }
 
             if (kafkaShouldRoll) {
@@ -1363,9 +1363,8 @@ class SecurityST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        this.clusterOperator = this.clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
     }
 }

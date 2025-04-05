@@ -21,7 +21,7 @@ public class KafkaNodePoolType implements ResourceType<KafkaNodePool> {
     private final MixedOperation<KafkaNodePool, KafkaNodePoolList, Resource<KafkaNodePool>> client;
 
     public KafkaNodePoolType() {
-        client = Crds.kafkaNodePoolOperation(KubeResourceManager.getKubeClient().getClient());
+        client = Crds.kafkaNodePoolOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     @Override

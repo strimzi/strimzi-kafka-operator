@@ -22,7 +22,7 @@ public class KafkaTopicType implements ResourceType<KafkaTopic> {
     private MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> client;
 
     public KafkaTopicType() {
-        client = Crds.topicOperation(KubeResourceManager.getKubeClient().getClient());
+        client = Crds.topicOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     @Override
