@@ -59,7 +59,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -349,11 +348,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
     }
 
     @Test
-    public void testManualPodRollingUpdateWithPodSetsWithError(VertxTestContext context) {
-        testManualPodRollingUpdateWithPodSetsWithErrorConditions(context, "", false);
-    }
-
-    private void testManualPodRollingUpdateWithPodSetsWithErrorConditions(VertxTestContext context, String featureGates, boolean expectError) {
+    public void testManualPodRollingUpdateWithPodSetsWithErrorConditions(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
 
@@ -388,7 +383,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(featureGates);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig();
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 reconciliation,
@@ -413,24 +408,16 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 kr);
 
         Checkpoint async = context.checkpoint();
-        if (expectError) {
-            kao.reconcile(reconciliation)
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat(e.getMessage(), containsString("Force failure"));
-                    async.flag();
-                })));
-        } else {
-            kao.reconcile(reconciliation)
-                .onComplete(context.succeeding(e -> context.verify(() -> {
-                    // Verify Kafka rolling updates
-                    assertThat(kr.maybeRollKafkaInvocations, is(1));
-                    assertThat(kr.kafkaNodesNeedRestart.size(), is(4));
-                    assertThat(kr.kafkaNodesNeedRestart, is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-brokers-10", "my-cluster-brokers-11")));
-                    assertThat(kr.kafkaRestartReasons.apply(podWithName("anyName")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+        kao.reconcile(reconciliation)
+            .onComplete(context.succeeding(e -> context.verify(() -> {
+                // Verify Kafka rolling updates
+                assertThat(kr.maybeRollKafkaInvocations, is(1));
+                assertThat(kr.kafkaNodesNeedRestart.size(), is(4));
+                assertThat(kr.kafkaNodesNeedRestart, is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-brokers-10", "my-cluster-brokers-11")));
+                assertThat(kr.kafkaRestartReasons.apply(podWithName("anyName")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
 
-                    async.flag();
-                })));
-        }
+                async.flag();
+            })));
     }
 
     // Internal utility methods
