@@ -28,7 +28,10 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.collection.IsMapWithSize.aMapWithSize;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClusterOperatorConfigTest {
@@ -58,6 +61,7 @@ public class ClusterOperatorConfigTest {
         envVars.remove(ClusterOperatorConfig.FEATURE_GATES.key());
         envVars.remove(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key());
         envVars.remove(ClusterOperatorConfig.POD_DISRUPTION_BUDGET_GENERATION.key());
+        envVars.remove(ClusterOperatorConfig.STRIMZI_REMOTE_KUBE_CONFIG);
 
         ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
@@ -73,6 +77,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getPodSecurityProviderClass(), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.defaultValue()));
         assertThat(config.getLeaderElectionConfig(), is(nullValue()));
         assertThat(config.isPodDisruptionBudgetGeneration(), is(true));
+        assertThat(config.getRemoteClusterConfigs().isEmpty(), is(true));
     }
 
     @Test
@@ -379,5 +384,86 @@ public class ClusterOperatorConfigTest {
 
         config.getLeaderElectionConfig();
         assertThat(ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getLeaderElectionConfig(), is(notNullValue()));
+    }
+
+    @Test
+    public void testRemoteClusterConfigParsing() {
+        String kubeConfig = String.join("\n",
+            "cluster-a.url=https://api.cluster-a.com",
+            "cluster-a.secret=secret-cluster-a",
+            "cluster-b.url=https://api.cluster-b.com",
+            "cluster-b.secret=secret-cluster-b"
+        );
+
+        Map<String, String> envMap = new HashMap<>();
+        envMap.put(ClusterOperatorConfig.STRIMZI_REMOTE_KUBE_CONFIG, kubeConfig);
+
+        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envMap, KafkaVersionTestUtils.getKafkaVersionLookup());
+
+        Map<String, ClusterInfo> remoteClusters = config.getRemoteClusterConfigs();
+        assertEquals(2, remoteClusters.size());
+
+        ClusterInfo clusterA = remoteClusters.get("cluster-a");
+        assertNotNull(clusterA);
+        assertEquals("https://api.cluster-a.com", clusterA.getApiUrl());
+        assertEquals("secret-cluster-a", clusterA.getSecretName());
+
+        ClusterInfo clusterB = remoteClusters.get("cluster-b");
+        assertNotNull(clusterB);
+        assertEquals("https://api.cluster-b.com", clusterB.getApiUrl());
+        assertEquals("secret-cluster-b", clusterB.getSecretName());
+    }
+
+    @Test
+    public void testValidRemoteClusterConfig() {
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
+        String remoteConfig = String.join("\n",
+            "cluster-a.url=https://api.cluster-a.com",
+            "cluster-a.secret=secret-a",
+            "cluster-b.url=https://api.cluster-b.com",
+            "cluster-b.secret=secret-b"
+        );
+        envVars.put(ClusterOperatorConfig.STRIMZI_REMOTE_KUBE_CONFIG, remoteConfig);
+
+        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
+        Map<String, ClusterInfo> remoteClusters = config.getRemoteClusterConfigs();
+
+        assertThat(remoteClusters, aMapWithSize(2));
+        assertThat(remoteClusters.get("cluster-a").getApiUrl(), is("https://api.cluster-a.com"));
+        assertThat(remoteClusters.get("cluster-a").getSecretName(), is("secret-a"));
+        assertThat(remoteClusters.get("cluster-b").getApiUrl(), is("https://api.cluster-b.com"));
+        assertThat(remoteClusters.get("cluster-b").getSecretName(), is("secret-b"));
+    }
+
+    @Test
+    public void testEmptyRemoteClusterConfig() {
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
+        envVars.put(ClusterOperatorConfig.STRIMZI_REMOTE_KUBE_CONFIG, "");
+
+        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
+        Map<String, ClusterInfo> remoteClusters = config.getRemoteClusterConfigs();
+
+        assertThat(remoteClusters.isEmpty(), is(true));
+    }
+
+    @Test
+    public void testMissingRemoteClusterConfig() {
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
+        envVars.remove(ClusterOperatorConfig.STRIMZI_REMOTE_KUBE_CONFIG);
+
+        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
+        Map<String, ClusterInfo> remoteClusters = config.getRemoteClusterConfigs();
+
+        assertThat(remoteClusters.isEmpty(), is(true));
+    }
+
+    @Test
+    public void testInvalidKeyValueRemoteClusterConfig() {
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
+        envVars.put(ClusterOperatorConfig.STRIMZI_REMOTE_KUBE_CONFIG, "invalid-key-value");
+
+        assertThrows(InvalidConfigurationException.class, () -> {
+            ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
+        });
     }
 }
