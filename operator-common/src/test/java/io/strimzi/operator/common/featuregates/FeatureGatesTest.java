@@ -56,6 +56,22 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
         assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
         assertThat(new FeatureGates("  -ContinueReconciliationOnManualRollingUpdateFailure    ").continueOnManualRUFailureEnabled(), is(false));
+
+        assertThat(new FeatureGates("+useStretchCluster").useStretchClusterEnabled(), is(true));
+        assertThat(new FeatureGates("-useStretchCluster").useStretchClusterEnabled(), is(false));
+        assertThat(new FeatureGates("  -useStretchCluster").useStretchClusterEnabled(), is(false));
+
+        assertThat(new FeatureGates("-useStretchCluster,-ContinueReconciliationOnManualRollingUpdateFailure").useStretchClusterEnabled(), is(false));
+        assertThat(new FeatureGates("-useStretchCluster,-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
+
+        assertThat(new FeatureGates("  +useStretchCluster    ,    +ContinueReconciliationOnManualRollingUpdateFailure").useStretchClusterEnabled(), is(true));
+        assertThat(new FeatureGates("  +useStretchCluster    ,    +ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
+
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-useStretchCluster").useStretchClusterEnabled(), is(false));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-useStretchCluster").continueOnManualRUFailureEnabled(), is(true));
+
+
+
         // TODO: Add more tests with various feature gate combinations once we have multiple feature gates again.
         //       The commented out code below shows the tests we used to have with multiple feature gates.
         //assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(false));
@@ -68,10 +84,19 @@ public class FeatureGatesTest {
 
     @ParallelTest
     public void testFeatureGatesEquals() {
-        FeatureGates fg = new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure");
-        assertThat(fg, is(fg));
-        assertThat(fg, is(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure")));
-        assertThat(fg, is(not(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure"))));
+        FeatureGates fgPositive = new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,+useStretchCluster");
+        assertThat(fgPositive, is(fgPositive));
+        assertThat(fgPositive, is(new FeatureGates("+useStretchCluster,+ContinueReconciliationOnManualRollingUpdateFailure")));
+        assertThat(fgPositive, is(not(new FeatureGates("+useStretchCluster,-ContinueReconciliationOnManualRollingUpdateFailure"))));
+        assertThat(fgPositive, is(not(new FeatureGates("-useStretchCluster,-ContinueReconciliationOnManualRollingUpdateFailure"))));
+        assertThat(fgPositive, is(not(new FeatureGates("-useStretchCluster,+ContinueReconciliationOnManualRollingUpdateFailure"))));
+
+        FeatureGates fgNegative = new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure,-useStretchCluster");
+        assertThat(fgNegative, is(fgNegative));
+        assertThat(fgNegative, is(new FeatureGates("-useStretchCluster,-ContinueReconciliationOnManualRollingUpdateFailure")));
+        assertThat(fgNegative, is(not(new FeatureGates("+useStretchCluster,-ContinueReconciliationOnManualRollingUpdateFailure"))));
+        assertThat(fgNegative, is(not(new FeatureGates("+useStretchCluster,+ContinueReconciliationOnManualRollingUpdateFailure"))));
+        assertThat(fgNegative, is(not(new FeatureGates("-useStretchCluster,+ContinueReconciliationOnManualRollingUpdateFailure"))));
     }
 
     @ParallelTest
@@ -117,7 +142,11 @@ public class FeatureGatesTest {
     @ParallelTest
     public void testEnvironmentVariable()   {
         assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
-        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is("-ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure,+useStretchCluster").toEnvironmentVariable(), is("-ContinueReconciliationOnManualRollingUpdateFailure,+useStretchCluster"));
+        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure,-useStretchCluster").toEnvironmentVariable(), is("-ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,+useStretchCluster").toEnvironmentVariable(), is("+useStretchCluster"));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-useStretchCluster").toEnvironmentVariable(), is(""));
         assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is(""));
+        assertThat(new FeatureGates("+useStretchCluster").toEnvironmentVariable(), is("+useStretchCluster"));
     }
 }
