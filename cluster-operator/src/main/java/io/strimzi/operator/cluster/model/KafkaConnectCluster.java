@@ -620,7 +620,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             populateTLSEnvVars(varList);
         }
 
-        // This is still needed to generate oauth truststore certificates in PKCS12 format
+        // Client authentication env var is needed to generate oauth truststore certificates in PKCS12 format in container script
         AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
 
         if (tracing != null) {
