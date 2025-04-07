@@ -298,9 +298,9 @@ class RollingUpdateST extends AbstractST {
             () -> kubeClient(Environment.TEST_SUITE_NAMESPACE).listPods(Environment.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
                     .map(pod -> pod.getStatus().getPhase()).toList().size() < kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE).size());
 
-        LabelSelector coLabelSelector = kubeClient().getDeployment(SetupClusterOperator.get().getOperatorNamespace(), SetupClusterOperator.get().getOperatorDeploymentName()).getSpec().getSelector();
+        LabelSelector coLabelSelector = kubeClient().getDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator Pod with labels {}", coLabelSelector);
-        kubeClient(SetupClusterOperator.get().getOperatorNamespace()).deletePodsByLabelSelector(coLabelSelector);
+        kubeClient(SetupClusterOperator.getInstance().getOperatorNamespace()).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator Pod deleted");
 
         LOGGER.info("Rolling Update is taking place, starting with roll of controller Pods with labels {}", testStorage.getControllerSelector());
@@ -310,7 +310,7 @@ class RollingUpdateST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasStartedRolling(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), brokerPods);
 
         LOGGER.info("Deleting Cluster Operator Pod with labels {}, while Rolling update rolls Kafka Pods", coLabelSelector);
-        kubeClient(SetupClusterOperator.get().getOperatorNamespace()).deletePodsByLabelSelector(coLabelSelector);
+        kubeClient(SetupClusterOperator.getInstance().getOperatorNamespace()).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator Pod deleted");
 
         LOGGER.info("Wait until Rolling Update finish successfully despite Cluster Operator being deleted in beginning of Rolling Update and also during Kafka Pods rolling");
@@ -495,7 +495,7 @@ class RollingUpdateST extends AbstractST {
     @BeforeAll
     void setup() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
     }

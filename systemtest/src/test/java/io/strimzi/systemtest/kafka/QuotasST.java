@@ -240,7 +240,7 @@ public class QuotasST extends AbstractST {
     @BeforeAll
     void setup() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
     }

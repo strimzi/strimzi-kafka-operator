@@ -357,7 +357,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         LOGGER.info("Creating: {} in Namespace: {}", coName, clusterOperatorNamespaceName);
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(clusterOperatorNamespaceName)
                 .withOperatorDeploymentName(coName)

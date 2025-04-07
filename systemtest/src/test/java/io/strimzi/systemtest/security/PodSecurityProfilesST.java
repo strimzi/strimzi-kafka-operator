@@ -210,7 +210,7 @@ public class PodSecurityProfilesST extends AbstractST {
         // we configure Pod Security via provider class, which sets SecurityContext to all containers (e.g., Kafka,
         // Entity Operator, Bridge). Another alternative but more complicated is to set it via .template section inside each CR.
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withExtraEnvVars(new EnvVarBuilder()
                     .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")

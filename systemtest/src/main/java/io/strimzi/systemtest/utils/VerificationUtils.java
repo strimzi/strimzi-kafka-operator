@@ -428,7 +428,7 @@ public class VerificationUtils {
      */
     public static Map<String, String> getClusterOperatorDeploymentImages(String clusterOperatorNamespace) {
         Map<String, String> images = new HashMap<>();
-        for (Container container : kubeClient().getDeployment(clusterOperatorNamespace, SetupClusterOperator.get().getOperatorDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container container : kubeClient().getDeployment(clusterOperatorNamespace, SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : container.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }

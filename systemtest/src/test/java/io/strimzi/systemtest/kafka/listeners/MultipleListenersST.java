@@ -428,7 +428,7 @@ public class MultipleListenersST extends AbstractST {
         generateTestCases();
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
     }

@@ -2694,7 +2694,7 @@ public class ListenersST extends AbstractST {
     @BeforeAll
     void setup() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
     }

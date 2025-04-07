@@ -170,7 +170,7 @@ public class HttpBridgeCorsST extends AbstractST {
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
 

@@ -149,7 +149,7 @@ class MirrorMaker2ST extends AbstractST {
         String connectConfigurations = configMap.getData().get("kafka-connect.properties");
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(expectedConfig.entrySet()), is(true));
-        VerificationUtils.verifyClusterOperatorMM2DockerImage(SetupClusterOperator.get().getOperatorNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
+        VerificationUtils.verifyClusterOperatorMM2DockerImage(SetupClusterOperator.getInstance().getOperatorNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
 
         VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()), testStorage.getMM2Selector());
         VerificationUtils.verifyServiceLabels(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.serviceName(testStorage.getClusterName()), testStorage.getMM2Selector());
@@ -1198,7 +1198,7 @@ class MirrorMaker2ST extends AbstractST {
     @BeforeAll
     void setup() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
                 .build()

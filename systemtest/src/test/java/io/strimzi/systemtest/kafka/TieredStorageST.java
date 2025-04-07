@@ -200,7 +200,7 @@ public class TieredStorageST extends AbstractST {
         // in order to not delete the Namespace (as in the install() method) we need to install CO first and then
         // do everything else.
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
 

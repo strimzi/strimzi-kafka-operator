@@ -237,7 +237,7 @@ class LoggingChangeST extends AbstractST {
         String configMapCOName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
 
         String originalCoLoggers = kubeClient().getClient().configMaps()
-            .inNamespace(SetupClusterOperator.get().getOperatorNamespace()).withName(configMapCOName).get().getData().get("log4j2.properties");
+            .inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(configMapCOName).get().getData().get("log4j2.properties");
 
         ConfigMap configMapKafka = new ConfigMapBuilder()
             .withNewMetadata()
@@ -269,14 +269,14 @@ class LoggingChangeST extends AbstractST {
             .withNewMetadata()
                 .withName(configMapCOName)
                 // we are using this namespace because CO is deployed @BeforeAll
-                .withNamespace(SetupClusterOperator.get().getOperatorNamespace())
+                .withNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
             .endMetadata()
             .addToData("log4j2.properties", loggersConfigCO)
             .build();
 
         kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapKafka);
         kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapOperators);
-        kubeClient().updateConfigMapInNamespace(SetupClusterOperator.get().getOperatorNamespace(), configMapCO);
+        kubeClient().updateConfigMapInNamespace(SetupClusterOperator.getInstance().getOperatorNamespace(), configMapCO);
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -315,9 +315,9 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
-        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(SetupClusterOperator.get().getOperatorNamespace(), SetupClusterOperator.get().getOperatorDeploymentName());
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
 
-        StUtils.checkLogForJSONFormat(SetupClusterOperator.get().getOperatorNamespace(), operatorSnapshot, SetupClusterOperator.get().getOperatorDeploymentName());
+        StUtils.checkLogForJSONFormat(SetupClusterOperator.getInstance().getOperatorNamespace(), operatorSnapshot, SetupClusterOperator.getInstance().getOperatorDeploymentName());
         StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), brokerPods, "");
         StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), controllerPods, "");
         StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "topic-operator");
@@ -325,7 +325,7 @@ class LoggingChangeST extends AbstractST {
 
         // set loggers of CO back to original
         configMapCO.getData().put("log4j2.properties", originalCoLoggers);
-        kubeClient().updateConfigMapInNamespace(SetupClusterOperator.get().getOperatorNamespace(), configMapCO);
+        kubeClient().updateConfigMapInNamespace(SetupClusterOperator.getInstance().getOperatorNamespace(), configMapCO);
     }
 
     @ParallelNamespaceTest
@@ -704,8 +704,8 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testDynamicallySetClusterOperatorLoggingLevels() {
-        final Map<String, String> coPod = DeploymentUtils.depSnapshot(SetupClusterOperator.get().getOperatorNamespace(), STRIMZI_DEPLOYMENT_NAME);
-        final String coPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(SetupClusterOperator.get().getOperatorNamespace(), STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
+        final Map<String, String> coPod = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), STRIMZI_DEPLOYMENT_NAME);
+        final String coPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(SetupClusterOperator.getInstance().getOperatorNamespace(), STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
         final String command = "cat /opt/strimzi/custom-config/log4j2.properties";
 
         String log4jConfig =
@@ -731,32 +731,32 @@ class LoggingChangeST extends AbstractST {
             .withNewMetadata()
                 .addToLabels("app", "strimzi")
                 .withName(STRIMZI_DEPLOYMENT_NAME)
-                .withNamespace(SetupClusterOperator.get().getOperatorNamespace())
+                .withNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
             .endMetadata()
             .withData(Collections.singletonMap("log4j2.properties", log4jConfig))
             .build();
 
         LOGGER.info("Checking that original logging config is different from the new one");
-        assertThat(log4jConfig, not(equalTo(cmdKubeClient().namespace(SetupClusterOperator.get().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim())));
+        assertThat(log4jConfig, not(equalTo(cmdKubeClient().namespace(SetupClusterOperator.getInstance().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim())));
 
         LOGGER.info("Changing logging for cluster-operator");
-        kubeClient().updateConfigMapInNamespace(SetupClusterOperator.get().getOperatorNamespace(), coMap);
+        kubeClient().updateConfigMapInNamespace(SetupClusterOperator.getInstance().getOperatorNamespace(), coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(SetupClusterOperator.get().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = OFF")
+            () -> cmdKubeClient().namespace(SetupClusterOperator.getInstance().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = OFF")
         );
 
         LOGGER.info("Checking log4j2.properties in CO Pod");
-        String podLogConfig = cmdKubeClient().namespace(SetupClusterOperator.get().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        String podLogConfig = cmdKubeClient().namespace(SetupClusterOperator.getInstance().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
         assertThat(podLogConfig, equalTo(log4jConfig));
 
         LOGGER.info("Checking if CO rolled its Pod");
-        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(SetupClusterOperator.get().getOperatorNamespace(), STRIMZI_DEPLOYMENT_NAME)));
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), STRIMZI_DEPLOYMENT_NAME)));
 
         TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
-                String coLog = StUtils.getLogFromPodByTime(SetupClusterOperator.get().getOperatorNamespace(), coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+                String coLog = StUtils.getLogFromPodByTime(SetupClusterOperator.getInstance().getOperatorNamespace(), coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
                 LOGGER.debug(coLog);
                 return coLog != null && coLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(coLog).find();
             });
@@ -766,23 +766,23 @@ class LoggingChangeST extends AbstractST {
         coMap.setData(Collections.singletonMap("log4j2.properties", log4jConfig));
 
         LOGGER.info("Changing logging for cluster-operator");
-        kubeClient().updateConfigMapInNamespace(SetupClusterOperator.get().getOperatorNamespace(), coMap);
+        kubeClient().updateConfigMapInNamespace(SetupClusterOperator.getInstance().getOperatorNamespace(), coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(SetupClusterOperator.get().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = INFO")
+            () -> cmdKubeClient().namespace(SetupClusterOperator.getInstance().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = INFO")
         );
 
         LOGGER.info("Checking log4j2.properties in CO Pod");
-        podLogConfig = cmdKubeClient().namespace(SetupClusterOperator.get().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        podLogConfig = cmdKubeClient().namespace(SetupClusterOperator.getInstance().getOperatorNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
         assertThat(podLogConfig, equalTo(log4jConfig));
 
         LOGGER.info("Checking if CO rolled its Pod");
-        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(SetupClusterOperator.get().getOperatorNamespace(), STRIMZI_DEPLOYMENT_NAME)));
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), STRIMZI_DEPLOYMENT_NAME)));
 
         TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
-                String coLog = StUtils.getLogFromPodByTime(SetupClusterOperator.get().getOperatorNamespace(), coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+                String coLog = StUtils.getLogFromPodByTime(SetupClusterOperator.getInstance().getOperatorNamespace(), coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
                 return coLog != null && !coLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(coLog).find();
             });
     }
@@ -2270,7 +2270,7 @@ class LoggingChangeST extends AbstractST {
     @BeforeAll
     void setup() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
     }

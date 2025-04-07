@@ -236,7 +236,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         LOGGER.info("Creating environment for recovery");
         LOGGER.info("####################################");
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(testStorage.getNamespaceName())
                 .build()
@@ -300,7 +300,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     private void recreateClusterOperator(String namespace) {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(namespace)
                 .build()

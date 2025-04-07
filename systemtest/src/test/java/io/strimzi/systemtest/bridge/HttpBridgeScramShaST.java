@@ -143,7 +143,7 @@ class HttpBridgeScramShaST extends AbstractST {
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
 

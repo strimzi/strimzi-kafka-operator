@@ -98,7 +98,7 @@ public class DrainCleanerST extends AbstractST {
     @BeforeAll
     void setup() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(TestConstants.DRAIN_CLEANER_NAMESPACE)
                 .withNamespacesToWatch(TestConstants.DRAIN_CLEANER_NAMESPACE)

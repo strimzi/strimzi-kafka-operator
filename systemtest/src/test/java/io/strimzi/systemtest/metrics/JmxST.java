@@ -135,7 +135,7 @@ public class JmxST extends AbstractST {
         final String namespaceToWatch = Environment.isNamespaceRbacScope() ? CO_NAMESPACE : TestConstants.WATCH_ALL_NAMESPACES;
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
                 .build()

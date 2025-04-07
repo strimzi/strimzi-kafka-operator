@@ -97,7 +97,7 @@ public abstract class AbstractST implements TestSeparator {
                     KubeUtils.labelNamespace(
                         namespace.getMetadata().getName(),
                         TestConstants.TEST_CASE_NAME_LABEL,
-                        testCaseName
+                        StUtils.trimTestCaseBaseOnItsLength(testCaseName)
                     );
                 }
             }
@@ -118,7 +118,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} second(s)", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(TestConstants.DEPLOYMENT, SetupClusterOperator.get().getOperatorDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
+        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(TestConstants.DEPLOYMENT, SetupClusterOperator.getInstance().getOperatorDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
@@ -228,7 +228,7 @@ public abstract class AbstractST implements TestSeparator {
         try {
             // This method needs to be disabled for the moment, as it brings flakiness and is unstable due to regexes and current matcher checks.
             // Needs to be reworked on what errors to ignore. Better error logging should be added.
-//            assertNoCoErrorsLogged(SetupClusterOperator.get().getOperatorNamespace(), (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY));
+//            assertNoCoErrorsLogged(SetupClusterOperator.getInstance().getOperatorNamespace(), (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY));
         } finally {
             afterEachMayOverride();
             afterEachMustExecute();

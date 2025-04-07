@@ -75,7 +75,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @BeforeAll
     void setup() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(NAMESPACE)
                 .withNamespacesToWatch(NAMESPACE)
@@ -84,8 +84,8 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
             .installUsingOlm();
 
         exampleResources = OlmUtils.getExamplesFromCsv(
-            SetupClusterOperator.get().getOperatorNamespace(),
-            SetupClusterOperator.get().getOlmClusterOperatorConfiguration().getOlmAppBundlePrefix()
+            SetupClusterOperator.getInstance().getOperatorNamespace(),
+            SetupClusterOperator.getInstance().getOlmClusterOperatorConfiguration().getOlmAppBundlePrefix()
         );
 
         cluster.setNamespace(NAMESPACE);

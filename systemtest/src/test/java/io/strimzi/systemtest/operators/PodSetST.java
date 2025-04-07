@@ -48,12 +48,12 @@ public class PodSetST extends AbstractST {
     @IsolatedTest("We are changing CO env variables in this test")
     void testPodSetOnlyReconciliation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final Map<String, String> coPod = DeploymentUtils.depSnapshot(SetupClusterOperator.get().getOperatorNamespace(), SetupClusterOperator.get().getOperatorDeploymentName());
+        final Map<String, String> coPod = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
         final int replicas = 3;
         final int probeTimeoutSeconds = 6;
 
         EnvVar reconciliationEnv = new EnvVar(Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV, "true", null);
-        List<EnvVar> envVars = kubeClient().getDeployment(SetupClusterOperator.get().getOperatorNamespace(), SetupClusterOperator.get().getOperatorDeploymentName()).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        List<EnvVar> envVars = kubeClient().getDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         envVars.add(reconciliationEnv);
 
         LOGGER.info("Deploy Kafka configured to create topics more resilient against data loss or unavailability");
@@ -88,9 +88,9 @@ public class PodSetST extends AbstractST {
 
         LOGGER.info("Changing {} to 'true', so only SPS will be reconciled", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
-        DeploymentResource.replaceDeployment(SetupClusterOperator.get().getOperatorNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), SetupClusterOperator.get().getOperatorDeploymentName());
+        DeploymentResource.replaceDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), SetupClusterOperator.getInstance().getOperatorDeploymentName());
 
-        DeploymentUtils.waitTillDepHasRolled(SetupClusterOperator.get().getOperatorNamespace(), SetupClusterOperator.get().getOperatorDeploymentName(), 1, coPod);
+        DeploymentUtils.waitTillDepHasRolled(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName(), 1, coPod);
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
@@ -111,10 +111,10 @@ public class PodSetST extends AbstractST {
         LOGGER.info("Removing {} env from CO", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
         envVars.remove(reconciliationEnv);
-        DeploymentResource.replaceDeployment(SetupClusterOperator.get().getOperatorNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), SetupClusterOperator.get().getOperatorDeploymentName()
+        DeploymentResource.replaceDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), SetupClusterOperator.getInstance().getOperatorDeploymentName()
         );
 
-        DeploymentUtils.waitTillDepHasRolled(SetupClusterOperator.get().getOperatorNamespace(), SetupClusterOperator.get().getOperatorDeploymentName(), 1, coPod);
+        DeploymentUtils.waitTillDepHasRolled(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName(), 1, coPod);
 
         LOGGER.info("Because the configuration was changed, Pods should be rolled");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), replicas, brokerPods);
@@ -128,7 +128,7 @@ public class PodSetST extends AbstractST {
     @BeforeAll
     void setup() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
     }

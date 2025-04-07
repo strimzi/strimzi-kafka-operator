@@ -96,7 +96,7 @@ public class OpaIntegrationST extends AbstractST {
     @BeforeAll
     void setup() throws Exception {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
 

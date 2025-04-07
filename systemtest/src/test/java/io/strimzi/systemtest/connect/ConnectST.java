@@ -180,7 +180,7 @@ class ConnectST extends AbstractST {
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(exceptedConfig.entrySet()), is(true));
 
-        VerificationUtils.verifyClusterOperatorConnectDockerImage(SetupClusterOperator.get().getOperatorNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
+        VerificationUtils.verifyClusterOperatorConnectDockerImage(SetupClusterOperator.getInstance().getOperatorNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
 
         VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaConnectResources.componentName(testStorage.getClusterName()), testStorage.getKafkaConnectSelector());
         VerificationUtils.verifyServiceLabels(testStorage.getNamespaceName(), KafkaConnectResources.serviceName(testStorage.getClusterName()), testStorage.getKafkaConnectSelector());
@@ -1895,7 +1895,7 @@ class ConnectST extends AbstractST {
     @BeforeAll
     void setUp() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
                 .build()

@@ -13,9 +13,7 @@ import io.strimzi.systemtest.Environment;
 
 public class SetupClusterOperator {
 
-    private static SetupClusterOperator instance;
-    private ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfiguration();
-
+    private ClusterOperatorConfiguration clusterOperatorConfiguration;
     private HelmInstallation helmInstallation;
     private OlmInstallation olmInstallation;
     private YamlInstallation yamlInstallation;
@@ -25,12 +23,12 @@ public class SetupClusterOperator {
         this.clusterOperatorConfiguration = new ClusterOperatorConfiguration();
     }
 
-    // Public method to get the singleton instance
-    public static synchronized SetupClusterOperator get() {
-        if (instance == null) {
-            instance = new SetupClusterOperator();
-        }
-        return instance;
+    private static class Holder {
+        private static final SetupClusterOperator INSTANCE = new SetupClusterOperator();
+    }
+
+    public static SetupClusterOperator getInstance() {
+        return Holder.INSTANCE;
     }
 
     public SetupClusterOperator withDefaultConfiguration() {

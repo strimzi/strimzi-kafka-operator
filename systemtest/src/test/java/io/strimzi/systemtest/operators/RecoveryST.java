@@ -58,11 +58,11 @@ class RecoveryST extends AbstractST {
         String kafkaName = StrimziPodSetResource.getBrokerComponentName(sharedClusterName);
         String kafkaUid = StrimziPodSetUtils.getStrimziPodSetUID(Environment.TEST_SUITE_NAMESPACE, kafkaName);
 
-        kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.get().getOperatorNamespace()).withName(SetupClusterOperator.get().getOperatorDeploymentName()).withTimeoutInMillis(600_000L).scale(0);
+        kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).withTimeoutInMillis(600_000L).scale(0);
         StrimziPodSetUtils.deleteStrimziPodSet(Environment.TEST_SUITE_NAMESPACE, kafkaName);
 
         PodUtils.waitForPodsWithPrefixDeletion(kafkaName);
-        kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.get().getOperatorNamespace()).withName(SetupClusterOperator.get().getOperatorDeploymentName()).withTimeoutInMillis(600_000L).scale(1);
+        kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).withTimeoutInMillis(600_000L).scale(1);
 
         LOGGER.info("Waiting for recovery {}", kafkaName);
         StrimziPodSetUtils.waitForStrimziPodSetRecovery(Environment.TEST_SUITE_NAMESPACE, kafkaName, kafkaUid);
@@ -158,7 +158,7 @@ class RecoveryST extends AbstractST {
     @BeforeEach
     void setup() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
                 .build()

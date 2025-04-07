@@ -24,6 +24,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.utils.StUtils;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -312,7 +313,7 @@ public class TestLogCollector {
             .withMatchLabels(
                 Map.of(
                     TestConstants.TEST_SUITE_NAME_LABEL, testClass,
-                    TestConstants.TEST_CASE_NAME_LABEL, testCase
+                    TestConstants.TEST_CASE_NAME_LABEL, StUtils.trimTestCaseBaseOnItsLength(testCase)
                 )
             )
             .build();

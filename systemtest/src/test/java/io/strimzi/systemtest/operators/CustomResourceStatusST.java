@@ -345,7 +345,7 @@ class CustomResourceStatusST extends AbstractST {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
                 .build()

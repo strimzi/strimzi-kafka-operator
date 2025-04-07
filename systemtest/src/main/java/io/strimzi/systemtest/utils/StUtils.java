@@ -629,4 +629,14 @@ public class StUtils {
             return Collections.emptyMap();
         }
     }
+
+    public static String trimTestCaseBaseOnItsLength(String testCaseName) {
+        // because label values `must be no more than 63 characters`
+        if (testCaseName.length() > 63) {
+            // we cut to 62 characters
+            return testCaseName.substring(0, 62);
+        }
+
+        return testCaseName;
+    }
 }

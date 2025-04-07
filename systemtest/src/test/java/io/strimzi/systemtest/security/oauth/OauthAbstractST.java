@@ -117,7 +117,7 @@ public class OauthAbstractST extends AbstractST {
 
     protected void setupCoAndKeycloak(String keycloakNamespace) {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
 

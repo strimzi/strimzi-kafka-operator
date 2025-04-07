@@ -40,7 +40,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         );
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespacesToWatch(TestConstants.WATCH_ALL_NAMESPACES)
                 .build()

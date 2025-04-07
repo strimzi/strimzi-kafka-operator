@@ -492,7 +492,7 @@ class HttpBridgeST extends AbstractST {
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withExtraEnvVars(
                     new EnvVarBuilder()

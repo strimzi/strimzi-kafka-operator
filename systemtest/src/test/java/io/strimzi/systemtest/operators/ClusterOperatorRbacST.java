@@ -50,7 +50,7 @@ public class ClusterOperatorRbacST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
                 .withNamespacesToWatch(TestConstants.CO_NAMESPACE + "," + Environment.TEST_SUITE_NAMESPACE)
@@ -88,7 +88,7 @@ public class ClusterOperatorRbacST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
                 .withNamespacesToWatch(TestConstants.CO_NAMESPACE + "," + Environment.TEST_SUITE_NAMESPACE)

@@ -55,7 +55,7 @@ public class RbacST extends AbstractST {
 
         // Used here only for (re)creation of Cluster Operator's Namespace
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .createClusterOperatorNamespace();
 

@@ -403,7 +403,7 @@ public class OpenTelemetryST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
 

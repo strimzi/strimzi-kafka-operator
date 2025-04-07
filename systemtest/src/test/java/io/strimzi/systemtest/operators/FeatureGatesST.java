@@ -32,7 +32,7 @@ public class FeatureGatesST extends AbstractST {
      */
     private void setupClusterOperatorWithFeatureGate(String extraFeatureGates) {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withFeatureGates(extraFeatureGates)
                 .build()

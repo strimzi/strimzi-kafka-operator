@@ -78,7 +78,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         //  1. Create subscription with manual approval and operator group if needed
         //  2. Approve installation (get install-plan and patch it)
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(clusterOperatorConfiguration)
             .installUsingOlm();
 

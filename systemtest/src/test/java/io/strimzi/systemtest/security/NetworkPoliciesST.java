@@ -107,7 +107,7 @@ public class NetworkPoliciesST extends AbstractST {
         final String consumerNameDeniedPlain = testStorage.getConsumerName() + "-denied-plain";
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(testStorage.getNamespaceName())
                 .build()
@@ -264,7 +264,7 @@ public class NetworkPoliciesST extends AbstractST {
                 .build();
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
                 .withNamespacesToWatch(TestConstants.WATCH_ALL_NAMESPACES)
@@ -315,7 +315,7 @@ public class NetworkPoliciesST extends AbstractST {
             .build();
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
                 .withExtraEnvVars(networkPolicyGenerationEnv)

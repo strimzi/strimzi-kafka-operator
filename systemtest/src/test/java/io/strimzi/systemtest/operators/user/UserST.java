@@ -414,7 +414,7 @@ class UserST extends AbstractST {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
 

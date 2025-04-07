@@ -94,7 +94,7 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
     @BeforeAll
     void setUp() {
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
 

@@ -165,7 +165,7 @@ public class CustomAuthorizerST extends AbstractST {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
 
         SetupClusterOperator
-            .get()
+            .getInstance()
             .withDefaultConfiguration()
             .install();
 
