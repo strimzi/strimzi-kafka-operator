@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -335,7 +336,9 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         // Refresh the KafkaRebalance to make sure it's not in `NotReady` state due to CruiseControlRestException
         // This can happen if the new Cruise Control pod was not up and request was propagated to old Cruise Control
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceAnnotation.refresh);
+        if (KafkaRebalanceUtils.rebalanceStateCondition(testStorage.getNamespaceName(), testStorage.getClusterName()).getType().equals(KafkaRebalanceState.NotReady.name())) {
+            KafkaRebalanceUtils.annotateKafkaRebalanceResource(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceAnnotation.refresh);
+        }
 
         KafkaRebalanceUtils.doRebalancingProcess(testStorage.getNamespaceName(), testStorage.getClusterName());
 
