@@ -404,7 +404,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(tls.getTrustedCertificates())));
         }
 
-        // This is still needed to generate oauth truststore certificates in PKCS12 format
+        // Client authentication env var is needed to generate oauth truststore certificates in PKCS12 format in container script
         AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
 
         // Add shared environment variables used for all containers

@@ -9,6 +9,8 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.common.ClientTls;
+import io.strimzi.api.kafka.model.common.GenericSecretSource;
+import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
@@ -149,8 +151,7 @@ public class KafkaBridgeConfigurationBuilder {
 
                 if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
                     saslMechanism = "PLAIN";
-                    String passwordFilePath = String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, PASSWORD_VOLUME_MOUNT, passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword());
-                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + passwordAuth.getUsername() + "\" password=\"" + passwordFilePath + "\";");
+                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + passwordAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(passwordAuth.getPasswordSecret(), PASSWORD_VOLUME_MOUNT) + "\";");
                 } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
 
                     if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256)) {
@@ -159,8 +160,7 @@ public class KafkaBridgeConfigurationBuilder {
                         saslMechanism = "SCRAM-SHA-512";
                     }
 
-                    String passwordFilePath = String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, PASSWORD_VOLUME_MOUNT, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword());
-                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + scramAuth.getUsername() + "\" password=\"" + passwordFilePath + "\";");
+                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + scramAuth.getUsername() + "\" password=\"" + formatPasswordTemplate(scramAuth.getPasswordSecret(), PASSWORD_VOLUME_MOUNT) + "\";");
                 } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
                     saslMechanism = "OAUTHBEARER";
                     String oauthConfig = AuthenticationUtils.oauthJaasOptions(oauth).entrySet().stream()
@@ -174,23 +174,23 @@ public class KafkaBridgeConfigurationBuilder {
                     }
 
                     if (oauth.getClientSecret() != null) {
-                        jaasConfig.append(" oauth.client.secret=\"" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()) + "\"");
+                        jaasConfig.append(" oauth.client.secret=\"" + formatOauthSecretTemplate(oauth.getClientSecret()) + "\"");
                     }
 
                     if (oauth.getRefreshToken() != null) {
-                        jaasConfig.append(" oauth.refresh.token=\"" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getKey()) + "\"");
+                        jaasConfig.append(" oauth.refresh.token=\"" + formatOauthSecretTemplate(oauth.getRefreshToken()) + "\"");
                     }
 
                     if (oauth.getAccessToken() != null) {
-                        jaasConfig.append(" oauth.access.token=\"" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getKey()) + "\"");
+                        jaasConfig.append(" oauth.access.token=\"" + formatOauthSecretTemplate(oauth.getAccessToken()) + "\"");
                     }
 
                     if (oauth.getPasswordSecret() != null) {
-                        jaasConfig.append(" oauth.password.grant.password=\"" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getPasswordSecret().getSecretName(), oauth.getPasswordSecret().getPassword()) + "\"");
+                        jaasConfig.append(" oauth.password.grant.password=\"" + formatPasswordTemplate(oauth.getPasswordSecret(), OAUTH_SECRETS_BASE_VOLUME_MOUNT) + "\"");
                     }
 
                     if (oauth.getClientAssertion() != null) {
-                        jaasConfig.append(" oauth.client.assertion=\"" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getClientAssertion().getSecretName(), oauth.getClientAssertion().getKey()) + "\"");
+                        jaasConfig.append(" oauth.client.assertion=\"" + formatOauthSecretTemplate(oauth.getClientAssertion()) + "\"");
                     }
 
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
@@ -206,6 +206,14 @@ public class KafkaBridgeConfigurationBuilder {
             }
         }
         return this;
+    }
+
+    private String formatOauthSecretTemplate(GenericSecretSource secret) {
+        return String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, secret.getSecretName(), secret.getKey());
+    }
+
+    private String formatPasswordTemplate(PasswordSecretSource secret, String volumeMountPath) {
+        return String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, volumeMountPath, secret.getSecretName(), secret.getPassword());
     }
 
     /**
