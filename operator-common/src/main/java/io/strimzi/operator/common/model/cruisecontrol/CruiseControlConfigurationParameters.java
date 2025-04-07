@@ -29,6 +29,11 @@ public enum CruiseControlConfigurationParameters {
     REPLICATION_THROTTLE("default.replication.throttle"),
 
     /**
+     * Default log dir throttle
+     */
+    LOG_DIR_THROTTLE("default.log.dir.throttle"),
+
+    /**
      * Size of the partition aggregation window
      */
     PARTITION_METRICS_WINDOW_MS_CONFIG_KEY("partition.metrics.window.ms"),

@@ -317,6 +317,9 @@ public class KafkaRebalanceAssemblyOperator
         if (kafkaRebalanceSpec.getReplicationThrottle() > 0) {
             rebalanceOptionsBuilder.withReplicationThrottle(kafkaRebalanceSpec.getReplicationThrottle());
         }
+        if (kafkaRebalanceSpec.getLogDirThrottle() > 0) {
+            rebalanceOptionsBuilder.withLogDirThrottle(kafkaRebalanceSpec.getLogDirThrottle());
+        }
         if (kafkaRebalanceSpec.getReplicaMovementStrategies() != null) {
             rebalanceOptionsBuilder.withReplicaMovementStrategies(kafkaRebalanceSpec.getReplicaMovementStrategies());
         }

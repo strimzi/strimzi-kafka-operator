@@ -65,12 +65,18 @@ You can set the following rebalance tuning options when configuring Cruise Contr
 | `num.concurrent.leader.movements`
 | `concurrentLeaderMovements`
 | 1000
+| 1000
 | The maximum number of partition leadership changes in each partition reassignment batch
 
 | `default.replication.throttle`
 | `replicationThrottle`
 | Null (no limit)
-| The bandwidth (in bytes per second) to assign to partition reassignment
+| The bandwidth (in bytes per second) to assign to inter-broker partition reassignment (i.e., replica movements between brokers)
+
+| `default.log.dir.throttle`
+| `logDirThrottle`
+| Null (no limit)
+| The bandwidth (in bytes per second) to assign to intra-broker partition reassignment (i.e., replica movements between disks)
 
 
 | `default.replica.movement.strategies`

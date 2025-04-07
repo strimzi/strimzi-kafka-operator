@@ -27,8 +27,10 @@ public abstract class AbstractRebalanceOptions {
     private final int concurrentPartitionMovementsPerBroker;
     /** The upper bound of ongoing leadership movements */
     private final int concurrentLeaderMovements;
-    /** The upper bound, in bytes per second, on the bandwidth used to move replicas */
+    /** The upper bound, in bytes per second, on the bandwidth used to move replicas between brokers (i.e., inter-broker replica movements) */
     private final long replicationThrottle;
+    /** The upper bound, in bytes per second, on the bandwidth used to move replicas between disks (i.e., intra-broker replica movements) */
+    private final long logDirThrottle;
     /** A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. */
     private final List<String> replicaMovementStrategies;
 
@@ -96,6 +98,13 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * @return  Log Dir throttle
+     */
+    public long getLogDirThrottle() {
+        return logDirThrottle;
+    }
+
+    /**
      * @return  List of configured replica movement strategies
      */
     public List<String> getReplicaMovementStrategies() {
@@ -112,6 +121,7 @@ public abstract class AbstractRebalanceOptions {
         this.concurrentPartitionMovementsPerBroker = builder.concurrentPartitionMovementsPerBroker;
         this.concurrentLeaderMovements = builder.concurrentLeaderMovements;
         this.replicationThrottle = builder.replicationThrottle;
+        this.logDirThrottle = builder.logDirThrottle;
         this.replicaMovementStrategies = builder.replicaMovementStrategies;
     }
 
@@ -131,6 +141,7 @@ public abstract class AbstractRebalanceOptions {
         private int concurrentPartitionMovementsPerBroker;
         private int concurrentLeaderMovements;
         private long replicationThrottle;
+        private long logDirThrottle;
         private List<String> replicaMovementStrategies;
 
         AbstractRebalanceOptionsBuilder() {
@@ -143,6 +154,7 @@ public abstract class AbstractRebalanceOptions {
             concurrentPartitionMovementsPerBroker = 0;
             concurrentLeaderMovements = 0;
             replicationThrottle = 0;
+            logDirThrottle = 0;
             replicaMovementStrategies = null;
         }
 
@@ -246,9 +258,24 @@ public abstract class AbstractRebalanceOptions {
          */
         public B withReplicationThrottle(long bandwidth) {
             if (bandwidth < 0) {
-                throw new IllegalArgumentException("The max replication bandwidth should be greater than zero");
+                throw new IllegalArgumentException("The max inter-broker replica movement bandwidth should be greater than zero");
             }
             this.replicationThrottle = bandwidth;
+            return self();
+        }
+
+        /**
+         * Sets log dir throttle
+         *
+         * @param bandwidth     The throttle bandwidth
+         *
+         * @return  Instance of this builder
+         */
+        public B withLogDirThrottle(long bandwidth) {
+            if (bandwidth < 0) {
+                throw new IllegalArgumentException("The max intra-broker replica movement bandwidth should be greater than zero");
+            }
+            this.logDirThrottle = bandwidth;
             return self();
         }
 

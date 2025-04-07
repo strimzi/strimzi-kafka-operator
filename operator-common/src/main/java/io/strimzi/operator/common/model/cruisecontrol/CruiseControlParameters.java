@@ -78,6 +78,11 @@ public enum CruiseControlParameters {
     REPLICATION_THROTTLE("replication_throttle"),
 
     /**
+     * Log Dir throttle
+     */
+    LOG_DIR_THROTTLE("log_dir_throttle"),
+
+    /**
      * Replica movement strategies
      */
     REPLICA_MOVEMENT_STRATEGIES("replica_movement_strategies"),
