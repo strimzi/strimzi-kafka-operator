@@ -34,6 +34,9 @@ jobs:
       runTests: ${{ steps.parse.outputs.runTests }}
       profileList: ${{ steps.parse.outputs.profileList }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Parse Comment
         id: parse
         uses: ./.github/actions/parse-comment
@@ -54,6 +57,9 @@ jobs:
         jdk_version: [ '17' ]
       fail-fast: false
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Call reusable system-tests
         uses: ./.github/workflows/system-tests.yml
         with:

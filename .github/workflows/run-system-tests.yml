@@ -96,6 +96,9 @@ jobs:
       STRIMZI_USE_NODE_POOLS_IN_TESTS: ${{ inputs.strimzi_use_node_pools_in_tests }}
     # Job steps
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set default environment variables
         uses: ./.github/actions/set-defaults
 
