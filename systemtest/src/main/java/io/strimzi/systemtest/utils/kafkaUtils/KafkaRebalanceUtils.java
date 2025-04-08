@@ -31,7 +31,7 @@ public class KafkaRebalanceUtils {
 
     private KafkaRebalanceUtils() {}
 
-    private static Condition rebalanceStateCondition(String namespaceName, String resourceName) {
+    public static Condition rebalanceStateCondition(String namespaceName, String resourceName) {
 
         List<Condition> statusConditions = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName)
                 .withName(resourceName).get().getStatus().getConditions().stream()

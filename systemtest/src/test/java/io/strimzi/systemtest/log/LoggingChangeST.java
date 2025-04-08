@@ -2194,8 +2194,8 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testChangingInternalToExternalLoggingTriggerRollingUpdate() {
-        // Cruise Control currently does not work with Kafka 4.0 and this tests is therefore disabled when Kafka 4.0 or newer is used.
-        // This should be re-enabled once Cruise Control support is fixed: https://github.com/strimzi/strimzi-kafka-operator/issues/11199
+        // This test would need some changes since Kafka 4.0.0 uses Log4j2 which provides dynamic logging changes for the brokers and is therefore disabled.
+        // This test can be enabled again once we fix the issue: https://github.com/strimzi/strimzi-kafka-operator/issues/11312
         Assumptions.assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
