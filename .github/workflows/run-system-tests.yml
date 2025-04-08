@@ -120,6 +120,8 @@ jobs:
 
       - name: Install Helm
         uses: ./.github/actions/install-helm
+      - name: Install Shellcheck
+        uses: ./.github/actions/install-shellcheck
       - name: Install yq
         uses: ./.github/actions/install-yq
         with:
