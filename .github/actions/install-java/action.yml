@@ -1,0 +1,16 @@
+name: "Install Java"
+description: "Install Java"
+
+inputs:
+  javaVersion:
+    description: "Java version used for the job"
+    required: false
+    default: "17"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: "temurin"
+        java-version: ${{ inputs.javaVersion }}

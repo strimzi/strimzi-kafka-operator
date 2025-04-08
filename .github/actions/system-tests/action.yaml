@@ -1,0 +1,312 @@
+name: System Tests
+
+################################################################################
+# Trigger:
+# ----------
+# Example triggers:
+#  1) Manually from GitHub UI using "workflow_dispatch"
+#  2) On pull_request for certain branches
+#
+# Adjust to your preference. For example, if you want to mimic "run tests" from
+# a comment, you'd incorporate an `issue_comment` trigger and parse that.
+################################################################################
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Job name (similar to parameters.name in Azure)"
+        required: false
+        default: "my_system_tests"
+      display_name:
+        description: "Job display name (similar to parameters.display_name)"
+        required: false
+        default: "My System Tests"
+      profile:
+        description: "Which test profile to run, e.g. regression, upgrade, performance"
+        required: false
+        default: ""
+      excludedGroups:
+        description: "Excluded groups for tests"
+        required: false
+        default: ""
+      cluster_operator_install_type:
+        description: "Operator install type"
+        required: false
+        default: ""
+      timeout:
+        description: "Timeout for job (minutes)"
+        required: false
+        default: "60"
+      strimzi_rbac_scope:
+        description: "STRIMZI_RBAC_SCOPE"
+        required: false
+        default: "CLUSTER"
+      parallel:
+        description: "Number of parallel test threads"
+        required: false
+        default: "1"
+      run_parallel:
+        description: "Enable parallel test execution? (true/false)"
+        required: false
+        default: "false"
+      releaseVersion:
+        description: "Release version to test (i.e. 'latest')"
+        required: false
+        default: "latest"
+      strimzi_use_kraft_in_tests:
+        description: "Use Kraft in tests? (true/false)"
+        required: false
+        default: "true"
+      strimzi_use_node_pools_in_tests:
+        description: "Use Node Pools in tests? (true/false)"
+        required: false
+        default: "true"
+      kafkaVersion:
+        description: "Kafka version. e.g. '3.3.2' or 'latest'"
+        required: false
+        default: "latest"
+
+  pull_request:
+    # If you want to auto-run on PRs, enable these lines:
+    branches: [ "main", "master", "develop" ]
+    # If you want more advanced control or triggers, you can customize further.
+
+################################################################################
+# Jobs:
+################################################################################
+jobs:
+  system-tests:
+    name: ${{ github.event.inputs.display_name }}  # Mimics Azure's "displayName"
+    runs-on: ubuntu-22.04
+    # If you need a matrix across multiple JDK versions, add them here:
+    strategy:
+      matrix:
+        jdk_version: [ '17' ]
+
+    # Set a job-level timeout (in minutes) using the user-provided parameter.
+    timeout-minutes: ${{ github.event.inputs.timeout }}
+
+    env:
+      # Map the inputs to environment variables. This is optional, but convenient.
+      AZURE_JOB_NAME: ${{ github.event.inputs.name }}
+      AZURE_DISPLAY_NAME: ${{ github.event.inputs.display_name }}
+      PROFILE: ${{ github.event.inputs.profile }}
+      EXCLUDED_GROUPS: ${{ github.event.inputs.excludedGroups }}
+      CLUSTER_OPERATOR_INSTALL_TYPE: ${{ github.event.inputs.cluster_operator_install_type }}
+      STRIMZI_RBAC_SCOPE: ${{ github.event.inputs.strimzi_rbac_scope }}
+      PARALLEL: ${{ github.event.inputs.parallel }}
+      RUN_PARALLEL: ${{ github.event.inputs.run_parallel }}
+      RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
+      STRIMZI_USE_KRAFT_IN_TESTS: ${{ github.event.inputs.strimzi_use_kraft_in_tests }}
+      STRIMZI_USE_NODE_POOLS_IN_TESTS: ${{ github.event.inputs.strimzi_use_node_pools_in_tests }}
+      KAFKA_VERSION: ${{ github.event.inputs.kafkaVersion }}
+      # Docker-related variables
+      # In Azure you used 'docker_registry' or 'docker_org' from the environment.
+      # Hard-code or parameterize as needed:
+      DOCKER_ORG: "myorg"
+      DOCKER_REGISTRY: "localhost:5000"
+      DOCKER_TAG: ${{ github.event.inputs.releaseVersion }}
+
+    steps:
+      ############################################################################
+      # 1) Check out the code
+      ############################################################################
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      ############################################################################
+      # 2) Log environment variables (mimicking log_variables.yaml)
+      ############################################################################
+      - name: Print environment variables
+        run: |
+          echo "BRANCH: ${{ github.ref_name }}"
+          echo "TAG: ${{ env.TAG }}"
+          echo "COMMIT: ${{ github.sha }}"
+          echo "PULL_REQUEST: ${{ github.event.pull_request.number || '' }}"
+          echo "DOCKER_ORG: ${{ env.DOCKER_ORG }}"
+          echo "DOCKER_REGISTRY: ${{ env.DOCKER_REGISTRY }}"
+          echo "DOCKER_TAG: ${{ env.DOCKER_TAG }}"
+          echo "COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}"
+          echo "REASON: ${{ github.event_name }}"
+          echo "REPO_SLUG: ${{ github.repository }}"
+          echo "PATH: $PATH"
+          echo "OPERATOR_IMAGE_PULL_POLICY: ${{ env.OPERATOR_IMAGE_PULL_POLICY }}"
+          echo "ST_KAFKA_VERSION: ${{ env.ST_KAFKA_VERSION }}"
+          echo "COMPONENTS_IMAGE_PULL_POLICY: ${{ env.COMPONENTS_IMAGE_PULL_POLICY }}"
+          echo "JAVA_HOME: $JAVA_HOME"
+          java -version
+          which java
+        continue-on-error: true
+
+      ############################################################################
+      # 3) (Optional) Use a matrix for JDK installation – or call an action
+      ############################################################################
+      - name: Set up Java ${{ matrix.jdk_version }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.jdk_version }}
+
+      ############################################################################
+      # 4) Install prerequisites
+      #    In Azure you had multiple templates like:
+      #      - install_yq.yaml
+      #      - install_shellcheck.yaml
+      #      - install_helm.yaml
+      #      - install_docker.yaml
+      #      - install_minikube.yaml
+      #      - install_java.yaml
+      #
+      #    Below we assume you have them as custom composite actions in .github/actions.
+      #    Example:
+      #       - uses: ./.github/actions/install_yq
+      ############################################################################
+      - name: Install yq
+        uses: ./.github/actions/install_yq
+
+      - name: Install shellcheck
+        uses: ./.github/actions/install_shellcheck
+
+      - name: Install helm
+        uses: ./.github/actions/install_helm
+
+      - name: Install Docker
+        uses: ./.github/actions/install_docker
+
+      - name: Install Minikube
+        uses: ./.github/actions/install_minikube
+
+      # This "Install Java" might be redundant if we're using actions/setup-java,
+      # but we include it for parity with your existing pipelines.
+      - name: Install Java
+        uses: ./.github/actions/install_java
+        with:
+          jdk_version: ${{ matrix.jdk_version }}
+
+      ############################################################################
+      # 5) Build Strimzi images or Java code
+      #    Azure has logic:
+      #      condition: and(eq(variables['docker_tag'], 'latest'), ne(variables['build.sourceBranch'], 'refs/heads/main'))
+      #    Let's replicate that in GH:
+      ############################################################################
+      - name: Build Strimzi images
+        if: ${{ env.DOCKER_TAG == 'latest' && github.ref_name != 'main' }}
+        run: |
+          echo "== Building Strimzi images (Docker tag is 'latest' and branch != 'main') =="
+          # Typically you'd do: eval $(minikube docker-env)
+          # then: make java_install && make docker_build && make docker_tag && make docker_push
+          echo "Placeholder build commands"
+
+      - name: Build Strimzi Java code
+        if: ${{ !(env.DOCKER_TAG == 'latest' && github.ref_name != 'main') }}
+        run: |
+          echo "== Building Strimzi Java code only =="
+          # e.g. make java_install -DskipTests ...
+          echo "Placeholder Java build commands"
+
+      ############################################################################
+      # 6) Create directory for Kafka binaries cache if DOCKER_TAG != 'latest'
+      ############################################################################
+      - name: Create dir for Kafka binaries cache
+        if: ${{ env.DOCKER_TAG != 'latest' }}
+        run: mkdir -p docker-images/artifacts/binaries/kafka/archives
+
+      ############################################################################
+      # 7) Build KafkaConnect image with file-sink plugin, skipping if "upgrade"
+      ############################################################################
+      - name: Build KafkaConnect image
+        if: ${{ !contains(env.PROFILE, 'upgrade') }}
+        run: |
+          echo "== Building KafkaConnect image for KAFKA_VERSION='${{ env.KAFKA_VERSION }}' =="
+          # e.g.: eval $(minikube docker-env)
+          #       ./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE"
+          echo "Placeholder connect-build commands"
+
+      ############################################################################
+      # 8) Additional "setup_upgrade.sh" if profile includes "upgrade"
+      ############################################################################
+      - name: Setup environment for upgrade
+        if: ${{ contains(env.PROFILE, 'upgrade') }}
+        run: |
+          echo "== Running .azure/scripts/setup_upgrade.sh =="
+          echo "Placeholder upgrade environment commands"
+
+      ############################################################################
+      # 9) Set KAFKA_TIERED_STORAGE_BASE_IMAGE for Tiered Storage tests
+      #    In Azure, you used a bash script to determine the version from kafka-versions.yaml
+      ############################################################################
+      - name: Set KAFKA_TIERED_STORAGE_BASE_IMAGE
+        run: |
+          echo "== Setting Tiered Storage base image for KAFKA_VERSION='${KAFKA_VERSION}' =="
+          # Example logic from your snippet
+          echo "KAFKA_TIERED_STORAGE_BASE_IMAGE=${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}" >> $GITHUB_ENV
+
+      ############################################################################
+      # 10) Run system tests (Maven)
+      #     In Azure you used Maven@4 with a bunch of arguments. We replicate that here.
+      ############################################################################
+      - name: Run systemtests
+        run: |
+          echo "== Running Maven verify =="
+          echo "Profile: $PROFILE"
+          echo "Excluded Groups: $EXCLUDED_GROUPS"
+          echo "Cluster Operator Install Type: $CLUSTER_OPERATOR_INSTALL_TYPE"
+          echo "STRIMZI_USE_KRAFT_IN_TESTS: $STRIMZI_USE_KRAFT_IN_TESTS"
+          echo "STRIMZI_USE_NODE_POOLS_IN_TESTS: $STRIMZI_USE_NODE_POOLS_IN_TESTS"
+          echo "Parallel: $PARALLEL"
+          echo "Run_Parallel: $RUN_PARALLEL"
+
+          # Example Maven command. Replace with your real "goals" and "options".
+          mvn -f systemtest/pom.xml verify \
+            -P"${PROFILE}" \
+            -DexcludedGroups="flaky,loadbalancer,networkpolicies,${EXCLUDED_GROUPS}" \
+            -Dmaven.javadoc.skip=true \
+            -B -V \
+            -Dfailsafe.rerunFailingTestsCount=2 \
+            -Djunit.jupiter.execution.parallel.enabled="${RUN_PARALLEL}" \
+            -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL}" \
+            -Dskip.surefire.tests \
+            -s ./.azure/systemtests/systemtest-settings.xml
+
+        env:
+          # In Azure, you set these in 'env:' for Maven@4
+          DOCKER_TAG: ${{ env.DOCKER_TAG }}
+          BRIDGE_IMAGE: "latest-released"
+          DOCKER_REGISTRY: "registry.minikube"
+          STRIMZI_RBAC_SCOPE: ${{ env.STRIMZI_RBAC_SCOPE }}
+          CLUSTER_OPERATOR_INSTALL_TYPE: ${{ env.CLUSTER_OPERATOR_INSTALL_TYPE }}
+          STRIMZI_FEATURE_GATES: ${{ env.STRIMZI_FEATURE_GATES }}
+          STRIMZI_USE_KRAFT_IN_TESTS: ${{ env.STRIMZI_USE_KRAFT_IN_TESTS }}
+          STRIMZI_USE_NODE_POOLS_IN_TESTS: ${{ env.STRIMZI_USE_NODE_POOLS_IN_TESTS }}
+          BUILD_ID: ${{ matrix.jdk_version }}-systemtests
+          RESOURCE_ALLOCATION_STRATEGY: "NOT_SHARED"
+          TEST_LOG_DIR: "systemtest-logs"
+          CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN: "whatever/connect:image"
+
+      ############################################################################
+      # 11) Always gather test results and logs, even if tests fail
+      ############################################################################
+
+      # a) Remove timeMeasuring dir (like your "bash: rm -rf" step)
+      - name: Remove timeMeasuring dir
+        if: ${{ always() }}
+        run: rm -rf systemtest/target/logs/timeMeasuring
+
+      # b) Upload JUnit test results (similar to PublishTestResults@2 in Azure).
+      #    GH Actions doesn't have a built-in "Test Summary" parser for raw JUnit
+      #    but we can archive them as artifacts or use a 3rd party test reporter.
+      - name: Archive JUnit test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: junit-results
+          path: |
+            systemtest/target/failsafe-reports/
+            **/TEST-*.xml
+
+      # c) Publish logs from failed tests (similar to PublishBuildArtifacts@1)
+      - name: Archive systemtest logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: systemtest-logs
+          path: systemtest-logs

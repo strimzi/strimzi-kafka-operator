@@ -1,0 +1,61 @@
+name: Run System Tests
+
+on:
+  # Trigger for manual execution from GitHub UI
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: "Release version to test (i.e. 'latest', '0.46.0')"
+        required: false
+        default: "latest"
+      kafkaVersion:
+        description: "Kafka version. e.g. '4.0.0' or 'latest'"
+        required: false
+        default: "latest"
+      profile:
+        description: "Comma-separated or single profile name(s)"
+        required: false
+        default: ""
+        type: string
+  # Automated trigger for issue comment
+  issue_comment:
+    types: [created]
+
+jobs:
+  # Check if the comment contains "/ga run" at all.
+  # If not, don't even bother with parse-params job.
+  parse-params:
+    if: contains(toLower(github.event.comment.body), '/ga run')
+    runs-on: ubuntu-latest
+    outputs:
+      runTests: ${{ steps.parse.outputs.runTests }}
+      profileList: ${{ steps.parse.outputs.profileList }}
+    steps:
+      - name: Parse Comment
+        id: parse
+        uses: ./.github/actions/parse-comment
+        with:
+          commentBody: ${{ github.event.comment.body }}
+
+  # The actual "run-tests" job that uses the parse outputs.
+  call-run-tests:
+    needs: parse-params
+    if: ${{ needs.parse-params.outputs.runTests == 'true' }}
+    strategy:
+      matrix:
+        # TODO - change accordingly
+        agent: [oracle-4cpu-16gb-x86-64]
+        profile: ${{ fromJson(needs.parse-params.outputs.profileList) }}
+        # TODO - change accordingly
+        jdk_version: [ '17' ]
+      fail-fast: false
+    steps:
+      - name: Call reusable system-tests
+        uses: ./.github/workflows/system-tests.yml
+        with:
+          name: ${{ matrix.profile }}-${{ matrix.agent }}
+          displayName: ${{ github.event.inputs.displayName }}
+          profile: ${{ matrix.profile }}
+          agent: ${{ matrix.agent }}
+          # TODO - change accordingly
+          architecture: "x86_64"
