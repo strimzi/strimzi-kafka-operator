@@ -1631,7 +1631,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private  List<EnvVar> getEnvVars(KafkaPool pool) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED,
-                metrics != null && metrics instanceof JmxPrometheusExporterModel ? Boolean.TRUE.toString() : Boolean.FALSE.toString()));
+                String.valueOf(metrics instanceof JmxPrometheusExporterModel)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(pool.gcLoggingEnabled)));
 
         JvmOptionUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, pool.jvmOptions, pool.resources);
@@ -1845,7 +1845,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                 .withTieredStorage(cluster, tieredStorage)
                 .withQuotas(cluster, quotas);
-        if (metrics != null && metrics instanceof StrimziMetricsReporterModel) {
+        if (metrics instanceof StrimziMetricsReporterModel) {
             builder.withStrimziMetricsReporter((StrimziMetricsReporterModel) metrics)
                     .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null, true);
         } else {
@@ -1866,7 +1866,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         String parsedMetrics = null;
-        if (metrics != null && metrics instanceof JmxPrometheusExporterModel) {
+        if (metrics instanceof JmxPrometheusExporterModel) {
             parsedMetrics = ((JmxPrometheusExporterModel) metrics).metricsJson(reconciliation, metricsAndLogging.metricsCm());
         }
         String parsedLogging = logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm());

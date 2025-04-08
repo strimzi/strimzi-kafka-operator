@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,7 +37,7 @@ public class StrimziMetricsReporterModelTest {
         StrimziMetricsReporterModel metrics = new StrimziMetricsReporterModel(new KafkaClusterSpecBuilder()
                 .withMetricsConfig(metricsConfig).build(), List.of(".*"));
 
-        assertThat(metrics, is(notNullValue()));
+        assertThat(metrics.getAllowList().isEmpty(), is(false));
         assertThat(metrics.getAllowList().get(), is("kafka_log.*,kafka_network.*"));
     }
 
@@ -59,7 +58,6 @@ public class StrimziMetricsReporterModelTest {
                         .build())
         );
         assertThat(ise0.getMessage(), is("Metrics configuration is invalid: [Allowlist should contain at least one element]"));
-
 
         InvalidResourceException ise1 = Assertions.assertThrows(InvalidResourceException.class, () -> StrimziMetricsReporterModel.validate(
                 new StrimziMetricsReporterBuilder()

@@ -144,8 +144,7 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(StrimziMetricsReporterModel model)   {
         if (model != null) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
-            writer.println("prometheus.metrics.reporter.listener.enable=true");
-            writer.println("prometheus.metrics.reporter.listener=http://0.0.0.0:" + StrimziMetricsReporterModel.METRICS_PORT);
+            writer.println("prometheus.metrics.reporter.listener=http://:" + StrimziMetricsReporterModel.METRICS_PORT);
             model.getAllowList().ifPresent(allowList -> writer.println("prometheus.metrics.reporter.allowlist=" + allowList));
             writer.println();
         }
