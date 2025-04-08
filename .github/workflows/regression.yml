@@ -20,8 +20,8 @@ on:
   # Automated trigger for issue comment
   issue_comment:
     types: [created]
-#  pull_request:
-#    types: [created, reopened, synchronized]
+  pull_request:
+    types: [created, reopened, synchronized]
 
 jobs:
   # Check if the comment contains "/ga run" at all.
