@@ -1,0 +1,9 @@
+name: "Install Helm"
+description: "Install Helm by our script"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install kubectl
+      shell: bash
+      run: ".azure/scripts/setup-helm.sh"
