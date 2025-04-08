@@ -12,5 +12,4 @@ package io.strimzi.operator.cluster;
  * @param apiUrl      The URL of the remote Kubernetes API server.
  * @param secretName  The name of the Kubernetes Secret used for authentication.
  */
-public record ClusterInfo(String clusterId, String apiUrl, String secretName) {
-}
+public record ClusterInfo(String clusterId, String apiUrl, String secretName) { }

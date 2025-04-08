@@ -388,9 +388,9 @@ public class ClusterOperatorConfig {
                     throw new InvalidConfigurationException("Cluster ID cannot contain '.' character: " + clusterId);
                 }
 
-                ClusterInfo existing = clusters.get(clusterId);
-                String url = existing != null ? existing.apiUrl() : null;
-                String secret = existing != null ? existing.secretName() : null;
+                ClusterInfo knownCluster = clusters.get(clusterId);
+                String url = knownCluster != null ? knownCluster.apiUrl() : null;
+                String secret = knownCluster != null ? knownCluster.secretName() : null;
 
                 switch (field) {
                     case "url":
