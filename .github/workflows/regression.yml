@@ -1,0 +1,75 @@
+name: System Tests
+
+on:
+  # Trigger for manual execution from GitHub UI
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: "Release version to test (i.e. 'latest', '0.46.0')"
+        required: false
+        default: "latest"
+      kafkaVersion:
+        description: "Kafka version. e.g. '4.0.0' or 'latest'"
+        required: false
+        default: "latest"
+      profile:
+        description: "Comma-separated or single profile name(s)"
+        required: false
+        default: ""
+        type: string
+  # Automated trigger for issue comment
+  # TODO - this works only if the workflow is commited in main
+  issue_comment:
+    types: [created]
+  pull_request:
+
+jobs:
+  # TODO - this cannot me used now as we do not have workflow in main branch!
+  # Check if the comment contains "/ga run" at all.
+  # If not, don't even bother with parse-params job.
+  parse-params:
+#    if: contains(github.event.comment.body, '/ga run')
+    runs-on: oracle-4cpu-16gb-x86-64
+#    runs-on: oracle-2cpu-8gb-arm64
+    outputs:
+      runTests: ${{ steps.parse.outputs.runTests }}
+      profileList: ${{ steps.parse.outputs.profileList }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Parse Comment
+        id: parse
+        uses: ./.github/actions/parse-comment
+        with:
+          # TODO - revert this
+#          commentBody: ${{ github.event.comment.body }}
+          commentBody: "/ga run profile=smoke"
+
+  # The actual "run-tests" job that uses the parse outputs.
+  run-tests:
+#    runs-on: oracle-2cpu-8gb-arm64
+    name: run
+    needs: parse-params
+    if: ${{ needs.parse-params.outputs.runTests == 'true' }}
+    strategy:
+      matrix:
+        # TODO - change accordingly
+        config:
+          - agent: oracle-4cpu-16gb-x86-64
+            arch: amd64
+            jdk_version: "17"
+          - agent: oracle-2cpu-8gb-arm64
+            arch: arm64
+            jdk_version: "17"
+        profile: ${{ fromJson(needs.parse-params.outputs.profileList) }}
+      fail-fast: false
+
+    uses: ./.github/workflows/run-system-tests.yml
+    with:
+      name: ${{ matrix.profile }}-${{ matrix.config.agent }}
+      displayName: ${{ matrix.profile }}-${{ matrix.config.agent }}
+      profile: ${{ matrix.profile }}
+      agent: ${{ matrix.config.agent }}
+      # TODO - change accordingly
+      architecture: ${{ matrix.config.arch }}
