@@ -1,4 +1,4 @@
-name: Run System Tests
+name: System Tests
 
 on:
   # Trigger for manual execution from GitHub UI
@@ -42,10 +42,10 @@ jobs:
         uses: ./.github/actions/parse-comment
         with:
 #          commentBody: ${{ github.event.comment.body }}
-          commentBody: "/ga run smoke"
+          commentBody: "/ga run profile=smoke"
 
   # The actual "run-tests" job that uses the parse outputs.
-  call-run-tests:
+  run-tests:
     runs-on: oracle-2cpu-8gb-arm64
     needs: parse-params
     if: ${{ needs.parse-params.outputs.runTests == 'true' }}
@@ -62,7 +62,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Call reusable system-tests
-        uses: ./.github/workflows/system-tests.yml
+        uses: ./.github/workflows/run-system-tests.yml
         with:
           name: ${{ matrix.profile }}-${{ matrix.agent }}
           displayName: ${{ matrix.profile }}-${{ matrix.agent }}
