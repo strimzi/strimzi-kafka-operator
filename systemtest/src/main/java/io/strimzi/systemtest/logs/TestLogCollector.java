@@ -268,7 +268,7 @@ public class TestLogCollector {
         List<String> namespaces = new ArrayList<>();
 
         // Old way of keeping the list of Namespaces - delete this once we are done with the integration
-        namespaces.addAll(NamespaceManager.getInstance().getListOfNamespacesForTestClassAndTestCase(testClassShortName, testCase));
+        namespaces.addAll(NamespaceManager.getInstance().getListOfNamespacesForTestClassAndTestCase(testClass, testCase));
         // New way using labels on the Namespaces
         namespaces.addAll(getListOfNamespaces(testClassShortName, testCase));
 

@@ -83,7 +83,7 @@ public abstract class AbstractST implements TestSeparator {
 
         KubeResourceManager.get().addCreateCallback(resource -> {
             if (resource instanceof Namespace namespace) {
-                String testClass = StUtils.removePackageName(KubeResourceManager.get().getTestContext().getRequiredTestClass().getSimpleName());
+                String testClass = StUtils.removePackageName(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName());
 
                 KubeUtils.labelNamespace(
                     namespace.getMetadata().getName(),

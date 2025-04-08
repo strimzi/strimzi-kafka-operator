@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.skodjob.testframe.MetricsCollector;
 import io.skodjob.testframe.metrics.Gauge;
 import io.skodjob.testframe.metrics.Metric;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -280,6 +281,13 @@ public class NetworkPoliciesST extends AbstractST {
             .endMetadata()
             .build());
 
+        KubeResourceManager.get().createResourceWithWait(
+            new NamespaceBuilder()
+                .withNewMetadata()
+                    .withName(secondNamespace)
+                .endMetadata()
+                .build()
+        );
         cluster.setNamespace(secondNamespace);
 
         resourceManager.createResourceWithWait(
