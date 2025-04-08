@@ -34,7 +34,7 @@ on:
       run_parallel:
         description: "Whether the tests should be executed in parallel or not"
         required: false
-        default: "true"
+        default: true
         type: boolean
       parallel:
         description: "How many tests should be executed in parallel"
