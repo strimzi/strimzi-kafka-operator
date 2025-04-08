@@ -6,6 +6,7 @@ runs:
   steps:
     - name: Configure environment variables
       id: set-env
+      shell: bash
       run: |
         # Compare the Git ref name. For example, 'main', 'refs/tags/v0.46.0', etc.
         if [ "${{ github.ref_name }}" = "main" ]; then
