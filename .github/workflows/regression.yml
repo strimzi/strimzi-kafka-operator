@@ -30,9 +30,9 @@ jobs:
     steps:
       - name: Print event
         run: |
-          echo ${DATA_TO_PRINT}
+          echo $DATA_TO_PRINT
         env:
-          DATA_TO_PRINT: ${{ github.event }}
+          DATA_TO_PRINT: ${{ toJson(github) }}
   # Check if the comment contains "/ga run" at all.
   # If not, don't even bother with parse-params job.
   parse-params:
