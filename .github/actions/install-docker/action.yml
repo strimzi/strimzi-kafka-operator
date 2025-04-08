@@ -1,0 +1,26 @@
+name: "Install Docker"
+description: "Install Docker"
+
+runs:
+  using: "composite"
+  steps:
+    # Docker is already installed on CNCF agents
+    - name: Check docker version
+      shell: bash
+      run: "docker --version"
+    # TODO - maybe not needed?
+    - name: Check docker version
+      shell: bash
+      run: "docker ps -a"
+#    - name: Set up Docker
+#      uses: docker/setup-docker-action@v4
+#      with:
+#        daemon-config: |
+#          {
+#            "debug": true
+#          }
+#        rootless: true
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
