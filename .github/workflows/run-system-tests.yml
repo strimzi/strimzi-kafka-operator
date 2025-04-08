@@ -212,7 +212,7 @@ jobs:
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
           BRIDGE_IMAGE: "latest-released"
           DOCKER_REGISTRY: "registry.minikube"
-          BUILD_ID: ${{ agent }}-${{ inputs.profile }}-systemtests
+          BUILD_ID: ${{ inputs.agent }}-${{ inputs.profile }}-systemtests
           RESOURCE_ALLOCATION_STRATEGY: "NOT_SHARED"
           TEST_LOG_DIR: "systemtest-logs"
           CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN: ${{ env.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN }}
