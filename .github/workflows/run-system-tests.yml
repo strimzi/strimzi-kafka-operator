@@ -79,17 +79,12 @@ jobs:
   # The actual "run-tests" job that uses the parse outputs.
   run-tests:
     name: ${{ inputs.name }}
-    strategy:
-      matrix:
-        profile: ${{ fromJson(inputs.profileList) }}
-        jdk_version: [ '17' ]
-      fail-fast: false
     runs-on: ${{ inputs.agent }}
     # Environment variables
     env:
       RELEASE_VERSION: ${{ inputs.releaseVersion }}
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
-      PROFILE: ${{ matrix.profile }}
+      PROFILE: ${{ inputs.profile }}
 
       STRIMZI_RBAC_SCOPE: ${{ inputs.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ inputs.cluster_operator_install_type }}
@@ -217,7 +212,7 @@ jobs:
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
           BRIDGE_IMAGE: "latest-released"
           DOCKER_REGISTRY: "registry.minikube"
-          BUILD_ID: ${{ matrix.agent }}-${{ matrix.profile }}-${{ matrix.jdk_version }}-systemtests
+          BUILD_ID: ${{ agent }}-${{ inputs.profile }}-systemtests
           RESOURCE_ALLOCATION_STRATEGY: "NOT_SHARED"
           TEST_LOG_DIR: "systemtest-logs"
           CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN: ${{ env.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN }}
