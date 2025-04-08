@@ -20,6 +20,8 @@ on:
   # Automated trigger for issue comment
   issue_comment:
     types: [created]
+  pull_request:
+    types: [created, reopened, synchronized]
 
 jobs:
   # Check if the comment contains "/ga run" at all.
@@ -54,7 +56,7 @@ jobs:
         uses: ./.github/workflows/system-tests.yml
         with:
           name: ${{ matrix.profile }}-${{ matrix.agent }}
-          displayName: ${{ github.event.inputs.displayName }}
+          displayName: ${{ matrix.profile }}-${{ matrix.agent }}
           profile: ${{ matrix.profile }}
           agent: ${{ matrix.agent }}
           # TODO - change accordingly
