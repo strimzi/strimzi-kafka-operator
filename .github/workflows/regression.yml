@@ -25,11 +25,19 @@ on:
   push:
 
 jobs:
+  print-event:
+    runs-on: oracle-2cpu-8gb-arm64
+    steps:
+      - name: Print event
+        run: |
+          echo ${DATA_TO_PRINT}
+        env:
+          DATA_TO_PRINT: ${{ github.event }}
   # Check if the comment contains "/ga run" at all.
   # If not, don't even bother with parse-params job.
   parse-params:
     if: contains(github.event.comment.body, '/ga run')
-    runs-on: ubuntu-latest
+    runs-on: oracle-2cpu-8gb-arm64
     outputs:
       runTests: ${{ steps.parse.outputs.runTests }}
       profileList: ${{ steps.parse.outputs.profileList }}
@@ -45,7 +53,7 @@ jobs:
 
   # The actual "run-tests" job that uses the parse outputs.
   call-run-tests:
-    runs-on: ubuntu-latest
+    runs-on: oracle-2cpu-8gb-arm64
     needs: parse-params
     if: ${{ needs.parse-params.outputs.runTests == 'true' }}
     strategy:
