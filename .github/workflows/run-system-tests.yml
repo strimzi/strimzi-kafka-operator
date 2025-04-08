@@ -223,14 +223,14 @@ jobs:
       # REVISIT - TODO
       - name: Archive JUnit test results
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: junit-results
           path: systemtest/target/failsafe-reports/**/TEST-*.xml
 
       - name: Archive systemtest logs
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: systemtest-logs
           path: systemtest-logs
