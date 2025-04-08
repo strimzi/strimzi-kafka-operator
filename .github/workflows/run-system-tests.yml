@@ -124,10 +124,8 @@ jobs:
         uses: ./.github/actions/install-yq
         with:
           arch: ${{ inputs.architecture }}
-
-      - name: Set up Docker
-        uses: docker/setup-docker-action@v4
-
+      - name: Install Docker
+        uses: ./.github/actions/install-docker
       - name: Install minikube
         uses: ./.github/actions/setup-minikube
 
