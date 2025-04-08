@@ -123,11 +123,15 @@ jobs:
       - name: Install yq
         uses: ./.github/actions/install-yq
         with:
-          arch: ${{ inputs.architecture }}
+          architecture: ${{ inputs.architecture }}
       - name: Install Docker
         uses: ./.github/actions/install-docker
       - name: Install minikube
         uses: ./.github/actions/setup-minikube
+
+      # TODO - remove after testing
+      - name: Print out environment info
+        uses: ./.github/actions/log-variables
 
       # Build Strimzi and its images => used when running STs against PR or main branch where container images should be built
       - name: Build Strimzi images

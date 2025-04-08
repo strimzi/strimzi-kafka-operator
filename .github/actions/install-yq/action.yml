@@ -10,7 +10,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install kubectl
+    - name: Install yq
       shell: bash
       run: ".azure/scripts/install_yq.sh"
       env:

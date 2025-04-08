@@ -4,7 +4,8 @@ description: "Install Docker"
 runs:
   using: "composite"
   steps:
-    - name: Debug
+    # Docker is already installed on CNCF agents
+    - name: Check docker version
       shell: bash
       run: "docker --version"
 #    - name: Set up Docker
