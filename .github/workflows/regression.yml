@@ -27,7 +27,7 @@ jobs:
   # Check if the comment contains "/ga run" at all.
   # If not, don't even bother with parse-params job.
   parse-params:
-    if: contains(github.event.comment.body, '/ga run')
+#    if: contains(github.event.comment.body, '/ga run')
     runs-on: ubuntu-latest
     outputs:
       runTests: ${{ steps.parse.outputs.runTests }}
