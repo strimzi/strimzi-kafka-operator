@@ -99,6 +99,7 @@ For information on feature gates that have reached GA, see the documentation for
 
 Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
 Stable feature gates are production-ready, but they can still be disabled.
+Currently, there are no beta level feature gates.
 
 == Early access feature gates (Alpha)
 
