@@ -1,0 +1,16 @@
+name: "Setup Kind"
+description: "Installs Kind and configures cluster"
+
+inputs:
+  architecture:
+    description: "Architecture"
+    required: false
+    default: "amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Kind
+      shell: bash
+      run: |
+        ./.azure/scripts/setup-kind.sh  "${{ inputs.architecture }}"

@@ -1,0 +1,264 @@
+name: Run System Tests
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: "Job name"
+        required: true
+        type: string
+      displayName:
+        description: "Job display name"
+        required: true
+        type: string
+      profile:
+        description: "Comma-separated or single profile name(s)"
+        required: false
+        default: ""
+        type: string
+      excludedGroups:
+        description: "Excluded groups"
+        required: false
+        default: ""
+        type: string
+      cluster_operator_install_type:
+        description: "Install type method used for Strimzi operator"
+        required: false
+        default: "bundle"
+        type: string
+      strimzi_rbac_scope:
+        description: "RBAC configuration for operator access"
+        required: false
+        default: "CLUSTER"
+        type: string
+      run_parallel:
+        description: "Whether the tests should be executed in parallel or not"
+        required: false
+        default: true
+        type: boolean
+      parallel:
+        description: "How many tests should be executed in parallel"
+        required: false
+        default: "2"
+        type: string
+      strimzi_use_feature_gates:
+        description: "Which feature-gates will be used by operator"
+        required: false
+        default: ""
+        type: string
+      releaseVersion:
+        description: "Release version to test (i.e. 'latest', '0.46.0')"
+        required: false
+        default: "latest"
+        type: string
+      kafkaVersion:
+        description: "Kafka version. e.g. '4.0.0' or 'latest'"
+        required: false
+        default: "latest"
+        type: string
+      agent:
+        description: "On which agent the jobs will be executed"
+        required: true
+        type: string
+      architecture:
+        description: "Which architecture is used for the job"
+        required: true
+        type: string
+
+jobs:
+  # The actual "run-tests" job that uses the parse outputs.
+  run-tests:
+    name: ${{ inputs.name }}
+    runs-on: ${{ inputs.agent }}
+    # Environment variables
+    env:
+      KAFKA_VERSION: ${{ inputs.kafkaVersion }}
+      PROFILE: ${{ inputs.profile }}
+      DOCKER_TAG: ${{ inputs.releaseVersion }}
+      # Global config for architecture
+      ARCH: ${{ inputs.architecture }}
+
+      STRIMZI_RBAC_SCOPE: ${{ inputs.strimzi_rbac_scope }}
+      CLUSTER_OPERATOR_INSTALL_TYPE: ${{ inputs.cluster_operator_install_type }}
+      STRIMZI_FEATURE_GATES: ${{ inputs.strimzi_use_feature_gates }}
+    # Job steps
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set default environment variables
+        uses: ./.github/actions/set-defaults
+
+      - name: Set release version
+        if: ${{ inputs.releaseVersion != 'latest' }}
+        run: |
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+        env:
+          RELEASE_VERSION: ${{ inputs.releaseVersion }}
+
+      - name: Set DOCKER_TAG to releaseVersion
+        if: ${{ inputs.releaseVersion != 'latest' }}
+        run: |
+          echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
+
+      - name: Set DOCKER_REGISTRY to quay.io if releaseVersion != latest
+        if: ${{ inputs.releaseVersion != 'latest' }}
+        run: |
+          echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
+
+      - name: Set ST_KAFKA_VERSION if kafkaVersion != latest
+        if: ${{ env.KAFKA_VERSION != 'latest' }}
+        run: |
+          echo "ST_KAFKA_VERSION=${KAFKA_VERSION}" >> $GITHUB_ENV
+
+      - name: Print out environment info
+        uses: ./.github/actions/log-variables
+
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.9
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          # TODO - maybe change as a parameter?
+          java-version: "17"
+          cache: maven
+
+      - name: Install Helm
+        uses: ./.github/actions/install-helm
+
+#      # TODO - deal with this
+#      - name: Install xz
+#        run: "sudo apt-get install -y xz-utils iptables fuse-overlayfs"
+
+      - name: Install Shellcheck
+        uses: ./.github/actions/install-shellcheck
+        with:
+          architecture: ${{ inputs.architecture }}
+      - name: Install yq
+        uses: ./.github/actions/install-yq
+        with:
+          architecture: ${{ inputs.architecture }}
+      - name: Install Docker
+        uses: ./.github/actions/install-docker
+#      - name: Install Kind
+#        uses: ./.github/actions/setup-kind
+#        with:
+#          architecture: ${{ inputs.architecture }}
+      - name: Install Minikube
+        uses: ./.github/actions/setup-minikube
+        with:
+          architecture: ${{ inputs.architecture }}
+
+      # TODO - remove after testing
+      - name: Print out environment info
+        uses: ./.github/actions/log-variables
+
+      # Build Strimzi and its images => used when running STs against PR or main branch where container images should be built
+      - name: Build Strimzi images
+        # Build images in case that we are not running tests on the `main` branch and the docker_tag is `latest`, which means
+        # that we are running tests on a PR
+        if: ${{ env.DOCKER_TAG == 'latest' && github.ref_name != 'main' }}
+        run: |
+          eval $(minikube docker-env)
+          make java_install
+          make docker_build
+          make docker_tag
+          make docker_push
+        env:
+          MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'
+
+      # Build Strimzi without images => used when running the STs against releases or release candidates where the images
+      # are already built, and we need only the Java build
+      - name: Build Strimzi Java code
+        # Build Strimzi without images in case that we are on the `main` branch or in case that we are running tests against tags during release
+        if: ${{ !(env.DOCKER_TAG == 'latest' && github.ref_name != 'main') }}
+        run: make java_install
+        env:
+          MVN_ARGS: "-DskipTests -Dmaven.javadoc.skip=true  -e -V -B"
+
+      - name: Create dir for Kafka binaries cache
+        if: ${{ env.DOCKER_TAG != 'latest' }}
+        run: mkdir -p docker-images/artifacts/binaries/kafka/archives
+
+      ############################################################################
+      # Build KafkaConnect image with file-sink plugin, skipping if "upgrade"
+      ############################################################################
+      - name: Build KafkaConnect image
+        # we want to let Connect image build for different versions of Kafka inside the upgrade/downgrade STs
+        # TODO - set Kafka version globally?
+        if: ${{ !contains(env.PROFILE, 'upgrade') }}
+        run: |
+          eval $(minikube docker-env)
+          export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
+          BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}"
+          echo "Base image: $BASE_IMAGE"
+          eval "$(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE")"
+          echo "connect build image: $CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN"
+
+          # Provide "connectImage" variable for tests:
+          echo "CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=${CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN}" >> $GITHUB_ENV
+
+      ############################################################################
+      # Additional "setup_upgrade.sh" if profile includes "upgrade"
+      ############################################################################
+      - name: Setup environment for upgrade
+        if: ${{ contains(env.PROFILE, 'upgrade') }}
+        run: |
+          .azure/scripts/setup_upgrade.sh
+
+      ############################################################################
+      # Set KAFKA_TIERED_STORAGE_BASE_IMAGE for Tiered Storage tests
+      ############################################################################
+      # TODO - check if the image is correct for releases
+      - name: Set KAFKA_TIERED_STORAGE_BASE_IMAGE
+        run: |
+          export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
+          echo "KAFKA_TIERED_STORAGE_BASE_IMAGE=${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}" >> $GITHUB_ENV
+
+      - name: Print out environment info
+        uses: ./.github/actions/log-variables
+
+      ############################################################################
+      # Run system tests
+      ############################################################################
+      - name: Run systemtests
+        run: |
+          mvn -f systemtest/pom.xml verify \
+            -P"${PROFILE}" \
+            -DexcludedGroups="flaky,loadbalancer,networkpolicies,${EXCLUDED_GROUPS}" \
+            -Dmaven.javadoc.skip=true \
+            -B -V \
+            -Dfailsafe.rerunFailingTestsCount=2 \
+            -Djunit.jupiter.execution.parallel.enabled="${RUN_PARALLEL}" \
+            -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL}" \
+            -Dskip.surefire.tests \
+            -s ./.azure/systemtests/systemtest-settings.xml
+
+        env:
+          DOCKER_TAG: ${{ env.DOCKER_TAG }}
+          BRIDGE_IMAGE: "latest-released"
+          DOCKER_REGISTRY: "registry.minikube"
+          BUILD_ID: ${{ inputs.agent }}-${{ inputs.profile }}-systemtests
+          RESOURCE_ALLOCATION_STRATEGY: "NOT_SHARED"
+          TEST_LOG_DIR: "systemtest-logs"
+          CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN: ${{ env.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN }}
+          # Parallel test execution config
+          RUN_PARALLEL: ${{ inputs.run_parallel }}
+          PARALLEL: ${{ inputs.parallel }}
+
+      # REVISIT - TODO
+      - name: Archive JUnit test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-results-${{ inputs.profile }}-${{ inputs.agent }}
+          path: systemtest/target/failsafe-reports/**/TEST-*.xml
+
+      - name: Archive systemtest logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: systemtest-logs-${{ inputs.profile }}-${{ inputs.agent }}
+          path: systemtest-logs

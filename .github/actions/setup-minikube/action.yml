@@ -1,0 +1,28 @@
+name: "Setup Minikube"
+description: "Installs minikube and configures cluster"
+
+inputs:
+  kubectlVersion:
+    description: "Kubernetes CLI version to install"
+    required: false
+    default: "v1.25.0"
+  minikubeVersion:
+    description: "Minikube version to install"
+    required: false
+    default: "v1.33.1"
+  architecture:
+    description: "Architecture"
+    required: false
+    default: "amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Minikube
+      shell: bash
+      run: |
+        .azure/scripts/setup-kubernetes.sh "${{ inputs.architecture }}"
+      env:
+        TEST_CLUSTER: minikube
+        TEST_KUBECTL_VERSION: ${{ inputs.kubectlVersion }}
+        TEST_MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
