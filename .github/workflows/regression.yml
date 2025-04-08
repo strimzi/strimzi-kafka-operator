@@ -1,22 +1,22 @@
 name: Run System Tests
 
 on:
-#  # Trigger for manual execution from GitHub UI
-#  workflow_dispatch:
-#    inputs:
-#      releaseVersion:
-#        description: "Release version to test (i.e. 'latest', '0.46.0')"
-#        required: false
-#        default: "latest"
-#      kafkaVersion:
-#        description: "Kafka version. e.g. '4.0.0' or 'latest'"
-#        required: false
-#        default: "latest"
-#      profile:
-#        description: "Comma-separated or single profile name(s)"
-#        required: false
-#        default: ""
-#        type: string
+  # Trigger for manual execution from GitHub UI
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: "Release version to test (i.e. 'latest', '0.46.0')"
+        required: false
+        default: "latest"
+      kafkaVersion:
+        description: "Kafka version. e.g. '4.0.0' or 'latest'"
+        required: false
+        default: "latest"
+      profile:
+        description: "Comma-separated or single profile name(s)"
+        required: false
+        default: ""
+        type: string
 #  # Automated trigger for issue comment
 #  issue_comment:
 #    types: [created]
@@ -42,6 +42,7 @@ jobs:
 
   # The actual "run-tests" job that uses the parse outputs.
   call-run-tests:
+    runs-on: ubuntu-latest
     needs: parse-params
     if: ${{ needs.parse-params.outputs.runTests == 'true' }}
     strategy:
