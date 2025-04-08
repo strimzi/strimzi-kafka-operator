@@ -85,6 +85,7 @@ jobs:
       RELEASE_VERSION: ${{ inputs.releaseVersion }}
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
       PROFILE: ${{ inputs.profile }}
+      DOCKER_TAG: ${{ inputs.releaseVersion }}
 
       STRIMZI_RBAC_SCOPE: ${{ inputs.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ inputs.cluster_operator_install_type }}
@@ -98,6 +99,11 @@ jobs:
           fetch-depth: 0
       - name: Set default environment variables
         uses: ./.github/actions/set-defaults
+
+      - name: Set DOCKER_TAG to releaseVersion
+        if: ${{ env.RELEASE_VERSION != 'latest' }}
+        run: |
+          echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
 
       - name: Set DOCKER_REGISTRY to quay.io if releaseVersion != latest
         if: ${{ env.RELEASE_VERSION != 'latest' }}
@@ -197,6 +203,7 @@ jobs:
       # TODO - check if the image is correct for releases
       - name: Set KAFKA_TIERED_STORAGE_BASE_IMAGE
         run: |
+          export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
           echo "KAFKA_TIERED_STORAGE_BASE_IMAGE=${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}" >> $GITHUB_ENV
 
       - name: Print out environment info
