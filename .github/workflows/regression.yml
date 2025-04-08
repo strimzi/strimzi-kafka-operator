@@ -18,25 +18,18 @@ on:
         default: ""
         type: string
   # Automated trigger for issue comment
+  # TODO - this works only if the workflow is commited in main
   issue_comment:
     types: [created]
   pull_request:
     types: [created, reopened, synchronized]
-  push:
 
 jobs:
-  print-event:
-    runs-on: oracle-2cpu-8gb-arm64
-    steps:
-      - name: Print event
-        run: |
-          echo $DATA_TO_PRINT
-        env:
-          DATA_TO_PRINT: ${{ toJson(github) }}
+  # TODO - this cannot me used now as we do not have workflow in main branch!
   # Check if the comment contains "/ga run" at all.
   # If not, don't even bother with parse-params job.
   parse-params:
-    if: contains(github.event.comment.body, '/ga run')
+#    if: contains(github.event.comment.body, '/ga run')
     runs-on: oracle-2cpu-8gb-arm64
     outputs:
       runTests: ${{ steps.parse.outputs.runTests }}
@@ -49,7 +42,8 @@ jobs:
         id: parse
         uses: ./.github/actions/parse-comment
         with:
-          commentBody: ${{ github.event.comment.body }}
+#          commentBody: ${{ github.event.comment.body }}
+          commentBody: "/ga run smoke"
 
   # The actual "run-tests" job that uses the parse outputs.
   call-run-tests:
@@ -76,4 +70,4 @@ jobs:
           profile: ${{ matrix.profile }}
           agent: ${{ matrix.agent }}
           # TODO - change accordingly
-          architecture: "x86_64"
+          architecture: "amd64"
