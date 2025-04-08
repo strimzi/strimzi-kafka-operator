@@ -19,10 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Model for the Prometheus JMX Exporter Java agent.
+ * Model for the JMX Prometheus Exporter Java agent.
  */
 public class JmxPrometheusExporterModel implements MetricsModel {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(JmxPrometheusExporterModel.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(JmxPrometheusExporterModel.class);
 
     /**
      * Key under which the metrics configuration is stored in the ConfigMap
