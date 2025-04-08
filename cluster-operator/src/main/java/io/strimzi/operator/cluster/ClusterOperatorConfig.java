@@ -19,6 +19,8 @@ import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -49,11 +51,6 @@ public class ClusterOperatorConfig {
      * Configures the Kafka container images
      */
     public static final String STRIMZI_KAFKA_IMAGES = "STRIMZI_KAFKA_IMAGES";
-
-    /**
-     * Environment variable for configuring remote Kubernetes clusters.
-     */
-    public static final String STRIMZI_REMOTE_KUBE_CONFIG = "STRIMZI_REMOTE_KUBE_CONFIG";
 
     /**
      * Configures the Kafka Connect container images
@@ -133,6 +130,17 @@ public class ClusterOperatorConfig {
      * Enabled or disables the FIPS mode
      */
     public static final String FIPS_MODE = "FIPS_MODE";
+
+    // Stretch cluster configuration
+    /**
+     * Environment variable for configuring remote Kubernetes clusters.
+     */
+    public static final String STRIMZI_REMOTE_KUBE_CONFIG = "STRIMZI_REMOTE_KUBE_CONFIG";
+
+    /**
+     * Configuration for remote Kubernetes cluster configs.
+     */
+    public static final ConfigParameter<String> REMOTE_KUBE_CONFIG = new ConfigParameter<>("STRIMZI_REMOTE_KUBE_CONFIG", STRING, null, CONFIG_VALUES);
 
     // Default values
     /**
@@ -255,29 +263,15 @@ public class ClusterOperatorConfig {
     private final KafkaVersion.Lookup versions;
 
     /**
-     * Environment Variable for remote Kubernetes cluster configs.
-     */
-    public static final ConfigParameter<String> REMOTE_KUBE_CONFIG = new ConfigParameter<>("STRIMZI_REMOTE_KUBE_CONFIG", STRING, null, CONFIG_VALUES);
-
-    /**
-     * A map containing information about remote Kubernetes clusters that the Cluster Operator can access.
-     * Each entry is keyed by a cluster ID (e.g., "cluster-east", "cluster-west"), and contains a {@link ClusterInfo}
-     * object with the cluster's API server URL and the name of the Secret holding its credentials.
-     *
-     * This configuration is used to enable multi-cluster support, allowing the operator to manage Kafka components
-     * in additional Kubernetes clusters beyond the one it is deployed in.
-     */
-    private Map<String, ClusterInfo> remoteClusterConfigs;
-
-    /**
      * Returns a map of remote Kubernetes cluster configurations.
      * The key is the cluster ID, and the value is a {@link ClusterInfo} object containing
      * the cluster URL and the name of the Kubernetes Secret with access credentials.
      *
      * @return A map of remote cluster configurations, or an empty map if no remote clusters are configured.
      */
-    public Map<String, ClusterInfo> getRemoteClusterConfigs() {
-        return remoteClusterConfigs;
+    public Map<String, ClusterInfo> parseRemoteClusterConfigsFromEnv() {
+        String remoteKubeConfigValue = get(REMOTE_KUBE_CONFIG);
+        return parseRemoteClusterConfigs(remoteKubeConfigValue);
     }
 
     /**
@@ -330,9 +324,9 @@ public class ClusterOperatorConfig {
 
         Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
 
-        // Add STRIMZI_REMOTE_KUBE_CONFIG if it's set as an environment variable
+        // Add STRIMZI_REMOTE_KUBE_CONFIG if it's set and not blank
         String remoteKubeConfig = System.getenv(REMOTE_KUBE_CONFIG.key());
-        if (remoteKubeConfig != null) {
+        if (remoteKubeConfig != null && !remoteKubeConfig.isBlank()) {
             generatedMap.put(REMOTE_KUBE_CONFIG.key(), remoteKubeConfig);
         }
 
@@ -350,10 +344,6 @@ public class ClusterOperatorConfig {
     private ClusterOperatorConfig(Map<String, Object> map, KafkaVersion.Lookup lookup) {
         this.versions = lookup;
         this.map = map;
-
-        // Parse remote cluster configuration
-        String remoteKubeConfigValue = (String) map.get(REMOTE_KUBE_CONFIG.key());
-        this.remoteClusterConfigs = parseRemoteClusterConfigs(remoteKubeConfigValue);
     }
 
     /**
@@ -370,50 +360,65 @@ public class ClusterOperatorConfig {
      * @param envValue Environment variable value containing remote cluster configuration
      * @return Map of cluster IDs to corresponding ClusterInfo objects
      */
-    private Map<String, ClusterInfo> parseRemoteClusterConfigs(String envValue) {
+    public static Map<String, ClusterInfo> parseRemoteClusterConfigs(String envValue) {
         Map<String, ClusterInfo> clusters = new HashMap<>();
 
         if (envValue != null && !envValue.isBlank()) {
-            for (String line : envValue.split("\n")) {
-                String[] keyValue = line.split("=", 2);
-                if (keyValue.length != 2) {
-                    throw new InvalidConfigurationException("Invalid remote cluster configuration line: " + line);
+            String[] lines = envValue.split("\n");
+
+            for (String line : lines) {
+                long equalsCount = line.chars().filter(ch -> ch == '=').count();
+                if (equalsCount != 1) {
+                    throw new InvalidConfigurationException("Invalid remote cluster configuration line (must contain exactly one '='): " + line);
                 }
 
+                String[] keyValue = line.split("=", 2);
                 String fullKey = keyValue[0].trim();
                 String value = keyValue[1].trim();
 
                 int dotIndex = fullKey.indexOf('.');
                 if (dotIndex == -1) {
-                    throw new InvalidConfigurationException("Invalid remote cluster configuration line: " + line);
+                    throw new InvalidConfigurationException("Invalid remote cluster configuration key (must be in 'clusterId.field' format): " + fullKey);
                 }
 
                 String clusterId = fullKey.substring(0, dotIndex);
                 String field = fullKey.substring(dotIndex + 1);
 
-                ClusterInfo clusterInfo = clusters.computeIfAbsent(clusterId, k -> new ClusterInfo());
+                if (clusterId.contains(".")) {
+                    throw new InvalidConfigurationException("Cluster ID cannot contain '.' character: " + clusterId);
+                }
 
-                if ("url".equals(field)) {
-                    clusterInfo.setApiUrl(value);
-                } else if ("secret".equals(field)) {
-                    clusterInfo.setSecretName(value);
+                ClusterInfo clusterInfo = clusters.computeIfAbsent(clusterId, k -> new ClusterInfo(k, null, null));
+
+                switch (field) {
+                    case "url":
+                        try {
+                            new URL(value); // Validate URL syntax
+                            clusters.put(clusterId, new ClusterInfo(clusterId, value, clusterInfo.secretName()));
+                        } catch (MalformedURLException e) {
+                            throw new InvalidConfigurationException("Invalid URL for cluster '" + clusterId + "': " + value);
+                        }
+                        break;
+                    case "secret":
+                        clusters.put(clusterId, new ClusterInfo(clusterId, clusterInfo.apiUrl(), value));
+                        break;
+                    default:
+                        throw new InvalidConfigurationException("Unknown field '" + field + "' in configuration key: " + fullKey);
                 }
             }
 
-            // Validate all clusters have both fields
-            for (Map.Entry<String, ClusterInfo> entry : clusters.entrySet()) {
-                String clusterId = entry.getKey();
-                ClusterInfo info = entry.getValue();
-                if (info.getApiUrl() == null || info.getSecretName() == null) {
-                    throw new InvalidConfigurationException("Incomplete configuration for remote cluster '" + clusterId +
-                        "'. Both 'url' and 'secret' must be specified.");
+            // Final check: all cluster entries must have both url and secret
+            for (ClusterInfo info : clusters.values()) {
+                if (info.apiUrl() == null || info.secretName() == null) {
+                    throw new InvalidConfigurationException("Incomplete configuration for remote cluster '" + info.clusterId() +
+                            "'. Both 'url' and 'secret' must be specified.");
                 }
             }
+
         }
 
         return clusters;
     }
-
 
     /**
      * @return Set of configuration key/names
@@ -704,7 +709,7 @@ public class ClusterOperatorConfig {
                 "\n\tpodSecurityProviderClass='" + getPodSecurityProviderClass() + '\'' +
                 "\n\tleaderElectionConfig='" + getLeaderElectionConfig() + '\'' +
                 "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() +
-                "\n\tremoteClusterConfigs=" + getRemoteClusterConfigs() +
+                "\n\tremoteClusterConfigs=" + parseRemoteClusterConfigsFromEnv() +
                 "}";
     }
 }
