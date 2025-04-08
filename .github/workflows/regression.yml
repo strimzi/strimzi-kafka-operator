@@ -48,6 +48,7 @@ jobs:
   # The actual "run-tests" job that uses the parse outputs.
   run-tests:
 #    runs-on: oracle-2cpu-8gb-arm64
+    name: run
     needs: parse-params
     if: ${{ needs.parse-params.outputs.runTests == 'true' }}
     strategy:
