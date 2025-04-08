@@ -1,0 +1,59 @@
+name: "Parse Comment"
+description: "Parses a comment to see if user wants to run tests, and which profile(s)"
+
+inputs:
+  commentBody:
+    description: "The body of the GitHub comment"
+    required: true
+
+outputs:
+  runTests:
+    description: "true/false if we want to run tests"
+    value: ${{ steps.do-parse.outputs.runTests }}
+  profileList:
+    description: "JSON array of test profiles"
+    value: ${{ steps.do-parse.outputs.profileList }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Parse comment
+      id: do-parse
+      shell: bash
+      run: |
+        COMMENT="${{ inputs.commentBody }}"
+        COMMENT_LOWER=$(echo "$COMMENT" | tr '[:upper:]' '[:lower:]')
+
+        # Default outputs
+        RUN_TESTS="false"
+        PROFILE_LIST='[]'
+
+        # Check if comment has "/ga run"
+        if echo "$COMMENT_LOWER" | grep -q "/ga run"; then
+          RUN_TESTS="true"
+
+          # If user provided "profile=<value>" parse out <value>
+          if echo "$COMMENT_LOWER" | grep -q "profile="; then
+            VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*profile=\([^ ]*\).*/\1/p')
+            # If profile is empty or something weird, fallback
+            if [ -z "$VALUE" ]; then
+              # fallback to default multiple
+              PROFILE_LIST='["regression","upgrade","performance"]'
+            else
+              # Just a single profile
+              PROFILE_LIST='["'"$VALUE"'"]'
+            fi
+          else
+            # If no profile= is found, default to multiple
+            PROFILE_LIST='["regression","upgrade","performance"]'
+          fi
+        fi
+
+        echo "runTests=$RUN_TESTS"
+        echo "profileList=$PROFILE_LIST"
+
+        # Set them as outputs
+        echo "runTests=$RUN_TESTS" >> $GITHUB_OUTPUT
+        echo "profileList=$PROFILE_LIST" >> $GITHUB_OUTPUT
+        
+        echo "Collected profiles: ${PROFILE_LIST}"

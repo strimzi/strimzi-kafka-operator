@@ -1,0 +1,16 @@
+name: "Install Shellcheck"
+description: "Install Shellcheck tool by our script"
+
+inputs:
+  architecture:
+    description: "Architecture"
+    required: false
+    default: "amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install shellcheck
+      shell: bash
+      run: |
+        .azure/scripts/setup_shellcheck.sh "${{ inputs.architecture }}"

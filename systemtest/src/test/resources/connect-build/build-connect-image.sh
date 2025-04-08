@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 KAFKA_VERSION=$1
 BASE_IMAGE=$2
 CONNECT_IMAGE=${3:-"strimzi/connect-file-sink:latest"}
