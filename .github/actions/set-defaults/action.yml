@@ -1,0 +1,34 @@
+name: "Set default variables for system tests"
+description: "Set default variables for system tests"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure environment variables
+      id: set-env
+      shell: bash
+      run: |
+        # Compare the Git ref name. For example, 'main', 'refs/tags/v0.46.0', etc.
+        if [ "${{ github.ref_name }}" = "main" ]; then
+          echo "PULL_REQUEST=false" >> $GITHUB_ENV
+          echo "DOCKER_ORG=strimzi" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
+          echo "TAG=latest" >> $GITHUB_ENV
+          echo "COMMIT=latest" >> $GITHUB_ENV
+        
+        # If branch starts with refs/tags/ OR refs/heads/release
+        elif [[ "${{ github.ref_name }}" == refs/tags/* || "${{ github.ref_name }}" == refs/heads/release* ]]; then
+          echo "PULL_REQUEST=false" >> $GITHUB_ENV
+          echo "DOCKER_ORG=strimzi" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
+          echo "COMMIT=release" >> $GITHUB_ENV
+          echo "TAG=release" >> $GITHUB_ENV
+        
+        else
+          # Not main, not tag/release => treat as PR
+          echo "PULL_REQUEST=true" >> $GITHUB_ENV
+          echo "DOCKER_ORG=strimzi" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=localhost:5000" >> $GITHUB_ENV
+          echo "COMMIT=${{ github.sha }}" >> $GITHUB_ENV
+          echo "TAG=pr" >> $GITHUB_ENV
+        fi

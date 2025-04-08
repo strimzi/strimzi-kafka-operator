@@ -1,0 +1,28 @@
+name: "Log environment variables"
+description: "Log environment variables used by build mechanism and system test"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Print environment variables
+      shell: bash
+      run: |
+        echo "BRANCH: ${{ github.ref_name }}"
+        echo "TAG: ${{ env.TAG }}"
+        echo "COMMIT: ${{ github.sha }}"
+        echo "PULL_REQUEST: ${{ github.event.pull_request.number || '' }}"
+        echo "DOCKER_ORG: ${{ env.DOCKER_ORG }}"
+        echo "DOCKER_REGISTRY: ${{ env.DOCKER_REGISTRY }}"
+        echo "DOCKER_TAG: ${{ env.DOCKER_TAG }}"
+        echo "COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}"
+        echo "REASON: ${{ github.event_name }}"
+        echo "REPO_SLUG: ${{ github.repository }}"
+        echo "PATH: $PATH"
+        echo "OPERATOR_IMAGE_PULL_POLICY: ${{ env.OPERATOR_IMAGE_PULL_POLICY }}"
+        echo "ST_KAFKA_VERSION: ${{ env.ST_KAFKA_VERSION }}"
+        echo "KAFKA_VERSION: ${{ env.KAFKA_VERSION }}"
+        echo "COMPONENTS_IMAGE_PULL_POLICY: ${{ env.COMPONENTS_IMAGE_PULL_POLICY }}"
+        echo "JAVA_HOME: $JAVA_HOME"
+        java -version
+        which java
+      continue-on-error: true
