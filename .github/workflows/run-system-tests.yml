@@ -60,10 +60,12 @@ on:
         description: "Release version to test (i.e. 'latest', '0.46.0')"
         required: false
         default: "latest"
+        type: string
       kafkaVersion:
         description: "Kafka version. e.g. '4.0.0' or 'latest'"
         required: false
         default: "latest"
+        type: string
       agent:
         description: "On which agent the jobs will be executed"
         required: true
