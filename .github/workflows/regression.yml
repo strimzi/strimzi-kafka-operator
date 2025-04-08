@@ -41,6 +41,7 @@ jobs:
         id: parse
         uses: ./.github/actions/parse-comment
         with:
+          # TODO - revert this
 #          commentBody: ${{ github.event.comment.body }}
           commentBody: "/ga run profile=smoke"
 
