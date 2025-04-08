@@ -46,7 +46,7 @@ jobs:
 
   # The actual "run-tests" job that uses the parse outputs.
   run-tests:
-    runs-on: oracle-2cpu-8gb-arm64
+#    runs-on: oracle-2cpu-8gb-arm64
     needs: parse-params
     if: ${{ needs.parse-params.outputs.runTests == 'true' }}
     strategy:
@@ -57,16 +57,12 @@ jobs:
         # TODO - change accordingly
         jdk_version: [ '17' ]
       fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Call reusable system-tests
-        uses: ./.github/workflows/run-system-tests.yml
-        with:
-          name: ${{ matrix.profile }}-${{ matrix.agent }}
-          displayName: ${{ matrix.profile }}-${{ matrix.agent }}
-          profile: ${{ matrix.profile }}
-          agent: ${{ matrix.agent }}
-          # TODO - change accordingly
-          architecture: "amd64"
+
+    uses: ./.github/workflows/run-system-tests.yml
+    with:
+      name: ${{ matrix.profile }}-${{ matrix.agent }}
+      displayName: ${{ matrix.profile }}-${{ matrix.agent }}
+      profile: ${{ matrix.profile }}
+      agent: ${{ matrix.agent }}
+      # TODO - change accordingly
+      architecture: "amd64"
