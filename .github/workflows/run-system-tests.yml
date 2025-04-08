@@ -77,7 +77,6 @@ jobs:
   # The actual "run-tests" job that uses the parse outputs.
   run-tests:
     name: ${{ inputs.name }}
-    run-name: ${{ inputs.displayName }}
     strategy:
       matrix:
         profile: ${{ fromJson(inputs.profileList) }}
