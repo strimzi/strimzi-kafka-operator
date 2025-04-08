@@ -6,15 +6,17 @@ package io.strimzi.operator.cluster.model.metrics;
 
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -22,10 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class StrimziMetricsReporterModelTest {
     @Test
     public void testDisabled() {
-        StrimziMetricsReporterModel metrics = new StrimziMetricsReporterModel(new KafkaClusterSpecBuilder().build());
-
-        assertThat(metrics.isEnabled(), is(false));
-        assertThat(metrics.getAllowList(), is(Optional.empty()));
+        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> new StrimziMetricsReporterModel(new KafkaConnectSpecBuilder().build(), List.of(".*")));
+        assertThat(ex.getMessage(), is("Unexpected empty metrics config"));
     }
 
     @Test
@@ -36,9 +36,9 @@ public class StrimziMetricsReporterModelTest {
                 .endValues()
                 .build();
         StrimziMetricsReporterModel metrics = new StrimziMetricsReporterModel(new KafkaClusterSpecBuilder()
-                .withMetricsConfig(metricsConfig).build());
+                .withMetricsConfig(metricsConfig).build(), List.of(".*"));
 
-        assertThat(metrics.isEnabled(), is(true));
+        assertThat(metrics, is(notNullValue()));
         assertThat(metrics.getAllowList().get(), is("kafka_log.*,kafka_network.*"));
     }
 

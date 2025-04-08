@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
@@ -47,6 +48,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
@@ -220,6 +222,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             */
             if (ccSpec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
                 result.metrics = new JmxPrometheusExporterModel(ccSpec);
+            } else if (ccSpec.getMetricsConfig() instanceof StrimziMetricsReporter) {
+                LOGGER.errorCr(reconciliation, "The Strimzi Metrics Reporter is not supported with this component");
+                throw new InvalidResourceException("The Strimzi Metrics Reporter is not supported with this component");
             }
 
             result.logging = new LoggingModel(ccSpec, result.getClass().getSimpleName(), true, false);
@@ -239,10 +244,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         } else {
             return null;
         }
-    }
-
-    private boolean hasMetricsConfig() {
-        return metrics != null;
     }
 
     private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration) {
@@ -314,7 +315,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
         portList.add(ContainerUtils.createContainerPort(REST_API_PORT_NAME, REST_API_PORT));
 
-        if (hasMetricsConfig()) {
+        if (metrics != null) {
             portList.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
         }
 
@@ -402,12 +403,12 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_JMX_EXPORTER_ENABLED, hasMetricsConfig() ? Boolean.TRUE.toString() : Boolean.FALSE.toString()));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_JMX_EXPORTER_ENABLED, String.valueOf(metrics != null)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED, String.valueOf(this.sslEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED, String.valueOf(this.authEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_USERNAME, CruiseControlApiProperties.HEALTHCHECK_USERNAME));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT, String.valueOf(REST_API_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
@@ -483,7 +484,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, peers));
 
         // Everyone can access metrics
-        if (hasMetricsConfig()) {
+        if (metrics != null) {
             rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
         }
 
