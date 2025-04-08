@@ -115,7 +115,8 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: "temurin"
-          java-version: ${{ matrix.jdk_version }}
+          # TODO - maybe change as a parameter?
+          java-version: "17"
 
       - name: Install Helm
         uses: ./.github/actions/install-helm
