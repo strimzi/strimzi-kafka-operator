@@ -388,23 +388,33 @@ public class ClusterOperatorConfig {
                     throw new InvalidConfigurationException("Cluster ID cannot contain '.' character: " + clusterId);
                 }
 
-                ClusterInfo clusterInfo = clusters.computeIfAbsent(clusterId, k -> new ClusterInfo(k, null, null));
+                ClusterInfo existing = clusters.get(clusterId);
+                String url = existing != null ? existing.apiUrl() : null;
+                String secret = existing != null ? existing.secretName() : null;
 
                 switch (field) {
                     case "url":
+                        if (url != null) {
+                            throw new InvalidConfigurationException("Duplicate URL entry for remote cluster '" + clusterId + "'");
+                        }
                         try {
                             new URL(value); // Validate URL syntax
-                            clusters.put(clusterId, new ClusterInfo(clusterId, value, clusterInfo.secretName()));
+                            url = value;
                         } catch (MalformedURLException e) {
                             throw new InvalidConfigurationException("Invalid URL for cluster '" + clusterId + "': " + value);
                         }
                         break;
                     case "secret":
-                        clusters.put(clusterId, new ClusterInfo(clusterId, clusterInfo.apiUrl(), value));
+                        if (secret != null) {
+                            throw new InvalidConfigurationException("Duplicate secret entry for remote cluster '" + clusterId + "'");
+                        }
+                        secret = value;
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown field '" + field + "' in configuration key: " + fullKey);
                 }
+
+                clusters.put(clusterId, new ClusterInfo(clusterId, url, secret));
             }
 
             // Final check: all cluster entries must have both url and secret
@@ -414,11 +424,11 @@ public class ClusterOperatorConfig {
                             "'. Both 'url' and 'secret' must be specified.");
                 }
             }
-
         }
 
         return clusters;
     }
+
 
     /**
      * @return Set of configuration key/names
