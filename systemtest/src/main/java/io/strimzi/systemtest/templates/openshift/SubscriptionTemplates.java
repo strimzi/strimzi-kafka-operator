@@ -16,7 +16,17 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Class containing Subscription templates
+ */
 public class SubscriptionTemplates {
+    /**
+     * Returns templated ClusterOperator Subscription for OLM based on the specified {@link ClusterOperatorConfiguration}.
+     *
+     * @param clusterOperatorConfiguration  desired configuration of the ClusterOperator
+     *
+     * @return  Subscription based on the {@link ClusterOperatorConfiguration}
+     */
     public static Subscription clusterOperatorSubscription(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         SubscriptionBuilder subscriptionBuilder = new SubscriptionBuilder()
             .editOrNewMetadata()

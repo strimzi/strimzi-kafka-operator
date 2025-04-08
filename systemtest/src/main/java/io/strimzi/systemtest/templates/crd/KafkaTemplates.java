@@ -218,6 +218,10 @@ public class KafkaTemplates {
                     .endTopicOperator()
                     .editOrNewTemplate()
                         .editOrNewTopicOperatorContainer()
+                            // Finalizers ensure orderly and controlled deletion of KafkaTopic resources.
+                            // In this case we would delete them automatically via ResourceManager
+                            // And in case that we forget to delete some KafkaTopic in the test, we will anyway remove
+                            // whole Namespace with it -> otherwise the Namespace deletion would be blocked.
                             .addToEnv(new ContainerEnvVarBuilder()
                                 .withName("STRIMZI_USE_FINALIZERS")
                                 .withValue("false")

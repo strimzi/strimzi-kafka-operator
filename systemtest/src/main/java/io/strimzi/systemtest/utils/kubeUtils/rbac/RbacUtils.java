@@ -15,6 +15,9 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+/**
+ * Class containing method for operations around RBAC resource - like ClusterRoles or Roles.
+ */
 public class RbacUtils {
     private static final Logger LOGGER = LogManager.getLogger(RbacUtils.class);
 

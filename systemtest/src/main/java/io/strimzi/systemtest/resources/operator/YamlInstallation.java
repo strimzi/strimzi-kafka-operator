@@ -50,6 +50,10 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
+/**
+ * Class for handling the Yaml manifest installation.
+ * Everything is done by resources and ResourceManager.
+ */
 public class YamlInstallation implements InstallationMethod {
 
     private static final Logger LOGGER = LogManager.getLogger(YamlInstallation.class);
@@ -59,17 +63,37 @@ public class YamlInstallation implements InstallationMethod {
 
     private ClusterOperatorConfiguration clusterOperatorConfiguration;
 
+    /**
+     * Constructor with specific {@link ClusterOperatorConfiguration}.
+     *
+     * @param clusterOperatorConfiguration  default or customized {@link ClusterOperatorConfiguration} which should be used
+     *                                      for installation of the ClusterOperator via application of YAMLs
+     */
     public YamlInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         this.clusterOperatorConfiguration = clusterOperatorConfiguration;
     }
 
+    /**
+     * Returns the configured {@link ClusterOperatorConfiguration}.
+     * This is then used in {@link SetupClusterOperator#getClusterConfiguration()} (based on the installation method).
+     *
+     * @return  {@link ClusterOperatorConfiguration} configured and used during the installation
+     */
     public ClusterOperatorConfiguration getClusterOperatorConfiguration() {
         return clusterOperatorConfiguration;
     }
 
+    /**
+     * Installation method for YAML install type.
+     * It:
+     *   - applies installation files - except RoleBindings and Deployment - as those are handled in different methods
+     *      - that means it creates modified - Lease, (Cluster)Roles, ConfigMap, ServiceAccount, CRDs
+     *   - applies default Roles, ClusterRoles, and (Cluster)Role Bindings - based on the RBAC scope (in {@link ClusterOperatorConfiguration#getClusterOperatorRBACType()}
+     *   - deploys the ClusterOperator's Deployment based on configuration from {@link #clusterOperatorConfiguration}
+     */
     @Override
     public void install() {
-        // Firstly, apply all installation files - except (Cluster)Roles, RoleBindings and Deployment
+        // Firstly, apply all installation files - except RoleBindings and Deployment
         applyInstallationFiles();
         // Based on the scope, apply default (Cluster)Roles and RoleBindings
         applyDefaultRolesClusterRolesAndRoleBindings();
@@ -77,11 +101,24 @@ public class YamlInstallation implements InstallationMethod {
         deployClusterOperator();
     }
 
+    /**
+     * No implementation of deletion.
+     * Everything is deployed using {@link KubeResourceManager}, meaning it is properly deleted at the end of the tests.
+     * In case that this method is used, it throws the {@link UnsupportedOperationException} - as resource manager should be used.
+     */
     @Override
     public void delete() {
         throw new UnsupportedOperationException("delete() should not be called directly; use KubeResourceManager instead.");
     }
 
+    /**
+     * Applies files from the {@link #CO_INSTALL_DIR} path.
+     * It filters out all the ClusterRoleBindings, RoleBindings, and Deployment files, as they are handled in {@link #applyDefaultRolesClusterRolesAndRoleBindings()}
+     * and {@link #deployClusterOperator()}.
+     * In case of ClusterRoles it checks if the files should be switched to Roles (because of Namespace-scoped installation).
+     * For the ClusterRole it also checks if the Lease name should be changed for corresponding ClusterOperator.
+     * These files are then applied (created) using the {@link KubeResourceManager}.
+     */
     public void applyInstallationFiles() {
         List<File> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
             .filter(File::isFile)
@@ -152,6 +189,10 @@ public class YamlInstallation implements InstallationMethod {
         }
     }
 
+    /**
+     * This method applies the all needed ClusterRoles, Roles, and RoleBindings everywhere where they are needed.
+     * The full procedure and what is applied where is described in the comments directly in the code of the method.
+     */
     public void applyDefaultRolesClusterRolesAndRoleBindings() {
         // ------------------
         // watch multiple Namespaces
@@ -191,6 +232,15 @@ public class YamlInstallation implements InstallationMethod {
         }
     }
 
+    /**
+     * Applies all RoleBindings listed in the method.
+     * It also changes the ClusterRole to Role in the RoleBindings in case of Namespace-scoped installation.
+     * Finally, for the `022-RoleBinding-strimzi-cluster-operator.yaml` it checks if the change of the Lease name is needed or not
+     * (and changes it in case of need).
+     * These RoleBindings are then applied in each Namespace that should be watched by the ClusterOperator.
+     *
+     * @param namespaceToWatch  Namespace which ClusterOperator should watch and where these RoleBindings should be created
+     */
     public void applyRoleBindings(String namespaceToWatch) {
         List<String> roleBindings = List.of(
             // 020-RoleBinding => Cluster Operator rights for managing operands
@@ -219,6 +269,15 @@ public class YamlInstallation implements InstallationMethod {
         });
     }
 
+    /**
+     * Applies all Roles listed in the method.
+     * It also changes the ClusterRole to Role in case of Namespace-scoped installation.
+     * Finally, for the `022-ClusterRole-strimzi-cluster-operator-role.yaml"` it checks if the change of the Lease name is needed or not
+     * (and changes it in case of need).
+     * These Roles are then applied in each Namespace that should be watched by the ClusterOperator.
+     *
+     * @param namespaceToWatch  Namespace which ClusterOperator should watch and where these Roles should be created
+     */
     public void applyRoles(String namespaceToWatch) {
         List<String> roleFiles = List.of(
             "020-ClusterRole-strimzi-cluster-operator-role.yaml",
@@ -246,6 +305,9 @@ public class YamlInstallation implements InstallationMethod {
         });
     }
 
+    /**
+     * In case of cluster-wide installation, it applies all ClusterRoleBindings listed in the method.
+     */
     private void applyClusterRoleBindings() {
         List<String> clusterRoleBindings = List.of(
             "021-ClusterRoleBinding-strimzi-cluster-operator.yaml",
@@ -261,10 +323,20 @@ public class YamlInstallation implements InstallationMethod {
         }
     }
 
+    /**
+     * Method that deploys the ClusterOperator based on the {@link #clusterOperatorConfiguration} configured at
+     * initialization of the {@link YamlInstallation} method.
+     */
     public void deployClusterOperator() {
         deployClusterOperator(clusterOperatorConfiguration);
     }
 
+    /**
+     * Based on {@link ClusterOperatorConfiguration} specified in the {@param clusterOperatorConfiguration} it configures
+     * the Deployment (with all the env variables, labels, replicas, etc.) and deploys it using the {@link KubeResourceManager}.
+     *
+     * @param clusterOperatorConfiguration  desired configuration of the ClusterOperator
+     */
     public static void deployClusterOperator(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         Deployment clusterOperator = DeploymentResource.getDeploymentFromYaml(PATH_TO_CO_CONFIG);
 

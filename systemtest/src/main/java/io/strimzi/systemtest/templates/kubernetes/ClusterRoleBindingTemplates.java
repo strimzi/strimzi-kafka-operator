@@ -90,6 +90,16 @@ public class ClusterRoleBindingTemplates {
                 .build();
     }
 
+
+    /**
+     * It reads the ClusterRoleBinding object from the {@param pathToFile}, then it returns the CRB with first subject updated
+     * with the Namespace name set to {@param namespaceName}.
+     *
+     * @param namespaceName     name of the Namespace that should be used for the first subject
+     * @param pathToFile        path to the CRB file
+     *
+     * @return  CRB object from {@param pathToFile} updated with {@param namespaceName} set in the first subject
+     */
     public static ClusterRoleBinding clusterRoleBindingFromFile(String namespaceName, String pathToFile) {
         ClusterRoleBinding clusterRoleBinding = ReadWriteUtils.readObjectFromYamlFilepath(pathToFile, ClusterRoleBinding.class);
 

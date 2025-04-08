@@ -16,6 +16,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Class containing all the configuration options for the ClusterOperator -> including OLM.
+ * This class is and should be used across all the installation methods.
+ */
 @Buildable(editableEnabled = false)
 public class ClusterOperatorConfiguration {
     private String operatorDeploymentName = TestConstants.STRIMZI_DEPLOYMENT_NAME;

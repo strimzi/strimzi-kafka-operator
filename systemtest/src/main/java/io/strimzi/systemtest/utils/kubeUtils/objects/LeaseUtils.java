@@ -20,7 +20,20 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Class containing methods for operations around Leases
+ */
 public class LeaseUtils {
+    /**
+     * It takes the path to the resource (specified in {@param yamlPath} and changes the file to correspond to particular
+     * Lease name specified in `STRIMZI_LEADER_ELECTION_LEASE_NAME` (one of the environment variables in {@param envVars}.
+     * Based on the resource type it changes the Lease name in specific fields.
+     *
+     * @param yamlPath  path to resource YAML
+     * @param envVars   list of environment variables containing `STRIMZI_LEADER_ELECTION_LEASE_NAME` env variable
+     *                  If there is none, the whole check is skipped
+     * @return  path to the updated resource's YAML file
+     */
     public static String changeLeaseNameInResourceIfNeeded(String yamlPath, List<EnvVar> envVars) {
         final EnvVar leaseEnvVar = envVars == null ? null : envVars.stream().filter(envVar -> envVar.getName().equals("STRIMZI_LEADER_ELECTION_LEASE_NAME")).findFirst().orElse(null);
         Map.Entry<String, String> resourceEntry = TestConstants.LEASE_FILES_AND_RESOURCES.entrySet().stream().filter(entry -> yamlPath.equals(entry.getValue())).findFirst().orElse(null);

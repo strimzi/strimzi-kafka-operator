@@ -106,6 +106,14 @@ public class OlmUtils {
         return kubeClient().getCsv(namespaceName, csvName).getSpec().getInstall().getSpec().getDeployments().get(0).getName();
     }
 
+    /**
+     * Returns Map of Kind and particular object in JsonObject from CSV.
+     *
+     * @param coNamespaceName   Namespace name where the CSV should be located
+     * @param olmBundlePrefix   Prefix for the OLM bundle - by that the CSV is taken
+     *
+     * @return  Map of examples that particular CSV contains
+     */
     public static Map<String, JsonObject> getExamplesFromCsv(String coNamespaceName, String olmBundlePrefix) {
         JsonArray examples = new JsonArray(kubeClient().getCsvWithPrefix(coNamespaceName, olmBundlePrefix).getMetadata().getAnnotations().get("alm-examples"));
         return examples.stream().map(o -> (JsonObject) o).collect(Collectors.toMap(object -> object.getString("kind"), object -> object));

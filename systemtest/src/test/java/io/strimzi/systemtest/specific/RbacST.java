@@ -150,6 +150,15 @@ public class RbacST extends AbstractST {
         assertThat(condition.getStatus(), CoreMatchers.is("True"));
     }
 
+    /**
+     * Similar method that we have in {@link YamlInstallation#applyInstallationFiles()} with different resource types that it handles.
+     * This is here because it's used only in this test and having it directly in the {@link YamlInstallation#applyInstallationFiles()}
+     * would be too hacky.
+     * It applies all resources from the {@link YamlInstallation#CO_INSTALL_DIR} except Roles, ClusterRoles, ClusterRoleBindings, RoleBindings and Deployment.
+     * These resources are applied in the tests directly.
+     *
+     * @param clusterOperatorConfiguration  desired ClusterOperator configuration
+     */
     private void applyOtherInstallationFilesThatAreNotRbac(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         List<File> operatorFiles = Arrays.stream(new File(YamlInstallation.CO_INSTALL_DIR).listFiles()).sorted()
             .filter(File::isFile)

@@ -16,29 +16,45 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.regex.Matcher;
 
+/**
+ * Class for handling the Helm installation via the Helm client.
+ */
 public class HelmInstallation implements InstallationMethod {
-    private static final Logger LOGGER = LogManager.getLogger(HelmInstallation.class);
-
     public static final String HELM_CHART = TestUtils.USER_PATH + "/../packaging/helm-charts/helm3/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
 
     private final ClusterOperatorConfiguration clusterOperatorConfiguration;
 
+    /**
+     * Constructor with specific {@link ClusterOperatorConfiguration}.
+     *
+     * @param clusterOperatorConfiguration  default or customized {@link ClusterOperatorConfiguration} which should be used
+     *                                      for installation of the ClusterOperator via Helm
+     */
     public HelmInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) {
         this.clusterOperatorConfiguration = clusterOperatorConfiguration;
     }
 
+    /**
+     * Returns the configured (and maybe updated) {@link ClusterOperatorConfiguration}.
+     * This is then used in {@link SetupClusterOperator#getClusterConfiguration()} (based on the installation method).
+     *
+     * @return  {@link ClusterOperatorConfiguration} configured and used during the installation
+     */
     public ClusterOperatorConfiguration getClusterOperatorConfiguration() {
         return clusterOperatorConfiguration;
     }
 
+    /**
+     * Install method that goes through the configured values in the {@link #clusterOperatorConfiguration}.
+     * It uses the Helm client and because we are not using the ResourceManager for handling it, we are adding the
+     * {@link #delete()} method to the stack.
+     */
     @Override
     public void install() {
         InstallCommand installCommand = new Helm(Paths.get(HELM_CHART))
@@ -108,6 +124,10 @@ public class HelmInstallation implements InstallationMethod {
         KubeResourceManager.get().pushToStack(new ResourceItem<>(this::delete));
     }
 
+    /**
+     * Delete method that uses Helm client to delete the whole installation.
+     * This is added into ResourceManager's stack in the {@link #install()} method.
+     */
     @Override
     public void delete() {
         Helm.uninstall(HELM_RELEASE_NAME)

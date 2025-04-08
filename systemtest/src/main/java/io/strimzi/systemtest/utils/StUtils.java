@@ -630,6 +630,13 @@ public class StUtils {
         }
     }
 
+    /**
+     * Method for cutting the length of the test case in case that it's too long for having it as label in the particular resource.
+     *
+     * @param testCaseName  test case name that should be trimmed
+     *
+     * @return  trimmed test case name if needed
+     */
     public static String trimTestCaseBaseOnItsLength(String testCaseName) {
         // because label values `must be no more than 63 characters`
         if (testCaseName.length() > 63) {
