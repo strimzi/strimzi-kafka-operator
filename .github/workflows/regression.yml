@@ -26,7 +26,7 @@ on:
 
 jobs:
   print-event:
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: oracle-4cpu-16gb-x86-64
     steps:
       - name: Print event
         run: |
