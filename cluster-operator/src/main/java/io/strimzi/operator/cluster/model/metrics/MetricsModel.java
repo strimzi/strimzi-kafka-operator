@@ -17,9 +17,4 @@ public interface MetricsModel {
      * Metrics endpoint port number.
      */
     int METRICS_PORT = 9404;
-
-    /**
-     * @return Whether the endpoint is enabled.
-     */
-    boolean isEnabled();
 }

@@ -2165,7 +2165,7 @@ public class KafkaConnectClusterTest {
 
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS, SHARED_ENV_PROVIDER);
 
-        assertThat(kc.metrics().isEnabled(), is(true));
+        assertThat(kc.metrics(), is(notNullValue()));
         assertThat(((JmxPrometheusExporterModel) kc.metrics()).getConfigMapName(), is("my-metrics-configuration"));
         assertThat(((JmxPrometheusExporterModel) kc.metrics()).getConfigMapKey(), is("config.yaml"));
     }

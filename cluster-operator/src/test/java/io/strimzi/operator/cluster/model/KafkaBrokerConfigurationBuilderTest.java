@@ -35,7 +35,6 @@ import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
-import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
@@ -44,6 +43,7 @@ import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -158,16 +158,16 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endValues()
                 .build();
         StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(new KafkaClusterSpecBuilder()
-                .withMetricsConfig(config).build());
+                .withMetricsConfig(config).build(), List.of(".*"));
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withStrimziMetricsReporter(model)
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                 StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true",
-                 StrimziMetricsReporterConfig.LISTENER + "=http://0.0.0.0:" + StrimziMetricsReporterModel.METRICS_PORT,
-                 StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_log.*,kafka_network.*"));
+                 "prometheus.metrics.reporter.listener.enable=true",
+                 "prometheus.metrics.reporter.listener=http://0.0.0.0:" + StrimziMetricsReporterModel.METRICS_PORT,
+                 "prometheus.metrics.reporter.allowlist=kafka_log.*,kafka_network.*"));
     }
 
     @ParallelTest
@@ -483,8 +483,8 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testNullUserConfiguration()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(null, false, false)
-                .build();
+            .withUserConfiguration(null, false, false)
+            .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "config.providers=strimzienv,strimzifile,strimzidir",
@@ -527,8 +527,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
-                "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS));
+                "kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter",
+                "metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter"));
     }
 
     @ParallelTest
@@ -545,9 +545,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
+                "kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter",
                 "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
-                        + "," + StrimziMetricsReporterConfig.KAFKA_CLASS));
+                        + ",io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter"));
     }
 
     @ParallelTest
@@ -699,18 +699,18 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
-                "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS));
+                "kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter",
+                "metric.reporters=my.domain.CustomMetricReporter,io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter"));
     }
 
     @ParallelTest
-    public void testUserConfigurationWithCcAndStrimziAndOtherMetricsReporters()  {
+    public void testUserConfigurationWithCcAndStrimziAndOtherMetricsReporters() {
         Map<String, Object> userConfiguration = new HashMap<>();
         userConfiguration.put("metric.reporters", "my.domain.CustomMetricReporter");
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-            .withUserConfiguration(kafkaConfiguration, true, true)
-            .build();
+                .withUserConfiguration(kafkaConfiguration, true, true)
+                .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "config.providers=strimzienv,strimzifile,strimzidir",
@@ -720,11 +720,12 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
+                "kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter",
                 "metric.reporters=my.domain.CustomMetricReporter,"
-                        + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER + ","
-                        + StrimziMetricsReporterConfig.KAFKA_CLASS));
+                        + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER +
+                        ",io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter"));
     }
+
 
     @ParallelTest
     public void testEphemeralStorageLogDirs()  {
@@ -2557,5 +2558,82 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "metadata.log.dir=/my/kraft/metadata/kafka-log2"
         ));
+    }
+
+    @ParallelTest
+    public void testCreateOrUpdateConfigValueNewValue() {
+        // The value does not exist and should be appended.
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        String key = "test-key";
+        String newValue = "new-value";
+
+        KafkaBrokerConfigurationBuilder.createOrUpdateConfigValue(config, key, newValue);
+
+        assertThat(config.getConfigOption(key), is(newValue));
+    }
+
+    @ParallelTest
+    public void testCreateOrUpdateConfigValueDifferentValue() {
+        // The value has changed, so new value should be added.
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        String key = "test-key";
+        String newValue = "new-value";
+
+        config.setConfigOption(key, "initial-value");
+        KafkaBrokerConfigurationBuilder.createOrUpdateConfigValue(config, key, newValue);
+
+        assertThat(config.getConfigOption(key), is(newValue));
+    }
+
+    @ParallelTest
+    public void testCreateOrUpdateConfigValueSameValue() {
+        // The value already exists, so it should not be added again.
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        String key = "test-key";
+        String initialValue = "test-value";
+
+        config.setConfigOption(key, initialValue);
+        KafkaBrokerConfigurationBuilder.createOrUpdateConfigValue(config, key, initialValue);
+
+        assertThat(config.getConfigOption(key), is(initialValue));
+    }
+
+    @ParallelTest
+    public void testCreateOrAddConfigListValueNewValue() {
+        // The value does not exist in the list and should be appended.
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        String key = "test-key";
+        String newValue = "test-value";
+
+        KafkaBrokerConfigurationBuilder.createOrAddConfigListValue(config, key, newValue);
+
+        assertThat(config.getConfigOption(key), is("test-value"));
+    }
+
+    @ParallelTest
+    public void testCreateOrAddConfigListValueExistingDoesNotContainValue() {
+        // The value has changed in the list, so new value should be added.
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        String key = "test-key";
+        String initialValue = "test-value";
+        String newValue = "new-value";
+
+        config.setConfigOption(key, initialValue);
+        KafkaBrokerConfigurationBuilder.createOrAddConfigListValue(config, key, newValue);
+
+        assertThat(config.getConfigOption(key), is("test-value,new-value"));
+    }
+
+    @ParallelTest
+    public void testCreateOrAddConfigListValueExistingContainsValue() {
+        // The value already exists in the list, so it should not be added again.
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        String key = "test-key";
+        String value = "test-value";
+
+        config.setConfigOption(key, value);
+        KafkaBrokerConfigurationBuilder.createOrAddConfigListValue(config, key, value);
+
+        assertThat(config.getConfigOption(key), is(value));
     }
 }

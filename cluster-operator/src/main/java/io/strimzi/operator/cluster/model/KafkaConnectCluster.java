@@ -251,6 +251,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
         result.jvmOptions = spec.getJvmOptions();
 
+        /*
+         Metrics Reporter is not yet supported with KafkaConnect.
+         Metrics config type check happens with CEL validation at the spec level.
+        */
         if (spec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
             result.metrics = new JmxPrometheusExporterModel(spec);
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
@@ -366,7 +370,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(2);
         portList.add(ContainerUtils.createContainerPort(REST_API_PORT_NAME, REST_API_PORT));
-        if (metrics != null && metrics.isEnabled()) {
+        if (metrics != null) {
             portList.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
         }
 
@@ -618,7 +622,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(metrics != null && metrics.isEnabled())));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(metrics != null)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
@@ -764,7 +768,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, List.of(connectPeer, clusterOperatorPeer)));
 
             // The Metrics port (if enabled) is opened to all by default
-            if (metrics != null && metrics.isEnabled()) {
+            if (metrics != null) {
                 rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
             }
 

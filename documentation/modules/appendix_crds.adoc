@@ -1941,7 +1941,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec
 |The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, capacity.config.file, self.healing., ssl., kafka.broker.failure.detection.enable, topic.config.provider.class (with the exception of: ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled, webserver.http.cors.origin, webserver.http.cors.exposeheaders, webserver.security.enable, webserver.ssl.enable).
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
-|Metrics configuration.
+|Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not support `strimziMetricsReporter`.
 |apiUsers
 |xref:type-HashLoginServiceApiUsers-{context}[`HashLoginServiceApiUsers`]
 |Configuration of the Cruise Control REST API users.
@@ -2530,7 +2530,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |Configuration of the node label which will be used as the `client.rack` consumer configuration.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
-|Metrics configuration.
+|Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not yet support `strimziMetricsReporter`.
 |tracing
 |xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |The configuration of tracing in Kafka Connect.
@@ -4125,7 +4125,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |Configuration of the node label which will be used as the `client.rack` consumer configuration.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
-|Metrics configuration.
+|Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not yet support `strimziMetricsReporter`.
 |tracing
 |xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |The configuration of tracing in Kafka Connect.

@@ -62,6 +62,7 @@ import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
@@ -102,6 +103,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({
     "checkstyle:ClassDataAbstractionCoupling",
@@ -1086,7 +1088,7 @@ public class CruiseControlTest {
                 .build();
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
-        assertThat(cc.metrics().isEnabled(), is(true));
+        assertThat(cc.metrics(), is(notNullValue()));
         assertThat(((JmxPrometheusExporterModel) cc.metrics()).getConfigMapName(), is("my-metrics-configuration"));
         assertThat(((JmxPrometheusExporterModel) cc.metrics()).getConfigMapKey(), is("config.yaml"));
     }
@@ -1095,6 +1097,26 @@ public class CruiseControlTest {
     public void testMetricsParsingNoMetrics() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         assertThat(cc.metrics(), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testStrimziReporterMetricsConfig() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+            .editSpec()
+                .withNewCruiseControl()
+                    .withNewStrimziMetricsReporterConfig()
+                        .withNewValues()
+                            .withAllowList(List.of("kafka_log.*", "kafka_network.*"))
+                        .endValues()
+                    .endStrimziMetricsReporterConfig()
+                .endCruiseControl()
+            .endSpec()
+            .build();
+
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class,
+            () -> createCruiseControl(kafka, NODES, STORAGE, Map.of()));
+
+        assertThat(ex.getMessage(), is("The Strimzi Metrics Reporter is not supported with this component"));
     }
 
     @ParallelTest
