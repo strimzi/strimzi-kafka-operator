@@ -8,8 +8,13 @@ runs:
     - name: Check docker version
       shell: bash
       run: "docker --version"
-#    - name: Set up Docker
-#      uses: docker/setup-docker-action@v4
+    - name: Set up Docker
+      uses: docker/setup-docker-action@v4
+      with:
+        daemon-config: |
+          {
+            "debug": true
+          }
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
