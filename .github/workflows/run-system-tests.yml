@@ -150,8 +150,6 @@ jobs:
           architecture: ${{ inputs.architecture }}
       - name: Install Docker
         uses: ./.github/actions/install-docker
-        with:
-          rootless: true
       - name: Install Kind
         uses: ./.github/actions/setup-kind
         with:
