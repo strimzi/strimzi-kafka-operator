@@ -54,10 +54,13 @@ import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
+import io.strimzi.api.kafka.model.connect.ImageArtifact;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectTemplate;
+import io.strimzi.api.kafka.model.connect.MountedArtifact;
+import io.strimzi.api.kafka.model.connect.MountedPlugin;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
@@ -140,6 +143,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected MetricsModel metrics;
     protected LoggingModel logging;
     protected AbstractConfiguration configuration;
+    protected List<MountedPlugin> mountedPlugins;
 
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
@@ -321,6 +325,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             }
         }
 
+        result.mountedPlugins = spec.getPlugins();
+
         return result;
     }
 
@@ -394,8 +400,35 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift, "", true);
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
+        volumeList.addAll(getMountedPluginVolumes());
         
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
+
+        return volumeList;
+    }
+
+    private List<Volume> getMountedPluginVolumes()  {
+        List<Volume> volumeList = new ArrayList<>();
+
+        if (mountedPlugins != null) {
+            for (MountedPlugin plugin : mountedPlugins) {
+                if (plugin.getArtifacts() != null && !plugin.getArtifacts().isEmpty()) {
+                    for (MountedArtifact artifact : plugin.getArtifacts()) {
+                        if (artifact instanceof ImageArtifact imageArtifact) {
+                            volumeList.add(new VolumeBuilder()
+                                    .withName("plugin-" + plugin.getName() + "-" + Util.hashStub(imageArtifact.getReference()))
+                                    .withNewImage()
+                                        .withReference(imageArtifact.getReference())
+                                        .withPullPolicy(imageArtifact.getPullPolicy())
+                                    .endImage()
+                                    .build());
+                        }
+                    }
+                } else {
+                    LOGGER.warnCr(reconciliation, "The mounted plugin {} has no artifacts", plugin.getName());
+                }
+            }
+        }
 
         return volumeList;
     }
@@ -458,6 +491,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs", "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
+        volumeMountList.addAll(getMountedPluginVolumeMounts());
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
 
@@ -468,6 +502,26 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateInitContainer);
+        return volumeMountList;
+    }
+
+    private List<VolumeMount> getMountedPluginVolumeMounts()    {
+        List<VolumeMount> volumeMountList = new ArrayList<>();
+
+        if (mountedPlugins != null) {
+            for (MountedPlugin plugin : mountedPlugins) {
+                if (plugin.getArtifacts() != null && !plugin.getArtifacts().isEmpty()) {
+                    for (MountedArtifact artifact : plugin.getArtifacts()) {
+                        if (artifact instanceof ImageArtifact imageArtifact) {
+                            volumeMountList.add(VolumeUtils.createVolumeMount("plugin-" + plugin.getName() + "-" + Util.hashStub(imageArtifact.getReference()), "/opt/kafka/plugins/" + plugin.getName() + "/" + Util.hashStub(imageArtifact.getReference())));
+                        }
+                    }
+                } else {
+                    LOGGER.warnCr(reconciliation, "The mounted plugin {} has no artifacts", plugin.getName());
+                }
+            }
+        }
+
         return volumeMountList;
     }
 

@@ -702,6 +702,7 @@ Supported Volume Types
 * EmptyDir
 * PersistentVolumeClaims
 * CSI Volumes
+* Image Volumes
 
 .Example configuration for additional volumes
 [source,yaml,subs=attributes+]
@@ -731,6 +732,9 @@ spec:
               volumeAttributes:
                 csi.cert-manager.io/issuer-name: my-ca
                 csi.cert-manager.io/dns-names: ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local
+          - name: example-oci-plugin
+            image:
+              reference: my-registry.io/oci-artifacts/example-plugin:latest
       kafkaContainer:
         volumeMounts:
           - name: example-secret
@@ -743,7 +747,16 @@ spec:
             mountPath: /mnt/data
           - name: example-csi-volume
             mountPath: /mnt/certificate
+          - name: example-oci-plugin
+            mountPath: /mnt/example-plugin
 ----
 
 You can use volumes to store files containing configuration values for a Kafka component and then load those values using a configuration provider.
 For more information, see link:{BookURLDeploying}#assembly-loading-config-with-providers-str[Loading configuration values from external sources^].
+
+You can also use additional volumes to mount custom plugins:
+
+* For the User and Topic Operators, you can use the environment variable `JAVA_CLASSPATH` to modify the Java classpath and have your custom plugin(s) included in it.
+* For the Kafka operands and Cruise Control, you can use the environment variable `CLASSPATH` to modify the Java classpath and have your custom plugin(s) included in it.
+* For adding Kafka Connect connectors, see link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-str[Adding Kafka Connect connectors^].
+* Some other plugins - such as the Tiered Storage plugins - might use their own classpath configuration.

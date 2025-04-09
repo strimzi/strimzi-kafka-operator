@@ -1630,6 +1630,14 @@ spec:
                                         type: string
                                       type: object
                                   description: CSIVolumeSource object to use to populate the volume.
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: ImageVolumeSource object to use to populate the volume.
                               oneOf:
                               - properties:
                                   secret: {}
@@ -1637,6 +1645,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka `Pods`.
                       bootstrapService:
@@ -3231,6 +3240,14 @@ spec:
                                         type: string
                                       type: object
                                   description: CSIVolumeSource object to use to populate the volume.
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: ImageVolumeSource object to use to populate the volume.
                               oneOf:
                               - properties:
                                   secret: {}
@@ -3238,6 +3255,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for ZooKeeper `Pods`.
                       clientService:
@@ -4638,6 +4656,14 @@ spec:
                                         type: string
                                       type: object
                                   description: CSIVolumeSource object to use to populate the volume.
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: ImageVolumeSource object to use to populate the volume.
                               oneOf:
                               - properties:
                                   secret: {}
@@ -4645,6 +4671,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Entity Operator `Pods`.
                       topicOperatorContainer:
@@ -6094,6 +6121,14 @@ spec:
                                         type: string
                                       type: object
                                   description: CSIVolumeSource object to use to populate the volume.
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: ImageVolumeSource object to use to populate the volume.
                               oneOf:
                               - properties:
                                   secret: {}
@@ -6101,6 +6136,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Cruise Control `Pods`.
                       apiService:
@@ -7349,6 +7385,14 @@ spec:
                                         type: string
                                       type: object
                                   description: CSIVolumeSource object to use to populate the volume.
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: ImageVolumeSource object to use to populate the volume.
                               oneOf:
                               - properties:
                                   secret: {}
@@ -7356,6 +7400,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for JmxTrans `Pods`.
                       container:
@@ -8282,6 +8327,14 @@ spec:
                                         type: string
                                       type: object
                                   description: CSIVolumeSource object to use to populate the volume.
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: ImageVolumeSource object to use to populate the volume.
                               oneOf:
                               - properties:
                                   secret: {}
@@ -8289,6 +8342,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka Exporter `Pods`.
                       service:

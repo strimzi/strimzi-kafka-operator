@@ -1170,6 +1170,14 @@ spec:
                                     type: string
                                   type: object
                               description: CSIVolumeSource object to use to populate the volume.
+                            image:
+                              type: object
+                              properties:
+                                pullPolicy:
+                                  type: string
+                                reference:
+                                  type: string
+                              description: ImageVolumeSource object to use to populate the volume.
                           oneOf:
                           - properties:
                               secret: {}
@@ -1177,6 +1185,7 @@ spec:
                               emptyDir: {}
                               persistentVolumeClaim: {}
                               csi: {}
+                              image: {}
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect `Pods`.
                   apiService:
@@ -2216,6 +2225,14 @@ spec:
                                     type: string
                                   type: object
                               description: CSIVolumeSource object to use to populate the volume.
+                            image:
+                              type: object
+                              properties:
+                                pullPolicy:
+                                  type: string
+                                reference:
+                                  type: string
+                              description: ImageVolumeSource object to use to populate the volume.
                           oneOf:
                           - properties:
                               secret: {}
@@ -2223,6 +2240,7 @@ spec:
                               emptyDir: {}
                               persistentVolumeClaim: {}
                               csi: {}
+                              image: {}
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                   buildContainer:
@@ -2652,6 +2670,46 @@ spec:
                 - output
                 - plugins
                 description: Configures how the Connect container image should be built. Optional.
+              plugins:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      pattern: "^[a-z0-9][-_a-z0-9]*[a-z0-9]$"
+                      description: "The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be mounted. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required."
+                    artifacts:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          pullPolicy:
+                            type: string
+                            description: |-
+                              Policy for pulling OCI objects. Possible values are:
+
+                              * `Always`: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+                              * `Never`: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+                              * `IfNotPresent`: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+
+                              Defaults to `Always` if `:latest` tag is specified, or `IfNotPresent` otherwise.
+                          reference:
+                            type: string
+                            description: Image or artifact reference to be used. Required.
+                          type:
+                            type: string
+                            enum:
+                            - image
+                            description: "Artifact type. Currently, the only supported artifact type is `image`."
+                        required:
+                        - reference
+                        - type
+                      description: List of artifacts which belong to this connector plugin. Required.
+                  required:
+                  - name
+                  - artifacts
+                description: List of connector plugins which should be mounted to the Kafka Connect.
             required:
             - bootstrapServers
             description: The specification of the Kafka Connect cluster.

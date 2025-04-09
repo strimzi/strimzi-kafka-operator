@@ -18,6 +18,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @DescriptionFile
@@ -28,7 +29,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "version", "replicas", "image", "bootstrapServers", "tls", "authentication", "config", "resources",
     "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "logging", "clientRackInitImage", "rack",
-    "metricsConfig", "tracing", "template", "externalConfiguration", "build" })
+    "metricsConfig", "tracing", "template", "externalConfiguration", "build", "plugins" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 @ToString(callSuper = true)
 public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
@@ -40,6 +41,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private Build build;
+    private List<MountedPlugin> plugins;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
@@ -90,5 +92,14 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
     public void setBuild(Build build) {
         this.build = build;
+    }
+
+    @Description("List of connector plugins which should be mounted to the Kafka Connect.")
+    public List<MountedPlugin> getPlugins() {
+        return plugins;
+    }
+
+    public void setPlugins(List<MountedPlugin> plugins) {
+        this.plugins = plugins;
     }
 }
