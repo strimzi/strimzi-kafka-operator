@@ -261,6 +261,7 @@ EOF
     cat /tmp/kind-config.yaml
     kind get nodes
     kind get clusters
+    free -m
     kind create cluster \
         --image "$KIND_NODE_IMAGE" \
         --name "$KIND_CLUSTER_NAME" \
