@@ -150,8 +150,8 @@ jobs:
           architecture: ${{ inputs.architecture }}
       - name: Install Docker
         uses: ./.github/actions/install-docker
-      - name: Install minikube
-        uses: ./.github/actions/setup-minikube
+      - name: Install Kind
+        uses: ./.github/actions/setup-kind
         with:
           architecture: ${{ inputs.architecture }}
 

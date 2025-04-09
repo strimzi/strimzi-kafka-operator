@@ -63,8 +63,8 @@ jobs:
 
     uses: ./.github/workflows/run-system-tests.yml
     with:
-      name: ${{ matrix.profile }}-${{ matrix.agent }}
-      displayName: ${{ matrix.profile }}-${{ matrix.agent }}
+      name: ${{ matrix.profile }}-${{ matrix.config.agent }}
+      displayName: ${{ matrix.profile }}-${{ matrix.config.agent }}
       profile: ${{ matrix.profile }}
       agent: ${{ matrix.config.agent }}
       # TODO - change accordingly
