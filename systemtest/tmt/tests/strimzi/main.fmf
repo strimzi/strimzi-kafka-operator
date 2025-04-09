@@ -74,7 +74,7 @@ environment:
 
 /user-capacity:
   summary: Run performance capacity strimzi test suite
-  duration: 12h
+  duration: 5h
   tier: 1
   environment+:
     TEST_PROFILE: user-capacity
@@ -82,7 +82,7 @@ environment:
 
 /topic-capacity:
   summary: Run performance capacity strimzi test suite
-  duration: 12h
+  duration: 5h
   tier: 1
   environment+:
     TEST_PROFILE: topic-capacity
