@@ -4,6 +4,7 @@
 
 * Add support for Kafka 3.9.1
 * Fixed MirrorMaker 2 client rack init container override being ignored.
+* Support for Kubernetes Image Volumes to mount custom plugins
 
 ### Major changes, deprecations and removals
 

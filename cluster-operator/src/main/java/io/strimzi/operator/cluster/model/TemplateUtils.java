@@ -130,6 +130,8 @@ public class TemplateUtils {
             volumeBuilder.withPersistentVolumeClaim(volumeConfig.getPersistentVolumeClaim());
         } else if (volumeConfig.getCsi() != null) {
             volumeBuilder.withCsi(volumeConfig.getCsi());
+        } else if (volumeConfig.getImage() != null) {
+            volumeBuilder.withImage(volumeConfig.getImage());
         }
 
         return volumeBuilder.build();

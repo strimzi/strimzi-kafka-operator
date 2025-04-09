@@ -1,0 +1,1 @@
+IMPORTANT: This feature requires that the Kubernetes Image Volume feature is enabled and supported by your Kubernetes cluster.

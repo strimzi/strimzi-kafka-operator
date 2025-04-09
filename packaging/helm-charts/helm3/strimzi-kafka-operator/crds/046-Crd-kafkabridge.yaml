@@ -1146,6 +1146,14 @@ spec:
                                       type: string
                                     type: object
                                 description: CSIVolumeSource object to use to populate the volume.
+                              image:
+                                type: object
+                                properties:
+                                  pullPolicy:
+                                    type: string
+                                  reference:
+                                    type: string
+                                description: ImageVolumeSource object to use to populate the volume.
                             oneOf:
                               - properties:
                                   secret: {}
@@ -1153,6 +1161,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Bridge `Pods`.
                     apiService:

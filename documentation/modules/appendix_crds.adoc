@@ -1320,6 +1320,9 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |csi
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#csivolumesource-v1-core[CSIVolumeSource]
 |CSIVolumeSource object to use to populate the volume.
+|image
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#imagevolumesource-v1-core[ImageVolumeSource]
+|ImageVolumeSource object to use to populate the volume.
 |====
 
 [id='type-InternalServiceTemplate-{context}']
@@ -2543,6 +2546,9 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |build
 |xref:type-Build-{context}[`Build`]
 |Configures how the Connect container image should be built. Optional.
+|plugins
+|xref:type-MountedPlugin-{context}[`MountedPlugin`] array
+|List of connector plugins which should be mounted to the Kafka Connect.
 |====
 
 [id='type-ClientTls-{context}']
@@ -3193,6 +3199,58 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |insecure
 |boolean
 |By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.
+|====
+
+[id='type-MountedPlugin-{context}']
+= `MountedPlugin` schema reference
+
+Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+
+xref:type-MountedPlugin-schema-{context}[Full list of `MountedPlugin` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.connect.MountedPlugin.adoc[leveloffset=+1]
+
+[id='type-MountedPlugin-schema-{context}']
+== `MountedPlugin` schema properties
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|name
+|string
+|The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be mounted. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
+|artifacts
+|xref:type-ImageArtifact-{context}[`ImageArtifact`] array
+|List of artifacts which belong to this connector plugin. Required.
+|====
+
+[id='type-ImageArtifact-{context}']
+= `ImageArtifact` schema reference
+
+Used in: xref:type-MountedPlugin-{context}[`MountedPlugin`]
+
+
+The `type` property is a discriminator that distinguishes use of the `ImageArtifact` type from other subtypes which may be added in the future.
+It must have the value `image` for the type `ImageArtifact`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `image`.
+|reference
+|string
+|Image or artifact reference to be used. Required.
+|pullPolicy
+|string
+|Policy for pulling OCI objects. Possible values are:
+
+* `Always`: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
+* `Never`: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
+* `IfNotPresent`: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+
+Defaults to `Always` if `:latest` tag is specified, or `IfNotPresent` otherwise.
 |====
 
 [id='type-KafkaConnectStatus-{context}']
