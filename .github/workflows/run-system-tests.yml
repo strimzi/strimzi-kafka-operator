@@ -142,6 +142,8 @@ jobs:
 
       - name: Install Shellcheck
         uses: ./.github/actions/install-shellcheck
+        with:
+          architecture: ${{ inputs.architecture }}
       - name: Install yq
         uses: ./.github/actions/install-yq
         with:
@@ -150,6 +152,8 @@ jobs:
         uses: ./.github/actions/install-docker
       - name: Install minikube
         uses: ./.github/actions/setup-minikube
+        with:
+          architecture: ${{ inputs.architecture }}
 
       # TODO - remove after testing
       - name: Print out environment info
