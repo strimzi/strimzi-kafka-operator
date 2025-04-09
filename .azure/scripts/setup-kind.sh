@@ -30,6 +30,10 @@ function is_podman() {
     [[ "$DOCKER_CMD" == "podman" ]]
 }
 
+function running_in_ci {
+    [[ -n "$GITHUB_ACTIONS" ]]
+}
+
 function install_kubectl {
     if [ "${TEST_KUBECTL_VERSION:-latest}" = "latest" ]; then
         TEST_KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
@@ -214,50 +218,44 @@ function adjust_inotify_limits {
 function create_kind_cluster {
     local control_planes="$1"
 
-# Start the cluster configuration
     cat <<EOF > /tmp/kind-config.yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 EOF
 
-    # Add control-plane nodes
     for i in $(seq 1 "$control_planes"); do
         echo "    - role: control-plane" >> /tmp/kind-config.yaml
     done
 
-    # Add worker nodes
     cat <<EOF >> /tmp/kind-config.yaml
     - role: worker
     - role: worker
     - role: worker
 EOF
 
-    # Add specific containerd configuration for IPv4/IPv6
     if [[ "$IP_FAMILY" == "ipv6" ]]; then
         cat <<EOF >> /tmp/kind-config.yaml
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."myregistry.local:5001"]
-      endpoint = ["http://myregistry.local:5001"]
+    endpoint = ["http://myregistry.local:5001"]
 EOF
     else
+        # Use the registry name as seen from Kind node (mapped via docker network)
         cat <<EOF >> /tmp/kind-config.yaml
 containerdConfigPatches:
 - |-
-  [plugins."io.containerd.grpc.v1.cri".registry]
-      config_path = "/etc/containerd/certs.d"
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."kind-registry:5001"]
+    endpoint = ["http://kind-registry:5001"]
 EOF
     fi
 
-    # Add networking configuration
     cat <<EOF >> /tmp/kind-config.yaml
 networking:
   ipFamily: $IP_FAMILY
 EOF
 
-
-    # Create the KIND cluster
     kind create cluster \
         --image "$KIND_NODE_IMAGE" \
         --name "$KIND_CLUSTER_NAME" \
@@ -363,7 +361,7 @@ network_name="kind"
 # by default using podman we have to use single control-plane because of https://github.com/kubernetes-sigs/kind/issues/2858
 control_planes=1
 
-if is_docker; then
+if is_docker || ! running_in_ci; then
     control_planes=3
 fi
 
@@ -373,7 +371,7 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     hostname=$(hostname --ip-address | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | awk '$1 != "127.0.0.1" { print $1 }' | head -1)
 
     # update insecure registries
-    # TODO - deal with this
+    # TODO - revert or remove after testing
     #updateContainerRuntimeConfiguration "${hostname}:${reg_port}"
 
     # Create kind cluster with containerd registry config dir enabled
@@ -423,7 +421,8 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
      # use ULA (i.e., Unique Local Address), which offers a similar "private" scope as link-local
     # but without the interface dependency and some of the other challenges of link-local addresses.
     # (link-local starts as fe80::) but we will use ULA fd01
-    updateContainerRuntimeConfiguration "" "${ula_fixed_ipv6}" "${reg_port}" "${registry_dns}"
+    # TODO - revert or remove after testing
+#    updateContainerRuntimeConfiguration "" "${ula_fixed_ipv6}" "${reg_port}" "${registry_dns}"
     create_kind_cluster ${control_planes}
 
     # run local container registry
