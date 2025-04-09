@@ -72,11 +72,27 @@ docker_push_manifest_default:
 
 .PHONY: docker_sign_manifest_default
 docker_sign_manifest_default:
-	# Signs the manifest and its images
-	@echo $$COSIGN_PRIVATE_KEY | base64 -d > cosign.key
+	@echo $$COSIGN_PRIVATE_KEY | base64 -d > cosign.key; \
 	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) --format '{{ json . }}' | jq -r .manifest.digest); \
-	cosign sign --recursive --tlog-upload=false -a author=StrimziCI -a BuildID=$(BUILD_ID) -a Commit=$(BUILD_COMMIT) --key cosign.key $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST
-	@rm cosign.key
+	RETRIES=5; \
+	COUNT=0; \
+	while [ $$COUNT -lt $$RETRIES ]; do \
+		cosign sign --recursive --tlog-upload=false \
+			-a author=StrimziCI -a BuildID=$(BUILD_ID) -a Commit=$(BUILD_COMMIT) \
+			--key cosign.key $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST; \
+		if [ $$? -eq 0 ]; then \
+			echo "Cosign succeeded"; \
+			break; \
+		fi; \
+		COUNT=$$((COUNT + 1)); \
+		echo "Retrying... ($$COUNT)"; \
+		sleep 2; \
+	done; \
+	if [ $$COUNT -eq $$RETRIES ]; then \
+		echo "Cosign failed after $$RETRIES attempts"; \
+		exit 1; \
+	fi; \
+	rm cosign.key
 
 .PHONY: docker_delete_manifest_default
 docker_delete_manifest_default:
