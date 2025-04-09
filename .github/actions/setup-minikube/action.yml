@@ -21,7 +21,7 @@ runs:
     - name: Setup Minikube
       shell: bash
       run: |
-        .azure/scripts/setup-kubernetes.sh "${{ inputs.architectures }}"
+        .azure/scripts/setup-kubernetes.sh "${{ inputs.architecture }}"
       env:
         TEST_CLUSTER: minikube
         TEST_KUBECTL_VERSION: ${{ inputs.kubectlVersion }}
