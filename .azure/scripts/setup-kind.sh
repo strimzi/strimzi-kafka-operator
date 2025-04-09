@@ -361,7 +361,7 @@ network_name="kind"
 # by default using podman we have to use single control-plane because of https://github.com/kubernetes-sigs/kind/issues/2858
 control_planes=1
 
-if is_docker || ! running_in_ci; then
+if is_docker && ! running_in_ci; then
     control_planes=3
 fi
 
