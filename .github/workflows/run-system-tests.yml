@@ -86,6 +86,8 @@ jobs:
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
       PROFILE: ${{ inputs.profile }}
       DOCKER_TAG: ${{ inputs.releaseVersion }}
+      # Global config for architecture
+      ARCH: ${{ inputs.architecture }}
 
       STRIMZI_RBAC_SCOPE: ${{ inputs.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ inputs.cluster_operator_install_type }}

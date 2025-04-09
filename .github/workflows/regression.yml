@@ -54,10 +54,11 @@ jobs:
     strategy:
       matrix:
         # TODO - change accordingly
-        agent: [oracle-2cpu-8gb-arm64]
+        config:
+          - agent: oracle-2cpu-8gb-arm64
+            arch: arm64
+            jdk_version: "17"
         profile: ${{ fromJson(needs.parse-params.outputs.profileList) }}
-        # TODO - change accordingly
-        jdk_version: [ '17' ]
       fail-fast: false
 
     uses: ./.github/workflows/run-system-tests.yml
@@ -65,6 +66,6 @@ jobs:
       name: ${{ matrix.profile }}-${{ matrix.agent }}
       displayName: ${{ matrix.profile }}-${{ matrix.agent }}
       profile: ${{ matrix.profile }}
-      agent: ${{ matrix.agent }}
+      agent: ${{ matrix.config.agent }}
       # TODO - change accordingly
-      architecture: "arm64"
+      architecture: ${{ matrix.config.arch }}
