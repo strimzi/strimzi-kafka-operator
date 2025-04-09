@@ -57,17 +57,17 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
         assertThat(new FeatureGates("  -ContinueReconciliationOnManualRollingUpdateFailure    ").continueOnManualRUFailureEnabled(), is(false));
 
-        assertThat(new FeatureGates("+UseStretchCluster").UseStretchClusterEnabled(), is(true));
-        assertThat(new FeatureGates("-UseStretchCluster").UseStretchClusterEnabled(), is(false));
-        assertThat(new FeatureGates("  -UseStretchCluster").UseStretchClusterEnabled(), is(false));
+        assertThat(new FeatureGates("+UseStretchCluster").useStretchClusterEnabled(), is(true));
+        assertThat(new FeatureGates("-UseStretchCluster").useStretchClusterEnabled(), is(false));
+        assertThat(new FeatureGates("  -UseStretchCluster").useStretchClusterEnabled(), is(false));
 
-        assertThat(new FeatureGates("-UseStretchCluster,-ContinueReconciliationOnManualRollingUpdateFailure").UseStretchClusterEnabled(), is(false));
+        assertThat(new FeatureGates("-UseStretchCluster,-ContinueReconciliationOnManualRollingUpdateFailure").useStretchClusterEnabled(), is(false));
         assertThat(new FeatureGates("-UseStretchCluster,-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
 
-        assertThat(new FeatureGates("  +UseStretchCluster    ,    +ContinueReconciliationOnManualRollingUpdateFailure").UseStretchClusterEnabled(), is(true));
+        assertThat(new FeatureGates("  +UseStretchCluster    ,    +ContinueReconciliationOnManualRollingUpdateFailure").useStretchClusterEnabled(), is(true));
         assertThat(new FeatureGates("  +UseStretchCluster    ,    +ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
 
-        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseStretchCluster").UseStretchClusterEnabled(), is(false));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseStretchCluster").useStretchClusterEnabled(), is(false));
         assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseStretchCluster").continueOnManualRUFailureEnabled(), is(true));
 
 

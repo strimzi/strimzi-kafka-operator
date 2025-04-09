@@ -95,7 +95,7 @@ public class FeatureGates {
     /**
      * @return  Returns true when the StretchCluster feature gate is enabled
      */
-    public boolean UseStretchClusterEnabled() {
+    public boolean useStretchClusterEnabled() {
         return useStretchCluster.isEnabled();
     }
 
