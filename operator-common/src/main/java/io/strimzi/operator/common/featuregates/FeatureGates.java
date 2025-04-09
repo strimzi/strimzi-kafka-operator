@@ -19,12 +19,12 @@ public class FeatureGates {
     /* test */ static final FeatureGates NONE = new FeatureGates("");
 
     private static final String CONTINUE_ON_MANUAL_RU_FAILURE = "ContinueReconciliationOnManualRollingUpdateFailure";
-    private static final String STRETCH_CLUSTER = "useStretchCluster";
+    private static final String USE_STRETCH_CLUSTER = "UseStretchCluster";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
     private final FeatureGate continueOnManualRUFailure =
         new FeatureGate(CONTINUE_ON_MANUAL_RU_FAILURE, true);
-    private final FeatureGate stretchCluster = new FeatureGate(STRETCH_CLUSTER, false);
+    private final FeatureGate useStretchCluster = new FeatureGate(USE_STRETCH_CLUSTER, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -46,8 +46,8 @@ public class FeatureGates {
                 featureGate = featureGate.substring(1);
 
                 switch (featureGate) {
-                    case STRETCH_CLUSTER:
-                        setValueOnlyOnce(stretchCluster, value);
+                    case USE_STRETCH_CLUSTER:
+                        setValueOnlyOnce(useStretchCluster, value);
                         break;
                     case CONTINUE_ON_MANUAL_RU_FAILURE:
                         setValueOnlyOnce(continueOnManualRUFailure, value);
@@ -95,8 +95,8 @@ public class FeatureGates {
     /**
      * @return  Returns true when the StretchCluster feature gate is enabled
      */
-    public boolean useStretchClusterEnabled() {
-        return stretchCluster.isEnabled();
+    public boolean UseStretchClusterEnabled() {
+        return useStretchCluster.isEnabled();
     }
 
 
@@ -106,14 +106,14 @@ public class FeatureGates {
      * @return  List of all Feature Gates
      */
     /*test*/ List<FeatureGate> allFeatureGates()  {
-        return List.of(continueOnManualRUFailure, stretchCluster);
+        return List.of(continueOnManualRUFailure, useStretchCluster);
     }
 
     @Override
     public String toString() {
         return "FeatureGates(" +
                 "ContinueReconciliationOnManualRollingUpdateFailure=" + continueOnManualRUFailure.isEnabled() + "," +
-                "useStretchCluster=" + stretchCluster.isEnabled() +
+                "UseStretchCluster=" + useStretchCluster.isEnabled() +
                 ")";
     }
 
@@ -145,13 +145,13 @@ public class FeatureGates {
             return false;
         } else {
             FeatureGates other = (FeatureGates) o;
-            return Objects.equals(continueOnManualRUFailure, other.continueOnManualRUFailure) && Objects.equals(stretchCluster, other.stretchCluster);
+            return Objects.equals(continueOnManualRUFailure, other.continueOnManualRUFailure) && Objects.equals(useStretchCluster, other.useStretchCluster);
         }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(continueOnManualRUFailure, stretchCluster);
+        return Objects.hash(continueOnManualRUFailure, useStretchCluster);
     }
 
     /**
