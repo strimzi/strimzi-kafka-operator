@@ -8,12 +8,6 @@ runs:
     - name: Check docker version
       shell: bash
       run: "docker --version"
-    - name: Create daemon.json
-      shell: bash
-      run: "which docker"
-    - name: Create daemon.json
-      shell: bash
-      run: "systemctl status docker"
     # TODO - maybe not needed?
 #    - name: Set up Docker
 #      uses: docker/setup-docker-action@v4
