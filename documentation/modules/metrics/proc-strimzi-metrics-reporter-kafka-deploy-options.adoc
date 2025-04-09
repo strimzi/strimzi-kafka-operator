@@ -3,16 +3,16 @@
 // metrics/assembly_metrics-kafka.adoc
 
 [id='proc-metrics-reporter-kafka-deploy-options-{context}']
-= Enabling Metrics Reporter metrics through configuration
+= Enabling Strimzi Metrics Reporter metrics through configuration
 
 [role="_abstract"]
 To enable and expose metrics in Strimzi for Prometheus, use metrics configuration properties.
 
-The following components require `metricsConfig` configuration to expose metrics:
+The following components require `metricsConfig` configuration to expose metrics in Prometheus format:
 
 * Kafka
 
-This configuration enables the {StrimziMetricsReporter} to expose metrics through an HTTP endpoint.
+This configuration enables the {StrimziMetricsReporter} to expose metrics through an HTTP endpoint on port 9404.
 The port for the Strimzi Metrics Reporter HTTP endpoint is 9404.
 Prometheus scrapes this endpoint to collect Kafka metrics.
 
@@ -58,12 +58,10 @@ metadata:
 spec:
   kafka:
     # ...
-    metricsConfig: <1>
+    metricsConfig:
       type: strimziMetricsReporter
       values:
         allowList:
           - "kafka_log.*"
           - "kafka_network.*"
-
-  # _metrics configuration..._
 ----

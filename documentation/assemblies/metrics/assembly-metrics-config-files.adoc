@@ -61,8 +61,8 @@ metrics
 <7> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus).
 <8> Installation resource file for the Prometheus image.
 <9> PodMonitor definitions translated by the Prometheus Operator into jobs for the Prometheus server to be able to scrape metrics data directly from pods.
-<10> Example Grafana dashboards with Metrics Reporter for the Kafka component.
-<11> Resource for deploying and configuring Strimzi Metrics Reporter based Kafka.
+<10> Example Grafana dashboards to be used with Metrics Reporter for the Kafka component.
+<11> Resource for deploying and configuring Kafka with Strimzi Metrics Reporter.
 <12> Kafka Bridge resource with metrics enabled.
 <13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
 <14> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control.

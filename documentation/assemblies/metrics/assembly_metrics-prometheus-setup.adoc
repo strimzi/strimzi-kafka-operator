@@ -14,9 +14,9 @@ Prometheus and Prometheus Alertmanager are used in the examples provided by Stri
 
 You can enable either Prometheus JMX Exporter or Strimzi Metrics Reporter to expose metrics:
 
-xref:proc-jmx-exporter-metrics-kafka-deploy-options-{context}[Enabling Prometheus Jmx metrics through configuration]
+xref:proc-jmx-exporter-metrics-kafka-deploy-options-{context}[Enabling Prometheus Jmx Exporter through configuration]
 
-xref:proc-metrics-reporter-kafka-deploy-options-{context}[Enabling Metrics Reporter through configuration]
+xref:proc-metrics-reporter-kafka-deploy-options-{context}[Enabling Strimzi Metrics Reporter through configuration]
 
 Once the type is determined, using Prometheus with Strimzi, requires the following:
 
