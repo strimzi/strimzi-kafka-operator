@@ -3,7 +3,7 @@ description: "Install yq tool by our script"
 
 inputs:
   architecture:
-    description: "Architecture of the yq tool"
+    description: "Architecture"
     required: false
     default: "amd64"
 
@@ -12,6 +12,5 @@ runs:
   steps:
     - name: Install yq
       shell: bash
-      run: ".azure/scripts/install_yq.sh"
-      env:
-        ARCH: ${{ inputs.architecture }}
+      run: |
+        .azure/scripts/install_yq.sh "${{ inputs.architecture }}"
