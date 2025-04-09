@@ -228,11 +228,13 @@ EOF
         echo "    - role: control-plane" >> /tmp/kind-config.yaml
     done
 
-    cat <<EOF >> /tmp/kind-config.yaml
+    if ! running_in_ci; then
+        cat <<EOF >> /tmp/kind-config.yaml
     - role: worker
     - role: worker
     - role: worker
 EOF
+    fi
 
     if [[ "$IP_FAMILY" == "ipv6" ]]; then
         cat <<EOF >> /tmp/kind-config.yaml
