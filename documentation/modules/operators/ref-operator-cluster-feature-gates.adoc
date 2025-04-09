@@ -86,7 +86,7 @@ The following table shows the maturity of the feature gates introduced across St
 ¦`ContinueReconciliationOnManualRollingUpdateFailure`
 ¦0.41
 ¦0.44
-¦0.47 (planned)
+¦0.46
 
 |===
 
@@ -99,29 +99,7 @@ For information on feature gates that have reached GA, see the documentation for
 
 Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
 Stable feature gates are production-ready, but they can still be disabled.
-
-[id='ref-operator-continue-reconciliation-on-manual-ru-failure-feature-gate-{context}']
-=== ContinueReconciliationOnManualRollingUpdateFailure feature gate
-
-The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate has a default state of _enabled_.
-
-The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate allows the Cluster Operator to continue a reconciliation if the manual rolling update of the operands fails.
-It applies to the following operands that support manual rolling updates using the `strimzi.io/manual-rolling-update` annotation:
-
-* Kafka
-* Kafka Connect
-* Kafka MirrorMaker 2
-
-Continuing the reconciliation after a manual rolling update failure allows the operator to recover from various situations that might prevent the update from succeeding.
-For example, a missing Persistent Volume Claim (PVC) or Persistent Volume (PV) might cause the manual rolling update to fail.
-However, the PVCs and PVs are created only in a later stage of the reconciliation.
-By continuing the reconciliation after this failure, the process can recreate the missing PVC or PV and recover.
-
-The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate is used by the Cluster Operator.
-It is ignored by the User and Topic Operators.
-
-.Disabling the ContinueReconciliationOnManualRollingUpdateFailure feature gate
-To disable the `ContinueReconciliationOnManualRollingUpdateFailure` feature gate, specify `-ContinueReconciliationOnManualRollingUpdateFailure` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+Currently, there are no beta level feature gates.
 
 == Early access feature gates (Alpha)
 
