@@ -54,7 +54,7 @@ jobs:
     strategy:
       matrix:
         # TODO - change accordingly
-        agent: [oracle-4cpu-16gb-x86-64]
+        agent: [oracle-2cpu-8gb-arm64]
         profile: ${{ fromJson(needs.parse-params.outputs.profileList) }}
         # TODO - change accordingly
         jdk_version: [ '17' ]
@@ -67,4 +67,4 @@ jobs:
       profile: ${{ matrix.profile }}
       agent: ${{ matrix.agent }}
       # TODO - change accordingly
-      architecture: "amd64"
+      architecture: "arm64"
