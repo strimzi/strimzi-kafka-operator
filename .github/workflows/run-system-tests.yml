@@ -24,7 +24,7 @@ on:
       cluster_operator_install_type:
         description: "Install type method used for Strimzi operator"
         required: false
-        default: ""
+        default: "bundle"
         type: string
       strimzi_rbac_scope:
         description: "RBAC configuration for operator access"
@@ -235,7 +235,6 @@ jobs:
       ############################################################################
       - name: Run systemtests
         run: |
-          mvn clean install -DskipTests
           mvn -f systemtest/pom.xml verify \
             -P"${PROFILE}" \
             -DexcludedGroups="flaky,loadbalancer,networkpolicies,${EXCLUDED_GROUPS}" \
