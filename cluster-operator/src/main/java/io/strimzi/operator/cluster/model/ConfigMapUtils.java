@@ -67,7 +67,6 @@ public class ConfigMapUtils {
             data.put(supportsLogging.logging().configMapKey(), supportsLogging.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm()));
         }
 
-        // this is only for JMX Prometheus Exporter, because Strimzi Metrics Reporter configuration is in the Kafka configuration file
         if (model instanceof SupportsMetrics supportsMetrics && supportsMetrics.metrics() instanceof JmxPrometheusExporterModel) {
             String parseResult = ((JmxPrometheusExporterModel) supportsMetrics.metrics()).metricsJson(reconciliation, metricsAndLogging.metricsCm());
             if (parseResult != null) {

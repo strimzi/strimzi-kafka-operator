@@ -44,8 +44,8 @@ public class MetricsAndLoggingUtils {
 
     private static Future<ConfigMap> metricsConfigMap(Reconciliation reconciliation, ConfigMapOperator configMapOperations, MetricsModel metrics) {
         // this is only for JMX Prometheus Exporter, because the Strimzi Metrics Reporter configuration is in the Kafka configuration file
-        if (metrics instanceof JmxPrometheusExporterModel && ((JmxPrometheusExporterModel) metrics).getConfigMapName() != null) {
-            return configMapOperations.getAsync(reconciliation.namespace(), ((JmxPrometheusExporterModel) metrics).getConfigMapName());
+        if (metrics instanceof JmxPrometheusExporterModel model && model.getConfigMapName() != null) {
+            return configMapOperations.getAsync(reconciliation.namespace(), model.getConfigMapName());
         } else {
             return Future.succeededFuture(null);
         }

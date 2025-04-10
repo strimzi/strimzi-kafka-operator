@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Model for the JMX Prometheus Exporter Java agent.
+ * Model for the Prometheus JMX Exporter Java agent.
  */
 public class JmxPrometheusExporterModel implements MetricsModel {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(JmxPrometheusExporterModel.class);

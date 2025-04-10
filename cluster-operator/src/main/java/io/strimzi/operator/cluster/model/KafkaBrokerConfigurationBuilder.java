@@ -60,6 +60,7 @@ public class KafkaBrokerConfigurationBuilder {
     // Names of environment variables expanded through config providers inside the Kafka node
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET_TEMPLATE_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:STRIMZI_%s_OAUTH_CLIENT_SECRET}";
+
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
@@ -135,7 +136,7 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Configures the Strimzi Metrics Reporter. It is set only if user enabled Strimzi Metrics Reporter.
+     * Configures the Strimzi Metrics Reporter. It is set only if user enables Strimzi Metrics Reporter.
      *
      * @param model     Strimzi Metrics Reporter configuration
      *
@@ -764,7 +765,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param userConfig    The user configuration to extract the possible user-provided config provider configuration
      *                      from it
      */
-    private void addConfigProviders(KafkaConfiguration userConfig) {
+    private void addConfigProviders(KafkaConfiguration userConfig)    {
         String strimziConfigProviders;
         if (node.broker()) {
             // File and Directory providers are used only on broker nodes
@@ -785,13 +786,14 @@ public class KafkaBrokerConfigurationBuilder {
             createConfigIfMissing(userConfig, "config.providers.strimzidir.class", "org.apache.kafka.common.config.provider.DirectoryConfigProvider");
             createConfigIfMissing(userConfig, "config.providers.strimzidir.param.allowed.paths", "/opt/kafka");
         }
+
     }
 
     /**
      * Adds the configurations passed by the user in the Kafka CR, injecting Strimzi configurations when needed.
      *
-     * @param userConfig                     The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
-     * @param injectCcMetricsReporter        Inject the Cruise Control Metrics Reporter into the configuration
+     * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
+     * @param injectCcMetricsReporter   Inject the Cruise Control Metrics Reporter into the configuration
      * @param injectStrimziMetricsReporter   Inject the Strimzi Metrics Reporter into the configuration
      *
      * @return Returns the builder instance
