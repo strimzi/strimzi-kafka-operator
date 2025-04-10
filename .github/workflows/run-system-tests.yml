@@ -187,6 +187,7 @@ jobs:
       ############################################################################
       - name: Build KafkaConnect image
         # we want to let Connect image build for different versions of Kafka inside the upgrade/downgrade STs
+        # TODO - set Kafka version globally?
         if: ${{ !contains(env.PROFILE, 'upgrade') }}
         run: |
           eval $(minikube docker-env)
