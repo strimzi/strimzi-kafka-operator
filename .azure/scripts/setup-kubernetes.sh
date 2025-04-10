@@ -103,15 +103,15 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
         minikube image load ${ARCH}/registry:2.8.2 gcr.io/google_containers/kube-registry-proxy:0.4-${ARCH}
         minikube addons enable registry --images="Registry=${ARCH}/registry:2.8.0-beta.1,KubeRegistryProxy=google_containers/kube-registry-proxy:0.4-${ARCH}"
         rm -rf kubernetes
-    elif [[ "$ARCH" = "arm64" ]]; then
-        git clone -b v1.9.11 --depth 1 https://github.com/kubernetes/kubernetes.git
-        sed -i 's/:1.11/:1.25.0/' kubernetes/cluster/addons/registry/images/Dockerfile
-        minikube image build -t google_containers/kube-registry-proxy:0.5-SNAPSHOT kubernetes/cluster/addons/registry/images/
-        minikube addons enable registry --images="Registry=arm64v8/registry:2.8.2,KubeRegistryProxy=google_containers/kube-registry-proxy:0.5-SNAPSHOT"
-        rm -rf kubernetes
+#    elif [[ "$ARCH" = "arm64" ]]; then
+#        git clone -b v1.9.11 --depth 1 https://github.com/kubernetes/kubernetes.git
+#        sed -i 's/:1.11/:1.25.0/' kubernetes/cluster/addons/registry/images/Dockerfile
+#        minikube image build -t google_containers/kube-registry-proxy:0.5-SNAPSHOT kubernetes/cluster/addons/registry/images/
+#        minikube addons enable registry --images="Registry=arm64v8/registry:2.8.2,KubeRegistryProxy=google_containers/kube-registry-proxy:0.5-SNAPSHOT"
+#        rm -rf kubernetes
     else
-
-        minikube addons enable registry --images="KubeRegistryProxy=gcr.io/google_containers/kube-registry-proxy:0.4"
+        minikube addons enable registry
+#        minikube addons enable registry --images="KubeRegistryProxy=gcr.io/google_containers/kube-registry-proxy:0.4"
     fi
 
     minikube addons enable registry-aliases
