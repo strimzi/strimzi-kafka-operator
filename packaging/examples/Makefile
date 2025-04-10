@@ -4,7 +4,7 @@ include ../../Makefile.os
 
 RELEASE_VERSION ?= latest
 RELEASE_PATH ?= ../../strimzi-$(RELEASE_VERSION)/$(PROJECT_NAME)
-EXAMPLE_DASHBOARDS ?= metrics/grafana-dashboards/
+EXAMPLE_DASHBOARDS ?= metrics/prometheus-jmx-exporter/grafana-dashboards/
 HELM_CHART_DASHBOARD_PATH ?= ../helm-charts/helm3/strimzi-kafka-operator/files/grafana-dashboards/
 
 ifneq ($(RELEASE_VERSION),latest)
