@@ -53,7 +53,7 @@ public class StrimziMetricsReporterModelTest {
         InvalidResourceException ise0 = assertThrows(InvalidResourceException.class, () -> StrimziMetricsReporterModel.validate(
                 new StrimziMetricsReporterBuilder()
                         .withNewValues()
-                        .withAllowList(List.of())
+                            .withAllowList(List.of())
                         .endValues()
                         .build())
         );
@@ -62,7 +62,7 @@ public class StrimziMetricsReporterModelTest {
         InvalidResourceException ise1 = Assertions.assertThrows(InvalidResourceException.class, () -> StrimziMetricsReporterModel.validate(
                 new StrimziMetricsReporterBuilder()
                         .withNewValues()
-                        .withAllowList(List.of("kafka_network.*", "kafka_log.***", "[a+"))
+                            .withAllowList(List.of("kafka_network.*", "kafka_log.***", "[a+"))
                         .endValues()
                         .build())
         );

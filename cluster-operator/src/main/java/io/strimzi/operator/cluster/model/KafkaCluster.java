@@ -112,7 +112,6 @@ import static java.util.Collections.singletonMap;
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
-
     /**
      * Default Strimzi Metrics Reporter allow list.
      * If modifying this list, make sure example dashboards are compatible with the regexes.
@@ -309,7 +308,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                        SharedEnvironmentProvider sharedEnvironmentProvider) {
         KafkaSpec kafkaSpec = kafka.getSpec();
         KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
+
         KafkaCluster result = new KafkaCluster(reconciliation, kafka, sharedEnvironmentProvider);
+
         result.clusterId = clusterId;
         result.nodePools = pools;
 
@@ -351,6 +352,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Kafka 4.0 and newer uses Log4j2
         boolean usesLog4j2 = KafkaVersion.compareDottedVersions(result.kafkaVersion.version(), "4.0.0") >= 0;
         result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName(), usesLog4j2, !usesLog4j2);
+
         result.jmx = new JmxModel(
                 reconciliation.namespace(),
                 KafkaResources.kafkaJmxSecretName(result.cluster),
@@ -1845,8 +1847,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                 .withTieredStorage(cluster, tieredStorage)
                 .withQuotas(cluster, quotas);
-        if (metrics instanceof StrimziMetricsReporterModel) {
-            builder.withStrimziMetricsReporter((StrimziMetricsReporterModel) metrics)
+        if (metrics instanceof StrimziMetricsReporterModel reporter) {
+            builder.withStrimziMetricsReporter(reporter)
                     .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null, true);
         } else {
             builder.withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null, false);
@@ -1866,8 +1868,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         String parsedMetrics = null;
-        if (metrics instanceof JmxPrometheusExporterModel) {
-            parsedMetrics = ((JmxPrometheusExporterModel) metrics).metricsJson(reconciliation, metricsAndLogging.metricsCm());
+        if (metrics instanceof JmxPrometheusExporterModel exporter) {
+            parsedMetrics = (exporter).metricsJson(reconciliation, metricsAndLogging.metricsCm());
         }
         String parsedLogging = logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm());
         List<ConfigMap> configMaps = new ArrayList<>();

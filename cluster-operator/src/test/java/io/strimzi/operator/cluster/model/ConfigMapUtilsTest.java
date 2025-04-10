@@ -62,6 +62,7 @@ public class ConfigMapUtilsTest {
         assertThat(cm.getData(), is(Map.of("key1", "value1", "key2", "value2")));
     }
 
+
     @Test
     public void testConfigMapDataNoMetricsNoLogging()   {
         Kafka kafka = new KafkaBuilder()

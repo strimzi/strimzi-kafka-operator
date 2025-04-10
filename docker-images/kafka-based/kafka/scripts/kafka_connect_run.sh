@@ -37,7 +37,7 @@ fi
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
 
-# Enable JMX Prometheus Exporter as Java agent
+# Enable Prometheus JMX Exporter as Java agent
 if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
     KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$JMX_EXPORTER_HOME"/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.json"
     export KAFKA_OPTS

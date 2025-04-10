@@ -78,7 +78,7 @@ RUN set -ex; \
 COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
 
 #####
-# Add JMX Prometheus Exporter
+# Add Prometheus JMX Exporter
 #####
 ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
 ENV JMX_EXPORTER_VERSION=1.1.0

@@ -2175,7 +2175,7 @@ public class KafkaConnectClusterTest {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, VERSIONS, SHARED_ENV_PROVIDER);
         assertThat(kc.metrics(), is(nullValue()));
     }
-    
+
     @ParallelTest
     public void testStrimziMetricsReporterConfig() {
         KafkaConnect resourceWithMetrics = new KafkaConnectBuilder(resource)
