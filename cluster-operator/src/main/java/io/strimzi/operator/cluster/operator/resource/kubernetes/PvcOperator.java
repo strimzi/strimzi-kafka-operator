@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -78,6 +79,7 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
         try {
             if (current.getSpec() != null && desired.getSpec() != null)   {
                 revertImmutableChanges(current, desired);
+                configureNormalizedStorageSizeIfEqual(current, desired);
             }
 
             return super.internalUpdate(reconciliation, namespace, name, current, desired);
@@ -101,5 +103,24 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
         desired.getSpec().setAccessModes(current.getSpec().getAccessModes());
         desired.getSpec().setSelector(current.getSpec().getSelector());
         desired.getSpec().setDataSource(current.getSpec().getDataSource());
+    }
+
+    /**
+     * Method for configuring the normalized volume size to "desired" PVC from the "current" one.
+     * Used in situations when f.e. "1024Gi" is configured in the "desired" PVC, however Kubernetes during creation/update
+     * of PVC normalize it to "1Ti". In the {@link io.strimzi.operator.common.operator.resource.ResourceDiff} we assume that
+     * the values are different (because the String values are different), and we need to patch the PVC,
+     * however it's not needed -> so we skip unnecessary patches.
+     *
+     * @param current  Existing PVC
+     * @param desired  Desired PVC
+     */
+    protected void configureNormalizedStorageSizeIfEqual(PersistentVolumeClaim current, PersistentVolumeClaim desired) {
+        Quantity currentQuantity = current.getSpec().getResources().getRequests().get("storage");
+        Quantity desiredQuantity = desired.getSpec().getResources().getRequests().get("storage");
+
+        if (currentQuantity.equals(desiredQuantity) && !currentQuantity.getAmount().equals(desiredQuantity.getAmount())) {
+            desired.getSpec().getResources().getRequests().put("storage", currentQuantity);
+        }
     }
 }

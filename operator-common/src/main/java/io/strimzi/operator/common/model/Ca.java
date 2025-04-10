@@ -295,8 +295,10 @@ public abstract class Ca {
     protected final boolean generateCa;
     protected String caCertSecretName;
     protected Secret caCertSecret;
+    protected int caCertGeneration;
     protected String caKeySecretName;
     protected Secret caKeySecret;
+    protected int caKeyGeneration;
     protected RenewalType renewalType;
     protected boolean caCertsRemoved;
     protected final CertificateExpirationPolicy policy;
@@ -329,8 +331,10 @@ public abstract class Ca {
         this.commonName = commonName;
         this.caCertSecret = caCertSecret;
         this.caCertSecretName = caCertSecretName;
+        this.caCertGeneration = initCaCertGeneration(caCertSecret);
         this.caKeySecret = caKeySecret;
         this.caKeySecretName = caKeySecretName;
+        this.caKeyGeneration = initCaKeyGeneration(caKeySecret);
         this.certManager = certManager;
         this.passwordGenerator = passwordGenerator;
         this.validityDays = validityDays;
@@ -354,21 +358,37 @@ public abstract class Ca {
     }
 
     /**
-     * Extracts the CA generation from the CA
+     * Extracts the CA generation from the CA cert Secret
      *
+     * @param caCertSecret Secret to extract the CA cert from
      * @return CA generation or the initial generation if no generation is set
      */
-    public int caCertGeneration() {
-        return Annotations.intAnnotation(caCertSecret(), ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION);
+    private int initCaCertGeneration(Secret caCertSecret) {
+        if (caCertSecret != null) {
+            if (!Annotations.hasAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION)) {
+                LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
+                        caCertSecret.getMetadata().getNamespace(), caCertSecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_CERT_GENERATION);
+            }
+            return Annotations.intAnnotation(caCertSecret(), ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION);
+        }
+        return INIT_GENERATION;
     }
 
     /**
-     * Extracts the CA key generation from the CA
+     * Extracts the CA key generation from the CA key Secret
      *
+     * @param caKeySecret Secret to extract the CA key from
      * @return CA key generation or the initial generation if no generation is set
      */
-    public int caKeyGeneration() {
-        return Annotations.intAnnotation(caKeySecret(), ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION);
+    private int initCaKeyGeneration(Secret caKeySecret) {
+        if (caKeySecret != null) {
+            if (!Annotations.hasAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION)) {
+                LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
+                        caKeySecret.getMetadata().getNamespace(), caKeySecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_KEY_GENERATION);
+            }
+            return Annotations.intAnnotation(caKeySecret(), ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION);
+        }
+        return INIT_GENERATION;
     }
 
     protected static void delete(Reconciliation reconciliation, File file) {
@@ -545,9 +565,6 @@ public abstract class Ca {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
-        int caCertGeneration = certGeneration();
-        int caKeyGeneration = keyGeneration();
-
         if (!generateCa) {
             certData = caCertSecret.getData();
             keyData = singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY));
@@ -787,36 +804,22 @@ public abstract class Ca {
     /**
      * @return the generation of the current CA certificate
      */
-    public int certGeneration() {
-        if (caCertSecret != null) {
-            if (!Annotations.hasAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION)) {
-                LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
-                        caCertSecret.getMetadata().getNamespace(), caCertSecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_CERT_GENERATION);
-            }
-            return caCertGeneration();
-        }
-        return INIT_GENERATION;
+    public int caCertGeneration() {
+        return caCertGeneration;
     }
 
     /**
      * @return the generation of the current CA certificate as an annotation
      */
     public Map.Entry<String, String> caCertGenerationFullAnnotation() {
-        return Map.entry(caCertGenerationAnnotation(), String.valueOf(certGeneration()));
+        return Map.entry(caCertGenerationAnnotation(), String.valueOf(caCertGeneration));
     }
 
     /**
      * @return the generation of the current CA key
      */
-    public int keyGeneration() {
-        if (caKeySecret != null) {
-            if (!Annotations.hasAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION)) {
-                LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
-                        caKeySecret.getMetadata().getNamespace(), caKeySecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_KEY_GENERATION);
-            }
-            return caKeyGeneration();
-        }
-        return INIT_GENERATION;
+    public int caKeyGeneration() {
+        return caKeyGeneration;
     }
 
     /**
@@ -1068,23 +1071,21 @@ public abstract class Ca {
 
     /**
      * It checks if the current (cluster or clients) CA certificate generation is changed compared to the one
-     * brought by the corresponding annotation on the provided Secret (i.e. Kafka brokers, ...)
+     * brought by the corresponding annotation on the provided Resource (i.e. Secret containing Kafka broker certificates, Kafka Pods presenting certificates...)
      *
-     * @param secret Secret containing certificates signed by the current (clients or cluster) CA
+     * @param resource Resource (Secret or Pod) containing or presenting certificates signed by the current (clients or cluster) CA
      * @return if the current (cluster or clients) CA certificate generation is changed compared to the one
-     *         brought by the corresponding annotation on the provided Secret
+     *         brought by the corresponding annotation on the provided Resource
      */
-    public boolean hasCaCertGenerationChanged(HasMetadata secret) {
-        if (secret != null) {
-            String caCertGenerationAnno = Annotations.stringAnnotation(secret, caCertGenerationAnnotation(), null);
-            int currentCaCertGeneration = certGeneration();
+    public boolean hasCaCertGenerationChanged(HasMetadata resource) {
+        if (resource != null && Annotations.hasAnnotation(resource, caCertGenerationAnnotation())) {
+            int caCertGenerationAnno = Annotations.intAnnotation(resource, caCertGenerationAnnotation(), INIT_GENERATION);
             LOGGER.debugOp("Secret {}/{} generation anno = {}, current CA generation = {}",
-                    secret.getMetadata().getNamespace(), secret.getMetadata().getName(), caCertGenerationAnno, currentCaCertGeneration);
-            return caCertGenerationAnno != null && Integer.parseInt(caCertGenerationAnno) != currentCaCertGeneration;
+                    resource.getMetadata().getNamespace(), resource.getMetadata().getName(), caCertGenerationAnno, caCertGeneration);
+            return caCertGenerationAnno != caCertGeneration;
         }
         return false;
     }
-
 
     /**
      * Generates the expiration date as epoch of the CA certificate.
