@@ -1869,7 +1869,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         String parsedMetrics = null;
         if (metrics instanceof JmxPrometheusExporterModel exporter) {
-            parsedMetrics = (exporter).metricsJson(reconciliation, metricsAndLogging.metricsCm());
+            parsedMetrics = exporter.metricsJson(reconciliation, metricsAndLogging.metricsCm());
         }
         String parsedLogging = logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm());
         List<ConfigMap> configMaps = new ArrayList<>();
