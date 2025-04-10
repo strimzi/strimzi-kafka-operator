@@ -81,7 +81,7 @@ public class TieredStorageST extends AbstractST {
     private static final String BUCKET_NAME = "test-bucket";
     private static final String BUILT_IMAGE_TAG = "latest";
     private static final int SEGMENT_BYTE = 1048576;
-    private static final int MESSAGE_COUNT = 10000;
+    private static final int MESSAGE_COUNT = 10_000;
     private static final String NFS_INSTANCE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/nfs/nfs.yaml";
     private static final String MOUNT_PATH = "/mnt/nfs";
     private static final String VOLUME_NAME = "nfs-volume";
@@ -95,7 +95,7 @@ public class TieredStorageST extends AbstractST {
             @Step(value = "Deploy Kafka CustomResource with Tiered Storage configuration pointing to Minio S3, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions.", expected = "Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions."),
             @Step(value = "Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync).", expected = "Topic is created successfully with Tiered Storage enabled and segment size of 10mb."),
             @Step(value = "Starts continuous producer to send data to Kafka.", expected = "Continuous producer starts sending data to Kafka."),
-            @Step(value = "Wait until Minio size is greater than one log segment size (contains data from Kafka).", expected = "Minio contains at least one log segment from Kafka."),
+            @Step(value = "Wait until Minio size is not empty (contains data from Kafka).", expected = "Minio contains data from Kafka."),
             @Step(value = "Wait until the earliest-local offset to be higher than 0.", expected = "The log segments uploaded to Minio are deleted locally."),
             @Step(value = "Starts a consumer to consume all the produced messages, some of the messages should be located in Minio.", expected = "Consumer can consume all the messages successfully."),
             @Step(value = "Alter the topic config to retention.ms=10 sec to test the remote log deletion.", expected = "The topic config is altered successfully."),
@@ -158,7 +158,7 @@ public class TieredStorageST extends AbstractST {
                 // Bytes retention set to 1024mb
                 .addToConfig("retention.bytes", 1073741824)
                 .addToConfig("retention.ms", 86400000)
-                // Segment size is set to 10mb to make it quickier to sync data to Minio
+                // Segment size is set to 10mb to make it quicker to sync data to Minio
                 .addToConfig("segment.bytes", SEGMENT_BYTE)
             .endSpec()
             .build());
@@ -209,7 +209,6 @@ public class TieredStorageST extends AbstractST {
             @Step(value = "Starts a consumer to consume all the produced messages, some of the messages should be located in NFS.", expected = "Consumer can consume all the messages successfully."),
             @Step(value = "Alter the topic config to retention.ms=10 sec to test the remote log deletion.", expected = "The topic config is altered successfully."),
             @Step(value = "Wait until the NFS data is deleted.", expected = "The data in the NFS data is deleted.")
-
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -280,7 +279,7 @@ public class TieredStorageST extends AbstractST {
                 // Bytes retention set to 1024mb
                 .addToConfig("retention.bytes", 1073741824)
                 .addToConfig("retention.ms", 86400000)
-                // Segment size is set to 10mb to make it quicker to sync data to Minio
+                // Segment size is set to 10mb to make it quicker to sync data to NFS
                 .addToConfig("segment.bytes", SEGMENT_BYTE)
             .endSpec()
             .build());
