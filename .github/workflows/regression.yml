@@ -29,7 +29,8 @@ jobs:
   # If not, don't even bother with parse-params job.
   parse-params:
 #    if: contains(github.event.comment.body, '/ga run')
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: oracle-4cpu-16gb-x86-64
+#    runs-on: oracle-2cpu-8gb-arm64
     outputs:
       runTests: ${{ steps.parse.outputs.runTests }}
       profileList: ${{ steps.parse.outputs.profileList }}
@@ -55,7 +56,8 @@ jobs:
       matrix:
         # TODO - change accordingly
         config:
-          - agent: oracle-2cpu-8gb-arm64
+          - agent: oracle-4cpu-16gb-x86-64
+#          - agent: oracle-2cpu-8gb-arm64
             arch: arm64
             jdk_version: "17"
         profile: ${{ fromJson(needs.parse-params.outputs.profileList) }}
