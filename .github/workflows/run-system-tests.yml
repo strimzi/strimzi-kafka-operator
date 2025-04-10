@@ -135,9 +135,9 @@ jobs:
       - name: Install Helm
         uses: ./.github/actions/install-helm
 
-      # TODO - deal with this
-      - name: Install xz
-        run: "sudo apt-get install -y xz-utils iptables fuse-overlayfs"
+#      # TODO - deal with this
+#      - name: Install xz
+#        run: "sudo apt-get install -y xz-utils iptables fuse-overlayfs"
 
       - name: Install Shellcheck
         uses: ./.github/actions/install-shellcheck
