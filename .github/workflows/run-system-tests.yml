@@ -126,11 +126,16 @@ jobs:
       - name: Print out environment info
         uses: ./.github/actions/log-variables
 
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.9
       - uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           # TODO - maybe change as a parameter?
           java-version: "17"
+          cache: maven
 
       - name: Install Helm
         uses: ./.github/actions/install-helm
