@@ -115,7 +115,7 @@ tls:
   trustedCertificates: []
 ----
 
-Similarly, you can use the `tlstrustedCertificates` property in the configuration for `oauth` and `keycloak` authentication and authorization types that integrate with authorization servers.
+Similarly, you can use the `tlsTrustedCertificates` property in the configuration for `oauth` and `keycloak` authentication and authorization types that integrate with authorization servers.
 The configuration sets up encrypted TLS connections to the authorization server.
 
 .Example TLS encryption configuration for authentication types

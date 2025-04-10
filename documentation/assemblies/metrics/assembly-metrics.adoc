@@ -15,7 +15,7 @@ Metrics can be collected from Strimzi components using Prometheus and visualized
 Prometheus collects metrics from running pods in your cluster when configured with appropriate rules. 
 Grafana visualizes these metrics on dashboards, providing an intuitive interface for monitoring. 
 
-While the Strimzi operators expose their own Prometheus metrics by default—such as reconciliation counts and durations, JVM data, and resource processing statistics—other Strimzi components and features that support metrics, including OAuth 2.0 integration, require configuration to expose them.
+While the Strimzi operators expose their own Prometheus metrics by default, such as reconciliation counts and durations, JVM data, and resource processing statistics, other Strimzi components and features that support metrics, including OAuth 2.0 integration, require configuration to expose them.
 
 Strimzi provides example Prometheus rules and Grafana dashboards, which you can customize to fit your deployment. 
 These tools help visualize metrics and define alerts based on specific conditions.
