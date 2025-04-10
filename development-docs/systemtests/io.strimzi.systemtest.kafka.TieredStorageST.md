@@ -27,7 +27,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploys KafkaNodePool resource with PV of size 10Gi. | KafkaNodePool resource is deployed successfully with specified configuration. |
-| 2. | Deploys a NFS instance with RoleBinding, serviceAccount, service, PVC... related resources. | NFS resources are deployed successfully. |
+| 2. | Deploys a NFS instance with RoleBinding, serviceAccount, service, StorageClass... related resources. | NFS resources are deployed successfully. |
 | 3. | Deploy Kafka CustomResource with additional NFS volume mounted and Tiered Storage configuration pointing to NFS path, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions. | Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions. |
 | 4. | Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync). | Topic is created successfully with Tiered Storage enabled and segment size of 10mb. |
 | 5. | Starts continuous producer to send data to Kafka. | Continuous producer starts sending data to Kafka. |

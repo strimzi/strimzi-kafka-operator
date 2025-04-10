@@ -199,7 +199,7 @@ public class TieredStorageST extends AbstractST {
         description = @Desc("This testcase is focused on testing of Tiered Storage integration implemented within Strimzi. The tests use the FileSystem plugin in Aiven Tiered Storage project (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>)."),
         steps = {
             @Step(value = "Deploys KafkaNodePool resource with PV of size 10Gi.", expected = "KafkaNodePool resource is deployed successfully with specified configuration."),
-            @Step(value = "Deploys a NFS instance with RoleBinding, serviceAccount, service, PVC... related resources.", expected = "NFS resources are deployed successfully."),
+            @Step(value = "Deploys a NFS instance with RoleBinding, serviceAccount, service, StorageClass... related resources.", expected = "NFS resources are deployed successfully."),
             @Step(value = "Deploy Kafka CustomResource with additional NFS volume mounted and Tiered Storage configuration pointing to NFS path, using a built Kafka image. " +
                     "Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions.", expected = "Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions."),
             @Step(value = "Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync).", expected = "Topic is created successfully with Tiered Storage enabled and segment size of 10mb."),
@@ -250,7 +250,7 @@ public class TieredStorageST extends AbstractST {
                             .addToConfig("chunk.size", "4194304")
                         .endRemoteStorageManager()
                     .endTieredStorageCustomTiered()
-                    // mount additional NFS volume in kafka pods
+                    // mount additional NFS volume in kafka pod
                     .withNewTemplate()
                         .withNewPod()
                             .addNewVolume()
@@ -264,7 +264,6 @@ public class TieredStorageST extends AbstractST {
                     .endTemplate()
                     // reduce the interval to speed up the test
                     .addToConfig("remote.log.manager.task.interval.ms", 5000)
-                    .addToConfig("rlmm.config.remote.log.metadata.topic.replication.factor", 1)
                     .addToConfig("log.retention.check.interval.ms", 5000)
                 .endKafka()
             .endSpec()
@@ -293,7 +292,7 @@ public class TieredStorageST extends AbstractST {
         resourceManager.createResourceWithWait(clients.producerStrimzi());
 
         // wait for logs uploaded to NFS
-        NfsUtils.waitForSizeInNfs(testStorage.getNamespaceName(), size -> size >= SEGMENT_BYTE);
+        NfsUtils.waitForSizeInNfs(testStorage.getNamespaceName(), size -> size > SEGMENT_BYTE);
 
         // Create admin-client to check offsets
         resourceManager.createResourceWithWait(
@@ -362,6 +361,9 @@ public class TieredStorageST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(suiteStorage.getNamespaceName(), "test-nfs-server-provisioner", 1);
     }
 
+    /**
+     * Install Minio instance
+     */
     private void deployMinioInstance() {
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
