@@ -4,10 +4,10 @@ set -xe
 rm -rf ~/.kube
 
 # There is a bug in 0.24.0 - https://github.com/kubernetes-sigs/kind/issues/3713
-KIND_VERSION=${KIND_VERSION:-"v0.25.0"}
+KIND_VERSION=${KIND_VERSION:-"v0.27.0"}
 KIND_CLOUD_PROVIDER_VERSION=${KIND_CLOUD_PROVIDER_VERSION:-"v0.6.0"}
 # To properly upgrade Kind version check the releases in github https://github.com/kubernetes-sigs/kind/releases and use proper image based on Kind version
-KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-"kindest/node:v1.26.15@sha256:c79602a44b4056d7e48dc20f7504350f1e87530fe953428b792def00bc1076dd"}
+KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-"kindest/node:v1.29.14@sha256:8703bd94ee24e51b778d5556ae310c6c0fa67d761fae6379c8e0bb480e6fea29"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 DOCKER_CMD="${DOCKER_CMD:-docker}"
 
