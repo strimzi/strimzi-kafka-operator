@@ -274,18 +274,6 @@ public class KubeClient {
     }
 
     /**
-     * Returns list of pods contains the name
-     * @param namespaceName Namespace name
-     * @param name          name exists in the pod name
-     * @return List of pods
-     */
-    public List<Pod> listPodsContainsName(String namespaceName, String name) {
-        return listPods(namespaceName)
-                .stream().filter(p -> p.getMetadata().getName().contains(name))
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Returns list of pods by prefix in pod name
      * @param namespaceName Namespace name
      * @param podNamePrefix prefix with which the name should begin

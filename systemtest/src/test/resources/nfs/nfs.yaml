@@ -1,0 +1,233 @@
+# Source: nfs-server-provisioner/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: nfs-server-provisioner
+  name: test-nfs-server-provisioner
+---
+# Source: nfs-server-provisioner/templates/storageclass.yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: nfs
+  labels:
+    app: nfs-server-provisioner
+provisioner: cluster.local/test-nfs-server-provisioner
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+mountOptions:
+  - vers=3
+  - retrans=2
+  - timeo=30
+---
+# Source: nfs-server-provisioner/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: test-nfs-server-provisioner
+  labels:
+    app: nfs-server-provisioner
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get"]
+  - apiGroups: ["extensions"]
+    resources: ["podsecuritypolicies"]
+    resourceNames: ["nfs-provisioner"]
+    verbs: ["use"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
+  - apiGroups: ["security.openshift.io"]
+    resources: ["securitycontextconstraints"]
+    resourceNames: ["privileged"]
+    verbs: ["use"]
+---
+# Source: nfs-server-provisioner/templates/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app: nfs-server-provisioner
+  name: test-nfs-server-provisioner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: test-nfs-server-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: test-nfs-server-provisioner
+    namespace: NAMESPACE_TO_BE_CHANGE
+---
+# Source: nfs-server-provisioner/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-nfs-server-provisioner
+  labels:
+    app: nfs-server-provisioner
+spec:
+  type: ClusterIP
+  ports:
+    - port: 2049
+      targetPort: nfs
+      protocol: TCP
+      name: nfs
+    - port: 2049
+      targetPort: nfs-udp
+      protocol: UDP
+      name: nfs-udp
+    - port: 32803
+      targetPort: nlockmgr
+      protocol: TCP
+      name: nlockmgr
+    - port: 32803
+      targetPort: nlockmgr-udp
+      protocol: UDP
+      name: nlockmgr-udp
+    - port: 20048
+      targetPort: mountd
+      protocol: TCP
+      name: mountd
+    - port: 20048
+      targetPort: mountd-udp
+      protocol: UDP
+      name: mountd-udp
+    - port: 875
+      targetPort: rquotad
+      protocol: TCP
+      name: rquotad
+    - port: 875
+      targetPort: rquotad-udp
+      protocol: UDP
+      name: rquotad-udp
+    - port: 111
+      targetPort: rpcbind
+      protocol: TCP
+      name: rpcbind
+    - port: 111
+      targetPort: rpcbind-udp
+      protocol: UDP
+      name: rpcbind-udp
+    - port: 662
+      targetPort: statd
+      protocol: TCP
+      name: statd
+    - port: 662
+      targetPort: statd-udp
+      protocol: UDP
+      name: statd-udp
+  selector:
+    app: nfs-server-provisioner
+---
+# Source: nfs-server-provisioner/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: test-nfs-server-provisioner
+  labels:
+    app: nfs-server-provisioner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-server-provisioner
+  serviceName: test-nfs-server-provisioner
+  template:
+    metadata:
+      labels:
+        app: nfs-server-provisioner
+    spec:
+      # NOTE: This is 10 seconds longer than the default nfs-provisioner --grace-period value of 90sec
+      terminationGracePeriodSeconds: 100
+      serviceAccountName: test-nfs-server-provisioner
+      containers:
+        - name: nfs-server-provisioner
+          image: "registry.k8s.io/sig-storage/nfs-provisioner:v4.0.8"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: nfs
+              containerPort: 2049
+              protocol: TCP
+            - name: nfs-udp
+              containerPort: 2049
+              protocol: UDP
+            - name: nlockmgr
+              containerPort: 32803
+              protocol: TCP
+            - name: nlockmgr-udp
+              containerPort: 32803
+              protocol: UDP
+            - name: mountd
+              containerPort: 20048
+              protocol: TCP
+            - name: mountd-udp
+              containerPort: 20048
+              protocol: UDP
+            - name: rquotad
+              containerPort: 875
+              protocol: TCP
+            - name: rquotad-udp
+              containerPort: 875
+              protocol: UDP
+            - name: rpcbind
+              containerPort: 111
+              protocol: TCP
+            - name: rpcbind-udp
+              containerPort: 111
+              protocol: UDP
+            - name: statd
+              containerPort: 662
+              protocol: TCP
+            - name: statd-udp
+              containerPort: 662
+              protocol: UDP
+          securityContext:
+            capabilities:
+              add:
+                - DAC_READ_SEARCH
+                - SYS_RESOURCE
+          args:
+            - "-provisioner=cluster.local/test-nfs-server-provisioner"
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: SERVICE_NAME
+              value: test-nfs-server-provisioner
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: data
+              mountPath: /export
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
