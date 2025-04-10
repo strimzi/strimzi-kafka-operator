@@ -57,9 +57,11 @@ jobs:
         # TODO - change accordingly
         config:
           - agent: oracle-4cpu-16gb-x86-64
-#          - agent: oracle-2cpu-8gb-arm64
-            arch: arm64
+            arch: amd64
             jdk_version: "17"
+#          - agent: oracle-2cpu-8gb-arm64
+#            arch: arm64
+#            jdk_version: "17"
         profile: ${{ fromJson(needs.parse-params.outputs.profileList) }}
       fail-fast: false
 
