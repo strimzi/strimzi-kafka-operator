@@ -235,7 +235,7 @@ jobs:
       ############################################################################
       - name: Run systemtests
         run: |
-          mvn clean install -DskipTests -f systemtest/pom.xml
+          mvn clean install -DskipTests
           mvn -f systemtest/pom.xml verify \
             -P"${PROFILE}" \
             -DexcludedGroups="flaky,loadbalancer,networkpolicies,${EXCLUDED_GROUPS}" \
