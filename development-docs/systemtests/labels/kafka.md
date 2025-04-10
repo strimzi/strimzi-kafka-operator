@@ -18,24 +18,13 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testClusterOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testCombinationOfEveryKindOfListener](../io.strimzi.systemtest.kafka.listeners.MultipleListenersST.md)
 - [testCombinationOfInternalAndExternalListeners](../io.strimzi.systemtest.kafka.listeners.MultipleListenersST.md)
-<<<<<<< HEAD
 - [testConnectWithConnectorUsingConfigAndEnvProvider](../io.strimzi.systemtest.kafka.ConfigProviderST.md)
-=======
-- [testClusterIp](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
-- [testTieredStorageWithAivenFileSystemPlugin](../io.strimzi.systemtest.kafka.TieredStorageST.md)
-- [testCustomCertRouteAndTlsRollingUpdate](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
-- [testRegenerateCertExternalAddressChange](../io.strimzi.systemtest.kafka.KafkaST.md)
-- [testTieredStorageWithAivenS3Plugin](../io.strimzi.systemtest.kafka.TieredStorageST.md)
-- [testJvmAndResources](../io.strimzi.systemtest.kafka.KafkaST.md)
-- [testMultipleLoadBalancers](../io.strimzi.systemtest.kafka.listeners.MultipleListenersST.md)
->>>>>>> bda49d28a4ed2e8f8c65feabb117409d8e4a9dcb
 - [testCruiseControlMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testCustomCertLoadBalancerAndTlsRollingUpdate](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCustomCertNodePortAndTlsRollingUpdate](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCustomCertRouteAndTlsRollingUpdate](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCustomChainCertificatesForLoadBalancer](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCustomChainCertificatesForNodePort](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
-<<<<<<< HEAD
 - [testCustomChainCertificatesForRoute](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCustomSoloCertificatesForLoadBalancer](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCustomSoloCertificatesForNodePort](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
@@ -60,13 +49,6 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testKafkaExporterMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testKafkaJBODDeleteClaimsTrueFalse](../io.strimzi.systemtest.kafka.KafkaST.md)
 - [testKafkaLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
-=======
-- [testMultipleRoutes](../io.strimzi.systemtest.kafka.listeners.MultipleListenersST.md)
-- [testSendMessagesPlainAnonymous](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
-- [testMirrorMaker2Metrics](../io.strimzi.systemtest.metrics.MetricsST.md)
-- [testOverrideNodePortConfiguration](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
-- [testNotExistingCMSetsDefaultLogging](../io.strimzi.systemtest.log.LoggingChangeST.md)
->>>>>>> bda49d28a4ed2e8f8c65feabb117409d8e4a9dcb
 - [testKafkaMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testKafkaMetricsSettings](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testKafkaNodePoolBrokerIdsManagementUsingAnnotations](../io.strimzi.systemtest.kafka.KafkaNodePoolST.md)
@@ -103,7 +85,8 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testSendMessagesTlsAuthenticated](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testSendMessagesTlsScramSha](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testSimpleDynamicConfiguration](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfST.md)
-- [testTieredStorageWithAivenPlugin](../io.strimzi.systemtest.kafka.TieredStorageST.md)
+- [testTieredStorageWithAivenFileSystemPlugin](../io.strimzi.systemtest.kafka.TieredStorageST.md)
+- [testTieredStorageWithAivenS3Plugin](../io.strimzi.systemtest.kafka.TieredStorageST.md)
 - [testUpdateToExternalListenerCausesRollingRestart](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfST.md)
 - [testUpdateToExternalListenerCausesRollingRestartUsingExternalClients](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfST.md)
 - [testUserOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)

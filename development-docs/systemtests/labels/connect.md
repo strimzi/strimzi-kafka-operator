@@ -10,15 +10,9 @@ maintaining data consistency and availability in a streaming ecosystem.
 
 <!-- generated part -->
 **Tests:**
-<<<<<<< HEAD
 - [testBuildFailsWithWrongChecksumOfArtifact](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testBuildOtherPluginTypeWithAndWithoutFileName](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testBuildPluginUsingMavenCoordinatesArtifacts](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
-=======
-- [testConnectLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
-- [testScaleConnectWithoutConnectorToZero](../io.strimzi.systemtest.connect.ConnectST.md)
-- [testBuildFailsWithWrongChecksumOfArtifact](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
->>>>>>> bda49d28a4ed2e8f8c65feabb117409d8e4a9dcb
 - [testBuildWithJarTgzAndZip](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testConnectLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testConnectScramShaAuthWithWeirdUserName](../io.strimzi.systemtest.connect.ConnectST.md)
@@ -34,7 +28,6 @@ maintaining data consistency and availability in a streaming ecosystem.
 - [testKafkaConnectScaleUpScaleDown](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testKafkaConnectWithPlainAndScramShaAuthentication](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged](../io.strimzi.systemtest.connect.ConnectST.md)
-<<<<<<< HEAD
 - [testMountingSecretAndConfigMapAsVolumesAndEnvVars](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testMultiNodeKafkaConnectWithConnectorCreation](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testPushIntoImageStream](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
@@ -43,11 +36,4 @@ maintaining data consistency and availability in a streaming ecosystem.
 - [testScaleConnectWithoutConnectorToZero](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication](../io.strimzi.systemtest.connect.ConnectST.md)
-=======
-- [testJvmAndResources](../io.strimzi.systemtest.connect.ConnectST.md)
-- [testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication](../io.strimzi.systemtest.connect.ConnectST.md)
-- [testBuildOtherPluginTypeWithAndWithoutFileName](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
-- [testConnectScramShaAuthWithWeirdUserName](../io.strimzi.systemtest.connect.ConnectST.md)
-- [testBuildPluginUsingMavenCoordinatesArtifacts](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
->>>>>>> bda49d28a4ed2e8f8c65feabb117409d8e4a9dcb
 - [testUpdateConnectWithAnotherPlugin](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
