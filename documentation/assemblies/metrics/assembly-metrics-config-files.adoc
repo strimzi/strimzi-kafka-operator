@@ -14,55 +14,57 @@ You can find example Grafana dashboards and other metrics configuration files in
 [source]
 --
 metrics
-├── grafana-dashboards <1>
-│   ├── strimzi-cruise-control.json
-│   ├── strimzi-kafka-bridge.json
-│   ├── strimzi-kafka-connect.json
-│   ├── strimzi-kafka-exporter.json
-│   ├── strimzi-kafka-mirror-maker-2.json
-|   ├── strimzi-kafka-oauth.json
-│   ├── strimzi-kafka.json
-|   ├── strimzi-kraft.json
-│   ├── strimzi-operators.json
 ├── grafana-install
-│   └── grafana.yaml <2>
-├── kube-state-metrics <3>
+│   └── grafana.yaml <1>
+├── kube-state-metrics <2>
 │   ├── configmap.yaml
 │   ├── ksm.yaml
 │   └── prometheus-rules.yaml
 ├── prometheus-additional-properties
-│   └── prometheus-additional.yaml <4>
+│   └── prometheus-additional.yaml <3>
 ├── prometheus-alertmanager-config
-│   └── alert-manager-config.yaml <5>
+│   └── alert-manager-config.yaml <4>
 ├── prometheus-install
-│    ├── alert-manager.yaml <6>
-│    ├── prometheus-rules.yaml <7>
-│    ├── prometheus.yaml <8>
-│    └── strimzi-pod-monitor.yaml <9>
+│   ├── alert-manager.yaml <5>
+│   ├── prometheus-rules.yaml <6>
+│   ├── prometheus.yaml <7>
+│   └── strimzi-pod-monitor.yaml <8>
 ├── strimzi-metrics-reporter
-|    ├── grafana-dashboards <10>
-|    |  ├── strimzi-kafka.json
-|    |  ├── strimzi-kraft.json
-|    └── kafka-metrics.yaml <11>
-├── kafka-bridge-metrics.yaml <12>
-├── kafka-connect-metrics.yaml <13>
-├── kafka-cruise-control-metrics.yaml <14>
-├── kafka-metrics.yaml <15>
-├── kafka-mirror-maker-2-metrics.yaml <16>
-└── oauth-metrics.yaml <17>
-
+│   ├── grafana-dashboards <9>
+│   │  ├── strimzi-kafka.json
+│   │  ├── strimzi-kraft.json
+│   ├── kafka-metrics.yaml <10>
+│   └── README.md
+├── prometheus-jmx-exporter
+│   ├── grafana-dashboards <11>
+│   │  ├── strimzi-cruise-control.json
+│   │  ├── strimzi-kafka-bridge.json
+│   │  ├── strimzi-kafka-connect.json
+│   │  ├── strimzi-kafka-exporter.json
+│   │  ├── strimzi-kafka-mirror-maker-2.json
+│   │  ├── strimzi-kafka-oauth.json
+│   │  ├── strimzi-kafka.json
+│   │  ├── strimzi-kraft.json
+│   │  └── strimzi-operators.json
+│   ├── kafka-bridge-metrics.yaml <12>
+│   ├── kafka-connect-metrics.yaml <13>
+│   ├── kafka-cruise-control-metrics.yaml <14>
+│   ├── kafka-metrics.yaml <15>
+│   ├── kafka-mirror-maker-2-metrics.yaml <16>
+│   ├── kafka-oauth-metrics.yaml <17>
+│   └── README.md
 --
-<1> Example Grafana dashboards for the different Strimzi components.
-<2> Installation file for the Grafana image.
-<3> Kube-state-metrics deployment and configuration files for custom resource monitoring.
-<4> Additional configuration to scrape metrics for CPU, memory and disk volume usage, which comes directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
-<5> Hook definitions for sending notifications through Alertmanager.
-<6> Resources for deploying and configuring Alertmanager.
-<7> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus).
-<8> Installation resource file for the Prometheus image.
-<9> PodMonitor definitions translated by the Prometheus Operator into jobs for the Prometheus server to be able to scrape metrics data directly from pods.
-<10> Example Grafana dashboards to be used with Metrics Reporter for the Kafka component.
-<11> Resource for deploying and configuring Kafka with Strimzi Metrics Reporter.
+<1> Installation file for the Grafana image.
+<2> Kube-state-metrics deployment and configuration files for custom resource monitoring.
+<3> Additional configuration to scrape metrics for CPU, memory and disk volume usage, which comes directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
+<4> Hook definitions for sending notifications through Alertmanager.
+<5> Resources for deploying and configuring Alertmanager.
+<6> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus).
+<7> Installation resource file for the Prometheus image.
+<8> PodMonitor definitions translated by the Prometheus Operator into jobs for the Prometheus server to be able to scrape metrics data directly from pods.
+<9> Example Grafana dashboards to be used with Metrics Reporter for the Kafka component.
+<10> Resource for deploying and configuring Kafka with Strimzi Metrics Reporter.
+<11> Example Grafana dashboards for the different Strimzi components.
 <12> Kafka Bridge resource with metrics enabled.
 <13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
 <14> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control.
