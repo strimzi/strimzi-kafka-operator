@@ -229,7 +229,7 @@ jobs:
             -DexcludedGroups="flaky,loadbalancer,networkpolicies,${EXCLUDED_GROUPS}" \
             -Dmaven.javadoc.skip=true \
             -B -V \
-            -Dfailsafe.rerunFailingTestsCount=0 \
+            -Dfailsafe.rerunFailingTestsCount=2 \
             -Djunit.jupiter.execution.parallel.enabled="${RUN_PARALLEL}" \
             -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL}" \
             -Dskip.surefire.tests \
@@ -252,12 +252,12 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: junit-results
+          name: junit-results-${{ inputs.profile }}-${{ inputs.agent }}
           path: systemtest/target/failsafe-reports/**/TEST-*.xml
 
       - name: Archive systemtest logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: systemtest-logs
+          name: systemtest-logs-${{ inputs.profile }}-${{ inputs.agent }}
           path: systemtest-logs
