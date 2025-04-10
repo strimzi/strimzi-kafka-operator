@@ -165,6 +165,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
+                "prometheus.metrics.reporter.listener.enable=true",
                 "prometheus.metrics.reporter.listener=http://:" + StrimziMetricsReporterModel.METRICS_PORT,
                 "prometheus.metrics.reporter.allowlist=kafka_log.*,kafka_network.*"));
     }
