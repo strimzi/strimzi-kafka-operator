@@ -31,6 +31,10 @@
 | 3. | Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync). | Topic is created successfully with Tiered Storage enabled and segment size of 10mb. |
 | 4. | Starts continuous producer to send data to Kafka. | Continuous producer starts sending data to Kafka. |
 | 5. | Wait until Minio size is not empty (contains data from Kafka). | Minio contains data from Kafka. |
+| 6. | Wait until the earliest-local offset to be higher than 0. | The log segments uploaded to Minio are deleted locally. |
+| 7. | Starts a consumer to consume all the produced messages, some of the messages should be located in Minio. | Consumer can consume all the messages successfully. |
+| 8. | Alter the topic config to retention.ms=10000 to test the remote log deletion. | The topic config is altered successfully. |
+| 9. | Wait until Minio size is 0. | The data in Minio are deleted. |
 
 **Labels:**
 
