@@ -190,9 +190,10 @@ jobs:
       test:
         tmt:
           name: performance
+
   - job: tests
     trigger: pull_request
-    identifier: "capacity"
+    identifier: "user-capacity"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -200,11 +201,27 @@ jobs:
     manual_trigger: true
     env: { IP_FAMILY: ipv4 }
     labels:
-      - capacity
+      - user-capacity
     tf_extra_params:
       test:
         tmt:
-          name: capacity
+          name: user-capacity
+
+  - job: tests
+    trigger: pull_request
+    identifier: "topic-capacity"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: true
+    env: { IP_FAMILY: ipv4 }
+    labels:
+      - topic-capacity
+    tf_extra_params:
+      test:
+        tmt:
+          name: topic-capacity
 
   ##############################################################################################
   ####################################     Releases    #########################################

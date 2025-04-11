@@ -42,7 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static io.strimzi.systemtest.TestTags.CAPACITY;
+import static io.strimzi.systemtest.TestTags.TOPIC_CAPACITY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class TopicOperatorPerformance extends AbstractST {
@@ -80,7 +80,7 @@ public class TopicOperatorPerformance extends AbstractST {
         );
     }
 
-    @Tag(CAPACITY)
+    @Tag(TOPIC_CAPACITY)
     @ParameterizedTest
     @MethodSource("provideConfigurationsForCapacity")
     void testCapacity(String maxBatchSize, String maxBatchLingerMs) throws IOException {
