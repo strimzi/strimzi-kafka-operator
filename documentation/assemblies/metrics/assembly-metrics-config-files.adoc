@@ -39,12 +39,17 @@ metrics
 │    ├── prometheus-rules.yaml <7>
 │    ├── prometheus.yaml <8>
 │    └── strimzi-pod-monitor.yaml <9>
-├── kafka-bridge-metrics.yaml <10>
-├── kafka-connect-metrics.yaml <11>
-├── kafka-cruise-control-metrics.yaml <12>
-├── kafka-metrics.yaml <13>
-├── kafka-mirror-maker-2-metrics.yaml <14>
-└── oauth-metrics.yaml <15>
+├── strimzi-metrics-reporter
+|    ├── grafana-dashboards <10>
+|    |  ├── strimzi-kafka.json
+|    |  ├── strimzi-kraft.json
+|    └── kafka-metrics.yaml <11>
+├── kafka-bridge-metrics.yaml <12>
+├── kafka-connect-metrics.yaml <13>
+├── kafka-cruise-control-metrics.yaml <14>
+├── kafka-metrics.yaml <15>
+├── kafka-mirror-maker-2-metrics.yaml <16>
+└── oauth-metrics.yaml <17>
 
 --
 <1> Example Grafana dashboards for the different Strimzi components.
@@ -56,12 +61,14 @@ metrics
 <7> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus).
 <8> Installation resource file for the Prometheus image.
 <9> PodMonitor definitions translated by the Prometheus Operator into jobs for the Prometheus server to be able to scrape metrics data directly from pods.
-<10> Kafka Bridge resource with metrics enabled.
-<11> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
-<12> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control.
-<13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka.
-<14> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for MirrorMaker 2.
-<15> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for OAuth 2.0.
+<10> Example Grafana dashboards with Metrics Reporter for the Kafka component.
+<11> Resource for deploying and configuring Strimzi Metrics Reporter based Kafka.
+<12> Kafka Bridge resource with metrics enabled.
+<13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
+<14> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control.
+<15> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka.
+<16> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for MirrorMaker 2.
+<17> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for OAuth 2.0.
 
 NOTE: The Prometheus JMX Exporter collects Java Management Extensions (JMX) from Kafka components and converts them into Prometheus metrics.
 You do not require `jmxOptions` configuration in the custom resource of the component for the Prometheus JMX Exporter to function.
@@ -69,6 +76,10 @@ You do not require `jmxOptions` configuration in the custom resource of the comp
 
 //Example Prometheus metrics files
 include::../../modules/metrics/ref-prometheus-metrics-config.adoc[leveloffset=+1]
+//Example Prometheus JMX metrics files
+include::../../modules/metrics/ref-prometheus-jmx-metrics-config.adoc[leveloffset=+1]
+//Example Strimzi metrics reporter files
+include::../../modules/metrics/ref-strimzi-metrics-reporter-config.adoc[leveloffset=+1]
 //Example Prometheus alert rules
 include::../../modules/metrics/ref_metrics-alertmanager-examples.adoc[leveloffset=+1]
 //Example Grafana dashboards

@@ -12,16 +12,23 @@ To expose metrics in Prometheus format, you add configuration to a custom resour
 You must also make sure that the metrics are scraped by your monitoring stack.
 Prometheus and Prometheus Alertmanager are used in the examples provided by Strimzi, but you can use also other compatible tools.
 
-Using Prometheus with Strimzi, requires the following:
+You can enable either Prometheus JMX Exporter or Strimzi Metrics Reporter to expose metrics:
 
-. xref:proc-metrics-kafka-deploy-options-{context}[Enabling Prometheus metrics through configuration]
+xref:proc-jmx-exporter-metrics-kafka-deploy-options-{context}[Enabling Prometheus Jmx metrics through configuration]
+
+xref:proc-metrics-reporter-kafka-deploy-options-{context}[Enabling Metrics Reporter through configuration]
+
+Once the type is determined, using Prometheus with Strimzi, requires the following:
+
 . xref:assembly-metrics-prometheus-{context}[Setting up Prometheus]
 . xref:proc-metrics-deploying-prometheus-alertmanager-{context}[Deploying Prometheus Alertmanager]
 
 Strimzi provides an xref:assembly-metrics-config-files-str[example Grafana dashboards] to display visualizations of metrics.
 The exposed metrics provide the monitoring data when you xref:proc-metrics-grafana-dashboard-str[enable the Grafana dashboard].
 
-include::../../modules/metrics/proc-metrics-kafka-deploy-options.adoc[leveloffset=+1]
+include::../../modules/metrics/proc-jmx-exporter-metrics-kafka-deploy-options.adoc[leveloffset=+1]
+
+include::../../modules/metrics/proc-strimzi-metrics-reporter-kafka-deploy-options.adoc[leveloffset=+1]
 
 include::assembly_metrics-prometheus-deploy.adoc[leveloffset=+1]
 

@@ -1,0 +1,69 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly_metrics-kafka.adoc
+
+[id='proc-metrics-reporter-kafka-deploy-options-{context}']
+= Enabling Metrics Reporter metrics through configuration
+
+[role="_abstract"]
+To enable and expose metrics in Strimzi for Prometheus, use metrics configuration properties.
+
+The following components require `metricsConfig` configuration to expose metrics:
+
+* Kafka
+
+This configuration enables the {StrimziMetricsReporter} to expose metrics through an HTTP endpoint.
+The port for the Strimzi Metrics Reporter HTTP endpoint is 9404.
+Prometheus scrapes this endpoint to collect Kafka metrics.
+
+To deploy Prometheus metrics configuration in Strimzi, you can use your own configuration or the xref:ref-metrics-reporter-config-{context}[example custom resource configuration file] provided with Strimzi:
+
+* `kafka-metrics.yaml`
+
+This file contain the necessary configuration to enable Prometheus metrics.
+It is a good starting point for trying Prometheus with Strimzi.
+
+This procedure shows how to deploy example Prometheus metrics configuration in the `Kafka` resource.
+The process is the same when deploying the example files for other resources.
+
+.Procedure
+
+. Deploy the example custom resource with the Prometheus configuration.
++
+For example, for each `Kafka` resource you can apply the `kafka-metrics.yaml` file.
++
+.Deploying the example configuration
+[source,shell,subs="+attributes"]
+----
+kubectl apply -f kafka-metrics.yaml
+----
++
+Alternatively, copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource.
++
+.Copying the example configuration
+[source,shell]
+----
+kubectl edit kafka <kafka_configuration_file>
+----
++
+Copy the `metricsConfig` property to your `Kafka` resource.
++
+.Example metrics configuration for Kafka
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    metricsConfig: <1>
+      type: strimziMetricsReporter
+      values:
+        allowList:
+          - "kafka_log.*"
+          - "kafka_network.*"
+
+  # _metrics configuration..._
+----

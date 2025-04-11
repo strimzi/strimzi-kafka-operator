@@ -3,46 +3,18 @@
 //
 // metrics/assembly-metrics-config-files.adoc
 
-[id='ref-metrics-prometheus-metrics-config-{context}']
+[id='ref-metrics-metrics-config-{context}']
 
 = Example Prometheus metrics configuration
 
 [role="_abstract"]
-Strimzi uses the {JMXExporter} to expose metrics through an HTTP endpoint, which can be scraped by the Prometheus server.
+Strimzi uses the {StrimziMetricsReporter} or the {JMXExporter} to expose metrics through an HTTP endpoint, which can be scraped by the Prometheus server.
 
-Grafana dashboards are dependent on Prometheus JMX Exporter relabeling rules, which are defined for Strimzi components in the custom resource configuration.
+Grafana dashboards are dependent on relabeling rules, which are defined for Strimzi components in the custom resource configuration.
 
 A label is a name-value pair.
 Relabeling is the process of writing a label dynamically.
 For example, the value of a label may be derived from the name of a Kafka server and client ID.
 
 Strimzi provides example custom resource configuration YAML files with relabeling rules.
-When deploying Prometheus metrics configuration, you can can deploy the example custom resource or copy the metrics configuration to your own custom resource definition.
-
-.Example custom resources with metrics configuration
-[cols="3*",options="header",stripes="none"]
-|===
-|Component
-|Custom resource
-|Example YAML file
-
-|Kafka nodes
-|`Kafka`
-|`kafka-metrics.yaml`
-
-|Kafka Connect
-|`KafkaConnect`
-|`kafka-connect-metrics.yaml`
-
-|Kafka MirrorMaker 2
-|`KafkaMirrorMaker2`
-|`kafka-mirror-maker-2-metrics.yaml`
-
-|Kafka Bridge
-|`KafkaBridge`
-|`kafka-bridge-metrics.yaml`
-
-|Cruise Control
-|`Kafka`
-|`kafka-cruise-control-metrics.yaml`
-|===
+When deploying Prometheus metrics configuration, you can deploy the example custom resource or copy the metrics configuration to your own custom resource definition.
