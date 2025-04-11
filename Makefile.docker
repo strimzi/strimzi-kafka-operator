@@ -75,7 +75,7 @@ docker_sign_manifest_default:
 	# Signs the manifest and its images
 	@echo $$COSIGN_PRIVATE_KEY | base64 -d > cosign.key
 	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) --format '{{ json . }}' | jq -r .manifest.digest); \
-	cosign sign --recursive --tlog-upload=false -a author=StrimziCI -a BuildID=$(BUILD_ID) -a Commit=$(BUILD_COMMIT) --key cosign.key $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST
+	cosign sign --recursive --timeout 6m0s --tlog-upload=false -a author=StrimziCI -a BuildID=$(BUILD_ID) -a Commit=$(BUILD_COMMIT) --key cosign.key $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST
 	@rm cosign.key
 
 .PHONY: docker_delete_manifest_default
