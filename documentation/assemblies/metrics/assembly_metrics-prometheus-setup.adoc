@@ -12,13 +12,13 @@ To expose metrics in Prometheus format, you add configuration to a custom resour
 You must also make sure that the metrics are scraped by your monitoring stack.
 Prometheus and Prometheus Alertmanager are used in the examples provided by Strimzi, but you can use also other compatible tools.
 
-You can enable either Prometheus JMX Exporter or Strimzi Metrics Reporter to expose metrics:
+You can expose metrics using one of the following approaches:
 
-xref:proc-jmx-exporter-metrics-kafka-deploy-options-{context}[Enabling Prometheus Jmx Exporter through configuration]
+xref:proc-jmx-exporter-metrics-kafka-deploy-options-{context}[Enabling Prometheus Jmx Exporter]
 
-xref:proc-metrics-reporter-kafka-deploy-options-{context}[Enabling Strimzi Metrics Reporter through configuration]
+xref:proc-metrics-reporter-kafka-deploy-options-{context}[Enabling Strimzi Metrics Reporter]
 
-Once the type is determined, using Prometheus with Strimzi, requires the following:
+After enabling metrics, you can integrate with Prometheus:
 
 . xref:assembly-metrics-prometheus-{context}[Setting up Prometheus]
 . xref:proc-metrics-deploying-prometheus-alertmanager-{context}[Deploying Prometheus Alertmanager]
