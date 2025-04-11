@@ -29,7 +29,8 @@ When accessing a dashboard, you can use the `port-forward` command to forward tr
 The name of the Grafana pod is different for each user.
 
 .Prerequisites
-* xref:proc-jmx-exporter-metrics-kafka-deploy-options-{context}[Metrics are configured for the Kafka cluster resource]
+* xref:proc-jmx-exporter-metrics-kafka-deploy-options-{context}[Prometheus JMX Exporter metrics are configured for the Kafka cluster resource]
+* xref:proc-strimzi-metrics-reporter-kafka-deploy-options.adoc-{context}[Strimzi Metrics Reporter metrics are configured for the Kafka cluster resource]
 * xref:assembly-metrics-prometheus-{context}[Prometheus and Prometheus Alertmanager are deployed]
 
 .Procedure

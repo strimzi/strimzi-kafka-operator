@@ -5,7 +5,7 @@
 
 [id='ref-jmx-metrics-prometheus-metrics-config-{context}']
 
-= Example Prometheus Jmx Exporter metrics configuration
+= Example Prometheus JMX Exporter metrics configuration
 
 [role="_abstract"]
 

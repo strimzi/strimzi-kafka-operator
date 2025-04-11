@@ -3,7 +3,7 @@
 // metrics/assembly_metrics-kafka.adoc
 
 [id='proc-jmx-exporter-metrics-kafka-deploy-options-{context}']
-= Enabling Prometheus Jmx Exporter through configuration
+= Enabling Prometheus Jmx Exporter
 
 [role="_abstract"]
 To enable and expose metrics in Strimzi for Prometheus, configure the appropriate properties in the custom resources for the components you want to monitor.
@@ -25,7 +25,12 @@ Set `enableMetrics` to `true` to expose metrics for the following:
 ** Configure in the `Kafka` resource for `oauth` or `keycloak` cluster authorization, or `oauth` listener authentication.
 ** Configure in the `KafkaBridge`, `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
 
-To deploy Prometheus metrics configuration in Strimzi, you can use your own configuration or the xref:ref-jmx-metrics-prometheus-metrics-config-{context}[example custom resource configuration files] provided with Strimzi:
+To include xref:con-metrics-kafka-exporter-lag-str[Kafka Exporter] metrics, add `kafkaExporter` configuration to the `Kafka` resource.
+
+IMPORTANT: Kafka Exporter provides additional metrics for consumer lag and offsets only.
+You still need to configure Prometheus metrics in the `Kafka` resource to collect standard Kafka metrics.
+
+You can create your own Prometheus configuration or use the xref:ref-metrics-prometheus-metrics-config-{context}[example custom resource files] provided with Strimzi:
 
 * `kafka-metrics.yaml`
 * `kafka-connect-metrics.yaml`
@@ -34,7 +39,7 @@ To deploy Prometheus metrics configuration in Strimzi, you can use your own conf
 * `kafka-cruise-control-metrics.yaml`
 * `oauth-metrics.yaml`
 
-These files include relabeling rules and example metrics configuration, and are a good starting point for trying Prometheus with Strimzi. 
+These files include relabeling rules and example metrics configuration, and are a good starting point for trying Prometheus with Strimzi.
 
 This procedure shows how to deploy example Prometheus metrics configuration to the `Kafka` resource.
 The same steps apply when deploying the example files for other resources.
