@@ -13,7 +13,7 @@ Properties for the Kafka Connect cluster group ID and internal topics are config
 Alternatively, you can define them explicitly in the `spec` of the `KafkaConnect` resource. 
 This is useful when xref:con-config-kafka-connect-multiple-instances-{context}[configuring Kafka Connect for multiple instances], as the values for the group ID and topics must differ when running multiple Kafka Connect instances.
 
-Simple authorization uses ACL rules managed by the Kafka `AclAuthorizer` and `StandardAuthorizer` plugins to ensure appropriate access levels.
+Simple authorization uses ACL rules managed by the Kafka `StandardAuthorizer` plugin to ensure appropriate access levels.
 For more information on configuring a `KafkaUser` resource to use simple authorization, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
 
 .Prerequisites

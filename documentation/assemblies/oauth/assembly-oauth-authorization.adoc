@@ -12,7 +12,7 @@ which lets you manage security policies and permissions centrally.
 Security policies and permissions defined in Keycloak grant access to Kafka resources.
 Users and clients are matched against policies that permit access to perform specific actions on Kafka brokers.
 
-Kafka allows all users full access to brokers by default, but also provides the `AclAuthorizer` and `StandardAuthorizer` plugins to configure authorization based on Access Control Lists (ACLs).
+Kafka allows all users full access to brokers by default, but also provides the `StandardAuthorizer` plugin to configure authorization based on Access Control Lists (ACLs).
 The ACL rules managed by these plugins are used to grant or deny access to resources based on _username_, and these rules are stored within the Kafka cluster itself.
 
 However, OAuth 2.0 token-based authorization with Keycloak offers far greater flexibility on how you wish to implement access control to Kafka brokers.

@@ -100,7 +100,7 @@ spec:
 <5> Required. TLS encryption on the listener. For `route` and `ingress` type listeners it must be set to `true`. For mTLS authentication, also use the `authentication` property. 
 <6> Client authentication mechanism on the listener. For server and client authentication using mTLS, you specify `tls: true` and `authentication.type: tls`. 
 <7> (Optional) Depending on the requirements of the listener type, you can specify additional link:{BookURLConfiguring}#type-GenericKafkaListenerConfiguration-reference[listener configuration^].
-<8> Authorization specified as `simple`, which uses the `AclAuthorizer` and `StandardAuthorizer` Kafka plugins.
+<8> Authorization specified as `simple`, which uses the `StandardAuthorizer` Kafka plugin.
 <9> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
 +
 WARNING: An OpenShift route address comprises the Kafka cluster name, the listener name, the project name, and the domain of the router.
