@@ -54,6 +54,7 @@ import static io.strimzi.systemtest.TestConstants.GLOBAL_POLL_INTERVAL;
 import static io.strimzi.systemtest.TestConstants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
+import static io.strimzi.systemtest.utils.specific.NfsUtils.NFS_PVC_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
@@ -255,7 +256,7 @@ public class TieredStorageST extends AbstractST {
                         .withNewPod()
                             .addNewVolume()
                                 .withName(VOLUME_NAME)
-                                .withNewPersistentVolumeClaim("nfs-pvc", false)
+                                .withNewPersistentVolumeClaim(NFS_PVC_NAME, false)
                             .endVolume()
                         .endPod()
                         .withNewKafkaContainer()

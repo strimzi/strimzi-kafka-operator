@@ -16,8 +16,8 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class NfsUtils {
     private static final Logger LOGGER = LogManager.getLogger(NfsUtils.class);
-    private static final String NFS_PVC_NAME = "nfs-pvc";
     private static final String NFS_POD_NAME_PREFIX = "test-nfs-server-provisioner";
+    public static final String NFS_PVC_NAME = "nfs-pvc";
 
     private NfsUtils() {
     }
