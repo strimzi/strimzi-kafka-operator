@@ -17,20 +17,17 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class MetricsModelTest {
+public class JmxPrometheusExporterModelTest {
     @Test
     public void testDisabled()   {
-        MetricsModel metrics = new MetricsModel(new KafkaConnectSpecBuilder().build());
-
-        assertThat(metrics.isEnabled(), is(false));
-        assertThat(metrics.getConfigMapName(), is(nullValue()));
-        assertThat(metrics.getConfigMapKey(), is(nullValue()));
+        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().build()));
+        assertThat(ex.getMessage(), is("Unexpected empty metrics config"));
     }
 
     @Test
@@ -41,9 +38,9 @@ public class MetricsModelTest {
                 .endValueFrom()
                 .build();
 
-        MetricsModel metrics = new MetricsModel(new KafkaConnectSpecBuilder().withMetricsConfig(metricsConfig).build());
+        JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(metricsConfig).build());
 
-        assertThat(metrics.isEnabled(), is(true));
+        assertThat(metrics, is(notNullValue()));
         assertThat(metrics.getConfigMapName(), is("my-name"));
         assertThat(metrics.getConfigMapKey(), is("my-key"));
         assertThat(metrics.metricsJson(Reconciliation.DUMMY_RECONCILIATION, new ConfigMapBuilder().withData(Map.of("my-key", "")).build()), is("{}"));
@@ -58,7 +55,7 @@ public class MetricsModelTest {
                 .endValueFrom()
                 .build();
 
-        MetricsModel metrics = new MetricsModel(new KafkaConnectSpecBuilder().withMetricsConfig(metricsConfig).build());
+        JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(metricsConfig).build());
 
         InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> metrics.metricsJson(Reconciliation.DUMMY_RECONCILIATION, null));
         assertThat(ex.getMessage(), is("ConfigMap my-name does not exist"));
@@ -71,19 +68,17 @@ public class MetricsModelTest {
     }
 
     @Test
-    public void testPrometheusJmxMetricsValidation() {
-        assertDoesNotThrow(() -> MetricsModel.validateJmxPrometheusExporterMetricsConfiguration(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("my-key", "my-name", false)).endValueFrom().build()));
+    public void testJmxPrometheusMetricsValidation() {
+        assertDoesNotThrow(() -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("my-key", "my-name", false)).endValueFrom().build()));
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> MetricsModel.validateJmxPrometheusExporterMetricsConfiguration(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector()).endValueFrom().build()));
-        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Name of the Config Map with metrics configuration is missing, The key under which the metrics configuration is stored in the ConfigMap is missing]"));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector()).endValueFrom().build()));
+        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Name of the ConfigMap with metrics configuration is missing, The key under which the metrics configuration is stored in the ConfigMap is missing]"));
 
-        ex = assertThrows(InvalidResourceException.class, () -> MetricsModel.validateJmxPrometheusExporterMetricsConfiguration(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector(null, "my-name", false)).endValueFrom().build()));
+        ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector(null, "my-name", false)).endValueFrom().build()));
         assertThat(ex.getMessage(), is("Metrics configuration is invalid: [The key under which the metrics configuration is stored in the ConfigMap is missing]"));
 
-        ex = assertThrows(InvalidResourceException.class, () -> MetricsModel.validateJmxPrometheusExporterMetricsConfiguration(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().endValueFrom().build()));
-        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Config Map reference is missing]"));
+        ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().endValueFrom().build()));
+        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [ConfigMap reference is missing]"));
 
-        ex = assertThrows(InvalidResourceException.class, () -> MetricsModel.validateJmxPrometheusExporterMetricsConfiguration(new JmxPrometheusExporterMetricsBuilder().build()));
-        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Config Map reference is missing]"));
     }
 }
