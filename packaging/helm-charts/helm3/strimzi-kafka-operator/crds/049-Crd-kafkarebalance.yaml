@@ -149,6 +149,10 @@ spec:
                 sessionId:
                   type: string
                   description: The session identifier for requests to Cruise Control pertaining to this KafkaRebalance resource. This is used by the Kafka Rebalance operator to track the status of ongoing rebalancing operations.
+                progress:
+                  x-kubernetes-preserve-unknown-fields: true
+                  type: object
+                  description: A JSON object describing the progress of the rebalance.
                 optimizationResult:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
