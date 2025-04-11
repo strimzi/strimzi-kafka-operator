@@ -1,0 +1,38 @@
+
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly-metrics-config-files.adoc
+
+[id='ref-jmx-metrics-prometheus-metrics-config-{context}']
+
+= Example Prometheus Jmx Exporter metrics configuration
+
+[role="_abstract"]
+
+.Example custom resources with metrics configuration
+[cols="3*",options="header",stripes="none"]
+|===
+|Component
+|Custom resource
+|Example YAML file
+
+|Kafka nodes
+|`Kafka`
+|`kafka-metrics.yaml`
+
+|Kafka Connect
+|`KafkaConnect`
+|`kafka-connect-metrics.yaml`
+
+|Kafka MirrorMaker 2
+|`KafkaMirrorMaker2`
+|`kafka-mirror-maker-2-metrics.yaml`
+
+|Kafka Bridge
+|`KafkaBridge`
+|`kafka-bridge-metrics.yaml`
+
+|Cruise Control
+|`Kafka`
+|`kafka-cruise-control-metrics.yaml`
+|===
