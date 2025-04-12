@@ -3,14 +3,6 @@ name: Run System Tests
 on:
   workflow_call:
     inputs:
-      name:
-        description: "Job name"
-        required: true
-        type: string
-      displayName:
-        description: "Job display name"
-        required: true
-        type: string
       profileList:
         description: "Comma-separated or single profile name(s)"
         required: false
