@@ -61,7 +61,7 @@ runs:
         SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
         # Read the full data from a file stored in the action directory.
-        DEFINED_PIPELINES=$(cat "$SCRIPT_DIR/./.github/actions/generate-matrix/pipeline.json")
+        DEFINED_PIPELINES=$(cat "$SCRIPT_DIR/./.github/actions/generate-matrix/pipelines.json")
         
         # Filtering: pipelines take precedence over profiles.
         if [ -n "${INPUT_PIPELINES}" ]; then
