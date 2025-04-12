@@ -55,7 +55,6 @@ jobs:
 
     uses: ./.github/workflows/run-system-tests.yml
     with:
-      runTests: ${{ needs.parse-params.outputs.runTests }}
       pipelineList: ${{ needs.parse-params.outputs.pipelineList }}
       profileList: ${{ needs.parse-params.outputs.profileList }}
       # TODO - deal with missing arch?
