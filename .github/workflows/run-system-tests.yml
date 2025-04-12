@@ -3,16 +3,13 @@ name: Run System Tests
 on:
   workflow_call:
     inputs:
-      name:
-        description: "Job name"
-        required: true
-        type: string
-      displayName:
-        description: "Job display name"
-        required: true
-        type: string
-      profile:
+      profileList:
         description: "Comma-separated or single profile name(s)"
+        required: false
+        default: ""
+        type: string
+      pipelineList:
+        description: "Comma-separated or single pipeline name(s)"
         required: false
         default: ""
         type: string
@@ -31,17 +28,12 @@ on:
         required: false
         default: "CLUSTER"
         type: string
-      run_parallel:
-        description: "Whether the tests should be executed in parallel or not"
-        required: false
-        default: true
-        type: boolean
       parallel:
         description: "How many tests should be executed in parallel"
         required: false
         default: "2"
         type: string
-      strimzi_use_feature_gates:
+      strimzi_feature_gates:
         description: "Which feature-gates will be used by operator"
         required: false
         default: ""
@@ -66,21 +58,55 @@ on:
         type: string
 
 jobs:
-  # The actual "run-tests" job that uses the parse outputs.
+  generate-matrix:
+    runs-on: oracle-2cpu-8gb-arm64
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # yq is required for generate-matrix action
+      - name: Install yq
+        uses: ./.github/actions/install-yq
+        with:
+          architecture: "arm64"
+      - name: Generate Matrix
+        id: gen
+        uses: ./.github/actions/generate-matrix
+        with:
+          pipelines: ${{ inputs.pipelineList }}
+          profiles: ${{ inputs.profileList }}
+          default_agent: ${{ inputs.agent }}
+          default_arch: ${{ inputs.architecture }}
+          default_strimzi_feature_gates: ${{ inputs.strimzi_feature_gates }}
+          default_strimzi_rbac_scope: ${{ inputs.strimzi_rbac_scope }}
+          default_cluster_operator_install_type: ${{ inputs.cluster_operator_install_type }}
+          default_parallel: ${{ inputs.parallel }}
+
   run-tests:
-    name: ${{ inputs.name }}
-    runs-on: ${{ inputs.agent }}
+    needs: generate-matrix
+    strategy:
+      matrix:
+        config: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+      fail-fast: false
+
+    name: ${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.arch }}
+    runs-on: ${{ matrix.config.agent }}
+    timeout-minutes: ${{ matrix.config.timeout }}
     # Environment variables
     env:
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
-      PROFILE: ${{ inputs.profile }}
       DOCKER_TAG: ${{ inputs.releaseVersion }}
-      # Global config for architecture
-      ARCH: ${{ inputs.architecture }}
-
-      STRIMZI_RBAC_SCOPE: ${{ inputs.strimzi_rbac_scope }}
-      CLUSTER_OPERATOR_INSTALL_TYPE: ${{ inputs.cluster_operator_install_type }}
-      STRIMZI_FEATURE_GATES: ${{ inputs.strimzi_use_feature_gates }}
+      PROFILE: ${{ matrix.config.profile }}
+      ARCH: ${{ matrix.config.architecture }}
+      STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
+      CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
+      STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
+      PARALLEL: ${{ matrix.config.parallel }}
+      STRIMZI_DEFAULT_LOG_LEVEL: DEBUG
+      OPERATOR_IMAGE_PULL_POLICY: IfNotPresent
+      COMPONENTS_IMAGE_PULL_POLICY: IfNotPresent
     # Job steps
     steps:
       - uses: actions/checkout@v4
@@ -128,30 +154,22 @@ jobs:
       - name: Install Helm
         uses: ./.github/actions/install-helm
 
-#      # TODO - deal with this
-#      - name: Install xz
-#        run: "sudo apt-get install -y xz-utils iptables fuse-overlayfs"
-
       - name: Install Shellcheck
         uses: ./.github/actions/install-shellcheck
         with:
-          architecture: ${{ inputs.architecture }}
+          architecture: ${{ matrix.config.arch }}
       - name: Install yq
         uses: ./.github/actions/install-yq
         with:
-          architecture: ${{ inputs.architecture }}
+          architecture: ${{ matrix.config.arch }}
       - name: Install Docker
         uses: ./.github/actions/install-docker
-#      - name: Install Kind
-#        uses: ./.github/actions/setup-kind
-#        with:
-#          architecture: ${{ inputs.architecture }}
+
       - name: Install Minikube
         uses: ./.github/actions/setup-minikube
         with:
-          architecture: ${{ inputs.architecture }}
+          architecture: ${{ matrix.config.arch }}
 
-      # TODO - remove after testing
       - name: Print out environment info
         uses: ./.github/actions/log-variables
 
@@ -200,6 +218,16 @@ jobs:
           # Provide "connectImage" variable for tests:
           echo "CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=${CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN}" >> $GITHUB_ENV
 
+
+      ############################################################################
+      # We need to set DOCKER_REGISTRY to IP and port of service, which is created by minikube registry addon, port is always 80
+      # Default value for PRs is localhost:5000 because we need to push built images into minikube registry and make them available for pods
+      ############################################################################
+      - name: "Set docker_registry to local registry in minikube"
+        if: ${{ contains(env.DOCKER_REGISTRY, 'localhost:5000') }}
+        run: |
+          echo "DOCKER_REGISTRY=$(kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'):80" >> $GITHUB_ENV
+
       ############################################################################
       # Additional "setup_upgrade.sh" if profile includes "upgrade"
       ############################################################################
@@ -230,8 +258,8 @@ jobs:
             -DexcludedGroups="flaky,loadbalancer,networkpolicies,${EXCLUDED_GROUPS}" \
             -Dmaven.javadoc.skip=true \
             -B -V \
-            -Dfailsafe.rerunFailingTestsCount=2 \
-            -Djunit.jupiter.execution.parallel.enabled="${RUN_PARALLEL}" \
+            -Dfailsafe.rerunFailingTestsCount=1 \
+            -Djunit.jupiter.execution.parallel.enabled="true" \
             -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL}" \
             -Dskip.surefire.tests \
             -s ./.azure/systemtests/systemtest-settings.xml
@@ -239,26 +267,22 @@ jobs:
         env:
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
           BRIDGE_IMAGE: "latest-released"
-          DOCKER_REGISTRY: "registry.minikube"
-          BUILD_ID: ${{ inputs.agent }}-${{ inputs.profile }}-systemtests
-          RESOURCE_ALLOCATION_STRATEGY: "NOT_SHARED"
+          DOCKER_REGISTRY: ${{ env.DOCKER_REGISTRY }}
+          BUILD_ID: ${{ matrix.config.agent }}-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-systemtests
+          RESOURCE_ALLOCATION_STRATEGY: "SHARE_MEMORY_FOR_ALL_COMPONENTS"
           TEST_LOG_DIR: "systemtest-logs"
           CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN: ${{ env.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN }}
-          # Parallel test execution config
-          RUN_PARALLEL: ${{ inputs.run_parallel }}
-          PARALLEL: ${{ inputs.parallel }}
 
-      # REVISIT - TODO
       - name: Archive JUnit test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: junit-results-${{ inputs.profile }}-${{ inputs.agent }}
+          name: junit-results-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest/target/failsafe-reports/**/TEST-*.xml
 
       - name: Archive systemtest logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: systemtest-logs-${{ inputs.profile }}-${{ inputs.agent }}
+          name: systemtest-logs-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest-logs
