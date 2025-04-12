@@ -72,11 +72,13 @@ on:
 
 jobs:
   generate-matrix:
-    needs: parse
     runs-on: oracle-2cpu-8gb-arm64
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Generate Matrix
         id: gen
         uses: ./.github/actions/generate-matrix
@@ -92,10 +94,11 @@ jobs:
 
   # The actual "run-tests" job that uses the parse outputs.
   run-tests:
+    needs: generate-matrix
     strategy:
       matrix:
         # TODO - change accordingly
-        config: ${{ fromJson(steps.gen.outputs.matrix) }}
+        config: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
       fail-fast: false
 
     name: ${{ matrix.config.profile }}-${{ matrix.config.agent }}
