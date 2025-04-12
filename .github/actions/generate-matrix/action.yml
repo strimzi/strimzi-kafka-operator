@@ -66,10 +66,10 @@ runs:
         # Filtering: pipelines take precedence over profiles.
         if [ -n "${INPUT_PIPELINES}" ]; then
           FILTER=$(echo "${INPUT_PIPELINES}" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
-          MATRIX=$(echo "$DEFINED_PIPELINES" | jq --argjson filter "$FILTER" 'map(select(.trigger_text as $t | $filter | index($t)))')
+          MATRIX=$(echo "$DEFINED_PIPELINES" | jq --argjson filter "$FILTER" 'map(select(.pipeline as $t | $filter | index($t)))')
         elif [ -n "${INPUT_PROFILES}" ]; then
           FILTER=$(echo "${INPUT_PROFILES}" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
-          MATRIX=$(echo "$DEFINED_PIPELINES" | jq --argjson filter "$FILTER" 'map(select(.pipeline as $t | $filter | index($t)))')
+          MATRIX=$(echo "$DEFINED_PIPELINES" | jq --argjson filter "$FILTER" 'map(select(.profile as $t | $filter | index($t)))')
         else
           # If no pipelines or profiles provided, then build a simple matrix with one object per default profile.
           DEFAULT_PROFILES="regression,upgrade,performance"
