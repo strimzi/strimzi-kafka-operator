@@ -86,7 +86,9 @@ runs:
             '$profiles | map({agent: $agent, arch: $arch, jdk_version: $jdk, profile: ., strimzi_use_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi})')
         fi
 
-        echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+        # Use jq -c to produce compact (one-line) JSON output.
+        COMPACT_MATRIX=$(echo "$MATRIX" | jq -c '.')
+        echo "matrix=$COMPACT_MATRIX" >> $GITHUB_OUTPUT
         echo "Generated matrix: $MATRIX"
       env:
         INPUT_PIPELINES: "${{ inputs.pipelines }}"
