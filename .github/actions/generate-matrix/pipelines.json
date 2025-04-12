@@ -1,0 +1,222 @@
+[
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "brokers-and-security",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "operators",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "operands",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "brokers-and-security",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "operators",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "operands",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "smoke",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "smoke"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "smoke",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "smoke"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "azp_upgrade",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "upgrade"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "azp_upgrade",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "upgrade"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "azp_kafka_upgrade",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "upgrade"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "azp_kafka_upgrade",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "upgrade"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "acceptance",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "acceptance"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "acceptance",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "acceptance"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "acceptance",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "helm",
+    "pipeline": "acceptance-helm"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "acceptance",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "helm",
+    "pipeline": "acceptance-helm"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "brokers-and-security",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "NAMESPACE",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression-rbac"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "operators",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "NAMESPACE",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression-rbac"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "jdk_version": "17",
+    "profile": "operands",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "NAMESPACE",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression-rbac"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "brokers-and-security",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "NAMESPACE",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression-rbac"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "operators",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "NAMESPACE",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression-rbac"
+  },
+  {
+    "agent": "oracle-2cpu-8gb-arm64",
+    "arch": "arm64",
+    "jdk_version": "17",
+    "profile": "operands",
+    "strimzi_use_feature_gates": "false",
+    "strimzi_rbac_scope": "NAMESPACE",
+    "cluster_operator_install_type": "bundle",
+    "pipeline": "regression-rbac"
+  }
+]
