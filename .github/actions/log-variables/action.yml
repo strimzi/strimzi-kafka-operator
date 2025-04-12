@@ -22,6 +22,10 @@ runs:
         echo "ST_KAFKA_VERSION: ${{ env.ST_KAFKA_VERSION }}"
         echo "KAFKA_VERSION: ${{ env.KAFKA_VERSION }}"
         echo "COMPONENTS_IMAGE_PULL_POLICY: ${{ env.COMPONENTS_IMAGE_PULL_POLICY }}"
+        echo "PROFILE: ${{ env.PROFILE }}"
+        echo "CLUSTER_OPERATOR_INSTALL_TYPE: ${{ env.CLUSTER_OPERATOR_INSTALL_TYPE }}"
+        echo "STRIMZI_FEATURE_GATES: ${{ env.STRIMZI_FEATURE_GATES }}"
+        echo "STRIMZI_RBAC_SCOPE: ${{ env.STRIMZI_RBAC_SCOPE }}"
         echo "JAVA_HOME: $JAVA_HOME"
         java -version
         which java
