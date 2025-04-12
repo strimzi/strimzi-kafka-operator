@@ -1,0 +1,131 @@
+name: "Parse Comment Config"
+description: "Parses the comment to extract run flag, pipeline list, profile list, and additional configuration fields."
+
+inputs:
+  commentBody:
+    description: "The body of the GitHub comment (or manual trigger text)"
+    required: true
+
+outputs:
+  runTests:
+    description: "true/false value if tests should be run"
+    value: ${{ steps.parse.outputs.runTests }}
+  pipelineList:
+    description: "Comma-separated list of pipeline names (if provided)"
+    value: ${{ steps.parse.outputs.pipelineList }}
+  profileList:
+    description: "Comma-separated list of profile names (fallback if pipeline is not provided)"
+    value: ${{ steps.parse.outputs.profileList }}
+  agent:
+    description: "The parsed agent value from the comment"
+    value: ${{ steps.parse.outputs.agent }}
+  architecture:
+    description: "The parsed architecture value from the comment"
+    value: ${{ steps.parse.outputs.architecture }}
+  strimzi_feature_gates:
+    description: "The parsed strimzi_feature_gates value"
+    value: ${{ steps.parse.outputs.strimzi_feature_gates }}
+  strimzi_rbac_scope:
+    description: "The parsed strimzi_rbac_scope value"
+    value: ${{ steps.parse.outputs.strimzi_rbac_scope }}
+  cluster_operator_install_type:
+    description: "The parsed cluster_operator_install_type value"
+    value: ${{ steps.parse.outputs.cluster_operator_install_type }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Parse Comment
+      id: parse
+      shell: bash
+      run: |
+        set -e
+        
+        # Read the comment body
+        COMMENT="${{ inputs.commentBody }}"
+        COMMENT_LOWER=$(echo "$COMMENT" | tr '[:upper:]' '[:lower:]')
+        
+        # Default values
+        DEFAULT_PIPELINES="regression,upgrade,performance"
+        DEFAULT_PROFILES="regression,upgrade,performance"
+        DEFAULT_FEATURE_GATES="false"
+        DEFAULT_RBAC_SCOPE="CLUSTER"
+        DEFAULT_OPERATOR_INSTALL_TYPE="bundle"
+        
+        RUN_TESTS="false"
+        PIPELINE_LIST=""
+        PROFILE_LIST=""
+        AGENT_VALUE=""
+        ARCH_VALUE=""
+        FG_VALUE="$DEFAULT_FEATURE_GATES"
+        RBAC_VALUE="$DEFAULT_RBAC_SCOPE"
+        COI_VALUE="$DEFAULT_OPERATOR_INSTALL_TYPE"
+        PARALLEL_VALUE=""
+        
+        # Check for trigger string
+        if echo "$COMMENT_LOWER" | grep -q "/ga run"; then
+          RUN_TESTS="true"
+        
+          # Check if pipeline parameter exists (pipeline=...)
+          if echo "$COMMENT_LOWER" | grep -q "pipeline="; then
+            VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*pipeline=\([^ ]*\).*/\1/p')
+            if [ -z "$VALUE" ]; then
+              PIPELINE_LIST="$DEFAULT_PIPELINES"
+            else
+              PIPELINE_LIST="$VALUE"
+            fi
+          else
+            # Otherwise check for profile parameter (profile=...)
+            if echo "$COMMENT_LOWER" | grep -q "profile="; then
+              VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*profile=\([^ ]*\).*/\1/p')
+              if [ -z "$VALUE" ]; then
+                PROFILE_LIST="$DEFAULT_PROFILES"
+              else
+                PROFILE_LIST="$VALUE"
+              fi
+            else
+              PROFILE_LIST="$DEFAULT_PROFILES"
+            fi
+          fi
+        
+          # Parse additional fields (if present)
+          if echo "$COMMENT_LOWER" | grep -q "agent="; then
+            AGENT_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*agent=\([^ ]*\).*/\1/p')
+          fi
+          if echo "$COMMENT_LOWER" | grep -q "strimzi_feature_gates="; then
+            FG_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*strimzi_feature_gates=\([^ ]*\).*/\1/p')
+          fi
+          if echo "$COMMENT_LOWER" | grep -q "strimzi_rbac_scope="; then
+            RBAC_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*strimzi_rbac_scope=\([^ ]*\).*/\1/p')
+          fi
+          if echo "$COMMENT_LOWER" | grep -q "cluster_operator_install_type="; then
+            COI_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*cluster_operator_install_type=\([^ ]*\).*/\1/p')
+          fi
+          if echo "$COMMENT_LOWER" | grep -q "parallel="; then
+            PARALLEL_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*parallel=\([^ ]*\).*/\1/p')
+          fi
+          if echo "$COMMENT_LOWER" | grep -q "architecture="; then
+            ARCH_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*architecture=\([^ ]*\).*/\1/p')
+          fi
+        fi
+        
+        # Output the collected values as simple comma-separated strings
+        echo "runTests=$RUN_TESTS" >> $GITHUB_OUTPUT
+        echo "pipelineList=$PIPELINE_LIST" >> $GITHUB_OUTPUT
+        echo "profileList=$PROFILE_LIST" >> $GITHUB_OUTPUT
+        echo "agent=$AGENT_VALUE" >> $GITHUB_OUTPUT
+        echo "architecture=$ARCH_VALUE" >> $GITHUB_OUTPUT
+        echo "strimzi_feature_gates=$FG_VALUE" >> $GITHUB_OUTPUT
+        echo "strimzi_rbac_scope=$RBAC_VALUE" >> $GITHUB_OUTPUT
+        echo "cluster_operator_install_type=$COI_VALUE" >> $GITHUB_OUTPUT
+        echo "parallel=$PARALLEL_VALUE" >> $GITHUB_OUTPUT
+
+        echo "Parsed runTests: $RUN_TESTS"
+        echo "Parsed pipelineList: $PIPELINE_LIST"
+        echo "Parsed profileList: $PROFILE_LIST"
+        echo "Parsed agent: $AGENT_VALUE"
+        echo "Parsed architecture: $ARCH_VALUE"
+        echo "Parsed strimzi_feature_gates: $FG_VALUE"
+        echo "Parsed strimzi_rbac_scope: $RBAC_VALUE"
+        echo "Parsed cluster_operator_install_type: $COI_VALUE"
+        echo "Parsed parallel: $PARALLEL_VALUE"

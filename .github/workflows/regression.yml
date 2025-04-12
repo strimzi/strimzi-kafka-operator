@@ -29,47 +29,42 @@ jobs:
   # If not, don't even bother with parse-params job.
   parse-params:
 #    if: contains(github.event.comment.body, '/ga run')
-    runs-on: oracle-4cpu-16gb-x86-64
-#    runs-on: oracle-2cpu-8gb-arm64
+#    runs-on: oracle-4cpu-16gb-x86-64
+    runs-on: oracle-2cpu-8gb-arm64
     outputs:
       runTests: ${{ steps.parse.outputs.runTests }}
+      pipelineList: ${{ steps.parse.outputs.pipelineList }}
       profileList: ${{ steps.parse.outputs.profileList }}
+      agent: ${{ steps.parse.outputs.agent }}
+      architecture: ${{ steps.parse.outputs.architecture }}
+      strimzi_feature_gates: ${{ steps.parse.outputs.strimzi_feature_gates }}
+      strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
+      cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
+      parallel: ${{ steps.parse.outputs.parallel }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Parse Comment
         id: parse
-        uses: ./.github/actions/parse-comment
+        uses: ./.github/actions/parse-comment-config
         with:
           # TODO - revert this
 #          commentBody: ${{ github.event.comment.body }}
-          commentBody: "/ga run profile=smoke"
+          commentBody: "/ga run pipeline=regression,upgrade"
 
-  # The actual "run-tests" job that uses the parse outputs.
   run-tests:
-#    runs-on: oracle-2cpu-8gb-arm64
     name: run
     needs: parse-params
     if: ${{ needs.parse-params.outputs.runTests == 'true' }}
-    strategy:
-      matrix:
-        # TODO - change accordingly
-        config:
-          - agent: oracle-4cpu-16gb-x86-64
-            arch: amd64
-            jdk_version: "17"
-          - agent: oracle-2cpu-8gb-arm64
-            arch: arm64
-            jdk_version: "17"
-        profile: ${{ fromJson(needs.parse-params.outputs.profileList) }}
-      fail-fast: false
 
     uses: ./.github/workflows/run-system-tests.yml
     with:
-      name: ${{ matrix.profile }}-${{ matrix.config.agent }}
-      displayName: ${{ matrix.profile }}-${{ matrix.config.agent }}
-      profile: ${{ matrix.profile }}
-      agent: ${{ matrix.config.agent }}
-      # TODO - change accordingly
-      architecture: ${{ matrix.config.arch }}
+      pipelineList: ${{ needs.parse-params.outputs.pipelineList }}
+      profileList: ${{ needs.parse-params.outputs.profileList }}
+      agent: ${{ needs.parse-params.outputs.agent }}
+      architecture: ${{ needs.parse-params.outputs.architecture }}
+      strimzi_feature_gates: ${{ needs.parse-params.outputs.strimzi_feature_gates }}
+      strimzi_rbac_scope: ${{ needs.parse-params.outputs.strimzi_rbac_scope }}
+      cluster_operator_install_type: ${{ needs.parse-params.outputs.cluster_operator_install_type }}
+      parallel: ${{ needs.parse-params.outputs.parallel }}

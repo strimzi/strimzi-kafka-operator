@@ -568,6 +568,7 @@ public class KafkaUtils {
                 LOGGER.info("Kafka pod: {} the directory: {} - {}", kafkaPod.getMetadata().getName(), dir, result);
 
                 // Assert the condition that metadata should only exist in the specified KRaft metadata volume.
+                // TODO - this seems to be flaky, should the wait be dynamic?
                 if (volumeId == kraftMetadataVolumeId) {
                     assertThat("Metadata should exist in KRaft metadata volume", result, CoreMatchers.is(0));
                 } else {

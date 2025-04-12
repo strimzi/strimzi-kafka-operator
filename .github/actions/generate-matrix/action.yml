@@ -1,0 +1,92 @@
+name: "Matrix Generator"
+description: "Generates a JSON matrix for system tests based on input pipelines/profiles and fixed default parameters."
+
+inputs:
+  pipelines:
+    description: "Comma-separated list of pipelines (if provided, takes precedence)"
+    required: false
+    default: ""
+  profiles:
+    description: "Comma-separated list of profiles (used if pipelines is empty)"
+    required: false
+    default: ""
+  default_agent:
+    description: "Default agent value"
+    required: true
+    default: "oracle-4cpu-16gb-x86-64"
+  default_arch:
+    description: "Default architecture value"
+    required: true
+    default: "amd64"
+  default_strimzi_feature_gates:
+    description: "Default value for strimzi_feature_gates"
+    required: true
+    default: ""
+  default_strimzi_rbac_scope:
+    description: "Default value for strimzi_rbac_scope"
+    required: true
+    default: "CLUSTER"
+  default_cluster_operator_install_type:
+    description: "Default value for cluster_operator_install_type"
+    required: true
+    default: "bundle"
+  default_parallel:
+    description: "Number of tests executed in parallel"
+    default: "1"
+
+outputs:
+  matrix:
+    description: "Generated JSON matrix for system tests jobs"
+    value: ${{ steps.gen.outputs.matrix }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate Matrix JSON
+      id: gen
+      shell: bash
+      run: |
+        set -e
+
+        # Read the pipelines config from a file stored in the action directory.
+        DEFINED_PIPELINES=$(yq eval '.pipelines' -j ".github/actions/generate-matrix/pipelines.yaml")
+        
+        # Filtering: pipelines take precedence over profiles.
+        if [ -n "${INPUT_PIPELINES}" ]; then
+          FILTER=$(echo "${INPUT_PIPELINES}" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+          MATRIX=$(echo "$DEFINED_PIPELINES" | jq --argjson filter "$FILTER" 'map(select(.pipeline as $t | $filter | index($t)))')
+        elif [ -n "${INPUT_PROFILES}" ]; then
+          FILTER=$(echo "${INPUT_PROFILES}" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+          MATRIX=$(echo "$DEFINED_PIPELINES" | jq --argjson filter "$FILTER" 'map(select(.profile as $t | $filter | index($t)))')
+        else
+          # If no pipelines or profiles provided, then build a simple matrix with one object per default profile.
+          DEFAULT_PROFILES="regression,upgrade"
+          # Convert comma-separated default list to a JSON array string.
+          PROFILES=$(echo "$DEFAULT_PROFILES" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+          MATRIX=$(jq -n \
+            --arg agent "$INPUT_DEFAULT_AGENT" \
+            --arg arch "$INPUT_DEFAULT_ARCH" \
+            --arg fg "$INPUT_DEFAULT_STRIMZI_USE_FEATURE_GATES" \
+            --arg rbac "$INPUT_DEFAULT_STRIMZI_RBAC_SCOPE" \
+            --arg coi "$INPUT_DEFAULT_CLUSTER_OPERATOR_INSTALL_TYPE" \
+            --arg parallel "$INPUT_DEFAULT_PARALLEL" \
+            --arg pipeline "custom" \
+            --arg timeout 720 \
+            --argjson profiles "$PROFILES" \
+            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., $timeout: timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
+        fi
+
+        # Use jq -c to produce compact (one-line) JSON output.
+        COMPACT_MATRIX=$(echo "$MATRIX" | jq -c '.')
+        echo "matrix=$COMPACT_MATRIX" >> $GITHUB_OUTPUT
+        echo "Generated matrix: $MATRIX"
+      env:
+        INPUT_PIPELINES: "${{ inputs.pipelines }}"
+        INPUT_PROFILES: "${{ inputs.profiles }}"
+        INPUT_DEFAULT_AGENT: "${{ inputs.default_agent }}"
+        INPUT_DEFAULT_ARCH: "${{ inputs.default_arch }}"
+        INPUT_DEFAULT_JDK_VERSION: "${{ inputs.default_jdk_version }}"
+        INPUT_DEFAULT_STRIMZI_USE_FEATURE_GATES: "${{ inputs.default_strimzi_feature_gates }}"
+        INPUT_DEFAULT_STRIMZI_RBAC_SCOPE: "${{ inputs.default_strimzi_rbac_scope }}"
+        INPUT_DEFAULT_CLUSTER_OPERATOR_INSTALL_TYPE: "${{ inputs.default_cluster_operator_install_type }}"
+        INPUT_DEFAULT_PARALLEL: "${{ inputs.default_parallel }}"
