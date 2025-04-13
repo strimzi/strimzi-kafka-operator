@@ -33,7 +33,13 @@ jobs:
     runs-on: oracle-2cpu-8gb-arm64
     outputs:
       runTests: ${{ steps.parse.outputs.runTests }}
+      pipelineList: ${{ steps.parse.outputs.pipelineList }}
       profileList: ${{ steps.parse.outputs.profileList }}
+      # TODO - deal with missing arch?
+      agent: ${{ steps.parse.outputs.agent }}
+      strimzi_use_feature_gates: ${{ steps.parse.outputs.strimzi_use_feature_gates }}
+      strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
+      cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
     steps:
       - uses: actions/checkout@v4
         with:
