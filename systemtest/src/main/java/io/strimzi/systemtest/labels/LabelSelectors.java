@@ -19,35 +19,20 @@ import java.util.Map;
 
 public class LabelSelectors {
     public static LabelSelector bridgeLabelSelector(String clusterName, String componentName) {
-        Map<String, String> matchLabels = new HashMap<>();
-        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-        matchLabels.put(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND);
-        matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);
-
         return new LabelSelectorBuilder()
-            .withMatchLabels(matchLabels)
+            .withMatchLabels(commonMatchLabels(clusterName, KafkaBridge.RESOURCE_KIND, componentName))
             .build();
     }
 
     public static LabelSelector connectLabelSelector(String clusterName, String componentName) {
-        Map<String, String> matchLabels = new HashMap<>();
-        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-        matchLabels.put(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
-        matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);
-
         return new LabelSelectorBuilder()
-            .withMatchLabels(matchLabels)
+            .withMatchLabels(commonMatchLabels(clusterName, KafkaConnect.RESOURCE_KIND, componentName))
             .build();
     }
 
     public static LabelSelector mirrorMaker2LabelSelector(String clusterName, String componentName) {
-        Map<String, String> matchLabels = new HashMap<>();
-        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-        matchLabels.put(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
-        matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);
-
         return new LabelSelectorBuilder()
-            .withMatchLabels(matchLabels)
+            .withMatchLabels(commonMatchLabels(clusterName, KafkaMirrorMaker2.RESOURCE_KIND, componentName))
             .build();
     }
 
@@ -70,18 +55,15 @@ public class LabelSelectors {
     }
 
     public static LabelSelector kafkaLabelSelector(String clusterName, String componentName) {
-        Map<String, String> matchLabels = commonKafkaMatchLabels(clusterName);
-
-        matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);
-
         return new LabelSelectorBuilder()
-            .withMatchLabels(matchLabels)
+            .withMatchLabels(commonMatchLabels(clusterName, Kafka.RESOURCE_KIND, componentName))
             .build();
     }
 
     public static LabelSelector entityOperatorLabelSelector(final String clusterName) {
-        final Map<String, String> matchLabels = commonKafkaMatchLabels(clusterName);
-
+        final Map<String, String> matchLabels = new HashMap<>();
+        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        matchLabels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
         matchLabels.put(Labels.STRIMZI_COMPONENT_TYPE_LABEL, "entity-operator");
 
         return new LabelSelectorBuilder()
@@ -90,20 +72,15 @@ public class LabelSelectors {
     }
 
     public static LabelSelector allKafkaPodsLabelSelector(String clusterName) {
-        Map<String, String> matchLabels = commonKafkaMatchLabels(clusterName);
-
-        matchLabels.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(clusterName));
-
-        return new LabelSelectorBuilder()
-            .withMatchLabels(matchLabels)
-            .build();
+        return kafkaLabelSelector(clusterName, KafkaResources.kafkaComponentName(clusterName));
     }
 
-    private static Map<String, String> commonKafkaMatchLabels(String clusterName) {
+    private static Map<String, String> commonMatchLabels(String clusterName, String kind, String componentName) {
         Map<String, String> labels = new HashMap<>();
 
         labels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-        labels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
+        labels.put(Labels.STRIMZI_KIND_LABEL, kind);
+        labels.put(Labels.STRIMZI_NAME_LABEL, componentName);
 
         return labels;
     }
