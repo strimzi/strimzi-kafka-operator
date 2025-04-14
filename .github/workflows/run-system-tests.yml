@@ -77,12 +77,11 @@ jobs:
         with:
           pipelines: ${{ inputs.pipelineList }}
           profiles: ${{ inputs.profileList }}
-          default_agent: ${{ inputs.agent || 'oracle-4cpu-16gb-x86-64' }}
-          default_arch: ${{ inputs.architecture || 'amd64' }}
-          default_jdk_version: "17"
-          default_strimzi_use_feature_gates: ${{ inputs.strimzi_use_feature_gates || 'false' }}
-          default_strimzi_rbac_scope: ${{ inputs.strimzi_rbac_scope || 'CLUSTER' }}
-          default_cluster_operator_install_type: ${{ inputs.cluster_operator_install_type || 'bundle' }}
+          default_agent: ${{ inputs.agent }}
+          default_arch: ${{ inputs.architecture }}
+          default_strimzi_use_feature_gates: ${{ inputs.strimzi_use_feature_gates }}
+          default_strimzi_rbac_scope: ${{ inputs.strimzi_rbac_scope }}
+          default_cluster_operator_install_type: ${{ inputs.cluster_operator_install_type }}
 
   # The actual "run-tests" job that uses the parse outputs.
   run-tests:

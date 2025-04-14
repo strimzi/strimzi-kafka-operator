@@ -5,7 +5,6 @@ inputs:
   commentBody:
     description: "The body of the GitHub comment (or manual trigger text)"
     required: true
-    type: string
 
 outputs:
   runTests:
@@ -97,6 +96,9 @@ runs:
           if echo "$COMMENT_LOWER" | grep -q "cluster_operator_install_type="; then
             COI_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*cluster_operator_install_type=\([^ ]*\).*/\1/p')
           fi
+          if echo "$COMMENT_LOWER" | grep -q "cluster_operator_install_type="; then
+            PARALLEL_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*parallel=\([^ ]*\).*/\1/p')
+          fi
         fi
         
         # Output the collected values as simple comma-separated strings
@@ -107,6 +109,7 @@ runs:
         echo "strimzi_use_feature_gates=$FG_VALUE" >> $GITHUB_OUTPUT
         echo "strimzi_rbac_scope=$RBAC_VALUE" >> $GITHUB_OUTPUT
         echo "cluster_operator_install_type=$COI_VALUE" >> $GITHUB_OUTPUT
+        echo "parallel=$PARALLEL_VALUE" >> $GITHUB_OUTPUT
 
         echo "Parsed runTests: $RUN_TESTS"
         echo "Parsed pipelineList: $PIPELINE_LIST"
@@ -115,3 +118,4 @@ runs:
         echo "Parsed strimzi_use_feature_gates: $FG_VALUE"
         echo "Parsed strimzi_rbac_scope: $RBAC_VALUE"
         echo "Parsed cluster_operator_install_type: $COI_VALUE"
+        echo "Parsed parallel: $PARALLEL_VALUE"
