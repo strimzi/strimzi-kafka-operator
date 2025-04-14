@@ -71,6 +71,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # yq is required for generate-matrix action
       - name: Install yq
         uses: ./.github/actions/install-yq
         with:
@@ -87,12 +88,10 @@ jobs:
           default_strimzi_rbac_scope: ${{ inputs.strimzi_rbac_scope }}
           default_cluster_operator_install_type: ${{ inputs.cluster_operator_install_type }}
 
-  # The actual "run-tests" job that uses the parse outputs.
   run-tests:
     needs: generate-matrix
     strategy:
       matrix:
-        # TODO - change accordingly
         config: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
       fail-fast: false
 
@@ -103,9 +102,7 @@ jobs:
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
       PROFILE: ${{ matrix.config.profile }}
       DOCKER_TAG: ${{ inputs.releaseVersion }}
-      # Global config for architecture
       ARCH: ${{ matrix.config.architecture }}
-
       STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
       STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_use_feature_gates }}
