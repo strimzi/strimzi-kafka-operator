@@ -220,7 +220,7 @@ jobs:
       # Default value for PRs is localhost:5000 because we need to push built images into minikube registry and make them available for pods
       ############################################################################
       - name: "Set docker_registry to local registry in minikube"
-        if: ${{ env.DOCKER_REGISTRY == "localhost:5000" }}
+        if: ${{ !contains(env.DOCKER_REGISTRY, 'localhost:5000') }}
         run: |
           echo "DOCKER_REGISTRY=$(kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'):80" >> $GITHUB_ENV
 
