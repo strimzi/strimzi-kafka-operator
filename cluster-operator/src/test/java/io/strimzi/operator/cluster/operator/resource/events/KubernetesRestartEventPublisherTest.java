@@ -197,7 +197,7 @@ class KubernetesRestartEventPublisherTest {
         assertThat(publishedEvent.getReason(), is("FileSystemResizeNeeded"));
         assertThat(publishedEvent.getAction(), is("StrimziInitiatedPodRestart"));
         assertThat(publishedEvent.getType(), is("Normal"));
-        assertThat(publishedEvent.getNote(), is(RestartReason.FILE_SYSTEM_RESIZE_NEEDED.getDefaultNote()));
+        assertThat(publishedEvent.getNote(), is("Rolling Pod " + POD_NAME + " due to " + RestartReason.FILE_SYSTEM_RESIZE_NEEDED.getDefaultNote()));
         assertThat(publishedEvent.getEventTime().getTime(), is("2020-10-11T00:00:00.000000Z"));
 
     }

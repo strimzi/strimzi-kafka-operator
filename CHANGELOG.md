@@ -23,6 +23,7 @@
 * The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
 * Update OAuth library to 0.16.2.
 * Update HTTP bridge to 0.32.0.
+* Kubernetes events emitted during a Pod restart updated to have the Kafka resource as the `regardingObject` and the Pod in the `related` field.
 
 ### Major changes, deprecations and removals
 
@@ -45,6 +46,8 @@
   Please use the template section to configure additional volumes instead.
 * Kafka 4.0 and newer is using Log4j2 for logging instead of Reload4j/Log4j1.
   If you have any custom logging configuration, you might need to update it during the upgrade to Kafka 4.0.
+* Kubernetes events for Pod restarts no longer have the Pod as the `regardingObject`.
+  If you are using `regardingObject` as a `field-selector` for listing events you must update the selector to specify the Kafka resource instead.
 
 ## 0.45.0
 
