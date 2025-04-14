@@ -147,12 +147,12 @@
         <fabric8.openshift-client.version>7.1.0</fabric8.openshift-client.version>
         <fabric8.kubernetes-model.version>7.1.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
-        <fasterxml.jackson-core.version>2.16.2</fasterxml.jackson-core.version>
-        <fasterxml.jackson-databind.version>2.16.2</fasterxml.jackson-databind.version>
-        <fasterxml.jackson-dataformat.version>2.16.2</fasterxml.jackson-dataformat.version>
-        <fasterxml.jackson-annotations.version>2.16.2</fasterxml.jackson-annotations.version>
-        <fasterxml.jackson-datatype.version>2.16.2</fasterxml.jackson-datatype.version>
-        <fasterxml.jackson-jaxrs.version>2.16.2</fasterxml.jackson-jaxrs.version>
+        <fasterxml.jackson-core.version>2.18.3</fasterxml.jackson-core.version>
+        <fasterxml.jackson-databind.version>2.18.3</fasterxml.jackson-databind.version>
+        <fasterxml.jackson-dataformat.version>2.18.3</fasterxml.jackson-dataformat.version>
+        <fasterxml.jackson-annotations.version>2.18.3</fasterxml.jackson-annotations.version>
+        <fasterxml.jackson-datatype.version>2.18.3</fasterxml.jackson-datatype.version>
+        <fasterxml.jackson-jaxrs.version>2.18.3</fasterxml.jackson-jaxrs.version>
         <vertx.version>4.5.14</vertx.version>
         <vertx-junit5.version>4.5.14</vertx-junit5.version>
         <kafka.version>4.0.0</kafka.version>
@@ -171,7 +171,7 @@
         -->
         <jetty-old-kafka.version>9.4.56.v20240826</jetty-old-kafka.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.16.1</strimzi-oauth.version>
         <netty.version>4.1.118.Final</netty.version>
         <micrometer.version>1.12.13</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
