@@ -52,7 +52,7 @@ runs:
         SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
         # Read the full data from a file stored in the action directory.
-        DEFINED_PIPELINES=$(yq eval '.pipelines' -o=json "$SCRIPT_DIR/pipelines.yaml")
+        DEFINED_PIPELINES=$(yq eval '.pipelines' -j "$SCRIPT_DIR/pipelines.yaml")
         
         # Filtering: pipelines take precedence over profiles.
         if [ -n "${INPUT_PIPELINES}" ]; then
