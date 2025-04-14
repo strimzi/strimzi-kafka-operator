@@ -135,4 +135,39 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
         assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithIgnoredAnnos).isEmpty(), is(true));
         assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithOtherAnnos).isEmpty(), is(false));
     }
+
+    @Test
+    public void testNormalizedVolumeSize() {
+        PersistentVolumeClaim pvcWithDefaultStorageSize = new PersistentVolumeClaimBuilder(resource("my-pvc"))
+            .withNewSpec()
+                .withNewResources()
+                    .withRequests(Collections.singletonMap("storage", new Quantity("1Gi", null)))
+                .endResources()
+            .endSpec()
+            .build();
+
+        PersistentVolumeClaim pvcWithSameSizeInMi = new PersistentVolumeClaimBuilder(pvcWithDefaultStorageSize)
+            .editSpec()
+                .editResources()
+                    .withRequests(Collections.singletonMap("storage", new Quantity("1024Mi", null)))
+                .endResources()
+            .endSpec()
+            .build();
+
+        PersistentVolumeClaim pvcWithHigherSizeInMi = new PersistentVolumeClaimBuilder(pvcWithDefaultStorageSize)
+            .editSpec()
+                .editResources()
+                    .withRequests(Collections.singletonMap("storage", new Quantity("1048Mi", null)))
+                .endResources()
+            .endSpec()
+            .build();
+
+        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class));
+
+        op.configureNormalizedStorageSizeIfEqual(pvcWithDefaultStorageSize, pvcWithSameSizeInMi);
+        assertThat(pvcWithSameSizeInMi.getSpec().getResources().getRequests().get("storage").toString().equals("1Gi"), is(true));
+
+        op.configureNormalizedStorageSizeIfEqual(pvcWithDefaultStorageSize, pvcWithHigherSizeInMi);
+        assertThat(pvcWithHigherSizeInMi.getSpec().getResources().getRequests().get("storage").toString().equals("1048Mi"), is(true));
+    }
 }

@@ -172,7 +172,7 @@ spec:
 <15> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <16> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka.
 <17> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
-<18> Authorization enables simple, OAUTH 2.0, or OPA authorization on the Kafka broker. Simple authorization uses the `AclAuthorizer` and `StandardAuthorizer` Kafka plugins.
+<18> Authorization enables simple, OAuth 2.0, custom, or OPA (deprecated) authorization on the Kafka broker. Simple authorization uses the `StandardAuthorizer` Kafka plugin.
 <19> Rack awareness configuration to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label.
 <20> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
 <21> Rules for exporting metrics in Prometheus format to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.

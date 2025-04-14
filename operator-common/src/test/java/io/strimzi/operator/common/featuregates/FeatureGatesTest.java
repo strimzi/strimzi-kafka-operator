@@ -53,25 +53,25 @@ public class FeatureGatesTest {
 
     @ParallelTest
     public void testFeatureGatesParsing() {
-        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
-        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
-        assertThat(new FeatureGates("  -ContinueReconciliationOnManualRollingUpdateFailure    ").continueOnManualRUFailureEnabled(), is(false));
+        assertThat(new FeatureGates("+DummyFeatureGate").dummyFeatureGateEnabled(), is(true));
+        assertThat(new FeatureGates("-DummyFeatureGate").dummyFeatureGateEnabled(), is(false));
+        assertThat(new FeatureGates("   -DummyFeatureGate   ").dummyFeatureGateEnabled(), is(false));
         // TODO: Add more tests with various feature gate combinations once we have multiple feature gates again.
         //       The commented out code below shows the tests we used to have with multiple feature gates.
-        //assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(false));
-        //assertThat(new FeatureGates("-UseKRaft,-ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(false));
-        //assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").useKRaftEnabled(), is(true));
-        //assertThat(new FeatureGates("  +UseKRaft    ,    +ContinueReconciliationOnManualRollingUpdateFailure").continueOnManualRUFailureEnabled(), is(true));
-        //assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").useKRaftEnabled(), is(false));
-        //assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-UseKRaft").continueOnManualRUFailureEnabled(), is(true));
+        //assertThat(new FeatureGates("-UseKRaft,-DummyFeatureGate").useKRaftEnabled(), is(false));
+        //assertThat(new FeatureGates("-UseKRaft,-DummyFeatureGate").continueOnManualRUFailureEnabled(), is(false));
+        //assertThat(new FeatureGates("  +UseKRaft    ,    +DummyFeatureGate").useKRaftEnabled(), is(true));
+        //assertThat(new FeatureGates("  +UseKRaft    ,    +DummyFeatureGate").continueOnManualRUFailureEnabled(), is(true));
+        //assertThat(new FeatureGates("+DummyFeatureGate,-UseKRaft").useKRaftEnabled(), is(false));
+        //assertThat(new FeatureGates("+DummyFeatureGate,-UseKRaft").continueOnManualRUFailureEnabled(), is(true));
     }
 
     @ParallelTest
     public void testFeatureGatesEquals() {
-        FeatureGates fg = new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure");
+        FeatureGates fg = new FeatureGates("+DummyFeatureGate");
         assertThat(fg, is(fg));
-        assertThat(fg, is(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure")));
-        assertThat(fg, is(not(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure"))));
+        assertThat(fg, is(new FeatureGates("+DummyFeatureGate")));
+        assertThat(fg, is(not(new FeatureGates("-DummyFeatureGate"))));
     }
 
     @ParallelTest
@@ -92,20 +92,20 @@ public class FeatureGatesTest {
 
     @ParallelTest
     public void testDuplicateFeatureGateWithSameValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,+ContinueReconciliationOnManualRollingUpdateFailure"));
-        assertThat(e.getMessage(), containsString("Feature gate ContinueReconciliationOnManualRollingUpdateFailure is configured multiple times"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+DummyFeatureGate,+DummyFeatureGate"));
+        assertThat(e.getMessage(), containsString("Feature gate DummyFeatureGate is configured multiple times"));
     }
 
     @ParallelTest
     public void testDuplicateFeatureGateWithDifferentValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure,-ContinueReconciliationOnManualRollingUpdateFailure"));
-        assertThat(e.getMessage(), containsString("Feature gate ContinueReconciliationOnManualRollingUpdateFailure is configured multiple times"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+DummyFeatureGate,-DummyFeatureGate"));
+        assertThat(e.getMessage(), containsString("Feature gate DummyFeatureGate is configured multiple times"));
     }
 
     @ParallelTest
     public void testMissingSign() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("ContinueReconciliationOnManualRollingUpdateFailure"));
-        assertThat(e.getMessage(), containsString("ContinueReconciliationOnManualRollingUpdateFailure is not a valid feature gate configuration"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("DummyFeatureGate"));
+        assertThat(e.getMessage(), containsString("DummyFeatureGate is not a valid feature gate configuration"));
     }
 
     @ParallelTest
@@ -117,7 +117,7 @@ public class FeatureGatesTest {
     @ParallelTest
     public void testEnvironmentVariable()   {
         assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
-        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is("-ContinueReconciliationOnManualRollingUpdateFailure"));
-        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is(""));
+        assertThat(new FeatureGates("+DummyFeatureGate").toEnvironmentVariable(), is("+DummyFeatureGate"));
+        assertThat(new FeatureGates("-DummyFeatureGate").toEnvironmentVariable(), is(""));
     }
 }
