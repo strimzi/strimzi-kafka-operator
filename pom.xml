@@ -164,6 +164,7 @@
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>12.0.16</jetty.version>
+        <json-smart.version>2.5.2</json-smart.version>
         <!--
         This property is used to track the Jetty version used by Kafka. Kafka uses old Jetty version that is not
         supported anymore. This also needs to be used by the kafka-agent module. Strimzi operators uses newer supported
@@ -734,6 +735,12 @@
                 <groupId>io.skodjob</groupId>
                 <artifactId>test-frame-common</artifactId>
                 <version>${skodjob.test-frame.version}</version>
+            </dependency>
+            <!-- Transitive override to address CVE-2024-57699. Remove in the future when oauth will bring json-path with fixed json-smart -->
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json-smart.version}</version>
             </dependency>
             <!-- Test dependencies -->
             <dependency>
