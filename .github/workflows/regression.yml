@@ -45,8 +45,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install yq
-        run: sudo apt install -y yq
       - name: Parse Comment
         id: parse
         uses: ./.github/actions/parse-comment-config
