@@ -214,6 +214,16 @@ jobs:
           # Provide "connectImage" variable for tests:
           echo "CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=${CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN}" >> $GITHUB_ENV
 
+
+      ############################################################################
+      # We need to set DOCKER_REGISTRY to IP and port of service, which is created by minikube registry addon, port is always 80
+      # Default value for PRs is localhost:5000 because we need to push built images into minikube registry and make them available for pods
+      ############################################################################
+      - name: "Set docker_registry to local registry in minikube"
+        if: ${{ env.DOCKER_REGISTRY == "localhost:5000" }}
+        run: |
+          echo "DOCKER_REGISTRY=$(kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'):80" >> $GITHUB_ENV
+
       ############################################################################
       # Additional "setup_upgrade.sh" if profile includes "upgrade"
       ############################################################################
@@ -244,7 +254,7 @@ jobs:
             -DexcludedGroups="flaky,loadbalancer,networkpolicies,${EXCLUDED_GROUPS}" \
             -Dmaven.javadoc.skip=true \
             -B -V \
-            -Dfailsafe.rerunFailingTestsCount=2 \
+            -Dfailsafe.rerunFailingTestsCount=1 \
             -Djunit.jupiter.execution.parallel.enabled="true" \
             -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL}" \
             -Dskip.surefire.tests \
@@ -253,9 +263,9 @@ jobs:
         env:
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
           BRIDGE_IMAGE: "latest-released"
-          DOCKER_REGISTRY: "registry.minikube"
+          DOCKER_REGISTRY: ${{ env.DOCKER_REGISTRY }}
           BUILD_ID: ${{ matrix.config.agent }}-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-systemtests
-          RESOURCE_ALLOCATION_STRATEGY: "NOT_SHARED"
+          RESOURCE_ALLOCATION_STRATEGY: "SHARE_MEMORY_FOR_ALL_COMPONENTS"
           TEST_LOG_DIR: "systemtest-logs"
           CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN: ${{ env.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN }}
 
