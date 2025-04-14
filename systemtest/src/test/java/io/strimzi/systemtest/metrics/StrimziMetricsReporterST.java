@@ -17,11 +17,11 @@ import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
-import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.METRICS;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.SANITY;
@@ -43,13 +42,12 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(SANITY)
 @Tag(REGRESSION)
 @Tag(METRICS)
-@Tag(CRUISE_CONTROL)
 @SuiteDoc(
     description = @Desc("This test suite is designed for testing metrics exposed by the Strimzi Metrics Reporter."),
     beforeTestSteps = {
         @Step(value = "Create namespace {@namespace}.", expected = "Namespace {@namespace} is created."),
         @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed."),
-        @Step(value = "Deploy Kafka {@clusterName} with metrics.", expected = "Kafka @{clusterName} is deployed."),
+        @Step(value = "Deploy Kafka {@clusterName} with Strimzi Metrics Reporter.", expected = "Kafka @{clusterName} is deployed."),
         @Step(value = "Deploy scraper Pod in namespace {@namespace} for collecting metrics from Strimzi pods.", expected = "Scraper Pods is deployed."),
         @Step(value = "Create KafkaTopic resource.", expected = "KafkaTopic resource is Ready."),
         @Step(value = "Create collector for Kafka.", expected = "Metrics collected in collectors structs.")
@@ -63,9 +61,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 )
 public class StrimziMetricsReporterST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziMetricsReporterST.class);
-
-    private final String namespace = Environment.TEST_SUITE_NAMESPACE;
-    private final String clusterName = "my-cluster";
 
     private BaseMetricsCollector kafkaCollector;
 
@@ -89,6 +84,8 @@ public class StrimziMetricsReporterST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+
         // metrics tests are not designed to run with namespace RBAC scope
         assumeFalse(Environment.isNamespaceRbacScope());
 
@@ -96,26 +93,31 @@ public class StrimziMetricsReporterST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        cluster.setNamespace(namespace);
+        cluster.setNamespace(testStorage.getNamespaceName());
 
-        String scraperName = namespace + "-" + TestConstants.SCRAPER_NAME;
-
-        // create resources without wait to deploy them simultaneously
         resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(namespace, KafkaNodePoolResource.getBrokerPoolName(clusterName), clusterName, 3).build(),
-            KafkaNodePoolTemplates.controllerPool(namespace, KafkaNodePoolResource.getControllerPoolName(clusterName), clusterName, 3).build()
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(),
+                KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(),
+                KafkaNodePoolResource.getControllerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithoutWait(
-            KafkaTemplates.kafkaWithStrimziMetricsReporter(namespace, clusterName, 3).build(),
-            ScraperTemplates.scraperPod(namespace, scraperName).build()
+        resourceManager.createResourceWithWait(
+            KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+                .editSpec()
+                    .editKafka()
+                        .withNewStrimziMetricsReporterConfig()
+                            .withNewValues()
+                                .withAllowList("kafka_server.*")
+                            .endValues()
+                        .endStrimziMetricsReporterConfig()
+                    .endKafka()
+                .endSpec().build()
         );
 
-        // sync resources
-        resourceManager.synchronizeResources();
-
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(namespace, KafkaTopicUtils.generateRandomNameOfTopic(), clusterName, 5, 2).build());
-
-        String scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespace, scraperName).get(0).getMetadata().getName();
+        resourceManager.createResourceWithWait(
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 5, 2).build()
+        );
 
         // wait some time for metrics to be stable, at least reconciliation interval + 10s
         LOGGER.info("Sleeping for {} to give operators and operands some time to stable the metrics values before collecting",
@@ -123,9 +125,10 @@ public class StrimziMetricsReporterST extends AbstractST {
         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(TestConstants.SAFETY_RECONCILIATION_INTERVAL));
 
         kafkaCollector = new BaseMetricsCollector.Builder()
-            .withScraperPodName(scraperPodName)
-            .withNamespaceName(namespace)
-            .withComponent(KafkaMetricsComponent.create(clusterName))
+            .withScraperPodName(ResourceManager.kubeClient()
+                .listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withComponent(KafkaMetricsComponent.create(testStorage.getClusterName()))
             .build();
 
         kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
