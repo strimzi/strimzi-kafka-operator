@@ -351,7 +351,8 @@ class KafkaConnectConfigurationBuilderTest {
                 " oauth.refresh.token=\"${strimzidir:/opt/kafka/oauth/my-refresh-token-secret:my-refresh-token-key}\"" +
                 " oauth.access.token=\"${strimzidir:/opt/kafka/oauth/my-refresh-token-secret:my-access-token-key}\"" +
                 " oauth.password.grant.password=\"${strimzidir:/opt/kafka/oauth/my-password-secret-secret:my-password-key}\"" +
-                " oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/my-tls-trusted-certificate/pem-content\" oauth.ssl.truststore.type=\"PEM\";";
+                " oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/my-cluster-connect-oauth-trusted-certs/my-cluster-connect-oauth-trusted-certs.crt\"" +
+                " oauth.ssl.truststore.type=\"PEM\";";
 
         assertThat(configuration, isEquivalent(
                 "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
