@@ -22,6 +22,9 @@ rules:
       - kafkas
       - kafkanodepools
       - kafkarebalances
+      - kafkaconnects
+      - kafkaconnectors
+      - kafkamirrormaker2s
     verbs: ["list", "watch"]
   - apiGroups:
       - core.strimzi.io

@@ -135,3 +135,73 @@ data:
                 rebalancing: [ status, conditions, "[type=Rebalancing]", status ]
                 deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 template: [ metadata, annotations, "strimzi.io/rebalance-template" ]
+        - groupVersionKind:
+            group: kafka.strimzi.io
+            version: v1beta2
+            kind: KafkaConnect
+          metricNamePrefix: strimzi_kafka_connect
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi kafka connect resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                generation: [ status, observedGeneration ]
+                connectorPluginsClass: [ status, connectorPlugins, class ]
+                connectorPluginsType: [ status, connectorPlugins, type ]
+                connectorPluginsVersion: [ status, connectorPlugins, version ]
+                replicas: [ status, replicas ]
+                labelSelector: [ status, labelSelector ]
+        - groupVersionKind:
+            group: kafka.strimzi.io
+            version: v1beta2
+            kind: KafkaConnector
+          metricNamePrefix: strimzi_kafka_connector
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi kafka connector resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                generation: [ status, observedGeneration ]
+                autoRestartCount: [ status, autoRestart, count ]
+                autoRestartConnectorName: [ status, autoRestart, connectorName ]
+                tasksMax: [ status, tasksMax ]
+                topics: [ status, topics ]
+        - groupVersionKind:
+            group: kafka.strimzi.io
+            version: v1beta2
+            kind: KafkaMirrorMaker2
+          metricNamePrefix: strimzi_kafka_mm2
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi kafka mirrormaker2 resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                generation: [ status, observedGeneration ]
+                autoRestartCount: [ status, autoRestart, count ]
+                autoRestartConnectorName: [ status, autoRestart, connectorName ]
+                connectorPluginsClass: [ status, connectorPlugins, class ]
+                connectorPluginsType: [ status, connectorPlugins, type ]
+                connectorPluginsVersion: [ status, connectorPlugins, version ]
+                labelSelector: [ status, labelSelector ]
+                replicas: [ status, replicas ]
