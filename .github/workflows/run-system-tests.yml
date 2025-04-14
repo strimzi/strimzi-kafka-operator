@@ -154,18 +154,18 @@ jobs:
       - name: Install Shellcheck
         uses: ./.github/actions/install-shellcheck
         with:
-          architecture: ${{ inputs.architecture }}
+          architecture: ${{ matrix.config.arch }}
       - name: Install yq
         uses: ./.github/actions/install-yq
         with:
-          architecture: ${{ inputs.architecture }}
+          architecture: ${{ matrix.config.arch }}
       - name: Install Docker
         uses: ./.github/actions/install-docker
 
       - name: Install Minikube
         uses: ./.github/actions/setup-minikube
         with:
-          architecture: ${{ inputs.architecture }}
+          architecture: ${{ matrix.config.arch }}
 
       - name: Print out environment info
         uses: ./.github/actions/log-variables
