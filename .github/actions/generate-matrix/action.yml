@@ -48,11 +48,8 @@ runs:
       run: |
         set -e
 
-        # Determine the directory of this action
-        SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
-
-        # Read the full data from a file stored in the action directory.
-        DEFINED_PIPELINES=$(yq eval '.pipelines' -j "$SCRIPT_DIR/pipelines.yaml")
+        # Read the pipelines config from a file stored in the action directory.
+        DEFINED_PIPELINES=$(yq eval '.pipelines' -j ".github/actions/generate-matrix/pipelines.yaml")
         
         # Filtering: pipelines take precedence over profiles.
         if [ -n "${INPUT_PIPELINES}" ]; then
