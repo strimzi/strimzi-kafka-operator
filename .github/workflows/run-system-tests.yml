@@ -96,7 +96,7 @@ jobs:
         config: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
       fail-fast: false
 
-    name: ${{ matrix.config.profile }}-${{ matrix.config.agent }}
+    name: ${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.arch }}
     runs-on: ${{ matrix.config.agent }}
     # Environment variables
     env:
