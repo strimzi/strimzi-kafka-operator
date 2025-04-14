@@ -5,13 +5,26 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Namespace;
+import io.skodjob.testframe.resources.BuildConfigType;
 import io.skodjob.testframe.resources.ClusterRoleBindingType;
 import io.skodjob.testframe.resources.ClusterRoleType;
+import io.skodjob.testframe.resources.ConfigMapType;
 import io.skodjob.testframe.resources.CustomResourceDefinitionType;
 import io.skodjob.testframe.resources.DeploymentType;
+import io.skodjob.testframe.resources.ImageStreamType;
 import io.skodjob.testframe.resources.JobType;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.LeaseType;
 import io.skodjob.testframe.resources.NamespaceType;
+import io.skodjob.testframe.resources.NetworkPolicyType;
+import io.skodjob.testframe.resources.OperatorGroupType;
+import io.skodjob.testframe.resources.RoleBindingType;
+import io.skodjob.testframe.resources.RoleType;
+import io.skodjob.testframe.resources.SecretType;
+import io.skodjob.testframe.resources.ServiceAccountType;
+import io.skodjob.testframe.resources.ServiceType;
+import io.skodjob.testframe.resources.SubscriptionType;
+import io.skodjob.testframe.resources.ValidatingWebhookConfigurationType;
 import io.skodjob.testframe.utils.KubeUtils;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
@@ -57,10 +70,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith({TestExecutionWatcher.class})
 @DisplayNameGeneration(IndicativeSentences.class)
 @io.skodjob.testframe.annotations.ResourceManager
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
     static {
         LB_FINALIZERS = Environment.LB_FINALIZERS ? List.of(TestConstants.LOAD_BALANCER_CLEANUP) : null;
+
         KubeResourceManager.get().setResourceTypes(
             new ClusterRoleBindingType(),
             new ClusterRoleType(),
@@ -68,6 +83,19 @@ public abstract class AbstractST implements TestSeparator {
             new DeploymentType(),
             new NamespaceType(),
             new JobType(),
+            new NetworkPolicyType(),
+            new RoleBindingType(),
+            new ServiceType(),
+            new ConfigMapType(),
+            new LeaseType(),
+            new ServiceAccountType(),
+            new RoleType(),
+            new SecretType(),
+            new ValidatingWebhookConfigurationType(),
+            new SubscriptionType(),
+            new OperatorGroupType(),
+            new BuildConfigType(),
+            new ImageStreamType(),
             new KafkaAccessType(),
             new KafkaBridgeType(),
             new KafkaConnectorType(),
@@ -105,9 +133,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     // Test-Frame integration stuff, remove everything else when not needed
-    protected final KubeResourceManager kubeResourceManager = KubeResourceManager.get();
-
-    protected final ResourceManager resourceManager = ResourceManager.getInstance();
+    protected final KubeResourceManager resourceManager = KubeResourceManager.get();
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
     private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
     protected KubeClusterResource cluster;
@@ -136,7 +162,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void afterEachMayOverride() throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
-            ResourceManager.getInstance().deleteResources();
+            KubeResourceManager.get().deleteResources();
             testSuiteNamespaceManager.deleteParallelNamespace();
         }
     }
@@ -149,7 +175,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected synchronized void afterAllMayOverride() {
         if (!Environment.SKIP_TEARDOWN) {
-            ResourceManager.getInstance().deleteResources();
+            KubeResourceManager.get().deleteResources();
             testSuiteNamespaceManager.deleteTestSuiteNamespace();
             NamespaceManager.getInstance().deleteAllNamespacesFromSet();
         }

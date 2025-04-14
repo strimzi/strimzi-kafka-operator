@@ -16,9 +16,8 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -99,7 +98,7 @@ public class TopicReplicasChangeST extends AbstractST {
 
         // Wait for the KafkaTopic to reflect the invalid configuration
         KafkaTopicUtils.waitForKafkaTopicNotReady(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(sharedTestStorage.getNamespaceName()).withName(testStorage.getTopicName()).get().getStatus();
+        KafkaTopicStatus kafkaTopicStatus = KafkaTopicUtils.kafkaTopicClient().inNamespace(sharedTestStorage.getNamespaceName()).withName(testStorage.getTopicName()).get().getStatus();
 
         String errorMessage = "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered.";
 
@@ -113,7 +112,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int newTopicReplicationFactor = 3;
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+        KafkaTopicUtils.replaceTopicResourceInSpecificNamespace(
             sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(newTopicReplicationFactor)
         );
 
@@ -158,7 +157,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+        KafkaTopicUtils.replaceTopicResourceInSpecificNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor)
         );
 
@@ -172,7 +171,7 @@ public class TopicReplicasChangeST extends AbstractST {
         // --- 3rd stage (go back to 2 replicas)
         topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+        KafkaTopicUtils.replaceTopicResourceInSpecificNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor)
         );
 
@@ -219,7 +218,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+        KafkaTopicUtils.replaceTopicResourceInSpecificNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(wrongTopicReplicationFactor)
         );
 
@@ -235,7 +234,7 @@ public class TopicReplicasChangeST extends AbstractST {
         // ----- 3rd stage (back to correct 3 replicas)
         topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+        KafkaTopicUtils.replaceTopicResourceInSpecificNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor)
         );
 
@@ -281,7 +280,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+        KafkaTopicUtils.replaceTopicResourceInSpecificNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor)
         );
 
@@ -334,7 +333,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 3;
         final String eoPodName = kubeClient().listPods(sharedTestStorage.getNamespaceName(),
-                        KafkaResource.getEntityOperatorLabelSelector(sharedTestStorage.getClusterName())).stream()
+                        LabelSelectors.entityOperatorLabelSelector(sharedTestStorage.getClusterName())).stream()
                 .findFirst()
                 .orElseThrow()
                 .getMetadata().getName();
@@ -348,7 +347,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+        KafkaTopicUtils.replaceTopicResourceInSpecificNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(decreasedTopicReplicationFactor)
         );
 

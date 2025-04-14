@@ -16,6 +16,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -137,7 +138,7 @@ public class ConfigProviderST extends AbstractST {
 
         LOGGER.info("Creating needed RoleBinding and Role for Kubernetes Config Provider");
 
-        ResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             new RoleBindingBuilder()
                 .editOrNewMetadata()
                     .withName("connector-config-rb")

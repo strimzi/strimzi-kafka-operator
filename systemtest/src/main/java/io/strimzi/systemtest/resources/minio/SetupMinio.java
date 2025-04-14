@@ -12,10 +12,11 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,7 +78,7 @@ public class SetupMinio {
             .build();
 
         // Create the deployment
-        ResourceManager.getInstance().createResourceWithWait(minioDeployment);
+        KubeResourceManager.get().createResourceWithWait(minioDeployment);
 
         // Create a service to expose Minio
         Service minioService = new ServiceBuilder()
@@ -94,8 +95,8 @@ public class SetupMinio {
             .endSpec()
             .build();
 
-        ResourceManager.getInstance().createResourceWithoutWait(minioService);
-        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(namespace, MINIO, Map.of(TestConstants.APP_POD_LABEL, MINIO));
+        KubeResourceManager.get().createResourceWithoutWait(minioService);
+        NetworkPolicyUtils.allowNetworkPolicyAllIngressForMatchingLabel(namespace, MINIO, Map.of(TestConstants.APP_POD_LABEL, MINIO));
 
         initMinioClient(namespace);
     }

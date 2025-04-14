@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.kubernetes;
+package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
@@ -17,7 +18,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
@@ -31,41 +31,12 @@ import static io.strimzi.api.ResourceLabels.STRIMZI_KIND_LABEL;
 import static io.strimzi.api.ResourceLabels.STRIMZI_NAME_LABEL;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
-
-    private static final Logger LOGGER = LogManager.getLogger(NetworkPolicyResource.class);
-
-    @Override
-    public String getKind() {
-        return TestConstants.NETWORK_POLICY;
-    }
-    @Override
-    public NetworkPolicy get(String namespace, String name) {
-        return ResourceManager.kubeClient().namespace(namespace).getNetworkPolicy(name);
-    }
-    @Override
-    public void create(NetworkPolicy resource) {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createNetworkPolicy(resource);
-    }
-    @Override
-    public void delete(NetworkPolicy resource) {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteNetworkPolicy(resource.getMetadata().getName());
-    }
-
-    @Override
-    public void update(NetworkPolicy resource) {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).updateNetworkPolicy(resource);
-    }
-
-    @Override
-    public boolean waitForReadiness(NetworkPolicy resource) {
-        return resource != null;
-    }
+public class NetworkPolicyUtils {
+    private static final Logger LOGGER = LogManager.getLogger(NetworkPolicyUtils.class);
 
     /**
      * Method for allowing network policies for Cluster Operator
      */
-
     public static void allowNetworkPolicySettingsForClusterOperator(String namespace) {
         String clusterOperatorKind = "cluster-operator";
         LabelSelector labelSelector = new LabelSelectorBuilder()
@@ -89,7 +60,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        KubeResourceManager.get().createResourceWithWait(networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
@@ -106,14 +77,14 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        KubeResourceManager.get().createResourceWithWait(networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", clientLabelSelector);
     }
 
     public static void allowNetworkPolicySettingsForBridgeScraper(String namespace, String scraperPodName, String componentName) {
         LabelSelector scraperLabelSelector = new LabelSelectorBuilder()
-                    .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
-                    .build();
+            .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
+            .build();
 
         LOGGER.info("Apply NetworkPolicy access to Kafka Bridge {} from scraper Pods with LabelSelector {}", componentName, scraperLabelSelector);
 
@@ -127,7 +98,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        KubeResourceManager.get().createResourceWithWait(networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", scraperLabelSelector);
     }
 
@@ -147,7 +118,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                 .endSpec()
                 .build();
 
-            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+            KubeResourceManager.get().createResourceWithWait(networkPolicy);
         }
     }
 
@@ -165,14 +136,14 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                 .editSpec()
                     // keeping ingress empty to allow all connections
                     .addNewIngress()
-                    .endIngress()
-                    .withNewPodSelector()
+                        .endIngress()
+                            .withNewPodSelector()
                         .addToMatchLabels(matchLabels)
                     .endPodSelector()
                 .endSpec()
                 .build();
 
-            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+            KubeResourceManager.get().createResourceWithWait(networkPolicy);
         }
     }
 
@@ -197,10 +168,10 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                     .withNewPodSelector()
                         .addToMatchLabels(matchLabels)
                     .endPodSelector()
-                    .endSpec()
+                .endSpec()
                 .build();
 
-            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+            KubeResourceManager.get().createResourceWithWait(networkPolicy);
         }
     }
 
@@ -249,7 +220,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                         .withNewPort(9404)
                         .withProtocol("TCP")
                     .endPort()
-                    .addNewPort()
+                        .addNewPort()
                         .withNewPort(8080)
                         .withProtocol("TCP")
                     .endPort()
@@ -268,7 +239,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+        KubeResourceManager.get().createResourceWithWait(networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
@@ -283,7 +254,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                     networkPolicy = NetworkPolicyTemplates.defaultNetworkPolicy(namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
                 }
 
-                ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+                KubeResourceManager.get().createResourceWithWait(networkPolicy);
                 LOGGER.info("NetworkPolicy successfully set to: {} for Namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
             }
         }

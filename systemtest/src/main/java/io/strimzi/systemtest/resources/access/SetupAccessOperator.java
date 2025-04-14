@@ -12,9 +12,9 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -48,7 +48,7 @@ public class SetupAccessOperator {
                 switch (resourceType) {
                     case TestConstants.SERVICE_ACCOUNT:
                         ServiceAccount serviceAccount = ReadWriteUtils.readObjectFromYamlFilepath(file, ServiceAccount.class);
-                        ResourceManager.getInstance().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
+                        KubeResourceManager.get().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
                             .editMetadata()
                                 .withNamespace(namespaceName)
                             .endMetadata()
@@ -56,11 +56,11 @@ public class SetupAccessOperator {
                         break;
                     case TestConstants.CLUSTER_ROLE:
                         ClusterRole clusterRole = ReadWriteUtils.readObjectFromYamlFilepath(file, ClusterRole.class);
-                        ResourceManager.getInstance().createResourceWithWait(clusterRole);
+                        KubeResourceManager.get().createResourceWithWait(clusterRole);
                         break;
                     case TestConstants.CLUSTER_ROLE_BINDING:
                         ClusterRoleBinding clusterRoleBinding = ReadWriteUtils.readObjectFromYamlFilepath(file, ClusterRoleBinding.class);
-                        ResourceManager.getInstance().createResourceWithWait(new ClusterRoleBindingBuilder(clusterRoleBinding)
+                        KubeResourceManager.get().createResourceWithWait(new ClusterRoleBindingBuilder(clusterRoleBinding)
                             .editFirstSubject()
                                 .withNamespace(namespaceName)
                             .endSubject()
@@ -69,7 +69,7 @@ public class SetupAccessOperator {
                         break;
                     case TestConstants.DEPLOYMENT:
                         Deployment deployment = ReadWriteUtils.readObjectFromYamlFilepath(file, Deployment.class);
-                        ResourceManager.getInstance().createResourceWithWait(new DeploymentBuilder(deployment)
+                        KubeResourceManager.get().createResourceWithWait(new DeploymentBuilder(deployment)
                             .editMetadata()
                                 .withNamespace(namespaceName)
                                 .addToLabels(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.AccessOperator.name())
@@ -79,7 +79,7 @@ public class SetupAccessOperator {
                         break;
                     case TestConstants.CUSTOM_RESOURCE_DEFINITION_SHORT:
                         CustomResourceDefinition customResourceDefinition = ReadWriteUtils.readObjectFromYamlFilepath(file, CustomResourceDefinition.class);
-                        ResourceManager.getInstance().createResourceWithWait(customResourceDefinition);
+                        KubeResourceManager.get().createResourceWithWait(customResourceDefinition);
                         break;
                     default:
                         LOGGER.error("Unknown installation resource type: {}", resourceType);

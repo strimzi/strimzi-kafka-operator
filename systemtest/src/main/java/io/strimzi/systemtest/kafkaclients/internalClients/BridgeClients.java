@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.sundr.builder.annotations.Buildable;
 
 import java.util.Collections;
@@ -57,7 +57,7 @@ public class BridgeClients extends KafkaClients {
                 .addToMatchLabels(clientLabels)
                 .build();
 
-            NetworkPolicyResource.allowNetworkPolicySettingsForBridgeClients(this.getNamespaceName(), clientName, producerLabelSelector, this.getComponentName());
+            NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeClients(this.getNamespaceName(), clientName, producerLabelSelector, this.getComponentName());
         }
     }
 

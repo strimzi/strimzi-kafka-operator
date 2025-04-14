@@ -40,14 +40,12 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -63,7 +61,9 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import org.apache.logging.log4j.LogManager;
@@ -249,8 +249,8 @@ public class MetricsST extends AbstractST {
     )
     void testKafkaExporterMetrics() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String kafkaStrimziPodSetName = StrimziPodSetResource.getBrokerComponentName(kafkaClusterFirstName);
-        final LabelSelector brokerPodsSelector = KafkaResource.getLabelSelector(kafkaClusterFirstName, kafkaStrimziPodSetName);
+        final String kafkaStrimziPodSetName = KafkaResourceNames.getBrokerComponentName(kafkaClusterFirstName);
+        final LabelSelector brokerPodsSelector = LabelSelectors.kafkaLabelSelector(kafkaClusterFirstName, kafkaStrimziPodSetName);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(kafkaExporterTopicName)
@@ -302,7 +302,7 @@ public class MetricsST extends AbstractST {
 
         Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
+        KafkaUtils.replaceKafkaResourceInSpecificNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
             k.getSpec().getKafkaExporter().setTopicRegex(topicName);
         });
@@ -317,7 +317,7 @@ public class MetricsST extends AbstractST {
         assertMetricValueNullOrZero(kafkaExporterCollector, "kafka_topic_partitions\\{topic=\"" + consumerOffsetsTopicName + "\"}");
 
         LOGGER.info("Changing Topic and group regexes back to default");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
+        KafkaUtils.replaceKafkaResourceInSpecificNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex(".*");
             k.getSpec().getKafkaExporter().setTopicRegex(".*");
         });
@@ -466,7 +466,7 @@ public class MetricsST extends AbstractST {
         );
 
         // Allow connections from scraper to Bridge pods when NetworkPolicies are set to denied by default
-        NetworkPolicyResource.allowNetworkPolicySettingsForBridgeScraper(namespaceFirst, scraperPodName, KafkaBridgeResources.componentName(bridgeClusterName));
+        NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeScraper(namespaceFirst, scraperPodName, KafkaBridgeResources.componentName(bridgeClusterName));
 
         BaseMetricsCollector bridgeCollector = kafkaCollector.toBuilder()
             .withComponent(KafkaBridgeMetricsComponent.create(namespaceFirst, bridgeClusterName))
@@ -582,7 +582,7 @@ public class MetricsST extends AbstractST {
                 .endValueFrom()
                 .build();
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceSecond, kafkaClusterSecondName, k -> {
+        KafkaUtils.replaceKafkaResourceInSpecificNamespace(namespaceSecond, kafkaClusterSecondName, k -> {
             k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
         });
 
@@ -631,12 +631,12 @@ public class MetricsST extends AbstractST {
 
         // create resources without wait to deploy them simultaneously
         resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(namespaceFirst, KafkaNodePoolResource.getBrokerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
-            KafkaNodePoolTemplates.controllerPool(namespaceFirst, KafkaNodePoolResource.getControllerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
-            KafkaNodePoolTemplates.brokerPool(namespaceSecond, KafkaNodePoolResource.getBrokerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build(),
-            KafkaNodePoolTemplates.controllerPool(namespaceSecond, KafkaNodePoolResource.getControllerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build()
+            KafkaNodePoolTemplates.brokerPool(namespaceFirst, KafkaResourceNames.getBrokerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
+            KafkaNodePoolTemplates.controllerPool(namespaceFirst, KafkaResourceNames.getControllerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
+            KafkaNodePoolTemplates.brokerPool(namespaceSecond, KafkaResourceNames.getBrokerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build(),
+            KafkaNodePoolTemplates.controllerPool(namespaceSecond, KafkaResourceNames.getControllerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build()
         );
-        resourceManager.createResourceWithoutWait(
+        resourceManager.createResourceAsyncWait(
             KafkaTemplates.kafkaMetricsConfigMap(namespaceFirst, kafkaClusterFirstName),
             KafkaTemplates.cruiseControlMetricsConfigMap(namespaceFirst, kafkaClusterFirstName),
             // Kafka with CruiseControl and metrics
@@ -660,9 +660,6 @@ public class MetricsST extends AbstractST {
             ScraperTemplates.scraperPod(namespaceSecond, secondScraperName).build()
         );
 
-        // sync resources
-        resourceManager.synchronizeResources();
-
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(namespaceFirst, topicName, kafkaClusterFirstName, 7, 2).build());
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(namespaceFirst, kafkaExporterTopicName, kafkaClusterFirstName, 7, 2).build());
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(namespaceFirst, bridgeTopicName, kafkaClusterFirstName).build());
@@ -673,7 +670,7 @@ public class MetricsST extends AbstractST {
         scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
-        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(TestConstants.CO_NAMESPACE);
+        NetworkPolicyUtils.allowNetworkPolicySettingsForClusterOperator(TestConstants.CO_NAMESPACE);
 
         // wait some time for metrics to be stable - at least reconciliation interval + 10s
         LOGGER.info("Sleeping for {} to give operators and operands some time to stable the metrics values before collecting",

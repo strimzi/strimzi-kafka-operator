@@ -4,18 +4,34 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.openshift.api.model.Build;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigList;
+import io.fabric8.openshift.api.model.BuildList;
 import io.fabric8.openshift.api.model.BuildStatus;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.dsl.BuildResource;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.openshift.BuildConfigResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class BuildUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(BuildUtils.class);
 
     private BuildUtils() { }
+
+    public static MixedOperation<BuildConfig, BuildConfigList, io.fabric8.openshift.client.dsl.BuildConfigResource<BuildConfig, Void, Build>> buildConfigClient() {
+        return kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs();
+    }
+
+    public static MixedOperation<Build, BuildList, BuildResource> buildsClient() {
+        return kubeClient().getClient().adapt(OpenShiftClient.class).builds();
+    }
 
     /**
      * Gets OpenShift build name based on name and version
@@ -37,10 +53,10 @@ public class BuildUtils {
         LOGGER.info("Waiting for build of {} to be completed", buildConfigName);
 
         TestUtils.waitFor("build " + buildConfigName + " complete", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
-            Long buildLatestVersion = BuildConfigResource.buildConfigClient().inNamespace(namespaceName).withName(buildConfigName).get().getStatus().getLastVersion();
+            Long buildLatestVersion = buildConfigClient().inNamespace(namespaceName).withName(buildConfigName).get().getStatus().getLastVersion();
             String buildName = getBuildName(buildConfigName, buildLatestVersion);
 
-            BuildStatus buildStatus = BuildConfigResource.buildsClient().inNamespace(namespaceName).withName(buildName).get().getStatus();
+            BuildStatus buildStatus = buildsClient().inNamespace(namespaceName).withName(buildName).get().getStatus();
 
             LOGGER.debug("Build status of {} is '{}'", buildName, buildStatus.getPhase());
 

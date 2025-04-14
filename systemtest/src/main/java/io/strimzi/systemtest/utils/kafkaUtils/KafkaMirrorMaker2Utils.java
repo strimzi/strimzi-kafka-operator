@@ -4,14 +4,18 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.test.TestUtils;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -20,6 +24,14 @@ public class KafkaMirrorMaker2Utils {
 
     private KafkaMirrorMaker2Utils() {}
 
+    public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
+        return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
+    }
+
+    public static void replaceKafkaMirrorMaker2ResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaMirrorMaker2> editor) {
+        ResourceManager.replaceCrdResource(namespaceName, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, resourceName, editor);
+    }
+
     /**
      * Wait for KafkaMirrorMaker2 to be in desired state
      * @param namespaceName name of the namespace
@@ -27,8 +39,8 @@ public class KafkaMirrorMaker2Utils {
      * @param state desired state
      */
     public static boolean waitForKafkaMirrorMaker2Status(String namespaceName, String clusterName, Enum<?> state) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get();
+        return ResourceManager.waitForResourceStatus(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
     }
 
     /**
@@ -47,7 +59,7 @@ public class KafkaMirrorMaker2Utils {
     @SuppressWarnings("unchecked")
     public static void waitForKafkaMirrorMaker2ConnectorReadiness(String namespaceName, String clusterName) {
         TestUtils.waitFor("MirrorMaker2 connectors readiness", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
-            KafkaMirrorMaker2Status kafkaMirrorMaker2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus();
+            KafkaMirrorMaker2Status kafkaMirrorMaker2Status = kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus();
             // There should be only three connectors in the status of MM2
             if (kafkaMirrorMaker2Status.getConnectors().size() != 3) {
                 return false;
@@ -63,7 +75,7 @@ public class KafkaMirrorMaker2Utils {
     }
 
     public static boolean waitForKafkaMirrorMaker2StatusMessage(String namespaceName, String clusterName, String message) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatusMessage(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client(), kafkaMirrorMaker2, message);
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get();
+        return ResourceManager.waitForResourceStatusMessage(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, message);
     }
 }

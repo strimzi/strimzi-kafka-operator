@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -195,7 +196,8 @@ public class TopicOperatorPerformance extends AbstractST {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaTopic
             LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespaceName());
-            resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
+            List<KafkaTopic> kafkaTopics = KafkaTopicUtils.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+            resourceManager.deleteResource(kafkaTopics.toArray(new KafkaTopic[0]));
             KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
 
             if (this.topicOperatorMetricsGatherer != null) {

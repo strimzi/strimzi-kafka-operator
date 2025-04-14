@@ -4,16 +4,29 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeList;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 
+import java.util.function.Consumer;
+
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.systemtest.resources.crd.KafkaBridgeResource.kafkaBridgeClient;
 
 public class KafkaBridgeUtils {
     private KafkaBridgeUtils() {}
+
+    public static MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> kafkaBridgeClient() {
+        return Crds.kafkaBridgeOperation(ResourceManager.kubeClient().getClient());
+    }
+
+    public static void replaceBridgeResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaBridge> editor) {
+        ResourceManager.replaceCrdResource(namespaceName, KafkaBridge.class, KafkaBridgeList.class, resourceName, editor);
+    }
 
     /**
      * Wait until KafkaBridge is in desired state

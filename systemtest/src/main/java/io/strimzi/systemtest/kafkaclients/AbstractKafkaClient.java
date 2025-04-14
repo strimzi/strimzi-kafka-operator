@@ -7,8 +7,8 @@ package io.strimzi.systemtest.kafkaclients;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -204,7 +204,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
 
     public String getBootstrapServerFromStatus() {
 
-        List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners();
+        List<ListenerStatus> listenerStatusList = KafkaUtils.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners();
 
         if (listenerStatusList == null || listenerStatusList.size() < 1) {
             LOGGER.error("There is no Kafka external listener specified in the Kafka CR Status");

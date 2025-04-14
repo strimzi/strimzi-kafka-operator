@@ -12,8 +12,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -21,6 +19,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -88,7 +87,7 @@ public class PodSetST extends AbstractST {
 
         LOGGER.info("Changing {} to 'true', so only SPS will be reconciled", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
-        DeploymentResource.replaceDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), SetupClusterOperator.getInstance().getOperatorDeploymentName());
+        DeploymentUtils.replaceDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), SetupClusterOperator.getInstance().getOperatorDeploymentName());
 
         DeploymentUtils.waitTillDepHasRolled(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName(), 1, coPod);
 
@@ -96,7 +95,7 @@ public class PodSetST extends AbstractST {
 
         LOGGER.info("Changing Kafka resource configuration, the Pods should not be rolled");
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
         });
 
@@ -111,8 +110,7 @@ public class PodSetST extends AbstractST {
         LOGGER.info("Removing {} env from CO", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
         envVars.remove(reconciliationEnv);
-        DeploymentResource.replaceDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), SetupClusterOperator.getInstance().getOperatorDeploymentName()
-        );
+        DeploymentUtils.replaceDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), SetupClusterOperator.getInstance().getOperatorDeploymentName());
 
         DeploymentUtils.waitTillDepHasRolled(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName(), 1, coPod);
 

@@ -6,7 +6,7 @@ package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.systemtest.labels.LabelSelectors;
 
 /**
  * Concrete implementation of BaseMetricsComponent for Kafka MirrorMaker 2.
@@ -35,6 +35,6 @@ public class KafkaMirrorMaker2MetricsComponent extends BaseMetricsComponent {
      */
     @Override
     public LabelSelector getLabelSelector() {
-        return KafkaMirrorMaker2Resource.getLabelSelector(componentName, KafkaMirrorMaker2Resources.componentName(componentName));
+        return LabelSelectors.mirrorMaker2LabelSelector(componentName, KafkaMirrorMaker2Resources.componentName(componentName));
     }
 }

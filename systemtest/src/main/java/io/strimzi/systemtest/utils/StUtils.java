@@ -22,8 +22,8 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.TestTags;
 import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -551,7 +551,7 @@ public class StUtils {
      * @return                  List with ConfigMaps containing the configuration
      */
     public static List<String> getKafkaConfigurationConfigMaps(String namespaceName, String kafkaClusterName) {
-        return kubeClient().listPodNames(namespaceName, KafkaResource.getLabelSelector(kafkaClusterName, StrimziPodSetResource.getBrokerComponentName(kafkaClusterName)));
+        return kubeClient().listPodNames(namespaceName, LabelSelectors.kafkaLabelSelector(kafkaClusterName, KafkaResourceNames.getBrokerComponentName(kafkaClusterName)));
     }
 
     public static void waitUntilSuppliersAreMatching(final Supplier<?> sup, final Supplier<?> anotherSup) {
