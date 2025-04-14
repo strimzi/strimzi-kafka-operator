@@ -60,7 +60,7 @@ runs:
           MATRIX=$(echo "$DEFINED_PIPELINES" | jq --argjson filter "$FILTER" 'map(select(.profile as $t | $filter | index($t)))')
         else
           # If no pipelines or profiles provided, then build a simple matrix with one object per default profile.
-          DEFAULT_PROFILES="regression,upgrade,performance"
+          DEFAULT_PROFILES="regression,upgrade"
           # Convert comma-separated default list to a JSON array string.
           PROFILES=$(echo "$DEFAULT_PROFILES" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
           MATRIX=$(jq -n \
@@ -70,8 +70,9 @@ runs:
             --arg rbac "$INPUT_DEFAULT_STRIMZI_RBAC_SCOPE" \
             --arg coi "$INPUT_DEFAULT_CLUSTER_OPERATOR_INSTALL_TYPE" \
             --arg parallel "$INPUT_DEFAULT_PARALLEL" \
+            --arg pipeline "custom" \
             --argjson profiles "$PROFILES" \
-            '$profiles | map({agent: $agent, arch: $arch, profile: ., strimzi_use_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
+            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., strimzi_use_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
         fi
 
         # Use jq -c to produce compact (one-line) JSON output.

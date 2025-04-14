@@ -37,30 +37,30 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 3
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "regression"
   profile: "brokers-and-security"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 1
-- agent: "oracle-2cpu-8gb-arm64"
+  parallel: 4
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "regression"
   profile: "operators"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 1
-- agent: "oracle-2cpu-8gb-arm64"
+  parallel: 4
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "regression"
   profile: "operands"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 1
+  parallel: 4
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "smoke"
@@ -69,7 +69,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 3
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   jdk_version: "17"
   pipeline: "smoke"
@@ -85,14 +85,14 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 3
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "upgrade"
   profile: "azp_upgrade"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 1
+  parallel: 4
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "upgrade"
@@ -101,14 +101,14 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 3
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "upgrade"
   profile: "azp_kafka_upgrade"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 1
+  parallel: 4
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "acceptance"
@@ -117,14 +117,14 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 3
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "acceptance"
   profile: "acceptance"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 1
+  parallel: 4
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "acceptance-helm"
@@ -133,14 +133,14 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "helm"
   parallel: 3
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "acceptance-helm"
   profile: "acceptance"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "helm"
-  parallel: 1
+  parallel: 4
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "regression-rbac"
@@ -165,27 +165,27 @@ pipelines:
   strimzi_rbac_scope: "NAMESPACE"
   cluster_operator_install_type: "bundle"
   parallel: 3
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "regression-rbac"
   profile: "brokers-and-security"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "NAMESPACE"
   cluster_operator_install_type: "bundle"
-  parallel: 1
-- agent: "oracle-2cpu-8gb-arm64"
+  parallel: 4
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "regression-rbac"
   profile: "operators"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "NAMESPACE"
   cluster_operator_install_type: "bundle"
-  parallel: 1
-- agent: "oracle-2cpu-8gb-arm64"
+  parallel: 4
+- agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "regression-rbac"
   profile: "operands"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "NAMESPACE"
   cluster_operator_install_type: "bundle"
-  parallel: 1
+  parallel: 4
