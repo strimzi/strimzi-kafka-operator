@@ -183,6 +183,51 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, 0));
 
     }
+
+    /**
+     * Setup state responses in mock server while partition rebalance is in execution.
+     */
+    public void setupCCStateResponseInExecution() {
+        JsonBody json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-State-inExecution.json"));
+
+        server
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true|false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
+                                .withPath(CruiseControlEndpoints.STATE.toString())
+                                .withHeaders(AUTH_HEADER)
+                                .withSecure(true))
+                .respond(
+                        response()
+                                .withBody(json)
+                                .withHeaders(header(USER_TASK_ID_HEADER, "cruise-control-state"))
+                                .withDelay(TimeUnit.SECONDS, 0));
+    }
+
+    /**
+     * Setup state response failure in mock server.
+     */
+    public void setupCCStateNoResponse() {
+        JsonBody json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-State-fetch-error.json"));
+
+        server
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true|false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
+                                .withPath(CruiseControlEndpoints.STATE.toString())
+                                .withHeaders(AUTH_HEADER)
+                                .withSecure(true))
+                .respond(
+                        response()
+                                .withStatusCode(500)
+                                .withBody(json)
+                                .withHeaders(header(USER_TASK_ID_HEADER, "cruise-control-state-error"))
+                                .withDelay(TimeUnit.SECONDS, 0));
+    }
     
     /**
      * Setup NotEnoughValidWindows error rebalance/add/remove broker response.

@@ -25,11 +25,12 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "sessionId", "optimizationResult" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "sessionId", "progress", "optimizationResult" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaRebalanceStatus extends Status {
     private String sessionId;
+    private Map<String, Object> progress = new HashMap<>(0);
     private Map<String, Object> optimizationResult = new HashMap<>(0);
 
     @Description("A JSON object describing the optimization result")
@@ -40,6 +41,16 @@ public class KafkaRebalanceStatus extends Status {
 
     public void setOptimizationResult(Map<String, Object> optimizationResult) {
         this.optimizationResult = optimizationResult;
+    }
+
+    @Description("A JSON object describing the progress of the rebalance")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, Object> getProgress() {
+        return progress;
+    }
+
+    public void setProgress(Map<String, Object> progress) {
+        this.progress = progress;
     }
 
     @Description("The session identifier for requests to Cruise Control pertaining to this KafkaRebalance resource. " +

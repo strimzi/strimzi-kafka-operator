@@ -36,6 +36,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRetriableConnectionException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.TimeoutException;
@@ -70,6 +71,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.BYTE_MOVEMENT_COMPLETED;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.BYTE_MOVEMENT_ZERO;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.COMPLETED_BYTE_MOVEMENT_KEY;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.ESTIMATED_TIME_TO_COMPLETION_KEY;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.EXECUTOR_STATE_KEY;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.REBALANCE_PROGRESS_CONFIG_MAP_KEY;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.TIME_COMPLETED;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -1962,6 +1971,109 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .onComplete(context.succeeding(v -> {
                     KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
                     assertThat(kafkaRebalance, not(StateMatchers.hasState()));
+                    checkpoint.flag();
+                }));
+    }
+
+    /**
+     * Test progress fields of KafkaRebalance resource and ConfigMap during rebalance lifecycle.
+     */
+    @Test
+    public void testProgressFieldsDuringRebalanceLifecycle(VertxTestContext context) throws IOException, URISyntaxException {
+        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
+        cruiseControlServer.setupCCStateResponseInExecution();
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
+
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        crdCreateKafka();
+        crdCreateCruiseControlSecrets();
+
+        ConfigMapOperator configMapOperator = this.supplier.configMapOperations;
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from New to ProposalReady
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
+                    KafkaRebalanceStatus status = kafkaRebalance.getStatus();
+                    assertThat(status.getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(Boolean.TRUE));
+
+                    configMapOperator.getAsync(namespace, RESOURCE_NAME)
+                            .onSuccess(configMap -> {
+                                Map<String, String> fields = configMap.getData();
+                                assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(Boolean.FALSE));
+                                assertThat(fields.get(COMPLETED_BYTE_MOVEMENT_KEY), is(BYTE_MOVEMENT_ZERO));
+                                assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(Boolean.FALSE));
+                                assertThat(fields.containsKey(BROKER_LOAD_KEY), is(Boolean.TRUE));
+                            });
+                }))
+                .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from ProposalReady to Rebalancing
+                    assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.Rebalancing);
+                    configMapOperator.getAsync(namespace, RESOURCE_NAME)
+                            .onSuccess(configMap -> {
+                                Map<String, String> fields = configMap.getData();
+                                assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(Boolean.TRUE));
+                                assertThat(fields.containsKey(COMPLETED_BYTE_MOVEMENT_KEY), is(Boolean.TRUE));
+                                assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(Boolean.TRUE));
+                                assertThat(fields.containsKey(BROKER_LOAD_KEY), is(Boolean.TRUE));
+                            });
+                })).compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from Rebalancing to Ready
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Ready);
+                    configMapOperator.getAsync(namespace, RESOURCE_NAME)
+                            .onSuccess(configMap -> {
+                                Map<String, String> fields = configMap.getData();
+                                assertThat(fields.get(ESTIMATED_TIME_TO_COMPLETION_KEY), is(TIME_COMPLETED));
+                                assertThat(fields.get(COMPLETED_BYTE_MOVEMENT_KEY), is(BYTE_MOVEMENT_COMPLETED));
+                                assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(Boolean.FALSE));
+                                assertThat(fields.containsKey(BROKER_LOAD_KEY), is(Boolean.TRUE));
+                            });
+                    checkpoint.flag();
+                }));
+    }
+
+    /**
+     *  Test `KafkaRebalance` resource has "Warning" condition when Cruise Control state cannot be retrieved during
+     *  a rebalance
+     */
+    @Test
+    public void testConditionsWhenCcNotReachableDuringRebalance(VertxTestContext context) throws IOException, URISyntaxException {
+        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
+        cruiseControlServer.setupCCStateNoResponse();
+
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        crdCreateKafka();
+        crdCreateCruiseControlSecrets();
+
+        ConfigMapOperator configMapOperator = this.supplier.configMapOperations;
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from New to ProposalReady
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                }))
+                .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from ProposalReady to Rebalancing
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
+
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
+                    KafkaRebalanceStatus status = kafkaRebalance.getStatus();
+                    assertThat(status.getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(Boolean.TRUE));
+
+                    Condition warningCondition = status.getConditions().stream()
+                            .filter(condition -> "Warning".equals(condition.getType()))
+                            .findFirst()
+                            .orElse(null);
+                    assertThat(warningCondition, notNullValue());
                     checkpoint.flag();
                 }));
     }
