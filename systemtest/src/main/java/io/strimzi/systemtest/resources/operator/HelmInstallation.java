@@ -91,7 +91,7 @@ public class HelmInstallation implements InstallationMethod {
         installCommand.set("kafkaBridge.image.tag", bridgeTag);
 
         // Additional config
-        installCommand.set("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);
+        installCommand.set("image.imagePullPolicy", Environment.COMPONENTS_IMAGE_PULL_POLICY);
         installCommand.set("resources.requests.memory", TestConstants.CO_REQUESTS_MEMORY);
         installCommand.set("resources.requests.cpu", TestConstants.CO_REQUESTS_CPU);
         installCommand.set("resources.limits.memory", TestConstants.CO_LIMITS_MEMORY);

@@ -7,12 +7,13 @@ package io.strimzi.systemtest.resources;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceStatus;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.logs.CollectorElement;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -143,9 +144,9 @@ public class NamespaceManager {
      * @param namespaceName name of Namespace that should be created
      */
     public void createNamespaceAndPrepare(String namespaceName) {
-        final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
-        final String testCaseName = ResourceManager.getTestContext().getTestMethod().orElse(null) == null ?
-            "" : ResourceManager.getTestContext().getRequiredTestMethod().getName();
+        final String testSuiteName = KubeResourceManager.get().getTestContext().getRequiredTestClass().getName();
+        final String testCaseName = KubeResourceManager.get().getTestContext().getTestMethod().orElse(null) == null ?
+            "" : KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
 
         createNamespaceAndPrepare(namespaceName, new CollectorElement(testSuiteName, testCaseName));
     }
@@ -162,7 +163,7 @@ public class NamespaceManager {
      */
     public void createNamespaceAndPrepare(String namespaceName, CollectorElement collectorElement) {
         createNamespaceAndAddToSet(namespaceName, collectorElement);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(Collections.singletonList(namespaceName));
+        NetworkPolicyUtils.applyDefaultNetworkPolicySettings(Collections.singletonList(namespaceName));
         StUtils.copyImagePullSecrets(namespaceName);
     }
 

@@ -10,9 +10,9 @@ import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpecBuilder;
-import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
@@ -20,11 +20,9 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -66,12 +64,12 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testTopicAvailable() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         prepareEnvironmentForRecovery(testStorage);
 
         // Get list of topics and list of PVC needed for recovery
-        List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+        List<KafkaTopic> kafkaTopicList = CrdClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace(testStorage.getNamespaceName());
 
@@ -81,10 +79,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Recreate all KafkaTopic resources
         for (KafkaTopic kafkaTopic : kafkaTopicList) {
             kafkaTopic.getMetadata().setResourceVersion(null);
-            KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaTopic).create();
+            CrdClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaTopic).create();
         }
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                 .editSpec()
                     .withNewPersistentClaimStorage()
@@ -103,7 +101,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                 .build()
         );
 
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -114,7 +112,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
-        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
@@ -126,7 +124,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      **/
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testTopicNotAvailable() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         prepareEnvironmentForRecovery(testStorage);
 
         // Get list of topics and list of PVC needed for recovery
@@ -139,15 +137,14 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         }
 
         // store cluster-id from Kafka CR
-        final String oldClusterId = KafkaResource.kafkaClient()
+        final String oldClusterId = CrdClients.kafkaClient()
             .inNamespace(testStorage.getNamespaceName())
             .withName(testStorage.getClusterName())
             .get()
             .getStatus()
             .getClusterId();
 
-        final String kafkaPodName = kubeClient().listPods(testStorage.getNamespaceName(),
-            KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), testStorage.getBrokerPoolName(), ProcessRoles.BROKER)).get(0).getMetadata().getName();
+        final String kafkaPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector()).get(0).getMetadata().getName();
 
         LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespaceName(), kafkaPodName,
             KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
@@ -161,8 +158,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         LOGGER.info("Recreating Cluster Operator");
         recreateClusterOperator(testStorage.getNamespaceName());
 
-        resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getBrokerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
                 .editSpec()
                     .withNewPersistentClaimStorage()
                         .withSize("1Gi")
@@ -170,7 +167,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                     .endPersistentClaimStorage()
                 .endSpec()
                 .build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getControllerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
                 .editSpec()
                     .withNewPersistentClaimStorage()
                         .withSize("1Gi")
@@ -181,7 +178,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         );
 
         LOGGER.info("Recreating Kafka cluster without Topic Operator");
-        resourceManager.createResourceWithoutWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithoutWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editMetadata()
                 // Deploy the Kafka cluster using the original configuration for the Kafka resource.
                 // Add the annotation strimzi.io/pause-reconciliation="true" to the original configuration for the Kafka resource,
@@ -196,14 +193,14 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         );
 
         // Edit the Kafka resource to set the .status.clusterId with the recovered value
-        KafkaResource.kafkaClient()
+        CrdClients.kafkaClient()
             .inNamespace(testStorage.getNamespaceName())
             .withName(testStorage.getClusterName())
             .subresource("status")
             .patch(PatchContext.of(PatchType.JSON_MERGE), String.format("{\"status\": {\"clusterId\": \"%s\"}}", oldClusterId));
 
         //  Unpause the Kafka resource reconciliation
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             kafka -> {
                 Map<String, String> annotations = kafka.getMetadata().getAnnotations();
                 annotations.put(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false");
@@ -216,7 +213,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
 
         LOGGER.info("Adding Topic Operator to existing Kafka");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
+        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().setEntityOperator(new EntityOperatorSpecBuilder()
                 .withNewTopicOperator()
                 .endTopicOperator()
@@ -227,7 +224,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1);
 
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
-        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
@@ -243,7 +240,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             )
             .install();
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                 .editSpec()
                     .withNewPersistentClaimStorage()
@@ -262,7 +259,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                 .build()
         );
 
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -273,10 +270,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
-        resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("##################################################");

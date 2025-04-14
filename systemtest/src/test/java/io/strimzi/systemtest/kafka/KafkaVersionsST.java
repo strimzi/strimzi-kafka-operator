@@ -9,6 +9,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
@@ -17,7 +18,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -65,7 +65,7 @@ public class KafkaVersionsST extends AbstractST {
         }
     )
     void testKafkaWithVersion(final TestKafkaVersion testKafkaVersion) {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String kafkaUserRead = testStorage.getUsername() + "-read";
         final String kafkaUserWrite = testStorage.getUsername() + "-write";
@@ -74,11 +74,11 @@ public class KafkaVersionsST extends AbstractST {
 
         LOGGER.info("Deploying Kafka with version: {}", testKafkaVersion.version());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withVersion(testKafkaVersion.version())
@@ -160,7 +160,7 @@ public class KafkaVersionsST extends AbstractST {
                 .endSpec()
                 .build();
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
             readUser,
             writeUser,
@@ -172,7 +172,7 @@ public class KafkaVersionsST extends AbstractST {
             .withUsername(kafkaUserWrite)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaClientsPlainScramShaWrite.producerScramShaPlainStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaClientsPlainScramShaWrite.producerScramShaPlainStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         final KafkaClients kafkaClientsPlainScramShaRead = ClientUtils.getInstantScramShaOverPlainClientBuilder(testStorage)
@@ -180,7 +180,7 @@ public class KafkaVersionsST extends AbstractST {
             .withUsername(kafkaUserRead)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaClientsPlainScramShaRead.consumerScramShaPlainStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaClientsPlainScramShaRead.consumerScramShaPlainStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         LOGGER.info("Sending and receiving messages via TLS");
@@ -190,7 +190,7 @@ public class KafkaVersionsST extends AbstractST {
             .withUsername(kafkaUserReadWriteTls)
             .build();
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             kafkaClientsTlsScramShaRead.producerTlsStrimzi(testStorage.getClusterName()),
             kafkaClientsTlsScramShaRead.consumerTlsStrimzi(testStorage.getClusterName())
         );

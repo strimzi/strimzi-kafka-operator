@@ -4,11 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.topic.KafkaTopicSpec;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,7 +44,7 @@ public class KafkaTopicScalabilityUtils {
 
         for (int i = start; i < end; i++) {
             String currentTopicName = topicPrefix + "-" + i;
-            ResourceManager.getInstance().createResourceWithoutWait(KafkaTopicTemplates.topic(namespaceName, currentTopicName, clusterName,
+            KubeResourceManager.get().createResourceWithoutWait(KafkaTopicTemplates.topic(namespaceName, currentTopicName, clusterName,
                 numberOfPartitions, numberOfReplicas, minInSyncReplicas).build());
         }
     }
@@ -139,7 +138,7 @@ public class KafkaTopicScalabilityUtils {
 
         for (int i = startIndex; i < endIndex; i++) {
             String currentTopicName = topicPrefix + "-" + i;
-            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(namespaceName, currentTopicName, kafkaTopic -> kafkaTopic.setSpec(topicSpec));
+            KafkaTopicUtils.replaceInNamespace(namespaceName, currentTopicName, kafkaTopic -> kafkaTopic.setSpec(topicSpec));
         }
     }
 

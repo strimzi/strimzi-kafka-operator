@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators.topic;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -13,7 +14,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -53,7 +53,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
     @ParallelTest
     void testThrottlingQuotasDuringAllTopicOperations() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         int numOfTopics = 25;
         int numOfPartitions = 100;
@@ -126,15 +126,15 @@ public class ThrottlingQuotaST extends AbstractST {
             .withDefaultConfiguration()
             .install();
 
-        sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
+        sharedTestStorage = new TestStorage(KubeResourceManager.get().getTestContext(), Environment.TEST_SUITE_NAMESPACE);
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 3).build()
         );
         // Deploy kafka with ScramSHA512
         LOGGER.info("Deploying shared Kafka across all test cases in {} Namespace", sharedTestStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(
@@ -161,7 +161,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         // deploy quota limited admin client and respective Kafka User
 
-        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getUsername(), sharedTestStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getUsername(), sharedTestStorage.getClusterName())
             .editOrNewSpec()
                 .withNewQuotas()
                     .withControllerMutationRate(1.0)
@@ -171,7 +171,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .build()
         );
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             AdminClientTemplates.scramShaOverPlainAdminClient(
                 sharedTestStorage.getNamespaceName(),
                 sharedTestStorage.getUsername(),
@@ -183,13 +183,13 @@ public class ThrottlingQuotaST extends AbstractST {
 
         // deploy unlimited admin client and respective user for purpose of cleaning up resources
 
-        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getUsername() + "-unlimited", sharedTestStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getUsername() + "-unlimited", sharedTestStorage.getClusterName())
             .editOrNewSpec()
                 .withAuthentication(new KafkaUserScramSha512ClientAuthentication())
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             AdminClientTemplates.scramShaOverPlainAdminClient(
                 sharedTestStorage.getNamespaceName(),
                 sharedTestStorage.getUsername() + "-unlimited",

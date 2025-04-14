@@ -9,16 +9,16 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.resources.ResourceItem;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.TestUtils;
@@ -66,7 +66,7 @@ public class SetupKeycloak {
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentAndPodsReady(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME, 1);
 
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
 
         LOGGER.info("Keycloak Operator in Namespace: {} is ready", deploymentNamespace);
     }
@@ -83,7 +83,7 @@ public class SetupKeycloak {
         deployKeycloak(namespaceName);
 
         KeycloakInstance keycloakInstance = createKeycloakInstance(namespaceName);
-        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, KEYCLOAK + "-allow", Map.of(TestConstants.APP_POD_LABEL, KEYCLOAK));
+        NetworkPolicyUtils.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, KEYCLOAK + "-allow", Map.of(TestConstants.APP_POD_LABEL, KEYCLOAK));
         importRealms(namespaceName, keycloakInstance);
 
         return keycloakInstance;
@@ -95,7 +95,7 @@ public class SetupKeycloak {
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, "keycloak", 1);
 
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloak(namespaceName)));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> deleteKeycloak(namespaceName)));
 
         LOGGER.info("Waiting for Keycloak Secret: {}/{} to be present", namespaceName, KEYCLOAK_SECRET_NAME);
         SecretUtils.waitForSecretReady(namespaceName, KEYCLOAK_SECRET_NAME, () -> { });
@@ -116,7 +116,7 @@ public class SetupKeycloak {
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, "postgres", 1);
 
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deletePostgres(namespaceName)));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> deletePostgres(namespaceName)));
 
         Secret postgresSecret = new SecretBuilder()
             .withNewMetadata()
@@ -184,7 +184,7 @@ public class SetupKeycloak {
                 .endSpec()
                 .build();
 
-            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+            KubeResourceManager.get().createResourceWithWait(networkPolicy);
         }
     }
 

@@ -27,12 +27,9 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -108,11 +105,11 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected static final int UPGRADE_TOPIC_COUNT = 20;
     protected static final int BTO_KAFKA_TOPICS_ONLY_COUNT = 3;
 
-    protected final LabelSelector controllerSelector = KafkaNodePoolResource.getLabelSelector(CLUSTER_NAME, CONTROLLER_NODE_NAME, ProcessRoles.CONTROLLER);
-    protected final LabelSelector brokerSelector = KafkaNodePoolResource.getLabelSelector(CLUSTER_NAME, BROKER_NODE_NAME, ProcessRoles.BROKER);
-    protected final LabelSelector eoSelector = KafkaResource.getLabelSelector(CLUSTER_NAME, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
+    protected final LabelSelector controllerSelector = LabelSelectors.nodePoolLabelSelector(CLUSTER_NAME, CONTROLLER_NODE_NAME, ProcessRoles.CONTROLLER);
+    protected final LabelSelector brokerSelector = LabelSelectors.nodePoolLabelSelector(CLUSTER_NAME, BROKER_NODE_NAME, ProcessRoles.BROKER);
+    protected final LabelSelector eoSelector = LabelSelectors.entityOperatorLabelSelector(CLUSTER_NAME);
     protected final LabelSelector coSelector = new LabelSelectorBuilder().withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator")).build();
-    protected final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(CLUSTER_NAME, KafkaConnectResources.componentName(CLUSTER_NAME));
+    protected final LabelSelector connectLabelSelector = LabelSelectors.connectLabelSelector(CLUSTER_NAME, KafkaConnectResources.componentName(CLUSTER_NAME));
 
     // We want to keep the default configuration (as configured via the env variables)
     protected final ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfiguration();
@@ -176,7 +173,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             .withUsername(USER_NAME)
             .build();
         // send again new messages
-        resourceManager.createResourceWithWait(clients.producerTlsStrimzi(CLUSTER_NAME));
+        KubeResourceManager.get().createResourceWithWait(clients.producerTlsStrimzi(CLUSTER_NAME));
 
         // Verify that Producer finish successfully
         ClientUtils.waitForInstantProducerClientSuccess(testStorage.getNamespaceName(), testStorage);
@@ -241,7 +238,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             .withUsername(USER_NAME)
             .build();
 
-        resourceManager.createResourceWithWait(clients.producerTlsStrimzi(CLUSTER_NAME));
+        KubeResourceManager.get().createResourceWithWait(clients.producerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
     }
 
@@ -284,7 +281,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     .replace("replicas: 1", "replicas: 3") +
                     "    min.insync.replicas: 2");
 
-                ResourceManager.waitForResourceReadiness(testStorage.getNamespaceName(), getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL), testStorage.getTopicName());
+                KafkaTopicUtils.waitForKafkaTopicReady(testStorage.getNamespaceName(), testStorage.getTopicName());
             }
 
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
@@ -297,7 +294,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                 .withNamespaceName(testStorage.getNamespaceName())
                 .build();
 
-            resourceManager.createResourceWithWait(
+            KubeResourceManager.get().createResourceWithWait(
                 kafkaBasicClientJob.producerStrimzi(),
                 kafkaBasicClientJob.consumerStrimzi()
             );
@@ -334,7 +331,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         if (!cmdKubeClient(componentsNamespaceName).getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL)).contains(CLUSTER_NAME)) {
             // Deploy a Kafka cluster
             if (upgradeData.getFromExamples().equals("HEAD")) {
-                resourceManager.createResourceWithWait(
+                KubeResourceManager.get().createResourceWithWait(
                     KafkaNodePoolTemplates.controllerPoolPersistentStorage(componentsNamespaceName, CONTROLLER_NODE_NAME, CLUSTER_NAME, 3).build(),
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(componentsNamespaceName, BROKER_NODE_NAME, CLUSTER_NAME, 3).build(),
                     KafkaTemplates.kafka(componentsNamespaceName, CLUSTER_NAME, 3)
@@ -369,12 +366,12 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         if (!cmdKubeClient(componentsNamespaceName).getResources(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL)).contains(USER_NAME)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
-                resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(componentsNamespaceName, USER_NAME, CLUSTER_NAME).build());
+                KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(componentsNamespaceName, USER_NAME, CLUSTER_NAME).build());
             } else {
                 kafkaUserYaml = new File(dir, upgradeData.getFromExamples() + "/examples/user/kafka-user.yaml");
                 LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
                 cmdKubeClient(componentsNamespaceName).applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
-                ResourceManager.waitForResourceReadiness(componentsNamespaceName, getResourceApiVersion(KafkaUser.RESOURCE_PLURAL), USER_NAME);
+                KafkaUserUtils.waitForKafkaUserReady(componentsNamespaceName, USER_NAME);
             }
         }
     }
@@ -390,7 +387,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             }
             LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
             cmdKubeClient(componentsNamespaceName).create(kafkaTopicYaml);
-            ResourceManager.waitForResourceReadiness(componentsNamespaceName, getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL), TOPIC_NAME);
+            KafkaTopicUtils.waitForKafkaTopicReady(componentsNamespaceName, TOPIC_NAME);
         }
     }
 
@@ -402,7 +399,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         // setup KafkaConnect + KafkaConnector
         if (!cmdKubeClient(testStorage.getNamespaceName()).getResources(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL)).contains(CLUSTER_NAME)) {
             if (acrossUpgradeData.getFromVersion().equals("HEAD")) {
-                resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), CLUSTER_NAME, 1)
+                KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), CLUSTER_NAME, 1)
                     .editMetadata()
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()
@@ -414,7 +411,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                         .withVersion(upgradeKafkaVersion.getVersion())
                     .endSpec()
                     .build());
-                resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), CLUSTER_NAME)
+                KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), CLUSTER_NAME)
                     .editSpec()
                         .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                         .addToConfig("topics", testStorage.getTopicName())
@@ -456,10 +453,10 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     .endSpec()
                     .build();
 
-                resourceManager.createResourceWithWait(kafkaConnect);
+                KubeResourceManager.get().createResourceWithWait(kafkaConnect);
 
                 // in our examples is no sink connector and thus we are using the same as in HEAD verification
-                resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), CLUSTER_NAME)
+                KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), CLUSTER_NAME)
                     .editMetadata()
                         .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, kafkaConnect.getMetadata().getName())
                     .endMetadata()
@@ -692,7 +689,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}, in Namespace {}", kafkaTopicYaml.getPath(), namespaceName);
         cmdKubeClient(namespaceName).applyContent(ReadWriteUtils.readFile(kafkaTopicYaml));
-        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName("my-topic").delete()));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> CrdClients.kafkaTopicClient().inNamespace(namespaceName).withName("my-topic").delete()));
     }
 
     private String getKafkaYamlWithName(String name) {

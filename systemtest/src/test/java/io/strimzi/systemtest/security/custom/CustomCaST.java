@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security.custom;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.user.KafkaUser;
@@ -13,9 +14,7 @@ import io.strimzi.operator.common.model.Ca;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.security.SystemTestCertHolder;
 import io.strimzi.systemtest.security.SystemTestCertManager;
@@ -78,7 +77,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // Generate root and intermediate certificate authority with cluster CA
         SystemTestCertHolder clusterCa = new SystemTestCertHolder(
             "CN=" + testStorage.getTestName() + "ClusterCA",
@@ -124,8 +123,8 @@ public class CustomCaST extends AbstractST {
         LOGGER.info("All rounds of rolling update have been finished");
         // Try to produce messages
         final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantTlsClients(testStorage);
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
-        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Get new certificate secret and assert old value is still present
@@ -156,7 +155,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplacingCustomClientsKeyPairToInvokeRenewalProcess() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // Generate root and intermediate certificate authority with clients CA
         final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
             "CN=" + testStorage.getTestName() + "ClientsCA",
@@ -191,8 +190,8 @@ public class CustomCaST extends AbstractST {
 
         // Try to produce messages
         final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantTlsClients(testStorage);
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
-        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
@@ -205,7 +204,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testCustomClusterCaAndClientsCaCertificates() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
             "CN=" + testStorage.getTestName() + "ClientsCA",
@@ -229,11 +228,11 @@ public class CustomCaST extends AbstractST {
         checkCustomCaCorrectness(clusterCa, clusterCert);
 
         LOGGER.info("Deploying Kafka with new certs, Secrets");
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .withNewClusterCa()
                     .withGenerateCertificateAuthority(false)
@@ -252,11 +251,11 @@ public class CustomCaST extends AbstractST {
         assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         LOGGER.info("Check KafkaUser certificate");
         final KafkaUser user = KafkaUserTemplates.tlsUser(testStorage).build();
-        resourceManager.createResourceWithWait(user);
+        KubeResourceManager.get().createResourceWithWait(user);
         final X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
             testStorage.getUsername()), "user.crt");
         assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
@@ -264,7 +263,7 @@ public class CustomCaST extends AbstractST {
 
         LOGGER.info("Send and receive messages over TLS");
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
@@ -277,7 +276,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplaceCustomClusterCACertificateValidityToInvokeRenewalProcess() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int renewalDays = 15;
         final int newRenewalDays = 150;
         final int validityDays = 20;
@@ -308,7 +307,7 @@ public class CustomCaST extends AbstractST {
         final Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
         // Pause Kafka reconciliation
-        LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
+        LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", KafkaComponents.getBrokerPodSetName(testStorage.getClusterName()));
         KafkaUtils.annotateKafka(testStorage.getNamespaceName(), testStorage.getClusterName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
         // To test trigger of renewal of CA with short validity dates, both new dates need to be set
@@ -320,10 +319,10 @@ public class CustomCaST extends AbstractST {
         newClusterCA.setValidityDays(newValidityDays);
         newClusterCA.setGenerateCertificateAuthority(false);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA));
+        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA));
 
         // Resume Kafka reconciliation
-        LOGGER.info("Resume the reconciliation of the Kafka CustomResource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
+        LOGGER.info("Resume the reconciliation of the Kafka CustomResource ({})", KafkaComponents.getBrokerPodSetName(testStorage.getClusterName()));
         KafkaUtils.removeAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
 
         // On the next reconciliation, the Cluster Operator performs a `rolling update`:
@@ -367,7 +366,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplaceCustomClientsCACertificateValidityToInvokeRenewalProcess() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int renewalDays = 15;
         final int newRenewalDays = 150;
         final int validityDays = 20;
@@ -380,7 +379,7 @@ public class CustomCaST extends AbstractST {
 
         prepareTestCaWithBundleAndKafkaCluster(clientsCa, testStorage, renewalDays, validityDays);
 
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
         final Map<String, String> entityPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
 
         // Check initial clientsCA validity days
@@ -395,7 +394,7 @@ public class CustomCaST extends AbstractST {
         final Date initialKafkaUserCertEndTime = userCert.getNotAfter();
 
         // Pause Kafka reconciliation
-        LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
+        LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", KafkaComponents.getBrokerPodSetName(testStorage.getClusterName()));
         KafkaUtils.annotateKafka(testStorage.getNamespaceName(), testStorage.getClusterName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
         LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
@@ -404,10 +403,10 @@ public class CustomCaST extends AbstractST {
         newClientsCA.setValidityDays(newValidityDays);
         newClientsCA.setGenerateCertificateAuthority(false);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA));
+        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA));
 
         // Resume Kafka reconciliation
-        LOGGER.info("Resume the reconciliation of the Kafka CustomResource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
+        LOGGER.info("Resume the reconciliation of the Kafka CustomResource ({})", KafkaComponents.getBrokerPodSetName(testStorage.getClusterName()));
         KafkaUtils.removeAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
 
         // Wait for reconciliation and verify certs have been updated
@@ -450,7 +449,7 @@ public class CustomCaST extends AbstractST {
      */
     private void manuallyRenewCa(TestStorage testStorage, SystemTestCertHolder oldCa, SystemTestCertHolder newCa) {
         // Pause Kafka reconciliation
-        LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
+        LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", KafkaComponents.getBrokerPodSetName(testStorage.getClusterName()));
         KafkaUtils.annotateKafka(testStorage.getNamespaceName(), testStorage.getClusterName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
         String certSecretName = "";
@@ -487,7 +486,7 @@ public class CustomCaST extends AbstractST {
         SystemTestCertHolder.increaseCertGenerationCounterInSecret(caKeySecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION);
 
         // Resume Kafka reconciliation
-        LOGGER.info("Resume the reconciliation of the Kafka CustomResource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
+        LOGGER.info("Resume the reconciliation of the Kafka CustomResource ({})", KafkaComponents.getBrokerPodSetName(testStorage.getClusterName()));
         KafkaUtils.removeAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
     }
 
@@ -538,12 +537,12 @@ public class CustomCaST extends AbstractST {
             clusterCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
         }
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
         // 2. Create a Kafka cluster without implicit generation of CA and paused reconciliation
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 .withNewClientsCa()
                     .withRenewalDays(renewalDays)

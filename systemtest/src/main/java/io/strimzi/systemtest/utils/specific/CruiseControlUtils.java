@@ -9,8 +9,8 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfiguration
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.KafkaTopicDescription;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -155,7 +155,7 @@ public class CruiseControlUtils {
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {
-        String cmName = kubeClient().listPods(namespaceName, KafkaResource.getLabelSelector(clusterName, StrimziPodSetResource.getBrokerComponentName(clusterName))).get(0).getMetadata().getName();
+        String cmName = kubeClient().listPods(namespaceName, LabelSelectors.kafkaLabelSelector(clusterName, KafkaComponents.getBrokerPodSetName(clusterName))).get(0).getMetadata().getName();
 
         InputStream configurationFileStream = new ByteArrayInputStream(kubeClient(namespaceName).getConfigMap(namespaceName, cmName)
                 .getData().get("server.config").getBytes(StandardCharsets.UTF_8));

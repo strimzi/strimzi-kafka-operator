@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * ClientUtils class, which provides static methods for the all type clients

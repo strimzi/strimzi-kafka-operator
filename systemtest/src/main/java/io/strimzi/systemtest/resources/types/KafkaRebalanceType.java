@@ -13,9 +13,11 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.systemtest.resources.ResourceOperation;
 
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class KafkaRebalanceType implements ResourceType<KafkaRebalance> {
@@ -23,6 +25,11 @@ public class KafkaRebalanceType implements ResourceType<KafkaRebalance> {
 
     public KafkaRebalanceType() {
         client = Crds.kafkaRebalanceOperation(KubeResourceManager.get().kubeClient().getClient());
+    }
+
+    @Override
+    public Long getTimeoutForResourceReadiness() {
+        return ResourceOperation.getTimeoutForKafkaRebalanceState(KafkaRebalanceState.ProposalReady);
     }
 
     @Override
@@ -59,10 +66,20 @@ public class KafkaRebalanceType implements ResourceType<KafkaRebalance> {
 
     @Override
     public boolean isReady(KafkaRebalance kafkaRebalance) {
-        KafkaRebalanceStatus kafkaRebalanceStatus = client.inNamespace(kafkaRebalance.getMetadata().getNamespace()).resource(kafkaRebalance).get().getStatus();
-        Optional<Condition> readyCondition = kafkaRebalanceStatus.getConditions().stream().filter(condition -> condition.getType().equals("Ready")).findFirst();
+        List<String> readyConditions = Arrays.asList(
+            KafkaRebalanceState.PendingProposal.toString(),
+            KafkaRebalanceState.ProposalReady.toString(),
+            KafkaRebalanceState.Ready.toString()
+        );
 
-        return readyCondition.map(condition -> condition.getStatus().equals("True")).orElse(false);
+        List<String> actualConditions = kafkaRebalance.getStatus().getConditions().stream().map(Condition::getType).toList();
+
+        for (String condition: actualConditions) {
+            if (readyConditions.contains(condition)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

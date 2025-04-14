@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.performance.gather.schedulers;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.performance.PerformanceConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -82,11 +82,11 @@ public abstract class BaseMetricsCollectionScheduler {
      */
     public void startCollecting(long initialDelay, long interval, TimeUnit unit) {
         // Capture the context in the thread where startCollecting is called
-        final ExtensionContext currentContext = ResourceManager.getTestContext();
+        final ExtensionContext currentContext = KubeResourceManager.get().getTestContext();
 
         final Runnable task = () -> {
             // Set the context specifically for a new thread to ensure thread-local data is available
-            ResourceManager.setTestContext(currentContext);
+            KubeResourceManager.get().setTestContext(currentContext);
             executeMetricsCollection();
         };
 

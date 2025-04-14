@@ -5,8 +5,8 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 
 /**
  * Concrete implementation of BaseMetricsComponent for Kafka general metrics.
@@ -35,6 +35,6 @@ public class KafkaMetricsComponent extends BaseMetricsComponent {
      */
     @Override
     public LabelSelector getLabelSelector() {
-        return KafkaResource.getLabelSelector(componentName, StrimziPodSetResource.getBrokerComponentName(componentName));
+        return LabelSelectors.kafkaLabelSelector(componentName, KafkaComponents.getBrokerPodSetName(componentName));
     }
 }

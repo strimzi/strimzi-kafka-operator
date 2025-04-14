@@ -108,6 +108,17 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <name>Central Portal Snapshots</name>
+            <id>central-portal-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
     <properties>
@@ -198,7 +209,7 @@
         <testcontainer.version>1.20.1</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.test-frame.version>0.10.0</skodjob.test-frame.version>
+        <skodjob.test-frame.version>0.13.0-SNAPSHOT</skodjob.test-frame.version>
         <skodjob-doc.version>0.4.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
         <!--
@@ -744,6 +755,12 @@
                 <groupId>io.skodjob</groupId>
                 <artifactId>test-frame-kubernetes</artifactId>
                 <version>${skodjob.test-frame.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.skodjob</groupId>
+                <artifactId>test-frame-openshift</artifactId>
+                <version>${skodjob.test-frame.version}</version>
+                <scope>test</scope>
             </dependency>
             <!-- Test dependencies -->
             <dependency>

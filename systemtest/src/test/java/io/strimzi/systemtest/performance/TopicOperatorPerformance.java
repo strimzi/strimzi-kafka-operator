@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.performance;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -17,6 +18,7 @@ import io.strimzi.systemtest.performance.gather.schedulers.TopicOperatorMetricsC
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
+import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -40,6 +42,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -91,7 +94,7 @@ public class TopicOperatorPerformance extends AbstractST {
         final String maxQueueSize = String.valueOf(Integer.MAX_VALUE);
 
         try {
-            resourceManager.createResourceWithWait(
+            KubeResourceManager.get().createResourceWithWait(
                 KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                     .editSpec()
                         .withNewPersistentClaimStorage()
@@ -107,7 +110,7 @@ public class TopicOperatorPerformance extends AbstractST {
                     .endSpec()
                     .build()
             );
-            resourceManager.createResourceWithWait(
+            KubeResourceManager.get().createResourceWithWait(
                 KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
                 KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas)
                     .editSpec()
@@ -195,7 +198,8 @@ public class TopicOperatorPerformance extends AbstractST {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaTopic
             LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespaceName());
-            resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
+            List<KafkaTopic> kafkaTopics = CrdClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+            KubeResourceManager.get().deleteResource(kafkaTopics.toArray(new KafkaTopic[0]));
             KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
 
             if (this.topicOperatorMetricsGatherer != null) {

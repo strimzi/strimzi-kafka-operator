@@ -102,7 +102,7 @@ For instance, when one want deploy Kafka cluster with three nodes it can be simp
 ```java
 final int numberOfKafkaBrokers = 3;
 
-resourceManager.createResourceWithWait(extensionContext, 
+KubeResourceManager.get().createResourceWithWait(extensionContext, 
     // using KafkaTemplate class for pre-defined values
     KafkaTemplates.kafka(
         clusterName,
@@ -119,7 +119,7 @@ Example of setup shared resources in scope of the test suite:
 @BeforeAll
 void setUp(ExtensionContext extensionContext) {
     // create resources without wait to deploy them simultaneously
-    resourceManager.createResourceWithoutWait(extensionContext, // we do not wait for readiness and therefore deploy all resources asynchronously
+    KubeResourceManager.get().createResourceWithoutWait(extensionContext, // we do not wait for readiness and therefore deploy all resources asynchronously
     // kafka with cruise control and metrics
     KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(...).build(),
     KafkaTemplates.kafkaWithMetrics(...).build(),
@@ -130,7 +130,7 @@ void setUp(ExtensionContext extensionContext) {
     );
     
     // sync resources (barier)
-    resourceManager.synchronizeResources(extensionContext);
+    KubeResourceManager.get().synchronizeResources(extensionContext);
 }
 ```
 

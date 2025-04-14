@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -14,6 +13,9 @@ import org.apache.logging.log4j.Logger;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class MinioUtils {
     private static final Logger LOGGER = LogManager.getLogger(SetupMinio.class);
@@ -29,9 +31,9 @@ public class MinioUtils {
      * @return Overall statistics about the bucket in String format
      */
     public static String getBucketSizeInfo(String namespaceName, String bucketName) {
-        final String minioPod = ResourceManager.kubeClient().listPods(namespaceName, Map.of(TestConstants.APP_POD_LABEL, SetupMinio.MINIO)).get(0).getMetadata().getName();
+        final String minioPod = kubeClient().listPods(namespaceName, Map.of(TestConstants.APP_POD_LABEL, SetupMinio.MINIO)).get(0).getMetadata().getName();
 
-        return ResourceManager.cmdKubeClient().namespace(namespaceName).execInPod(minioPod,
+        return cmdKubeClient().namespace(namespaceName).execInPod(minioPod,
             "mc",
             "stat",
             "local/" + bucketName).out();

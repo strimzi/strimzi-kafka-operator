@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -74,11 +74,11 @@ public class KafkaType implements ResourceType<Kafka> {
         // deletion of all KafkaTopics
         if (HAS_CRUISE_CONTROL_SUPPORT.test(kafka)) {
             LOGGER.info("Explicit deletion of KafkaTopics in Namespace: {}, for CruiseControl Kafka cluster {}", namespaceName, clusterName);
-            KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).list()
+            CrdClients.kafkaTopicClient().inNamespace(namespaceName).list()
                 .getItems().stream()
                 .parallel()
                 .filter(kt -> kt.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(clusterName))
-                .map(kt -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(kt.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete())
+                .map(kt -> CrdClients.kafkaTopicClient().inNamespace(namespaceName).withName(kt.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete())
                 // check that all topic was successfully deleted
                 .allMatch(result -> true);
         }

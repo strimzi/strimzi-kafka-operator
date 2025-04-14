@@ -9,6 +9,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -23,7 +24,6 @@ import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -81,7 +81,7 @@ public class MultipleListenersST extends AbstractST {
         }
     )
     void testMultipleNodePorts() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         runListenersTest(testCases.get(KafkaListenerType.NODEPORT), testStorage.getClusterName());
     }
 
@@ -96,7 +96,7 @@ public class MultipleListenersST extends AbstractST {
         }
     )
     void testMultipleInternal() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         runListenersTest(testCases.get(KafkaListenerType.INTERNAL), testStorage.getClusterName());
     }
 
@@ -118,7 +118,7 @@ public class MultipleListenersST extends AbstractST {
     void testCombinationOfInternalAndExternalListeners() {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
         assumeFalse(Environment.isNamespaceRbacScope());
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -146,7 +146,7 @@ public class MultipleListenersST extends AbstractST {
         }
     )
     void testMultipleLoadBalancers() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         runListenersTest(testCases.get(KafkaListenerType.LOADBALANCER), testStorage.getClusterName());
     }
 
@@ -165,7 +165,7 @@ public class MultipleListenersST extends AbstractST {
         }
     )
     void testMultipleRoutes() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         runListenersTest(testCases.get(KafkaListenerType.ROUTE), testStorage.getClusterName());
     }
 
@@ -186,7 +186,7 @@ public class MultipleListenersST extends AbstractST {
         }
     )
     void testMixtureOfExternalListeners() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
         List<GenericKafkaListener> routeListeners = testCases.get(KafkaListenerType.ROUTE);
@@ -216,7 +216,7 @@ public class MultipleListenersST extends AbstractST {
         }
     )
     void testCombinationOfEveryKindOfListener() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -236,14 +236,14 @@ public class MultipleListenersST extends AbstractST {
 
     private void runListenersTest(List<GenericKafkaListener> listeners, String clusterName) {
         LOGGER.info("These are listeners to be verified: {}", listeners);
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), clusterName, 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), clusterName, 3).build()
         );
         // exercise phase
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, clusterName, 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withListeners(listeners)
@@ -256,14 +256,14 @@ public class MultipleListenersST extends AbstractST {
             String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
             KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, kafkaUsername, clusterName).build();
 
-            resourceManager.createResourceWithWait(kafkaUserInstance);
+            KubeResourceManager.get().createResourceWithWait(kafkaUserInstance);
 
             for (GenericKafkaListener listener : listeners) {
                 final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
                 final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, topicName, clusterName).build());
+                KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, topicName, clusterName).build());
 
                 boolean isTlsEnabled = listener.isTls();
 
@@ -319,12 +319,12 @@ public class MultipleListenersST extends AbstractST {
 
                     if (isTlsEnabled) {
                         // verify phase
-                        resourceManager.createResourceWithWait(
+                        KubeResourceManager.get().createResourceWithWait(
                             kafkaClients.producerTlsStrimzi(clusterName),
                             kafkaClients.consumerTlsStrimzi(clusterName)
                         );
                     } else {
-                        resourceManager.createResourceWithWait(
+                        KubeResourceManager.get().createResourceWithWait(
                             kafkaClients.producerStrimzi(),
                             kafkaClients.consumerStrimzi()
                         );

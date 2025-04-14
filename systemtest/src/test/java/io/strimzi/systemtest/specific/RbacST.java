@@ -21,9 +21,8 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.logs.CollectorElement;
+import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.operator.YamlInstallation;
@@ -59,13 +58,13 @@ public class RbacST extends AbstractST {
             .withDefaultConfiguration()
             .createClusterOperatorNamespace();
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
         final ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfiguration();
 
         // create namespace, where we will be able to deploy CustomResources
         NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved,
-            CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), ResourceManager.getTestContext().getRequiredTestMethod().getName()));
+            CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(), KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName()));
 
         // --- a) defining Role and ClusterRoles
         final Role strimziClusterOperator020 = ReadWriteUtils.readObjectFromYamlFilepath(RbacUtils.switchClusterRolesToRolesIfNeeded(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
@@ -125,26 +124,26 @@ public class RbacST extends AbstractST {
         // Deploy CO deployment
         YamlInstallation.deployClusterOperator(clusterOperatorConfiguration);
 
-        resourceManager.createResourceWithoutWait(
+        KubeResourceManager.get().createResourceWithoutWait(
             KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithoutWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithoutWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 3).build());
 
         // implicit verification that a user is able to deploy Kafka cluster in namespace <example-1>, where we are allowed
         // to create CustomResources because of `*-namespaced Role`
-        resourceManager.createResourceWithoutWait(
+        KubeResourceManager.get().createResourceWithoutWait(
             KafkaNodePoolTemplates.brokerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
         // this should work
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getClusterName(), 3).build());
 
         // verify that in `infra-namespace` we are not able to deploy Kafka cluster
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(),
             ".*code=403.*");
 
-        final Condition condition = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(c -> "NotReady".equals(c.getType())).findFirst().orElseThrow();
+        final Condition condition = CrdClients.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(c -> "NotReady".equals(c.getType())).findFirst().orElseThrow();
 
         assertThat(condition.getReason(), CoreMatchers.is("KubernetesClientException"));
         assertThat(condition.getStatus(), CoreMatchers.is("True"));

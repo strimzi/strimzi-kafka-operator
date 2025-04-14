@@ -24,6 +24,7 @@ import java.util.Map;
 public class ClusterOperatorConfiguration {
     private String operatorDeploymentName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
     private String namespaceName = TestConstants.CO_NAMESPACE;
+    private boolean deleteNamespace = true;
     // in case that we have Namespace-scoped RBAC, then we are running tests just in the co-namespace (by default)
     // otherwise, the default is watching all Namespaces ('*')
     private String namespacesToWatch = Environment.isNamespaceRbacScope() ? TestConstants.CO_NAMESPACE : TestConstants.WATCH_ALL_NAMESPACES;
@@ -63,6 +64,14 @@ public class ClusterOperatorConfiguration {
 
     public void setNamespaceName(String namespaceName) {
         this.namespaceName = namespaceName;
+    }
+
+    public boolean shouldDeleteNamespace() {
+        return deleteNamespace;
+    }
+
+    public void setDeleteNamespace(boolean skipNamespaceDeletion) {
+        this.deleteNamespace = skipNamespaceDeletion;
     }
 
     public String getNamespacesToWatch() {

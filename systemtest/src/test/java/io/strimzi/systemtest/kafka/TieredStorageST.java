@@ -12,6 +12,8 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -21,10 +23,7 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -34,7 +33,9 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.specific.ContainerRuntimeUtils;
 import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.systemtest.utils.specific.NfsUtils;
@@ -49,7 +50,6 @@ import org.junit.jupiter.api.Tag;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Stack;
 
 import static io.strimzi.systemtest.TestConstants.GLOBAL_POLL_INTERVAL;
 import static io.strimzi.systemtest.TestConstants.GLOBAL_TIMEOUT;
@@ -110,9 +110,9 @@ public class TieredStorageST extends AbstractST {
     void testTieredStorageWithAivenS3Plugin() {
         deployMinioInstance();
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                 .editSpec()
                     .withNewPersistentClaimStorage()
@@ -124,7 +124,7 @@ public class TieredStorageST extends AbstractST {
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
         );
 
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
@@ -151,7 +151,7 @@ public class TieredStorageST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName())
             .editSpec()
                 .addToConfig("file.delete.delay.ms", 1000)
                 .addToConfig("local.retention.ms", 1000)
@@ -171,12 +171,12 @@ public class TieredStorageST extends AbstractST {
             .withMessage(String.join("", Collections.nCopies(300, "#")))
             .build();
 
-        resourceManager.createResourceWithWait(clients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
 
         MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
 
         // Create admin-client to check offsets
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             AdminClientTemplates.plainAdminClient(
                 testStorage.getNamespaceName(),
                 testStorage.getAdminName(),
@@ -185,14 +185,14 @@ public class TieredStorageST extends AbstractST {
         );
         waitForEarliestLocalOffsetGreaterThanZero(testStorage.getNamespaceName(), testStorage.getAdminName(), testStorage.getTopicName());
 
-        resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
         // Verify we can consume messages from (a) remote storage and (b) local storage. Because we have verified earlier
         // that the log segments are moved to remote storage (by Minio size check) and deleted locally (by earliest-local offset check),
         // we can verify (a) and (b) by checking if we can consume all messages successfully.
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
         // Delete data
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+        KafkaTopicUtils.replaceInNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
         );
 
@@ -222,9 +222,9 @@ public class TieredStorageST extends AbstractST {
     void testTieredStorageWithAivenFileSystemPlugin() {
         deployNfsInstance();
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                 .editSpec()
                     .withNewPersistentClaimStorage()
@@ -242,7 +242,7 @@ public class TieredStorageST extends AbstractST {
                 .withMountPath(MOUNT_PATH)
                 .build()
         };
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
@@ -274,7 +274,7 @@ public class TieredStorageST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName())
             .editSpec()
                 .addToConfig("file.delete.delay.ms", 1000)
                 .addToConfig("local.retention.ms", 1000)
@@ -294,13 +294,13 @@ public class TieredStorageST extends AbstractST {
             .withMessage(String.join("", Collections.nCopies(300, "#")))
             .build();
 
-        resourceManager.createResourceWithWait(clients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
 
         // wait for logs uploaded to NFS
         NfsUtils.waitForSizeInNfs(testStorage.getNamespaceName(), size -> size > SEGMENT_BYTE);
 
         // Create admin-client to check offsets
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             AdminClientTemplates.plainAdminClient(
                 testStorage.getNamespaceName(),
                 testStorage.getAdminName(),
@@ -310,11 +310,11 @@ public class TieredStorageST extends AbstractST {
 
         waitForEarliestLocalOffsetGreaterThanZero(testStorage.getNamespaceName(), testStorage.getAdminName(), testStorage.getTopicName());
 
-        resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
         // Delete data
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+        KafkaTopicUtils.replaceInNamespace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
         );
 
@@ -349,7 +349,7 @@ public class TieredStorageST extends AbstractST {
         LOGGER.info("=== Deploying NFS instance ===");
 
         // allow NetworkPolicies for the NFS in case that we have "default to deny all" mode enabled
-        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(suiteStorage.getNamespaceName(), "nfs", Map.of(TestConstants.APP_POD_LABEL, "nfs-server-provisioner"));
+        NetworkPolicyUtils.allowNetworkPolicyAllIngressForMatchingLabel(suiteStorage.getNamespaceName(), "nfs", Map.of(TestConstants.APP_POD_LABEL, "nfs-server-provisioner"));
 
         String instanceYamlContent = ReadWriteUtils.readFile(NFS_INSTANCE_PATH).replace("NAMESPACE_TO_BE_CHANGE", suiteStorage.getNamespaceName());
 
@@ -362,8 +362,7 @@ public class TieredStorageST extends AbstractST {
                 LOGGER.error("Following exception has been thrown during NFS Instance Deployment: {}", e.getMessage());
                 return false;
             } finally {
-                ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
-                ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(suiteStorage.getNamespaceName()).deleteContent(instanceYamlContent)));
+                KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> cmdKubeClient(suiteStorage.getNamespaceName()).deleteContent(instanceYamlContent)));
             }
         });
         StatefulSetUtils.waitForAllStatefulSetPodsReady(suiteStorage.getNamespaceName(), "test-nfs-server-provisioner", 1);
@@ -390,8 +389,7 @@ public class TieredStorageST extends AbstractST {
             .withDefaultConfiguration()
             .install();
 
-        suiteStorage = new TestStorage(ResourceManager.getTestContext());
-
+        suiteStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
     }
 }

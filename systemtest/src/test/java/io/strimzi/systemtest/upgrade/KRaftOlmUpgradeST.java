@@ -15,7 +15,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -57,7 +56,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
 
     @IsolatedTest
     void testStrimziUpgrade() throws IOException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext(), CO_NAMESPACE);
         final String fromVersion = olmUpgradeData.getFromVersion();
         ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfigurationBuilder()
             .withNamespaceName(CO_NAMESPACE)
@@ -107,7 +106,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(kafkaUpgradeTopic);
+        KubeResourceManager.get().createResourceWithWait(kafkaUpgradeTopic);
 
         KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -119,9 +118,9 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
 
-        clusterOperatorConfiguration.setOperatorDeploymentName(ResourceManager.kubeClient().namespace(CO_NAMESPACE).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME));
+        clusterOperatorConfiguration.setOperatorDeploymentName(kubeClient().namespace(CO_NAMESPACE).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME));
         LOGGER.info("Old deployment name of Cluster Operator is {}", clusterOperatorConfiguration.getOperatorDeploymentName());
 
         // ======== Cluster Operator upgrade starts ========
