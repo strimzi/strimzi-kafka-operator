@@ -19,6 +19,14 @@ rules:
     resources:
       - kafkatopics
       - kafkausers
+      - kafkas
+      - kafkanodepools
+      - kafkarebalances
+    verbs: ["list", "watch"]
+  - apiGroups:
+      - core.strimzi.io
+    resources:
+      - strimzipodsets
     verbs: ["list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
