@@ -74,7 +74,9 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -286,8 +288,27 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             return Future.succeededFuture();
         }
 
-        return reconcileTrustedCertsSecret(reconciliation, namespace, connect, secretsToCopy, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()));
-    }
+        ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
+        return Future.join(secretsToCopy.stream()
+                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
+                                .compose(secret -> {
+                                    if (secret == null) {
+                                        return Future.failedFuture("Secret " + secretName + " not found");
+                                    } else {
+                                        secret.getData().entrySet().stream()
+                                                .filter(e -> e.getKey().contains(".crt"))
+                                                // In case secrets contain the same key, append the secret name into the key
+                                                .forEach(e -> secretData.put(secretName + "-" + e.getKey(), e.getValue()));
+                                    }
+                                    return Future.succeededFuture();
+                                }))
+                        .collect(Collectors.toList()))
+                .compose(ignore -> secretOperations.reconcile(
+                                reconciliation,
+                                namespace,
+                                KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
+                                connect.generateTlsTrustedCertsSecret(secretData, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
+                        .mapEmpty());    }
 
     /**
      * Generates or reconciles the secret that combines secrets and certificates
@@ -312,36 +333,42 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             return Future.succeededFuture();
         }
 
-        return reconcileTrustedCertsSecret(reconciliation, namespace, connect, secretsToCopy, KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()));
-    }
-
-    /**
-     * Copies the given list of secrets to a single internal secret with the provided name.
-     *
-     * @return  Future which completes when the reconciliation is done
-     */
-    private Future<Void> reconcileTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect, List<String> secretsToCopy, String internalSecretName) {
-        ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
+        List<String> certs = new ArrayList<>();
+        String oauthSecret = KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster());
         return Future.join(secretsToCopy.stream()
-                .map(secretName -> secretOperations.getAsync(namespace, secretName)
-                        .compose(secret -> {
-                            if (secret == null) {
-                                return Future.failedFuture("Secret " + secretName + " not found");
-                            } else {
-                                secret.getData().entrySet().stream()
-                                        .filter(e -> e.getKey().contains(".crt"))
-                                        // In case secrets contain the same key, append the secret name into the key
-                                        .forEach(e -> secretData.put(secretName + "-" + e.getKey(), e.getValue()));
-                            }
-                            return Future.succeededFuture();
-                        }))
-                .collect(Collectors.toList()))
+                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
+                                .compose(secret -> {
+                                    if (secret == null) {
+                                        return Future.failedFuture("Secret " + secretName + " not found");
+                                    } else {
+                                        secret.getData().entrySet().stream()
+                                                .filter(e -> e.getKey().contains(".crt"))
+                                                // In case secrets contain the same key, append the secret name into the key
+                                                .forEach(e -> certs.add(e.getValue()));
+                                    }
+                                    return Future.succeededFuture();
+                                }))
+                        .collect(Collectors.toList()))
                 .compose(ignore -> secretOperations.reconcile(
                                 reconciliation,
                                 namespace,
-                                internalSecretName,
-                                connect.generateTlsTrustedCertsSecret(secretData, internalSecretName))
+                                oauthSecret,
+                                connect.generateTlsTrustedCertsSecret(Map.of(oauthSecret + ".crt", mergeAndEncodeCerts(certs)), oauthSecret))
                         .mapEmpty());
+    }
+
+    private String mergeAndEncodeCerts(List<String> certs) {
+        if (certs.size() > 1) {
+            String decodedAndMergedCerts = certs.stream()
+                    .map(c -> new String(Base64.getDecoder().decode(c), StandardCharsets.UTF_8))
+                    .collect(Collectors.joining("\n"));
+
+            return Base64.getEncoder().encodeToString(decodedAndMergedCerts.getBytes(StandardCharsets.UTF_8));
+        } else if (certs.size() < 1) {
+            return "";
+        } else {
+            return certs.get(0);
+        }
     }
 
     /**
