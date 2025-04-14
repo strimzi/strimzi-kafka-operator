@@ -72,10 +72,18 @@ environment:
     TEST_PROFILE: performance
     PARALLELISM_ENABLED: false
 
-/capacity:
+/user-capacity:
   summary: Run performance capacity strimzi test suite
-  duration: 12h
+  duration: 6h
   tier: 1
   environment+:
-    TEST_PROFILE: capacity
+    TEST_PROFILE: user-capacity
+    PARALLELISM_ENABLED: false
+
+/topic-capacity:
+  summary: Run performance capacity strimzi test suite
+  duration: 2h
+  tier: 1
+  environment+:
+    TEST_PROFILE: topic-capacity
     PARALLELISM_ENABLED: false
