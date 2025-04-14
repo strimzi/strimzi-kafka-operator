@@ -37,7 +37,7 @@ jobs:
       profileList: ${{ steps.parse.outputs.profileList }}
       agent: ${{ steps.parse.outputs.agent }}
       architecture: ${{ steps.parse.outputs.architecture }}
-      strimzi_use_feature_gates: ${{ steps.parse.outputs.strimzi_use_feature_gates }}
+      strimzi_feature_gates: ${{ steps.parse.outputs.strimzi_feature_gates }}
       strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
       cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
       parallel: ${{ steps.parse.outputs.parallel }}
@@ -64,7 +64,7 @@ jobs:
       profileList: ${{ needs.parse-params.outputs.profileList }}
       agent: ${{ needs.parse-params.outputs.agent }}
       architecture: ${{ needs.parse-params.outputs.architecture }}
-      strimzi_use_feature_gates: ${{ needs.parse-params.outputs.strimzi_use_feature_gates }}
+      strimzi_feature_gates: ${{ needs.parse-params.outputs.strimzi_feature_gates }}
       strimzi_rbac_scope: ${{ needs.parse-params.outputs.strimzi_rbac_scope }}
       cluster_operator_install_type: ${{ needs.parse-params.outputs.cluster_operator_install_type }}
       parallel: ${{ needs.parse-params.outputs.parallel }}

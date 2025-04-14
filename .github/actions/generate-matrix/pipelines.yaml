@@ -13,6 +13,9 @@
 # Each of the following items is threatened as a single job that will be executed on specific agent
 ####################################################################################################
 pipelines:
+##################
+### Regression ###
+##################
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "regression"
@@ -61,6 +64,10 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 4
+#############
+### Smoke ###
+#############
+# Smoke pipelines can use smaller agents as the tests are not running in parallel even if configured
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "smoke"
@@ -68,19 +75,22 @@ pipelines:
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 3
-- agent: "oracle-16cpu-64gb-arm64"
+  parallel: 1
+- agent: "oracle-2cpu-8gb-arm64"
   arch: "arm64"
   jdk_version: "17"
   pipeline: "smoke"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 3
+  parallel: 1
+###############
+### Upgrade ###
+###############
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "upgrade"
-  profile: "azp_upgrade"
+  profile: "azp_kraft_upgrade"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
@@ -88,7 +98,7 @@ pipelines:
 - agent: "oracle-16cpu-64gb-arm64"
   arch: "arm64"
   pipeline: "upgrade"
-  profile: "azp_upgrade"
+  profile: "azp_kraft_upgrade"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
@@ -109,6 +119,10 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 4
+##################
+### Acceptance ###
+##################
+# Acceptance pipelines can use smaller agents as the tests are not running in parallel even if configured
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "acceptance"
@@ -117,14 +131,17 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 3
-- agent: "oracle-16cpu-64gb-arm64"
+- agent: "oracle-2cpu-8gb-arm64"
   arch: "arm64"
   pipeline: "acceptance"
   profile: "acceptance"
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 4
+  parallel: 1
+#######################
+### Acceptance Helm ###
+#######################
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "acceptance-helm"
@@ -133,7 +150,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "helm"
   parallel: 3
-- agent: "oracle-16cpu-64gb-arm64"
+- agent: "oracle-2cpu-8gb-arm64"
   arch: "arm64"
   pipeline: "acceptance-helm"
   profile: "acceptance"
@@ -141,6 +158,9 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "helm"
   parallel: 4
+#######################
+### Regression RBAC ###
+#######################
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
   pipeline: "regression-rbac"

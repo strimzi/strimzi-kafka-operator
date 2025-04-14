@@ -33,7 +33,7 @@ on:
         required: false
         default: "2"
         type: string
-      strimzi_use_feature_gates:
+      strimzi_feature_gates:
         description: "Which feature-gates will be used by operator"
         required: false
         default: ""
@@ -79,7 +79,7 @@ jobs:
           profiles: ${{ inputs.profileList }}
           default_agent: ${{ inputs.agent }}
           default_arch: ${{ inputs.architecture }}
-          default_strimzi_use_feature_gates: ${{ inputs.strimzi_use_feature_gates }}
+          default_strimzi_feature_gates: ${{ inputs.strimzi_feature_gates }}
           default_strimzi_rbac_scope: ${{ inputs.strimzi_rbac_scope }}
           default_cluster_operator_install_type: ${{ inputs.cluster_operator_install_type }}
           default_parallel: ${{ inputs.parallel }}
@@ -101,9 +101,8 @@ jobs:
       ARCH: ${{ matrix.config.architecture }}
       STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
-      STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_use_feature_gates }}
+      STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
       PARALLEL: ${{ matrix.config.parallel }}
-      RUN_PARALLEL: ${{ inputs.run_parallel }}
     # Job steps
     steps:
       - uses: actions/checkout@v4

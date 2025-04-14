@@ -22,9 +22,9 @@ outputs:
   architecture:
     description: "The parsed architecture value from the comment"
     value: ${{ steps.parse.outputs.architecture }}
-  strimzi_use_feature_gates:
-    description: "The parsed strimzi_use_feature_gates value"
-    value: ${{ steps.parse.outputs.strimzi_use_feature_gates }}
+  strimzi_feature_gates:
+    description: "The parsed strimzi_feature_gates value"
+    value: ${{ steps.parse.outputs.strimzi_feature_gates }}
   strimzi_rbac_scope:
     description: "The parsed strimzi_rbac_scope value"
     value: ${{ steps.parse.outputs.strimzi_rbac_scope }}
@@ -92,8 +92,8 @@ runs:
           if echo "$COMMENT_LOWER" | grep -q "agent="; then
             AGENT_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*agent=\([^ ]*\).*/\1/p')
           fi
-          if echo "$COMMENT_LOWER" | grep -q "strimzi_use_feature_gates="; then
-            FG_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*strimzi_use_feature_gates=\([^ ]*\).*/\1/p')
+          if echo "$COMMENT_LOWER" | grep -q "strimzi_feature_gates="; then
+            FG_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*strimzi_feature_gates=\([^ ]*\).*/\1/p')
           fi
           if echo "$COMMENT_LOWER" | grep -q "strimzi_rbac_scope="; then
             RBAC_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*strimzi_rbac_scope=\([^ ]*\).*/\1/p')
@@ -115,7 +115,7 @@ runs:
         echo "profileList=$PROFILE_LIST" >> $GITHUB_OUTPUT
         echo "agent=$AGENT_VALUE" >> $GITHUB_OUTPUT
         echo "architecture=$ARCH_VALUE" >> $GITHUB_OUTPUT
-        echo "strimzi_use_feature_gates=$FG_VALUE" >> $GITHUB_OUTPUT
+        echo "strimzi_feature_gates=$FG_VALUE" >> $GITHUB_OUTPUT
         echo "strimzi_rbac_scope=$RBAC_VALUE" >> $GITHUB_OUTPUT
         echo "cluster_operator_install_type=$COI_VALUE" >> $GITHUB_OUTPUT
         echo "parallel=$PARALLEL_VALUE" >> $GITHUB_OUTPUT
@@ -125,7 +125,7 @@ runs:
         echo "Parsed profileList: $PROFILE_LIST"
         echo "Parsed agent: $AGENT_VALUE"
         echo "Parsed architecture: $ARCH_VALUE"
-        echo "Parsed strimzi_use_feature_gates: $FG_VALUE"
+        echo "Parsed strimzi_feature_gates: $FG_VALUE"
         echo "Parsed strimzi_rbac_scope: $RBAC_VALUE"
         echo "Parsed cluster_operator_install_type: $COI_VALUE"
         echo "Parsed parallel: $PARALLEL_VALUE"

@@ -18,10 +18,10 @@ inputs:
     description: "Default architecture value"
     required: true
     default: "amd64"
-  default_strimzi_use_feature_gates:
-    description: "Default value for strimzi_use_feature_gates"
+  default_strimzi_feature_gates:
+    description: "Default value for strimzi_feature_gates"
     required: true
-    default: "false"
+    default: ""
   default_strimzi_rbac_scope:
     description: "Default value for strimzi_rbac_scope"
     required: true
@@ -30,7 +30,7 @@ inputs:
     description: "Default value for cluster_operator_install_type"
     required: true
     default: "bundle"
-  default_paralel:
+  default_parallel:
     description: "Number of tests executed in parallel"
     default: "1"
 
@@ -72,7 +72,7 @@ runs:
             --arg parallel "$INPUT_DEFAULT_PARALLEL" \
             --arg pipeline "custom" \
             --argjson profiles "$PROFILES" \
-            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., strimzi_use_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
+            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
         fi
 
         # Use jq -c to produce compact (one-line) JSON output.
@@ -85,7 +85,7 @@ runs:
         INPUT_DEFAULT_AGENT: "${{ inputs.default_agent }}"
         INPUT_DEFAULT_ARCH: "${{ inputs.default_arch }}"
         INPUT_DEFAULT_JDK_VERSION: "${{ inputs.default_jdk_version }}"
-        INPUT_DEFAULT_STRIMZI_USE_FEATURE_GATES: "${{ inputs.default_strimzi_use_feature_gates }}"
+        INPUT_DEFAULT_STRIMZI_USE_FEATURE_GATES: "${{ inputs.default_strimzi_feature_gates }}"
         INPUT_DEFAULT_STRIMZI_RBAC_SCOPE: "${{ inputs.default_strimzi_rbac_scope }}"
         INPUT_DEFAULT_CLUSTER_OPERATOR_INSTALL_TYPE: "${{ inputs.default_cluster_operator_install_type }}"
         INPUT_DEFAULT_PARALLEL: "${{ inputs.default_parallel }}"
