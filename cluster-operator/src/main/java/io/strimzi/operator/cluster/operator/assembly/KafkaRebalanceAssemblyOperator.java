@@ -362,13 +362,13 @@ public class KafkaRebalanceAssemblyOperator
 
                         if (configMap != null) {
                             status.setProgress(Map.of(REBALANCE_PROGRESS_CONFIG_MAP_KEY, configMap.getMetadata().getName()));
-                        }
 
-                        KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, state, host,
-                                        cruiseControlPort, apiClient, configMap)
-                                .onFailure(exception -> {
-                                    KafkaRebalanceConfigMapUtils.updateStatusCondition(status, exception);
-                                });
+                            KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, state, host,
+                                            cruiseControlPort, apiClient, configMap)
+                                    .onFailure(exception -> {
+                                        KafkaRebalanceConfigMapUtils.updateStatusCondition(status, exception);
+                                    });
+                        }
 
                         return Future.succeededFuture(statusAndMap);
                     })

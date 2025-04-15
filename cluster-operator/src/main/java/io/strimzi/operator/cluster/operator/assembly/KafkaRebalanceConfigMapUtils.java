@@ -17,7 +17,7 @@ import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.Future;
 
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,20 +38,13 @@ public class KafkaRebalanceConfigMapUtils {
     /**
      * Updates the given KafkaRebalance ConfigMap with progress fields based on the progress of the Kafka rebalance operation.
      *
-     * @param state The current state of the Kafka rebalance operation (e.g., ProposalReady, Rebalancing, Stopped, etc.).
-     * @param executorState The executor state information in JSON format, which is used to calculate progress fields.
-     * @param configMap The ConfigMap to be updated with progress information. If null, a new ConfigMap will be created.
+     * @param state The current state of the KafkaRebalance resource (e.g., ProposalReady, Rebalancing, Stopped, etc.).
+     * @param executorState The executor state information in JSON format, which is used to calculate progress fields
+     *                      in the Rebalancing state.
+     * @param configMap The ConfigMap to be updated with progress information.
      */
-    public static void updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState state, JsonNode executorState, ConfigMap configMap) {
-        if (configMap == null) {
-            return;
-        }
-
-        Map<String, String> data = configMap.getData();
-        if (data == null) {
-            data = new HashMap<>();
-            configMap.setData(data);
-        }
+    /* test */ static void updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState state, JsonNode executorState, ConfigMap configMap) {
+        Map<String, String> data = configMap != null ? configMap.getData() : null;
 
         switch (state) {
             case ProposalReady:
@@ -95,7 +88,7 @@ public class KafkaRebalanceConfigMapUtils {
     }
 
     /**
-     * Updates the Kafka Rebalance {@link ConfigMap} with relevant state information depending on the current
+     * Updates the KafkaRebalance {@link ConfigMap} with relevant state information depending on the current
      * {@link KafkaRebalanceState}.
      *
      * @param reconciliation The reconciliation context
@@ -121,8 +114,7 @@ public class KafkaRebalanceConfigMapUtils {
                                     false))
                     .compose(response -> {
                         JsonNode executorState = response.getJson().get("ExecutorState");
-                        KafkaRebalanceConfigMapUtils.updateRebalanceConfigMapWithProgressFields(
-                                state, executorState, configMap);
+                        updateRebalanceConfigMapWithProgressFields(state, executorState, configMap);
                         return Future.succeededFuture(configMap);
                     });
         } else {
@@ -140,7 +132,7 @@ public class KafkaRebalanceConfigMapUtils {
      * @param exception The {@link Throwable} containing the reason and message for the Warning condition.
      */
     public static void updateStatusCondition(KafkaRebalanceStatus status, Throwable exception) {
-        List<Condition> conditions = status.getConditions();
+        List<Condition> conditions = new ArrayList<>(status.getConditions());
 
         Condition warningCondition = StatusUtils.buildWarningCondition("CruiseControlRestException", exception.getMessage());
 
@@ -152,8 +144,9 @@ public class KafkaRebalanceConfigMapUtils {
                     return;
                 }
             }
-
         }
+
         conditions.add(warningCondition);
+        status.setConditions(conditions);
     }
 }

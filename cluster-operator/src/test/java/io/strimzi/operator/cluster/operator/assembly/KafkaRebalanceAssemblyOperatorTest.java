@@ -4,15 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
@@ -24,61 +21,35 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
-import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRetriableConnectionException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.TimeoutException;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
-import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.ReadWriteUtils;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.BYTE_MOVEMENT_COMPLETED;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.BYTE_MOVEMENT_ZERO;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.COMPLETED_BYTE_MOVEMENT_KEY;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.ESTIMATED_TIME_TO_COMPLETION_KEY;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.EXECUTOR_STATE_KEY;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.REBALANCE_PROGRESS_CONFIG_MAP_KEY;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.TIME_COMPLETED;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -89,29 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class KafkaRebalanceAssemblyOperatorTest {
-    private static final String HOST = "localhost";
-    private static final String RESOURCE_NAME = "my-rebalance";
-    private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
-    private static final Kafka KAFKA = new KafkaBuilder()
-            .withNewMetadata()
-                .withName(CLUSTER_NAME)
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
-            .endMetadata()
-            .withNewSpec()
-                .withNewKafka()
-                    .withListeners(new GenericKafkaListenerBuilder()
-                            .withName("plain")
-                            .withPort(9092)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(false)
-                            .build())
-                .endKafka()
-                .withNewCruiseControl()
-                .endCruiseControl()
-            .endSpec()
-            .build();
-    private static final KafkaRebalanceSpec EMPTY_KAFKA_REBALANCE_SPEC = new KafkaRebalanceSpecBuilder().build();
+public class KafkaRebalanceAssemblyOperatorTest extends AbstractKafkaRebalanceAssemblyOperatorTest {
     private static final KafkaRebalanceSpec ADD_BROKER_KAFKA_REBALANCE_SPEC =
             new KafkaRebalanceSpecBuilder()
                     .withMode(KafkaRebalanceMode.ADD_BROKERS)
@@ -132,127 +81,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                                     .withVolumeIds(1)
                                     .build())
                     .build();
-    private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
-    private static KubernetesClient client;
-    private static MockKube3 mockKube;
-    private static Vertx vertx;
-    private static WorkerExecutor sharedWorkerExecutor;
-    private String namespace;
-    private KafkaRebalanceAssemblyOperator krao;
-    private ResourceOperatorSupplier supplier;
-
-    private static int cruiseControlPort;
-    private static File tlsKeyFile;
-    private static File tlsCrtFile;
-    private static MockCruiseControl cruiseControlServer;
-
-    @BeforeAll
-    public static void beforeAll() throws IOException {
-        // Configure the Kubernetes Mock
-        mockKube = new MockKube3.MockKube3Builder()
-                .withKafkaCrd()
-                .withKafkaRebalanceCrd()
-                .withDeletionController()
-                .build();
-        mockKube.start();
-        client = mockKube.client();
-
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
-
-        // Configure Cruise Control mock
-        cruiseControlPort = TestUtils.getFreePort();
-        tlsKeyFile = ReadWriteUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".key");
-        tlsCrtFile = ReadWriteUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".crt");
-        
-        new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
-            new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
-
-        cruiseControlServer = new MockCruiseControl(cruiseControlPort, tlsKeyFile, tlsCrtFile);
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        sharedWorkerExecutor.close();
-        vertx.close();
-        mockKube.stop();
-        if (cruiseControlServer != null && cruiseControlServer.isRunning()) {
-            cruiseControlServer.stop();
-        }
-    }
-
-    @BeforeEach
-    public void beforeEach(TestInfo testInfo) {
-        namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
-        // handling Kubernetes constraint for namespace limit name (63 characters)
-        if (namespace.length() > 63) {
-            namespace = namespace.substring(0, 63);
-        }
-        mockKube.prepareNamespace(namespace);
-
-        if (cruiseControlServer != null && cruiseControlServer.isRunning()) {
-            cruiseControlServer.reset();
-        }
-
-        supplier = new ResourceOperatorSupplier(vertx, client, ResourceUtils.adminClientProvider(),
-                ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA);
-
-        // Override to inject mocked cruise control address so real cruise control not required
-        krao = createKafkaRebalanceAssemblyOperator(ResourceUtils.dummyClusterOperatorConfig());
-    }
-
-    @AfterEach
-    public void afterEach() {
-        client.namespaces().withName(namespace).delete();
-    }
-
-    private KafkaRebalanceAssemblyOperator createKafkaRebalanceAssemblyOperator(ClusterOperatorConfig config) {
-        return new KafkaRebalanceAssemblyOperator(vertx, supplier, config, cruiseControlPort) {
-            @Override
-            public String cruiseControlHost(String clusterName, String clusterNamespace) {
-                return HOST;
-            }
-
-            @Override
-            public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
-                return new CruiseControlApiImpl(1, ccSecret, ccApiSecret, true, true);
-            }
-        };
-    }
-
-    private void crdCreateKafka() {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .withNewStatus()
-                    .withObservedGeneration(1L)
-                    .withConditions(new ConditionBuilder()
-                            .withType("Ready")
-                            .withStatus("True")
-                            .build())
-                .endStatus()
-                .build();
-
-        Crds.kafkaOperation(client).inNamespace(namespace).resource(kafka).create();
-        Crds.kafkaOperation(client).inNamespace(namespace).resource(kafka).updateStatus();
-    }
-
-    private void crdCreateCruiseControlSecrets() {
-        Secret ccSecret = new SecretBuilder(MockCruiseControl.CC_SECRET)
-                .editMetadata()
-                    .withName(CruiseControlResources.secretName(CLUSTER_NAME))
-                    .withNamespace(namespace)
-                .endMetadata()
-                .build();
-
-        Secret ccApiSecret = new SecretBuilder(MockCruiseControl.CC_API_SECRET)
-                .editMetadata()
-                    .withName(CruiseControlResources.apiSecretName(CLUSTER_NAME))
-                    .withNamespace(namespace)
-                .endMetadata()
-                .build();
-
-        client.secrets().inNamespace(namespace).resource(ccSecret).create();
-        client.secrets().inNamespace(namespace).resource(ccApiSecret).create();
-    }
 
     /**
      * Tests the transition from 'New' to 'ProposalReady'
@@ -1976,109 +1804,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
-     * Test progress fields of KafkaRebalance resource and ConfigMap during rebalance lifecycle.
-     */
-    @Test
-    public void testProgressFieldsDuringRebalanceLifecycle(VertxTestContext context) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
-        cruiseControlServer.setupCCStateResponseInExecution();
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
-
-        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
-        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
-        crdCreateKafka();
-        crdCreateCruiseControlSecrets();
-
-        ConfigMapOperator configMapOperator = this.supplier.configMapOperations;
-
-        Checkpoint checkpoint = context.checkpoint();
-        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
-                .onComplete(context.succeeding(v -> {
-                    // the resource moved from New to ProposalReady
-                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
-
-                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
-                    KafkaRebalanceStatus status = kafkaRebalance.getStatus();
-                    assertThat(status.getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(Boolean.TRUE));
-
-                    configMapOperator.getAsync(namespace, RESOURCE_NAME)
-                            .onSuccess(configMap -> {
-                                Map<String, String> fields = configMap.getData();
-                                assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(Boolean.FALSE));
-                                assertThat(fields.get(COMPLETED_BYTE_MOVEMENT_KEY), is(BYTE_MOVEMENT_ZERO));
-                                assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(Boolean.FALSE));
-                                assertThat(fields.containsKey(BROKER_LOAD_KEY), is(Boolean.TRUE));
-                            });
-                }))
-                .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
-                .onComplete(context.succeeding(v -> {
-                    // the resource moved from ProposalReady to Rebalancing
-                    assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.Rebalancing);
-                    configMapOperator.getAsync(namespace, RESOURCE_NAME)
-                            .onSuccess(configMap -> {
-                                Map<String, String> fields = configMap.getData();
-                                assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(Boolean.TRUE));
-                                assertThat(fields.containsKey(COMPLETED_BYTE_MOVEMENT_KEY), is(Boolean.TRUE));
-                                assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(Boolean.TRUE));
-                                assertThat(fields.containsKey(BROKER_LOAD_KEY), is(Boolean.TRUE));
-                            });
-                })).compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
-                .onComplete(context.succeeding(v -> {
-                    // the resource moved from Rebalancing to Ready
-                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Ready);
-                    configMapOperator.getAsync(namespace, RESOURCE_NAME)
-                            .onSuccess(configMap -> {
-                                Map<String, String> fields = configMap.getData();
-                                assertThat(fields.get(ESTIMATED_TIME_TO_COMPLETION_KEY), is(TIME_COMPLETED));
-                                assertThat(fields.get(COMPLETED_BYTE_MOVEMENT_KEY), is(BYTE_MOVEMENT_COMPLETED));
-                                assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(Boolean.FALSE));
-                                assertThat(fields.containsKey(BROKER_LOAD_KEY), is(Boolean.TRUE));
-                            });
-                    checkpoint.flag();
-                }));
-    }
-
-    /**
-     *  Test `KafkaRebalance` resource has "Warning" condition when Cruise Control state cannot be retrieved during
-     *  a rebalance
-     */
-    @Test
-    public void testConditionsWhenCcNotReachableDuringRebalance(VertxTestContext context) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
-        cruiseControlServer.setupCCStateNoResponse();
-
-        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
-        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
-        crdCreateKafka();
-        crdCreateCruiseControlSecrets();
-
-        ConfigMapOperator configMapOperator = this.supplier.configMapOperations;
-
-        Checkpoint checkpoint = context.checkpoint();
-        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
-                .onComplete(context.succeeding(v -> {
-                    // the resource moved from New to ProposalReady
-                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
-                }))
-                .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
-                .onComplete(context.succeeding(v -> {
-                    // the resource moved from ProposalReady to Rebalancing
-                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
-
-                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
-                    KafkaRebalanceStatus status = kafkaRebalance.getStatus();
-                    assertThat(status.getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(Boolean.TRUE));
-
-                    Condition warningCondition = status.getConditions().stream()
-                            .filter(condition -> "Warning".equals(condition.getType()))
-                            .findFirst()
-                            .orElse(null);
-                    assertThat(warningCondition, notNullValue());
-                    checkpoint.flag();
-                }));
-    }
-
-    /**
      * annotate the KafkaRebalance, patch the (mocked) server with the resource and then return the annotated resource
      */
     private void annotate(KubernetesClient kubernetesClient, String namespace, String resource, KafkaRebalanceAnnotation annotationValue) {
@@ -2087,15 +1812,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, annotationValue.toString())
                 .endMetadata()
                 .build());
-    }
-
-    private void assertState(VertxTestContext context, KubernetesClient kubernetesClient, String namespace, String resource, KafkaRebalanceState state) {
-        context.verify(() -> {
-            KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
-            assertThat(kafkaRebalance, StateMatchers.hasState());
-            Condition condition = KafkaRebalanceUtils.rebalanceStateCondition(kafkaRebalance.getStatus());
-            assertThat(Collections.singletonList(condition), StateMatchers.hasStateInConditions(state));
-        });
     }
 
     private void assertValidationCondition(VertxTestContext context, KubernetesClient kubernetesClient, String namespace, String resource, String validationError) {
@@ -2114,22 +1830,5 @@ public class KafkaRebalanceAssemblyOperatorTest {
             Condition condition = KafkaRebalanceUtils.rebalanceStateCondition(kafkaRebalance.getStatus());
             assertThat(condition, StateMatchers.hasStateInCondition(state, reason, message));
         });
-    }
-
-    private KafkaRebalance createKafkaRebalance(String namespace, String clusterName, String resourceName,
-                                                     KafkaRebalanceSpec kafkaRebalanceSpec, boolean isAutoApproval) {
-        return new KafkaRebalanceBuilder()
-                .withNewMetadata()
-                    .withNamespace(namespace)
-                    .withName(resourceName)
-                    .withLabels(clusterName != null ? Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME) : null)
-                    .withAnnotations(isAutoApproval ? Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true") : null)
-                .endMetadata()
-                .withSpec(kafkaRebalanceSpec)
-                .build();
-    }
-
-    private static class StateMatchers extends AbstractResourceStateMatchers {
-
     }
 }
