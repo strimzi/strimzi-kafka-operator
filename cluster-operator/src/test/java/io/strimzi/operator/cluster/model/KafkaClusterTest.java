@@ -328,24 +328,6 @@ public class KafkaClusterTest {
             assertThat(cm.getData().toString(), containsString("prometheus.metrics.reporter.listener=http://:9404"));
             assertThat(cm.getData().toString(), containsString("prometheus.metrics.reporter.allowlist=kafka_log.*,kafka_network.*"));
         }
-    }
-
-    @ParallelTest
-    public void testStrimziMetricsReporterNetworkPolicy() {
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withNewStrimziMetricsReporterConfig()
-                            .withNewValues()
-                                .withAllowList("kafka_log.*", "kafka_network.*")
-                            .endValues()
-                        .endStrimziMetricsReporterConfig()
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
         NetworkPolicy np = kc.generateNetworkPolicy(null, null);
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(StrimziMetricsReporterModel.METRICS_PORT))).toList();

@@ -38,7 +38,7 @@ public class StrimziMetricsReporterModelTest {
                 .withMetricsConfig(metricsConfig).build(), List.of(".*"));
 
         assertThat(metrics.getAllowList().isEmpty(), is(false));
-        assertThat(metrics.getAllowList().get(), is("kafka_log.*,kafka_network.*"));
+        assertThat(metrics.getAllowList(), is("kafka_log.*,kafka_network.*"));
     }
 
     @Test

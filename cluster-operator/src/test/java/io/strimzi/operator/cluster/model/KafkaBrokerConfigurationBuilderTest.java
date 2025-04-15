@@ -2561,31 +2561,6 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testCreateConfigIfMissingNewConfig()  {
-        String key = "test-key";
-        String value = "new-value";
-
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        KafkaBrokerConfigurationBuilder.createConfigIfMissing(config, key, value);
-
-        assertThat(config.getConfigOption(key), is(value));
-    }
-
-    @ParallelTest
-    public void testCreateConfigIfMissingConflict()  {
-        String key = "test-key";
-        String value = "test-value";
-        String newValue = "new-value";
-
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption(key, value);
-
-        KafkaBrokerConfigurationBuilder.createConfigIfMissing(config, key, newValue);
-
-        assertThat(config.getConfigOption(key), is(value));
-    }
-
-    @ParallelTest
     public void testCreateOrAddConfigListNewConfig()  {
         String key = "test-key";
         String value = "test-value";

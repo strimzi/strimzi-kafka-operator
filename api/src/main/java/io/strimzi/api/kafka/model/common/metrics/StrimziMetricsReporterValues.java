@@ -32,7 +32,7 @@ public class StrimziMetricsReporterValues implements UnknownPropertyPreserving {
     private List<String> allowList;
     private Map<String, Object> additionalProperties;
 
-    @Description("A comma separated list of regex patterns to specify the metrics to collect.")
+    @Description("A list of regex patterns to filter the metrics to collect. Should contain at least one element.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public List<String> getAllowList() {
         return allowList;

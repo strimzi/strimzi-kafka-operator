@@ -107,7 +107,7 @@ public class JmxPrometheusExporterModel implements MetricsModel {
     /* test */ static void validateJmxExporterMetricsConfig(JmxPrometheusExporterMetrics config) {
         List<String> errors = new ArrayList<>();
 
-        if (config.getValueFrom().getConfigMapKeyRef() != null) {
+        if (config.getValueFrom() != null && config.getValueFrom().getConfigMapKeyRef() != null) {
             // The ConfigMap reference exists
             if (config.getValueFrom().getConfigMapKeyRef().getName() == null
                     || config.getValueFrom().getConfigMapKeyRef().getName().isEmpty()) {

@@ -67,8 +67,8 @@ public class ConfigMapUtils {
             data.put(supportsLogging.logging().configMapKey(), supportsLogging.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm()));
         }
 
-        if (model instanceof SupportsMetrics supportsMetrics && supportsMetrics.metrics() instanceof JmxPrometheusExporterModel) {
-            String parseResult = ((JmxPrometheusExporterModel) supportsMetrics.metrics()).metricsJson(reconciliation, metricsAndLogging.metricsCm());
+        if (model instanceof SupportsMetrics supportsMetrics && supportsMetrics.metrics() instanceof JmxPrometheusExporterModel jmxMetrics) {
+            String parseResult = jmxMetrics.metricsJson(reconciliation, metricsAndLogging.metricsCm());
             if (parseResult != null) {
                 data.put(JmxPrometheusExporterModel.CONFIG_MAP_KEY, parseResult);
             }

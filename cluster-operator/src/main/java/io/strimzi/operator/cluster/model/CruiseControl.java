@@ -107,9 +107,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      */
     public static final String ANNO_STRIMZI_CAPACITY_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "capacity-configuration-hash";
 
-    // Configuration defaults
-    protected static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
-
     private boolean sslEnabled;
     private boolean authEnabled;
     private HashLoginServiceApiCredentials apiCredentials;

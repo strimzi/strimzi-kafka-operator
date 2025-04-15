@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
@@ -142,12 +143,17 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(StrimziMetricsReporterModel model)   {
+    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model)   {
         if (model != null) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println("prometheus.metrics.reporter.listener.enable=true");
             writer.println("prometheus.metrics.reporter.listener=http://:" + StrimziMetricsReporterModel.METRICS_PORT);
-            model.getAllowList().ifPresent(allowList -> writer.println("prometheus.metrics.reporter.allowlist=" + allowList));
+            if (model instanceof StrimziMetricsReporterModel strimziModel) {
+                String allowList = strimziModel.getAllowList();
+                if (!allowList.isEmpty()) {
+                    writer.println("prometheus.metrics.reporter.allowlist=" + allowList);
+                }
+            }
             writer.println();
         }
 
@@ -766,7 +772,9 @@ public class KafkaBrokerConfigurationBuilder {
      * @param userConfig    The user configuration to extract the possible user-provided config provider configuration
      *                      from it
      */
-    private void addConfigProviders(KafkaConfiguration userConfig)    {
+    private void configProviders(KafkaConfiguration userConfig)    {
+        printSectionHeader("Config providers");
+
         String strimziConfigProviders;
         if (node.broker()) {
             // File and Directory providers are used only on broker nodes
@@ -775,19 +783,29 @@ public class KafkaBrokerConfigurationBuilder {
             strimziConfigProviders = "strimzienv";
         }
 
-        createOrAddConfigList(userConfig, "config.providers", strimziConfigProviders);
+        if (userConfig != null
+                && !userConfig.getConfiguration().isEmpty()
+                && userConfig.getConfigOption("config.providers") != null) {
+            writer.println("# Configuration providers configured by the user and by Strimzi");
+            writer.println("config.providers=" + userConfig.getConfigOption("config.providers") + "," + strimziConfigProviders);
+            userConfig.removeConfigOption("config.providers");
+        } else {
+            writer.println("# Configuration providers configured by Strimzi");
+            writer.println("config.providers=" + strimziConfigProviders);
+        }
 
-        createConfigIfMissing(userConfig, "config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
-        createConfigIfMissing(userConfig, "config.providers.strimzienv.param.allowlist.pattern", ".*");
+        writer.println("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
 
         if (node.broker()) {
             // File and Directory providers are used only on broker nodes
-            createConfigIfMissing(userConfig, "config.providers.strimzifile.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
-            createConfigIfMissing(userConfig, "config.providers.strimzifile.param.allowed.paths", "/opt/kafka");
-            createConfigIfMissing(userConfig, "config.providers.strimzidir.class", "org.apache.kafka.common.config.provider.DirectoryConfigProvider");
-            createConfigIfMissing(userConfig, "config.providers.strimzidir.param.allowed.paths", "/opt/kafka");
+            writer.println("config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
+            writer.println("config.providers.strimzifile.param.allowed.paths=/opt/kafka");
+            writer.println("config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider");
+            writer.println("config.providers.strimzidir.param.allowed.paths=/opt/kafka");
         }
 
+        writer.println();
     }
 
     /**
@@ -807,7 +825,7 @@ public class KafkaBrokerConfigurationBuilder {
                 ? new KafkaConfiguration(userConfig)
                 : new KafkaConfiguration(reconciliation, new ArrayList<>());
 
-        addConfigProviders(userConfig);
+        configProviders(userConfig);
 
         // Adds the Kafka metric.reporters to the user configuration.
         maybeAddMetricReporters(userConfig, injectCcMetricsReporter, injectStrimziMetricsReporter);
@@ -997,21 +1015,6 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println(String.format("client.quota.callback.static.excluded.principal.name.list=%s", String.join(";", excludedPrincipals)));
     }
 
-    /**
-     * Create or update configuration value.
-     *
-     * @param config Configuration.
-     * @param key Property key.
-     * @param value Property value to add or replace.
-     */
-    static void createConfigIfMissing(AbstractConfiguration config, String key, String value) {
-        if (config != null && key != null && !key.isBlank() && value != null && !value.isBlank()) {
-            String existingConfig = config.getConfigOption(key);
-            if (existingConfig == null) {
-                config.setConfigOption(key, value);
-            }
-        }
-    }
 
     /**
      * This method creates a configuration if it does not exist or adds a value to the list if it does exist.

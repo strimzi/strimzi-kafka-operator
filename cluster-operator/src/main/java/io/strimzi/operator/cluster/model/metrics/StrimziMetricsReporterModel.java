@@ -11,7 +11,6 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -44,8 +43,8 @@ public class StrimziMetricsReporterModel implements MetricsModel {
     /**
      * @return Comma separated list of allow regex expressions.
      */
-    public Optional<String> getAllowList() {
-        return Optional.of(String.join(",", allowList));
+    public String getAllowList() {
+        return String.join(",", allowList);
     }
 
     /**

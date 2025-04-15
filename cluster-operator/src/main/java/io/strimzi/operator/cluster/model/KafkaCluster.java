@@ -1831,7 +1831,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return  String with the Kafka broker configuration
      */
     private String generatePerBrokerConfiguration(NodeRef node, KafkaPool pool, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
-        KafkaBrokerConfigurationBuilder builder = new KafkaBrokerConfigurationBuilder(reconciliation, node)
+        return new KafkaBrokerConfigurationBuilder(reconciliation, node)
                 .withRackId(rack)
                 .withKRaft(cluster, namespace, nodes())
                 .withKRaftMetadataLogDir(VolumeUtils.kraftMetadataPath(pool.storage))
@@ -1846,14 +1846,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withAuthorization(cluster, authorization)
                 .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                 .withTieredStorage(cluster, tieredStorage)
-                .withQuotas(cluster, quotas);
-        if (metrics instanceof StrimziMetricsReporterModel reporter) {
-            builder.withStrimziMetricsReporter(reporter)
-                    .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null, true);
-        } else {
-            builder.withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null, false);
-        }
-        return builder.build().trim();
+                .withQuotas(cluster, quotas)
+                .withStrimziMetricsReporter(metrics)
+                .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null, metrics instanceof StrimziMetricsReporterModel)
+                .build().trim();
     }
 
     /**
