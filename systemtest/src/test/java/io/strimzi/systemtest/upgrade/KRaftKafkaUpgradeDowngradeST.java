@@ -23,6 +23,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -249,13 +250,17 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
         if (!isUpgrade) {
             LOGGER.info("Verifying that metadataVersion attribute updated correctly to version {}", initMetadataVersion);
-            assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME)
-                .get().getStatus().getKafkaMetadataVersion().contains(initMetadataVersion), is(true));
+            TestUtils.waitFor(String.format("metadataVersion attribute updated correctly to version %s", initMetadataVersion),
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+                () -> Crds.kafkaOperation(kubeClient().getClient()).inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME)
+                    .get().getStatus().getKafkaMetadataVersion().contains(initMetadataVersion));
         } else {
             if (currentMetadataVersion != null) {
                 LOGGER.info("Verifying that metadataVersion attribute updated correctly to version {}", newVersion.metadataVersion());
-                assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME)
-                    .get().getStatus().getKafkaMetadataVersion().contains(newVersion.metadataVersion()), is(true));
+                TestUtils.waitFor(String.format("metadataVersion attribute updated correctly to version %s", newVersion.metadataVersion()),
+                    TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+                    () -> Crds.kafkaOperation(kubeClient().getClient()).inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME)
+                        .get().getStatus().getKafkaMetadataVersion().contains(newVersion.metadataVersion()));
             }
         }
 

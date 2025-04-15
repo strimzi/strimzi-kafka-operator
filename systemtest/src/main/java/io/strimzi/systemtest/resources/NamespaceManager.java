@@ -248,9 +248,10 @@ public class NamespaceManager {
             } else if (isNamespaceDeletionStuckOnFinalizers(namespace.getStatus())) {
                 LOGGER.debug("There are KafkaTopics with finalizers remaining in Namespace: {}, going to set those finalizers to null", namespaceName);
                 KafkaTopicUtils.setFinalizersInAllTopicsToNull(namespaceName);
-            } else {
-                deleteNamespace(namespaceName);
             }
+
+            deleteNamespace(namespaceName);
+
             return false;
         });
     }

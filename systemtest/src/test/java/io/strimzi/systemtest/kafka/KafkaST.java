@@ -413,6 +413,7 @@ class KafkaST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         // kafka cluster already deployed
+        // TODO - it seems it doesn't work properly so the whole check should be rewriten to dyamic format
         TestUtils.waitFor("expected labels on PVCs", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
             try {
                 verifyVolumeNamesAndLabels(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerComponentName(), kafkaReplicas, 2, diskSizeGi);
@@ -848,9 +849,18 @@ class KafkaST extends AbstractST {
 
         String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
 
+        // TODO - this seems to be flaky, we should print also the output to see what is really there
         TestUtils.waitFor("KafkaTopic creation inside Kafka Pod", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName, "/bin/bash",
-                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out().contains(testStorage.getTopicName()));
+            () -> {
+                String output = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName, "/bin/bash",
+                    "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out();
+                if (output.contains(testStorage.getTopicName())) {
+                    return true;
+                } else {
+                    LOGGER.info("{} should be in {}, trying again...", testStorage.getTopicName(), output);
+                    return false;
+                }
+            });
 
         String topicDirNameInPod = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName, "/bin/bash",
             "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/" + testStorage.getTopicName() + "/p'").out();
