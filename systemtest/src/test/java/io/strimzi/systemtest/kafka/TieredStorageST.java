@@ -187,6 +187,9 @@ public class TieredStorageST extends AbstractST {
         waitForEarliestLocalOffsetGreaterThanZero(testStorage.getNamespaceName(), testStorage.getAdminName(), testStorage.getTopicName());
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
+        // Verify we can consume messages from (a) remote storage and (b) local storage. Because we have verified earlier
+        // that the log segments are moved to remote storage (by Minio size check) and deleted locally (by earliest-local offset check),
+        // we can verify (a) and (b) by checking if we can consume all messages successfully.
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
         // Delete data

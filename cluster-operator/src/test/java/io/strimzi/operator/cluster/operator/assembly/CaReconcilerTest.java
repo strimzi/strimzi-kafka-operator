@@ -291,6 +291,18 @@ public class CaReconcilerTest {
         return (X509Certificate) trustStore.getCertificate(alias);
     }
 
+    private void assertCertDataNotNull(Map<String, String> certData) {
+        assertThat(certData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
+        assertThat(certData.get(CA_CRT), is(notNullValue()));
+        assertThat(certData.get(CA_STORE), is(notNullValue()));
+        assertThat(certData.get(CA_STORE_PASSWORD), is(notNullValue()));
+    }
+
+    private void assertKeyDataNotNull(Map<String, String> keyData) {
+        assertThat(keyData.keySet(), is(singleton(CA_KEY)));
+        assertThat(keyData.get(CA_KEY), is(notNullValue()));
+    }
+
     @Test
     public void testReconcileCasGeneratesCertsInitially(Vertx vertx, VertxTestContext context) {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
@@ -341,11 +353,6 @@ public class CaReconcilerTest {
     @Test
     public void testReconcileCasNoCertsGetGeneratedOutsideRenewalPeriod(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-        assertNoCertsGetGeneratedOutsideRenewalPeriod(vertx, context);
-    }
-
-    private void assertNoCertsGetGeneratedOutsideRenewalPeriod(Vertx vertx, VertxTestContext context)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
@@ -356,31 +363,17 @@ public class CaReconcilerTest {
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
 
-        Map<String, String> clusterCaCertData = initialClusterCaCertSecret.getData();
-        assertThat(clusterCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(clusterCaCertData.get(CA_CRT), is(notNullValue()));
-        assertThat(clusterCaCertData.get(CA_STORE), is(notNullValue()));
-        assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(notNullValue()));
+        assertCertDataNotNull(initialClusterCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClusterCaCertSecret.getData()), is(true));
-
-        Map<String, String> clusterCaKeyData = initialClusterCaKeySecret.getData();
-        assertThat(clusterCaKeyData.keySet(), is(singleton(CA_KEY)));
-        assertThat(clusterCaKeyData.get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClusterCaKeySecret.getData());
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
 
-        Map<String, String> clientsCaCertData = initialClientsCaCertSecret.getData();
-        assertThat(clientsCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(clientsCaCertData.get(CA_CRT), is(notNullValue()));
-        assertThat(clientsCaCertData.get(CA_STORE), is(notNullValue()));
-        assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(notNullValue()));
+        assertCertDataNotNull(initialClientsCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClientsCaCertSecret.getData()), is(true));
-
-        Map<String, String> clientsCaKeyData = initialClientsCaKeySecret.getData();
-        assertThat(clientsCaKeyData.keySet(), is(singleton(CA_KEY)));
-        assertThat(clientsCaKeyData.get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClientsCaKeySecret.getData());
 
         secrets.add(initialClusterCaCertSecret);
         secrets.add(initialClusterCaKeySecret);
@@ -443,44 +436,27 @@ public class CaReconcilerTest {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-                assertThat(clusterCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
+                assertCertDataNotNull(clusterCaCertData);
 
-                X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
-                String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
-                String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
-                String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
-
-                assertThat(newClusterCaCert, is(notNullValue()));
-                assertThat(newClusterCaCertStore, is(notNullValue()));
-                assertThat(newClusterCaCertStorePassword, is(notNullValue()));
+                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
                 assertThat(newClusterCaCert, is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertThat(newX509ClusterCaCertStore, is(x509Certificate(newClusterCaCert)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
 
                 Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
-                assertThat(clusterCaKeyData.keySet(), is(singleton(CA_KEY)));
-
-                String newClusterCaKey = clusterCaKeyData.remove(CA_KEY);
-                assertThat(newClusterCaKey, is(notNullValue()));
-                assertThat(newClusterCaKey, is(initialClusterCaKeySecret.getData().get(CA_KEY)));
+                assertThat(clusterCaKeyData, aMapWithSize(1));
+                assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
 
                 Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
-                assertThat(clientsCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
+                assertCertDataNotNull(clientsCaCertData);
 
-                X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
-                String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
-                String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
-                String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
-                assertThat(newClientsCaCert, is(notNullValue()));
-                assertThat(newClientsCaCertStore, is(notNullValue()));
-                assertThat(newClientsCaCertStorePassword, is(notNullValue()));
+                String newClientsCaCert = clientsCaCertData.get(CA_CRT);
                 assertThat(newClientsCaCert, is(initialClientsCaCertSecret.getData().get(CA_CRT)));
-                assertThat(newX509ClientsCaCertStore, is(x509Certificate(newClientsCaCert)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
 
                 Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
-                assertThat(clientsCaKeyData.keySet(), is(singleton(CA_KEY)));
-                String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
-                assertThat(newClientsCaKey, is(notNullValue()));
-                assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
+                assertThat(clientsCaKeyData, aMapWithSize(1));
+                assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
+
                 async.flag();
             })));
     }
@@ -496,24 +472,18 @@ public class CaReconcilerTest {
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
-        assertThat(initialClusterCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClusterCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClusterCaCertSecret.getData()), is(true));
-        assertThat(initialClusterCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClusterCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClusterCaKeySecret.getData());
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
-        assertThat(initialClientsCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClientsCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClientsCaCertSecret.getData()), is(true));
-        assertThat(initialClientsCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClientsCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClientsCaKeySecret.getData());
 
         secrets.add(initialClusterCaCertSecret);
         secrets.add(initialClusterCaKeySecret);
@@ -526,45 +496,28 @@ public class CaReconcilerTest {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-                assertThat(clusterCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-                X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
-                String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
-                String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
-                String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
-                assertThat(newClusterCaCert, is(notNullValue()));
-                assertThat(newClusterCaCertStore, is(notNullValue()));
-                assertThat(newClusterCaCertStorePassword, is(notNullValue()));
+                assertCertDataNotNull(clusterCaCertData);
+
+                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
                 assertThat(newClusterCaCert, is(not(initialClusterCaCertSecret.getData().get(CA_CRT))));
-                assertThat(newClusterCaCertStore, is(not(initialClusterCaCertSecret.getData().get(CA_STORE))));
-                assertThat(newClusterCaCertStorePassword, is(not(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD))));
-                assertThat(newX509ClusterCaCertStore, is(x509Certificate(newClusterCaCert)));
+                assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(not(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD))));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
 
                 Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
-                assertThat(clusterCaKeyData.keySet(), is(singleton(CA_KEY)));
-                String newClusterCaKey = clusterCaKeyData.remove(CA_KEY);
-                assertThat(newClusterCaKey, is(notNullValue()));
-                assertThat(newClusterCaKey, is(initialClusterCaKeySecret.getData().get(CA_KEY)));
+                assertThat(clusterCaKeyData, aMapWithSize(1));
+                assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
 
                 Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
-                assertThat(clientsCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
+                assertCertDataNotNull(clientsCaCertData);
 
-                X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
-                String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
-                String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
-                String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
-                assertThat(newClientsCaCert, is(notNullValue()));
-                assertThat(newClientsCaCertStore, is(notNullValue()));
-                assertThat(newClientsCaCertStorePassword, is(notNullValue()));
+                String newClientsCaCert = clientsCaCertData.get(CA_CRT);
                 assertThat(newClientsCaCert, is(not(initialClientsCaCertSecret.getData().get(CA_CRT))));
-                assertThat(newClientsCaCertStore, is(not(initialClientsCaCertSecret.getData().get(CA_STORE))));
-                assertThat(newClientsCaCertStorePassword, is(not(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD))));
-                assertThat(newX509ClientsCaCertStore, is(x509Certificate(newClientsCaCert)));
+                assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(not(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD))));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
 
                 Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
-                assertThat(clientsCaKeyData.keySet(), is(singleton(CA_KEY)));
-                String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
-                assertThat(newClientsCaKey, is(notNullValue()));
-                assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
+                assertThat(clientsCaKeyData, aMapWithSize(1));
+                assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
 
                 async.flag();
             })));
@@ -590,24 +543,18 @@ public class CaReconcilerTest {
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
-        assertThat(initialClusterCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClusterCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClusterCaCertSecret.getData()), is(true));
-        assertThat(initialClusterCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClusterCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClusterCaKeySecret.getData());
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
-        assertThat(initialClientsCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClientsCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClientsCaCertSecret.getData()), is(true));
-        assertThat(initialClientsCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClientsCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClientsCaKeySecret.getData());
 
         secrets.add(initialClusterCaCertSecret);
         secrets.add(initialClusterCaKeySecret);
@@ -620,48 +567,33 @@ public class CaReconcilerTest {
                 assertThat(c.getAllValues(), hasSize(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-                assertThat(clusterCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-                X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
+                assertCertDataNotNull(clusterCaCertData);
+
+                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
                 assertThat(c.getAllValues().get(0).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
-                String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
-                String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
-                String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
-                assertThat(newClusterCaCert, is(notNullValue()));
-                assertThat(newClusterCaCertStore, is(notNullValue()));
-                assertThat(newClusterCaCertStorePassword, is(notNullValue()));
                 assertThat(newClusterCaCert, is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertThat(newClusterCaCertStore, is(initialClusterCaCertSecret.getData().get(CA_STORE)));
-                assertThat(newClusterCaCertStorePassword, is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
-                assertThat(newX509ClusterCaCertStore, is(x509Certificate(newClusterCaCert)));
+                assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
 
                 Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
-                assertThat(clusterCaKeyData.keySet(), is(singleton(CA_KEY)));
+                assertThat(clusterCaKeyData, aMapWithSize(1));
+                assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
                 assertThat(c.getAllValues().get(1).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION), is("0"));
-                String newClusterCaKey = clusterCaKeyData.remove(CA_KEY);
-                assertThat(newClusterCaKey, is(notNullValue()));
-                assertThat(newClusterCaKey, is(initialClusterCaKeySecret.getData().get(CA_KEY)));
+
 
                 Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
-                assertThat(clientsCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-                X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
+                assertCertDataNotNull(clientsCaCertData);
+
+                String newClientsCaCert = clientsCaCertData.get(CA_CRT);
                 assertThat(c.getAllValues().get(2).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
-                String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
-                String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
-                String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
-                assertThat(newClientsCaCert, is(notNullValue()));
-                assertThat(newClientsCaCertStore, is(notNullValue()));
-                assertThat(newClientsCaCertStorePassword, is(notNullValue()));
                 assertThat(newClientsCaCert, is(initialClientsCaCertSecret.getData().get(CA_CRT)));
-                assertThat(newClientsCaCertStore, is(initialClientsCaCertSecret.getData().get(CA_STORE)));
-                assertThat(newClientsCaCertStorePassword, is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
-                assertThat(newX509ClientsCaCertStore, is(x509Certificate(newClientsCaCert)));
+                assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
 
                 Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
-                assertThat(clientsCaKeyData.keySet(), is(singleton(CA_KEY)));
+                assertThat(clientsCaKeyData, aMapWithSize(1));
+                assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
                 assertThat(c.getAllValues().get(3).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION), is("0"));
-                String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
-                assertThat(newClientsCaKey, is(notNullValue()));
-                assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
 
                 async.flag();
             })));
@@ -687,24 +619,18 @@ public class CaReconcilerTest {
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
-        assertThat(initialClusterCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClusterCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClusterCaCertSecret.getData()), is(true));
-        assertThat(initialClusterCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClusterCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClusterCaKeySecret.getData());
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
-        assertThat(initialClientsCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClientsCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClientsCaCertSecret.getData()), is(true));
-        assertThat(initialClientsCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClientsCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClientsCaKeySecret.getData());
 
         secrets.add(initialClusterCaCertSecret);
         secrets.add(initialClusterCaKeySecret);
@@ -717,48 +643,33 @@ public class CaReconcilerTest {
                 assertThat(c.getAllValues().size(), is(4));
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-                assertThat(clusterCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-                X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
+                assertCertDataNotNull(clusterCaCertData);
+
+                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
                 assertThat(c.getAllValues().get(0).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
-                String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
-                String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
-                String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
-                assertThat(newClusterCaCert, is(notNullValue()));
-                assertThat(newClusterCaCertStore, is(notNullValue()));
-                assertThat(newClusterCaCertStorePassword, is(notNullValue()));
                 assertThat(newClusterCaCert, is(not(initialClusterCaCertSecret.getData().get(CA_CRT))));
-                assertThat(newClusterCaCertStore, is(not(initialClusterCaCertSecret.getData().get(CA_STORE))));
-                assertThat(newClusterCaCertStorePassword, is(not(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD))));
-                assertThat(newX509ClusterCaCertStore, is(x509Certificate(newClusterCaCert)));
+                assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(not(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD))));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
 
                 Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
-                assertThat(clusterCaKeyData.keySet(), is(singleton(CA_KEY)));
+                assertThat(clusterCaKeyData, aMapWithSize(1));
+                assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
                 assertThat(c.getAllValues().get(1).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
-                String newClusterCaKey = clusterCaKeyData.remove(CA_KEY);
-                assertThat(newClusterCaKey, is(notNullValue()));
-                assertThat(newClusterCaKey, is(initialClusterCaKeySecret.getData().get(CA_KEY)));
 
                 Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
-                assertThat(clientsCaCertData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-                X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
+                assertCertDataNotNull(clientsCaCertData);
+
+                String newClientsCaCert = clientsCaCertData.get(CA_CRT);
                 assertThat(c.getAllValues().get(2).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
-                String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
-                String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
-                String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
-                assertThat(newClientsCaCert, is(notNullValue()));
-                assertThat(newClientsCaCertStore, is(notNullValue()));
-                assertThat(newClientsCaCertStorePassword, is(notNullValue()));
                 assertThat(newClientsCaCert, is(not(initialClientsCaCertSecret.getData().get(CA_CRT))));
-                assertThat(newClientsCaCertStore, is(not(initialClientsCaCertSecret.getData().get(CA_STORE))));
-                assertThat(newClientsCaCertStorePassword, is(not(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD))));
-                assertThat(newX509ClientsCaCertStore, is(x509Certificate(newClientsCaCert)));
+                assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(not(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD))));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
 
                 Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
-                assertThat(clientsCaKeyData.keySet(), is(singleton(CA_KEY)));
+                assertThat(clientsCaKeyData, aMapWithSize(1));
+                assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
                 assertThat(c.getAllValues().get(3).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
-                String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
-                assertThat(newClientsCaKey, is(notNullValue()));
-                assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
+
                 async.flag();
             })));
     }
@@ -776,24 +687,18 @@ public class CaReconcilerTest {
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
-        assertThat(initialClusterCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClusterCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClusterCaCertSecret.getData()), is(true));
-        assertThat(initialClusterCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClusterCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClusterCaKeySecret.getData());
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
-        assertThat(initialClientsCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClientsCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClientsCaCertSecret.getData()), is(true));
-        assertThat(initialClientsCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClientsCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClientsCaKeySecret.getData());
 
         secrets.add(initialClusterCaCertSecret);
         secrets.add(initialClusterCaKeySecret);
@@ -807,61 +712,54 @@ public class CaReconcilerTest {
 
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
                 assertThat(clusterCaCertData, aMapWithSize(4));
-                X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
+
+                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
                 String oldClusterCaCertKey = clusterCaCertData.keySet()
                         .stream()
                         .filter(alias -> alias.startsWith("ca-"))
                         .findAny()
                         .orElseThrow();
-                X509Certificate oldX509ClusterCaCertStore = getCertificateFromTrustStore(oldClusterCaCertKey, clusterCaCertData);
-                String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
-                String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
-                String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
+                String oldClusterCaCert = clusterCaCertData.get(oldClusterCaCertKey);
+
                 assertThat(newClusterCaCert, is(not(initialClusterCaCertSecret.getData().get(CA_CRT))));
-                assertThat(newClusterCaCertStore, is(not(initialClusterCaCertSecret.getData().get(CA_STORE))));
-                assertThat(newClusterCaCertStorePassword, is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
-                assertThat(newX509ClusterCaCertStore, is(x509Certificate(newClusterCaCert)));
-                Map.Entry<String, String> oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
-                assertThat(oldClusterCaCert.getValue(), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertThat(oldX509ClusterCaCertStore, is(x509Certificate(String.valueOf(oldClusterCaCert.getValue()))));
+                assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
+
+                assertThat(oldClusterCaCert, is(initialClusterCaCertSecret.getData().get(CA_CRT)));
+                assertThat(getCertificateFromTrustStore(oldClusterCaCertKey, clusterCaCertData), is(x509Certificate(oldClusterCaCert)));
                 assertThat(x509Certificate(newClusterCaCert).getSubjectX500Principal().getName(), is("CN=cluster-ca v1,O=io.strimzi"));
 
                 Secret clusterCaKeySecret = c.getAllValues().get(1);
                 assertThat(clusterCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
                 Map<String, String> clusterCaKeyData = clusterCaKeySecret.getData();
-                assertThat(clusterCaKeyData.keySet(), is(singleton(CA_KEY)));
-                String newClusterCaKey = clusterCaKeyData.remove(CA_KEY);
-                assertThat(newClusterCaKey, is(notNullValue()));
-                assertThat(newClusterCaKey, is(not(initialClusterCaKeySecret.getData().get(CA_KEY))));
+                assertKeyDataNotNull(clusterCaKeyData);
+                assertThat(clusterCaKeyData.get(CA_KEY), is(not(initialClusterCaKeySecret.getData().get(CA_KEY))));
 
                 Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
                 assertThat(clientsCaCertData, aMapWithSize(4));
-                X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
+
+                String newClientsCaCert = clientsCaCertData.get(CA_CRT);
                 String oldClientsCaCertKey = clientsCaCertData.keySet()
                         .stream()
                         .filter(alias -> alias.startsWith("ca-"))
                         .findAny()
                         .orElseThrow();
-                X509Certificate oldX509ClientsCaCertStore = getCertificateFromTrustStore(oldClientsCaCertKey, clientsCaCertData);
-                String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
-                String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
-                String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
+                String oldClientsCaCert = clientsCaCertData.get(oldClientsCaCertKey);
+
                 assertThat(newClientsCaCert, is(not(initialClientsCaCertSecret.getData().get(CA_CRT))));
-                assertThat(newClientsCaCertStore, is(not(initialClientsCaCertSecret.getData().get(CA_STORE))));
-                assertThat(newClientsCaCertStorePassword, is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
-                assertThat(newX509ClientsCaCertStore, is(x509Certificate(newClientsCaCert)));
-                Map.Entry<String, String> oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
-                assertThat(oldClientsCaCert.getValue(), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
-                assertThat(oldX509ClientsCaCertStore, is(x509Certificate(String.valueOf(oldClientsCaCert.getValue()))));
+                assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
+
+                assertThat(oldClientsCaCert, is(initialClientsCaCertSecret.getData().get(CA_CRT)));
+                assertThat(getCertificateFromTrustStore(oldClientsCaCertKey, clientsCaCertData), is(x509Certificate(oldClientsCaCert)));
                 assertThat(x509Certificate(newClientsCaCert).getSubjectX500Principal().getName(), is("CN=clients-ca v1,O=io.strimzi"));
 
                 Secret clientsCaKeySecret = c.getAllValues().get(3);
                 assertThat(clientsCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
                 Map<String, String> clientsCaKeyData = clientsCaKeySecret.getData();
-                assertThat(clientsCaKeyData.keySet(), is(singleton(CA_KEY)));
-                String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
-                assertThat(newClientsCaKey, is(notNullValue()));
-                assertThat(newClientsCaKey, is(not(initialClientsCaKeySecret.getData().get(CA_KEY))));
+                assertKeyDataNotNull(clientsCaKeyData);
+                assertThat(clientsCaKeyData.get(CA_KEY), is(not(initialClientsCaKeySecret.getData().get(CA_KEY))));
+
                 async.flag();
             })));
     }
@@ -887,24 +785,18 @@ public class CaReconcilerTest {
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
-        assertThat(initialClusterCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClusterCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClusterCaCertSecret.getData()), is(true));
-        assertThat(initialClusterCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClusterCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClusterCaKeySecret.getData());
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
-        assertThat(initialClientsCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClientsCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClientsCaCertSecret.getData()), is(true));
-        assertThat(initialClientsCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClientsCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClientsCaKeySecret.getData());
 
         secrets.add(initialClusterCaCertSecret);
         secrets.add(initialClusterCaKeySecret);
@@ -919,44 +811,34 @@ public class CaReconcilerTest {
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
                 assertThat(c.getAllValues().get(0).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0"));
                 assertThat(clusterCaCertData, aMapWithSize(3));
-                X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
-                String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
-                String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
-                String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
+
+                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
                 assertThat(newClusterCaCert, is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertThat(newClusterCaCertStore, is(initialClusterCaCertSecret.getData().get(CA_STORE)));
-                assertThat(newClusterCaCertStorePassword, is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
-                assertThat(newX509ClusterCaCertStore, is(x509Certificate(newClusterCaCert)));
+                assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
                 assertThat(x509Certificate(newClusterCaCert).getSubjectX500Principal().getName(), is("CN=cluster-ca,O=io.strimzi"));
 
                 Secret clusterCaKeySecret = c.getAllValues().get(1);
                 assertThat(clusterCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
                 Map<String, String> clusterCaKeyData = clusterCaKeySecret.getData();
-                assertThat(clusterCaKeyData.keySet(), is(singleton(CA_KEY)));
-                String newClusterCaKey = clusterCaKeyData.remove(CA_KEY);
-                assertThat(newClusterCaKey, is(notNullValue()));
-                assertThat(newClusterCaKey, is(initialClusterCaKeySecret.getData().get(CA_KEY)));
+                assertThat(clusterCaKeyData, aMapWithSize(1));
+                assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
 
                 Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
                 assertThat(c.getAllValues().get(2).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0"));
                 assertThat(clientsCaCertData, aMapWithSize(3));
-                X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
-                String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
-                String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
-                String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
+
+                String newClientsCaCert = clientsCaCertData.get(CA_CRT);
                 assertThat(newClientsCaCert, is(initialClientsCaCertSecret.getData().get(CA_CRT)));
-                assertThat(newClientsCaCertStore, is(initialClientsCaCertSecret.getData().get(CA_STORE)));
-                assertThat(newClientsCaCertStorePassword, is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
-                assertThat(newX509ClientsCaCertStore, is(x509Certificate(newClientsCaCert)));
+                assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
                 assertThat(x509Certificate(newClientsCaCert).getSubjectX500Principal().getName(), is("CN=clients-ca,O=io.strimzi"));
 
                 Secret clientsCaKeySecret = c.getAllValues().get(3);
                 assertThat(clientsCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
                 Map<String, String> clientsCaKeyData = clientsCaKeySecret.getData();
-                assertThat(clientsCaKeyData.keySet(), is(singleton(CA_KEY)));
-                String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
-                assertThat(newClientsCaKey, is(notNullValue()));
-                assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
+                assertThat(clientsCaKeyData, aMapWithSize(1));
+                assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
 
                 async.flag();
             })));
@@ -983,24 +865,18 @@ public class CaReconcilerTest {
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
-        assertThat(initialClusterCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClusterCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClusterCaCertSecret.getData()), is(true));
-        assertThat(initialClusterCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClusterCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClusterCaKeySecret.getData());
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
-        assertThat(initialClientsCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClientsCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClientsCaCertSecret.getData()), is(true));
-        assertThat(initialClientsCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClientsCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClientsCaKeySecret.getData());
 
         secrets.add(initialClusterCaCertSecret);
         secrets.add(initialClusterCaKeySecret);
@@ -1016,62 +892,54 @@ public class CaReconcilerTest {
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
                 assertThat(c.getAllValues().get(0).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
                 assertThat(clusterCaCertData, aMapWithSize(4));
-                X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
+
+                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
                 String oldClusterCaCertKey = clusterCaCertData.keySet()
                         .stream()
                         .filter(alias -> alias.startsWith("ca-"))
                         .findAny()
                         .orElseThrow();
-                X509Certificate oldX509ClusterCaCertStore = getCertificateFromTrustStore(oldClusterCaCertKey, clusterCaCertData);
-                String newClusterCaCert = clusterCaCertData.remove(CA_CRT);
-                String newClusterCaCertStore = clusterCaCertData.remove(CA_STORE);
-                String newClusterCaCertStorePassword = clusterCaCertData.remove(CA_STORE_PASSWORD);
+                String oldClusterCaCert = clusterCaCertData.get(oldClusterCaCertKey);
+
                 assertThat(newClusterCaCert, is(not(initialClusterCaCertSecret.getData().get(CA_CRT))));
-                assertThat(newClusterCaCertStore, is(not(initialClusterCaCertSecret.getData().get(CA_STORE))));
-                assertThat(newClusterCaCertStorePassword, is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
-                assertThat(newX509ClusterCaCertStore, is(x509Certificate(newClusterCaCert)));
-                Map.Entry<String, String> oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
-                assertThat(oldClusterCaCert.getValue(), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertThat(oldX509ClusterCaCertStore, is(x509Certificate(String.valueOf(oldClusterCaCert.getValue()))));
+                assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
+
+                assertThat(oldClusterCaCert, is(initialClusterCaCertSecret.getData().get(CA_CRT)));
+                assertThat(getCertificateFromTrustStore(oldClusterCaCertKey, clusterCaCertData), is(x509Certificate(oldClusterCaCert)));
                 assertThat(x509Certificate(newClusterCaCert).getSubjectX500Principal().getName(), is("CN=cluster-ca v1,O=io.strimzi"));
 
                 Secret clusterCaKeySecret = c.getAllValues().get(1);
                 assertThat(clusterCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
                 Map<String, String> clusterCaKeyData = clusterCaKeySecret.getData();
-                assertThat(clusterCaKeyData.keySet(), is(singleton(CA_KEY)));
-                String newClusterCaKey = clusterCaKeyData.remove(CA_KEY);
-                assertThat(newClusterCaKey, is(notNullValue()));
-                assertThat(newClusterCaKey, is(not(initialClusterCaKeySecret.getData().get(CA_KEY))));
+                assertKeyDataNotNull(clusterCaKeyData);
+                assertThat(clusterCaKeyData.get(CA_KEY), is(not(initialClusterCaKeySecret.getData().get(CA_KEY))));
 
                 Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
                 assertThat(c.getAllValues().get(2).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
                 assertThat(clientsCaCertData, aMapWithSize(4));
-                X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
+
+                String newClientsCaCert = clientsCaCertData.get(CA_CRT);
                 String oldClientsCaCertKey = clientsCaCertData.keySet()
                         .stream()
                         .filter(alias -> alias.startsWith("ca-"))
                         .findAny()
                         .orElseThrow();
-                X509Certificate oldX509ClientsCaCertStore = getCertificateFromTrustStore(oldClientsCaCertKey, clientsCaCertData);
-                String newClientsCaCert = clientsCaCertData.remove(CA_CRT);
-                String newClientsCaCertStore = clientsCaCertData.remove(CA_STORE);
-                String newClientsCaCertStorePassword = clientsCaCertData.remove(CA_STORE_PASSWORD);
+                String oldClientsCaCert = clientsCaCertData.get(oldClientsCaCertKey);
+
                 assertThat(newClientsCaCert, is(not(initialClientsCaCertSecret.getData().get(CA_CRT))));
-                assertThat(newClientsCaCertStore, is(not(initialClientsCaCertSecret.getData().get(CA_STORE))));
-                assertThat(newClientsCaCertStorePassword, is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
-                assertThat(newX509ClientsCaCertStore, is(x509Certificate(newClientsCaCert)));
-                Map.Entry<String, String> oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
-                assertThat(oldClientsCaCert.getValue(), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
-                assertThat(oldX509ClientsCaCertStore, is(x509Certificate(String.valueOf(oldClientsCaCert.getValue()))));
+                assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
+
+                assertThat(oldClientsCaCert, is(initialClientsCaCertSecret.getData().get(CA_CRT)));
+                assertThat(getCertificateFromTrustStore(oldClientsCaCertKey, clientsCaCertData), is(x509Certificate(oldClientsCaCert)));
                 assertThat(x509Certificate(newClientsCaCert).getSubjectX500Principal().getName(), is("CN=clients-ca v1,O=io.strimzi"));
 
                 Secret clientsCaKeySecret = c.getAllValues().get(3);
                 assertThat(clientsCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
                 Map<String, String> clientsCaKeyData = clientsCaKeySecret.getData();
-                assertThat(clientsCaKeyData.keySet(), is(singleton(CA_KEY)));
-                String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
-                assertThat(newClientsCaKey, is(notNullValue()));
-                assertThat(newClientsCaKey, is(not(initialClientsCaKeySecret.getData().get(CA_KEY))));
+                assertKeyDataNotNull(clientsCaKeyData);
+                assertThat(clientsCaKeyData.get(CA_KEY), is(not(initialClientsCaKeySecret.getData().get(CA_KEY))));
 
                 async.flag();
             })));
@@ -1094,11 +962,10 @@ public class CaReconcilerTest {
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
-        assertThat(initialClusterCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClusterCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClusterCaCertSecret.getData()), is(true));
+        assertKeyDataNotNull(initialClusterCaKeySecret.getData());
 
         // add an expired certificate to the secret ...
         String clusterCert = Objects.requireNonNull(ReadWriteUtils.readFileFromResources(getClass(), "cluster-ca.crt"));
@@ -1122,11 +989,10 @@ public class CaReconcilerTest {
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
-        assertThat(initialClientsCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClientsCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClientsCaCertSecret.getData()), is(true));
+        assertKeyDataNotNull(initialClientsCaKeySecret.getData());
 
         // add an expired certificate to the secret ...
         String clientCert = Objects.requireNonNull(ReadWriteUtils.readFileFromResources(getClass(), "clients-ca.crt"));
@@ -1161,7 +1027,6 @@ public class CaReconcilerTest {
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
                 assertThat(clusterCaCertData, aMapWithSize(3));
                 assertThat(clusterCaCertData.get(CA_CRT), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertThat(clusterCaCertData.get(CA_STORE), is(initialClusterCaCertSecret.getData().get(CA_STORE)));
                 assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
                 assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(clusterCaCertData.get(CA_CRT))));
                 Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
@@ -1171,7 +1036,6 @@ public class CaReconcilerTest {
                 Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
                 assertThat(clientsCaCertData, aMapWithSize(3));
                 assertThat(clientsCaCertData.get(CA_CRT), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
-                assertThat(clientsCaCertData.get(CA_STORE), is(initialClientsCaCertSecret.getData().get(CA_STORE)));
                 assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
                 assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(clientsCaCertData.get(CA_CRT))));
                 Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
@@ -1193,24 +1057,18 @@ public class CaReconcilerTest {
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
         Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
         Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
-        assertThat(initialClusterCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClusterCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClusterCaCertSecret.getData()), is(true));
-        assertThat(initialClusterCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClusterCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClusterCaKeySecret.getData());
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
         Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
         Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
-        assertThat(initialClientsCaCertSecret.getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_CRT), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE), is(notNullValue()));
-        assertThat(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD), is(notNullValue()));
+
+        assertCertDataNotNull(initialClientsCaCertSecret.getData());
         assertThat(isCertInTrustStore(CA_CRT, initialClientsCaCertSecret.getData()), is(true));
-        assertThat(initialClientsCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
-        assertThat(initialClientsCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
+        assertKeyDataNotNull(initialClientsCaKeySecret.getData());
 
         secrets.add(initialClusterCaCertSecret);
         secrets.add(initialClusterCaKeySecret);
