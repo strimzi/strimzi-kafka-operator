@@ -240,7 +240,7 @@ public class NamespaceManager {
      * @param namespaceName name of the Namespace that should be deleted
      */
     private void waitForNamespaceDeletion(String namespaceName) {
-        TestUtils.waitFor("Namespace: " + namespaceName + "to be deleted", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT, () -> {
+        TestUtils.waitFor("Namespace: " + namespaceName + " to be deleted", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT, () -> {
             Namespace namespace = kubeClient().getNamespace(namespaceName);
 
             if (namespace == null) {
@@ -248,6 +248,8 @@ public class NamespaceManager {
             } else if (isNamespaceDeletionStuckOnFinalizers(namespace.getStatus())) {
                 LOGGER.debug("There are KafkaTopics with finalizers remaining in Namespace: {}, going to set those finalizers to null", namespaceName);
                 KafkaTopicUtils.setFinalizersInAllTopicsToNull(namespaceName);
+            } else {
+                deleteNamespace(namespaceName);
             }
             return false;
         });

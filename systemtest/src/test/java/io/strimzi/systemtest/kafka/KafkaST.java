@@ -413,7 +413,15 @@ class KafkaST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         // kafka cluster already deployed
-        verifyVolumeNamesAndLabels(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerComponentName(), kafkaReplicas, 2, diskSizeGi);
+        TestUtils.waitFor("expected labels on PVCs", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
+            try {
+                verifyVolumeNamesAndLabels(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerComponentName(), kafkaReplicas, 2, diskSizeGi);
+                return true;
+            } catch (Exception ex) {
+                LOGGER.info("Some of the expected labels are not in place, rerunning the check...");
+                return false;
+            }
+        });
 
         //change value of first PVC to delete its claim once Kafka is deleted.
         LOGGER.info("Update Volume with id=0 in Kafka CR by setting 'Delete Claim' property to false");

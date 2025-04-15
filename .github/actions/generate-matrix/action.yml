@@ -71,8 +71,9 @@ runs:
             --arg coi "$INPUT_DEFAULT_CLUSTER_OPERATOR_INSTALL_TYPE" \
             --arg parallel "$INPUT_DEFAULT_PARALLEL" \
             --arg pipeline "custom" \
+            --arg timeout 720 \
             --argjson profiles "$PROFILES" \
-            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
+            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., $timeout: timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
         fi
 
         # Use jq -c to produce compact (one-line) JSON output.

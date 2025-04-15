@@ -93,6 +93,7 @@ jobs:
 
     name: ${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.arch }}
     runs-on: ${{ matrix.config.agent }}
+    timeout-minutes: ${{ matrix.config.timeout }}
     # Environment variables
     env:
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
@@ -103,6 +104,9 @@ jobs:
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
       STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
       PARALLEL: ${{ matrix.config.parallel }}
+      STRIMZI_DEFAULT_LOG_LEVEL: DEBUG
+      OPERATOR_IMAGE_PULL_POLICY: IfNotPresent
+      COMPONENTS_IMAGE_PULL_POLICY: IfNotPresent
     # Job steps
     steps:
       - uses: actions/checkout@v4
