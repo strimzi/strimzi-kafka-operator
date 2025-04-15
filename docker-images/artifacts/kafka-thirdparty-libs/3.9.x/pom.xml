@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.16.1</strimzi-oauth.version>
+        <strimzi-oauth.version>0.16.2</strimzi-oauth.version>
         <cruise-control.version>2.5.142</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.3.1</kafka-quotas-plugin.version>
@@ -35,6 +35,10 @@
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
         </repository>
+        <repository>
+            <id>staging</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1263</url>
+        </repository>
     </repositories>
 
     <dependencyManagement>
@@ -42,7 +46,6 @@
             <!--
             Override version 1.1.1 dependency of net.logstash.log4j:jsonevent-layout
             Tests with updated version pass using sources at https://github.com/logstash/log4j-jsonevent-layout
-            The json-smart override to address CVE-2024-57699 as well. Remove in the future when oauth will bring json-path with fixed json-smart
             -->
             <dependency>
                 <groupId>net.minidev</groupId>

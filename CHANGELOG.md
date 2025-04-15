@@ -21,7 +21,7 @@
   This will make the cluster boot up correctly in IPv6 only environments, where IPv4 preference will break it due to lack of IPv4 addresses.
 * Improved the MirrorMaker2 example Grafana dashboard to set metric units and include chart descriptions.
 * The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
-* Update OAuth library to 0.16.1.
+* Update OAuth library to 0.16.2.
 
 ### Major changes, deprecations and removals
 
