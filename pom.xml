@@ -108,10 +108,6 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-        <repository>
-            <id>staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1263</url>
-        </repository>
     </repositories>
 
     <properties>
