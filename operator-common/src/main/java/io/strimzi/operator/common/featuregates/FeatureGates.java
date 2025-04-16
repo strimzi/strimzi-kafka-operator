@@ -18,11 +18,12 @@ import static java.util.Arrays.asList;
 public class FeatureGates {
     /* test */ static final FeatureGates NONE = new FeatureGates("");
 
-    private static final String CONTINUE_ON_MANUAL_RU_FAILURE = "ContinueReconciliationOnManualRollingUpdateFailure";
+    // As we currently don't have any real feature gate, this dummy feature gate is used to make it clear how to add a
+    // real feature gates in the future and allows us to test the feature gates.
+    private static final String DUMMY_FEATURE_GATE = "DummyFeatureGate";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
-    private final FeatureGate continueOnManualRUFailure =
-        new FeatureGate(CONTINUE_ON_MANUAL_RU_FAILURE, true);
+    private final FeatureGate dummyFeatureGate = new FeatureGate(DUMMY_FEATURE_GATE, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -44,8 +45,8 @@ public class FeatureGates {
                 featureGate = featureGate.substring(1);
 
                 switch (featureGate) {
-                    case CONTINUE_ON_MANUAL_RU_FAILURE:
-                        setValueOnlyOnce(continueOnManualRUFailure, value);
+                    case DUMMY_FEATURE_GATE:
+                        setValueOnlyOnce(dummyFeatureGate, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -81,10 +82,10 @@ public class FeatureGates {
     }
 
     /**
-     * @return  Returns true when the ContinueReconciliationOnManualRollingUpdateFailure feature gate is enabled
+     * @return  Returns true when the DummyFeatureGate feature gate is enabled
      */
-    public boolean continueOnManualRUFailureEnabled() {
-        return continueOnManualRUFailure.isEnabled();
+    public boolean dummyFeatureGateEnabled() {
+        return dummyFeatureGate.isEnabled();
     }
 
     /**
@@ -93,14 +94,14 @@ public class FeatureGates {
      * @return  List of all Feature Gates
      */
     /*test*/ List<FeatureGate> allFeatureGates()  {
-        return List.of(continueOnManualRUFailure);
+        return List.of(dummyFeatureGate);
     }
 
     @Override
     public String toString() {
         return "FeatureGates(" +
-                "ContinueReconciliationOnManualRollingUpdateFailure=" + continueOnManualRUFailure.isEnabled() +
-                ")";
+            "DummyFeatureGate=" + dummyFeatureGate.isEnabled() +
+            ")";
     }
 
     /**
@@ -131,13 +132,13 @@ public class FeatureGates {
             return false;
         } else {
             FeatureGates other = (FeatureGates) o;
-            return Objects.equals(continueOnManualRUFailure, other.continueOnManualRUFailure);
+            return Objects.equals(dummyFeatureGate, other.dummyFeatureGate);
         }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(continueOnManualRUFailure);
+        return Objects.hashCode(dummyFeatureGate);
     }
 
     /**

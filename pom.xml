@@ -153,8 +153,8 @@
         <fasterxml.jackson-annotations.version>2.16.2</fasterxml.jackson-annotations.version>
         <fasterxml.jackson-datatype.version>2.16.2</fasterxml.jackson-datatype.version>
         <fasterxml.jackson-jaxrs.version>2.16.2</fasterxml.jackson-jaxrs.version>
-        <vertx.version>4.5.13</vertx.version>
-        <vertx-junit5.version>4.5.13</vertx-junit5.version>
+        <vertx.version>4.5.14</vertx.version>
+        <vertx-junit5.version>4.5.14</vertx-junit5.version>
         <kafka.version>4.0.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
@@ -184,7 +184,7 @@
         <junit.platform.version>1.8.2</junit.platform.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>5.8.2</jupiter.version>
-        <strimzi-test-container.version>0.109.1</strimzi-test-container.version>
+        <strimzi-test-container.version>0.110.0</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <mockwebserver.version>3.14.7</mockwebserver.version>
         <valid4j.version>1.1</valid4j.version>
@@ -195,7 +195,7 @@
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
         <skodjob.test-frame.version>0.8.0</skodjob.test-frame.version>
-        <skodjob-doc.version>0.3.0</skodjob-doc.version>
+        <skodjob-doc.version>0.4.0</skodjob-doc.version>
         <!--
             Currently, there are no released versions in Maven repository of this module,
             using SNAPSHOT for having the `api` module available and usable in the STs.

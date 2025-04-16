@@ -6,39 +6,23 @@
 = Introducing metrics
 
 [role="_abstract"]
-Collecting metrics is critical for understanding the health and performance of your Kafka deployment. 
-By monitoring metrics, you can actively identify issues before they become critical and make informed decisions about resource allocation and capacity planning. Without metrics, you may be left with limited visibility into the behavior of your Kafka deployment, which can make troubleshooting more difficult and time-consuming. Setting up metrics can save you time and resources in the long run, and help ensure the reliability of your Kafka deployment.
+Collecting metrics is essential for understanding the health and performance of your Kafka deployment. 
+By monitoring metrics, you can actively identify issues before they become critical and make informed decisions about resource allocation and capacity planning. 
+Without metrics, you may be left with limited visibility into the behavior of your Kafka deployment, which can make troubleshooting more difficult and time-consuming. 
+Setting up metrics can save you time and resources, and help ensure the reliability of your Kafka deployment.
 
-Metrics are available for each component in Strimzi, providing valuable insights into their individual performance. 
-While other components require configuration to expose metrics, Strimzi operators automatically expose Prometheus metrics by default. 
-These metrics include:
-
-* Reconciliation count
-* Custom Resource count being processed
-* Reconciliation duration
-* JVM metrics
-
-You can also collect metrics specific to `oauth` authentication and `opa` or `keycloak` authorization by enabling the `enableMetrics` property in the listener or authorization configuration of the `Kafka` resource.
-Similarly, you can enable metrics for `oauth` authentication in custom resources such as `KafkaBridge`, `KafkaConnect`, and `KafkaMirrorMaker2`.
-
-You can use Prometheus and Grafana to monitor Strimzi.
-Prometheus consumes metrics from the running pods in your cluster when configured with Prometheus rules. 
+Metrics can be collected from Strimzi components using Prometheus and visualized in Grafana.
+Prometheus collects metrics from running pods in your cluster when configured with appropriate rules. 
 Grafana visualizes these metrics on dashboards, providing an intuitive interface for monitoring. 
 
-To facilitate metrics integration, Strimzi provides example Prometheus rules and Grafana dashboards for Strimzi components. 
-You can customize the example Grafana dashboards to suit your specific deployment requirements.
-You can use rules to define conditions that trigger alerts based on specific metrics.
+While the Strimzi operators expose their own Prometheus metrics by default, such as reconciliation counts and durations, JVM data, and resource processing statistics, other Strimzi components and features that support metrics, including OAuth 2.0 integration, require configuration to expose them.
 
-Depending on your monitoring requirements, you can do the following:
-
-* xref:assembly-metrics-setup-{context}[Set up and deploy Prometheus to expose metrics]
-* xref:proc-metrics-kafka-deploy-options-{context}[Deploy Kafka Exporter to provide additional metrics]
-* xref:proc-metrics-grafana-dashboard-{context}[Use Grafana to present the Prometheus metrics]
-
+Strimzi provides example Prometheus rules and Grafana dashboards, which you can customize to fit your deployment. 
+These tools help visualize metrics and define alerts based on specific conditions.
 Additionally, you can configure your deployment to track messages end-to-end by xref:assembly-distributed-tracing-str[setting up distributed tracing].
 
-NOTE: Strimzi provides example installation files for Prometheus and Grafana, which can serve as a starting point for monitoring your Strimzi deployment. 
-For further support, try engaging with the Prometheus and Grafana developer communities.
+NOTE: Strimzi provides example installation files for Prometheus and Grafana to help get you started. 
+For further support, refer to the Prometheus and Grafana developer communities.
 
 .Supporting documentation for metrics and monitoring tools
 For more information on the metrics and monitoring tools, refer to the supporting documentation:
@@ -47,7 +31,7 @@ For more information on the metrics and monitoring tools, refer to the supportin
 * {PrometheusConfig}
 * {kafka-exporter-project}
 * {GrafanaHome}
-* link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka
+* link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring^] describes JMX metrics exposed by Apache Kafka
 
 //what is Consumer lag?
 include::../../modules/metrics/con_kafka-exporter-lag.adoc[leveloffset=+1]

@@ -42,8 +42,8 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
     @BeforeAll
     public static void beforeAll() {
         Map<String, String> additionalConfiguration = Map.of(
-                "authorizer.class.name", "kafka.security.authorizer.AclAuthorizer",
-                "super.users", "User:ANONYMOUS");
+            "authorizer.class.name", "org.apache.kafka.metadata.authorizer.StandardAuthorizer",
+            "super.users", "User:ANONYMOUS");
         kafkaContainer = new StrimziKafkaContainer()
                 .withBrokerId(1)
                 .withKafkaConfigurationMap(additionalConfiguration);

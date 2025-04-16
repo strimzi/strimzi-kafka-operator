@@ -11,7 +11,7 @@
 * Store Kafka node certificates in separate Secrets, one Secret per pod.
 * Allow configuring `ssl.principal.mapping.rules` and custom trusted CAs in Kafka brokers with `type: custom` authentication
 * Moved HTTP bridge configuration to the ConfigMap setup by the operator.
-* Dependency updates (Vert.x 4.5.12, Netty 4.1.117.Final)
+* Dependency updates (Vert.x 4.5.14, Netty 4.1.118.Final)
 * Moved Kafka Connect configuration to the ConfigMap created by the operator.
 * Update Kafka Exporter to [1.9.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.9.0)
 * Adopted new Kafka Connect health check endpoint (see [proposal 89](https://github.com/strimzi/proposals/blob/main/089-adopt-connect-health-endpoint.md)).
@@ -20,6 +20,7 @@
 * Implicit IPv4 preference when enabling JMX has been removed, and will now use JVM defaults.
   This will make the cluster boot up correctly in IPv6 only environments, where IPv4 preference will break it due to lack of IPv4 addresses.
 * Improved the MirrorMaker2 example Grafana dashboard to set metric units and include chart descriptions.
+* The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
 
 ### Major changes, deprecations and removals
 
