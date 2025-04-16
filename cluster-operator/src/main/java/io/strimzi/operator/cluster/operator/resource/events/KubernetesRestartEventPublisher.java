@@ -74,7 +74,7 @@ public class KubernetesRestartEventPublisher {
                 String note = maybeTruncated("Rolling Pod " + pod.getMetadata().getName() + " due to " + reasons.getNoteFor(reason));
                 String type = "Normal";
                 String k8sFormattedReason = reason.pascalCased();
-                LOG.debug("Publishing K8s event, time {}, type, {}, reason, {}, note, {}, resource {}, pod, {}",
+                LOG.debug("Publishing K8s event, time={}, type={}, reason={}, note={}, resource={}, pod={}",
                         k8sEventTime, type, k8sFormattedReason, note, resourceReference, podReference);
                 publishEvent(k8sEventTime, resourceReference, podReference, k8sFormattedReason, type, note);
             }
