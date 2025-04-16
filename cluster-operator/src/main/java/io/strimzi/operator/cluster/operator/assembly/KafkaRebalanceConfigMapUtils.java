@@ -6,19 +6,14 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.Future;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -114,6 +109,7 @@ public class KafkaRebalanceConfigMapUtils {
                                     false))
                     .compose(response -> {
                         JsonNode executorState = response.getJson().get("ExecutorState");
+                        ExecutorStateProcessor.verifyExecutorState(executorState);
                         updateRebalanceConfigMapWithProgressFields(state, executorState, configMap);
                         return Future.succeededFuture(configMap);
                     });
@@ -121,32 +117,5 @@ public class KafkaRebalanceConfigMapUtils {
             updateRebalanceConfigMapWithProgressFields(state, null, configMap);
             return Future.succeededFuture(configMap);
         }
-    }
-
-    /**
-     * Updates the {@code KafkaRebalanceStatus} conditions by adding a new Warning condition
-     * based on the provided {@link Throwable}. If a Warning condition with the same reason
-     * and message already exists, no update is performed.
-     *
-     * @param status    The {@link KafkaRebalanceStatus} object whose conditions will be updated.
-     * @param exception The {@link Throwable} containing the reason and message for the Warning condition.
-     */
-    public static void updateStatusCondition(KafkaRebalanceStatus status, Throwable exception) {
-        List<Condition> conditions = new ArrayList<>(status.getConditions());
-
-        Condition warningCondition = StatusUtils.buildWarningCondition("CruiseControlRestException", exception.getMessage());
-
-        // Do not update Warning condition if it already exists with same reason and message
-        for (Condition condition : conditions) {
-            if (condition.getType().equals("Warning")) {
-                if (condition.getReason().equals(warningCondition.getReason()) &&
-                    condition.getMessage().equals(warningCondition.getMessage())) {
-                    return;
-                }
-            }
-        }
-
-        conditions.add(warningCondition);
-        status.setConditions(conditions);
     }
 }

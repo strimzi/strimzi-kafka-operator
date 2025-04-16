@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor.ExecutorState;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,6 +30,15 @@ public class ExecutorStateProcessorTest {
             }
         }
         return objectNode;
+    }
+
+    @Test
+    public void testVerifyExecutorState() throws Exception {
+        JsonNode es0 = createExecutorState(Map.of("state", ExecutorState.NO_TASK_IN_PROGRESS.toString()));
+        assertThrows(IllegalStateException.class, () -> ExecutorStateProcessor.verifyExecutorState(es0));
+
+        JsonNode es1 = createExecutorState(Map.of("state", ExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString()));
+        ExecutorStateProcessor.verifyExecutorState(es1);
     }
 
     @Test

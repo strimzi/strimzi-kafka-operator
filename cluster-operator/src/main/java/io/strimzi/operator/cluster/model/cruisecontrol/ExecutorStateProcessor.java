@@ -7,6 +7,8 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,6 +20,47 @@ public class ExecutorStateProcessor {
     private static final String FINISHED_DATA_MOVEMENT_KEY = "finishedDataMovement";
     private static final String TOTAL_DATA_TO_MOVE_KEY = "totalDataToMove";
     private static final String TRIGGERED_TASK_REASON_KEY = "triggeredTaskReason";
+
+    /* test */ enum ExecutorState {
+        NO_TASK_IN_PROGRESS,
+        STARTING_EXECUTION,
+        INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
+        INTRA_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
+        LEADER_MOVEMENT_TASK_IN_PROGRESS,
+        STOPPING_EXECUTION,
+        INITIALIZING_PROPOSAL_EXECUTION,
+        GENERATING_PROPOSALS_FOR_EXECUTION;
+
+        private static final List<ExecutorState> REBALANCE_EXECUTOR_STATES = List.of(
+                INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
+                INTRA_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
+                LEADER_MOVEMENT_TASK_IN_PROGRESS);
+
+        private static ExecutorState fromString(String state) {
+            return Arrays.stream(ExecutorState.values())
+                    .filter(e -> e.name().equals(state))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown ExecutorState: " + state));
+        }
+    }
+
+    /**
+     * Verifies whether the given executor state is a valid rebalancing state.
+     * If the state is not an active rebalancing state, an {@link IllegalStateException} is thrown.
+     *
+     * @param executorState the {@link JsonNode} containing the executor state to verify;
+     *                      must have a {@code "state"} field with a valid executor state string.
+     * @throws IllegalStateException if the provided state is not a valid active rebalancing state.
+     */
+    public static void verifyExecutorState(JsonNode executorState) {
+        ExecutorState state = ExecutorState.fromString(executorState.get("state").asText());
+        if (!ExecutorState.REBALANCE_EXECUTOR_STATES.contains(state)) {
+            throw new IllegalStateException(
+                    String.format("Executor has not started rebalance and is currently in non-active state: '%s'. " +
+                                  "Progress estimation fields cannot be provided.",
+                    state.toString()));
+        }
+    }
 
     /**
      * Retrieves the total amount of data to move from the provided `executorState` JSON object.

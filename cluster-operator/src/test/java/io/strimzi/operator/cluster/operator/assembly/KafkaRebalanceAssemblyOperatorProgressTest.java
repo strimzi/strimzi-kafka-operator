@@ -128,7 +128,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                     KafkaRebalanceStatus status = kafkaRebalance.getStatus();
                     assertThat(status.getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(Boolean.TRUE));
 
-                    Condition warningCondition = getWarningCondition(status);
+                    Condition warningCondition = KafkaRebalanceUtils.getWarningCondition(status);
                     assertThat(warningCondition, notNullValue());
                 })).compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
                 .onComplete(context.succeeding(v -> {
@@ -142,15 +142,6 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                 }));
     }
 
-    private static Condition getWarningCondition(KafkaRebalanceStatus status) {
-        for (Condition condition : status.getConditions()) {
-            if (condition.getType().equals("Warning")) {
-                return condition;
-            }
-        }
-        return null;
-    }
-    
     // TODO: Add test for when `KafkaRebalance` is in New and Pending states
     // TODO: Add test for when CC provides malformed executor state  data
 }

@@ -9,13 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY;
@@ -25,7 +22,6 @@ import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfig
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.EXECUTOR_STATE_KEY;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.TIME_COMPLETED;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.updateRebalanceConfigMapWithProgressFields;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.updateStatusCondition;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceStatusTest.buildOptimizationProposal;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -174,40 +170,5 @@ public class KafkaRebalanceConfigMapUtilsTest {
         assertThat(m.containsKey(COMPLETED_BYTE_MOVEMENT_KEY), is(false));
         assertThat(m.containsKey(EXECUTOR_STATE_KEY), is(false));
         assertThat(m.get(BROKER_LOAD_KEY), is(BROKER_LOAD));
-    }
-
-    @Test
-    public void testUpdateStatusCondition() {
-        String ts = "2024-11-05T15:28:23.995129903Z";
-
-        Condition c0 = new Condition();
-        c0.setLastTransitionTime(ts);
-        c0.setStatus("True");
-        c0.setType("Rebalancing");
-
-        Condition c1 = new Condition();
-        c1.setLastTransitionTime(ts);
-        c1.setStatus("True");
-        c1.setType("Warning");
-        c1.setReason("CruiseControlRestException");
-        c1.setMessage("Example error");
-
-        KafkaRebalanceStatus status = new KafkaRebalanceStatus();
-        status.setConditions(List.of(c0));
-
-        Exception e = new IllegalArgumentException("Invalid argument provided",  new NullPointerException("Underlying null value"));
-
-        updateStatusCondition(status, e);
-
-        List<Condition> conditions = status.getConditions();
-        assertThat(conditions.size(), is(2));
-
-        status.setConditions(List.of(c0));
-
-        updateStatusCondition(status, e);
-        conditions = status.getConditions();
-        assertThat(conditions.size(), is(2));
-
-        // TODO: Update tests to check original timestamp does not change for errors with the same reason and message
     }
 }

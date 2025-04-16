@@ -366,7 +366,7 @@ public class KafkaRebalanceAssemblyOperator
                             KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, state, host,
                                             cruiseControlPort, apiClient, configMap)
                                     .onFailure(exception -> {
-                                        KafkaRebalanceConfigMapUtils.updateStatusCondition(status, exception);
+                                        KafkaRebalanceUtils.addWarningCondition(status, exception);
                                     });
                         }
 
