@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security.custom;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.user.KafkaUser;
@@ -13,7 +14,6 @@ import io.strimzi.operator.common.model.Ca;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.security.SystemTestCertHolder;
@@ -77,7 +77,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // Generate root and intermediate certificate authority with cluster CA
         SystemTestCertHolder clusterCa = new SystemTestCertHolder(
             "CN=" + testStorage.getTestName() + "ClusterCA",
@@ -155,7 +155,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplacingCustomClientsKeyPairToInvokeRenewalProcess() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // Generate root and intermediate certificate authority with clients CA
         final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
             "CN=" + testStorage.getTestName() + "ClientsCA",
@@ -204,7 +204,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testCustomClusterCaAndClientsCaCertificates() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
             "CN=" + testStorage.getTestName() + "ClientsCA",
@@ -276,7 +276,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplaceCustomClusterCACertificateValidityToInvokeRenewalProcess() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int renewalDays = 15;
         final int newRenewalDays = 150;
         final int validityDays = 20;
@@ -319,7 +319,7 @@ public class CustomCaST extends AbstractST {
         newClusterCA.setValidityDays(newValidityDays);
         newClusterCA.setGenerateCertificateAuthority(false);
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA));
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA));
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka CustomResource ({})", KafkaResourceNames.getBrokerComponentName(testStorage.getClusterName()));
@@ -366,7 +366,7 @@ public class CustomCaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testReplaceCustomClientsCACertificateValidityToInvokeRenewalProcess() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int renewalDays = 15;
         final int newRenewalDays = 150;
         final int validityDays = 20;
@@ -403,7 +403,7 @@ public class CustomCaST extends AbstractST {
         newClientsCA.setValidityDays(newValidityDays);
         newClientsCA.setGenerateCertificateAuthority(false);
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA));
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA));
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka CustomResource ({})", KafkaResourceNames.getBrokerComponentName(testStorage.getClusterName()));

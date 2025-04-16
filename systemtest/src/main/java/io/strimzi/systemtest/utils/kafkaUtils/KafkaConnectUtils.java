@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
@@ -14,7 +15,7 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectList;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
@@ -40,23 +41,23 @@ public class KafkaConnectUtils {
     private KafkaConnectUtils() {}
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectClient() {
-        return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaConnectOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
-    public static void replaceKafkaConnectResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaConnect> editor) {
-        ResourceManager.replaceCrdResource(namespaceName, KafkaConnect.class, KafkaConnectList.class, resourceName, editor);
+    public static void replaceKafkaConnectInNamespace(String namespaceName, String resourceName, Consumer<KafkaConnect> editor) {
+        KafkaConnect kafkaConnect = kafkaConnectClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafkaConnect, editor);
     }
     
     /**
      * Wait until the given Kafka Connect is in desired state.
      * @param namespaceName Namespace name
      * @param clusterName name of KafkaConnect cluster
-     * @param status desired state
+     * @param state desired state
      */
-    public static boolean waitForConnectStatus(String namespaceName, String clusterName, Enum<?>  status) {
+    public static boolean waitForConnectStatus(String namespaceName, String clusterName, Enum<?> state) {
         KafkaConnect kafkaConnect = kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(namespaceName, kafkaConnectClient(), kafkaConnect.getKind(),
-            kafkaConnect.getMetadata().getName(), status, ResourceOperation.getTimeoutForResourceReadiness(kafkaConnect.getKind()));
+        return KubeResourceManager.get().waitResourceCondition(kafkaConnect, ResourceConditions.resourceHasDesiredState(state), ResourceOperation.getTimeoutForResourceReadiness(kafkaConnect.getKind()));
     }
 
     public static boolean waitForConnectReady(String namespaceName, String clusterName) {

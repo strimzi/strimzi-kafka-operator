@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
@@ -15,7 +16,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -27,7 +28,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaRebalanceUtils {
 
@@ -36,11 +37,12 @@ public class KafkaRebalanceUtils {
     private KafkaRebalanceUtils() {}
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceClient() {
-        return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaRebalanceOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
-    public static void replaceKafkaRebalanceResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaRebalance> editor) {
-        ResourceManager.replaceCrdResource(namespaceName, KafkaRebalance.class, KafkaRebalanceList.class, resourceName, editor);
+    public static void replaceKafkaRebalanceInNamespace(String namespaceName, String resourceName, Consumer<KafkaRebalance> editor) {
+        KafkaRebalance kafkaRebalance = kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafkaRebalance, editor);
     }
 
     public static Condition rebalanceStateCondition(String namespaceName, String resourceName) {
@@ -62,25 +64,17 @@ public class KafkaRebalanceUtils {
         }
     }
 
-    public static boolean waitForKafkaRebalanceCustomResourceState(String namespaceName, String resourceName, KafkaRebalanceState state) {
+    public static void waitForKafkaRebalanceCustomResourceState(String namespaceName, String resourceName, KafkaRebalanceState state) {
         KafkaRebalance kafkaRebalance = kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get();
-        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, state, ResourceOperation.getTimeoutForKafkaRebalanceState(state));
-    }
-
-    public static boolean waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
-        return waitForKafkaRebalanceCustomResourceState(kubeClient().getNamespace(), resourceName, state);
+        KubeResourceManager.get().waitResourceCondition(kafkaRebalance, ResourceConditions.resourceHasDesiredState(state), ResourceOperation.getTimeoutForKafkaRebalanceState(state));
     }
 
     public static String annotateKafkaRebalanceResource(String namespaceName, String resourceName, KafkaRebalanceAnnotation annotation) {
         LOGGER.info("Annotating KafkaRebalance: {} with annotation: {}", resourceName, annotation.toString());
-        return ResourceManager.cmdKubeClient().namespace(namespaceName)
+        return cmdKubeClient().namespace(namespaceName)
             .execInCurrentNamespace("annotate", "kafkarebalance", resourceName, Annotations.ANNO_STRIMZI_IO_REBALANCE + "=" + annotation.toString())
             .out()
             .trim();
-    }
-
-    public static String annotateKafkaRebalanceResource(String resourceName, KafkaRebalanceAnnotation annotation) {
-        return annotateKafkaRebalanceResource(kubeClient().getNamespace(), resourceName, annotation);
     }
 
     public static void doRebalancingProcessWithAutoApproval(String namespaceName, String rebalanceName) {
@@ -148,29 +142,6 @@ public class KafkaRebalanceUtils {
             LOGGER.info("KafkaRebalance status gonna be stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
             return false;
         });
-    }
-
-    public static boolean waitForKafkaRebalanceReadiness(KafkaRebalance resource) {
-        List<String> readyConditions = Arrays.asList(KafkaRebalanceState.PendingProposal.toString(), KafkaRebalanceState.ProposalReady.toString(), KafkaRebalanceState.Ready.toString());
-        LOGGER.log(ResourceManager.getInstance().determineLogLevel(), "Waiting for {}: {}/{} will have desired ready state ({})", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), readyConditions);
-
-        TestUtils.waitFor(String.format("%s: %s#%s will have desired state: %s", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), KafkaRebalanceState.Ready),
-            TestConstants.GLOBAL_POLL_INTERVAL, ResourceOperation.getTimeoutForKafkaRebalanceState(KafkaRebalanceState.Ready),
-            () -> {
-                List<String> actualConditions = kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).get().getStatus().getConditions().stream().map(Condition::getType).toList();
-
-                for (String condition: actualConditions) {
-                    if (readyConditions.contains(condition)) {
-                        LOGGER.log(ResourceManager.getInstance().determineLogLevel(), "{}: {}/{} is in ready state ({})", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), condition);
-                        return true;
-                    }
-                }
-                LOGGER.log(ResourceManager.getInstance().determineLogLevel(), "{}: {}/{} is not ready ({})", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), actualConditions);
-
-                return false;
-            });
-
-        return true;
     }
 
     public static void waitForKafkaRebalanceIsPresent(final String namespaceName, final String kafkaRebalanceName) {

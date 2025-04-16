@@ -6,13 +6,17 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceConditions;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -21,15 +25,17 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 
 public class KafkaMirrorMaker2Utils {
+    private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMaker2Utils.class);
 
     private KafkaMirrorMaker2Utils() {}
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
-        return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaMirrorMaker2Operation(KubeResourceManager.get().kubeClient().getClient());
     }
 
-    public static void replaceKafkaMirrorMaker2ResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaMirrorMaker2> editor) {
-        ResourceManager.replaceCrdResource(namespaceName, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, resourceName, editor);
+    public static void replaceKafkaMirrorMaker2InNamespace(String namespaceName, String resourceName, Consumer<KafkaMirrorMaker2> editor) {
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafkaMirrorMaker2, editor);
     }
 
     /**
@@ -40,7 +46,7 @@ public class KafkaMirrorMaker2Utils {
      */
     public static boolean waitForKafkaMirrorMaker2Status(String namespaceName, String clusterName, Enum<?> state) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
+        return KubeResourceManager.get().waitResourceCondition(kafkaMirrorMaker2, ResourceConditions.resourceHasDesiredState(state), ResourceOperation.getTimeoutForResourceReadiness(kafkaMirrorMaker2.getKind()));
     }
 
     /**
@@ -74,8 +80,22 @@ public class KafkaMirrorMaker2Utils {
         });
     }
 
-    public static boolean waitForKafkaMirrorMaker2StatusMessage(String namespaceName, String clusterName, String message) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatusMessage(kafkaMirrorMaker2Client(), kafkaMirrorMaker2, message);
+    public static void waitForKafkaMirrorMaker2StatusMessage(String namespaceName, String clusterName, String message) {
+        LOGGER.info("Waiting for {}: {}/{} will contain desired status message: {}",
+            KafkaMirrorMaker2.RESOURCE_KIND, namespaceName, clusterName, message);
+
+        TestUtils.waitFor(String.format("%s: %s#%s will contain desired status message: %s", KafkaMirrorMaker2.RESOURCE_KIND, namespaceName, clusterName, message),
+            TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.getTimeoutForResourceReadiness(KafkaMirrorMaker2.RESOURCE_KIND),
+            () -> kafkaMirrorMaker2Client()
+                .inNamespace(namespaceName)
+                .withName(clusterName)
+                .get()
+                .getStatus()
+                .getConditions()
+                .stream()
+                .anyMatch(condition -> condition.getMessage().contains(message) && condition.getStatus().equals("True"))
+        );
+
+        LOGGER.info("{}: {}/{} contains desired message in status: {}", KafkaMirrorMaker2.RESOURCE_KIND, namespaceName, clusterName, message);
     }
 }

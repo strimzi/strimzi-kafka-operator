@@ -7,7 +7,8 @@ package io.strimzi.systemtest.metrics;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Concrete implementation of BaseMetricsComponent for the User Operator.
@@ -46,6 +47,6 @@ public class UserOperatorMetricsComponent extends BaseMetricsComponent {
      */
     @Override
     public LabelSelector getLabelSelector() {
-        return ResourceManager.kubeClient().getDeploymentSelectors(namespaceName, KafkaResources.entityOperatorDeploymentName(componentName));
+        return kubeClient().getDeploymentSelectors(namespaceName, KafkaResources.entityOperatorDeploymentName(componentName));
     }
 }

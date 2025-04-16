@@ -23,7 +23,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -128,7 +127,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         // Strimzi is deployed with cluster-wide access in this class STRIMZI_RBAC_SCOPE=NAMESPACE won't work
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), DEFAULT_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext(), DEFAULT_NAMESPACE);
 
         String firstCOScraperName = FIRST_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
         String secondCOScraperName = SECOND_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
@@ -174,7 +173,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         MetricsUtils.assertCoMetricResourcesNullOrZero(testStorage.getNamespaceName(), Kafka.RESOURCE_KIND, secondCoMetricsCollector);
 
         LOGGER.info("Adding {} selector of {} into Kafka: {} CR", FIRST_CO_SELECTOR, FIRST_CO_NAME, testStorage.getClusterName());
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR));
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR));
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         resourceManager.createResourceWithWait(
@@ -211,7 +210,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(firstCoMetricsCollector, KafkaConnector.RESOURCE_KIND, 1);
 
         LOGGER.info("Switch management of Kafka Cluster: {}/{} operand from CO: {} to CO: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), FIRST_CO_NAME, SECOND_CO_NAME);
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getLabels().replace("app.kubernetes.io/operator", SECOND_CO_NAME);
         });
 
@@ -255,7 +254,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
     @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     void testKafkaCCAndRebalanceWithMultipleCOs() {
         assumeFalse(Environment.isNamespaceRbacScope());
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), DEFAULT_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext(), DEFAULT_NAMESPACE);
 
         int scaleTo = 4;
 
@@ -288,7 +287,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         final Map<String, String> kafkaCCSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
 
         LOGGER.info("Removing CR selector from Kafka and increasing number of replicas to 4, new Pod should not appear");
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> {
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> {
             Map<String, String> labels = knp.getMetadata().getLabels();
             labels.put("app.kubernetes.io/operator", "random-operator-value");
 
@@ -296,7 +295,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
             knp.getSpec().setReplicas(scaleTo);
         });
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getLabels().clear();
         });
 
@@ -321,10 +320,10 @@ public class MultipleClusterOperatorsST extends AbstractST {
         assertNull(KafkaRebalanceUtils.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus());
 
         LOGGER.info("Adding {} selector of {} to Kafka", SECOND_CO_SELECTOR, SECOND_CO_NAME);
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
             knp -> knp.getMetadata().getLabels().putAll(SECOND_CO_SELECTOR));
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR));
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR));
 
         LOGGER.info("Waiting for Kafka to scales Pods to {}", scaleTo);
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaleTo);

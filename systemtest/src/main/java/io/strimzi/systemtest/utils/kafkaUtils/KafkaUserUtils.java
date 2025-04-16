@@ -19,7 +19,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserList;
 import io.strimzi.api.kafka.model.user.KafkaUserScramSha512ClientAuthenticationBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserSpec;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -47,11 +47,12 @@ public class KafkaUserUtils {
     private KafkaUserUtils() {}
 
     public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserClient() {
-        return Crds.kafkaUserOperation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaUserOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
-    public static void replaceUserResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaUser> editor) {
-        ResourceManager.replaceCrdResource(namespaceName, KafkaUser.class, KafkaUserList.class, resourceName, editor);
+    public static void replaceKafkaUserInNamespace(String namespaceName, String resourceName, Consumer<KafkaUser> editor) {
+        KafkaUser kafkaUser = kafkaUserClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafkaUser, editor);
     }
     
     /**
@@ -70,7 +71,7 @@ public class KafkaUserUtils {
         SecretUtils.waitForSecretReady(namespaceName, userName,
             () -> LOGGER.info(kafkaUserClient().inNamespace(namespaceName).withName(userName).get()));
 
-        ResourceManager.waitForResourceStatus(kafkaUserClient(), kafkaUser, Ready);
+        KubeResourceManager.get().waitResourceCondition(kafkaUser, ResourceConditions.resourceIsReady(), ResourceOperation.getTimeoutForResourceReadiness(kafkaUser.getKind()));
     }
 
     public static void waitForKafkaUserDeletion(final String namespaceName, String userName) {
@@ -112,17 +113,17 @@ public class KafkaUserUtils {
      * @param userName name of KafkaUser
      * @param state desired state
      */
-    public static boolean waitForKafkaUserStatus(String namespaceName, String userName, Enum<?> state) {
+    public static void waitForKafkaUserStatus(String namespaceName, String userName, Enum<?> state) {
         KafkaUser kafkaUser = kafkaUserClient().inNamespace(namespaceName).withName(userName).get();
-        return ResourceManager.waitForResourceStatus(kafkaUserClient(), kafkaUser, state);
+        KubeResourceManager.get().waitResourceCondition(kafkaUser, ResourceConditions.resourceHasDesiredState(state), ResourceOperation.getTimeoutForResourceReadiness(kafkaUser.getKind()));
     }
 
-    public static boolean waitForKafkaUserNotReady(String namespaceName, String userName) {
-        return waitForKafkaUserStatus(namespaceName, userName, NotReady);
+    public static void waitForKafkaUserNotReady(String namespaceName, String userName) {
+        waitForKafkaUserStatus(namespaceName, userName, NotReady);
     }
 
-    public static boolean waitForKafkaUserReady(String namespaceName, String userName) {
-        return waitForKafkaUserStatus(namespaceName, userName, Ready);
+    public static void waitForKafkaUserReady(String namespaceName, String userName) {
+        waitForKafkaUserStatus(namespaceName, userName, Ready);
     }
 
     public static String removeKafkaUserPart(File kafkaUserFile, String partName) {
@@ -197,7 +198,7 @@ public class KafkaUserUtils {
 
         KubeResourceManager.get().createResourceWithWait(userDefinedSecret);
 
-        KafkaUserUtils.replaceUserResourceInSpecificNamespace(ns, kafkaUserResourceName, ku -> {
+        KafkaUserUtils.replaceKafkaUserInNamespace(ns, kafkaUserResourceName, ku -> {
 
             ku.getSpec().setAuthentication(
                 new KafkaUserScramSha512ClientAuthenticationBuilder()

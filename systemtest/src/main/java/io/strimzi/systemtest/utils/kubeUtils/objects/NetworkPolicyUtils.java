@@ -17,7 +17,6 @@ import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
@@ -185,9 +184,9 @@ public class NetworkPolicyUtils {
             .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();
 
-        final String namespaceName = StUtils.isParallelNamespaceTest(ResourceManager.getTestContext()) && !Environment.isNamespaceRbacScope() ?
+        final String namespaceName = StUtils.isParallelNamespaceTest(KubeResourceManager.get().getTestContext()) && !Environment.isNamespaceRbacScope() ?
             // if parallel namespace test use namespace from store and if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-            ResourceManager.getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString() :
+            KubeResourceManager.get().getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString() :
             // otherwise use resource namespace
             resource.getMetadata().getNamespace();
 
@@ -244,7 +243,7 @@ public class NetworkPolicyUtils {
     }
 
     public static void applyDefaultNetworkPolicySettings(List<String> namespaces) {
-        if (!StUtils.shouldSkipNetworkPoliciesCreation(ResourceManager.getTestContext())) {
+        if (!StUtils.shouldSkipNetworkPoliciesCreation(KubeResourceManager.get().getTestContext())) {
             for (String namespace : namespaces) {
                 NetworkPolicy networkPolicy;
 

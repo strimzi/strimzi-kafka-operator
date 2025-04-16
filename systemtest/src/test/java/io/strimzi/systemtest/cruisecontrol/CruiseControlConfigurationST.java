@@ -10,6 +10,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
@@ -20,7 +21,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -88,7 +88,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         }
     )
     void testDeployAndUnDeployCruiseControl() throws IOException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // number of brokers to be created and also number of default replica count for each topic created
         final int defaultBrokerReplicaCount = 3;
 
@@ -108,7 +108,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Removing CruiseControl from Kafka");
             kafka.getSpec().setCruiseControl(null);
         });
@@ -136,7 +136,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(adminClient, defaultBrokerReplicaCount);
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Adding CruiseControl to the classic Kafka");
             kafka.getSpec().setCruiseControl(new CruiseControlSpec());
         });
@@ -167,7 +167,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         }
     )
     void testConfigurationUpdate() throws IOException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -184,7 +184,7 @@ public class CruiseControlConfigurationST extends AbstractST {
                 put(CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getValue(), -1);
             }};
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Changing CruiseControl performance tuning options");
             kafka.getSpec().setCruiseControl(new CruiseControlSpecBuilder()
                     .addToConfig(performanceTuningOpts)

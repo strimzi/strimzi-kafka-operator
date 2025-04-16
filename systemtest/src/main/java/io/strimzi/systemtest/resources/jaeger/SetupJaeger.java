@@ -7,11 +7,10 @@ package io.strimzi.systemtest.resources.jaeger;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceItem;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.test.ReadWriteUtils;
@@ -22,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Stack;
 
 import static io.strimzi.systemtest.TestConstants.JAEGER_DEPLOYMENT_POLL;
 import static io.strimzi.systemtest.TestConstants.JAEGER_DEPLOYMENT_TIMEOUT;
@@ -89,13 +87,13 @@ public class SetupJaeger {
      */
     private static void deployCertManager() {
         // create namespace `cert-manager` and add it to stack, to collect logs from it
-        NamespaceManager.getInstance().createNamespaceAndPrepare(CERT_MANAGER_NAMESPACE, CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName()));
+        NamespaceManager.getInstance().createNamespaceAndPrepare(CERT_MANAGER_NAMESPACE, CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName()));
 
         LOGGER.info("Deploying CertManager from {}", CERT_MANAGER_PATH);
         // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick
         cmdKubeClient("").apply(CERT_MANAGER_PATH);
 
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(SetupJaeger::deleteCertManager));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(SetupJaeger::deleteCertManager));
     }
 
     /**
@@ -126,8 +124,7 @@ public class SetupJaeger {
 
                 LOGGER.info("Creating Jaeger Operator (and needed resources) from {}", JAEGER_OPERATOR_PATH);
                 cmdKubeClient(JAEGER_NAMESPACE).applyContent(jaegerOperator);
-                ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteJaeger(jaegerOperator)));
-
+                KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> deleteJaeger(jaegerOperator)));
                 return true;
             } catch (Exception e) {
                 LOGGER.error("Following exception has been thrown during Jaeger Deployment: {}", e.getMessage());
@@ -144,7 +141,7 @@ public class SetupJaeger {
         LOGGER.info("=== Applying Jaeger Operator install files ===");
 
         // create namespace `jaeger` and add it to stack, to collect logs from it
-        NamespaceManager.getInstance().createNamespaceAndPrepare(JAEGER_NAMESPACE, CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName()));
+        NamespaceManager.getInstance().createNamespaceAndPrepare(JAEGER_NAMESPACE, CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName()));
         deployJaegerContent();
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
@@ -188,8 +185,7 @@ public class SetupJaeger {
                 LOGGER.error("Following exception has been thrown during Jaeger Instance Deployment: {}", e.getMessage());
                 return false;
             } finally {
-                ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
-                ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
+                KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
             }
         });
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_INSTANCE_NAME, 1);

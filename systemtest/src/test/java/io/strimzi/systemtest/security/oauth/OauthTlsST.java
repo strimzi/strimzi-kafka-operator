@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
@@ -26,7 +27,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -79,7 +79,7 @@ public class OauthTlsST extends OauthAbstractST {
      */
     @ParallelTest
     void testProducerConsumer() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -112,7 +112,7 @@ public class OauthTlsST extends OauthAbstractST {
     @Tag(CONNECT_COMPONENTS)
     @Tag(ACCEPTANCE)
     void testProducerConsumerConnect() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -188,7 +188,7 @@ public class OauthTlsST extends OauthAbstractST {
     @Tag(BRIDGE)
     @Tag(ACCEPTANCE)
     void testProducerConsumerBridge() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -264,7 +264,7 @@ public class OauthTlsST extends OauthAbstractST {
     void testMirrorMaker2() {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
         assumeFalse(Environment.isNamespaceRbacScope());
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
@@ -431,7 +431,7 @@ public class OauthTlsST extends OauthAbstractST {
 
     @ParallelTest
     void testIntrospectionEndpoint() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 

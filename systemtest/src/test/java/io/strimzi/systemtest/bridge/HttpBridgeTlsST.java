@@ -9,6 +9,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpecBuilder;
@@ -30,7 +31,6 @@ import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -85,7 +85,7 @@ class HttpBridgeTlsST extends AbstractST {
         }
     )
     void testSendSimpleMessageTls() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         BridgeClients kafkaBridgeClientJobProduce = new BridgeClientsBuilder(kafkaBridgeClientJob)
             .withTopicName(testStorage.getTopicName())
@@ -122,7 +122,7 @@ class HttpBridgeTlsST extends AbstractST {
         }
     )
     void testReceiveSimpleMessageTls() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         BridgeClients kafkaBridgeClientJobConsume = new BridgeClientsBuilder(kafkaBridgeClientJob)
             .withTopicName(testStorage.getTopicName())
@@ -144,7 +144,7 @@ class HttpBridgeTlsST extends AbstractST {
 
     @ParallelTest
     void testTlsScramShaAuthWithWeirdUsername() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         final String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
 
@@ -173,7 +173,7 @@ class HttpBridgeTlsST extends AbstractST {
 
     @ParallelTest
     void testTlsAuthWithWeirdUsername() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // Create weird named user with . and maximum of 64 chars -> TLS
         final String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
 
@@ -275,7 +275,7 @@ class HttpBridgeTlsST extends AbstractST {
 
     @BeforeAll
     void setUp() {
-        suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
+        suiteTestStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         SetupClusterOperator
             .getInstance()

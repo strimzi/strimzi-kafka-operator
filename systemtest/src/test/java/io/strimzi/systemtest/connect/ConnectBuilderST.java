@@ -12,6 +12,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -36,7 +37,6 @@ import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -173,7 +173,7 @@ class ConnectBuilderST extends AbstractST {
         }
     )
     void testBuildFailsWithWrongChecksumOfArtifact() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String imageName = getImageNameForTestCase();
 
@@ -214,7 +214,7 @@ class ConnectBuilderST extends AbstractST {
         assertThat(connectCondition.getType(), is(NotReady.toString()));
 
         LOGGER.info("Replacing plugin's checksum with right one");
-        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kC -> {
+        KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kC -> {
             Plugin pluginWithRightChecksum = new PluginBuilder()
                 .withName("connector-with-right-checksum")
                 .withArtifacts(new JarArtifactBuilder()
@@ -259,7 +259,7 @@ class ConnectBuilderST extends AbstractST {
         }
     )
     void testBuildWithJarTgzAndZip() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // this test also testing push into Docker output
         final String imageName = getImageNameForTestCase();
@@ -319,7 +319,7 @@ class ConnectBuilderST extends AbstractST {
         }
     )
     void testPushIntoImageStream() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         String imageStreamName = "custom-image-stream";
         ImageStream imageStream = new ImageStreamBuilder()
@@ -374,7 +374,7 @@ class ConnectBuilderST extends AbstractST {
         }
     )
     void testUpdateConnectWithAnotherPlugin() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         String camelConnector = "camel-http-connector";
         final String imageName = getImageNameForTestCase();
@@ -434,7 +434,7 @@ class ConnectBuilderST extends AbstractST {
         assertTrue(plugins.contains(TestConstants.ECHO_SINK_CLASS_NAME));
 
         LOGGER.info("Adding one more connector to the KafkaConnect");
-        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaConnect -> {
+        KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaConnect -> {
             kafkaConnect.getSpec().getBuild().getPlugins().add(secondPlugin);
         });
 
@@ -478,7 +478,7 @@ class ConnectBuilderST extends AbstractST {
         }
     )
     void testBuildOtherPluginTypeWithAndWithoutFileName() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String imageName = getImageNameForTestCase();
 
@@ -519,7 +519,7 @@ class ConnectBuilderST extends AbstractST {
             .build();
 
         LOGGER.info("Removing file name from the plugin, hash should be used");
-        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), connect -> {
+        KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), connect -> {
             connect.getSpec().getBuild().setPlugins(Collections.singletonList(pluginWithoutFileName));
         });
 
@@ -551,7 +551,7 @@ class ConnectBuilderST extends AbstractST {
         }
     )
     void testBuildPluginUsingMavenCoordinatesArtifacts() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String imageName = getImageNameForTestCase();
         final String connectorName = testStorage.getClusterName() + "-camel-connector";
@@ -603,7 +603,7 @@ class ConnectBuilderST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
+        suiteTestStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         SetupClusterOperator
             .getInstance()

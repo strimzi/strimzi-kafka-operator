@@ -15,12 +15,14 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
+
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class SetupMinio {
     private static final Logger LOGGER = LogManager.getLogger(SetupMinio.class);
@@ -106,9 +108,9 @@ public class SetupMinio {
      * @param namespace where Minio is installed
      */
     private static void initMinioClient(String namespace) {
-        final String minioPod = ResourceManager.kubeClient().listPods(namespace, Map.of(TestConstants.APP_POD_LABEL, MINIO)).get(0).getMetadata().getName();
+        final String minioPod = kubeClient().listPods(namespace, Map.of(TestConstants.APP_POD_LABEL, MINIO)).get(0).getMetadata().getName();
 
-        ResourceManager.cmdKubeClient().namespace(namespace).execInPod(minioPod,
+        cmdKubeClient().namespace(namespace).execInPod(minioPod,
             "mc",
             "config",
             "host",
@@ -124,9 +126,9 @@ public class SetupMinio {
      * @param bucketName name of the bucket that will be created and used within the tests
      */
     public static void createBucket(String namespace, String bucketName) {
-        final String minioPod = ResourceManager.kubeClient().listPods(namespace, Map.of(TestConstants.APP_POD_LABEL, MINIO)).get(0).getMetadata().getName();
+        final String minioPod = kubeClient().listPods(namespace, Map.of(TestConstants.APP_POD_LABEL, MINIO)).get(0).getMetadata().getName();
 
-        ResourceManager.cmdKubeClient().namespace(namespace).execInPod(minioPod,
+        cmdKubeClient().namespace(namespace).execInPod(minioPod,
             "mc",
             "mb",
             MINIO_STORAGE_ALIAS + "/" + bucketName);

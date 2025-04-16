@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
@@ -30,7 +31,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.KafkaTopicDescription;
 import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -94,7 +94,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker2() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int mirrorMakerReplicasCount = 2;
 
         Map<String, Object> expectedConfig = StUtils.loadProperties("bootstrap.servers=" + KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()) + "\n" +
@@ -200,7 +200,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
@@ -329,7 +329,7 @@ class MirrorMaker2ST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
     void testMirrorMaker2TlsAndScramSha512Auth() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int partitionCount = 3;
 
         resourceManager.createResourceWithWait(
@@ -452,7 +452,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
     void testScaleMirrorMaker2UpAndDownToZero() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
@@ -500,7 +500,7 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("-------> Scaling KafkaMirrorMaker2 down <-------");
 
         LOGGER.info("Scaling MirrorMaker2 to zero");
-        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 -> mm2.getSpec().setReplicas(0));
+        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2InNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 -> mm2.getSpec().setReplicas(0));
 
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getMM2Selector(), 0, true, () -> { });
 
@@ -520,7 +520,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker2CorrectlyMirrorsHeaders() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
@@ -572,7 +572,7 @@ class MirrorMaker2ST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testIdentityReplicationPolicy() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
@@ -616,7 +616,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testRestoreOffsetsInConsumerGroup() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String consumerGroup = ClientUtils.generateRandomConsumerGroup();
 
@@ -764,7 +764,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaMirrorMaker2ConnectorsStateAndOffsetManagement() throws JsonProcessingException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String listOffsetsConfigMap = testStorage.getClusterName() + "-offsets-list";
         final ObjectMapper mapper = new ObjectMapper();
@@ -815,7 +815,7 @@ class MirrorMaker2ST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2StatusMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), errorMessage);
 
         LOGGER.info("Modify originally wrong bootstrap service name configuration in KafkaMirrorMaker2: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 ->
+        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2InNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 ->
             mm2.getSpec().getClusters().stream().filter(mm2ClusterSpec -> mm2ClusterSpec.getAlias().equals(testStorage.getSourceClusterName()))
                 .findFirst().get().setBootstrapServers(KafkaUtils.namespacedPlainBootstrapAddress(testStorage.getNamespaceName(), testStorage.getSourceClusterName())));
 
@@ -825,7 +825,7 @@ class MirrorMaker2ST extends AbstractST {
         assertFalse(kmm2Status.getConditions().stream().anyMatch(condition -> condition.getMessage() != null && condition.getMessage().contains(errorMessage)));
 
         LOGGER.info("Pausing KafkaMirrorMaker2: {}/{} source connector", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2InNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             mm2 -> mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.PAUSED)
         );
 
@@ -839,7 +839,7 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientTimeout(testStorage);
 
         LOGGER.info("Re-running KafkaMirrorMaker2: {}/{} source connector", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2InNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             mm2 -> mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.RUNNING)
         );
 
@@ -857,7 +857,7 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         LOGGER.info("Checking Source Connector's offset using the offset management");
-        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2InNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             mm2 -> mm2.getMetadata().getAnnotations().putAll(Map.of(
                     Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "list",
                     Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, sourceConnectorName
@@ -881,7 +881,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String customSecretSource = "custom-secret-source";
         final String customSecretTarget = "custom-secret-target";
@@ -1017,7 +1017,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateTLS() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),

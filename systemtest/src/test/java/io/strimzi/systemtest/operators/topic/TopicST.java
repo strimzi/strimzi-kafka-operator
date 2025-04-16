@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.operators.topic;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
@@ -22,7 +23,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.metrics.TopicOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -78,7 +78,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testMoreReplicasThanAvailableBrokers() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         int topicReplicationFactor = 5;
         int topicPartitions = 5;
 
@@ -112,7 +112,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testCreateDeleteCreate() throws InterruptedException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName())
             .editSpec()
@@ -146,7 +146,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testSendingMessagesToNonExistingTopic() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         LOGGER.info("Checking if topic {} is present in Kafka", testStorage.getTopicName());
         assertFalse(AdminClientUtils.isTopicPresent(adminClient, testStorage.getTopicName()));
@@ -163,7 +163,7 @@ public class TopicST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDeleteTopicEnableFalse() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -213,7 +213,7 @@ public class TopicST extends AbstractST {
 
         LOGGER.info("Enable automatic topic deletion");
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().setConfig(Map.of("delete.topic.enable", true)));
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().setConfig(Map.of("delete.topic.enable", true)));
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaPods);
 
         LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
@@ -299,7 +299,7 @@ public class TopicST extends AbstractST {
      */
     @IsolatedTest
     void testKafkaTopicDifferentStatesInUTOMode() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         int initialReplicas = 1;
         int initialPartitions = 5;
         int decreasePartitions = 1;
@@ -386,7 +386,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testKafkaTopicChangingMinInSyncReplicas() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName(), 5).build());
         KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
@@ -431,7 +431,7 @@ public class TopicST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testTopicWithoutLabels() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final long topicOperatorReconciliationMs = 10_000;
 
         resourceManager.createResourceWithWait(
@@ -503,7 +503,7 @@ public class TopicST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
+        sharedTestStorage = new TestStorage(KubeResourceManager.get().getTestContext(), Environment.TEST_SUITE_NAMESPACE);
 
         SetupClusterOperator
             .getInstance()

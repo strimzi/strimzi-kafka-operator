@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -16,7 +17,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -71,7 +71,7 @@ class RecoveryST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaServiceDeletion() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
@@ -88,7 +88,7 @@ class RecoveryST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaHeadlessServiceDeletion() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
@@ -121,7 +121,7 @@ class RecoveryST extends AbstractST {
             .withRequests(requests)
             .build();
 
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getBrokerPoolName(sharedClusterName), knp -> knp.getSpec().setResources(resourceReq));
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getBrokerPoolName(sharedClusterName), knp -> knp.getSpec().setResources(resourceReq));
 
         PodUtils.waitForPendingPod(Environment.TEST_SUITE_NAMESPACE, kafkaSsName);
         PodUtils.verifyThatPendingPodsAreStable(Environment.TEST_SUITE_NAMESPACE, kafkaSsName);
@@ -129,7 +129,7 @@ class RecoveryST extends AbstractST {
         requests.put("memory", new Quantity("512Mi"));
         resourceReq.setRequests(requests);
 
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getBrokerPoolName(sharedClusterName), knp -> knp.getSpec().setResources(resourceReq));
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getBrokerPoolName(sharedClusterName), knp -> knp.getSpec().setResources(resourceReq));
 
         RollingUpdateUtils.waitForComponentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, KAFKA_REPLICAS);
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName);

@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators.topic;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
@@ -17,7 +18,6 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -37,7 +37,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
@@ -84,7 +84,7 @@ public class TopicReplicasChangeST extends AbstractST {
      */
     @ParallelTest
     void testMoreReplicasThanAvailableBrokersWithFreshKafkaTopic() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int topicPartitions = 5;
         final int topicReplicationFactor = 5; // Intentionally set higher than available brokers to induce failure
 
@@ -141,7 +141,7 @@ public class TopicReplicasChangeST extends AbstractST {
      */
     @ParallelTest
     void testKafkaTopicReplicaChangePositiveRoundTrip() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 2;
 
@@ -202,7 +202,7 @@ public class TopicReplicasChangeST extends AbstractST {
      */
     @ParallelTest
     void testKafkaTopicReplicaChangeNegativeRoundTrip() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 3;
 
@@ -266,7 +266,7 @@ public class TopicReplicasChangeST extends AbstractST {
      */
     @IsolatedTest
     void testRecoveryOfReplicationChangeDuringCcCrash() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 2;
         final int increasedTopicReplicationFactor = 3;
@@ -329,7 +329,7 @@ public class TopicReplicasChangeST extends AbstractST {
      */
     @IsolatedTest
     void testRecoveryOfReplicationChangeDuringEoCrash() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 3;
         final String eoPodName = kubeClient().listPods(sharedTestStorage.getNamespaceName(),
@@ -423,7 +423,7 @@ public class TopicReplicasChangeST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
+        sharedTestStorage = new TestStorage(KubeResourceManager.get().getTestContext(), Environment.TEST_SUITE_NAMESPACE);
 
         SetupClusterOperator
             .getInstance()

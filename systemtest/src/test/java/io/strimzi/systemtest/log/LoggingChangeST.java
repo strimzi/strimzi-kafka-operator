@@ -13,6 +13,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ExternalLogging;
@@ -34,7 +35,6 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -124,7 +124,7 @@ class LoggingChangeST extends AbstractST {
     )
     @SuppressWarnings("checkstyle:MethodLength")
     void testJSONFormatLogging() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
@@ -343,7 +343,7 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testDynamicallySetEOloggingLevels() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         InlineLogging ilOff = new InlineLogging();
         ilOff.setLoggers(Collections.singletonMap("rootLogger.level", "OFF"));
@@ -376,7 +376,7 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
         ilDebug.setLoggers(Collections.singletonMap("rootLogger.level", "DEBUG"));
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setLogging(ilDebug);
             k.getSpec().getEntityOperator().getUserOperator().setLogging(ilDebug);
         });
@@ -458,7 +458,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Setting log level of TO and UO to OFF - records should not appear in log");
         // change to external logging
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setLogging(elTo);
             k.getSpec().getEntityOperator().getUserOperator().setLogging(elUo);
         });
@@ -558,7 +558,7 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testDynamicallySetBridgeLoggingLevels() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -600,7 +600,7 @@ class LoggingChangeST extends AbstractST {
         loggers.put("logger.ready.level", "OFF");
         ilDebug.setLoggers(loggers);
 
-        KafkaBridgeUtils.replaceBridgeResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaBridgeUtils.replaceKafkaBridgeInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             bridz -> bridz.getSpec().setLogging(ilDebug)
         );
 
@@ -663,7 +663,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Setting log level of Bridge to OFF - records should not appear in the log");
         // change to the external logging
-        KafkaBridgeUtils.replaceBridgeResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaBridgeUtils.replaceKafkaBridgeInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             bridz -> bridz.getSpec().setLogging(bridgeXternalLogging)
         );
 
@@ -809,7 +809,7 @@ class LoggingChangeST extends AbstractST {
     )
     @SuppressWarnings("checkstyle:MethodLength")
     void testDynamicallyAndNonDynamicSetConnectLoggingLevels() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final Pattern log4jPatternDebugLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) DEBUG (?<message>.+)");
         final Pattern log4jPatternInfoLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) INFO (?<message>.+)");
 
@@ -861,7 +861,7 @@ class LoggingChangeST extends AbstractST {
             inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "DEBUG")).build();
         }
 
-        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
+        KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(inlineLoggingDebug);
         });
 
@@ -881,7 +881,7 @@ class LoggingChangeST extends AbstractST {
             inlineLoggingInfo = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "INFO")).build();
         }
 
-        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
+        KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(inlineLoggingInfo);
         });
 
@@ -951,7 +951,7 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Setting log level of Connect to OFF");
 
         // change to the external logging
-        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
+        KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(connectXternalLogging);
         });
 
@@ -967,7 +967,7 @@ class LoggingChangeST extends AbstractST {
             final String connectDepName = KafkaConnectResources.componentName(testStorage.getClusterName());
 
             // set use connector resource to false
-            KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kC -> {
+            KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kC -> {
                 final Map<String, String> annotations = kC.getMetadata().getAnnotations();
 
                 annotations.put(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "false");
@@ -983,7 +983,7 @@ class LoggingChangeST extends AbstractST {
             LOGGER.info("Changing rootLogger level from INFO to DEBUG with inline logging");
             StUtils.waitUntilSupplierIsSatisfied("Changing rootLogger level from INFO to DEBUG with inline logging",
                     () -> {
-                        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+                        KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
                                 kC -> kC.getSpec().setLogging(inlineLoggingDebug));
                         return true;
                     });
@@ -1016,7 +1016,7 @@ class LoggingChangeST extends AbstractST {
     )
     @SuppressWarnings("checkstyle:MethodLength")
     void testDynamicallySetKafkaLoggingLevels() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final InlineLogging inlineLogging;
         if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
@@ -1093,7 +1093,7 @@ class LoggingChangeST extends AbstractST {
             inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "DEBUG")).build();
         }
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(inlineLoggingDebug);
         });
 
@@ -1218,7 +1218,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Setting log level of Kafka INFO");
         // change to external logging
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(elKafka);
         });
 
@@ -1257,7 +1257,7 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testDynamicallySetUnknownKafkaLogger() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1283,7 +1283,7 @@ class LoggingChangeST extends AbstractST {
             inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("logger.paprika.name", "paprika", "logger.paprika.level", "INFO")).build();
         }
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(inlineLogging);
         });
 
@@ -1311,7 +1311,7 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testDynamicallySetUnknownKafkaLoggerValue() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1330,7 +1330,7 @@ class LoggingChangeST extends AbstractST {
             inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "PAPRIKA")).build();
         }
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(inlineLogging);
         });
 
@@ -1356,7 +1356,7 @@ class LoggingChangeST extends AbstractST {
     )
     @SuppressWarnings("checkstyle:MethodLength")
     void testDynamicallySetKafkaExternalLogging() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         String externalLogging;
         if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
@@ -1630,7 +1630,7 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testDynamicallySetMM2LoggingLevels() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final InlineLogging inlineLoggingOff;
         if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
@@ -1682,7 +1682,7 @@ class LoggingChangeST extends AbstractST {
             inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "DEBUG")).build();
         }
 
-        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2InNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             mm2 -> mm2.getSpec().setLogging(inlineLoggingDebug)
         );
 
@@ -1752,7 +1752,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Setting log level of MirrorMaker2 to OFF");
         // change to the external logging
-        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2InNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             mm2 -> mm2.getSpec().setLogging(mm2XternalLogging)
         );
 
@@ -1789,7 +1789,7 @@ class LoggingChangeST extends AbstractST {
     )
     @SuppressWarnings("checkstyle:MethodLength")
     void testMM2LoggingLevelsHierarchy() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
@@ -1959,7 +1959,7 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testNotExistingCMSetsDefaultLogging() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String propertiesFilename;
         final String defaultProps;
         final String loggingConfiguration;
@@ -2046,7 +2046,7 @@ class LoggingChangeST extends AbstractST {
         assertTrue(log4jFile.contains(loggingConfiguration));
 
         LOGGER.info("Changing external logging's CM to not existing one");
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setLogging(
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setLogging(
             new ExternalLoggingBuilder()
                 .withNewValueFrom()
                     .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
@@ -2092,7 +2092,7 @@ class LoggingChangeST extends AbstractST {
         }
     )
     void testLoggingHierarchy() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -2133,7 +2133,7 @@ class LoggingChangeST extends AbstractST {
             inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("logger.connector.name", connectorClassName, "logger.connector.level", "ERROR")).build();
         }
 
-        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineLogging));
+        KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineLogging));
 
         LOGGER.info("Waiting for Connect API loggers will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -2164,7 +2164,7 @@ class LoggingChangeST extends AbstractST {
             inlineLoggingWithConnect = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "WARN", "logger.connector.name", connectorClassName, "logger.connector.level", "ERROR")).build();
         }
 
-        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineLoggingWithConnect));
+        KafkaConnectUtils.replaceKafkaConnectInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineLoggingWithConnect));
 
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl",
@@ -2195,7 +2195,7 @@ class LoggingChangeST extends AbstractST {
         // This test can be enabled again once we fix the issue: https://github.com/strimzi/strimzi-kafka-operator/issues/11312
         Assumptions.assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
         resourceManager.createResourceWithWait(
@@ -2239,7 +2239,7 @@ class LoggingChangeST extends AbstractST {
 
         kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapLoggers);
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setLogging(new ExternalLoggingBuilder()
                 .withNewValueFrom()
                 .withConfigMapKeyRef(log4jLoggimgCMselector)

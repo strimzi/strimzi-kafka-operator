@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceStatus;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.logs.CollectorElement;
@@ -143,9 +144,9 @@ public class NamespaceManager {
      * @param namespaceName name of Namespace that should be created
      */
     public void createNamespaceAndPrepare(String namespaceName) {
-        final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
-        final String testCaseName = ResourceManager.getTestContext().getTestMethod().orElse(null) == null ?
-            "" : ResourceManager.getTestContext().getRequiredTestMethod().getName();
+        final String testSuiteName = KubeResourceManager.get().getTestContext().getRequiredTestClass().getName();
+        final String testCaseName = KubeResourceManager.get().getTestContext().getTestMethod().orElse(null) == null ?
+            "" : KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
 
         createNamespaceAndPrepare(namespaceName, new CollectorElement(testSuiteName, testCaseName));
     }

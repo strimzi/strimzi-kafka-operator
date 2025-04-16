@@ -32,7 +32,6 @@ import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.types.KafkaAccessType;
 import io.strimzi.systemtest.resources.types.KafkaBridgeType;
@@ -150,10 +149,10 @@ public abstract class AbstractST implements TestSeparator {
 
     private void afterEachMustExecute() {
         if (cluster.cluster().isClusterUp()) {
-            if (StUtils.isParallelTest(ResourceManager.getTestContext()) ||
-                StUtils.isParallelNamespaceTest(ResourceManager.getTestContext())) {
-                parallelSuiteController.notifyParallelTestToAllowExecution(ResourceManager.getTestContext());
-                parallelSuiteController.removeParallelTest(ResourceManager.getTestContext());
+            if (StUtils.isParallelTest(KubeResourceManager.get().getTestContext()) ||
+                StUtils.isParallelNamespaceTest(KubeResourceManager.get().getTestContext())) {
+                parallelSuiteController.notifyParallelTestToAllowExecution(KubeResourceManager.get().getTestContext());
+                parallelSuiteController.removeParallelTest(KubeResourceManager.get().getTestContext());
             }
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
@@ -197,10 +196,10 @@ public abstract class AbstractST implements TestSeparator {
 
     private void beforeEachMustExecute() {
         if (cluster.cluster().isClusterUp()) {
-            if (StUtils.isParallelNamespaceTest(ResourceManager.getTestContext()) ||
-                StUtils.isParallelTest(ResourceManager.getTestContext())) {
-                parallelSuiteController.addParallelTest(ResourceManager.getTestContext());
-                parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(ResourceManager.getTestContext());
+            if (StUtils.isParallelNamespaceTest(KubeResourceManager.get().getTestContext()) ||
+                StUtils.isParallelTest(KubeResourceManager.get().getTestContext())) {
+                parallelSuiteController.addParallelTest(KubeResourceManager.get().getTestContext());
+                parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(KubeResourceManager.get().getTestContext());
             }
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
@@ -226,7 +225,7 @@ public abstract class AbstractST implements TestSeparator {
 
     @BeforeEach
     void setUpTestCase(ExtensionContext extensionContext) {
-        ResourceManager.setTestContext(extensionContext);
+        KubeResourceManager.get().setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("————————————  {}@Before Each - Setup TestCase environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         beforeEachMustExecute();
@@ -235,7 +234,7 @@ public abstract class AbstractST implements TestSeparator {
 
     @BeforeAll
     void setUpTestSuite(ExtensionContext extensionContext) {
-        ResourceManager.setTestContext(extensionContext);
+        KubeResourceManager.get().setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@Before All - Setup TestSuite environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         beforeAllMayOverride();
@@ -244,7 +243,7 @@ public abstract class AbstractST implements TestSeparator {
 
     @AfterEach
     void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
-        ResourceManager.setTestContext(extensionContext);
+        KubeResourceManager.get().setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@After Each - Clean up after test ————————————", StUtils.removePackageName(this.getClass().getName()));
         // try with finally is needed because in worst case possible if the Cluster is unable to delete namespaces, which
@@ -263,7 +262,7 @@ public abstract class AbstractST implements TestSeparator {
 
     @AfterAll
     void tearDownTestSuite(ExtensionContext extensionContext) {
-        ResourceManager.setTestContext(extensionContext);
+        KubeResourceManager.get().setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@After All - Clean up after TestSuite ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         afterAllMayOverride();

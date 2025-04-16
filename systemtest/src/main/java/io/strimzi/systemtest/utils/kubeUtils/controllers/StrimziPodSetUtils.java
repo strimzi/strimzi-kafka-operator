@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
@@ -17,7 +18,6 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSetStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -39,11 +39,12 @@ public class StrimziPodSetUtils {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static MixedOperation<StrimziPodSet, StrimziPodSetList, Resource<StrimziPodSet>> strimziPodSetClient() {
-        return Crds.strimziPodSetOperation(ResourceManager.kubeClient().getClient());
+        return Crds.strimziPodSetOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
-    public static void replaceStrimziPodSetInSpecificNamespace(String namespaceName, String resourceName, Consumer<StrimziPodSet> editor) {
-        ResourceManager.replaceCrdResource(namespaceName, StrimziPodSet.class, StrimziPodSetList.class, resourceName, editor);
+    public static void replaceStrimziPodSetInNamespace(String namespaceName, String resourceName, Consumer<StrimziPodSet> editor) {
+        StrimziPodSet strimziPodSet = strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(strimziPodSet, editor);
     }
 
     public static Pod getFirstPodFromSpec(String namespaceName, String resourceName) {
@@ -130,7 +131,7 @@ public class StrimziPodSetUtils {
 
     public static void annotateStrimziPodSet(String namespaceName, String resourceName, Map<String, String> annotations) {
         LOGGER.info("Annotating StrimziPodSet {}/{} with annotations: {}", namespaceName, resourceName, annotations);
-        replaceStrimziPodSetInSpecificNamespace(namespaceName, resourceName, strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations));
+        replaceStrimziPodSetInNamespace(namespaceName, resourceName, strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations));
     }
 
     public static Map<String, String> getAnnotationsOfStrimziPodSet(String namespaceName, String resourceName) {

@@ -9,13 +9,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
@@ -40,11 +41,12 @@ public class KafkaConnectorUtils {
     private KafkaConnectorUtils() {}
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorClient() {
-        return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaConnectorOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
-    public static void replaceKafkaConnectorResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaConnector> editor) {
-        ResourceManager.replaceCrdResource(namespaceName, KafkaConnector.class, KafkaConnectorList.class, resourceName, editor);
+    public static void replaceKafkaConnectorInNamespace(String namespaceName, String resourceName, Consumer<KafkaConnector> editor) {
+        KafkaConnector kafkaConnector = kafkaConnectorClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafkaConnector, editor);
     }
 
     /**
@@ -53,17 +55,17 @@ public class KafkaConnectorUtils {
      * @param connectorName name of KafkaConnector
      * @param state desired state
      */
-    public static boolean waitForConnectorStatus(String namespaceName, String connectorName, Enum<?>  state) {
+    public static void waitForConnectorStatus(String namespaceName, String connectorName, Enum<?>  state) {
         KafkaConnector kafkaConnector = kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get();
-        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, state);
+        KubeResourceManager.get().waitResourceCondition(kafkaConnector, ResourceConditions.resourceHasDesiredState(state), ResourceOperation.getTimeoutForResourceReadiness(kafkaConnector.getKind()));
     }
 
-    public static boolean waitForConnectorReady(String namespaceName, String connectorName) {
-        return waitForConnectorStatus(namespaceName, connectorName, Ready);
+    public static void waitForConnectorReady(String namespaceName, String connectorName) {
+        waitForConnectorStatus(namespaceName, connectorName, Ready);
     }
 
-    public static boolean waitForConnectorNotReady(String namespaceName, String connectorName) {
-        return waitForConnectorStatus(namespaceName, connectorName, NotReady);
+    public static void waitForConnectorNotReady(String namespaceName, String connectorName) {
+        waitForConnectorStatus(namespaceName, connectorName, NotReady);
     }
 
     public static void waitForConnectorDeletion(String namespaceName, String connectorName) {

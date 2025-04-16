@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 
 import java.io.File;
@@ -235,8 +234,8 @@ public class TestLogCollector {
      */
     public void collectLogs() {
         collectLogs(
-            ResourceManager.getTestContext().getRequiredTestClass().getName(),
-            ResourceManager.getTestContext().getRequiredTestMethod().getName()
+            KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(),
+            KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName()
         );
     }
 

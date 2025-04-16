@@ -7,6 +7,7 @@ package io.strimzi.systemtest.rollingupdate;
 import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;
@@ -22,7 +23,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -68,7 +68,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings("checkstyle:MethodLength")
     void testManualTriggeringRollingUpdate() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // 500 messages will take 500 seconds in that case
         final int continuousClientsMessageCount = 500;
@@ -180,7 +180,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
         resourceManager.createResourceWithWait(
@@ -191,7 +191,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Adding new bootstrap dns: {} to external listeners", bootstrapDns);
             kafka.getSpec().getKafka()
                 .setListeners(asList(
@@ -233,7 +233,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     @ParallelNamespaceTest
     void testManualRollingUpdateForSinglePod() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -321,7 +321,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings("deprecation") // Storage is deprecated, but some API methods are still called here
     void testAddingAndRemovingJbodVolumes() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // 500 messages will take 500 seconds in that case
         final int continuousClientsMessageCount = 500;
@@ -378,7 +378,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Add Jbod volume to Kafka => triggers RU
         LOGGER.info("Add JBOD volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
             JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
             storage.getVolumes().add(vol1);
         });
@@ -397,7 +397,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Remove Jbod volume to Kafka => triggers RU
         LOGGER.info("Remove JBOD volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
             JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
             storage.getVolumes().remove(vol1);
         });
@@ -455,7 +455,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings("deprecation") // Storage is deprecated, but some API methods are still called here
     void testJbodMetadataLogRelocation() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int numberOfKafkaReplicas = 3;
 
         // Setup JBOD with multiple volumes, ensuring metadata is on a non-lowest ID volume
@@ -525,7 +525,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Remove Jbod KRaft volume to Kafka => triggers RU
         LOGGER.info("Remove JBOD volume (i.e., simulating disk failure for KRaft metadata volume) to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
             JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
             storage.getVolumes().remove(metadataVol);
         });

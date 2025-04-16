@@ -14,11 +14,11 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
-import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
@@ -32,7 +32,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -77,24 +77,25 @@ public class KafkaUtils {
     private KafkaUtils() {}
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaClient() {
-        return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
-    public static void replaceKafkaResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<Kafka> editor) {
-        ResourceManager.replaceCrdResource(namespaceName, Kafka.class, KafkaList.class, resourceName, editor);
+    public static void replaceKafkaInNamespace(String namespaceName, String resourceName, Consumer<Kafka> editor) {
+        Kafka kafka = kafkaClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafka, editor);
     }
     
     public static boolean waitForKafkaReady(String namespaceName, String clusterName) {
         return waitForKafkaStatus(namespaceName, clusterName, Ready);
     }
 
-    public static boolean waitForKafkaNotReady(String namespaceName, String clusterName) {
-        return waitForKafkaStatus(namespaceName, clusterName, NotReady);
+    public static void waitForKafkaNotReady(String namespaceName, String clusterName) {
+        waitForKafkaStatus(namespaceName, clusterName, NotReady);
     }
 
     public static boolean waitForKafkaStatus(String namespaceName, String clusterName, Enum<?>  state) {
         Kafka kafka = kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(kafkaClient(), kafka, state);
+        return KubeResourceManager.get().waitResourceCondition(kafka, ResourceConditions.resourceHasDesiredState(state), ResourceOperation.getTimeoutForResourceReadiness(kafka.getKind()));
     }
 
     /**
@@ -224,7 +225,7 @@ public class KafkaUtils {
      * @param value value of specific property
      */
     public static void updateSpecificConfiguration(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
-        replaceKafkaResourceInSpecificNamespace(namespaceName, clusterName, kafka -> {
+        replaceKafkaInNamespace(namespaceName, clusterName, kafka -> {
             LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
             Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
             config.put(brokerConfigName, value);
@@ -506,23 +507,11 @@ public class KafkaUtils {
     }
 
     public static void annotateKafka(String namespaceName, String clusterName, Map<String, String> annotations) {
-        replaceKafkaResourceInSpecificNamespace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations));
+        replaceKafkaInNamespace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations));
     }
 
     public static void removeAnnotation(String namespaceName, String clusterName, String annotationKey) {
-        replaceKafkaResourceInSpecificNamespace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey));
-    }
-
-    public static void waitUntilKafkaStatusContainsKafkaMetadataState(String namespaceName, String clusterName, KafkaMetadataState desiredKafkaMetadataState) {
-        TestUtils.waitFor(String.join("Kafka status to be contain kafkaMetadataState: %s", desiredKafkaMetadataState.name()), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
-            Kafka k = kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
-            return k.getStatus().getKafkaMetadataState().equals(desiredKafkaMetadataState);
-        });
-    }
-
-    public static String getKafkaLogFolderNameInPod(String namespaceName, String kafkaPodName, String dataFolderName) {
-        return ResourceManager.cmdKubeClient().namespace(namespaceName)
-            .execInPod(kafkaPodName, "/bin/bash", "-c", "ls /var/lib/kafka/" + dataFolderName + " | grep \"kafka-log[0-9]\\+\" -o").out().trim();
+        replaceKafkaInNamespace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey));
     }
 
     /**

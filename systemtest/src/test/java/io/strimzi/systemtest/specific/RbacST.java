@@ -22,7 +22,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.operator.YamlInstallation;
@@ -58,13 +57,13 @@ public class RbacST extends AbstractST {
             .withDefaultConfiguration()
             .createClusterOperatorNamespace();
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
         final ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfiguration();
 
         // create namespace, where we will be able to deploy CustomResources
         NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved,
-            CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), ResourceManager.getTestContext().getRequiredTestMethod().getName()));
+            CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(), KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName()));
 
         // --- a) defining Role and ClusterRoles
         final Role strimziClusterOperator020 = ReadWriteUtils.readObjectFromYamlFilepath(RbacUtils.switchClusterRolesToRolesIfNeeded(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);

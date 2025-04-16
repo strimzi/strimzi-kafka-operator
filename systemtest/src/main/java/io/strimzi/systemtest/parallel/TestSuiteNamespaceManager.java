@@ -4,12 +4,12 @@
  */
 package io.strimzi.systemtest.parallel;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,9 +45,9 @@ public class TestSuiteNamespaceManager {
      *
      */
     public void createTestSuiteNamespace() {
-        final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
+        final String testSuiteName = KubeResourceManager.get().getTestContext().getRequiredTestClass().getName();
 
-        if (ExecutionListener.requiresSharedNamespace(ResourceManager.getTestContext())) {
+        if (ExecutionListener.requiresSharedNamespace(KubeResourceManager.get().getTestContext())) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
                 NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
@@ -63,10 +63,10 @@ public class TestSuiteNamespaceManager {
      *
      */
     public void deleteTestSuiteNamespace() {
-        if (ExecutionListener.requiresSharedNamespace(ResourceManager.getTestContext())) {
+        if (ExecutionListener.requiresSharedNamespace(KubeResourceManager.get().getTestContext())) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
+                final String testSuiteName = KubeResourceManager.get().getTestContext().getRequiredTestClass().getName();
 
                 LOGGER.info("Deleting Namespace: {} for TestSuite: {}", Environment.TEST_SUITE_NAMESPACE, StUtils.removePackageName(testSuiteName));
                 NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
@@ -83,19 +83,19 @@ public class TestSuiteNamespaceManager {
      *
      */
     public void createParallelNamespace() {
-        final String testCaseName = ResourceManager.getTestContext().getRequiredTestMethod().getName();
+        final String testCaseName = KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
 
         // if 'parallel namespace test' we are gonna create namespace
-        if (StUtils.isParallelNamespaceTest(ResourceManager.getTestContext())) {
+        if (StUtils.isParallelNamespaceTest(KubeResourceManager.get().getTestContext())) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
                 final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
 
-                ResourceManager.getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.NAMESPACE_KEY, namespaceTestCase);
+                KubeResourceManager.get().getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.NAMESPACE_KEY, namespaceTestCase);
                 // create namespace by
                 LOGGER.info("Creating Namespace: {} for TestCase: {}", namespaceTestCase, StUtils.removePackageName(testCaseName));
 
-                NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceTestCase, CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), testCaseName));
+                NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceTestCase, CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(), testCaseName));
             }
         }
     }
@@ -106,15 +106,15 @@ public class TestSuiteNamespaceManager {
      */
     public void deleteParallelNamespace() {
         // if 'parallel namespace test' we are gonna delete namespace
-        if (StUtils.isParallelNamespaceTest(ResourceManager.getTestContext())) {
+        if (StUtils.isParallelNamespaceTest(KubeResourceManager.get().getTestContext())) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                final String namespaceToDelete = ResourceManager.getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
-                final String testCaseName = ResourceManager.getTestContext().getRequiredTestMethod().getName();
+                final String namespaceToDelete = KubeResourceManager.get().getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
+                final String testCaseName = KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
 
                 LOGGER.info("Deleting Namespace: {} for TestCase: {}", namespaceToDelete, StUtils.removePackageName(testCaseName));
 
-                NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(namespaceToDelete, CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), testCaseName));
+                NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(namespaceToDelete, CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(), testCaseName));
             }
         }
     }

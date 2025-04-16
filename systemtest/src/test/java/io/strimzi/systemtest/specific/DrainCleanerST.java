@@ -5,12 +5,12 @@
 package io.strimzi.systemtest.specific;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)
 @MicroShiftNotSupported
@@ -44,7 +44,7 @@ public class DrainCleanerST extends AbstractST {
     @Tag(REGRESSION)
     @IsolatedTest
     void testDrainCleanerWithComponents() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.DRAIN_CLEANER_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext(), TestConstants.DRAIN_CLEANER_NAMESPACE);
 
         final int replicas = 3;
 

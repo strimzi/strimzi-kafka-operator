@@ -6,6 +6,7 @@ package io.strimzi.systemtest.watcher;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -18,7 +19,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -133,7 +133,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
      */
     @ParallelTest
     final void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         LOGGER.info("Topic Operator in Kafka: {}/{} watches KafkaTopics in (different) Namespace: {}", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME, PRIMARY_KAFKA_WATCHED_NAMESPACE);
 
@@ -216,7 +216,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     final void testDeployMirrorMaker2InNamespaceDifferentFromCO(ExtensionContext extensionContext) {
         LOGGER.info("Deploying KafkaMirrorMaker2 in different Namespace than CO");
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker-2";
 
         LOGGER.info("Target Kafka cluster: {} and consequently MirrorMaker2: {} will be created in Namespace: {}", testStorage.getTargetClusterName(), mirrorMakerName, MAIN_TEST_NAMESPACE);
@@ -256,7 +256,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     final void testDeployKafkaConnectAndKafkaConnectorInNamespaceDifferentFromCO(ExtensionContext extensionContext) {
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String kafkaConnectName = testStorage.getClusterName() + "kafka-connect";
 
         // Deploy Kafka Connect in other namespace than CO

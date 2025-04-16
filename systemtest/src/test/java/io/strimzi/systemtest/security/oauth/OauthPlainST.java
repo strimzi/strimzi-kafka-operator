@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.skodjob.testframe.MetricsCollector;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.InlineLogging;
@@ -33,7 +34,6 @@ import io.strimzi.systemtest.metrics.KafkaBridgeMetricsComponent;
 import io.strimzi.systemtest.metrics.KafkaConnectMetricsComponent;
 import io.strimzi.systemtest.metrics.KafkaMetricsComponent;
 import io.strimzi.systemtest.metrics.KafkaMirrorMaker2MetricsComponent;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -113,7 +113,7 @@ public class OauthPlainST extends OauthAbstractST {
     @ParallelTest
     @Tag(METRICS)
     void testProducerConsumerWithOauthMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -146,7 +146,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testSaslPlainProducerConsumer() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + testStorage.getClusterName();
         String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + testStorage.getClusterName();
 
@@ -187,7 +187,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testProducerConsumerAudienceTokenChecks() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + testStorage.getClusterName();
@@ -238,7 +238,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testAccessTokenClaimCheck() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + testStorage.getClusterName();
@@ -295,7 +295,7 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT_COMPONENTS)
     @Tag(METRICS)
     void testProducerConsumerConnectWithOauthMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -374,7 +374,7 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(METRICS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMaker2WithOauthMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -532,7 +532,7 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(BRIDGE)
     @Tag(METRICS)
     void testProducerConsumerBridgeWithOauthMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -609,7 +609,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testSaslPlainAuthenticationKafkaConnectIsAbleToConnectToKafkaOAuth() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), oauthClusterName, 1)
             .withNewSpec()

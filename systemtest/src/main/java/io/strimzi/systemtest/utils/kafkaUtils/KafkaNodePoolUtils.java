@@ -7,13 +7,13 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaNodePoolUtils {
 
@@ -40,8 +40,9 @@ public class KafkaNodePoolUtils {
         return Crds.kafkaNodePoolOperation(kubeClient().getClient());
     }
 
-    public static void replaceKafkaNodePoolResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaNodePool> editor) {
-        ResourceManager.replaceCrdResource(namespaceName, KafkaNodePool.class, KafkaNodePoolList.class, resourceName, editor);
+    public static void replaceKafkaNodePoolInNamespace(String namespaceName, String resourceName, Consumer<KafkaNodePool> editor) {
+        KafkaNodePool kafkaNodePool = kafkaNodePoolClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafkaNodePool, editor);
     }
 
     public static KafkaNodePool getKafkaNodePool(String namespaceName, String resourceName) {
@@ -54,7 +55,7 @@ public class KafkaNodePoolUtils {
 
     public static void setKafkaNodePoolAnnotation(String namespaceName, String resourceName,  Map<String, String> annotations) {
         LOGGER.info("Annotating KafkaNodePool: {}/{} with annotation: {}", namespaceName, resourceName, annotations);
-        replaceKafkaNodePoolResourceInSpecificNamespace(namespaceName, resourceName,
+        replaceKafkaNodePoolInNamespace(namespaceName, resourceName,
             kafkaNodePool -> kafkaNodePool.getMetadata().setAnnotations(annotations));
     }
 

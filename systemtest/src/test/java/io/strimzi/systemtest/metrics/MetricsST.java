@@ -16,6 +16,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
@@ -44,7 +45,6 @@ import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -248,7 +248,7 @@ public class MetricsST extends AbstractST {
         }
     )
     void testKafkaExporterMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String kafkaStrimziPodSetName = KafkaResourceNames.getBrokerComponentName(kafkaClusterFirstName);
         final LabelSelector brokerPodsSelector = LabelSelectors.kafkaLabelSelector(kafkaClusterFirstName, kafkaStrimziPodSetName);
 
@@ -302,7 +302,7 @@ public class MetricsST extends AbstractST {
 
         Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
+        KafkaUtils.replaceKafkaInNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
             k.getSpec().getKafkaExporter().setTopicRegex(topicName);
         });
@@ -317,7 +317,7 @@ public class MetricsST extends AbstractST {
         assertMetricValueNullOrZero(kafkaExporterCollector, "kafka_topic_partitions\\{topic=\"" + consumerOffsetsTopicName + "\"}");
 
         LOGGER.info("Changing Topic and group regexes back to default");
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
+        KafkaUtils.replaceKafkaInNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex(".*");
             k.getSpec().getKafkaExporter().setTopicRegex(".*");
         });
@@ -454,7 +454,7 @@ public class MetricsST extends AbstractST {
         }
     )
     void testKafkaBridgeMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(
             KafkaBridgeTemplates.kafkaBridgeWithMetrics(
@@ -582,7 +582,7 @@ public class MetricsST extends AbstractST {
                 .endValueFrom()
                 .build();
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(namespaceSecond, kafkaClusterSecondName, k -> {
+        KafkaUtils.replaceKafkaInNamespace(namespaceSecond, kafkaClusterSecondName, k -> {
             k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
         });
 
@@ -666,8 +666,8 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(namespaceFirst, KafkaUserUtils.generateRandomNameOfKafkaUser(), kafkaClusterFirstName).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(namespaceFirst, KafkaUserUtils.generateRandomNameOfKafkaUser(), kafkaClusterFirstName).build());
 
-        coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
-        scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
+        coScraperPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
+        scraperPodName = kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
         NetworkPolicyUtils.allowNetworkPolicySettingsForClusterOperator(TestConstants.CO_NAMESPACE);

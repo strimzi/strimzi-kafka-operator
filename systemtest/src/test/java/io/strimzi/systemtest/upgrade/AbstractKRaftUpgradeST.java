@@ -29,7 +29,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -281,7 +280,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     .replace("replicas: 1", "replicas: 3") +
                     "    min.insync.replicas: 2");
 
-                ResourceManager.waitForResourceReadiness(testStorage.getNamespaceName(), getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL), testStorage.getTopicName());
+                KafkaTopicUtils.waitForKafkaTopicReady(testStorage.getNamespaceName(), testStorage.getTopicName());
             }
 
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
@@ -371,7 +370,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                 kafkaUserYaml = new File(dir, upgradeData.getFromExamples() + "/examples/user/kafka-user.yaml");
                 LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
                 cmdKubeClient(componentsNamespaceName).applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
-                ResourceManager.waitForResourceReadiness(componentsNamespaceName, getResourceApiVersion(KafkaUser.RESOURCE_PLURAL), USER_NAME);
+                KafkaUserUtils.waitForKafkaUserReady(componentsNamespaceName, USER_NAME);
             }
         }
     }
@@ -387,7 +386,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             }
             LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
             cmdKubeClient(componentsNamespaceName).create(kafkaTopicYaml);
-            ResourceManager.waitForResourceReadiness(componentsNamespaceName, getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL), TOPIC_NAME);
+            KafkaTopicUtils.waitForKafkaTopicReady(componentsNamespaceName, TOPIC_NAME);
         }
     }
 

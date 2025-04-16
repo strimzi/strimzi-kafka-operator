@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators.user;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -27,7 +28,6 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -99,7 +99,7 @@ class UserST extends AbstractST {
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testUpdateUser() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), sharedTestStorage.getClusterName()).build());
 
@@ -127,7 +127,7 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserUtils.replaceUserResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), ku -> {
+        KafkaUserUtils.replaceKafkaUserInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), ku -> {
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
         });
 
@@ -161,7 +161,7 @@ class UserST extends AbstractST {
 
     @ParallelTest
     void testTlsExternalUserWithQuotas() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), sharedTestStorage.getClusterName()).build();
 
         testUserWithQuotas(tlsExternalUser);
@@ -173,7 +173,7 @@ class UserST extends AbstractST {
         testUserWithQuotas(user);
     }
     void testUserWithQuotas(KafkaUser user) {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final Integer prodRate = 1111;
         final Integer consRate = 2222;
@@ -238,7 +238,7 @@ class UserST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCreatingUsersWithSecretPrefix() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String secretPrefix = "top-secret-";
         final String tlsUserName = "encrypted-leopold";
@@ -325,7 +325,7 @@ class UserST extends AbstractST {
 
     @ParallelNamespaceTest
     void testTlsExternalUser() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String consumerGroupName = ClientUtils.generateRandomConsumerGroup();
 
         resourceManager.createResourceWithWait(
@@ -387,7 +387,7 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserUtils.replaceUserResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), user -> {
+        KafkaUserUtils.replaceKafkaUserInNamespace(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), user -> {
             user.getSpec().setAuthorization(new KafkaUserAuthorizationSimpleBuilder()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
@@ -410,7 +410,7 @@ class UserST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
+        sharedTestStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         SetupClusterOperator
             .getInstance()

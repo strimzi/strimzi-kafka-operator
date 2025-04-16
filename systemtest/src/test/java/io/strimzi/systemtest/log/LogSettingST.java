@@ -13,6 +13,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.JvmOptions;
@@ -29,7 +30,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -206,7 +206,7 @@ class LogSettingST extends AbstractST {
         }
     )
     void testKafkaLogSetting() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         String topicOperatorMap = String.format("%s-%s", LOG_SETTING_CLUSTER_NAME, "entity-topic-operator-config");
         String userOperatorMap = String.format("%s-%s", LOG_SETTING_CLUSTER_NAME, "entity-user-operator-config");
@@ -241,12 +241,12 @@ class LogSettingST extends AbstractST {
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "user-operator"), is(true));
 
         LOGGER.info("Changing JVM options - setting GC logging to false");
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getBrokerPoolName(LOG_SETTING_CLUSTER_NAME),
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getBrokerPoolName(LOG_SETTING_CLUSTER_NAME),
             knp -> knp.getSpec().setJvmOptions(JVM_OPTIONS));
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getControllerPoolName(LOG_SETTING_CLUSTER_NAME),
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getControllerPoolName(LOG_SETTING_CLUSTER_NAME),
             knp -> knp.getSpec().setJvmOptions(JVM_OPTIONS));
 
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, kafka -> {
             kafka.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(JVM_OPTIONS);
             kafka.getSpec().getEntityOperator().getUserOperator().setJvmOptions(JVM_OPTIONS);
         });
@@ -293,7 +293,7 @@ class LogSettingST extends AbstractST {
         }
     )
     void testConnectLogSetting() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), LOG_SETTING_CLUSTER_NAME, 1)
             .editSpec()
@@ -314,7 +314,7 @@ class LogSettingST extends AbstractST {
         assertThat("KafkaConnect's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, CONNECT_LOGGERS, connectMap), is(true));
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaConnectSelector(), true);
 
-        KafkaConnectUtils.replaceKafkaConnectResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), kc -> kc.getSpec().setJvmOptions(JVM_OPTIONS));
+        KafkaConnectUtils.replaceKafkaConnectInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), kc -> kc.getSpec().setJvmOptions(JVM_OPTIONS));
         StUtils.waitTillStrimziPodSetOrDeploymentRolled(Environment.TEST_SUITE_NAMESPACE, connectDepName, 1, connectPods, testStorage.getKafkaConnectSelector());
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaConnectSelector(), false);
 
@@ -339,7 +339,7 @@ class LogSettingST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     void testMirrorMaker2LogSetting() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), GC_LOGGING_SET_NAME, LOG_SETTING_CLUSTER_NAME, 1, false)
             .editSpec()
@@ -361,7 +361,7 @@ class LogSettingST extends AbstractST {
         this.checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector(), true);
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector(), true);
 
-        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), mm2 -> mm2.getSpec().setJvmOptions(JVM_OPTIONS));
+        KafkaMirrorMaker2Utils.replaceKafkaMirrorMaker2InNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), mm2 -> mm2.getSpec().setJvmOptions(JVM_OPTIONS));
         StUtils.waitTillStrimziPodSetOrDeploymentRolled(Environment.TEST_SUITE_NAMESPACE, mm2DepName, 1, mm2Pods, testStorage.getMM2Selector());
 
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector(), false);
@@ -387,7 +387,7 @@ class LogSettingST extends AbstractST {
         }
     )
     void testBridgeLogSetting() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
             .editSpec()
@@ -410,7 +410,7 @@ class LogSettingST extends AbstractST {
 
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, labelSelector, true);
 
-        KafkaBridgeUtils.replaceBridgeResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), bridge -> bridge.getSpec().setJvmOptions(JVM_OPTIONS));
+        KafkaBridgeUtils.replaceKafkaBridgeInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), bridge -> bridge.getSpec().setJvmOptions(JVM_OPTIONS));
         DeploymentUtils.waitTillDepHasRolled(Environment.TEST_SUITE_NAMESPACE, bridgeDepName, 1, bridgePods);
 
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, labelSelector, false);
@@ -449,7 +449,7 @@ class LogSettingST extends AbstractST {
 
         InlineLogging logging = new InlineLogging();
         logging.setLoggers(Collections.singletonMap("rootLogger.level", debugText.strip()));
-        KafkaUtils.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, kafka -> kafka.getSpec().getCruiseControl().setLogging(logging));
+        KafkaUtils.replaceKafkaInNamespace(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, kafka -> kafka.getSpec().getCruiseControl().setLogging(logging));
 
         LOGGER.info("Waiting for change of root logger in {}", cruiseControlPodName);
         TestUtils.waitFor(" for log to be changed", CC_LOG_CONFIG_RELOAD, CO_OPERATION_TIMEOUT_MEDIUM, () -> {

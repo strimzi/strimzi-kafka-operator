@@ -11,6 +11,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
@@ -19,7 +20,6 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -76,7 +76,7 @@ public class KafkaNodePoolST extends AbstractST {
         }
     )
     void testKafkaNodePoolBrokerIdsManagementUsingAnnotations() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String nodePoolNameA = testStorage.getBrokerPoolName() + "-a";
         final String nodePoolNameB = testStorage.getBrokerPoolName() + "-b";
         final String nodePoolNameInitial = testStorage.getBrokerPoolName() + "-initial";
@@ -182,7 +182,7 @@ public class KafkaNodePoolST extends AbstractST {
         }
     )
     void testNodePoolsRolesChanging() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // volatile KNP which will be transitioned from mixed to -> controller only role and afterward to mixed role again
         final String volatileRolePoolName = testStorage.getMixedPoolName() + "-volatile";
@@ -214,7 +214,7 @@ public class KafkaNodePoolST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasStartedRolling(testStorage.getNamespaceName(), volatilePoolLabelSelector, volatilePoolPodsSnapshot);
 
         LOGGER.info("Change role in {}/{}, from mixed to broker only resulting in revert", testStorage.getNamespaceName(), volatileRolePoolName);
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), volatileRolePoolName, knp -> {
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(testStorage.getNamespaceName(), volatileRolePoolName, knp -> {
             knp.getSpec().setRoles(List.of(ProcessRoles.CONTROLLER));
         });
 
@@ -234,7 +234,7 @@ public class KafkaNodePoolST extends AbstractST {
         volatilePoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), volatilePoolLabelSelector, 3, volatilePoolPodsSnapshot);
 
         LOGGER.info("Change role in {}/{}, from broker only to mixed", testStorage.getNamespaceName(), volatileRolePoolName);
-        KafkaNodePoolUtils.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), volatileRolePoolName,
+        KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(testStorage.getNamespaceName(), volatileRolePoolName,
             knp -> knp.getSpec().setRoles(List.of(ProcessRoles.CONTROLLER, ProcessRoles.BROKER))
         );
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), volatilePoolLabelSelector, 3, volatilePoolPodsSnapshot);
@@ -264,7 +264,7 @@ public class KafkaNodePoolST extends AbstractST {
         }
     )
     void testNodePoolsAdditionAndRemoval() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // KafkaNodePools name convention is 'A' for all roles (: if possible i.e. based on feature gate) 'B' for broker roles.
         final String poolAName = testStorage.getBrokerPoolName() + "-a";
         final String poolB1Name = testStorage.getBrokerPoolName() + "-b1";

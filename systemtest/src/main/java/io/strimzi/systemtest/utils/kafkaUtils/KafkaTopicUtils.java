@@ -4,9 +4,9 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
@@ -17,7 +17,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
@@ -63,43 +62,14 @@ public class KafkaTopicUtils {
     private KafkaTopicUtils() {}
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> kafkaTopicClient() {
-        return Crds.topicOperation(ResourceManager.kubeClient().getClient());
+        return Crds.topicOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
-    /**
-     * Replaces a KafkaTopic CR in the given namespace using the provided editor.
-     * <p>
-     * Retries up to 3 times on 409 Conflict errors.
-     *
-     * @param namespaceName Namespace of the KafkaTopic
-     * @param resourceName  Name of the KafkaTopic
-     * @param editor        Function to edit the resource before replace
-     */
     public static void replaceTopicResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaTopic> editor) {
-        final int maxRetries = 3;
-        int attempt = 0;
-
-        while (true) {
-            try {
-                ResourceManager.replaceCrdResource(namespaceName, KafkaTopic.class, KafkaTopicList.class, resourceName, editor);
-                return; // success
-            } catch (CompletionException ce) {
-                Throwable cause = ce.getCause();
-                if (!isConflict(cause) || ++attempt >= maxRetries) {
-                    throw (cause instanceof RuntimeException re) ? re : new RuntimeException(cause);
-                }
-            } catch (KubernetesClientException e) {
-                if (!isConflict(e) || ++attempt >= maxRetries) {
-                    throw e;
-                }
-            }
-        }
+        KafkaTopic kafkaTopic = kafkaTopicClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafkaTopic, editor);
     }
 
-    private static boolean isConflict(Throwable t) {
-        return t instanceof KubernetesClientException kce && kce.getCode() == 409;
-    }
-    
     /**
      * Generated random name for the KafkaTopic resource
      * @return random name with additional salt
@@ -108,16 +78,6 @@ public class KafkaTopicUtils {
         String salt = RANDOM.nextInt(Integer.MAX_VALUE) + "-" + RANDOM.nextInt(Integer.MAX_VALUE);
 
         return  TOPIC_NAME_PREFIX + salt;
-    }
-
-    /**
-     * Method which return UID for specific topic
-     * @param namespaceName Namespace name
-     * @param topicName Topic name
-     * @return topic UID
-     */
-    public static String topicSnapshot(final String namespaceName, String topicName) {
-        return kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getMetadata().getUid();
     }
 
     public static void waitUntilTopicObservationGenerationIsPresent(final String namespaceName, final String topicName) {
@@ -139,34 +99,12 @@ public class KafkaTopicUtils {
         return topicObservationGeneration(namespaceName, topicName);
     }
 
-    /**
-     * Method which wait until topic has rolled form one generation to another.
-     * @param namespaceName name of the namespace
-     * @param topicName topic name
-     * @param topicUid topic UID
-     * @return topic new UID
-     */
-    public static String waitTopicHasRolled(final String namespaceName, String topicName, String topicUid) {
-        TestUtils.waitFor("Topic: " + namespaceName + "/" + topicName + " has rolled", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, 
-            () -> !topicUid.equals(topicSnapshot(namespaceName, topicName)));
-        return topicSnapshot(namespaceName, topicName);
-    }
-
     public static void waitForKafkaTopicCreation(String namespaceName, String topicName) {
         LOGGER.info("Waiting for KafkaTopic: {}/{} creation ", namespaceName, topicName);
         TestUtils.waitFor("creation of KafkaTopic: " + namespaceName + "/" + topicName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kafkaTopicClient().inNamespace(namespaceName)
                     .withName(topicName).get().getStatus().getConditions().get(0).getType().equals(Ready.toString()),
             () -> LOGGER.info(kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get())
-        );
-    }
-
-    public static void waitForKafkaTopicCreationByNamePrefix(String namespaceName, String topicNamePrefix) {
-        LOGGER.info("Waiting for Topic {}/{} creation", namespaceName, topicNamePrefix);
-        TestUtils.waitFor("creation of KafkaTopic: " + namespaceName + "/" + topicNamePrefix, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> kafkaTopicClient().inNamespace(namespaceName).list().getItems().stream()
-                    .filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix))
-                    .findFirst().orElseThrow().getStatus().getConditions().get(0).getType().equals(Ready.toString())
         );
     }
 
@@ -208,21 +146,21 @@ public class KafkaTopicUtils {
      * @param topicName name of KafkaTopic
      * @param conditionType desired state
      */
-    public static boolean waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?> conditionType) {
-        return waitForKafkaTopicStatus(namespaceName, topicName, conditionType, ConditionStatus.True);
+    public static void waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?> conditionType) {
+        waitForKafkaTopicStatus(namespaceName, topicName, conditionType, ConditionStatus.True);
     }
 
-    public static boolean waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?> conditionType, ConditionStatus conditionStatus) {
-        return ResourceManager.waitForResourceStatus(namespaceName, kafkaTopicClient(), KafkaTopic.RESOURCE_KIND,
-            topicName, conditionType, conditionStatus, ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND));
+    public static void waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?> conditionType, ConditionStatus conditionStatus) {
+        KafkaTopic kafkaTopic = kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get();
+        KubeResourceManager.get().waitResourceCondition(kafkaTopic, ResourceConditions.resourceHasDesiredState(conditionType, conditionStatus), ResourceOperation.getTimeoutForResourceReadiness(kafkaTopic.getKind()));
     }
 
-    public static boolean waitForKafkaTopicReady(String namespaceName, String topicName) {
-        return waitForKafkaTopicStatus(namespaceName, topicName, Ready);
+    public static void waitForKafkaTopicReady(String namespaceName, String topicName) {
+        waitForKafkaTopicStatus(namespaceName, topicName, Ready);
     }
 
-    public static boolean waitForKafkaTopicNotReady(final String namespaceName, String topicName) {
-        return waitForKafkaTopicStatus(namespaceName, topicName, Ready, ConditionStatus.False);
+    public static void waitForKafkaTopicNotReady(final String namespaceName, String topicName) {
+        waitForKafkaTopicStatus(namespaceName, topicName, Ready, ConditionStatus.False);
     }
 
     public static void waitForTopicConfigContains(String namespaceName, String topicName, Map<String, Object> config) {
@@ -269,18 +207,6 @@ public class KafkaTopicUtils {
         return kafkaTopicClient().inNamespace(namespace).list().getItems()
             .stream().filter(p -> p.getMetadata().getName().startsWith(prefix))
             .collect(Collectors.toList());
-    }
-
-    public static void deleteAllKafkaTopicsByPrefixWithWait(String namespace, String prefix) {
-        KafkaTopicUtils.getAllKafkaTopicsWithPrefix(namespace, prefix).forEach(topic ->
-            cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
-        );
-    }
-
-    public static void waitForTopicsByPrefixDeletionUsingPodCli(String namespace, String prefix, String bootstrapName, String scraperPodName, String properties) {
-        LOGGER.info("Waiting for all Topics with prefix: {} to be deleted from Kafka", prefix);
-        TestUtils.waitFor("deletion of all Topics with prefix: " + prefix, TestConstants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
-            () -> !KafkaCmdClient.listTopicsUsingPodCliWithConfigProperties(namespace, scraperPodName, bootstrapName, properties).contains(prefix));
     }
 
     public static void waitForDeletionOfTopicsWithPrefix(String topicPrefix, AdminClient adminClient) {
@@ -545,7 +471,7 @@ public class KafkaTopicUtils {
         List<KafkaTopic> topicsToDelete = getAllKafkaTopicsWithPrefix(namespace, prefix, start, end);
 
         topicsToDelete.forEach(topic ->
-            ResourceManager.cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
+            cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
         );
 
         LOGGER.info("Deleted Kafka topics from {} to {} in namespace {} with prefix {}", start, end, namespace, prefix);
