@@ -144,19 +144,13 @@ public class KafkaBrokerConfigurationBuilder {
      * @return Returns the builder instance
      */
     public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model)   {
-        if (model != null) {
+        if (model instanceof StrimziMetricsReporterModel reporterModel) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println("prometheus.metrics.reporter.listener.enable=true");
             writer.println("prometheus.metrics.reporter.listener=http://:" + StrimziMetricsReporterModel.METRICS_PORT);
-            if (model instanceof StrimziMetricsReporterModel strimziModel) {
-                String allowList = strimziModel.getAllowList();
-                if (!allowList.isEmpty()) {
-                    writer.println("prometheus.metrics.reporter.allowlist=" + allowList);
-                }
-            }
+            writer.println("prometheus.metrics.reporter.allowlist=" + reporterModel.getAllowList());
             writer.println();
         }
-
         return this;
     }
 
@@ -835,7 +829,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         // print user config with Strimzi injections
         if (!userConfig.getConfiguration().isEmpty()) {
-            printSectionHeader("User provided configuration with Strimzi injections");
+            printSectionHeader("User provided configuration");
             writer.println(userConfig.getConfiguration());
             writer.println();
         }
