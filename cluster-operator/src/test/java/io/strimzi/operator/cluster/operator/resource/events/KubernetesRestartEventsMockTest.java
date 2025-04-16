@@ -555,7 +555,9 @@ public class KubernetesRestartEventsMockTest {
             }
 
             Event restartEvent = maybeEvent.get();
-            assertThat(restartEvent.getRegarding().getName(), is(kafkaPod().getMetadata().getName()));
+            assertThat(restartEvent.getRelated().getName(), is(kafkaPod().getMetadata().getName()));
+            assertThat(restartEvent.getRegarding().getName(), is(CLUSTER_NAME));
+            assertThat(restartEvent.getRegarding().getKind(), is(Kafka.RESOURCE_KIND));
             context.completeNow();
         }));
     }
