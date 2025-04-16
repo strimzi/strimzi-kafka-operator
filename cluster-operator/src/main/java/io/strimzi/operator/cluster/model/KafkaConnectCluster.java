@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -28,6 +29,10 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
@@ -38,6 +43,8 @@ import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
@@ -137,12 +144,14 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected LoggingModel logging;
     protected AbstractConfiguration configuration;
 
-    private ClientTls tls;
-    private KafkaClientAuthentication authentication;
+    protected ClientTls tls;
+    protected KafkaClientAuthentication authentication;
 
     // Templates
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected ResourceTemplate templateInitClusterRoleBinding;
+    protected ResourceTemplate templateRole;
+    protected ResourceTemplate templateRoleBinding;
     protected DeploymentTemplate templateDeployment;
     protected ResourceTemplate templatePodSet;
     protected PodTemplate templatePod;
@@ -285,6 +294,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
+            result.templateRole = template.getRole();
+            result.templateRoleBinding = template.getRoleBinding();
             result.templateDeployment = template.getDeployment();
             result.templatePodSet = template.getPodSet();
             result.templatePod = template.getPod();
@@ -375,10 +386,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
-        if (tls != null) {
-            CertUtils.createTrustedCertificatesVolumes(volumeList, tls.getTrustedCertificates(), isOpenShift);
-        }
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift, "", true);
+        AuthenticationUtils.configureClientAuthenticationVolumes2(authentication, volumeList, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), isOpenShift, "", true);
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
         
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
@@ -439,17 +447,14 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
-        if (tls != null) {
-            CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, tls.getTrustedCertificates(), TLS_CERTS_BASE_VOLUME_MOUNT);
-        }
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs", "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts2(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
 
         return volumeMountList;
     }
-    
+
     private List<VolumeMount> getInitContainerVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
@@ -616,13 +621,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
         JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
-        if (tls != null) {
-            populateTLSEnvVars(varList);
-        }
-
-        // Client authentication env var is needed to generate oauth truststore certificates in PKCS12 format in container script
-        AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
-
         if (tracing != null) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
@@ -637,12 +635,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
         return varList;
-    }
-
-    private void populateTLSEnvVars(final List<EnvVar> varList) {
-        if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(tls.getTrustedCertificates())));
-        }
     }
 
     @SuppressWarnings("deprecation") // External Configuration environment variables are deprecated
@@ -709,6 +701,15 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the tls configuration with the certificate to trust
+     *
+     * @return tls trusted certificates list
+     */
+    public ClientTls getTls() {
+        return tls;
+    }
+
+    /**
      * Sets the configured authentication
      *
      * @param authentication Authentication configuration
@@ -716,6 +717,16 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected void setAuthentication(KafkaClientAuthentication authentication) {
         this.authentication = authentication;
     }
+
+    /**
+     * Gets the configured authentication
+     *
+     * @return Authentication configuration
+     */
+    public KafkaClientAuthentication getAuthentication() {
+        return authentication;
+    }
+
 
     /**
      * Generates the PodDisruptionBudget
@@ -812,6 +823,76 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Creates a Role for reading TLS certificate secrets in the same namespace as the resource.
+     * This is used for loading certificates from secrets directly.
+     **
+     * @return role for the Kafka Connect
+     */
+    public Role generateRole() {
+        List<String> certSecretNames = new ArrayList<>();
+        if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
+            certSecretNames.add(KafkaConnectResources.internalTlsTrustedCertsSecretName(cluster));
+        }
+
+        if (authentication != null) {
+            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
+                certSecretNames.add(tlsAuth.getCertificateAndKey().getSecretName());
+            } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null
+                    && !oauth.getTlsTrustedCertificates().isEmpty()) {
+                certSecretNames.add(KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster));
+            }
+        }
+
+        List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
+                .withApiGroups("")
+                .withResources("secrets")
+                .withVerbs("get")
+                .withResourceNames(certSecretNames)
+                .build());
+
+        Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, templateRole);
+        return role;
+    }
+
+    /**
+     * Generates the Kafka Connect Role Binding
+     *
+     * @return  Role Binding for the Kafka Connect
+     */
+    public RoleBinding generateRoleBindingForRole() {
+        Subject subject = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(componentName)
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName(componentName)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("Role")
+                .build();
+
+        RoleBinding rb = RbacUtils
+                .createRoleBinding(KafkaConnectResources.connectRoleBindingName(cluster), namespace, roleRef, List.of(subject), labels, ownerReference, templateRoleBinding);
+
+        return rb;
+    }
+
+    /**
+     * Creates a secret that contains the TLS certificates from one or more secrets
+     * in the same namespace as the resource.
+     * This is used for loading truststore certificates from the secret directly.
+     **
+     * @param secretData secret data
+     * @param secretName secret name
+     *
+     * @return secret for tls certificates
+     */
+    public Secret generateTlsTrustedCertsSecret(Map<String, String> secretData, String secretName) {
+        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.of(), Map.of());
+    }
+
+    /**
      * @return  Default logging configuration needed to update loggers in Kafka Connect (and Kafka Mirror Maker 2 which
      *          is based on Kafka Connect)
      */
@@ -845,12 +926,12 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         // add the ConfigMap data entry for Connect configurations
         data.put(
                 KAFKA_CONNECT_CONFIGURATION_FILENAME,
-                new KafkaConnectConfigurationBuilder(bootstrapServers)
+                new KafkaConnectConfigurationBuilder(reconciliation, bootstrapServers)
                         .withUserConfigurations(configuration)
                         .withRestListeners(REST_API_PORT)
                         .withPluginPath()
-                        .withTls(tls)
-                        .withAuthentication(authentication)
+                        .withTls(tls, cluster)
+                        .withAuthentication(authentication, cluster)
                         .withRackId()
                         .build()
         );

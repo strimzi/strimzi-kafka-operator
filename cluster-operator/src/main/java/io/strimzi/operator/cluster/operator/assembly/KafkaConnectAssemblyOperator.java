@@ -163,6 +163,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
+                .compose(i -> connectRole(reconciliation, namespace, connect))
+                .compose(i -> connectRoleBinding(reconciliation, namespace, connect))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
                 .compose(i -> manualRollingUpdate(reconciliation, connect))
                 .compose(i -> podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName()))
@@ -178,6 +180,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 })
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generateHeadlessService()))
+                .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, connect))
+                .compose(i -> oauthTrustedCertsSecret(reconciliation, namespace, connect))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, connect))
                 .compose(logAndMetricsConfigMap -> {
                     String logging = logAndMetricsConfigMap.getData().get(connect.logging().configMapKey());
