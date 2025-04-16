@@ -33,6 +33,7 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -143,7 +144,7 @@ public class KafkaRollerST extends AbstractST {
         LOGGER.info("Scaling down to {}", initialBrokerReplicaCount);
         KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> knp.getSpec().setReplicas(initialBrokerReplicaCount));
         KafkaNodePoolUtils.waitForKafkaNodePoolStatusUpdate(testStorage.getNamespaceName(), testStorage.getBrokerPoolName());
-        assertThat("NodePool still has old number of replicas", KafkaNodePoolUtils.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getBrokerPoolName()).get().getStatus().getReplicas(), is(4));
+        assertThat("NodePool still has old number of replicas", CrdResourceClients.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getBrokerPoolName()).get().getStatus().getReplicas(), is(4));
 
         LOGGER.info("Scale-down should have been reverted and the cluster should be still Ready");
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());

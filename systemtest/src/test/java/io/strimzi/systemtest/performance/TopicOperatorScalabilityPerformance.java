@@ -16,6 +16,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -68,7 +69,7 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
             } finally {
                 // safe net if something went wrong during test case and KafkaTopic is not properly deleted
                 LOGGER.info("Cleaning namespace: {}", suiteTestStorage.getNamespaceName());
-                List<KafkaTopic> kafkaTopics = KafkaTopicUtils.kafkaTopicClient().inNamespace(suiteTestStorage.getNamespaceName()).list().getItems();
+                List<KafkaTopic> kafkaTopics = CrdResourceClients.kafkaTopicClient().inNamespace(suiteTestStorage.getNamespaceName()).list().getItems();
                 resourceManager.deleteResource(kafkaTopics.toArray(new KafkaTopic[0]));
                 KafkaTopicUtils.waitForTopicWithPrefixDeletion(suiteTestStorage.getNamespaceName(), suiteTestStorage.getTopicName());
 

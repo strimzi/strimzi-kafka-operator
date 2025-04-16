@@ -4,12 +4,8 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceConditions;
@@ -23,15 +19,12 @@ import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaMirrorMaker2Client;
 
 public class KafkaMirrorMaker2Utils {
     private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMaker2Utils.class);
 
     private KafkaMirrorMaker2Utils() {}
-
-    public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
-        return Crds.kafkaMirrorMaker2Operation(KubeResourceManager.get().kubeClient().getClient());
-    }
 
     public static void replaceKafkaMirrorMaker2InNamespace(String namespaceName, String resourceName, Consumer<KafkaMirrorMaker2> editor) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(resourceName).get();

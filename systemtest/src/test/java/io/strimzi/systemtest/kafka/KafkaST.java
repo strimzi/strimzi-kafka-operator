@@ -57,6 +57,7 @@ import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -1382,7 +1383,7 @@ class KafkaST extends AbstractST {
         resourceManager.deleteResources();
 
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, KubeResourceManager.get().getTestContext());
-        if (KafkaUtils.kafkaClient().inNamespace(namespaceName).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
+        if (CrdResourceClients.kafkaClient().inNamespace(namespaceName).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
             cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
         }
 

@@ -17,6 +17,7 @@ import io.strimzi.systemtest.performance.gather.schedulers.TopicOperatorMetricsC
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -196,7 +197,7 @@ public class TopicOperatorPerformance extends AbstractST {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaTopic
             LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespaceName());
-            List<KafkaTopic> kafkaTopics = KafkaTopicUtils.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+            List<KafkaTopic> kafkaTopics = CrdResourceClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
             resourceManager.deleteResource(kafkaTopics.toArray(new KafkaTopic[0]));
             KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
 

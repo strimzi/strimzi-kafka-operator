@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -123,7 +124,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
         boolean sameMinorVersion = initialVersion.metadataVersion().equals(newVersion.metadataVersion());
 
-        if (KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get() == null) {
+        if (CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get() == null) {
             LOGGER.info("Deploying initial Kafka version {} with metadataVersion={}", initialVersion.version(), initMetadataVersion);
 
             KafkaBuilder kafka = KafkaTemplates.kafka(testStorage.getNamespaceName(), CLUSTER_NAME, brokerReplicas)
@@ -176,7 +177,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
         LOGGER.info("Deployment of initial Kafka version (" + initialVersion.version() + ") complete");
 
-        String controllerVersionResult = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get().getStatus().getKafkaVersion();
+        String controllerVersionResult = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get().getStatus().getKafkaVersion();
         LOGGER.info("Pre-change Kafka version: " + controllerVersionResult);
 
         controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerSelector);
@@ -199,7 +200,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), brokerSelector, brokerReplicas, brokerPods);
         LOGGER.info("1st Brokers roll (image change) is complete");
 
-        String currentMetadataVersion = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get().getSpec().getKafka().getMetadataVersion();
+        String currentMetadataVersion = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get().getSpec().getKafka().getMetadataVersion();
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 

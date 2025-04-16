@@ -11,6 +11,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -112,7 +113,7 @@ public class ClusterOperatorRbacST extends AbstractST {
             .build());
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), ".*code=403.*");
-        Condition kafkaStatusCondition = KafkaUtils.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
+        Condition kafkaStatusCondition = CrdResourceClients.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(kafkaStatusCondition, is(notNullValue()));
         assertTrue(kafkaStatusCondition.getMessage().contains("code=403"));
 
@@ -123,7 +124,7 @@ public class ClusterOperatorRbacST extends AbstractST {
             .build());
 
         KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), ".*code=403.*");
-        Condition kafkaConnectStatusCondition = KafkaConnectUtils.kafkaConnectClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
+        Condition kafkaConnectStatusCondition = CrdResourceClients.kafkaConnectClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(kafkaConnectStatusCondition, is(notNullValue()));
         assertTrue(kafkaConnectStatusCondition.getMessage().contains("code=403"));
     }

@@ -36,6 +36,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -158,7 +159,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaUserUtils.waitForKafkaUserReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
 
         LOGGER.info("Checking status of deployed KafkaUser");
-        Condition kafkaCondition = KafkaUserUtils.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get().getStatus().getConditions().get(0);
+        Condition kafkaCondition = CrdResourceClients.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get().getStatus().getConditions().get(0);
         LOGGER.info("KafkaUser Status: {}", kafkaCondition.getStatus());
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
         assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(Ready.toString()));
@@ -222,7 +223,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaConnectorUtils.replaceKafkaConnectorInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, "non-existing-connect-cluster")));
         KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
-        assertThat(KafkaConnectorUtils.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
+        assertThat(CrdResourceClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
 
         KafkaConnectorUtils.replaceKafkaConnectorInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, sharedTestStorage.getClusterName())));
@@ -230,12 +231,12 @@ class CustomResourceStatusST extends AbstractST {
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
 
-        String defaultClass = KafkaConnectorUtils.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getSpec().getClassName();
+        String defaultClass = CrdResourceClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getSpec().getClassName();
 
         KafkaConnectorUtils.replaceKafkaConnectorInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kc -> kc.getSpec().setClassName("non-existing-class"));
         KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
-        assertThat(KafkaConnectorUtils.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
+        assertThat(CrdResourceClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
 
         KafkaConnectorUtils.replaceKafkaConnectorInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kc -> {
@@ -257,7 +258,7 @@ class CustomResourceStatusST extends AbstractST {
 
         KafkaConnectorUtils.waitForConnectorNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
 
-        KafkaConnectorUtils.kafkaConnectorClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        CrdResourceClients.kafkaConnectorClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         KafkaConnectorUtils.waitForConnectorDeletion(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
     }
 
@@ -329,7 +330,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2NotReady(Environment.TEST_SUITE_NAMESPACE, mirrorMaker2Name);
 
         // delete
-        KafkaMirrorMaker2Utils.kafkaMirrorMaker2Client().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(mirrorMaker2Name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        CrdResourceClients.kafkaMirrorMaker2Client().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(mirrorMaker2Name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
         DeploymentUtils.waitForDeploymentDeletion(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMaker2Resources.componentName(mirrorMaker2Name));
     }
@@ -390,8 +391,8 @@ class CustomResourceStatusST extends AbstractST {
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
         long observedGeneration = 0;
 
-        KafkaStatus kafkaStatus = KafkaUtils.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get().getStatus();
-        observedGeneration = KafkaNodePoolUtils.kafkaNodePoolClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getBrokerPoolName()).get().getStatus().getObservedGeneration();
+        KafkaStatus kafkaStatus = CrdResourceClients.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get().getStatus();
+        observedGeneration = CrdResourceClients.kafkaNodePoolClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getBrokerPoolName()).get().getStatus().getObservedGeneration();
 
         assertThat("Kafka cluster status has incorrect Observed Generation", observedGeneration, is(expectedObservedGeneration));
 
@@ -418,7 +419,7 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     void assertKafkaMirrorMaker2Status(long expectedObservedGeneration, String apiUrl, String mirrorMaker2Name) {
-        KafkaMirrorMaker2Status kafkaMirrorMaker2Status = KafkaMirrorMaker2Utils.kafkaMirrorMaker2Client().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(mirrorMaker2Name).get().getStatus();
+        KafkaMirrorMaker2Status kafkaMirrorMaker2Status = CrdResourceClients.kafkaMirrorMaker2Client().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(mirrorMaker2Name).get().getStatus();
         assertThat("MirrorMaker2 cluster status has incorrect Observed Generation", kafkaMirrorMaker2Status.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("MirrorMaker2 cluster status has incorrect URL", kafkaMirrorMaker2Status.getUrl(), is(apiUrl));
         for (Map<String, Object> connector : kafkaMirrorMaker2Status.getConnectors()) {
@@ -427,13 +428,13 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     void assertKafkaBridgeStatus(long expectedObservedGeneration, String bridgeAddress) {
-        KafkaBridgeStatus kafkaBridgeStatus = KafkaBridgeUtils.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get().getStatus();
+        KafkaBridgeStatus kafkaBridgeStatus = CrdResourceClients.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get().getStatus();
         assertThat("KafkaBridge cluster status has incorrect Observed Generation", kafkaBridgeStatus.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("KafkaBridge cluster status has incorrect URL", kafkaBridgeStatus.getUrl(), is(bridgeAddress));
     }
 
     void assertKafkaConnectStatus(long expectedObservedGeneration, String expectedUrl) {
-        KafkaConnectStatus kafkaConnectStatus = KafkaConnectUtils.kafkaConnectClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get().getStatus();
+        KafkaConnectStatus kafkaConnectStatus = CrdResourceClients.kafkaConnectClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get().getStatus();
         assertThat("KafkaConnect cluster status has incorrect Observed Generation", kafkaConnectStatus.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("KafkaConnect cluster status has incorrect URL", kafkaConnectStatus.getUrl(), is(expectedUrl));
 

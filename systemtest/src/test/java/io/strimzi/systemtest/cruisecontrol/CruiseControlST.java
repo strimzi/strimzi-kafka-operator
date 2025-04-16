@@ -37,6 +37,7 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -305,7 +306,7 @@ public class CruiseControlST extends AbstractST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), errMessage, Duration.ofMinutes(6).toMillis());
 
-        KafkaStatus kafkaStatus = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaStatus kafkaStatus = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
 
         assertThat(kafkaStatus.getConditions().stream().filter(c -> "InvalidResourceException".equals(c.getReason())).findFirst().orElse(null), is(notNullValue()));
 
@@ -318,7 +319,7 @@ public class CruiseControlST extends AbstractST {
 
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        kafkaStatus = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        kafkaStatus = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is(not(errMessage)));
     }
 
@@ -365,7 +366,7 @@ public class CruiseControlST extends AbstractST {
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Checking status of KafkaRebalance");
-        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceUtils.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaRebalanceStatus kafkaRebalanceStatus = CrdResourceClients.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic1));
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic2));
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), not(containsString(includedTopic)));
@@ -406,7 +407,7 @@ public class CruiseControlST extends AbstractST {
         String ccPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
 
         LOGGER.info("Check for default CruiseControl replicaMovementStrategy in Pod configuration file");
-        Map<String, Object> actualStrategies = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName())
+        Map<String, Object> actualStrategies = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName())
             .withName(testStorage.getClusterName()).get().getSpec().getCruiseControl().getConfig();
         // Check that config contains only configurations for max.active.user.tasks, metric.sampling.interval.ms, cruise.control.metrics.reporter.metrics.reporting.interval.ms, metadata.max.age.ms
         assertThat(actualStrategies.size(), is(4));
@@ -482,7 +483,7 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Checking status of KafkaRebalance");
         // The provision status should be "UNDECIDED" when doing an intra-broker disk balance because it is irrelevant to the provision status
-        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceUtils.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaRebalanceStatus kafkaRebalanceStatus = CrdResourceClients.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("provisionStatus").toString(), containsString("UNDECIDED"));
     }
 
@@ -553,7 +554,7 @@ public class CruiseControlST extends AbstractST {
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(),  testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
         KafkaRebalanceUtils.doRebalancingProcess(testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaRebalanceUtils.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).delete();
+        CrdResourceClients.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).delete();
 
         LOGGER.info("Checking that Topic: {} has replicas on one of the new brokers (or both)", testStorage.getTopicName());
         List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));

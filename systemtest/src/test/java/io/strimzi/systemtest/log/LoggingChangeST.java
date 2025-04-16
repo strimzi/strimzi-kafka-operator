@@ -35,6 +35,7 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -2069,7 +2070,7 @@ class LoggingChangeST extends AbstractST {
         assertFalse(log4jFile.contains(defaultProps));
 
         LOGGER.info("Checking if Kafka: {} contains error about non-existing CM", testStorage.getClusterName());
-        Condition condition = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(con -> CustomResourceStatus.NotReady.toString().equals(con.getType())).findFirst().orElse(null);
+        Condition condition = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(con -> CustomResourceStatus.NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(condition, is(notNullValue()));
         assertTrue(condition.getMessage().matches("ConfigMap " + nonExistingCmName + " with external logging configuration does not exist .*"));
     }

@@ -56,6 +56,7 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -72,7 +73,6 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
@@ -1191,7 +1191,7 @@ class ConnectST extends AbstractST {
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 0, true);
 
         connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
-        KafkaConnectStatus connectStatus = KafkaConnectUtils.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaConnectStatus connectStatus = CrdResourceClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
         assertThat(connectStatus.getConditions().get(0).getType(), is(Ready.toString()));
@@ -1254,8 +1254,8 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
-        KafkaConnectStatus connectStatus = KafkaConnectUtils.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
-        KafkaConnectorStatus connectorStatus = KafkaConnectorUtils.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaConnectStatus connectStatus = CrdResourceClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaConnectorStatus connectorStatus = CrdResourceClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
         assertThat(connectStatus.getConditions().get(0).getType(), is(Ready.toString()));
@@ -1306,7 +1306,7 @@ class ConnectST extends AbstractST {
             .build());
 
         final int scaleTo = 4;
-        final long connectObsGen = KafkaConnectUtils.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
+        final long connectObsGen = CrdResourceClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
 
         LOGGER.info("-------> Scaling KafkaConnect subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
@@ -1318,15 +1318,15 @@ class ConnectST extends AbstractST {
 
         StUtils.waitUntilSupplierIsSatisfied("KafkaConnect expected size (status, replicas, pod count)",
             () -> kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName())).size() == scaleTo &&
-                KafkaConnectUtils.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
-                KafkaConnectUtils.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
+                CrdResourceClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
+                CrdResourceClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
 
         List<Pod> connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
         /*
         observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
         the observed generation is increased
         */
-        assertThat(connectObsGen < KafkaConnectUtils.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration(), is(true));
+        assertThat(connectObsGen < CrdResourceClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration(), is(true));
 
         LOGGER.info("-------> Scaling KafkaConnector subresource <-------");
         LOGGER.info("Scaling subresource task max to {}", scaleTo);
@@ -1334,8 +1334,8 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.waitForConnectorsTaskMaxChange(testStorage.getNamespaceName(), testStorage.getClusterName(), scaleTo);
 
         LOGGER.info("Check if taskMax is set to {}", scaleTo);
-        assertThat(KafkaConnectorUtils.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getTasksMax(), is(scaleTo));
-        assertThat(KafkaConnectorUtils.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getTasksMax(), is(scaleTo));
+        assertThat(CrdResourceClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getTasksMax(), is(scaleTo));
+        assertThat(CrdResourceClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getTasksMax(), is(scaleTo));
 
         LOGGER.info("Check taskMax on Connect Pods API");
         for (Pod pod : connectPods) {
@@ -1678,7 +1678,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .build();
 
-        KafkaUserUtils.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaUser).update();
+        CrdResourceClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaUser).update();
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectSnapshot);
 

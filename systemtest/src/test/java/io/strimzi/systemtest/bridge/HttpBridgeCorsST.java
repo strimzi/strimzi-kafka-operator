@@ -17,6 +17,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -24,7 +25,6 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.vertx.core.http.HttpMethod;
@@ -196,7 +196,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeScraper(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperPodName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName()));
 
-        KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeUtils.kafkaBridgeClient().inNamespace(suiteTestStorage.getNamespaceName()).withName(suiteTestStorage.getClusterName()).get().getSpec().getHttp().getCors();
+        KafkaBridgeHttpCors kafkaBridgeHttpCors = CrdResourceClients.kafkaBridgeClient().inNamespace(suiteTestStorage.getNamespaceName()).withName(suiteTestStorage.getClusterName()).get().getSpec().getHttp().getCors();
         LOGGER.info("Bridge with the following CORS settings {}", kafkaBridgeHttpCors.toString());
 
         bridgeUrl = KafkaBridgeResources.url(suiteTestStorage.getClusterName(), suiteTestStorage.getNamespaceName(), TestConstants.HTTP_BRIDGE_DEFAULT_PORT);

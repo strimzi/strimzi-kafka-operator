@@ -22,6 +22,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -317,7 +318,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         LOGGER.info("Checking if KafkaRebalance is still ignored, after the cluster stability wait");
 
         // because KR is ignored, it shouldn't contain any status
-        assertNull(KafkaRebalanceUtils.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus());
+        assertNull(CrdResourceClients.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus());
 
         LOGGER.info("Adding {} selector of {} to Kafka", SECOND_CO_SELECTOR, SECOND_CO_NAME);
         KafkaNodePoolUtils.replaceKafkaNodePoolInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),

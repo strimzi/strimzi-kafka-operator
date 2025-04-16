@@ -23,6 +23,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.metrics.TopicOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -91,7 +92,7 @@ public class TopicST extends AbstractST {
         String errorMessage = "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered.";
 
         KafkaTopicUtils.waitForKafkaTopicNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicUtils.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get().getStatus();
+        KafkaTopicStatus kafkaTopicStatus = CrdResourceClients.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get().getStatus();
 
         assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), containsString(errorMessage));
         assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString("KafkaError"));
@@ -205,7 +206,7 @@ public class TopicST extends AbstractST {
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         LOGGER.info("Try to delete KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopicUtils.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        CrdResourceClients.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         KafkaTopicUtils.waitForTopicStatusMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), "TopicDeletionDisabledException");
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
@@ -217,7 +218,7 @@ public class TopicST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaPods);
 
         LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopicUtils.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        CrdResourceClients.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     @ParallelTest
@@ -242,9 +243,9 @@ public class TopicST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicNotReady(Environment.TEST_SUITE_NAMESPACE, topicName);
 
         String exceptedMessage = "Decreasing partitions not supported";
-        assertThat(KafkaTopicUtils.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage(), is(exceptedMessage));
+        assertThat(CrdResourceClients.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage(), is(exceptedMessage));
 
-        String topicCRDMessage = KafkaTopicUtils.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
+        String topicCRDMessage = CrdResourceClients.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
 
         assertThat(topicCRDMessage, containsString(exceptedMessage));
 
@@ -486,7 +487,7 @@ public class TopicST extends AbstractST {
     }
 
     void assertKafkaTopicStatus(String namespaceName, String topicName, CustomResourceStatus status, ConditionStatus conditionStatus, String reason, String message, int expectedObservedGeneration) {
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicUtils.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getStatus();
+        KafkaTopicStatus kafkaTopicStatus = CrdResourceClients.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getStatus();
 
         assertThat(kafkaTopicStatus.getConditions().stream()
                 .anyMatch(condition -> condition.getType().equals(status.toString()) && condition.getStatus().equals(conditionStatus.toString())), CoreMatchers.is(true));
@@ -539,7 +540,7 @@ public class TopicST extends AbstractST {
         adminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName());
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();
-        topicOperatorReconciliationIntervalMs = KafkaUtils.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get()
+        topicOperatorReconciliationIntervalMs = CrdResourceClients.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get()
                 .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalMs() + 5_000L;
     }
 }

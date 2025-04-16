@@ -4,14 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.operator.common.Annotations;
@@ -28,6 +24,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaRebalanceClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaRebalanceUtils {
@@ -35,10 +32,6 @@ public class KafkaRebalanceUtils {
     private static final Logger LOGGER = LogManager.getLogger(KafkaRebalanceUtils.class);
 
     private KafkaRebalanceUtils() {}
-
-    public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceClient() {
-        return Crds.kafkaRebalanceOperation(KubeResourceManager.get().kubeClient().getClient());
-    }
 
     public static void replaceKafkaRebalanceInNamespace(String namespaceName, String resourceName, Consumer<KafkaRebalance> editor) {
         KafkaRebalance kafkaRebalance = kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get();

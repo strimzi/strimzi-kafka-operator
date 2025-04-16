@@ -7,13 +7,9 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
-import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceConditions;
@@ -31,6 +27,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.TestConstants.GLOBAL_RECONCILIATION_COUNT;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaConnectorClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaConnectorUtils {
@@ -39,10 +36,6 @@ public class KafkaConnectorUtils {
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND);
 
     private KafkaConnectorUtils() {}
-
-    public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorClient() {
-        return Crds.kafkaConnectorOperation(KubeResourceManager.get().kubeClient().getClient());
-    }
 
     public static void replaceKafkaConnectorInNamespace(String namespaceName, String resourceName, Consumer<KafkaConnector> editor) {
         KafkaConnector kafkaConnector = kafkaConnectorClient().inNamespace(namespaceName).withName(resourceName).get();

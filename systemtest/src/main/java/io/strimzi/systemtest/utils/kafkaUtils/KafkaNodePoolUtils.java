@@ -5,18 +5,14 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -26,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaNodePoolClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaNodePoolUtils {
 
@@ -35,10 +31,6 @@ public class KafkaNodePoolUtils {
     private static final Logger LOGGER = LogManager.getLogger(PodUtils.class);
 
     private KafkaNodePoolUtils() {}
-
-    public static MixedOperation<KafkaNodePool, KafkaNodePoolList, Resource<KafkaNodePool>> kafkaNodePoolClient() {
-        return Crds.kafkaNodePoolOperation(kubeClient().getClient());
-    }
 
     public static void replaceKafkaNodePoolInNamespace(String namespaceName, String resourceName, Consumer<KafkaNodePool> editor) {
         KafkaNodePool kafkaNodePool = kafkaNodePoolClient().inNamespace(namespaceName).withName(resourceName).get();
@@ -69,7 +61,7 @@ public class KafkaNodePoolUtils {
         TestUtils.waitFor("deletion of KafkaNodePool: " + namespaceName + "/" + kafkaNodePoolName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
                 if (kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).get() == null &&
-                    StrimziPodSetUtils.strimziPodSetClient().inNamespace(namespaceName).withName(kafkaClusterName + "-" + kafkaNodePoolName).get() == null
+                    CrdResourceClients.strimziPodSetClient().inNamespace(namespaceName).withName(kafkaClusterName + "-" + kafkaNodePoolName).get() == null
                 ) {
                     return true;
                 } else {
@@ -84,16 +76,6 @@ public class KafkaNodePoolUtils {
         waitForKafkaNodePoolPodsReady(
             testStorage.getNamespaceName(),
             testStorage.getClusterName(),
-            kafkaNodePoolName,
-            replicaCount,
-            nodePoolRole
-        );
-    }
-
-    public static void waitForKafkaNodePoolPodsReady(String namespaceName, String kafkaClusterName, ProcessRoles nodePoolRole, String kafkaNodePoolName, int replicaCount) {
-        waitForKafkaNodePoolPodsReady(
-            namespaceName,
-            kafkaClusterName,
             kafkaNodePoolName,
             replicaCount,
             nodePoolRole

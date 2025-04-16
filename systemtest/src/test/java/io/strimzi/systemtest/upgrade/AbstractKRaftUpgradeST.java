@@ -28,6 +28,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -688,7 +689,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}, in Namespace {}", kafkaTopicYaml.getPath(), namespaceName);
         cmdKubeClient(namespaceName).applyContent(ReadWriteUtils.readFile(kafkaTopicYaml));
-        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> KafkaTopicUtils.kafkaTopicClient().inNamespace(namespaceName).withName("my-topic").delete()));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> CrdResourceClients.kafkaTopicClient().inNamespace(namespaceName).withName("my-topic").delete()));
     }
 
     private String getKafkaYamlWithName(String name) {

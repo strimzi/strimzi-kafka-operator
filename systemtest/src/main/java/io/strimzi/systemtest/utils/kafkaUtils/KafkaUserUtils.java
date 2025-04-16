@@ -9,13 +9,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.PasswordBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUser;
-import io.strimzi.api.kafka.model.user.KafkaUserList;
 import io.strimzi.api.kafka.model.user.KafkaUserScramSha512ClientAuthenticationBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserSpec;
 import io.strimzi.systemtest.TestConstants;
@@ -35,6 +31,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaUserClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaUserUtils {
@@ -45,10 +42,6 @@ public class KafkaUserUtils {
     private static final Random RANDOM = new Random();
 
     private KafkaUserUtils() {}
-
-    public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserClient() {
-        return Crds.kafkaUserOperation(KubeResourceManager.get().kubeClient().getClient());
-    }
 
     public static void replaceKafkaUserInNamespace(String namespaceName, String resourceName, Consumer<KafkaUser> editor) {
         KafkaUser kafkaUser = kafkaUserClient().inNamespace(namespaceName).withName(resourceName).get();

@@ -19,9 +19,9 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -411,7 +411,7 @@ public class VerificationUtils {
         String mirrormaker2ImageName = PodUtils.getFirstContainerImageNameFromPod(mirrorMakerNamespace, kubeClient().listPods(mirrorMakerNamespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND)
             .get(0).getMetadata().getName());
 
-        String mirrormaker2Version = KafkaMirrorMaker2Utils.kafkaMirrorMaker2Client().inNamespace(mirrorMakerNamespace).withName(clusterName).get().getSpec().getVersion();
+        String mirrormaker2Version = CrdResourceClients.kafkaMirrorMaker2Client().inNamespace(mirrorMakerNamespace).withName(clusterName).get().getSpec().getVersion();
         if (mirrormaker2Version == null) {
             mirrormaker2Version = Environment.ST_KAFKA_VERSION;
         }

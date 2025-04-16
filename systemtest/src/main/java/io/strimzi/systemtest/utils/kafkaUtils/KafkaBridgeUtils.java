@@ -4,12 +4,8 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
-import io.strimzi.api.kafka.model.bridge.KafkaBridgeList;
 import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 
@@ -17,13 +13,10 @@ import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaBridgeClient;
 
 public class KafkaBridgeUtils {
     private KafkaBridgeUtils() {}
-
-    public static MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> kafkaBridgeClient() {
-        return Crds.kafkaBridgeOperation(KubeResourceManager.get().kubeClient().getClient());
-    }
 
     public static void replaceKafkaBridgeInNamespace(String namespaceName, String resourceName, Consumer<KafkaBridge> editor) {
         KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(namespaceName).withName(resourceName).get();

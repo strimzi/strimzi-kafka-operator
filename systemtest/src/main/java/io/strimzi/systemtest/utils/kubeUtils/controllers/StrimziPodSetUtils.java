@@ -8,12 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
-import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
@@ -28,6 +24,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.resources.CrdResourceClients.strimziPodSetClient;
+
 public class StrimziPodSetUtils {
 
     private StrimziPodSetUtils() {}
@@ -37,10 +35,6 @@ public class StrimziPodSetUtils {
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(StrimziPodSet.RESOURCE_KIND);
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    public static MixedOperation<StrimziPodSet, StrimziPodSetList, Resource<StrimziPodSet>> strimziPodSetClient() {
-        return Crds.strimziPodSetOperation(KubeResourceManager.get().kubeClient().getClient());
-    }
 
     public static void replaceStrimziPodSetInNamespace(String namespaceName, String resourceName, Consumer<StrimziPodSet> editor) {
         StrimziPodSet strimziPodSet = strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get();

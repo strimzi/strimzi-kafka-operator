@@ -12,13 +12,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
@@ -32,13 +28,13 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
@@ -64,6 +60,7 @@ import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIX
 import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.types.KafkaType.kafkaClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -76,15 +73,11 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaClient() {
-        return Crds.kafkaOperation(KubeResourceManager.get().kubeClient().getClient());
-    }
-
     public static void replaceKafkaInNamespace(String namespaceName, String resourceName, Consumer<Kafka> editor) {
         Kafka kafka = kafkaClient().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(kafka, editor);
     }
-    
+
     public static boolean waitForKafkaReady(String namespaceName, String clusterName) {
         return waitForKafkaStatus(namespaceName, clusterName, Ready);
     }
@@ -396,8 +389,8 @@ public class KafkaUtils {
         TestUtils.waitFor("deletion of Kafka: " + namespaceName + "/" + kafkaClusterName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
                 if (kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
-                    StrimziPodSetUtils.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResourceNames.getControllerComponentName(kafkaClusterName)).get() == null  &&
-                    StrimziPodSetUtils.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResourceNames.getBrokerComponentName(kafkaClusterName)).get() == null  &&
+                    CrdResourceClients.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResourceNames.getControllerComponentName(kafkaClusterName)).get() == null  &&
+                    CrdResourceClients.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResourceNames.getBrokerComponentName(kafkaClusterName)).get() == null  &&
                     kubeClient(namespaceName).getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
                     return true;
                 } else {

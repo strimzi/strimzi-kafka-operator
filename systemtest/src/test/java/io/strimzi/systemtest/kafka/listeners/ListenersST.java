@@ -34,6 +34,7 @@ import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
@@ -507,7 +508,7 @@ public class ListenersST extends AbstractST {
 
         StUtils.waitUntilSupplierIsSatisfied("Kafka status contains proper data about listeners (check test log for more info)", () -> {
             // Check that Kafka status has correct addresses in NodePort external listener part
-            for (ListenerStatus listenerStatus : KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getListeners()) {
+            for (ListenerStatus listenerStatus : CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getListeners()) {
                 if (listenerStatus.getName().equals(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)) {
                     List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).sorted(Comparator.comparing(String::toString)).toList();
                     List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).toList();
@@ -545,8 +546,8 @@ public class ListenersST extends AbstractST {
         });
 
         // check the ClusterRoleBinding annotations and labels in Kafka cluster
-        Map<String, String> actualLabel = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getTemplate().getClusterRoleBinding().getMetadata().getLabels();
-        Map<String, String> actualAnno = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getTemplate().getClusterRoleBinding().getMetadata().getAnnotations();
+        Map<String, String> actualLabel = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getTemplate().getClusterRoleBinding().getMetadata().getLabels();
+        Map<String, String> actualAnno = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getTemplate().getClusterRoleBinding().getMetadata().getAnnotations();
 
         assertThat(actualLabel, is(label));
         assertThat(actualAnno, is(anno));
@@ -726,7 +727,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        ServiceUtils.waitUntilAddressIsReachable(KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
+        ServiceUtils.waitUntilAddressIsReachable(CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -787,7 +788,7 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName()).build());
 
-        ServiceUtils.waitUntilAddressIsReachable(KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
+        ServiceUtils.waitUntilAddressIsReachable(CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())

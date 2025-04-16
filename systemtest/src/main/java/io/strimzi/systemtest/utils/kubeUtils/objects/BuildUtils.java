@@ -4,34 +4,20 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.openshift.api.model.Build;
-import io.fabric8.openshift.api.model.BuildConfig;
-import io.fabric8.openshift.api.model.BuildConfigList;
-import io.fabric8.openshift.api.model.BuildList;
 import io.fabric8.openshift.api.model.BuildStatus;
-import io.fabric8.openshift.client.OpenShiftClient;
-import io.fabric8.openshift.client.dsl.BuildResource;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static io.strimzi.systemtest.resources.CrdResourceClients.buildConfigClient;
+import static io.strimzi.systemtest.resources.CrdResourceClients.buildsClient;
 
 public class BuildUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(BuildUtils.class);
 
     private BuildUtils() { }
-
-    public static MixedOperation<BuildConfig, BuildConfigList, io.fabric8.openshift.client.dsl.BuildConfigResource<BuildConfig, Void, Build>> buildConfigClient() {
-        return kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs();
-    }
-
-    public static MixedOperation<Build, BuildList, BuildResource> buildsClient() {
-        return kubeClient().getClient().adapt(OpenShiftClient.class).builds();
-    }
 
     /**
      * Gets OpenShift build name based on name and version

@@ -20,6 +20,7 @@ import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.BuildUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -169,7 +170,7 @@ public class ImageBuild {
 
         KubeResourceManager.get().createResourceWithoutWait(imageStream);
         KubeResourceManager.get().createResourceWithoutWait(buildConfig);
-        BuildUtils.buildConfigClient().inNamespace(namespace).withName(name).instantiate(buildRequest);
+        CrdResourceClients.buildConfigClient().inNamespace(namespace).withName(name).instantiate(buildRequest);
 
         BuildUtils.waitForBuildComplete(namespace, name);
     }

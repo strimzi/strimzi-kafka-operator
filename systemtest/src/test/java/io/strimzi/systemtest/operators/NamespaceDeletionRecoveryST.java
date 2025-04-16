@@ -20,6 +20,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
@@ -29,7 +30,6 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
@@ -69,7 +69,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         prepareEnvironmentForRecovery(testStorage);
 
         // Get list of topics and list of PVC needed for recovery
-        List<KafkaTopic> kafkaTopicList = KafkaTopicUtils.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+        List<KafkaTopic> kafkaTopicList = CrdResourceClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace(testStorage.getNamespaceName());
 
@@ -79,7 +79,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Recreate all KafkaTopic resources
         for (KafkaTopic kafkaTopic : kafkaTopicList) {
             kafkaTopic.getMetadata().setResourceVersion(null);
-            KafkaTopicUtils.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaTopic).create();
+            CrdResourceClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaTopic).create();
         }
 
         resourceManager.createResourceWithWait(
@@ -137,7 +137,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         }
 
         // store cluster-id from Kafka CR
-        final String oldClusterId = KafkaUtils.kafkaClient()
+        final String oldClusterId = CrdResourceClients.kafkaClient()
             .inNamespace(testStorage.getNamespaceName())
             .withName(testStorage.getClusterName())
             .get()
@@ -193,7 +193,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         );
 
         // Edit the Kafka resource to set the .status.clusterId with the recovered value
-        KafkaUtils.kafkaClient()
+        CrdResourceClients.kafkaClient()
             .inNamespace(testStorage.getNamespaceName())
             .withName(testStorage.getClusterName())
             .subresource("status")

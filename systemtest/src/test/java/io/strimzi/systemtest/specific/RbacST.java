@@ -21,6 +21,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.logs.CollectorElement;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -142,7 +143,7 @@ public class RbacST extends AbstractST {
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(),
             ".*code=403.*");
 
-        final Condition condition = KafkaUtils.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(c -> "NotReady".equals(c.getType())).findFirst().orElseThrow();
+        final Condition condition = CrdResourceClients.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(c -> "NotReady".equals(c.getType())).findFirst().orElseThrow();
 
         assertThat(condition.getReason(), CoreMatchers.is("KubernetesClientException"));
         assertThat(condition.getStatus(), CoreMatchers.is("True"));

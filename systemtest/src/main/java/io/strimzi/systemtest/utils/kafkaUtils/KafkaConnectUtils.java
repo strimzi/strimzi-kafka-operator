@@ -5,13 +5,9 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.PodCondition;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
-import io.strimzi.api.kafka.model.connect.KafkaConnectList;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
@@ -31,6 +27,7 @@ import java.util.function.Predicate;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaConnectClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -39,10 +36,6 @@ public class KafkaConnectUtils {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectUtils.class);
 
     private KafkaConnectUtils() {}
-
-    public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectClient() {
-        return Crds.kafkaConnectOperation(KubeResourceManager.get().kubeClient().getClient());
-    }
 
     public static void replaceKafkaConnectInNamespace(String namespaceName, String resourceName, Consumer<KafkaConnect> editor) {
         KafkaConnect kafkaConnect = kafkaConnectClient().inNamespace(namespaceName).withName(resourceName).get();

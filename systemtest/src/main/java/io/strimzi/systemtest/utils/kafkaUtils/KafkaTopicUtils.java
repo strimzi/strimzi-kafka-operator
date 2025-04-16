@@ -4,14 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.api.kafka.model.topic.KafkaTopicList;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -45,6 +41,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaTopicClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -60,10 +57,6 @@ public class KafkaTopicUtils {
     private static final Random RANDOM = new Random();
 
     private KafkaTopicUtils() {}
-
-    public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> kafkaTopicClient() {
-        return Crds.topicOperation(KubeResourceManager.get().kubeClient().getClient());
-    }
 
     public static void replaceTopicResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaTopic> editor) {
         KafkaTopic kafkaTopic = kafkaTopicClient().inNamespace(namespaceName).withName(resourceName).get();

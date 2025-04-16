@@ -33,6 +33,7 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -581,7 +582,7 @@ class SecurityST extends AbstractST {
         maintenanceWindowCron = "* " + LocalDateTime.now().getMinute() + "-" + windowStopMin + " * * * ? *";
         LOGGER.info("Set maintenanceTimeWindow to start now to save time: {}", maintenanceWindowCron);
 
-        List<String> maintenanceTimeWindows = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getMaintenanceTimeWindows();
+        List<String> maintenanceTimeWindows = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getMaintenanceTimeWindows();
         maintenanceTimeWindows.add(maintenanceWindowCron);
 
         KafkaUtils.replaceKafkaInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().setMaintenanceTimeWindows(maintenanceTimeWindows));
@@ -1017,7 +1018,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, Object> configsFromKafkaCustomResource = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getConfig();
+        Map<String, Object> configsFromKafkaCustomResource = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getConfig();
 
         LOGGER.info("Verifying that Kafka cluster has the accepted configuration:\n" +
                         "{} -> {}\n" +
@@ -1093,7 +1094,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, Object> configsFromKafkaCustomResource = KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getConfig();
+        Map<String, Object> configsFromKafkaCustomResource = CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getConfig();
 
         LOGGER.info("Verifying that KafkaConnect has the accepted configuration:\n {} -> {}",
                 SslConfigs.SSL_CIPHER_SUITES_CONFIG, configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
@@ -1160,7 +1161,7 @@ class SecurityST extends AbstractST {
             .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(testStorage.getClusterName())) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()))).collect(Collectors.toList());
 
         LOGGER.info("Deleting Kafka: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         KafkaNodePoolUtils.deleteKafkaNodePoolWithPodSetAndWait(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerPoolName());
         KafkaNodePoolUtils.deleteKafkaNodePoolWithPodSetAndWait(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getControllerPoolName());
         KafkaUtils.waitForKafkaDeletion(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -1195,7 +1196,7 @@ class SecurityST extends AbstractST {
             .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(secondClusterName)) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(secondClusterName))).collect(Collectors.toList());
 
         LOGGER.info("Deleting Kafka: {}", secondClusterName);
-        KafkaUtils.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(secondClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        CrdResourceClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(secondClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         KafkaUtils.waitForKafkaDeletion(testStorage.getNamespaceName(), secondClusterName);
 
         LOGGER.info("Checking actual Secrets after Kafka deletion");
