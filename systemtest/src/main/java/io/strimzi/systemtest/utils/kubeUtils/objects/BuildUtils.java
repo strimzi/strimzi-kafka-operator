@@ -36,7 +36,7 @@ public class BuildUtils {
     public static void waitForBuildComplete(String namespaceName, String buildConfigName) {
         LOGGER.info("Waiting for build of {} to be completed", buildConfigName);
 
-        TestUtils.waitFor("build " + buildConfigName + " complete", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
+        TestUtils.waitFor("build " + buildConfigName + " complete", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT, () -> {
             Long buildLatestVersion = BuildConfigResource.buildConfigClient().inNamespace(namespaceName).withName(buildConfigName).get().getStatus().getLastVersion();
             String buildName = getBuildName(buildConfigName, buildLatestVersion);
 

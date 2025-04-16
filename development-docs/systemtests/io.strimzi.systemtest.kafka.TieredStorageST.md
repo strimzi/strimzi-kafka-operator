@@ -18,9 +18,33 @@
 
 <hr style="border:1px solid">
 
-## testTieredStorageWithAivenPlugin
+## testTieredStorageWithAivenFileSystemPlugin
 
-**Description:** This testcase is focused on testing of Tiered Storage integration implemented within Strimzi. The tests use Aiven Tiered Storage plugin (<a href="https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main">tiered-storage-for-apache-kafka</a>).
+**Description:** This testcase is focused on testing of Tiered Storage integration implemented within Strimzi. The tests use the FileSystem plugin in Aiven Tiered Storage project (<a href="https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main">tiered-storage-for-apache-kafka</a>).
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Deploys KafkaNodePool resource with PV of size 10Gi. | KafkaNodePool resource is deployed successfully with specified configuration. |
+| 2. | Deploys a NFS instance with RoleBinding, serviceAccount, service, StorageClass... related resources. | NFS resources are deployed successfully. |
+| 3. | Deploy Kafka CustomResource with additional NFS volume mounted and Tiered Storage configuration pointing to NFS path, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions. | Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions. |
+| 4. | Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync). | Topic is created successfully with Tiered Storage enabled and segment size of 10mb. |
+| 5. | Starts continuous producer to send data to Kafka. | Continuous producer starts sending data to Kafka. |
+| 6. | Wait until the NFS size is greater than one log segment size (contains data from Kafka). | The NFS contains at least one log segment from Kafka. |
+| 7. | Wait until the earliest-local offset to be higher than 0. | The log segments uploaded to NFS are deleted locally. |
+| 8. | Starts a consumer to consume all the produced messages, some of the messages should be located in NFS. | Consumer can consume all the messages successfully. |
+| 9. | Alter the topic config to retention.ms=10 sec to test the remote log deletion. | The topic config is altered successfully. |
+| 10. | Wait until the NFS data is deleted. | The data in the NFS data is deleted. |
+
+**Labels:**
+
+* [kafka](labels/kafka.md)
+
+
+## testTieredStorageWithAivenS3Plugin
+
+**Description:** This testcase is focused on testing of Tiered Storage integration implemented within Strimzi. The tests use the S3 plugin in Aiven Tiered Storage project (<a href="https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main">tiered-storage-for-apache-kafka</a>).
 
 **Steps:**
 
@@ -33,7 +57,7 @@
 | 5. | Wait until Minio size is not empty (contains data from Kafka). | Minio contains data from Kafka. |
 | 6. | Wait until the earliest-local offset to be higher than 0. | The log segments uploaded to Minio are deleted locally. |
 | 7. | Starts a consumer to consume all the produced messages, some of the messages should be located in Minio. | Consumer can consume all the messages successfully. |
-| 8. | Alter the topic config to retention.ms=10000 to test the remote log deletion. | The topic config is altered successfully. |
+| 8. | Alter the topic config to retention.ms=10 sec to test the remote log deletion. | The topic config is altered successfully. |
 | 9. | Wait until Minio size is 0. | The data in Minio are deleted. |
 
 **Labels:**
