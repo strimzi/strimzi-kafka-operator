@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
-import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -67,10 +67,10 @@ public class ConfigMapUtils {
             data.put(supportsLogging.logging().configMapKey(), supportsLogging.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm()));
         }
 
-        if (model instanceof SupportsMetrics supportMetrics) {
-            String parseResult = supportMetrics.metrics().metricsJson(reconciliation, metricsAndLogging.metricsCm());
+        if (model instanceof SupportsMetrics supportsMetrics && supportsMetrics.metrics() instanceof JmxPrometheusExporterModel jmxMetrics) {
+            String parseResult = jmxMetrics.metricsJson(reconciliation, metricsAndLogging.metricsCm());
             if (parseResult != null) {
-                data.put(MetricsModel.CONFIG_MAP_KEY, parseResult);
+                data.put(JmxPrometheusExporterModel.CONFIG_MAP_KEY, parseResult);
             }
         }
 
