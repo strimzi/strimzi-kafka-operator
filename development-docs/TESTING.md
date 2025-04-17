@@ -98,7 +98,7 @@ components and, if needed, change them from their default configuration using a 
 You can create resources anywhere you want. Our resource lifecycle implementation will handle insertion of the resource 
 on top of the stack and deletion at the end of the test method/class.
 Moreover, you should always use `Templates` classes for pre-defined resources. 
-For instance, when one want deploy Kafka cluster with tree nodes it can be simply done by following code:
+For instance, when one want deploy Kafka cluster with three nodes it can be simply done by following code:
 ```java
 final int numberOfKafkaBrokers = 3;
 
@@ -110,7 +110,7 @@ resourceManager.createResourceWithWait(extensionContext,
     );
 ```
 
-`ResourceManager` has Map<String, Stack<ResourceItem>>, which means that for each test case, we have a brand-new stack 
+`ResourceManager` has `Map<String, Stack<ResourceItem>>`, which means that for each test case, we have a brand-new stack 
 that stores all resources needed for specific tests. An important aspect is also the `ExtensionContext.class` with which
 we can know which stack is associated with which test uniquely.
 
@@ -176,7 +176,7 @@ related to `myNewTestName` test.
 
 ## Adding brand-new test suite 
 
-When you need to create a new test suite, firstly, make sure that it has the suffix `ST` (i.e., KafkaST, ConnectBuilderST).
+When you need to create a new test suite, firstly, make sure that it has the suffix `ST` (i.e., `KafkaST`, `ConnectBuilderST`).
 
 ## Parallel execution of tests
 
@@ -202,7 +202,7 @@ mvn verify -pl systemtest -P all -Dit.test=ListenersST -Djunit.jupiter.execution
 
 Key aspects:
 1. [JUnit5 parallelism](https://junit.org/junit5/docs/snapshot/user-guide/#writing-tests-parallel-execution)
-2. **annotations** = overrides parallelism configuration in runtime phase (i.e., @IsolatedTest, @ParallelTest, @ParallelNamespaceTest).
+2. **annotations** = overrides parallelism configuration in runtime phase (i.e., `@IsolatedTest`, `@ParallelTest`, `@ParallelNamespaceTest`).
 3. **auxiliary classes** (i.e., `SuiteThreadController`, `TestSuiteNamespaceManager`)
 
 #### 1. JUnit5 parallelism
@@ -220,7 +220,7 @@ class spawns as many threads as we specify in the `JUnit-platform.properties`.
 
 #### 3. Auxiliary classes
 
--- **TestSuiteNamespaceManager** = provides complete management of namespaces for specific test suites.
+- **TestSuiteNamespaceManager** = provides complete management of namespaces for specific test suites.
     1. **@ParallelSuite** - such a test suite creates its namespace (f.e., for TracingST creates `tracing-st` namespace).
        This is needed because we must ensure that each parallel suite runs in a separate namespace and thus runs in isolation.
     2. **@ParallelNamespaceTest** = responsible for creating and deleting auxiliary namespaces for such test cases.
@@ -245,9 +245,9 @@ Standard errors don't have any problematic impact on cluster behaviour, and requ
 
 You need to use the `groups` system property to execute a group of system tests. For example, with the following values:
 
-`-Dgroups=integration` — to execute one test group
-`-Dgroups=acceptance,regression` — to execute many test groups
-`-Dgroups=all` — to run all test groups
+- `-Dgroups=integration` - to execute one test group
+- `-Dgroups=acceptance,regression` - to execute many test groups
+- `-Dgroups=all` - to run all test groups
 
 If `-Dgroups` system property isn't defined, all tests without an explicitly declared test group will be executed.
 The following table shows currently used tags:
@@ -300,7 +300,7 @@ Loading of system configuration has the following priority order:
 2. Variable defined in the configuration file
 3. Default value
 
-After every systemtest test run all env variables are automatically stored into $TEST_LOG_DIR/test-run.../config.yaml so each test run can be easily reproduced just by running
+After every systemtest test run all env variables are automatically stored into `$TEST_LOG_DIR/test-run.../config.yaml` so each test run can be easily reproduced just by running
 ```commandline
 ST_CONFIG_PATH="path/to/config/file/config.yaml" mvn verify ...
 ```
