@@ -245,9 +245,9 @@ Standard errors don't have any problematic impact on cluster behaviour, and requ
 
 You need to use the `groups` system property to execute a group of system tests. For example, with the following values:
 
-- `-Dgroups=integration`: to execute one test group
-- `-Dgroups=acceptance,regression`: to execute many test groups
-- `-Dgroups=all`: to run all test groups
+- `-Dgroups=integration` - to execute one test group
+- `-Dgroups=acceptance,regression` - to execute many test groups
+- `-Dgroups=all` - to run all test groups
 
 If `-Dgroups` system property isn't defined, all tests without an explicitly declared test group will be executed.
 The following table shows currently used tags:
