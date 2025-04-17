@@ -75,6 +75,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE_TEMPLATE;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.REBALANCE_PROGRESS_CONFIG_MAP_KEY;
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL;
@@ -353,6 +354,24 @@ public class KafkaRebalanceAssemblyOperator
             AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
 
             computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceOptionsBuilder)
+                    .compose(statusAndMap -> {
+                        // Update desired `KafkaRebalance` resource status and ConfigMap with progress fields
+                        ConfigMap configMap = statusAndMap.getLoadMap();
+                        KafkaRebalanceStatus status = statusAndMap.getStatus();
+                        KafkaRebalanceState state = KafkaRebalanceUtils.rebalanceState(status);
+
+                        if (configMap != null) {
+                            status.setProgress(Map.of(REBALANCE_PROGRESS_CONFIG_MAP_KEY, configMap.getMetadata().getName()));
+
+                            KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, state, host,
+                                            cruiseControlPort, apiClient, configMap)
+                                    .onFailure(exception -> {
+                                        KafkaRebalanceUtils.addWarningCondition(status, exception);
+                                    });
+                        }
+
+                        return Future.succeededFuture(statusAndMap);
+                    })
                     .compose(desiredStatusAndMap -> {
                         KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(kafkaRebalance);
                         return configMapOperator.reconcile(reconciliation, kafkaRebalance.getMetadata().getNamespace(),
