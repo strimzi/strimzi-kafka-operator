@@ -2235,10 +2235,25 @@ public class KafkaMirrorMaker2ClusterTest {
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
         KafkaMirrorMaker2Cluster kmm = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, VERSIONS, SHARED_ENV_PROVIDER);
+        assertThat(kmm.metrics(), is(nullValue()));
+    }
 
-        assertThat(kmm.metrics().isEnabled(), is(false));
-        assertThat(kmm.metrics().getConfigMapName(), is(nullValue()));
-        assertThat(kmm.metrics().getConfigMapKey(), is(nullValue()));
+    @ParallelTest
+    public void testStrimziMetricsReporterConfig() {
+        KafkaMirrorMaker2 resourceWithMetrics = new KafkaMirrorMaker2Builder(resource)
+            .editSpec()
+                .withNewStrimziMetricsReporterConfig()
+                    .withNewValues()
+                        .withAllowList(List.of("kafka_log.*", "kafka_network.*"))
+                    .endValues()
+                .endStrimziMetricsReporterConfig()
+            .endSpec()
+            .build();
+        
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class,
+            () -> KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS, SHARED_ENV_PROVIDER));
+
+        assertThat(ex.getMessage(), is("The Strimzi Metrics Reporter is not supported for this component"));
     }
 
     @ParallelTest
