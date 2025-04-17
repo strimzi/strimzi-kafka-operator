@@ -261,7 +261,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Deploying 2 Cluster Operators: {}, {} in the same namespace: {}", FIRST_CO_NAME, SECOND_CO_NAME, testStorage.getNamespaceName());
         deployCOInNamespace(testStorage.getNamespaceName(), FIRST_CO_NAME, List.of(FIRST_CO_SELECTOR_ENV, FIRST_CO_LEASE_NAME_ENV), false);
-        deployCOInNamespace(testStorage.getNamespaceName(), SECOND_CO_NAME, List.of(SECOND_CO_SELECTOR_ENV, SECOND_CO_LEASE_NAME_ENV), false);
+        deployCOInNamespace(testStorage.getNamespaceName(), SECOND_CO_NAME, List.of(SECOND_CO_SELECTOR_ENV, SECOND_CO_LEASE_NAME_ENV), false, true);
 
         String secondCOScraperName = testStorage.getNamespaceName() + "-" + TestConstants.SCRAPER_NAME;
 
@@ -349,6 +349,10 @@ public class MultipleClusterOperatorsST extends AbstractST {
     }
 
     void deployCOInNamespace(String clusterOperatorNamespaceName, String coName, List<EnvVar> extraEnvs, boolean multipleNamespaces) {
+        deployCOInNamespace(clusterOperatorNamespaceName, coName, extraEnvs, multipleNamespaces, false);
+    }
+
+    void deployCOInNamespace(String clusterOperatorNamespaceName, String coName, List<EnvVar> extraEnvs, boolean multipleNamespaces, boolean skipNamespaceDeletion) {
         String namespace = multipleNamespaces ? TestConstants.WATCH_ALL_NAMESPACES : clusterOperatorNamespaceName;
 
         if (multipleNamespaces) {
@@ -368,6 +372,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
                 .withNamespacesToWatch(namespace)
                 .withExtraLabels(Collections.singletonMap("app.kubernetes.io/operator", coName))
                 .withExtraEnvVars(extraEnvs)
+                .withSkipNamespaceDeletion(skipNamespaceDeletion)
                 .build()
             )
             .install();

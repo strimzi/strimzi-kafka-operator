@@ -919,7 +919,7 @@ class KafkaST extends AbstractST {
                     .endKafka()
                     .editEntityOperator()
                         .withNewTemplate()
-                            .withNewTopicOperatorContainer()
+                            .editOrNewTopicOperatorContainer()
                                 .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
                             .endTopicOperatorContainer()
                             .withNewUserOperatorContainer()

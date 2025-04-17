@@ -55,8 +55,14 @@ public class LabelSelectors {
     }
 
     public static LabelSelector kafkaLabelSelector(String clusterName, String componentName) {
+        Map<String, String> labels = new HashMap<>();
+
+        labels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        labels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
+        labels.put(Labels.STRIMZI_CONTROLLER_NAME_LABEL, componentName);
+        
         return new LabelSelectorBuilder()
-            .withMatchLabels(commonMatchLabels(clusterName, Kafka.RESOURCE_KIND, componentName))
+            .withMatchLabels(labels)
             .build();
     }
 

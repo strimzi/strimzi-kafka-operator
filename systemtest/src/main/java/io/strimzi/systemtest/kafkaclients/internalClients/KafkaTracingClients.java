@@ -17,10 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 @Buildable(editableEnabled = false)
-public class KafkaTracingClients  extends KafkaClients {
+public class KafkaTracingClients extends KafkaClients {
     private String jaegerServiceProducerName;
     private String jaegerServiceConsumerName;
     private String jaegerServiceStreamsName;
@@ -156,7 +154,7 @@ public class KafkaTracingClients  extends KafkaClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(kubeClient().getNamespace())
+                .withNamespace(getNamespaceName())
                 .withLabels(kafkaStreamLabels)
                 .withName(kafkaStreamsName)
             .endMetadata()

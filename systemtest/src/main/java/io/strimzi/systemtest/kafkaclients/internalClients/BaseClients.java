@@ -8,8 +8,6 @@ import io.sundr.builder.annotations.Buildable;
 
 import java.security.InvalidParameterException;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 @Buildable(editableEnabled = false)
 public abstract class BaseClients {
     private String bootstrapAddress;
@@ -44,7 +42,7 @@ public abstract class BaseClients {
     }
 
     public void setNamespaceName(String namespaceName) {
-        this.namespaceName = (namespaceName == null || namespaceName.isEmpty()) ? kubeClient().getNamespace() : namespaceName;
+        this.namespaceName = namespaceName;
     }
 
     public String getAdditionalConfig() {
