@@ -1,0 +1,64 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly_metrics-kafka.adoc
+
+[id='proc-metrics-reporter-kafka-deploy-options-{context}']
+= Enabling Strimzi Metrics Reporter
+
+[role="_abstract"]
+To enable and expose metrics in Strimzi for Prometheus, configure the appropriate properties in the custom resources for the components you want to monitor.
+
+Use `metricsConfig` configuration to expose metrics for these components:
+
+* Kafka
+
+This enables the {StrimziMetricsReporter}, which exposes metrics on port 9404 through an HTTP endpoint.
+Prometheus scrapes this endpoint to collect Kafka metrics.
+
+You can create your own Prometheus configuration or use the xref:ref-metrics-prometheus-metrics-config-{context}[example custom resource file] provided with Strimzi:
+
+* `kafka-metrics.yaml`
+
+This file contains the necessary configuration, and is a good starting point for trying Prometheus with Strimzi.
+
+This procedure shows how to deploy example Prometheus metrics configuration to the `Kafka` resource.
+
+.Procedure
+
+. Deploy the example custom resource with the Prometheus configuration.
++
+For example, for each `Kafka` resource you can apply the `kafka-metrics.yaml` file.
++
+.Deploying the example configuration
+[source,shell,subs="+attributes"]
+----
+kubectl apply -f kafka-metrics.yaml
+----
++
+Alternatively, copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource.
++
+.Copying the example configuration
+[source,shell]
+----
+kubectl edit kafka <kafka_configuration_file>
+----
++
+Copy the `metricsConfig` property to your `Kafka` resource.
++
+.Example metrics configuration for Kafka
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    metricsConfig:
+      type: strimziMetricsReporter
+      values:
+        allowList:
+          - "kafka_log.*"
+          - "kafka_network.*"
+----

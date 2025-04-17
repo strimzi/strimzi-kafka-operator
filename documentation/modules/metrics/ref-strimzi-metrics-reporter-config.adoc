@@ -1,0 +1,22 @@
+
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly-metrics-config-files.adoc
+
+[id='ref-metrics-reporter-config-{context}']
+
+= Example Metrics Reporter metrics configuration
+[role="_abstract"]
+
+.Example custom resources with metrics configuration
+[cols="3*",options="header",stripes="none"]
+|===
+|Component
+|Custom resource
+|Example YAML file
+
+|Kafka nodes
+|`Kafka`
+|`kafka-metrics.yaml`
+
+|===
