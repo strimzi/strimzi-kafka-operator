@@ -126,11 +126,15 @@ public class MockCruiseControl {
 
     /**
      * Setup state responses in mock server.
+     *
+     * @param errorCalls The number of calls to the State endpoint that should return 500 error before a valid state
+     *                   response is returned.
+     * @param inExecutionCalls The number of calls to the State endpoint that should return a State that has a
+     *                         rebalancing task in execution.
      */
-    public void setupCCStateResponse() {
+    public void setupCCStateResponse(int errorCalls, int inExecutionCalls) {
         // Verbose/Non-verbose response
         JsonBody jsonProposalNotReady = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-State-proposal-not-ready.json"));
-
         server
                 .when(
                         request()
@@ -144,6 +148,43 @@ public class MockCruiseControl {
                         response()
                                 .withBody(jsonProposalNotReady)
                                 .withHeaders(header("User-Task-ID", STATE_PROPOSAL_NOT_READY_RESPONSE))
+                                .withDelay(TimeUnit.SECONDS, 0));
+
+        // The next errorCalls times respond with code 500.
+        JsonBody jsonError = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-State-fetch-error.json"));
+        server
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true|false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
+                                .withPath(CruiseControlEndpoints.STATE.toString())
+                                .withHeaders(AUTH_HEADER)
+                                .withSecure(true),
+                        Times.exactly(errorCalls))
+                .respond(
+                        response()
+                                .withStatusCode(500)
+                                .withBody(jsonError)
+                                .withHeaders(header(USER_TASK_ID_HEADER, "cruise-control-state-error"))
+                                .withDelay(TimeUnit.SECONDS, 0));
+
+        // The next inExecutionCalls times respond that with a Cruise Control State that has a rebalancing task in execution.
+        JsonBody jsonInExecution = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-State-inExecution.json"));
+        server
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true|false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
+                                .withPath(CruiseControlEndpoints.STATE.toString())
+                                .withHeaders(AUTH_HEADER)
+                                .withSecure(true),
+                        Times.exactly(inExecutionCalls))
+                .respond(
+                        response()
+                                .withBody(jsonInExecution)
+                                .withHeaders(header(USER_TASK_ID_HEADER, "cruise-control-state"))
                                 .withDelay(TimeUnit.SECONDS, 0));
 
         // Non-verbose response
@@ -184,51 +225,6 @@ public class MockCruiseControl {
 
     }
 
-    /**
-     * Setup state responses in mock server while partition rebalance is in execution.
-     */
-    public void setupCCStateResponseInExecution() {
-        JsonBody json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-State-inExecution.json"));
-
-        server
-                .when(
-                        request()
-                                .withMethod("GET")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
-                                .withPath(CruiseControlEndpoints.STATE.toString())
-                                .withHeaders(AUTH_HEADER)
-                                .withSecure(true))
-                .respond(
-                        response()
-                                .withBody(json)
-                                .withHeaders(header(USER_TASK_ID_HEADER, "cruise-control-state"))
-                                .withDelay(TimeUnit.SECONDS, 0));
-    }
-
-    /**
-     * Setup state response failure in mock server.
-     */
-    public void setupCCStateNoResponse() {
-        JsonBody json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-State-fetch-error.json"));
-
-        server
-                .when(
-                        request()
-                                .withMethod("GET")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
-                                .withPath(CruiseControlEndpoints.STATE.toString())
-                                .withHeaders(AUTH_HEADER)
-                                .withSecure(true))
-                .respond(
-                        response()
-                                .withStatusCode(500)
-                                .withBody(json)
-                                .withHeaders(header(USER_TASK_ID_HEADER, "cruise-control-state-error"))
-                                .withDelay(TimeUnit.SECONDS, 0));
-    }
-    
     /**
      * Setup NotEnoughValidWindows error rebalance/add/remove broker response.
      */
@@ -328,6 +324,8 @@ public class MockCruiseControl {
                                 .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
                                 .withStatusCode(202)
                                 .withDelay(TimeUnit.SECONDS, responseDelay));
+
+
 
         HttpResponse response = response();
 

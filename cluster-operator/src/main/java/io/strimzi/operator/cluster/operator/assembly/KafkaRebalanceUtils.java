@@ -158,10 +158,7 @@ public class KafkaRebalanceUtils {
     public static void addWarningCondition(KafkaRebalanceStatus status, Throwable exception) {
         List<Condition> conditions = status.getConditions() != null ? new ArrayList<>(status.getConditions()) : new ArrayList<>();
 
-        String causeDescription = exception.getCause() != null
-                ? exception.getCause().toString()
-                : "No cause available";
-        Condition newCondition = StatusUtils.buildWarningCondition(causeDescription, exception.getMessage());
+        Condition newCondition = StatusUtils.buildWarningCondition("CruiseControlExecutorState", exception.getMessage());
         Condition oldCondition = conditions.stream()
                 .filter(c -> "Warning".equals(c.getType()))
                 .findFirst()

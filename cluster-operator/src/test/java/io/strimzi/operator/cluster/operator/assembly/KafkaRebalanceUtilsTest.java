@@ -192,7 +192,7 @@ public class KafkaRebalanceUtilsTest {
                 .withLastTransitionTime(timestamp)
                 .withStatus("True")
                 .withType("Warning")
-                .withReason(exception(errorMessage).getCause().toString())
+                .withReason("CruiseControlExecutorState")
                 .withMessage(errorMessage)
                 .build();
         status.setConditions(List.of(c0, c1));
