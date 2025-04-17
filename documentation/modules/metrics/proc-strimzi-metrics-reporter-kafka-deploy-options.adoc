@@ -3,7 +3,7 @@
 // metrics/assembly_metrics-kafka.adoc
 
 [id='proc-metrics-reporter-kafka-deploy-options-{context}']
-= Enabling Strimzi Metrics Reporter metrics
+= Enabling Strimzi Metrics Reporter
 
 [role="_abstract"]
 To enable and expose metrics in Strimzi for Prometheus, configure the appropriate properties in the custom resources for the components you want to monitor.
