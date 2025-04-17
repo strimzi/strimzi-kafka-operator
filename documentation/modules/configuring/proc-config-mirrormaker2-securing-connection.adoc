@@ -31,7 +31,7 @@ The examples also provide the configuration for full authorization, including th
 When configuring user access to source and target Kafka clusters, ACLs must grant access rights to internal MirrorMaker 2 connectors and read/write access to the cluster group and internal topics used by the underlying Kafka Connect framework in the target cluster. 
 If you've renamed the cluster group or internal topics, such as when xref:con-config-mm2-multiple-instances-{context}[configuring MirrorMaker 2 for multiple instances], use those names in the ACLs configuration.
 
-Simple authorization uses ACL rules managed by the Kafka `AclAuthorizer` and `StandardAuthorizer` plugins to ensure appropriate access levels.
+Simple authorization uses ACL rules managed by the Kafka `StandardAuthorizer` plugin to ensure appropriate access levels.
 For more information on configuring a `KafkaUser` resource to use simple authorization, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
 
 .Prerequisites

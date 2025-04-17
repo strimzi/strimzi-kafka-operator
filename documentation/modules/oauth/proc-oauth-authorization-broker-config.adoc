@@ -83,7 +83,7 @@ spec:
 When you configure token-based `oauth` authentication, you specify a `jwksEndpointUri` as the URI for local JWT validation.
 The hostname for the `tokenEndpointUri` URI must be the same.
 <3> The client ID of the OAuth 2.0 client definition in Keycloak that has Authorization Services enabled. Typically, `kafka` is used as the ID.
-<4> (Optional) Delegate authorization to Kafka `AclAuthorizer` and `StandardAuthorizer` if access is denied by Keycloak Authorization Services policies.
+<4> (Optional) Delegate authorization to the Kafka `StandardAuthorizer` if access is denied by Keycloak Authorization Services policies.
 Default is `false`.
 <5> (Optional) Disable TLS hostname verification. Default is `false`.
 <6> (Optional) Designated super users.
