@@ -28,10 +28,10 @@ kubectl -n kafka get events --field-selector reportingController=strimzi.io/clus
 .Example showing events returned
 [source,shell]
 ----
-LAST SEEN   TYPE     REASON                   OBJECT                        MESSAGE
-2m          Normal   CaCertRenewed            pod/strimzi-cluster-kafka-0   CA certificate renewed
-58m         Normal   PodForceRestartOnError   pod/strimzi-cluster-kafka-1   Pod needs to be forcibly restarted due to an error
-5m47s       Normal   ManualRollingUpdate      pod/strimzi-cluster-kafka-2   Pod was manually annotated to be rolled
+LAST SEEN   TYPE     REASON                   OBJECT                  MESSAGE
+2m          Normal   CaCertRenewed            kafka/strimzi-cluster   Rolling Pod strimzi-cluster-kafka-0 due to CA certificate renewed
+58m         Normal   PodForceRestartOnError   kafka/strimzi-cluster   Rolling Pod strimzi-cluster-kafka-1 due to Pod needs to be forcibly restarted due to an error
+5m47s       Normal   ManualRollingUpdate      kafka/strimzi-cluster   Rolling Pod strimzi-cluster-kafka-2 due to Pod was manually annotated to be rolled
 ----
 +
 You can also specify a `reason` or other `field-selector` options to constrain the events returned.
@@ -60,12 +60,12 @@ items:
   eventTime: "2022-05-13T00:22:34.168086Z"
   firstTimestamp: null
   involvedObject:
-      kind: Pod
-      name: strimzi-cluster-kafka-1
+      kind: Kafka
+      name: strimzi-cluster
       namespace: kafka
   kind: Event
   lastTimestamp: null
-  message: Pod needs to be forcibly restarted due to an error
+  message: Rolling Pod strimzi-cluster-kafka-1 due to Pod needs to be forcibly restarted due to an error
   metadata:
       creationTimestamp: "2022-05-13T00:22:34Z"
       generateName: strimzi-event
@@ -74,6 +74,10 @@ items:
       resourceVersion: "432961"
       uid: 29fcdb9e-f2cf-4c95-a165-a5efcd48edfc
   reason: PodForceRestartOnError
+  related:
+      kind: Pod
+      name: strimzi-cluster-kafka-1
+      namespace: kafka
   reportingController: strimzi.io/cluster-operator
   reportingInstance: strimzi-cluster-operator-6458cfb4c6-6bpdp
   source: {}
