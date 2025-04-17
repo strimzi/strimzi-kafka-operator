@@ -4308,7 +4308,10 @@ If not specified, the `full` mode is used by default.
 |The upper bound of ongoing partition leadership movements. Default is 1000.
 |replicationThrottle
 |integer
-|The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default.
+|The upper bound, in bytes per second, on the bandwidth used to move replicas between brokers (i.e., inter-broker replica movements). There is no limit by default.
+|logDirThrottle
+|integer
+|The upper bound, in bytes per second, on the bandwidth used to move replicas between disks (i.e., intra-broker replica movements). There is no limit by default.
 |replicaMovementStrategies
 |string array
 |A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. By default BaseReplicaMovementStrategy is used, which will execute the replica movements in the order that they were generated.
