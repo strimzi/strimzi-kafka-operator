@@ -5,6 +5,7 @@
 * Dependency updates (Vert.x 4.5.13, Netty 4.1.118.Final).
 * Fixed bug which may lead to metadata loss within the cluster when restarting a KRaft migration after a previous rollback due to missing `/migration` znode deletion.
 * Fixed CVE-2024-57699 by overriding json-smart dependency with 2.5.2 version. 
+* Add support for Kafka 3.9.1
 
 ## 0.45.0
 
