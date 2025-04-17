@@ -16,6 +16,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -23,7 +24,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -75,7 +75,7 @@ public class ConfigProviderST extends AbstractST {
         }
     )
     void testConnectWithConnectorUsingConfigAndEnvProvider() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String customFileSinkPath = "/tmp/my-own-path.txt";
 
         resourceManager.createResourceWithWait(
@@ -137,7 +137,7 @@ public class ConfigProviderST extends AbstractST {
 
         LOGGER.info("Creating needed RoleBinding and Role for Kubernetes Config Provider");
 
-        ResourceManager.getInstance().createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             new RoleBindingBuilder()
                 .editOrNewMetadata()
                     .withName("connector-config-rb")

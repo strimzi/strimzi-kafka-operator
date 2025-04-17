@@ -16,6 +16,7 @@ import io.strimzi.systemtest.performance.gather.schedulers.UserOperatorMetricsCo
 import io.strimzi.systemtest.performance.report.UserOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.performance.utils.UserOperatorPerformanceUtils;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -43,7 +44,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestTags.CAPACITY;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class UserOperatorPerformance extends AbstractST {
 
@@ -205,7 +206,8 @@ public class UserOperatorPerformance extends AbstractST {
         } finally {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaUser
-            resourceManager.deleteResourcesOfTypeWithoutWait(KafkaUser.RESOURCE_KIND);
+            List<KafkaUser> kafkaUsers = CrdResourceClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+            resourceManager.deleteResource(kafkaUsers.toArray(new KafkaUser[0]));
             KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
 
             if (this.userOperatorMetricsGatherer != null) {

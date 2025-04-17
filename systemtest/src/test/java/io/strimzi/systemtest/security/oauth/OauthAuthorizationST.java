@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -18,10 +19,8 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.crd.KafkaResourceNames;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -90,7 +89,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(1)
     void smokeTestForClients() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String topicName = TOPIC_A + "-" + testStorage.getTopicName();
@@ -124,7 +123,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(2)
     void testTeamAWriteToTopic() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String consumerGroup = "a-consumer_group-" + testStorage.getClusterName();
@@ -189,7 +188,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(3)
     void testTeamAReadFromTopic() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String topicAName = TOPIC_A + "-" + testStorage.getTopicName();
@@ -242,7 +241,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(4)
     void testTeamBWriteToTopic() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String consumerGroup = "x-" + testStorage.getClusterName();
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + testStorage.getClusterName();
@@ -289,7 +288,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(5)
     void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + testStorage.getClusterName();
@@ -344,14 +343,14 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(6)
     void testSuperUserWithOauthAuthorization() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + testStorage.getClusterName();
         // only write means that Team A can not create new topic 'x-.*'
         String topicXName = TOPIC_X + testStorage.getTopicName();
-        LabelSelector brokerSelector = KafkaResource.getLabelSelector(oauthClusterName, StrimziPodSetResource.getBrokerComponentName(oauthClusterName));
+        LabelSelector brokerSelector = LabelSelectors.kafkaLabelSelector(oauthClusterName, KafkaResourceNames.getBrokerComponentName(oauthClusterName));
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, topicXName, oauthClusterName).build());
 
@@ -401,7 +400,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
 
             List<String> superUsers = new ArrayList<>(2);
             superUsers.add("service-account-" + TEAM_A_CLIENT);
@@ -445,7 +444,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Order(7)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testSessionReAuthentication() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String topicXName = TOPIC_X + "-example-topic";
         String topicAName = TOPIC_A + "-example-topic";
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
@@ -474,7 +473,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
 
         LOGGER.info("Adding the maxSecondsWithoutReauthentication to Kafka listener with OAuth authentication");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             kafka.getSpec().getKafka().setListeners(Arrays.asList(new GenericKafkaListenerBuilder()
                     .withName("tls")
                     .withPort(9093)
@@ -575,7 +574,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
 
         LOGGER.info("Changing configuration of Kafka back to it's original form");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
+        KafkaUtils.replaceKafkaInNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             kafka.getSpec().getKafka().setListeners(Collections.singletonList(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance)));
         });
 
@@ -599,7 +598,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelNamespaceTest
     @Order(10)
     void testKeycloakAuthorizerToDelegateToSimpleAuthorizer() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         if (!Environment.isNamespaceRbacScope()) {
             // we have to create keycloak, team-a-client and team-b-client secret from `co-namespace` to the new namespace
@@ -672,8 +671,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
         keycloakInstance.setRealm(TEST_REALM, true);
 
         resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(oauthClusterName), oauthClusterName, 3).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(oauthClusterName), oauthClusterName, 1).build()
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getBrokerPoolName(oauthClusterName), oauthClusterName, 3).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaResourceNames.getControllerPoolName(oauthClusterName), oauthClusterName, 1).build()
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, 3)
             .editSpec()

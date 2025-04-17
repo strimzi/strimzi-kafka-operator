@@ -99,10 +99,6 @@ public class KubeClient {
         client.namespaces().resource(ns).create();
     }
 
-    public void updateNamespace(Namespace namespace) {
-        client.namespaces().resource(namespace).update();
-    }
-
     public void deleteNamespace(String name) {
         client.namespaces().withName(name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
@@ -111,24 +107,12 @@ public class KubeClient {
     // ---------> CONFIG MAP <---------
     // ================================
 
-    public void createConfigMap(ConfigMap configMap) {
-        client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).resource(configMap).create();
-    }
-
     public void createConfigMapInNamespace(String namespaceName, ConfigMap configMap) {
         client.configMaps().inNamespace(namespaceName).resource(configMap).create();
     }
 
     public void updateConfigMapInNamespace(String namespaceName, ConfigMap configMap) {
         client.configMaps().inNamespace(namespaceName).resource(configMap).update();
-    }
-
-    public void deleteConfigMap(ConfigMap configMap) {
-        client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).withName(configMap.getMetadata().getName()).delete();
-    }
-
-    public void deleteConfigMap(String configMapName) {
-        client.configMaps().inNamespace(getNamespace()).withName(configMapName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     public ConfigMap getConfigMap(String namespaceName, String configMapName) {
@@ -938,10 +922,6 @@ public class KubeClient {
     public String getClusterOperatorPodName(final String namespaceName) {
         LabelSelector selector = new LabelSelectorBuilder().withMatchLabels(Map.of("strimzi.io/kind", "cluster-operator")).build();
         return kubeClient(namespaceName).listPods(namespaceName, selector).get(0).getMetadata().getName();
-    }
-
-    public String getClusterOperatorPodName() {
-        return getClusterOperatorPodName(getNamespace());
     }
 
     /**

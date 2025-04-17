@@ -5,12 +5,13 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.CrdResourceClients;
 import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -19,7 +20,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaNodePoolClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaNodePoolUtils {
@@ -29,8 +32,13 @@ public class KafkaNodePoolUtils {
 
     private KafkaNodePoolUtils() {}
 
+    public static void replaceKafkaNodePoolInNamespace(String namespaceName, String resourceName, Consumer<KafkaNodePool> editor) {
+        KafkaNodePool kafkaNodePool = kafkaNodePoolClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafkaNodePool, editor);
+    }
+
     public static KafkaNodePool getKafkaNodePool(String namespaceName, String resourceName) {
-        return KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(resourceName).get();
+        return kafkaNodePoolClient().inNamespace(namespaceName).withName(resourceName).get();
     }
 
     public static List<Integer> getCurrentKafkaNodePoolIds(String namespaceName, String resourceName) {
@@ -39,21 +47,21 @@ public class KafkaNodePoolUtils {
 
     public static void setKafkaNodePoolAnnotation(String namespaceName, String resourceName,  Map<String, String> annotations) {
         LOGGER.info("Annotating KafkaNodePool: {}/{} with annotation: {}", namespaceName, resourceName, annotations);
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(namespaceName, resourceName,
+        replaceKafkaNodePoolInNamespace(namespaceName, resourceName,
             kafkaNodePool -> kafkaNodePool.getMetadata().setAnnotations(annotations));
     }
 
     public static void scaleKafkaNodePool(String namespaceName, String kafkaNodePoolName, int scaleToReplicas) {
         LOGGER.info("Scaling KafkaNodePool: {}/{} to {} replicas", namespaceName, kafkaNodePoolName, scaleToReplicas);
-        KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).scale(scaleToReplicas);
+        kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).scale(scaleToReplicas);
     }
 
     public static void deleteKafkaNodePoolWithPodSetAndWait(String namespaceName, String kafkaClusterName, String kafkaNodePoolName) {
         LOGGER.info("Waiting for deletion of KafkaNodePool: {}/{}", namespaceName, kafkaNodePoolName);
         TestUtils.waitFor("deletion of KafkaNodePool: " + namespaceName + "/" + kafkaNodePoolName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
-                if (KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).get() == null &&
-                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(kafkaClusterName + "-" + kafkaNodePoolName).get() == null
+                if (kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).get() == null &&
+                    CrdResourceClients.strimziPodSetClient().inNamespace(namespaceName).withName(kafkaClusterName + "-" + kafkaNodePoolName).get() == null
                 ) {
                     return true;
                 } else {
@@ -61,7 +69,7 @@ public class KafkaNodePoolUtils {
                     return false;
                 }
             },
-            () -> LOGGER.info(KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).get()));
+            () -> LOGGER.info(kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).get()));
     }
 
     public static void waitForKafkaNodePoolPodsReady(TestStorage testStorage, String kafkaNodePoolName, ProcessRoles nodePoolRole, int replicaCount) {
@@ -74,19 +82,9 @@ public class KafkaNodePoolUtils {
         );
     }
 
-    public static void waitForKafkaNodePoolPodsReady(String namespaceName, String kafkaClusterName, ProcessRoles nodePoolRole, String kafkaNodePoolName, int replicaCount) {
-        waitForKafkaNodePoolPodsReady(
-            namespaceName,
-            kafkaClusterName,
-            kafkaNodePoolName,
-            replicaCount,
-            nodePoolRole
-        );
-    }
-
     public static void waitForKafkaNodePoolPodsReady(String namespaceName, String kafkaClusterName, String kafkaNodePoolName, int podReplicaCount, ProcessRoles processRoles) {
         LOGGER.info("Waiting for pods and SPS of KafkaNodePool: {}/{} to be ready", namespaceName, kafkaNodePoolName);
-        final LabelSelector kNPPodslabelSelector = KafkaNodePoolResource.getLabelSelector(kafkaClusterName, kafkaNodePoolName, processRoles);
+        final LabelSelector kNPPodslabelSelector = LabelSelectors.nodePoolLabelSelector(kafkaClusterName, kafkaNodePoolName, processRoles);
         PodUtils.waitForPodsReady(namespaceName, kNPPodslabelSelector, podReplicaCount, false);
     }
 
@@ -100,7 +98,7 @@ public class KafkaNodePoolUtils {
     public static void waitForKafkaNodePoolStatusUpdate(String namespaceName, String nodePoolName) {
         LOGGER.info("Waiting for KafkaNodePool status to be updated");
         TestUtils.waitFor("Kafka status to be updated", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
-            KafkaNodePool k = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(nodePoolName).get();
+            KafkaNodePool k = kafkaNodePoolClient().inNamespace(namespaceName).withName(nodePoolName).get();
             return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
         });
     }

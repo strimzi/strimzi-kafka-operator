@@ -27,7 +27,6 @@ import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
-import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.templates.kubernetes.RoleBindingTemplates;
 import io.strimzi.systemtest.templates.kubernetes.RoleTemplates;
@@ -338,7 +337,7 @@ public class YamlInstallation implements InstallationMethod {
      * @param clusterOperatorConfiguration  desired configuration of the ClusterOperator
      */
     public static void deployClusterOperator(ClusterOperatorConfiguration clusterOperatorConfiguration) {
-        Deployment clusterOperator = DeploymentResource.getDeploymentFromYaml(PATH_TO_CO_CONFIG);
+        Deployment clusterOperator = ReadWriteUtils.readObjectFromYamlFilepath(PATH_TO_CO_CONFIG, Deployment.class);
 
         // Get env from config file
         List<EnvVar> envVars = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();

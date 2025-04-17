@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.performance.utils;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.user.KafkaUserAuthorizationSimpleBuilder;
@@ -13,7 +14,6 @@ import io.strimzi.api.kafka.model.user.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserSpec;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.systemtest.enums.UserAuthType;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -63,7 +63,7 @@ public class UserOperatorPerformanceUtils {
         // get one user spec as the template for wait
         KafkaUserSpec kafkaUserSpec = listOfUsers.stream().findFirst().get().getSpec();
 
-        ResourceManager.getInstance().updateResource(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
+        KubeResourceManager.get().updateResource(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
         KafkaUserUtils.waitForConfigToBeChangedInAllUsersWithPrefix(testStorage.getNamespaceName(), usersPrefix, kafkaUserSpec);
         KafkaUserUtils.waitForAllUsersWithPrefixReady(testStorage.getNamespaceName(), usersPrefix);
     }
@@ -113,7 +113,7 @@ public class UserOperatorPerformanceUtils {
     public static void createAllUsersInListWithWait(final TestStorage testStorage, final List<KafkaUser> listOfUsers, final String usersPrefix) {
         LOGGER.info("Creating {} KafkaUsers", listOfUsers.size());
 
-        ResourceManager.getInstance().createResourceWithoutWait(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
+        KubeResourceManager.get().createResourceWithoutWait(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
         KafkaUserUtils.waitForAllUsersWithPrefixReady(testStorage.getNamespaceName(), usersPrefix);
     }
 

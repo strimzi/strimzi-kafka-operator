@@ -9,11 +9,11 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -66,7 +66,7 @@ public class CruiseControlApiST extends AbstractST {
         }
     )
     void testCruiseControlBasicAPIRequestsWithSecurityDisabled() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         Map<String, Object> config = new HashMap<>();
         config.put("webserver.security.enable", "false");
@@ -110,7 +110,7 @@ public class CruiseControlApiST extends AbstractST {
         }
     )
     void testCruiseControlAPIUsers() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String ccApiUserSecretName = "cc-api-users";
         final String ccApiUser = "arnost: heslo, USER\n";
 

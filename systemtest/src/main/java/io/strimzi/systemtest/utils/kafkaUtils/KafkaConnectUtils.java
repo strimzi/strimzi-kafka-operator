@@ -5,14 +5,14 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.PodCondition;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -22,10 +22,12 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.CrdResourceClients.kafkaConnectClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -35,16 +37,20 @@ public class KafkaConnectUtils {
 
     private KafkaConnectUtils() {}
 
+    public static void replaceKafkaConnectInNamespace(String namespaceName, String resourceName, Consumer<KafkaConnect> editor) {
+        KafkaConnect kafkaConnect = kafkaConnectClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(kafkaConnect, editor);
+    }
+    
     /**
      * Wait until the given Kafka Connect is in desired state.
      * @param namespaceName Namespace name
      * @param clusterName name of KafkaConnect cluster
-     * @param status desired state
+     * @param state desired state
      */
-    public static boolean waitForConnectStatus(String namespaceName, String clusterName, Enum<?>  status) {
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(namespaceName, KafkaConnectResource.kafkaConnectClient(), kafkaConnect.getKind(),
-            kafkaConnect.getMetadata().getName(), status, ResourceOperation.getTimeoutForResourceReadiness(kafkaConnect.getKind()));
+    public static boolean waitForConnectStatus(String namespaceName, String clusterName, Enum<?> state) {
+        KafkaConnect kafkaConnect = kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
+        return KubeResourceManager.get().waitResourceCondition(kafkaConnect, ResourceConditions.resourceHasDesiredState(state), ResourceOperation.getTimeoutForResourceReadiness(kafkaConnect.getKind()));
     }
 
     public static boolean waitForConnectReady(String namespaceName, String clusterName) {
@@ -87,7 +93,7 @@ public class KafkaConnectUtils {
         LOGGER.info("Waiting for KafkaConnect property: {} -> {} to change", propertyKey, propertyValue);
         TestUtils.waitFor("KafkaConnect property: " + propertyKey + " -> " + propertyValue + " to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                String propertyValueFromKafkaConnect =  (String) KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getConfig().get(propertyKey);
+                String propertyValueFromKafkaConnect =  (String) kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getConfig().get(propertyKey);
                 LOGGER.debug("Property key -> {}, Current property value -> {}", propertyKey, propertyValueFromKafkaConnect);
                 LOGGER.debug(propertyValueFromKafkaConnect + " == " + propertyValue);
                 return propertyValueFromKafkaConnect.equals(propertyValue);
@@ -120,7 +126,7 @@ public class KafkaConnectUtils {
     public static void waitUntilKafkaConnectStatusConditionContainsMessage(String namespaceName, String clusterName, String message) {
         TestUtils.waitFor("KafkaConnect status to contain message: [" + message + "]",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
-                List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConditions();
+                List<Condition> conditions = kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     if (condition.getMessage().matches(message)) {
                         return true;
@@ -133,7 +139,7 @@ public class KafkaConnectUtils {
     public static void waitForConnectStatusContainsPlugins(String namespaceName, String clusterName) {
         TestUtils.waitFor(String.join("for Connect: %s/%s contains plugins in its status", namespaceName, clusterName),
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConnectorPlugins() != null
+            () -> kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConnectorPlugins() != null
         );
     }
 
