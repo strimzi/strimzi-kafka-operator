@@ -90,7 +90,7 @@ public class HelmResource implements SpecificResourceType {
         values.put("kafkaBridge.image.tag", bridgeTag);
 
         // Additional config
-        values.put("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);
+        values.put("image.imagePullPolicy", Environment.COMPONENTS_IMAGE_PULL_POLICY);
         values.put("resources.requests.memory", TestConstants.CO_REQUESTS_MEMORY);
         values.put("resources.requests.cpu", TestConstants.CO_REQUESTS_CPU);
         values.put("resources.limits.memory", TestConstants.CO_LIMITS_MEMORY);
