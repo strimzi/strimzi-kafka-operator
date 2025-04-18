@@ -22,6 +22,7 @@
 * Improved the MirrorMaker2 example Grafana dashboard to set metric units and include chart descriptions.
 * The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
 * Update OAuth library to 0.16.2.
+* Update HTTP bridge to 0.32.0.
 
 ### Major changes, deprecations and removals
 
