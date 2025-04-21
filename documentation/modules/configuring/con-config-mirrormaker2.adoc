@@ -216,7 +216,8 @@ spec:
 <2> Kafka cluster alias for Kafka Connect, which must specify the *target* Kafka cluster. The Kafka cluster is used by Kafka Connect for its internal topics.
 <3> Specification for the Kafka clusters being synchronized.
 <4> Cluster alias for the source Kafka cluster.
-<5> Authentication for the source cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
+<5> Authentication for the source cluster, specified as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`.
+For details on configuring authentication, see the link:{BookURLConfiguring}#type-KafkaMirrorMaker2ClusterSpec-schema-reference[`KafkaMirrorMaker2Spec` schema properties^]
 <6> Bootstrap address for connection to the source Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
 <7> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
 <8> Cluster alias for the target Kafka cluster.
