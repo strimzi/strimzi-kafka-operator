@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
@@ -61,6 +62,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -74,13 +76,13 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
@@ -274,14 +276,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         ClientTls tls = connect.getTls();
-        List<String> secretsToCopy = new ArrayList<>();
+        Set<String> secretsToCopy = new HashSet<>();
 
-        if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
-            tls.getTrustedCertificates().stream().forEach(certSecretSource -> {
-                if (!secretsToCopy.contains(certSecretSource.getSecretName())) {
-                    secretsToCopy.add(certSecretSource.getSecretName());
-                }
-            });
+        if (tls != null && tls.getTrustedCertificates() != null) {
+            secretsToCopy.addAll(tls.getTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
         }
 
         if (secretsToCopy.isEmpty()) {
@@ -308,7 +306,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 namespace,
                                 KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
                                 connect.generateTlsTrustedCertsSecret(secretData, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
-                        .mapEmpty());    }
+                        .mapEmpty());
+    }
 
     /**
      * Generates or reconciles the secret that combines secrets and certificates
@@ -319,14 +318,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         KafkaClientAuthentication authentication = connect.getAuthentication();
-        List<String> secretsToCopy = new ArrayList<>();
+        Set<String> secretsToCopy = new HashSet<>();
 
-        if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-            oauth.getTlsTrustedCertificates().stream().forEach(certSecretSource -> {
-                if (!secretsToCopy.contains(certSecretSource.getSecretName())) {
-                    secretsToCopy.add(certSecretSource.getSecretName());
-                }
-            });
+        if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null) {
+            secretsToCopy.addAll(oauth.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
         }
 
         if (secretsToCopy.isEmpty()) {
@@ -360,10 +355,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private String mergeAndEncodeCerts(List<String> certs) {
         if (certs.size() > 1) {
             String decodedAndMergedCerts = certs.stream()
-                    .map(c -> new String(Base64.getDecoder().decode(c), StandardCharsets.UTF_8))
+                    .map(Util::decodeFromBase64)
                     .collect(Collectors.joining("\n"));
 
-            return Base64.getEncoder().encodeToString(decodedAndMergedCerts.getBytes(StandardCharsets.UTF_8));
+            return Util.encodeToBase64(decodedAndMergedCerts);
         } else if (certs.size() < 1) {
             return "";
         } else {
