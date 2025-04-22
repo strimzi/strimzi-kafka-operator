@@ -9,6 +9,10 @@ metadata:
     component: deployment
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+  {{- with .Values.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.replicas }}
   {{- if .Values.revisionHistoryLimit }}
