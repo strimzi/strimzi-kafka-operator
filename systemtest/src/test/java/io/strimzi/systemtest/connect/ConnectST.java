@@ -559,8 +559,8 @@ class ConnectST extends AbstractST {
 
         Secret secondCertSecret = new SecretBuilder()
                 .withNewMetadata()
-                .withName("my-secret")
-                .withNamespace(testStorage.getNamespaceName())
+                    .withName("my-secret")
+                    .withNamespace(testStorage.getNamespaceName())
                 .endMetadata()
                 .withType("Opaque")
                 .addToData("ca2.crt", encodedCertMock)

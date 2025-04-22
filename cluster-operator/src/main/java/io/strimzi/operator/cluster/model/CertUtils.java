@@ -227,20 +227,6 @@ public class CertUtils {
     }
 
     /**
-     * Creates the Secret Volumes for OAuth trusted TLS certificates
-     *
-     * @param volumeList            List where the volumes will be added
-     * @param isOpenShift           Indicates whether we run on OpenShift or not
-     * @param secretName            Name of the internal secret for storing trusted certificates for OAuth server
-     */
-    public static void createOauthTrustedCertificatesVolumes(List<Volume> volumeList, boolean isOpenShift, String secretName) {
-        // skipping if a volume with same name was already added
-        if (volumeList.stream().noneMatch(v -> v.getName().equals(secretName))) {
-            volumeList.add(VolumeUtils.createSecretVolume(secretName, secretName, isOpenShift));
-        }
-    }
-
-    /**
      * Creates the Volume used for trusted certificates and adds it to the list. It checks if the Secret where the
      * certificate is stored has been already used or not and makes sure to mount it only once to avoid duplicates and
      * naming conflicts.
@@ -316,21 +302,6 @@ public class CertUtils {
      */
     private static String trustedCertificateVolumeName(CertSecretSource certSecretSource, String prefix)    {
         return prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
-    }
-
-    /**
-     * Creates the volume mounts for the secret with OAuth trusted TLS certificates
-     *
-     * @param volumeMountList       List where the volume mounts will be added
-     * @param tlsVolumeMountPath    Path where the TLS certs should be mounted
-     * @param secretName            Prefix used for the volume names to distinguish when the same Secret is mounted for
-     *                              different purposes (e.g. different cluster connections in MM2)
-     */
-    public static void createOauthTrustedCertificatesVolumeMounts(List<VolumeMount> volumeMountList, String tlsVolumeMountPath, String secretName) {
-        // skipping if a volume mount with same Secret name was already added
-        if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(secretName))) {
-            volumeMountList.add(VolumeUtils.createVolumeMount(secretName, tlsVolumeMountPath + secretName));
-        }
     }
 
     /**

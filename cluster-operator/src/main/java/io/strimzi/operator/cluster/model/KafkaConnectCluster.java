@@ -121,11 +121,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     public static final String KAFKA_CONNECT_CONFIGURATION_FILENAME = "kafka-connect.properties";
 
     // Kafka Connect configuration keys (EnvVariables)
-    protected static final String ENV_VAR_PREFIX = "KAFKA_CONNECT_";
     protected static final String ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED = "KAFKA_CONNECT_METRICS_ENABLED";
     protected static final String ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS = "KAFKA_CONNECT_TRUSTED_CERTS";
-    protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT = "KAFKA_CONNECT_TLS_AUTH_CERT";
-    protected static final String ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY = "KAFKA_CONNECT_TLS_AUTH_KEY";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_LABELS";
@@ -400,7 +397,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes2(authentication, volumeList, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), isOpenShift, "", true);
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), isOpenShift, "", true);
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
         
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
@@ -461,7 +458,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts2(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
