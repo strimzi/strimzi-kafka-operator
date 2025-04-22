@@ -61,7 +61,7 @@ metrics
 <7> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus).
 <8> Installation resource file for the Prometheus image.
 <9> PodMonitor definitions translated by the Prometheus Operator into jobs for the Prometheus server to be able to scrape metrics data directly from pods.
-<10> Grafana dashboards for components using the Metrics Reporter.
+<10> Grafana dashboards for components using the Strimzi Metrics Reporter.
 <11> Resource for deploying and configuring Strimzi Metrics Reporter based Kafka.
 <12> Kafka Bridge resource with metrics enabled.
 <13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
@@ -74,7 +74,7 @@ NOTE: The Prometheus JMX Exporter collects Java Management Extensions (JMX) from
 You do not require `jmxOptions` configuration in the custom resource of the component for the Prometheus JMX Exporter to function.
 `jmxOptions` is only required if you need direct access to JMX from Kafka components.
 
-Strimzi uses the StrimziMetricsReporter or the {JMXExporter} to expose metrics through an HTTP endpoint, which can be scraped by the Prometheus server.
+Strimzi uses the {StrimziMetricsReporter} or the {JMXExporter} to expose metrics through an HTTP endpoint, which can be scraped by the Prometheus server.
 
 Strimzi provides example custom resource configuration YAML files with relabeling rules.
 When deploying Prometheus metrics configuration, you can deploy the example custom resource or copy the metrics configuration to your own custom resource definition.
