@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.leaderelection.LeaderElectionManager;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;

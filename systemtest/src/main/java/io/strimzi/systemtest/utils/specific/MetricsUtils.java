@@ -80,12 +80,12 @@ public class MetricsUtils {
     }
 
     public static void assertMetricResourceNotNull(BaseMetricsCollector collector, String metric, String kind) {
-        String metrics = metric + "\\{kind=\"" + kind + "\",.*}";
+        String metrics = metric + "\\{kind=\"" + kind + "\".*}";
         assertMetricValueNotNull(collector, metrics);
     }
 
     public static void assertCoMetricResourceStateNotExists(String namespaceName, String kind, String name, BaseMetricsCollector collector) {
-        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",resource_namespace=\"" + namespaceName + "\",}";
+        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",resource_namespace=\"" + namespaceName + "\"}";
         List<Double> values = createPatternAndCollectWithoutWait(collector, metric);
         assertThat(values.isEmpty(), is(true));
     }
@@ -95,7 +95,7 @@ public class MetricsUtils {
     }
 
     public static void assertMetricResourceState(String namespaceName, String kind, String name, BaseMetricsCollector collector, double value, String reason) {
-        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",reason=\"" + reason + ".*\",resource_namespace=\"" + namespaceName + "\",}";
+        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",reason=\"" + reason + ".*\",resource_namespace=\"" + namespaceName + "\"}";
         assertMetricValue(collector, metric, value);
     }
 
@@ -115,8 +115,8 @@ public class MetricsUtils {
     }
 
     public static String getResourceMetricPattern(String namespaceName, String kind) {
-        String metric = "strimzi_resources\\{kind=\"" + kind + "\",";
-        metric += namespaceName == null ? ".*}" : "namespace=\"" + namespaceName + "\",.*}";
+        String metric = "strimzi_resources\\{kind=\"" + kind + "\"";
+        metric += namespaceName == null ? ".*}" : ",namespace=\"" + namespaceName + "\".*}";
         return metric;
     }
 
@@ -133,7 +133,7 @@ public class MetricsUtils {
     }
 
     public static void assertMetricResourcesIs(BaseMetricsCollector collector, String kind, Predicate<Double> predicate, String message) {
-        String metric = "strimzi_resources\\{kind=\"" + kind + "\",.*}";
+        String metric = "strimzi_resources\\{kind=\"" + kind + "\".*}";
         TestUtils.waitFor("metric " + metric + "is " + message, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
             collector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
             List<Double> values = createPatternAndCollect(collector, metric);
@@ -185,12 +185,12 @@ public class MetricsUtils {
     }
 
     private static List<Double> createPatternAndCollect(BaseMetricsCollector collector, String metric) {
-        Pattern pattern = Pattern.compile(metric + " ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile(metric + " ([\\d.^\\n]+)", Pattern.CASE_INSENSITIVE);
         return collector.waitForSpecificMetricAndCollect(pattern);
     }
 
     private static List<Double> createPatternAndCollectWithoutWait(BaseMetricsCollector collector, String metric) {
-        Pattern pattern = Pattern.compile(metric + " ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile(metric + " ([\\d.^\\n]+)", Pattern.CASE_INSENSITIVE);
         return collector.collectSpecificMetric(pattern);
     }
 
