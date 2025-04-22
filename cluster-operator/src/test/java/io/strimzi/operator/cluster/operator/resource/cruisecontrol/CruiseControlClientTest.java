@@ -77,7 +77,7 @@ public class CruiseControlClientTest {
 
     @Test
     public void testGetCCState() {
-        cruiseControlServer.setupCCStateResponse(0, 0);
+        cruiseControlServer.setupCCStateResponse(0, 0, null, 0);
 
         CruiseControlApi client = cruiseControlClientProvider();
         client.getCruiseControlState(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, false)

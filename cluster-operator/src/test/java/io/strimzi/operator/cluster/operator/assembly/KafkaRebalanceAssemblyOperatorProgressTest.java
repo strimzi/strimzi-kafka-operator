@@ -44,7 +44,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
     @Test
     public void testProgressFieldsDuringRebalanceLifecycle(VertxTestContext context) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(1, CruiseControlEndpoints.REBALANCE, "true");
-        cruiseControlServer.setupCCStateResponse(0, 1);
+        cruiseControlServer.setupCCStateResponse(0, 1, null, 0);
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
@@ -60,8 +60,8 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                     // Check resource is in Pending state.
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.PendingProposal);
                     configMapOperator.getAsync(namespace, RESOURCE_NAME)
-                            .onComplete(config -> {
-                                assertThat(config, nullValue());
+                            .onComplete(configMap -> {
+                                assertThat(configMap, nullValue());
                             });
                 }))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName())))
@@ -119,7 +119,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
     public void testWarningConditionPropagation(VertxTestContext context) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 1);
-        cruiseControlServer.setupCCStateResponse(3, 0);
+        cruiseControlServer.setupCCStateResponse(0, 0, 1, 2);
 
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -179,6 +179,65 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                 }));
     }
 
-    // TODO: Add test to check progress fields after rebalance failure.
+    /**
+     *  Test to check progress fields after rebalance failure.
+     */
+    @Test
+    public void testProgressFieldsOnRebalanceFailure(VertxTestContext context) throws IOException, URISyntaxException {
+        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0, 1);
+        cruiseControlServer.setupCCStateResponse(0, 1, null, 0);
+
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        crdCreateKafka();
+        crdCreateCruiseControlSecrets();
+
+        ConfigMapOperator configMapOperator = this.supplier.configMapOperations;
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(context.succeeding(v -> {
+                    // Check resource moved from New to ProposalReady state.
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                }))
+                .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
+                .onComplete(context.succeeding(v -> {
+                    // Check resource moved from ProposalReady to Rebalancing state.
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
+
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
+                    KafkaRebalanceStatus status = kafkaRebalance.getStatus();
+                    assertThat(status.getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(Boolean.TRUE));
+
+                    configMapOperator.getAsync(namespace, RESOURCE_NAME)
+                            .onSuccess(configMap -> {
+                                Map<String, String> fields = configMap.getData();
+                                assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(Boolean.TRUE));
+                                assertThat(fields.containsKey(COMPLETED_BYTE_MOVEMENT_KEY), is(Boolean.TRUE));
+                                assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(Boolean.TRUE));
+                                assertThat(fields.containsKey(BROKER_LOAD_KEY), is(Boolean.TRUE));
+                            });
+
+                }))
+                .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
+                .onComplete(context.succeeding(v -> {
+                    // Check resource moved from Rebalancing to NotReady state.
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.NotReady);
+
+                    configMapOperator.getAsync(namespace, RESOURCE_NAME)
+                            .onSuccess(configMap -> {
+                                Map<String, String> fields = configMap.getData();
+                                System.out.println(fields);
+                                assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(Boolean.FALSE));
+                                assertThat(fields.containsKey(COMPLETED_BYTE_MOVEMENT_KEY), is(Boolean.TRUE));
+                                assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(Boolean.TRUE));
+                                assertThat(fields.containsKey(BROKER_LOAD_KEY), is(Boolean.TRUE));
+                            });
+
+                    checkpoint.flag();
+                }));
+    }
+
     // TODO: Add test for when CC provides malformed executor state  data
 }

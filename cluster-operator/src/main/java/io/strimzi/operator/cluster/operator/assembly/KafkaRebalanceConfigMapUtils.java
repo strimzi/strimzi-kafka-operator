@@ -77,6 +77,8 @@ public class KafkaRebalanceConfigMapUtils {
                 data.put(COMPLETED_BYTE_MOVEMENT_KEY, BYTE_MOVEMENT_COMPLETED);
                 data.remove(EXECUTOR_STATE_KEY);
                 break;
+            case New:
+            case PendingProposal:
             default:
                 break;
         }
