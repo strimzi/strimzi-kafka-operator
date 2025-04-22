@@ -153,8 +153,8 @@
         <fasterxml.jackson-annotations.version>2.18.3</fasterxml.jackson-annotations.version>
         <fasterxml.jackson-datatype.version>2.18.3</fasterxml.jackson-datatype.version>
         <fasterxml.jackson-jaxrs.version>2.18.3</fasterxml.jackson-jaxrs.version>
-        <vertx.version>4.5.14</vertx.version>
-        <vertx-junit5.version>4.5.14</vertx-junit5.version>
+        <vertx.version>5.0.0.CR6</vertx.version>
+        <vertx-junit5.version>5.0.0.CR6</vertx-junit5.version>
         <kafka.version>4.0.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
@@ -172,8 +172,8 @@
         <jetty-old-kafka.version>9.4.56.v20240826</jetty-old-kafka.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.16.2</strimzi-oauth.version>
-        <netty.version>4.1.118.Final</netty.version>
-        <micrometer.version>1.12.13</micrometer.version>
+        <netty.version>4.2.0.Final</netty.version>
+        <micrometer.version>1.14.5</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
         <registry.version>1.3.2.Final</registry.version>
         <commons-codec.version>1.13</commons-codec.version>
@@ -181,9 +181,9 @@
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
         <mockito.version>4.11.0</mockito.version>
-        <junit.platform.version>1.8.2</junit.platform.version>
+        <junit.platform.version>1.9.3</junit.platform.version>
         <opentest4j.version>1.2.0</opentest4j.version>
-        <jupiter.version>5.8.2</jupiter.version>
+        <jupiter.version>5.9.3</jupiter.version>
         <strimzi-test-container.version>0.110.0</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <mockwebserver.version>3.14.7</mockwebserver.version>
