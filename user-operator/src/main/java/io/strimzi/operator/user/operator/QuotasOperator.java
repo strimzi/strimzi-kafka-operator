@@ -200,7 +200,9 @@ public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<Str
     }
 
     /**
-     * @return Set with all usernames which have some ACLs set
+     * Returns the set of usernames that have quota configurations stored in the cache.
+     *
+     * @return A CompletionStage containing a Set of usernames with quotas
      */
     @Override
     public CompletionStage<Set<String>> getAllUsers() {
