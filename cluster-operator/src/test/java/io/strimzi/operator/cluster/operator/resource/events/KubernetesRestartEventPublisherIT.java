@@ -14,8 +14,10 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -68,7 +70,8 @@ public class KubernetesRestartEventPublisherIT {
     @Test
     void eventPublicationSucceeds() {
         KubernetesRestartEventPublisher publisher = new KubernetesRestartEventPublisher(client, "op") { };
-        publisher.publishRestartEvents(pod, RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED).add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED));
+        Reconciliation reconciliation = new Reconciliation("test", Kafka.RESOURCE_KIND, TEST_NAMESPACE, "test");
+        publisher.publishRestartEvents(reconciliation, pod, RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED).add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED));
 
         ListOptions strimziEventsOnly = new ListOptionsBuilder()
                 .withFieldSelector("reportingController=" + KubernetesRestartEventPublisher.CONTROLLER)
@@ -79,7 +82,16 @@ public class KubernetesRestartEventPublisherIT {
 
         Event exemplar = items.get(0);
         assertThat(exemplar.getAction(), is(KubernetesRestartEventPublisher.ACTION));
-        assertThat(exemplar.getRegarding(), is(referenceFromPod(pod)));
+        assertThat(exemplar.getRegarding(), is(referenceFromReconciliation(reconciliation)));
+        assertThat(exemplar.getRelated(), is(referenceFromPod(pod)));
+    }
+
+    static ObjectReference referenceFromReconciliation(Reconciliation reconciliation) {
+        return new ObjectReferenceBuilder()
+                .withKind(reconciliation.kind())
+                .withNamespace(reconciliation.namespace())
+                .withName(reconciliation.name())
+                .build();
     }
 
     static ObjectReference referenceFromPod(Pod pod) {
