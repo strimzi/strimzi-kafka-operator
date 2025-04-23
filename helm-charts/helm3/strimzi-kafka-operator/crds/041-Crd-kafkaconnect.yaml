@@ -289,6 +289,8 @@ spec:
                         properties:
                           name:
                             type: string
+                          request:
+                            type: string
                     limits:
                       additionalProperties:
                         anyOf:
@@ -573,6 +575,8 @@ spec:
                               type: boolean
                             runAsUser:
                               type: integer
+                            seLinuxChangePolicy:
+                              type: string
                             seLinuxOptions:
                               type: object
                               properties:
@@ -595,6 +599,8 @@ spec:
                               type: array
                               items:
                                 type: integer
+                            supplementalGroupsPolicy:
+                              type: string
                             sysctls:
                               type: array
                               items:
@@ -1025,6 +1031,35 @@ spec:
                               ip:
                                 type: string
                           description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                        dnsPolicy:
+                          type: string
+                          enum:
+                            - ClusterFirst
+                            - ClusterFirstWithHostNet
+                            - Default
+                            - None
+                          description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                        dnsConfig:
+                          type: object
+                          properties:
+                            nameservers:
+                              type: array
+                              items:
+                                type: string
+                            options:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                            searches:
+                              type: array
+                              items:
+                                type: string
+                          description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                         enableServiceLinks:
                           type: boolean
                           description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -1586,6 +1621,8 @@ spec:
                               type: boolean
                             runAsUser:
                               type: integer
+                            seLinuxChangePolicy:
+                              type: string
                             seLinuxOptions:
                               type: object
                               properties:
@@ -1608,6 +1645,8 @@ spec:
                               type: array
                               items:
                                 type: integer
+                            supplementalGroupsPolicy:
+                              type: string
                             sysctls:
                               type: array
                               items:
@@ -2038,6 +2077,35 @@ spec:
                               ip:
                                 type: string
                           description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                        dnsPolicy:
+                          type: string
+                          enum:
+                            - ClusterFirst
+                            - ClusterFirstWithHostNet
+                            - Default
+                            - None
+                          description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                        dnsConfig:
+                          type: object
+                          properties:
+                            nameservers:
+                              type: array
+                              items:
+                                type: string
+                            options:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                            searches:
+                              type: array
+                              items:
+                                type: string
+                          description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                         enableServiceLinks:
                           type: boolean
                           description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -2466,7 +2534,7 @@ spec:
                           type: array
                           items:
                             type: string
-                          description: "Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --custom-platform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run, --registry-certificate, --registry-client-cert. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image."
+                          description: "Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --custom-platform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run, --registry-certificate, --registry-client-cert, --ignore-path. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image."
                         image:
                           type: string
                           description: The name of the image which will be built. Required.
@@ -2547,6 +2615,8 @@ spec:
                             type: object
                             properties:
                               name:
+                                type: string
+                              request:
                                 type: string
                         limits:
                           additionalProperties:

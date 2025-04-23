@@ -1,0 +1,137 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: strimzi-kube-state-metrics-config
+data:
+  config.yaml: |
+    spec:
+      resources:
+        - groupVersionKind:
+            group: kafka.strimzi.io
+            version: v1beta2
+            kind: KafkaTopic
+          metricNamePrefix: strimzi_kafka_topic
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi Kafka topic resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                partitions: [ spec, partitions ]
+                replicas: [ spec, replicas ]
+                generation: [ status, observedGeneration ]
+                topicId: [ status, topicId ]
+                topicName: [ status, topicName ]
+        - groupVersionKind:
+            group: kafka.strimzi.io
+            version: v1beta2
+            kind: KafkaUser
+          metricNamePrefix: strimzi_kafka_user
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi Kafka user resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                secret: [ status, secret ]
+                generation: [ status, observedGeneration ]
+                username: [ status, username ]
+        - groupVersionKind:
+            group: kafka.strimzi.io
+            version: v1beta2
+            kind: Kafka
+          metricNamePrefix: strimzi_kafka
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi Kafka resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                kafka_version: [ status, kafkaVersion ]
+                kafka_metadata_state: [ status, kafkaMetadataState ]
+                kafka_metadata_version: [ status, kafkaMetadataVersion ]
+                cluster_id: [ status, clusterId ]
+                operator_last_successful_version: [ status, operatorLastSuccessfulVersion ]
+                generation: [ status, observedGeneration ]
+        - groupVersionKind:
+            group: kafka.strimzi.io
+            version: v1beta2
+            kind: KafkaNodePool
+          metricNamePrefix: strimzi_kafka_node_pool
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi Kafka node pool resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                # KafkaNodePool is not having a ready status as this is implemented via Kafka resource
+                # ready: [ status, conditions, "[type=Ready]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                node_ids: [ status, nodeIds ]
+                roles: [ status, roles ]
+                replicas: [ status, replicas ]
+                cluster_id: [ status, clusterId ]
+                generation: [ status, observedGeneration ]
+        - groupVersionKind:
+            group: core.strimzi.io
+            version: v1beta2
+            kind: StrimziPodSet
+          metricNamePrefix: strimzi_pod_set
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi pod set resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                currentPods: [ status, currentPods ]
+                pods: [ status, pods ]
+                readyPods: [ status, readyPods ]
+                generation: [ status, observedGeneration ]
+        - groupVersionKind:
+            group: kafka.strimzi.io
+            version: v1beta2
+            kind: KafkaRebalance
+          metricNamePrefix: strimzi_kafka_rebalance
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi kafka rebalance resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                proposal_ready: [ status, conditions, "[type=ProposalReady]", status ]
+                rebalancing: [ status, conditions, "[type=Rebalancing]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                template: [ metadata, annotations, "strimzi.io/rebalance-template" ]

@@ -89,48 +89,6 @@ spec:
       annotations:
         summary: 'One or more Kafka containers restarted too often'
         description: 'One or more Kafka containers were restarted too often within the last 5 minutes'
-  - name: zookeeper
-    rules:
-    - alert: AvgRequestLatency
-      expr: zookeeper_avgrequestlatency > 10
-      for: 10s
-      labels:
-        severity: warning
-      annotations:
-        summary: 'Zookeeper average request latency'
-        description: 'The average request latency is {{ $value }} on {{ $labels.kubernetes_pod_name }}'
-    - alert: OutstandingRequests
-      expr: zookeeper_outstandingrequests > 10
-      for: 10s
-      labels:
-        severity: warning
-      annotations:
-        summary: 'Zookeeper outstanding requests'
-        description: 'There are {{ $value }} outstanding requests on {{ $labels.kubernetes_pod_name }}'
-    - alert: ZookeeperRunningOutOfSpace
-      expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"data-(.+)-zookeeper-[0-9]+"} < 5368709120
-      for: 10s
-      labels:
-        severity: warning
-      annotations:
-        summary: 'Zookeeper is running out of free disk space'
-        description: 'There are only {{ $value }} bytes available at {{ $labels.persistentvolumeclaim }} PVC'
-    - alert: ZookeeperContainerRestartedInTheLast5Minutes
-      expr: count(count_over_time(container_last_seen{container="zookeeper"}[5m])) > 2 * count(container_last_seen{container="zookeeper",pod=~".+-zookeeper-[0-9]+"})
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        summary: 'One or more Zookeeper containers were restarted too often'
-        description: 'One or more Zookeeper containers were restarted too often within the last 5 minutes. This alert can be ignored when the Zookeeper cluster is scaling up'
-    - alert: ZookeeperContainersDown
-      expr: absent(container_last_seen{container="zookeeper",pod=~".+-zookeeper-[0-9]+"})
-      for: 3m
-      labels:
-        severity: major
-      annotations:
-        summary: 'All `zookeeper` containers in the Zookeeper pods down or in CrashLookBackOff status'
-        description: 'All `zookeeper` containers in the Zookeeper pods have been down or in CrashLookBackOff status for 3 minutes'
   - name: entityOperator
     rules:
     - alert: TopicOperatorContainerDown
@@ -225,16 +183,16 @@ spec:
       annotations:
         summary: 'Kafka Bridge returns code 5xx too often'
         description: 'Kafka Bridge returns code 5xx too much ({{ $value }}) for the path {{ $labels.path }}'
-  - name: mirrorMaker
+  - name: mirrorMaker2
     rules:
-    - alert: MirrorMakerContainerDown
-      expr: absent(container_last_seen{container=~".+-mirror-maker",pod=~".+-mirror-maker-.+"})
+    - alert: MirrorMaker2ContainerDown
+      expr: absent(container_last_seen{container=~".+-mirrormaker2",pod=~".+-mirrormaker2-.+"})
       for: 3m
       labels:
         severity: major
       annotations:
-        summary: 'All Kafka Mirror Maker containers down or in CrashLookBackOff status'
-        description: 'All Kafka Mirror Maker containers have been down or in CrashLookBackOff status for 3 minutes'
+        summary: 'All Kafka Mirror Maker 2 containers down or in CrashLookBackOff status'
+        description: 'All Kafka Mirror Maker 2 containers have been down or in CrashLookBackOff status for 3 minutes'
   - name: kafkaExporter
     rules:
     - alert: UnderReplicatedPartition

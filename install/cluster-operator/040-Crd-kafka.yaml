@@ -26,14 +26,6 @@ spec:
     subresources:
       status: {}
     additionalPrinterColumns:
-    - name: Desired Kafka replicas
-      description: The desired number of Kafka replicas in the cluster
-      jsonPath: .spec.kafka.replicas
-      type: integer
-    - name: Desired ZK replicas
-      description: The desired number of ZooKeeper replicas in the cluster
-      jsonPath: .spec.zookeeper.replicas
-      type: integer
     - name: Ready
       description: The state of the custom resource
       jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
@@ -73,7 +65,7 @@ spec:
                   replicas:
                     type: integer
                     minimum: 1
-                    description: The number of pods in the cluster. This property is required when node pools are not used.
+                    description: Replicas are now configured in `KafkaNodePool` resources and this option is ignored.
                   image:
                     type: string
                     description: "The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. "
@@ -586,7 +578,7 @@ spec:
                             broker:
                               type: integer
                               description: Id of the kafka broker (broker identifier).
-                        description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
+                        description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                       selector:
                         additionalProperties:
                           type: string
@@ -637,7 +629,7 @@ spec:
                                   broker:
                                     type: integer
                                     description: Id of the kafka broker (broker identifier).
-                              description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
+                              description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                             selector:
                               additionalProperties:
                                 type: string
@@ -661,7 +653,7 @@ spec:
                         description: List of volumes as Storage objects representing the JBOD disks array.
                     required:
                     - type
-                    description: Storage configuration (disk). Cannot be updated. This property is required when node pools are not used.
+                    description: Storage is now configured in the `KafkaNodePool` resources and this option is ignored.
                   authorization:
                     type: object
                     properties:
@@ -770,7 +762,7 @@ spec:
                         - opa
                         - keycloak
                         - custom
-                        description: "Authorization type. Currently, the supported types are `simple`, `keycloak`, `opa` and `custom`. `simple` authorization type uses Kafka's built-in authorizer for authorization. `keycloak` authorization type uses Keycloak Authorization Services for authorization. `opa` authorization type uses Open Policy Agent based authorization.`custom` authorization type uses user-provided implementation for authorization."
+                        description: "Authorization type. Currently, the supported types are `simple`, `keycloak`, `opa` and `custom`. `simple` authorization type uses Kafka's built-in authorizer for authorization. `keycloak` authorization type uses Keycloak Authorization Services for authorization. `opa` authorization type uses Open Policy Agent based authorization. `custom` authorization type uses user-provided implementation for authorization. As of Strimzi 0.46.0, `opa` type is deprecated and will be removed in the future. Please use `custom` type instead."
                       url:
                         type: string
                         example: http://opa:8181/v1/data/kafka/authz/allow
@@ -895,6 +887,8 @@ spec:
                           type: object
                           properties:
                             name:
+                              type: string
+                            request:
                               type: string
                       limits:
                         additionalProperties:
@@ -1042,6 +1036,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -1064,6 +1060,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -1494,6 +1492,35 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            enum:
+                            - ClusterFirst
+                            - ClusterFirstWithHostNet
+                            - Default
+                            - None
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -2301,7 +2328,7 @@ spec:
                             broker:
                               type: integer
                               description: Id of the kafka broker (broker identifier).
-                        description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
+                        description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                       selector:
                         additionalProperties:
                           type: string
@@ -2431,6 +2458,8 @@ spec:
                           type: object
                           properties:
                             name:
+                              type: string
+                            request:
                               type: string
                       limits:
                         additionalProperties:
@@ -2596,6 +2625,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -2618,6 +2649,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -3048,6 +3081,35 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            enum:
+                            - ClusterFirst
+                            - ClusterFirstWithHostNet
+                            - Default
+                            - None
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -3443,7 +3505,7 @@ spec:
                 required:
                 - replicas
                 - storage
-                description: Configuration of the ZooKeeper cluster. This section is required when running a ZooKeeper-based Apache Kafka cluster.
+                description: "As of Strimzi 0.46.0, ZooKeeper-based Apache Kafka clusters are not supported anymore and this option is ignored."
               entityOperator:
                 type: object
                 properties:
@@ -3549,6 +3611,8 @@ spec:
                               type: object
                               properties:
                                 name:
+                                  type: string
+                                request:
                                   type: string
                           limits:
                             additionalProperties:
@@ -3717,6 +3781,8 @@ spec:
                               properties:
                                 name:
                                   type: string
+                                request:
+                                  type: string
                           limits:
                             additionalProperties:
                               anyOf:
@@ -3813,6 +3879,8 @@ spec:
                               type: object
                               properties:
                                 name:
+                                  type: string
+                                request:
                                   type: string
                           limits:
                             additionalProperties:
@@ -3964,6 +4032,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -3986,6 +4056,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -4416,6 +4488,35 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            enum:
+                            - ClusterFirst
+                            - ClusterFirstWithHostNet
+                            - Default
+                            - None
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -5095,6 +5196,8 @@ spec:
                               properties:
                                 name:
                                   type: string
+                                request:
+                                  type: string
                           limits:
                             additionalProperties:
                               anyOf:
@@ -5182,6 +5285,8 @@ spec:
                           type: object
                           properties:
                             name:
+                              type: string
+                            request:
                               type: string
                       limits:
                         additionalProperties:
@@ -5383,6 +5488,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -5405,6 +5512,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -5835,6 +5944,35 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            enum:
+                            - ClusterFirst
+                            - ClusterFirstWithHostNet
+                            - Default
+                            - None
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -6500,6 +6638,8 @@ spec:
                           properties:
                             name:
                               type: string
+                            request:
+                              type: string
                       limits:
                         additionalProperties:
                           anyOf:
@@ -6589,6 +6729,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -6611,6 +6753,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -7041,6 +7185,35 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            enum:
+                            - ClusterFirst
+                            - ClusterFirstWithHostNet
+                            - Default
+                            - None
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -7341,6 +7514,8 @@ spec:
                           properties:
                             name:
                               type: string
+                            request:
+                              type: string
                       limits:
                         additionalProperties:
                           anyOf:
@@ -7487,6 +7662,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -7509,6 +7686,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -7939,6 +8118,35 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            enum:
+                            - ClusterFirst
+                            - ClusterFirstWithHostNet
+                            - Default
+                            - None
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -8233,7 +8441,7 @@ spec:
                 description: "A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression."
             required:
             - kafka
-            description: "The specification of the Kafka and ZooKeeper clusters, and Topic Operator."
+            description: The specification of the Kafka cluster.
           status:
             type: object
             properties:
@@ -8328,7 +8536,7 @@ spec:
                 - KRaftPostMigration
                 - PreKRaft
                 - KRaft
-                description: "Defines where cluster metadata are stored. Possible values are: ZooKeeper if the metadata are stored in ZooKeeper; KRaftMigration if the controllers are connected to ZooKeeper, brokers are being rolled with Zookeeper migration enabled and connection information to controllers, and the metadata migration process is running; KRaftDualWriting if the metadata migration process finished and the cluster is in dual-write mode; KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper; PreKRaft if brokers and controller are fully KRaft-based, metadata are stored in KRaft, but ZooKeeper must be deleted; KRaft if the metadata are stored in KRaft."
+                description: "Defines where cluster metadata are stored. Since Kafka KRaft has been fully adopted, the only applicable value is `KRaft`."
               autoRebalance:
                 type: object
                 properties:
@@ -8360,4 +8568,4 @@ spec:
                           description: "List of broker IDs involved in an auto-rebalancing operation related to the current mode. \nThe list contains one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous auto-rebalance is still in progress). \n"
                     description: "List of modes where an auto-rebalancing operation is either running or queued. \nEach mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress)."
                 description: The status of an auto-rebalancing triggered by a cluster scaling request.
-            description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."
+            description: The status of the Kafka cluster.
