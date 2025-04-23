@@ -17,6 +17,9 @@ import java.util.regex.Pattern;
  */
 public class ExecutorStateProcessor {
 
+    // Regular expression pattern to match the date-time in ISO 8601 format (UTC, rounded to the second).
+    private static final Pattern ISO_8601_UTC_TIMESTAMP_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z");
+
     private static final String FINISHED_DATA_MOVEMENT_KEY = "finishedDataMovement";
     private static final String TOTAL_DATA_TO_MOVE_KEY = "totalDataToMove";
     private static final String TRIGGERED_TASK_REASON_KEY = "triggeredTaskReason";
@@ -130,9 +133,9 @@ public class ExecutorStateProcessor {
     }
 
     /**
-     * Extracts the ISO 8601 date-time string from a Cruise Control task's reason string.
-     * The date-time is expected to be in the format "%s (Client: %s, Date: %s)", where
-     * the date follows "Date:" in UTC and is rounded to the second
+     * Extracts the ISO 8601 date-time string from a Cruise Control task's triggeredTaskReason string.
+     * The triggeredTaskReason string is expected to be in the format "%s (Client: %s, Date: %s)", where
+     * the ISO 8601 date-time string follows "Date:" in UTC and is rounded to the second
      * (see: https://github.com/linkedin/cruise-control/blob/main/cruise-control-core/src/main/java/com/linkedin/cruisecontrol/CruiseControlUtils.java#L39-L41).
      *
      * @param triggeredTaskReason Cruise Control task's triggeredTaskReason string.
@@ -144,11 +147,7 @@ public class ExecutorStateProcessor {
             throw new IllegalArgumentException("Triggered task reason is missing.");
         }
 
-        // Regular expression pattern to match the date-time in ISO 8601 format (UTC, rounded to the second).
-        String regex = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(triggeredTaskReason);
-
+        Matcher matcher = ISO_8601_UTC_TIMESTAMP_PATTERN.matcher(triggeredTaskReason);
         if (matcher.find()) {
             // Extract the date string
             return matcher.group();

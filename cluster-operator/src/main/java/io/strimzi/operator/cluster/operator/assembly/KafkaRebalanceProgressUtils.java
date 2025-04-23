@@ -11,6 +11,26 @@ public class KafkaRebalanceProgressUtils {
 
     private static final int SECONDS_IN_A_MINUTE = 60;
 
+    private static double getRate(long taskStartTime, long currentTime, double finishedDataMovement) {
+        if (currentTime < taskStartTime) {
+            throw new IllegalArgumentException(
+                    String.format("Invalid value(s) provided for the arguments taskStartTime: %d, currentTime: %d. " +
+                            "The value of taskStartTime must be greater than the value  currentTime", taskStartTime, currentTime)
+            );
+        }
+        // Calculate the seconds between the start time and the current time
+        long timeElapsedInSeconds = currentTime - taskStartTime;
+        if (timeElapsedInSeconds == 0) {
+            throw new ArithmeticException("Time elapsed less than or equal to zero, cannot calculate byte movement rate.");
+        }
+
+        double rate = finishedDataMovement / timeElapsedInSeconds;
+        if (rate == 0) {
+            throw new ArithmeticException("Byte movement rate is zero, cannot estimate time to completion.");
+        }
+        return rate;
+    }
+
     /**
      * Estimates the number of minutes it will take an ongoing partition rebalance to complete.
      *
@@ -37,22 +57,7 @@ public class KafkaRebalanceProgressUtils {
                     taskStartTime, currentTime, totalDataToMove, finishedDataMovement)
             );
         }
-        if (!(currentTime >= taskStartTime)) {
-            throw new IllegalArgumentException(
-                    String.format("Invalid value(s) provided for the arguments taskStartTime: %d, currentTime: %d. " +
-                            "The value of taskStartTime must be greater than the value  currentTime", taskStartTime, currentTime)
-            );
-        }
-        // Calculate the seconds between the start time and the current time
-        long timeElapsedInSeconds = currentTime - taskStartTime;
-        if (timeElapsedInSeconds == 0) {
-            throw new ArithmeticException("Time elapsed less than or equal to zero, cannot calculate byte movement rate.");
-        }
-
-        double rate = (double) finishedDataMovement / timeElapsedInSeconds;
-        if (rate == 0) {
-            throw new ArithmeticException("Byte movement rate is zero, cannot estimate time to completion.");
-        }
+        double rate = getRate(taskStartTime, currentTime, (double) finishedDataMovement);
 
         int dataLeftToMove = totalDataToMove - finishedDataMovement;
         return (int) (dataLeftToMove / (rate * SECONDS_IN_A_MINUTE));
@@ -68,7 +73,7 @@ public class KafkaRebalanceProgressUtils {
      * @throws IllegalArgumentException if `finishedDataMovement` is greater than `totalDataToMove` or if either value is negative.
      */
     /* test */ static int estimateCompletedByteMovementPercentage(int totalDataToMove, int finishedDataMovement) {
-        if (!(finishedDataMovement <= totalDataToMove) || finishedDataMovement < 0) {
+        if (finishedDataMovement > totalDataToMove || finishedDataMovement < 0) {
             throw new IllegalArgumentException(
                     String.format("Invalid value(s) provided for the arguments totalDataToMove: %d or finishedDataMovement: %d. " +
                                   "The value of finishedDataMovement must be less than or equal to totalDataToMove and both values must be non-negative",
