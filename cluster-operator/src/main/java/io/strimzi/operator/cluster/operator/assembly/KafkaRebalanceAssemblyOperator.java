@@ -343,22 +343,26 @@ public class KafkaRebalanceAssemblyOperator
 
                     if (existingConfigMap == null && desiredConfigMap == null) {
                         return Future.succeededFuture(desiredStatusAndMap);
-                    } else if (existingConfigMap != null && desiredStatusAndMap.getLoadMap() != null) {
-                        // Ensure desiredConfigMap retains broker load information if it exists.
-                        desiredConfigMap.getData().put(BROKER_LOAD_KEY, existingConfigMap.getData().get(BROKER_LOAD_KEY));
-                    } else if (desiredConfigMap == null) {
-                        desiredStatusAndMap.setLoadMap(existingConfigMap);
-                        desiredConfigMap = existingConfigMap;
                     }
 
-                    // Add progress information to KafkaRebalance resource status and ConfigMap.
-                    desiredStatus.setProgress(Map.of(REBALANCE_PROGRESS_CONFIG_MAP_KEY, configMapName));
-                    KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, desiredState, host, cruiseControlPort, apiClient, desiredConfigMap)
-                            .onFailure(exception -> {
-                                KafkaRebalanceUtils.addWarningCondition(desiredStatus, exception);
-                            });
+                    if (existingConfigMap != null) {
+                        if (desiredConfigMap == null) {
+                            desiredStatusAndMap.setLoadMap(existingConfigMap);
+                            desiredConfigMap = existingConfigMap;
+                        } else {
+                            // Ensure desiredConfigMap retains broker load information if it exists.
+                            desiredConfigMap.getData().put(BROKER_LOAD_KEY, existingConfigMap.getData().get(BROKER_LOAD_KEY));
+                        }
+                    }
 
-                    return Future.succeededFuture(desiredStatusAndMap);
+                    // Add progress information to `KafkaRebalance` resource status and ConfigMap.
+                    desiredStatus.setProgress(Map.of(REBALANCE_PROGRESS_CONFIG_MAP_KEY, configMapName));
+                    return KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, desiredState, host, cruiseControlPort, apiClient, desiredConfigMap)
+                            .recover(exception -> {
+                                KafkaRebalanceUtils.addWarningCondition(desiredStatus, exception);
+                                return Future.succeededFuture();
+                            })
+                            .map(ignored -> desiredStatusAndMap);
                 });
     }
 

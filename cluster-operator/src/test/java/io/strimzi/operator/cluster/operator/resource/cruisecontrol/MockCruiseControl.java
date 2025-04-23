@@ -148,12 +148,12 @@ public class MockCruiseControl {
         return buildStateResponse("CC-State-proposal-not-ready.json", STATE_PROPOSAL_NOT_READY_RESPONSE, 200);
     }
 
-    private HttpResponse stateEndpointFetchErrorResponse() {
-        return buildStateResponse("CC-State-fetch-error.json", "cruise-control-state-error", 500);
-    }
-
     private HttpResponse stateEndpointInExecutionResponse() {
         return buildStateResponse("CC-State-inExecution.json", "cruise-control-state", 200);
+    }
+
+    private HttpResponse stateEndpointFetchErrorResponse() {
+        return buildStateResponse("CC-State-fetch-error.json", "cruise-control-state-error", 500);
     }
 
     private HttpResponse stateEndpointResponse(boolean verbose) {
@@ -162,54 +162,68 @@ public class MockCruiseControl {
         return buildStateResponse(fileName, userTaskId, 200);
     }
 
+    private void setupCCStateResponse(int proposalNotReadyCalls, int inExecutionCalls) {
+        List<Header> authHeader = List.of(AUTH_HEADER);
+        List<Header> proposalNotReadyHeaders = List.of(header(USER_TASK_ID_HEADER, STATE_PROPOSAL_NOT_READY), authHeader.get(0));
+
+        server
+                .when(
+                        stateEndpointRequestMatcher(proposalNotReadyHeaders, "true|false", "true|false"),
+                        Times.exactly(proposalNotReadyCalls))
+                .respond(
+                        stateEndpointProposalNotReadyResponse());
+        server
+                .when(
+                        stateEndpointRequestMatcher(authHeader, "true|false", "true|false"),
+                        Times.exactly(inExecutionCalls))
+                .respond(
+                        stateEndpointInExecutionResponse());
+        server
+                .when(
+                        stateEndpointRequestMatcher(authHeader, "true", "false"))
+                .respond(
+                        stateEndpointResponse(false));
+        server
+                .when(
+                        stateEndpointRequestMatcher(authHeader, "true", "false"))
+                .respond(
+                        stateEndpointResponse(true));
+    }
+
     /**
-     * Sets up mock server responses for Cruise Control's {@code /state} endpoint.
-     * <p>
-     * This method configures the sequence of responses the mock server should return
-     * when the {@code /state} endpoint is called. The response pattern depends on the number
-     * of proposal-not-ready calls, in-execution calls, and optionally, error responses at a specified call number.
+     * Configures mock server responses for Cruise Control's {@code /state} endpoint.
      *
-     * @param proposalNotReadyCalls the number of calls to the {@code /state} endpoint that should return
-     *                              a response indicating the proposal is not ready.
-     * @param inExecutionCalls      the number of calls to the {@code /state} endpoint that should return
-     *                              a response indicating a rebalancing task is currently in execution.
-     * @param errorAtCallNumber     if non-null and greater than zero, configures the mock server to
-     *                              return a fetch error response (HTTP 500) on the {@code errorAtCallNumber}-th call,
-     *                              after responding to {@code errorAtCallNumber - 1} calls with a normal state response.
-     * @param numErrorCalls         the number of calls to the {@code /state} endpoint that should return
-     *                              errors.
+     * @param proposalNotReadyCalls   the total number of calls that should respond where proposal is not ready.
+     * @param inExecutionCalls        the total number of calls that should respond where a rebalance task is in execution.
+     * @param fetchErrorAtCallNumber  if non-null and greater than zero, configures the mock server to respond with
+     *                                a fetch error (HTTP 500) starting at the {@code fetchErrorAtCallNumber}-th call.
+     * @param numFetchErrorCalls      the number of consecutive calls that should return fetch errors after
+     *                                {@code fetchErrorAtCallNumber}.
      */
-    public void setupCCStateResponse(int proposalNotReadyCalls, int inExecutionCalls, Integer errorAtCallNumber, int numErrorCalls) {
-        int callCount = 0;
-        if (proposalNotReadyCalls > 0) {
-            List<Header> headers = List.of(header(USER_TASK_ID_HEADER, STATE_PROPOSAL_NOT_READY), AUTH_HEADER);
-            server.when(stateEndpointRequestMatcher(headers, "true|false", "true|false"), Times.exactly(proposalNotReadyCalls))
-                    .respond(stateEndpointProposalNotReadyResponse());
-            callCount += proposalNotReadyCalls;
-        }
-        if (inExecutionCalls > 0) {
-            server.when(stateEndpointRequestMatcher(List.of(AUTH_HEADER), "true|false", "true|false"), Times.exactly(inExecutionCalls))
-                    .respond(stateEndpointInExecutionResponse());
-            callCount += inExecutionCalls;
-        }
+    public void setupCCStateResponse(int proposalNotReadyCalls, int inExecutionCalls, Integer fetchErrorAtCallNumber, int numFetchErrorCalls) {
+        if (fetchErrorAtCallNumber != null && fetchErrorAtCallNumber > 0) {
+            int callsBeforeError = fetchErrorAtCallNumber - 1;
 
-        if (errorAtCallNumber != null) {
-            int normalResponseCalls = errorAtCallNumber - callCount - 1;
-            if (normalResponseCalls > 0) {
-                server.when(stateEndpointRequestMatcher(List.of(AUTH_HEADER), "true", "false"), Times.exactly(normalResponseCalls))
-                        .respond(stateEndpointResponse(false));
-            }
-            if (numErrorCalls > 0) {
-                server.when(stateEndpointRequestMatcher(List.of(AUTH_HEADER), "true|false", "true|false"), Times.exactly(numErrorCalls))
-                        .respond(stateEndpointFetchErrorResponse());
-            }
+            // Setup calls before error calls
+            int proposalNotReadyCallsBeforeError = Math.min(proposalNotReadyCalls, callsBeforeError);
+            int inExecutionCallsBeforeError = Math.min(inExecutionCalls, callsBeforeError - proposalNotReadyCallsBeforeError);
+            setupCCStateResponse(proposalNotReadyCallsBeforeError, inExecutionCallsBeforeError);
+
+            // Setup fetch error calls
+            server
+                    .when(
+                            stateEndpointRequestMatcher(List.of(AUTH_HEADER), "true|false", "true|false"),
+                            Times.exactly(numFetchErrorCalls))
+                    .respond(
+                            stateEndpointFetchErrorResponse());
+
+            // Remaining calls after error
+            int proposalNotReadyCallsAfterError = proposalNotReadyCalls - proposalNotReadyCallsBeforeError;
+            int inExecutionCallsAfterError = inExecutionCalls - inExecutionCallsBeforeError;
+            setupCCStateResponse(proposalNotReadyCallsAfterError, inExecutionCallsAfterError);
+        } else {
+            setupCCStateResponse(proposalNotReadyCalls, inExecutionCalls);
         }
-
-        server.when(stateEndpointRequestMatcher(List.of(AUTH_HEADER), "true", "false"))
-                .respond(stateEndpointResponse(false));
-
-        server.when(stateEndpointRequestMatcher(List.of(AUTH_HEADER), "true", "false"))
-                .respond(stateEndpointResponse(true));
     }
 
     /**
@@ -390,136 +404,6 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    /**
-     * Sets up the User Tasks endpoint. These endpoints expect the query to contain the user-task-id returned in the header of the response from
-     * the rebalance endpoints.
-     *
-     * @param activeCalls The number of calls to the User Tasks endpoint that should return "Active" before "inExecution" is returned as the status.
-     * @param inExecutionCalls The number of calls to the User Tasks endpoint that should return "InExecution" before "Completed" is returned as the status.
-     * @throws IOException If there are issues connecting to the network port.
-     * @throws URISyntaxException If any of the configured end points are invalid.
-     */
-    public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls) throws IOException, URISyntaxException {
-        // User tasks response for the rebalance request with no goals set (non-verbose)
-        JsonBody jsonActive = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-Active.json"));
-        JsonBody jsonInExecution = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-inExecution.json"));
-        JsonBody jsonCompleted = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-completed.json"));
-
-        // The first activeCalls times respond that with a status of "Active"
-        server
-                .when(
-                        request()
-                                .withMethod("GET")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.toString(), REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true),
-                        Times.exactly(activeCalls))
-                .respond(
-                        response()
-                                .withBody(jsonActive)
-                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, 0));
-
-        // The next inExecutionCalls times respond that with a status of "InExecution"
-        server
-                .when(
-                        request()
-                                .withMethod("GET")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.toString(), REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true),
-                        Times.exactly(inExecutionCalls))
-                .respond(
-                        response()
-                                .withBody(jsonInExecution)
-                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, 0));
-
-        // On the N+1 call, respond with a completed rebalance task.
-        server
-                .when(
-                        request()
-                                .withMethod("GET")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.toString(), REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true),
-                        Times.unlimited())
-                .respond(
-                        response()
-                                .withBody(jsonCompleted)
-                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, 0));
-
-        // User tasks response for the rebalance request with no goals set (verbose)
-        JsonBody jsonActiveVerbose = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-Active.json"));
-        JsonBody jsonInExecutionVerbose = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-inExecution.json"));
-        JsonBody jsonCompletedVerbose = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-completed.json"));
-
-        // The first activeCalls times respond that with a status of "Active"
-        server
-                .when(
-                        request()
-                                .withMethod("GET")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
-                                .withQueryStringParameter(
-                                        Parameter.param(CruiseControlParameters.USER_TASK_IDS.toString(), REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true),
-                        Times.exactly(activeCalls))
-                .respond(
-                        response()
-                                .withBody(jsonActiveVerbose)
-                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, 0));
-
-        server
-                .when(
-                        request()
-                                .withMethod("GET")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
-                                .withQueryStringParameter(
-                                        Parameter.param(CruiseControlParameters.USER_TASK_IDS.toString(), REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true),
-                        Times.exactly(inExecutionCalls))
-                .respond(
-                        response()
-                                .withBody(jsonInExecutionVerbose)
-                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, 0));
-
-        server
-                .when(
-                        request()
-                                .withMethod("GET")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
-                                .withQueryStringParameter(
-                                        Parameter.param(CruiseControlParameters.USER_TASK_IDS.toString(), REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true),
-                        Times.unlimited())
-                .respond(
-                        response()
-                                .withBody(jsonCompletedVerbose)
-                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, 0));
-    }
-
     private static HttpRequest userTasksEndpointRequestMatcher(Boolean verbose) {
         String userTaskId = verbose ? REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID : REBALANCE_NO_GOALS_RESPONSE_UTID;
         return request()
@@ -532,37 +416,16 @@ public class MockCruiseControl {
                 .withSecure(true);
     }
 
-    private HttpResponse userTasksEndpointActiveResponse(Boolean verbose) {
-        JsonBody jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-Active.json"));
-        String userTaskId = USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID;
-        if (verbose) {
-            jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-Active.json"));
-            userTaskId = USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID;
-        }
+    private HttpResponse userTaskResponse(String state, boolean verbose) {
+        String fileName = "CC-User-task-rebalance-no-goals-" +
+                (verbose ? "verbose-" : "") + state + ".json";
 
-        return response()
-                .withBody(jsonBody)
-                .withHeaders(header("User-Task-ID", userTaskId))
-                .withDelay(TimeUnit.SECONDS, 0);
-    }
+        String userTaskId = verbose
+                ? USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID
+                : USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID;
 
-    private HttpResponse userTasksEndpointInExecutionResponse(Boolean verbose) {
-        JsonBody jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-inExecution.json"));
-        String userTaskId = USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID;
-        if (verbose) {
-            jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-inExecution.json"));
-            userTaskId =  USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID;
-        }
-        return response()
-                .withBody(jsonBody)
-                .withHeaders(header("User-Task-ID", userTaskId))
-                .withDelay(TimeUnit.SECONDS, 0);
-    }
-
-    private HttpResponse userTasksEndpointErrorResponse() {
-        // This simulates asking for the status of a task that has Complete with error and fetch_completed_task=true
-        JsonBody jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-status-completed-with-error.json"));
-        String userTaskId = USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID;
+        JsonBody jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(
+                getClass(), "/" + CC_JSON_ROOT + fileName));
 
         return response()
                 .withBody(jsonBody)
@@ -571,17 +434,20 @@ public class MockCruiseControl {
                 .withDelay(TimeUnit.SECONDS, 0);
     }
 
-    private HttpResponse userTasksEndpointCompleteResponse(Boolean verbose) {
-        JsonBody jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-completed.json"));
-        String userTaskId = USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID;
-        if (verbose) {
-            jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-completed.json"));
-            userTaskId = USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID;
-        }
-        return response()
-                .withBody(jsonBody)
-                .withHeaders(header("User-Task-ID", userTaskId))
-                .withDelay(TimeUnit.SECONDS, 0);
+    private HttpResponse userTasksEndpointActiveResponse(boolean verbose) {
+        return userTaskResponse("Active", verbose);
+    }
+
+    private HttpResponse userTasksEndpointInExecutionResponse(boolean verbose) {
+        return userTaskResponse("InExecution", verbose);
+    }
+
+    private HttpResponse userTasksEndpointCompleteResponse(boolean verbose) {
+        return userTaskResponse("Completed",  verbose);
+    }
+
+    private HttpResponse userTasksEndpointCompletedWithErrorResponse() {
+        return userTaskResponse("CompletedWithError",  false);
     }
 
     /**
@@ -590,41 +456,37 @@ public class MockCruiseControl {
      *
      * @param activeCalls The number of calls to the User Tasks endpoint that should return "Active" before "inExecution" is returned as the status.
      * @param inExecutionCalls The number of calls to the User Tasks endpoint that should return "InExecution" before "Completed" is returned as the status.
+     * @param completeWithError If true, the User Tasks endpoint returns "CompletedWithError" as the response.
      * @throws IOException If there are issues connecting to the network port.
      * @throws URISyntaxException If any of the configured end points are invalid.
      */
-    public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls, Integer errorAtCallNumber) throws IOException, URISyntaxException {
-        // Non-verbose
-        setupUserTaskResponsesNoGoals(activeCalls, inExecutionCalls, errorAtCallNumber, false);
+    public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls, boolean completeWithError) throws IOException, URISyntaxException {
+        for (boolean verbose : List.of(false, true)) {
+            HttpRequest request = userTasksEndpointRequestMatcher(verbose);
 
-        // Verbose
-        setupUserTaskResponsesNoGoals(activeCalls, inExecutionCalls, errorAtCallNumber, true);
-    }
+            // The first activeCalls times respond that with a status of "Active"
+            server
+                    .when(request, Times.exactly(activeCalls))
+                    .respond(userTasksEndpointActiveResponse(verbose));
 
+            // The next inExecutionCalls times respond that with a status of "InExecution"
+            server
+                    .when(request, Times.exactly(inExecutionCalls))
+                    .respond(userTasksEndpointInExecutionResponse(verbose));
 
-    private void setupUserTaskResponsesNoGoals(int activeCalls, int inExecutionCalls, Integer errorAtCallNumber, boolean verbose) throws IOException, URISyntaxException {
-        // User tasks response for the rebalance request with no goals set (non-verbose)
+            if (completeWithError) {
+                // On the N+1 call, respond with a status of "CompletedWithError"
+                server
+                        .when(request, Times.unlimited())
+                        .respond(userTasksEndpointCompletedWithErrorResponse());
 
-        // Active responses
-        server.when(userTasksEndpointRequestMatcher(verbose), Times.exactly(activeCalls))
-                .respond(userTasksEndpointActiveResponse(verbose));
-
-        // InExecution responses
-        server.when(userTasksEndpointRequestMatcher(verbose), Times.exactly(inExecutionCalls))
-                .respond(userTasksEndpointInExecutionResponse(verbose));
-
-        if (errorAtCallNumber != null && errorAtCallNumber > 0) {
-            server.when(userTasksEndpointRequestMatcher(verbose), Times.exactly(errorAtCallNumber - 1))
-                    .respond(userTasksEndpointCompleteResponse(verbose));
-
-            server.when(userTasksEndpointRequestMatcher(verbose), Times.exactly(1))
-                    .respond(userTasksEndpointErrorResponse());
-            return;
+            } else {
+                // On the N+1 call, respond with a status of "Completed".
+                server
+                        .when(request, Times.unlimited())
+                        .respond(userTasksEndpointCompleteResponse(verbose));
+            }
         }
-
-        // Completed responses for everything else
-        server.when(userTasksEndpointRequestMatcher(verbose), Times.unlimited())
-                .respond(userTasksEndpointCompleteResponse(verbose));
     }
 
     /**
@@ -632,7 +494,7 @@ public class MockCruiseControl {
      */
     public void setupCCUserTasksCompletedWithError() throws IOException, URISyntaxException {
         // This simulates asking for the status of a task that has Complete with error and fetch_completed_task=true
-        JsonBody compWithErrorJson = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-status-completed-with-error.json"));
+        JsonBody compWithErrorJson = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-CompletedWithError.json"));
 
         server
                 .when(

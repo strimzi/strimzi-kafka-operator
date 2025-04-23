@@ -122,7 +122,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCGetRebalanceUserTask() throws IOException, URISyntaxException {
 
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0, false);
 
         CruiseControlApi client = cruiseControlClientProvider();
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
@@ -495,7 +495,7 @@ public class CruiseControlClientTest {
         int pendingCalls1 = 2;
         int pendingCalls2 = 4;
 
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls1);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls1, false);
 
         CompletableFuture<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
 
@@ -518,7 +518,7 @@ public class CruiseControlClientTest {
         statusFuture = statusFuture.thenCompose(response -> {
             try {
                 cruiseControlServer.reset();
-                cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls2);
+                cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls2, false);
             } catch (IOException | URISyntaxException e) {
                 return CompletableFuture.failedFuture(e);
             }
@@ -545,7 +545,7 @@ public class CruiseControlClientTest {
     }
 
     private void runTest(String userTaskID, int pendingCalls) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls, false);
 
         CruiseControlApi client = cruiseControlClientProvider();
 
