@@ -51,7 +51,7 @@
   If you have any custom logging configuration, you might need to update it during the upgrade to Kafka 4.0.
 * Kubernetes events for Pod restarts no longer have the Pod as the `regardingObject`.
   If you are using `regardingObject` as a `field-selector` for listing events you must update the selector to specify the Kafka resource instead.
-* From Kafka 4.0.0, you might need to explicitly enable the JMXReporter in `metric.reporters` in `.spec.kafka.config` Kafka option if you need it and didn't enable metrics in `.spec.kafka.metrics`.
+* From Kafka 4.0.0, to enable the JMXReporter you must either enable metrics in `.spec.kafka.metrics`, or explicitly add JMXReporter in `metric.reporters`.
 
 ## 0.45.0
 

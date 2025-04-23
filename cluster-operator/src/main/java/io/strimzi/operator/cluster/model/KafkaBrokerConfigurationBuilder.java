@@ -789,7 +789,7 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
      * @param injectCcMetricsReporter   Inject the Cruise Control Metrics Reporter into the configuration
-     * @param isMetricsEnabled          If metrics are enabled to inject the JmxReporter into the configuration
+     * @param isMetricsEnabled          Flag to indicate if metrics are enabled. If they are we inject the JmxReporter into the configuration
      *
      * @return Returns the builder instance
      */
@@ -813,7 +813,7 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Add reporters to the corresponding Kafka configuration
+     * Add metric reporters to the corresponding Kafka configuration
      *
      * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
      * @param injectCcMetricsReporter   Inject the Cruise Control Metrics Reporter into the configuration
