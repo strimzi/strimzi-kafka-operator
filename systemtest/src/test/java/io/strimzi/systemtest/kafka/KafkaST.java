@@ -1080,8 +1080,6 @@ class KafkaST extends AbstractST {
         KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
             .withMessageCount(continuousClientsMessageCount)
             .withAdditionalConfig(producerAdditionConfiguration)
-            // TODO: needed because of bug in test-clients - https://github.com/strimzi/test-clients/issues/119
-            .withMessagesPerTransaction("1")
             .build();
 
         resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
