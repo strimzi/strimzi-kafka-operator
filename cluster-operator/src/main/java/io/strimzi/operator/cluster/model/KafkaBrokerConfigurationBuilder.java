@@ -60,6 +60,8 @@ public class KafkaBrokerConfigurationBuilder {
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET_TEMPLATE_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:STRIMZI_%s_OAUTH_CLIENT_SECRET}";
 
+    private final static String KAFKA_JMX_REPORTER_CLASS = "org.apache.kafka.common.metrics.JmxReporter";
+
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
@@ -787,44 +789,52 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
      * @param injectCcMetricsReporter   Inject the Cruise Control Metrics Reporter into the configuration
+     * @param isMetricsEnabled          Flag to indicate if metrics are enabled. If they are we inject the JmxReporter into the configuration
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig, boolean injectCcMetricsReporter)  {
-        if (userConfig != null && !userConfig.getConfiguration().isEmpty()) {
-            // We have to create a copy of the configuration before we modify it
-            userConfig = new KafkaConfiguration(userConfig);
+    public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean isMetricsEnabled)  {
+        // We have to create a copy of the configuration before we modify it
+        userConfig = userConfig != null ? new KafkaConfiguration(userConfig) : new KafkaConfiguration(reconciliation, new ArrayList<>());
 
-            // Configure the configuration providers => we have to inject the Strimzi ones
-            configProviders(userConfig);
+        // Configure the configuration providers => we have to inject the Strimzi ones
+        configProviders(userConfig);
 
-            if (injectCcMetricsReporter)  {
-                // We configure the Cruise Control Metrics Reporter is needed
-                if (userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD) != null) {
-                    if (!userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD).contains(CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER)) {
-                        userConfig.setConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD, userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD) + "," + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-                    }
-                } else {
-                    userConfig.setConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD, CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-                }
-            }
+        addMetricReporters(userConfig, injectCcMetricsReporter, isMetricsEnabled);
 
+        // print user config with Strimzi injections
+        if (!userConfig.getConfiguration().isEmpty()) {
             printSectionHeader("User provided configuration");
             writer.println(userConfig.getConfiguration());
             writer.println();
-        } else {
-            // Configure the configuration providers => we have to inject the Strimzi ones
-            configProviders(userConfig);
-
-            if (injectCcMetricsReporter) {
-                // There is no user provided configuration. But we still need to inject the Cruise Control Metrics Reporter
-                printSectionHeader("Cruise Control Metrics Reporter");
-                writer.println(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD + "=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-                writer.println();
-            }
         }
 
         return this;
+    }
+
+    /**
+     * Add metric reporters to the corresponding Kafka configuration
+     *
+     * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
+     * @param injectCcMetricsReporter   Inject the Cruise Control Metrics Reporter into the configuration
+     * @param injectJmxReporter         Inject the JMX Reporter into the configuration
+     */
+    private void addMetricReporters(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean injectJmxReporter) {
+        if (injectJmxReporter)  {
+            if (userConfig.getConfigOption("metric.reporters") != null && !userConfig.getConfigOption("metric.reporters").contains(KAFKA_JMX_REPORTER_CLASS)) {
+                userConfig.setConfigOption("metric.reporters", userConfig.getConfigOption("metric.reporters") + "," + KAFKA_JMX_REPORTER_CLASS);
+            } else {
+                userConfig.setConfigOption("metric.reporters", KAFKA_JMX_REPORTER_CLASS);
+            }
+        }
+
+        if (injectCcMetricsReporter)  {
+            if (userConfig.getConfigOption("metric.reporters") != null && !userConfig.getConfigOption("metric.reporters").contains(CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER)) {
+                userConfig.setConfigOption("metric.reporters", userConfig.getConfigOption("metric.reporters") + "," + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
+            } else {
+                userConfig.setConfigOption("metric.reporters", CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
+            }
+        }
     }
 
     /**
