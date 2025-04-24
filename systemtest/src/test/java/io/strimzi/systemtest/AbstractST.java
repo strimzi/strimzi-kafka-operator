@@ -139,10 +139,12 @@ public abstract class AbstractST implements TestSeparator {
 
     @BeforeEach
     void setUpTestCase(ExtensionContext extensionContext) {
-        if (extensionContext.getTestClass().isPresent()) {
+        // Check if we execute tests in parallel to update logger appender dynamically
+        boolean parallelEnabled = Boolean.getBoolean("junit.jupiter.execution.parallel.enabled");
+        if (extensionContext.getTestClass().isPresent() && parallelEnabled) {
             ThreadContext.put("testClass", extensionContext.getTestClass().get().getSimpleName());
         }
-        if (extensionContext.getTestMethod().isPresent()) {
+        if (extensionContext.getTestMethod().isPresent() && parallelEnabled) {
             ThreadContext.put("testMethod", extensionContext.getTestMethod().get().getName());
         }
         ResourceManager.setTestContext(extensionContext);
@@ -154,7 +156,9 @@ public abstract class AbstractST implements TestSeparator {
 
     @BeforeAll
     void setUpTestSuite(ExtensionContext extensionContext) {
-        if (extensionContext.getTestClass().isPresent()) {
+        // Check if we execute tests in parallel to update logger appender dynamically
+        boolean parallelEnabled = Boolean.getBoolean("junit.jupiter.execution.parallel.enabled");
+        if (extensionContext.getTestClass().isPresent() && parallelEnabled) {
             ThreadContext.put("testClass", extensionContext.getTestClass().get().getSimpleName());
         }
         ResourceManager.setTestContext(extensionContext);
