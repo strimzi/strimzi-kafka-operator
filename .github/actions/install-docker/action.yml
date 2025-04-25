@@ -8,19 +8,27 @@ runs:
     - name: Check docker version
       shell: bash
       run: "docker --version"
-    # TODO - maybe not needed?
-    - name: Check docker version
-      shell: bash
-      run: "docker ps -a"
-#    - name: Set up Docker
-#      uses: docker/setup-docker-action@v4
+#    - name: Set up QEMU
+#      uses: docker/setup-qemu-action@v3
 #      with:
-#        daemon-config: |
-#          {
-#            "debug": true
-#          }
-#        rootless: true
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+#        platforms: linux/amd64, linux/arm64
+#    - name: Set up Docker Buildx
+#      uses: docker/setup-buildx-action@v3
+#      with:
+#        platforms: linux/amd64, linux/arm64
+#        driver: docker-container
+#        install: true
+#        use: true
+    - name: Register qemu-static
+      shell: bash
+      # Same as azure
+      run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Check buildx
+      shell: bash
+      run: docker buildx inspect --bootstrap
+
+    - name: DEBUG
+      shell: bash
+      run: |
+        docker buildx ls
+        docker context list 
