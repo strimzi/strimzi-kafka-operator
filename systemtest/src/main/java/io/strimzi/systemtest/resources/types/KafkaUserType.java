@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
 import io.strimzi.api.kafka.model.user.KafkaUserStatus;
+import io.strimzi.systemtest.resources.ResourceOperation;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -23,6 +24,11 @@ public class KafkaUserType implements ResourceType<KafkaUser> {
 
     public KafkaUserType() {
         client = Crds.kafkaUserOperation(KubeResourceManager.get().kubeClient().getClient());
+    }
+
+    @Override
+    public Long getTimeoutForResourceReadiness() {
+        return ResourceOperation.getTimeoutForResourceReadiness(KafkaUser.RESOURCE_KIND);
     }
 
     @Override

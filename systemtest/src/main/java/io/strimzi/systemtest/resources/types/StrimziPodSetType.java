@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetStatus;
+import io.strimzi.systemtest.resources.ResourceOperation;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -24,6 +25,11 @@ public class StrimziPodSetType implements ResourceType<StrimziPodSet> {
 
     public StrimziPodSetType() {
         client = Crds.strimziPodSetOperation(KubeResourceManager.get().kubeClient().getClient());
+    }
+
+    @Override
+    public Long getTimeoutForResourceReadiness() {
+        return ResourceOperation.getTimeoutForResourceReadiness(StrimziPodSet.RESOURCE_KIND);
     }
 
     @Override

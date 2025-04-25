@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicList;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
+import io.strimzi.systemtest.resources.ResourceOperation;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -23,6 +24,11 @@ public class KafkaTopicType implements ResourceType<KafkaTopic> {
 
     public KafkaTopicType() {
         client = Crds.topicOperation(KubeResourceManager.get().kubeClient().getClient());
+    }
+
+    @Override
+    public Long getTimeoutForResourceReadiness() {
+        return ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
     }
 
     @Override

@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectList;
 import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
+import io.strimzi.systemtest.resources.ResourceOperation;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -23,6 +24,11 @@ public class KafkaConnectType implements ResourceType<KafkaConnect> {
 
     public KafkaConnectType() {
         client = Crds.kafkaConnectOperation(KubeResourceManager.get().kubeClient().getClient());
+    }
+
+    @Override
+    public Long getTimeoutForResourceReadiness() {
+        return ResourceOperation.getTimeoutForResourceReadiness(KafkaConnect.RESOURCE_KIND);
     }
 
     @Override

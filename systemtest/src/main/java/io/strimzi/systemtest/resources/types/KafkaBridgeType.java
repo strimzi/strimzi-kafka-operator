@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeList;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.systemtest.resources.ResourceOperation;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -23,6 +24,11 @@ public class KafkaBridgeType implements ResourceType<KafkaBridge> {
 
     public KafkaBridgeType() {
         client = Crds.kafkaBridgeOperation(KubeResourceManager.get().kubeClient().getClient());
+    }
+
+    @Override
+    public Long getTimeoutForResourceReadiness() {
+        return ResourceOperation.getTimeoutForResourceReadiness(KafkaBridge.RESOURCE_KIND);
     }
 
     @Override
