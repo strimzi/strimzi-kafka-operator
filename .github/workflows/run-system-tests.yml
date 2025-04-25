@@ -165,10 +165,10 @@ jobs:
       - name: Install Docker
         uses: ./.github/actions/install-docker
 
-#      - name: Install Minikube
-#        uses: ./.github/actions/setup-minikube
-#        with:
-#          architecture: ${{ matrix.config.arch }}
+      - name: Install Minikube
+        uses: ./.github/actions/setup-minikube
+        with:
+          architecture: ${{ matrix.config.arch }}
 
       - name: Print out environment info
         uses: ./.github/actions/log-variables
@@ -189,14 +189,16 @@ jobs:
         # that we are running tests on a PR
         # add back: eval $(minikube docker-env)
         if: ${{ env.DOCKER_TAG == 'latest' && github.ref_name != 'main' }}
-        run: |
-          make java_install
-          make docker_build
-          make docker_tag
-          make docker_push
-        env:
-          MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'
-          RES_OPTIONS: "ndots:2"
+        uses: ./.github/actions/load-strimzi-images
+        with:
+          architecture: ${{ matrix.config.arch }}
+#        run: |
+#          make java_install
+#          make docker_build
+#          make docker_tag
+#          make docker_push
+#        env:
+#          MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'
 
       # Build Strimzi without images => used when running the STs against releases or release candidates where the images
       # are already built, and we need only the Java build
