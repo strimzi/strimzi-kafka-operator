@@ -16,11 +16,10 @@ LABEL name='base' \
 
 USER root
 
-# REVERT!!!
-RUN microdnf --setopt=timeout=30 --setopt=retries=3 --setopt=debuglevel=10 update -y \
-    && microdnf --setopt=timeout=30 --setopt=retries=3 --setopt=debuglevel=10 --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y java-${JAVA_VERSION}-openjdk-headless openssl shadow-utils \
-    && microdnf --setopt=timeout=30 --setopt=retries=3 --setopt=debuglevel=10 reinstall -y tzdata \
-    && microdnf --setopt=timeout=30 --setopt=retries=3 --setopt=debuglevel=10 clean all -y
+RUN microdnf update -y \
+    && microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y java-${JAVA_VERSION}-openjdk-headless openssl shadow-utils \
+    && microdnf reinstall -y tzdata \
+    && microdnf clean all -y
 
 ENV JAVA_HOME=/usr/lib/jvm/jre-17
 
