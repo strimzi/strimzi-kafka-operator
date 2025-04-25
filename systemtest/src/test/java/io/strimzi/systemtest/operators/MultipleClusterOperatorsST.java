@@ -261,7 +261,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Deploying 2 Cluster Operators: {}, {} in the same namespace: {}", FIRST_CO_NAME, SECOND_CO_NAME, testStorage.getNamespaceName());
         deployCOInNamespace(testStorage.getNamespaceName(), FIRST_CO_NAME, List.of(FIRST_CO_SELECTOR_ENV, FIRST_CO_LEASE_NAME_ENV), false);
-        deployCOInNamespace(testStorage.getNamespaceName(), SECOND_CO_NAME, List.of(SECOND_CO_SELECTOR_ENV, SECOND_CO_LEASE_NAME_ENV), false, true);
+        deployCOInNamespace(testStorage.getNamespaceName(), SECOND_CO_NAME, List.of(SECOND_CO_SELECTOR_ENV, SECOND_CO_LEASE_NAME_ENV), false, false);
 
         String secondCOScraperName = testStorage.getNamespaceName() + "-" + TestConstants.SCRAPER_NAME;
 
@@ -349,10 +349,10 @@ public class MultipleClusterOperatorsST extends AbstractST {
     }
 
     void deployCOInNamespace(String clusterOperatorNamespaceName, String coName, List<EnvVar> extraEnvs, boolean multipleNamespaces) {
-        deployCOInNamespace(clusterOperatorNamespaceName, coName, extraEnvs, multipleNamespaces, false);
+        deployCOInNamespace(clusterOperatorNamespaceName, coName, extraEnvs, multipleNamespaces, true);
     }
 
-    void deployCOInNamespace(String clusterOperatorNamespaceName, String coName, List<EnvVar> extraEnvs, boolean multipleNamespaces, boolean skipNamespaceDeletion) {
+    void deployCOInNamespace(String clusterOperatorNamespaceName, String coName, List<EnvVar> extraEnvs, boolean multipleNamespaces, boolean deleteNamespace) {
         String namespace = multipleNamespaces ? TestConstants.WATCH_ALL_NAMESPACES : clusterOperatorNamespaceName;
 
         if (multipleNamespaces) {
@@ -372,7 +372,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
                 .withNamespacesToWatch(namespace)
                 .withExtraLabels(Collections.singletonMap("app.kubernetes.io/operator", coName))
                 .withExtraEnvVars(extraEnvs)
-                .withDeleteNamespace(skipNamespaceDeletion)
+                .withDeleteNamespace(deleteNamespace)
                 .build()
             )
             .install();
