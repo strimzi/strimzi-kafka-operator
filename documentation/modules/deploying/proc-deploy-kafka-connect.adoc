@@ -3,7 +3,7 @@
 // deploying/assembly_deploy-kafka-connect.adoc
 
 [id='deploying-kafka-connect-{context}']
-= Deploying Kafka Connect to your Kubernetes cluster
+= Deploying Kafka Connect
 
 [role="_abstract"]
 This procedure shows how to deploy a Kafka Connect cluster to your Kubernetes cluster using the Cluster Operator.
@@ -36,7 +36,7 @@ In `examples/connect/kafka-connect.yaml`, add or update the following properties
 See the link:{BookURLConfiguring}#type-KafkaConnectSpec-schema-reference[`KafkaConnectSpec` schema properties^] for configuration details.
 * `spec.tls.trustedCertificates` to configure the TLS certificate. +
 Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates. +
-See link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
+See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
 
 . Configure the deployment for multiple Kafka Connect clusters (if required).
 + 

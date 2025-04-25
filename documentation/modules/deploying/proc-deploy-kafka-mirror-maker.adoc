@@ -3,7 +3,7 @@
 // deploying/assembly_deploy-kafka-mirror-maker.adoc
 
 [id='deploying-kafka-mirror-maker-{context}']
-= Deploying Kafka MirrorMaker to your Kubernetes cluster
+= Deploying Kafka MirrorMaker
 
 [role="_abstract"]
 This procedure shows how to deploy a Kafka MirrorMaker 2 cluster to your Kubernetes cluster using the Cluster Operator.
@@ -35,7 +35,7 @@ In `examples/mirror-maker/kafka-mirror-maker-2.yaml`, add or update the followin
 See the link:{BookURLConfiguring}#type-KafkaMirrorMaker2ClusterSpec-schema-reference[`KafkaMirrorMaker2Spec` schema properties^] for configuration details.
 * `spec.clusters[].tls.trustedCertificates` to configure the TLS certificate for each cluster. +
 Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates. +
-See link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
+See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
 
 . Configure the deployment for multiple MirrorMaker 2 clusters (if required).
 + 

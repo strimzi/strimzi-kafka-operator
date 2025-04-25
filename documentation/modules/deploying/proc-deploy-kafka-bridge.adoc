@@ -3,7 +3,7 @@
 // deploying/assembly_deploy-kafka-bridge.adoc
 
 [id='deploying-kafka-bridge-{context}']
-= Deploying Kafka Bridge to your Kubernetes cluster
+= Deploying Kafka Bridge
 
 [role="_abstract"]
 This procedure shows how to deploy a Kafka Bridge cluster to your Kubernetes cluster using the Cluster Operator.
@@ -17,39 +17,50 @@ In this procedure, we use the following example file:
 
 .Prerequisites
 
-* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* Cluster Operator is deployed.
+* Kafka cluster is running.
++
+This procedure assumes that the Kafka cluster was deployed using Strimzi.
 
 .Procedure
 
+. Edit the deployment file to configure connection details (if required). 
++ 
+In `examples/bridge/kafka-bridge.yaml`, add or update the following properties as needed: 
++
+* `spec.bootstrapServers` to specify the Kafka bootstrap address.
+* `spec.authentication` to specify the authentication type as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`. +
+See the link:{BookURLConfiguring}#type-KafkaBridgeSpec-schema-reference[`KafkaBridgeSpec` schema properties^] for configuration details.
+* `spec.tls.trustedCertificates` to configure the TLS certificate. +
+Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates. +
+See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
+
 . Deploy Kafka Bridge to your Kubernetes cluster:
 +
-[source,shell,subs="attributes+"]
+[source,shell]
 ----
 kubectl apply -f examples/bridge/kafka-bridge.yaml
 ----
 
 . Check the status of the deployment:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
-kubectl get pods -n _<my_cluster_operator_namespace>_
+kubectl get pods -n <my_cluster_operator_namespace>
 ----
 +
 .Output shows the deployment name and readiness
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
 NAME                       READY  STATUS   RESTARTS
 my-bridge-bridge-<pod_id>  1/1    Running  0
 ----
 +
-`my-bridge` is the name of the Kafka Bridge cluster.
-+
-A pod ID identifies each pod created.
-+
-With the default deployment, you install a single Kafka Bridge pod.
-+
-`READY` shows the number of replicas that are ready/expected.
-The deployment is successful when the `STATUS` displays as `Running`.
+In this example, `my-bridge` is the name of the Kafka Bridge cluster.
+A pod ID identifies each created pod.
+By default, the deployment creates a single Kafka Bridge pod.
+`READY` shows the number of ready versus expected replicas. 
+The deployment is successful when the `STATUS` is `Running`.
 
 [role="_additional-resources"]
 .Additional resources
