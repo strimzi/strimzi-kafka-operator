@@ -1,0 +1,37 @@
+name: "Build Strimzi jars"
+description: "Build and archive Strimzi jars"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install yq
+      uses: ./.github/actions/install-yq
+      with:
+        architecture: arm64
+    - name: Install Shellcheck
+      uses: ./.github/actions/install-shellcheck
+      with:
+        architecture: arm64
+    - name: Install Helm
+      uses: ./.github/actions/install-helm
+    - uses: actions/setup-java@v4
+      with:
+        distribution: "temurin"
+        java-version: "17"
+        cache: maven
+    - name: Build images
+      shell: bash
+      run: |
+        make java_install
+      env:
+        MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'
+
+    - name: Create tarball with artifact
+      shell: bash
+      run: "tar -cvpf strimzi-binaries.tar ./docker-images/artifacts/binaries"
+
+    - name: Upload containers artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: strimzi-binaries.tar
+        path: strimzi-binaries.tar

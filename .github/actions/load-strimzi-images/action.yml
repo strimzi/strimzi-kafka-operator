@@ -1,0 +1,31 @@
+name: "Load Strimzi images"
+description: "Load Strimzi images"
+
+inputs:
+  architecture:
+    description: "Architecture"
+    required: false
+    default: "amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: containers-${{ inputs.architecture }}.tar
+
+    - name: "Untar the ${{ inputs.architecture }} containers"
+      shell: bash
+      run: tar -xvf containers-${{ inputs.architecture }}.tar
+
+    - name: "Delete the original archive with the ${{ inputs.architecture }} containers"
+      shell: bash
+      run: rm containers-${{ inputs.architecture }}.tar
+
+    - name: Load Strimzi images
+      shell: bash
+      run: |
+        eval $(minikube docker-env)
+        make docker_load
+        make docker_tag
+        make docker_push

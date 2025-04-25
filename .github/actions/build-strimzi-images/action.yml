@@ -1,0 +1,62 @@
+name: "Build Strimzi images"
+description: "Build and archive Strimzi images"
+
+inputs:
+  architecture:
+    description: "Architecture"
+    required: false
+    default: "amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Docker
+      uses: ./.github/actions/install-docker
+    - name: Install yq
+      uses: ./.github/actions/install-yq
+      with:
+        architecture: amd64
+    - name: Install Shellcheck
+      uses: ./.github/actions/install-shellcheck
+      with:
+        architecture: amd64
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: strimzi-binaries.tar
+
+    - name: "Untar strimzi-binaries.tar"
+      shell: bash
+      run: tar -xvf strimzi-binaries.tar
+
+    - name: Build images
+      shell: bash
+      run: |
+        make docker_build
+        make docker_save
+      env:
+        MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'
+        DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
+        # User docker buildx
+#        DOCKER_BUILDX: buildx
+        # Add option to load image into registry
+#        DOCKER_BUILD_ARGS: --load
+        DOCKER_BUILDKIT: 1
+#        DOCKER_CLI_EXPERIMENTAL: enabled
+
+    - name: Create tarball with images
+      shell: bash
+      run: "tar -cvpf containers-${{ inputs.architecture }}.tar ./docker-images/container-archives"
+
+    - name: Upload containers artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: containers-${{ inputs.architecture }}.tar
+        path: containers-${{ inputs.architecture }}.tar
+
+    - name: DEBUG - docker
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        docker images -a
+        docker buildx ls
