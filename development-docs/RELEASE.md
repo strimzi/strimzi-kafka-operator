@@ -13,13 +13,13 @@ The release process should normally look like this:
 1. Create a release branch starting from the `main` one. The new release branch has to be named like `release-<Major>.<minor>.x`, for example `release-0.45.x` to be used for all patch releases for the 0.45.
 2. On the `main` git branch of the repository:
    * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. For example to update the next version to `0.46.0-SNAPSHOT` run: `NEXT_VERSION=0.46.0-SNAPSHOT make next_version`.
-   * Update the product version in the `documentation/shared/attributes.adoc` file to the next version by setting the `ProductVersion` variable
+   * Update the product version in the `documentation/shared/attributes.adoc` file to the next version by setting the `ProductVersion` variable and also the previous version by setting the `ProductVersionPrevious` variable.
    * Add a header for the new release to the `CHANGELOG.md` file
 3. Move to the release branch and run `make clean`
 4. Use the `RELEASE_VERSION` environment variable to set the desired version
    * Use always the GA version here (e.g. `0.45.0`) and not the RC version (e.g `0.45.0-rc1`)
 5. Run `RELEASE_VERSION=<desired version> make release`, for example `RELEASE_VERSION=0.45.0 make release`
-   * This will automatically update several `pom.xml` files and all files in `packaging/`, `install/`, `example/` and `helm-chart/` folders.
+   * This will automatically update several `pom.xml` files and all files in `packaging/`, `install/`, `example/` and `helm-charts/` folders.
 6. Update the checksums for released files in `.checksums` in the release branch
    * Use the Make commands `make checksum_examples`, `make checksum_install`, and `make checksum_helm` to generate the new checksums
    * Updated the checksums in the `.checksums` file in the root directory of the GitHub repository
@@ -39,7 +39,8 @@ The release process should normally look like this:
     * Mark the build in the Azure Pipelines UI to be retained forever
 12. Create a GitHub tag and release based on the release branch. Attach the release artifacts and docs as downloaded from the Azure pipelines.
     * For RCs, the tag should be named with the RC suffix, e.g. `0.45.0-rc1`
-13. _(only for GA, not for RCs)_ Update the website
+13. Run system tests pipelines. For more details see [Running Azure System Tests pipelines](#running-azure-system-tests-pipelines) section.
+14. _(only for GA, not for RCs)_ Update the website
     * Update the `_redirects` file to make sure the `/install/latest` redirect points to the new release.
     * Update the `_data/releases.yaml` file to add new release
     * Update the documentation: 
@@ -63,15 +64,15 @@ The release process should normally look like this:
       * The updated `index.yaml` will be generated in the directory with the artifacts.
         Verify the added data and the digest and if they are correct, copy it to `charts/index.yaml` on the website. 
 
-14. _(only for GA, not for RCs)_ On the `main` git branch of the repository:
+15. _(only for GA, not for RCs)_ On the `main` git branch of the repository:
     * Update the `ProductVersion` variable in `documentation/shared/attributes.adoc`
     * Update the `install`, `examples` and `helm-chart` directories in the `main` branch with the newly released files
     * Update the checksums for released files in `.checksums`
 
-15. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
-16. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operator Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
-17. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` file for the upgrade tests
-18. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleDowngrade.yaml` file and remove the old one for the downgrade tests
+16. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
+17. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operator Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
+18. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` file for the upgrade tests
+19. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleDowngrade.yaml` file and remove the old one for the downgrade tests
 
 ## Updating Kafka Bridge version
 
@@ -81,7 +82,8 @@ If you need to update the Kafka bridge to newer version, you should do it with f
 
 1. Edit the `bridge.version` file and update it to contain the new Bridge version
 2. Run `make bridge_version` to update the related files to the new version
-3. Commit all modified files to Git and open a PR.
+3. Update the `BridgeVersion` variable in the `documentation/shared/attributes.adoc` file.
+4. Commit all modified files to Git and open a PR.
 
 ## Running Azure System Tests pipelines
 
