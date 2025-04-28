@@ -160,10 +160,7 @@ public class KafkaRebalanceUtils {
         List<Condition> conditions = status.getConditions() != null ? new ArrayList<>(status.getConditions()) : new ArrayList<>();
 
         Condition newCondition = StatusUtils.buildWarningCondition("CruiseControlExecutorState", exception.getMessage());
-        Condition oldCondition = conditions.stream()
-                .filter(ConditionType::isWarning)
-                .findFirst()
-                .orElse(null);
+        Condition oldCondition = getWarningCondition(status);
 
         if (oldCondition != null) {
             // If existing Warning condition has same reason & message, do nothing
