@@ -6,7 +6,8 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -24,14 +25,41 @@ public class ExecutorStateProcessor {
     private static final String TOTAL_DATA_TO_MOVE_KEY = "totalDataToMove";
     private static final String TRIGGERED_TASK_REASON_KEY = "triggeredTaskReason";
 
-    /* test */ enum ExecutorState {
+    /**
+     * Represents the state that the Cruise Control Executor can be in at a moment in time.
+     */
+    public enum ExecutorState {
+        /**
+         * Indicates that there is no task currently in progress.
+         */
         NO_TASK_IN_PROGRESS,
+        /**
+         * Indicates that there is task is being prepared for execution.
+         */
         STARTING_EXECUTION,
+        /**
+         * Indicates that there is an inter-broker partition movement task in progress.
+         */
         INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
+        /**
+         * Indicates that there is an intra-broker partition movement task in progress.
+         */
         INTRA_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
+        /**
+         * Indicates that there is leadership partition movement task in progress.
+         */
         LEADER_MOVEMENT_TASK_IN_PROGRESS,
+        /**
+         * Indicates the executor is in the process of stopping task execution.
+         */
         STOPPING_EXECUTION,
+        /**
+         * Indicates the executor is preparing a task for execution.
+         */
         INITIALIZING_PROPOSAL_EXECUTION,
+        /**
+         * Indicates the executor is generating partition movement proposals for a task for execution.
+         */
         GENERATING_PROPOSALS_FOR_EXECUTION;
 
         private static final List<ExecutorState> REBALANCE_EXECUTOR_STATES = List.of(
@@ -39,97 +67,93 @@ public class ExecutorStateProcessor {
                 INTRA_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
                 LEADER_MOVEMENT_TASK_IN_PROGRESS);
 
+        /**
+         * Verifies whether the given executor state is a valid rebalancing state.
+         * If the state is not an active rebalancing state, an {@link IllegalStateException} is thrown.
+         *
+         * @param executorJson the {@link JsonNode} containing the executor state to verify;
+         *                      must have a {@code "state"} field with a valid executor state string.
+         * @throws IllegalStateException if the provided state is not a valid active rebalancing state.
+         */
+        public static void verifyRebalancingState(JsonNode executorJson) {
+            if (executorJson == null || !executorJson.has("state")) {
+                throw new IllegalStateException(
+                        String.format("Executor state: `%s` does not contain \"state\" entry", executorJson));
+            }
+
+            ExecutorState state = fromString(executorJson.get("state").asText());
+            if (!ExecutorState.REBALANCE_EXECUTOR_STATES.contains(state)) {
+                throw new IllegalStateException(
+                        String.format("Executor has not started rebalance and is currently in non-active state: '%s'. " +
+                                        "Progress estimation fields cannot be provided.",
+                                state.toString()));
+            }
+        }
+
         private static ExecutorState fromString(String state) {
+            String normalized = state.trim();
             return Arrays.stream(ExecutorState.values())
-                    .filter(e -> e.name().equals(state))
+                    .filter(e -> e.name().equals(normalized))
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Unknown ExecutorState: " + state));
         }
     }
 
     /**
-     * Verifies whether the given executor state is a valid rebalancing state.
-     * If the state is not an active rebalancing state, an {@link IllegalStateException} is thrown.
-     *
-     * @param executorState the {@link JsonNode} containing the executor state to verify;
-     *                      must have a {@code "state"} field with a valid executor state string.
-     * @throws IllegalStateException if the provided state is not a valid active rebalancing state.
-     */
-    public static void verifyExecutorState(JsonNode executorState) {
-        ExecutorState state = ExecutorState.fromString(executorState.get("state").asText());
-        if (!ExecutorState.REBALANCE_EXECUTOR_STATES.contains(state)) {
-            throw new IllegalStateException(
-                    String.format("Executor has not started rebalance and is currently in non-active state: '%s'. " +
-                                  "Progress estimation fields cannot be provided.",
-                    state.toString()));
-        }
-    }
-
-    /**
-     * Retrieves the total amount of data to move from the provided `executorState` JSON object.
+     * Retrieves the total amount of data to move from the provided `executorJson` JSON object.
      * The value is obtained from the "totalDataToMove" field.
      *
-     * @param executorState The `JsonNode` object containing the state of the executor,
+     * @param executorJson The `JsonNode` object containing the state of the executor,
      *                      from which the total data to move is extracted.
      * @return The total data to move, in megabytes.
      * @throws NullPointerException if the "totalDataToMove" field is missing or null.
      */
-    public static Integer getTotalDataToMove(JsonNode executorState) {
-        if (!executorState.has(TOTAL_DATA_TO_MOVE_KEY)) {
+    public static Integer getTotalDataToMove(JsonNode executorJson) {
+        if (!executorJson.has(TOTAL_DATA_TO_MOVE_KEY)) {
             throw new IllegalArgumentException(String.format("Executor State does not contain required '%s' field.", TOTAL_DATA_TO_MOVE_KEY));
         }
-        return executorState.get(TOTAL_DATA_TO_MOVE_KEY).asInt();
+        return executorJson.get(TOTAL_DATA_TO_MOVE_KEY).asInt();
     }
 
     /**
-     * Retrieves the amount of data that has already been moved from the provided `executorState` JSON object.
+     * Retrieves the amount of data that has already been moved from the provided `executorJson` JSON object.
      * The value is obtained from the "finishedDataMovement" field.
      *
-     * @param executorState The `JsonNode` object containing the state of the executor,
+     * @param executorJson The `JsonNode` object containing the state of the executor,
      *                      from which the finished data movement is extracted.
      * @return The amount of data that has already been moved, in megabytes.
      */
-    public static Integer getFinishedDataMovement(JsonNode executorState) {
-        if (!executorState.has(FINISHED_DATA_MOVEMENT_KEY)) {
+    public static Integer getFinishedDataMovement(JsonNode executorJson) {
+        if (!executorJson.has(FINISHED_DATA_MOVEMENT_KEY)) {
             throw new IllegalArgumentException(String.format("Executor State does not contain required '%s' field.", FINISHED_DATA_MOVEMENT_KEY));
         }
-        return executorState.get(FINISHED_DATA_MOVEMENT_KEY).asInt();
+        return executorJson.get(FINISHED_DATA_MOVEMENT_KEY).asInt();
     }
 
     /**
-     * Extracts the task start time from the provided `executorState` JSON object.
+     * Extracts the task start time from the provided `executorJson` JSON object.
      * The task start time is extracted from the "triggeredTaskReason" field, which contains a
-     * timestamp in ISO 8601 format. The timestamp is then parsed into seconds since the Unix epoch.
+     * timestamp in ISO 8601 format. The timestamp is then parsed into LocalDateTime object.
      *
-     * @param executorState The `JsonNode` object containing the state of the executor,
+     * @param executorJson The `JsonNode` object containing the state of the executor,
      *                      from which the task start time will be extracted.
-     * @return The task start time in seconds since the Unix epoch.
+     * @return The task start time as a LocalDateTime object.
      */
-    public static Integer getTaskStartTime(JsonNode executorState) {
-        if (!executorState.has(TRIGGERED_TASK_REASON_KEY)) {
+    public static LocalDateTime getTaskStartTime(JsonNode executorJson) {
+        if (!executorJson.has(TRIGGERED_TASK_REASON_KEY)) {
             throw new IllegalArgumentException(String.format("Executor State does not contain required '%s' field.", TRIGGERED_TASK_REASON_KEY));
         }
-        String triggeredTaskReason = executorState.get(TRIGGERED_TASK_REASON_KEY).asText();
+        String triggeredTaskReason = executorJson.get(TRIGGERED_TASK_REASON_KEY).asText();
         // Extract the timestamp from the string, assuming it's in ISO 8601 format
         String dateString = extractDateFromTriggeredTaskReason(triggeredTaskReason);
-        return (int) parseDateToSeconds(dateString);
-    }
 
-    /**
-     * Method to parse date-time string in ISO 8601 into time in seconds since Unix epoch.
-     *
-     * @param dateString Date-time string in ISO 8601 format.
-     *
-     * @return Seconds since Unix epoch.
-     */
-    private static long parseDateToSeconds(String dateString) {
         // Validate the date format
         if (dateString == null || dateString.isEmpty()) {
             throw new IllegalArgumentException("Invalid date string.");
         }
-        // Use Instant to parse the date-time string in ISO 8601 format
-        Instant instant = Instant.parse(dateString);
-        return instant.getEpochSecond();  // Convert to seconds
+        // Parse the date-time string in ISO 8601 format
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateString);
+        return offsetDateTime.toLocalDateTime();
     }
 
     /**

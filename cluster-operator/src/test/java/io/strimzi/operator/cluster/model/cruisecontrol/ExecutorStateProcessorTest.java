@@ -33,12 +33,15 @@ public class ExecutorStateProcessorTest {
     }
 
     @Test
-    public void testVerifyExecutorState() throws Exception {
+    public void testVerifyRebalancingState() throws Exception {
         JsonNode es0 = createExecutorState(Map.of("state", ExecutorState.NO_TASK_IN_PROGRESS.toString()));
-        assertThrows(IllegalStateException.class, () -> ExecutorStateProcessor.verifyExecutorState(es0));
+        assertThrows(IllegalStateException.class, () -> ExecutorState.verifyRebalancingState(es0));
 
         JsonNode es1 = createExecutorState(Map.of("state", ExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString()));
-        ExecutorStateProcessor.verifyExecutorState(es1);
+        ExecutorState.verifyRebalancingState(es1);
+
+        JsonNode es2 = createExecutorState(Map.of("", ""));
+        assertThrows(IllegalStateException.class, () -> ExecutorState.verifyRebalancingState(es2));
     }
 
     @Test
@@ -82,12 +85,12 @@ public class ExecutorStateProcessorTest {
         JsonNode es0 = createExecutorState(Map.of("finishedDataMovement", DEFAULT_FINISHED_DATA_MOVEMENT,
                 "totalDataToMove", DEFAULT_TOTAL_DATA_TO_MOVE,
                 "triggeredTaskReason", "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T19:41:27Z)"));
-        assertThat(ExecutorStateProcessor.getTaskStartTime(es0), is(1731699687));
+        assertThat(ExecutorStateProcessor.getTaskStartTime(es0).toString(), is("2024-11-15T19:41:27"));
 
         JsonNode es1 = createExecutorState(Map.of("finishedDataMovement", DEFAULT_FINISHED_DATA_MOVEMENT,
                 "totalDataToMove", DEFAULT_TOTAL_DATA_TO_MOVE,
                 "triggeredTaskReason", "(Client: 172.17.0.1, Date: 2024-11-10T23:25:27Z)"));
-        assertThat(ExecutorStateProcessor.getTaskStartTime(es1), is(1731281127));
+        assertThat(ExecutorStateProcessor.getTaskStartTime(es1).toString(), is("2024-11-10T23:25:27"));
 
         // Test missing date-string fails
         JsonNode es2 = createExecutorState(Map.of("finishedDataMovement", DEFAULT_FINISHED_DATA_MOVEMENT,

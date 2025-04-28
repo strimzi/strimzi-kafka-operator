@@ -13,7 +13,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -48,13 +48,13 @@ public class KafkaRebalanceConfigMapUtils {
                 data.remove(EXECUTOR_STATE_KEY);
                 break;
             case Rebalancing:
-                int taskStartTime = ExecutorStateProcessor.getTaskStartTime(executorState);
+                LocalDateTime taskStartTime = ExecutorStateProcessor.getTaskStartTime(executorState);
                 int totalDataToMove = ExecutorStateProcessor.getTotalDataToMove(executorState);
                 int finishedDataMovement = ExecutorStateProcessor.getFinishedDataMovement(executorState);
 
                 int estimatedTimeToCompletion = KafkaRebalanceProgressUtils.estimateTimeToCompletionInMinutes(
                         taskStartTime,
-                        Instant.now().getEpochSecond(),
+                        LocalDateTime.now(),
                         totalDataToMove,
                         finishedDataMovement);
 
@@ -111,7 +111,7 @@ public class KafkaRebalanceConfigMapUtils {
                                     false))
                     .compose(response -> {
                         JsonNode executorState = response.getJson().get("ExecutorState");
-                        ExecutorStateProcessor.verifyExecutorState(executorState);
+                        ExecutorStateProcessor.ExecutorState.verifyRebalancingState(executorState);
                         updateRebalanceConfigMapWithProgressFields(state, executorState, configMap);
                         return Future.succeededFuture(configMap);
                     });
