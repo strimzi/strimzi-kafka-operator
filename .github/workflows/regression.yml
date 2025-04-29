@@ -67,6 +67,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/build-strimzi-binaries
+        with:
+          mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
 
   build-images:
     name: build-images
@@ -74,20 +76,29 @@ jobs:
     if: ${{ needs.parse-params.outputs.runTests == 'true' }}
     strategy:
       matrix:
-        architecture: [arm64]
-    runs-on: oracle-4cpu-16gb-x86-64
-#    runs-on: oracle-2cpu-8gb-arm64
+        architecture: [amd64, arm64]
+    # Local registry for building the images
+    # TODO - check if the image can be cached
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+#    runs-on: oracle-4cpu-16gb-x86-64
+    runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/build-strimzi-images
+      - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}
 
   run-tests:
     name: run
-    needs: build-images
+    needs:
+      - parse-params
+      - build-images
     if: ${{ needs.parse-params.outputs.runTests == 'true' }}
 
     uses: ./.github/workflows/run-system-tests.yml
