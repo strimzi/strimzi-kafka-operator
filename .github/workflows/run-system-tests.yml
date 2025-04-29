@@ -66,11 +66,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      # yq is required for generate-matrix action
-      - name: Install yq
-        uses: ./.github/actions/install-yq
-        with:
-          architecture: "arm64"
       - name: Generate Matrix
         id: gen
         uses: ./.github/actions/generate-matrix
@@ -93,7 +88,7 @@ jobs:
 
     name: ${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.arch }}
     runs-on: ${{ matrix.config.agent }}
-    timeout-minutes: ${{ matrix.config.timeout }}
+    timeout-minutes: ${{ fromJson(matrix.config.timeout) }}
     # Environment variables
     env:
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
@@ -184,12 +179,12 @@ jobs:
           cat /etc/resolv.conf
 
       # Build Strimzi and its images => used when running STs against PR or main branch where container images should be built
-      - name: Build Strimzi images
+      - name: Load Strimzi images
         # Build images in case that we are not running tests on the `main` branch and the docker_tag is `latest`, which means
         # that we are running tests on a PR
         # add back: eval $(minikube docker-env)
         if: ${{ env.DOCKER_TAG == 'latest' && github.ref_name != 'main' }}
-        uses: ./.github/actions/load-strimzi-images
+        uses: ./.github/actions/containers-load
         with:
           architecture: ${{ matrix.config.arch }}
 #        run: |
@@ -199,6 +194,15 @@ jobs:
 #          make docker_push
 #        env:
 #          MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: "maven-cache | ${{ github.job }} | **/pom.xml"
+          restore-keys: |
+            maven | ${{ github.job }}
+            maven
 
       # Build Strimzi without images => used when running the STs against releases or release candidates where the images
       # are already built, and we need only the Java build
