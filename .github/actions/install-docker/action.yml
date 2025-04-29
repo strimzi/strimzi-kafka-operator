@@ -8,21 +8,23 @@ runs:
     - name: Check docker version
       shell: bash
       run: "docker --version"
-#    - name: Set up QEMU
-#      uses: docker/setup-qemu-action@v3
-#      with:
-#        platforms: linux/amd64, linux/arm64
-#    - name: Set up Docker Buildx
-#      uses: docker/setup-buildx-action@v3
-#      with:
-#        platforms: linux/amd64, linux/arm64
-#        driver: docker-container
-#        install: true
-#        use: true
-    - name: Register qemu-static
-      shell: bash
-      # Same as azure
-      run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: all
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+        driver: docker-container
+        install: true
+        use: true
+        # This option is needed to make sure that buildx is able to see localhost:5000 registry
+        driver-opts: network=host
+#    - name: Register qemu-static
+#      shell: bash
+#      # Same as azure
+#      run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     - name: Check buildx
       shell: bash
       run: docker buildx inspect --bootstrap

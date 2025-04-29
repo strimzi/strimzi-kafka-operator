@@ -26,6 +26,8 @@ runs:
       shell: bash
       run: |
         eval $(minikube docker-env)
-        make docker_load
-        make docker_tag
-        make docker_push
+        make docker_load docker_tag docker_push docker_e2e docker_delete_archive
+        
+        docker images -a
+      env:
+        DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
