@@ -16,7 +16,7 @@ endif
 
 SUBDIRS=kafka-agent kafka-agent-3 tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init systemtest docker-images/artifacts packaging/helm-charts/helm3 packaging/install packaging/examples
 DOCKERDIRS=docker-images/base docker-images/operator docker-images/kafka-based docker-images/maven-builder docker-images/kaniko-executor
-DOCKER_TARGETS=docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_sign_manifest docker_delete_manifest docker_delete_archive docker_sbom docker_push_sbom
+DOCKER_TARGETS=docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_sign_manifest docker_delete_manifest docker_delete_archive docker_sbom docker_push_sbom docker_e2e
 JAVA_TARGETS=java_build java_install java_clean
 
 all: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) crd_install dashboard_install helm_install shellcheck docu_versions docu_check

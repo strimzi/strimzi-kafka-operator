@@ -42,6 +42,11 @@ outputs:
 runs:
   using: "composite"
   steps:
+    # yq is required for generate-matrix action
+    - name: Install yq
+      uses: ./.github/actions/install-yq
+      with:
+        architecture: "arm64"
     - name: Generate Matrix JSON
       id: gen
       shell: bash
@@ -50,6 +55,12 @@ runs:
 
         # Read the pipelines config from a file stored in the action directory.
         DEFINED_PIPELINES=$(yq eval '.pipelines' -j ".github/actions/generate-matrix/pipelines.yaml")
+        
+        # Debug log of passed data
+        echo "INPUT_PIPELINES: $INPUT_PIPELINES"
+        echo "INPUT_PROFILES: $INPUT_PROFILES"
+        echo "INPUT_DEFAULT_AGENT: $INPUT_DEFAULT_AGENT"
+        echo "INPUT_DEFAULT_ARCH: $INPUT_DEFAULT_ARCH"
         
         # Filtering: pipelines take precedence over profiles.
         if [ -n "${INPUT_PIPELINES}" ]; then
@@ -73,7 +84,7 @@ runs:
             --arg pipeline "custom" \
             --arg timeout 720 \
             --argjson profiles "$PROFILES" \
-            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., $timeout: timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
+            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., timeout: $timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
         fi
 
         # Use jq -c to produce compact (one-line) JSON output.
