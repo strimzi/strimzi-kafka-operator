@@ -126,7 +126,8 @@ public class KafkaRollerST extends AbstractST {
 
         // last pod has index 3 (as it is 4th) or 6 (being 7th) as there are also 3 controllers
         final int scaledBrokerPodIndex = 6;
-        String uid = kubeClient(testStorage.getNamespaceName()).getPodUid(KafkaResources.kafkaPodName(testStorage.getClusterName(), KafkaComponents.getBrokerPoolName(testStorage.getClusterName()), scaledBrokerPodIndex));
+        String uid = PodUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), KafkaComponents.getBrokerPoolName(testStorage.getClusterName()), scaledBrokerPodIndex))
+            .getMetadata().getUid();
         List<Event> events = kubeClient(testStorage.getNamespaceName()).listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 

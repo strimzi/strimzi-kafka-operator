@@ -219,7 +219,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         for (String podName : brokerPods.keySet()) {
-            Map<String, String> secretData = kubeClient().getSecret(testStorage.getNamespaceName(), podName).getData();
+            Map<String, String> secretData = SecretUtils.getInNamespace(testStorage.getNamespaceName(), podName).getData();
             String certKey = podName + ".crt";
             LOGGER.info("Encoding {} cert", certKey);
             ByteArrayInputStream publicCert = new ByteArrayInputStream(Util.decodeBytesFromBase64(secretData.get(certKey).getBytes()));
@@ -252,44 +252,64 @@ class AlternativeReconcileTriggersST extends AbstractST {
         Map<String, String> controllerSnapshot = Collections.singletonMap(controllerPodName, controllerPod.getMetadata().getUid());
 
         LOGGER.info("Trying to roll just single broker and single controller Pod");
-        kubeClient(testStorage.getNamespaceName()).editPod(brokerPodName).edit(pod -> new PodBuilder(pod)
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata()
-            .build());
+        KubeResourceManager.get().kubeClient().getClient().pods()
+            .inNamespace(testStorage.getNamespaceName())
+            .withName(brokerPodName)
+            .edit(pod ->
+                new PodBuilder(pod)
+                    .editMetadata()
+                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                    .endMetadata()
+                    .build()
+            );
 
         // here we are waiting just to one pod's snapshot will be changed and all 3 pods ready -> if we set expectedPods to 1,
         // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
         brokerSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerSnapshot);
 
-        kubeClient(testStorage.getNamespaceName()).editPod(controllerPodName).edit(pod -> new PodBuilder(pod)
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata()
-            .build());
+        KubeResourceManager.get().kubeClient().getClient().pods()
+            .inNamespace(testStorage.getNamespaceName())
+            .withName(controllerPodName)
+            .edit(pod ->
+                new PodBuilder(pod)
+                    .editMetadata()
+                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                    .endMetadata()
+                    .build()
+            );
 
         // same as above
         controllerSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerSnapshot);
 
         LOGGER.info("Adding anno to all broker and controller Pods");
-        brokerSnapshot.keySet().forEach(podName -> {
-            kubeClient(testStorage.getNamespaceName()).editPod(podName).edit(pod -> new PodBuilder(pod)
-                .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                .endMetadata()
-                .build());
-        });
+        brokerSnapshot.keySet().forEach(podName ->
+            KubeResourceManager.get().kubeClient().getClient().pods()
+                .inNamespace(testStorage.getNamespaceName())
+                .withName(podName)
+                .edit(pod ->
+                    new PodBuilder(pod)
+                        .editMetadata()
+                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                        .endMetadata()
+                        .build()
+                )
+        );
 
         LOGGER.info("Checking if the rolling update will be successful for brokers");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerSnapshot);
 
-        controllerSnapshot.keySet().forEach(podName -> {
-            kubeClient(testStorage.getNamespaceName()).editPod(podName).edit(pod -> new PodBuilder(pod)
-                .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                .endMetadata()
-                .build());
-        });
+        controllerSnapshot.keySet().forEach(podName ->
+            KubeResourceManager.get().kubeClient().getClient().pods()
+                .inNamespace(testStorage.getNamespaceName())
+                .withName(podName)
+                .edit(pod ->
+                    new PodBuilder(pod)
+                        .editMetadata()
+                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                        .endMetadata()
+                        .build()
+                )
+        );
 
         LOGGER.info("Checking if the rolling update will be successful for controllers");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerSnapshot);

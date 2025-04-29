@@ -219,7 +219,7 @@ public class AdminClientTemplates {
      * @return a {@link String} containing the SASL mechanism, security protocol, and the SASL JAAS configuration
      */
     private static String getAdminClientScramConfig(String namespace, String userName, SecurityProtocol securityProtocol) {
-        final String saslJaasConfigEncrypted = kubeClient().getSecret(namespace, userName).getData().get("sasl.jaas.config");
+        final String saslJaasConfigEncrypted = SecretUtils.getInNamespace(namespace, userName).getData().get("sasl.jaas.config");
         final String saslJaasConfigDecrypted = Util.decodeFromBase64(saslJaasConfigEncrypted);
 
         return "sasl.mechanism=SCRAM-SHA-512\n" +

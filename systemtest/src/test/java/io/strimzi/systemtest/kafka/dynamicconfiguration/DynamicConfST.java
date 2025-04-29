@@ -34,6 +34,7 @@ import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
@@ -116,7 +117,7 @@ public class DynamicConfST extends AbstractST {
         int podNum = KafkaComponents.getPodNumFromPodName(testStorage.getBrokerComponentName(), brokerPodName);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName())) {
-            String kafkaConfiguration = kubeClient().getConfigMap(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
+            String kafkaConfiguration = ConfigMapUtils.getInNamespace(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
             assertThat("Kafka configuration CM doesn't contain 'offsets.topic.replication.factor=1'", kafkaConfiguration.contains("offsets.topic.replication.factor=1"), is(true));
             assertThat("Kafka configuration CM doesn't contain 'transaction.state.log.replication.factor=1'", kafkaConfiguration.contains("transaction.state.log.replication.factor=1"), is(true));
         }
@@ -135,7 +136,7 @@ public class DynamicConfST extends AbstractST {
         LOGGER.info("Verifying values after update");
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName())) {
-            String kafkaConfiguration = kubeClient().getConfigMap(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
+            String kafkaConfiguration = ConfigMapUtils.getInNamespace(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
             assertThat("Kafka configuration CM doesn't contain 'offsets.topic.replication.factor=1'", kafkaConfiguration.contains("offsets.topic.replication.factor=1"), is(true));
             assertThat("Kafka configuration CM doesn't contain 'transaction.state.log.replication.factor=1'", kafkaConfiguration.contains("transaction.state.log.replication.factor=1"), is(true));
             assertThat("Kafka configuration CM doesn't contain 'unclean.leader.election.enable=true'", kafkaConfiguration.contains("unclean.leader.election.enable=true"), is(true));

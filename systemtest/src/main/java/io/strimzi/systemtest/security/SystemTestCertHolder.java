@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -85,8 +86,7 @@ public class SystemTestCertHolder {
             //      b) Create the new (custom) secret.
 
             Secret secret = SecretUtils.createSecretFromFile(namespaceName, "ca.key", this.caKeySecretName, strimziKeyPKCS8.getAbsolutePath(), additionalSecretLabels);
-            kubeClient().namespace(namespaceName).createSecret(secret);
-            SecretUtils.waitForSecretReady(namespaceName, this.caKeySecretName, () -> { });
+            KubeResourceManager.get().createResourceWithWait(secret);
 
             // 4. Annotate the secrets
             SecretUtils.annotateSecret(namespaceName, this.caCertSecretName, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0");

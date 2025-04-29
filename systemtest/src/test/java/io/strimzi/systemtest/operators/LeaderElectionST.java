@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -73,7 +74,10 @@ public class LeaderElectionST extends AbstractST {
 
         LOGGER.info("Changing image of the leader pod: {} to not available image - to cause CrashLoopBackOff and change of leader to second Pod (failover)", oldLeaderPodName);
 
-        kubeClient().editPod(SetupClusterOperator.getInstance().getOperatorNamespace(), oldLeaderPodName).edit(pod -> new PodBuilder(pod)
+        KubeResourceManager.get().kubeClient().getClient().pods()
+            .inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
+            .withName(oldLeaderPodName)
+            .edit(pod -> new PodBuilder(pod)
             .editOrNewSpec()
                 .editContainer(0)
                     .withImage("wrong-image/name:latest")

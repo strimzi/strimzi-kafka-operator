@@ -62,6 +62,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -569,7 +570,7 @@ public class MetricsST extends AbstractST {
                 .endMetadata()
                 .build();
 
-        kubeClient().createConfigMapInNamespace(namespaceSecond, externalMetricsCm);
+        KubeResourceManager.get().createResourceWithWait(externalMetricsCm);
 
         // spec.kafka.metrics -> spec.kafka.jmxExporterMetrics
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
@@ -589,7 +590,7 @@ public class MetricsST extends AbstractST {
         PodUtils.verifyThatRunningPodsAreStable(namespaceSecond, kafkaClusterSecondName);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(namespaceSecond, kafkaClusterSecondName)) {
-            ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
+            ConfigMap actualCm = ConfigMapUtils.getInNamespace(namespaceSecond, cmName);
             assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson));
         }
 
@@ -602,11 +603,11 @@ public class MetricsST extends AbstractST {
                 .endMetadata()
                 .build();
 
-        kubeClient().updateConfigMapInNamespace(namespaceSecond, externalMetricsUpdatedCm);
+        KubeResourceManager.get().updateResource(externalMetricsUpdatedCm);
         PodUtils.verifyThatRunningPodsAreStable(namespaceSecond, kafkaClusterSecondName);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(namespaceSecond, kafkaClusterSecondName)) {
-            ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
+            ConfigMap actualCm = ConfigMapUtils.getInNamespace(namespaceSecond, cmName);
             assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson.replace("true", "false")));
         }
     }

@@ -44,6 +44,7 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlanBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -90,98 +91,9 @@ public class KubeClient {
         return namespace;
     }
 
-    public Namespace getNamespace(String namespace) {
-        return client.namespaces().withName(namespace).get();
-    }
-
-    public void createNamespace(String name) {
-        Namespace ns = new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build();
-        client.namespaces().resource(ns).create();
-    }
-
-    public void deleteNamespace(String name) {
-        client.namespaces().withName(name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
-
-    // ================================
-    // ---------> CONFIG MAP <---------
-    // ================================
-
-    public void createConfigMapInNamespace(String namespaceName, ConfigMap configMap) {
-        client.configMaps().inNamespace(namespaceName).resource(configMap).create();
-    }
-
-    public void updateConfigMapInNamespace(String namespaceName, ConfigMap configMap) {
-        client.configMaps().inNamespace(namespaceName).resource(configMap).update();
-    }
-
-    public ConfigMap getConfigMap(String namespaceName, String configMapName) {
-        return client.configMaps().inNamespace(namespaceName).withName(configMapName).get();
-    }
-
-    public ConfigMap getConfigMap(String configMapName) {
-        return getConfigMap(getNamespace(), configMapName);
-    }
-
-    /**
-     * Gets config map uid
-     * @param configMapName config map name
-     * @return config map ui
-     */
-    public String getConfigMapUid(String configMapName) {
-        return getConfigMap(configMapName).getMetadata().getUid();
-    }
-
-    public List<ConfigMap> listConfigMapsInSpecificNamespace(String namespaceName, String namePrefix) {
-        return client.configMaps().inNamespace(namespaceName).list().getItems().stream()
-            .filter(cm -> cm.getMetadata().getName().startsWith(namePrefix))
-            .collect(Collectors.toList());
-    }
-
-    public List<ConfigMap> listConfigMaps(String namePrefix) {
-        return listConfigMapsInSpecificNamespace(getNamespace(), namePrefix);
-    }
-
-    public List<ConfigMap> listConfigMaps() {
-        return client.configMaps().inNamespace(getNamespace()).list().getItems();
-    }
-
     // =========================
     // ---------> POD <---------
     // =========================
-
-    public PodResource editPod(String podName) {
-        return editPod(getNamespace(), podName);
-    }
-
-    public PodResource editPod(String namespaceName, String podName) {
-        return client.pods().inNamespace(namespaceName).withName(podName);
-    }
-
-    public String execInPod(String podName, String container, String... command) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        LOGGER.info("Running command on pod {}: {}", podName, command);
-        CountDownLatch execLatch = new CountDownLatch(1);
-
-        try {
-            client.pods().inNamespace(getNamespace())
-                .withName(podName).inContainer(container)
-                .redirectingInput()
-                .writingOutput(baos)
-                .usingListener(new SimpleListener(execLatch))
-                .exec(command);
-            boolean wait = execLatch.await(1, TimeUnit.MINUTES);
-            if (wait) {
-                LOGGER.info("Await for command execution was finished");
-            }
-            return baos.toString(StandardCharsets.UTF_8);
-        } catch (InterruptedException e) {
-            LOGGER.warn("Exception running command {} on pod: {}", command, e.getMessage());
-        }
-
-        return "";
-    }
-
     public List<Pod> listPods(LabelSelector selector) {
         return client.pods().inNamespace(getNamespace()).withLabelSelector(selector).list().getItems();
     }
@@ -251,12 +163,6 @@ public class KubeClient {
         return client.pods().inNamespace(namespaceName).list().getItems();
     }
 
-    public List<Pod> listPodsByNamespace(String namespaceName, String clusterName) {
-        return client.pods().inNamespace(namespaceName).list().getItems().stream()
-            .filter(pod -> pod.getMetadata().getName().startsWith(clusterName))
-            .collect(Collectors.toList());
-    }
-
     /**
      * Returns list of pods by prefix in pod name
      * @param namespaceName Namespace name
@@ -271,35 +177,6 @@ public class KubeClient {
 
     public List<Pod> listPodsByPrefixInName(String podNamePrefix) {
         return listPodsByPrefixInName(getNamespace(), podNamePrefix);
-    }
-
-    /**
-     * Gets pod
-     */
-    public Pod getPod(String namespaceName, String name) {
-        return client.pods().inNamespace(namespaceName).withName(name).get();
-    }
-
-    public Pod getPod(String name) {
-        return getPod(getNamespace(), name);
-    }
-
-    /**
-     * Gets pod
-     */
-    public PodResource getPodResource(String namespaceName, String name) {
-        return client.pods().inNamespace(namespaceName).withName(name);
-    }
-
-    /**
-     * Gets pod Uid
-     */
-    public String getPodUid(String name) {
-        return getPodUid(getNamespace(), name);
-    }
-
-    public String getPodUid(String namespace, String name) {
-        return client.pods().inNamespace(namespace).withName(name).get().getMetadata().getUid();
     }
 
     /**
@@ -324,67 +201,9 @@ public class KubeClient {
         client.pods().inNamespace(getNamespace()).withLabelSelector(labelSelector).delete();
     }
 
-    // ==================================
-    // ---------> STATEFUL SET <---------
-    // ==================================
-
-    /**
-     * Gets stateful set
-     */
-    public StatefulSet getStatefulSet(String namespaceName, String statefulSetName) {
-        return  client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).get();
-    }
-
-    public StatefulSet getStatefulSet(String statefulSetName) {
-        return getStatefulSet(getNamespace(), statefulSetName);
-    }
-
-    /**
-     * Gets stateful set
-     */
-    public RollableScalableResource<StatefulSet> statefulSet(String namespaceName, String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName);
-    }
-
-    public RollableScalableResource<StatefulSet> statefulSet(String statefulSetName) {
-        return statefulSet(getNamespace(), statefulSetName);
-    }
-
-    /**
-     * Gets stateful set selectors
-     */
-    public LabelSelector getStatefulSetSelectors(String namespaceName, String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).get().getSpec().getSelector();
-    }
-
-    /**
-     * Gets stateful set status
-     */
-    public boolean getStatefulSetStatus(String namespaceName, String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).isReady();
-    }
-
-    /**
-     * Gets stateful set Uid
-     */
-    public String getStatefulSetUid(String statefulSetName) {
-        return getStatefulSet(statefulSetName).getMetadata().getUid();
-    }
-
-    public void deleteStatefulSet(String statefulSetName) {
-        client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
-
     // ================================
     // ---------> DEPLOYMENT <---------
     // ================================
-
-    /**
-     * Gets deployment
-     */
-    public Deployment getDeployment(String namespaceName, String deploymentName) {
-        return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get();
-    }
 
     public String getDeploymentNameByPrefix(String deploymentNamePrefix) {
         return getDeploymentNameByPrefix(getNamespace(), deploymentNamePrefix);
@@ -402,21 +221,10 @@ public class KubeClient {
     }
 
     /**
-     * Gets deployment UID
-     */
-    public String getDeploymentUid(String namespaceName, String deploymentName) {
-        return getDeployment(namespaceName, deploymentName).getMetadata().getUid();
-    }
-
-    /**
      * Gets deployment status
      */
     public LabelSelector getDeploymentSelectors(String namespaceName, String deploymentName) {
         return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get().getSpec().getSelector();
-    }
-
-    public LabelSelector getDeploymentSelectors(String deploymentName) {
-        return getDeploymentSelectors(getNamespace(), deploymentName);
     }
 
     /**
@@ -426,69 +234,8 @@ public class KubeClient {
         return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).isReady();
     }
 
-    public void deleteDeployment(String namespaceName, String deploymentName) {
-        client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
-
-    public void createDeployment(Deployment deployment) {
-        client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).resource(deployment).create();
-    }
-
-    public void updateDeployment(Deployment deployment) {
-        client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).resource(deployment).update();
-    }
-
-    // ==========================
-    // ---------> NODE <---------
-    // ==========================
-
-    public String getNodeAddress() {
-        return kubeClient(namespace).listNodes().get(0).getStatus().getAddresses().get(0).getAddress();
-    }
-
-    public List<Node> listNodes() {
-        return client.nodes().list().getItems();
-    }
-
-    public List<Node> listWorkerNodes() {
-        return listNodes().stream().filter(node -> node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/worker")).collect(Collectors.toList());
-    }
-
-    /**
-     * Method which return list of kube cluster nodes
-     * @return list of nodes
-     */
-    public List<Node> getClusterNodes() {
-        return client.nodes().list().getItems();
-    }
-
-    // =========================
-    // ---------> JOB <---------
-    // =========================
-
-
-    public void createJob(Job job) {
-        client.batch().v1().jobs().inNamespace(job.getMetadata().getNamespace()).resource(job).create();
-    }
-
-    public void deleteJob(String jobName) {
-        client.batch().v1().jobs().inNamespace(getNamespace()).withName(jobName).delete();
-    }
-
-    public void updateJob(Job job) {
-        client.batch().v1().jobs().inNamespace(job.getMetadata().getNamespace()).resource(job).update();
-    }
-
     public void deleteJob(final String namespaceName, String jobName) {
         client.batch().v1().jobs().inNamespace(namespaceName).withName(jobName).delete();
-    }
-
-    public Job getJob(String jobName) {
-        return client.batch().v1().jobs().inNamespace(getNamespace()).withName(jobName).get();
-    }
-
-    public Job getJob(final String namespaceName, String jobName) {
-        return client.batch().v1().jobs().inNamespace(namespaceName).withName(jobName).get();
     }
 
     public boolean checkSucceededJobStatus(String namespaceName, String jobName, int expectedSucceededPods) {
@@ -519,33 +266,12 @@ public class KubeClient {
     // ---------> SECRET <---------
     // ============================
 
-    public Secret createSecret(Secret secret) {
-        return client.secrets().inNamespace(secret.getMetadata().getNamespace()).resource(secret).create();
-    }
-
-    public Secret updateSecret(Secret secret) {
-        return client.secrets().inNamespace(secret.getMetadata().getNamespace()).resource(secret).update();
-    }
-
     public void patchSecret(String namespaceName, String secretName, Secret secret) {
         client.secrets().inNamespace(namespaceName).withName(secretName).patch(PatchContext.of(PatchType.JSON), secret);
     }
 
-
-    public Secret getSecret(String namespaceName, String secretName) {
-        return client.secrets().inNamespace(namespaceName).withName(secretName).get();
-    }
-
-    public Secret getSecret(String secretName) {
-        return getSecret(getNamespace(), secretName);
-    }
-
     public void deleteSecret(String namespaceName, String secretName) {
         client.secrets().inNamespace(namespaceName).withName(secretName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
-
-    public void deleteSecret(String secretName) {
-        deleteSecret(getNamespace(), secretName);
     }
 
     public List<Secret> listSecrets(String namespaceName) {
@@ -554,82 +280,6 @@ public class KubeClient {
 
     public List<Secret> listSecrets() {
         return listSecrets(getNamespace());
-    }
-
-    // =============================
-    // ---------> SERVICE <---------
-    // =============================
-
-    public Service getService(String namespaceName, String serviceName) {
-        return client.services().inNamespace(namespaceName).withName(serviceName).get();
-    }
-
-    public Service getService(String serviceName) {
-        return getService(getNamespace(), serviceName);
-    }
-
-    public void createService(Service service) {
-        client.services().inNamespace(service.getMetadata().getNamespace()).resource(service).create();
-    }
-
-    /**
-     * Gets service uid
-     * @param serviceName service name
-     * @return service uid
-     */
-    public String getServiceUid(String serviceName) {
-        return getService(serviceName).getMetadata().getUid();
-    }
-
-    public List<Service> listServices(String namespaceName) {
-        return client.services().inNamespace(namespaceName).list().getItems();
-    }
-
-    public List<Service> listServices() {
-        return listServices(getNamespace());
-    }
-
-    public void deleteService(String serviceName) {
-        client.services().inNamespace(getNamespace()).withName(serviceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
-
-    public void deleteService(Service service) {
-        client.services().inNamespace(getNamespace()).resource(service).delete();
-    }
-
-    public List<ServiceAccount> listServiceAccounts(String namespaceName) {
-        return client.serviceAccounts().inNamespace(namespaceName).list().getItems();
-    }
-
-    /**
-     * Method for creating the specified ServiceAccount.
-     * In case that the ServiceAccount is already created, it is being updated.
-     * This can be caused by not cleared ServiceAccounts from other tests or in case we shut down the test before the cleanup
-     * phase.
-     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
-     * Without the update, we would need to manually remove all existing resources before running the test again.
-     * It should not have an impact on the functionality, we just update the ServiceAccount.
-     * @param serviceAccount ServiceAccount that we want to create or update
-     */
-    public void createOrUpdateServiceAccount(ServiceAccount serviceAccount) {
-        try {
-            client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).create();
-        } catch (KubernetesClientException e) {
-            if (e.getCode() == 409) {
-                LOGGER.info("ServiceAccount: {} is already created, going to update it", serviceAccount.getMetadata().getName());
-                client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).update();
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    public void deleteServiceAccount(ServiceAccount serviceAccount) {
-        client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).delete();
-    }
-
-    public ServiceAccount getServiceAccount(String namespaceName, String name) {
-        return client.serviceAccounts().inNamespace(namespaceName).withName(name).get();
     }
 
     // =========================
@@ -671,236 +321,6 @@ public class KubeClient {
                 .collect(Collectors.toList());
     }
 
-    // ===========================
-    // ---------> ROLES <---------
-    // ===========================
-
-    public List<ClusterRole> listClusterRoles() {
-        return client.rbac().clusterRoles().list().getItems();
-    }
-
-    /**
-     * Method for creating the specified ClusterRole.
-     * In case that the ClusterRole is already created, it is being updated.
-     * This can be caused by not cleared ClusterRoles from other tests or in case we shut down the test before the cleanup
-     * phase.
-     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
-     * Without the update, we would need to manually remove all existing resources before running the test again.
-     * It should not have an impact on the functionality, we just update the ClusterRole.
-     * @param clusterRole ClusterRole that we want to create or update
-     */
-    public void createOrUpdateClusterRoles(ClusterRole clusterRole) {
-        try {
-            client.rbac().clusterRoles().resource(clusterRole).create();
-        } catch (KubernetesClientException e) {
-            if (e.getCode() == 409) {
-                LOGGER.info("ClusterRole: {} is already created, going to update it", clusterRole.getMetadata().getName());
-                client.rbac().clusterRoles().resource(clusterRole).update();
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    public void deleteClusterRole(ClusterRole clusterRole) {
-        client.rbac().clusterRoles().resource(clusterRole).delete();
-    }
-
-    public ClusterRole getClusterRole(String name) {
-        return client.rbac().clusterRoles().withName(name).get();
-    }
-
-    // ==================================
-    // ---------> ROLE BINDING <---------
-    // ==================================
-
-    /**
-     * Method for creating the specified RoleBinding.
-     * In case that the RoleBinding is already created, it is being updated.
-     * This can be caused by not cleared RoleBindings from other tests or in case we shut down the test before the cleanup
-     * phase.
-     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
-     * Without the update, we would need to manually remove all existing resources before running the test again.
-     * It should not have an impact on the functionality, we just update the RoleBinding.
-     * @param roleBinding RoleBinding that we want to create or update
-     */
-    public void createOrUpdateRoleBinding(RoleBinding roleBinding) {
-        try {
-            client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).create();
-        } catch (KubernetesClientException e) {
-            if (e.getCode() == 409) {
-                LOGGER.info("RoleBinding: {} is already created, going to update it", roleBinding.getMetadata().getName());
-                client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).update();
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    /**
-     * Method for creating the specified ClusterRoleBinding.
-     * In case that the CRB is already created, it is being updated.
-     * This can be caused by not cleared CRBs from other tests or in case we shut down the test before the cleanup
-     * phase.
-     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
-     * Without the update, we would need to manually remove all existing resources before running the test again.
-     * It should not have an impact on the functionality, we just update the CRB.
-     * @param clusterRoleBinding ClusterRoleBinding that we want to create or update
-     */
-    public void createOrUpdateClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
-        try {
-            client.rbac().clusterRoleBindings().resource(clusterRoleBinding).create();
-        } catch (KubernetesClientException e) {
-            if (e.getCode() == 409) {
-                LOGGER.info("ClusterRoleBinding: {} is already created, going to update it", clusterRoleBinding.getMetadata().getName());
-                client.rbac().clusterRoleBindings().resource(clusterRoleBinding).update();
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    public void deleteClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
-        client.rbac().clusterRoleBindings().resource(clusterRoleBinding).delete();
-    }
-
-    public ClusterRoleBinding getClusterRoleBinding(String name) {
-        return client.rbac().clusterRoleBindings().withName(name).get();
-    }
-
-    public List<RoleBinding> listRoleBindings(String namespaceName) {
-        return client.rbac().roleBindings().inNamespace(namespaceName).list().getItems();
-    }
-
-    public RoleBinding getRoleBinding(String name) {
-        return client.rbac().roleBindings().inNamespace(getNamespace()).withName(name).get();
-    }
-
-    public void deleteRoleBinding(String namespace, String name) {
-        client.rbac().roleBindings().inNamespace(namespace).withName(name).delete();
-    }
-
-    /**
-     * Method for creating the specified Role.
-     * In case that the Role is already created, it is being updated.
-     * This can be caused by not cleared Roles from other tests or in case we shut down the test before the cleanup
-     * phase.
-     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
-     * Without the update, we would need to manually remove all existing resources before running the test again.
-     * It should not have an impact on the functionality, we just update the Role.
-     * @param role Role that we want to create or update
-     */
-    public void createOrUpdateRole(Role role) {
-        try {
-            client.rbac().roles().inNamespace(getNamespace()).resource(role).create();
-        } catch (KubernetesClientException e) {
-            if (e.getCode() == 409) {
-                LOGGER.info("Role: {} is already created, going to update it", role.getMetadata().getName());
-                client.rbac().roles().inNamespace(getNamespace()).resource(role).update();
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    public Role getRole(String name) {
-        return client.rbac().roles().inNamespace(getNamespace()).withName(name).get();
-    }
-
-    public void deleteRole(String namespace, String name) {
-        client.rbac().roles().inNamespace(namespace).withName(name).delete();
-    }
-
-    // =========================
-    // ---------> CRD <---------
-    // =========================
-
-    private static class SimpleListener implements ExecListener {
-        CountDownLatch execLatch;
-        SimpleListener(CountDownLatch execLatch) {
-            this.execLatch = execLatch;
-            execLatch.countDown();
-        }
-
-        @Override
-        public void onOpen() {
-            LOGGER.info("The shell will remain open for 10 seconds.");
-            execLatch.countDown();
-        }
-
-        @Override
-        public void onFailure(Throwable t, Response response) {
-            try {
-                LOGGER.info("shell barfed with code {} and body {}", response.code(), response.body());
-            } catch (IOException e) {
-                LOGGER.info("shell barfed with code {} and body() throws exception", response.code(), e);
-            }
-
-            execLatch.countDown();
-        }
-
-        @Override
-        public void onClose(int code, String reason) {
-            LOGGER.info("The shell will now close with error code {} by reason {}", code, reason);
-            execLatch.countDown();
-        }
-    }
-
-    // ====================================
-    // ---------> NETWORK POLICY <---------
-    // ====================================
-
-    public NetworkPolicy getNetworkPolicy(String name) {
-        return client.network().networkPolicies().inNamespace(getNamespace()).withName(name).get();
-    }
-
-    public void createNetworkPolicy(NetworkPolicy networkPolicy) {
-        client.network().networkPolicies().inNamespace(getNamespace()).resource(networkPolicy).create();
-    }
-
-    public void deleteNetworkPolicy(String name) {
-        client.network().networkPolicies().inNamespace(getNamespace()).withName(name).delete();
-    }
-
-    public void updateNetworkPolicy(NetworkPolicy networkPolicy) {
-        client.network().networkPolicies().inNamespace(getNamespace()).resource(networkPolicy).update();
-    }
-
-    // =====================================
-    // ---> CUSTOM RESOURCE DEFINITIONS <---
-    // =====================================
-
-    /**
-     * Method for creating the specified CustomResourceDefinition.
-     * In case that the CRD is already created, it is being updated.
-     * This can be caused by not cleared CRDs from other tests or in case we shut down the test before the cleanup
-     * phase.
-     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
-     * Without the update, we would need to manually remove all existing resources before running the test again.
-     * It should not have an impact on the functionality, we just update the CRD.
-     * @param resourceDefinition CustomResourceDefinition that we want to create or update
-     */
-    public void createOrUpdateCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
-        try {
-            client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).create();
-        } catch (KubernetesClientException e) {
-            if (e.getCode() == 409) {
-                LOGGER.info("CustomResourceDefinition: {} is already created, going to update it", resourceDefinition.getMetadata().getName());
-                client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).update();
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    public void deleteCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
-        client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).delete();
-    }
-
-    public CustomResourceDefinition getCustomResourceDefinition(String name) {
-        return client.apiextensions().v1().customResourceDefinitions().withName(name).get();
-    }
-
     // ======================================
     // ---------> CLUSTER SPECIFIC <---------
     // ======================================
@@ -915,67 +335,9 @@ public class KubeClient {
         return versionInfo.getMajor() + "." + versionInfo.getMinor().replace("+", "");
     }
 
-    /**
-     * Method which return name of cluster operator pod
-     * @return cluster operator pod name
-     */
-    public String getClusterOperatorPodName(final String namespaceName) {
-        LabelSelector selector = new LabelSelectorBuilder().withMatchLabels(Map.of("strimzi.io/kind", "cluster-operator")).build();
-        return kubeClient(namespaceName).listPods(namespaceName, selector).get(0).getMetadata().getName();
-    }
-
-    /**
-     * Method which return list of kube cluster workers node
-     * @return list of worker nodes
-     */
-    public List<Node> getClusterWorkers() {
-        return getClusterNodes().stream().filter(node ->
-                node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/worker")).collect(Collectors.toList());
-    }
-
-    // ======================================================
-    // ---------> VALIDATING WEBHOOK CONFIGURATION <---------
-    // ======================================================
-
-    public ValidatingWebhookConfiguration getValidatingWebhookConfiguration(String webhookName) {
-        return client.admissionRegistration().v1().validatingWebhookConfigurations().withName(webhookName).get();
-    }
-
-    public void createValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
-        client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).create();
-    }
-
-    public void deleteValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
-        client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).delete();
-    }
-
-    public void updateValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
-        client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).update();
-    }
-
     // =====================================================
     // ---------------> OPENSHIFT RESOURCES <---------------
     // =====================================================
-
-    public String getInstallPlanNameUsingCsvPrefix(String namespaceName, String csvPrefix) {
-        return client.adapt(OpenShiftClient.class).operatorHub().installPlans()
-            .inNamespace(namespaceName).list().getItems().stream()
-            .filter(installPlan -> installPlan.getSpec().getClusterServiceVersionNames().toString().contains(csvPrefix)).findFirst().get().getMetadata().getName();
-    }
-
-    public InstallPlan getInstallPlan(String namespaceName, String installPlanName) {
-        return client.adapt(OpenShiftClient.class).operatorHub().installPlans().inNamespace(namespaceName).withName(installPlanName).get();
-    }
-
-    public void approveInstallPlan(String namespaceName, String installPlanName) {
-        InstallPlan installPlan = new InstallPlanBuilder(kubeClient().getInstallPlan(namespaceName, installPlanName))
-            .editSpec()
-                .withApproved()
-            .endSpec()
-            .build();
-
-        client.adapt(OpenShiftClient.class).operatorHub().installPlans().inNamespace(namespaceName).withName(installPlanName).patch(installPlan);
-    }
 
     public InstallPlan getNonApprovedInstallPlanForCsvNameOrPrefix(String namespaceName, String csvNameOrPrefix) {
         return client.adapt(OpenShiftClient.class).operatorHub().installPlans()
@@ -993,24 +355,13 @@ public class KubeClient {
             .list().getItems().stream().filter(csv -> csv.getMetadata().getName().contains(csvPrefix)).findFirst().get();
     }
 
-    public void deleteCsv(String namespaceName, String csvName) {
-        client.adapt(OpenShiftClient.class).operatorHub().clusterServiceVersions().inNamespace(namespaceName).withName(csvName).delete();
-    }
 
     // =============================================
     // ---------> PERSISTENT VOLUME CLAIM <---------
     // =============================================
 
-    public void createPersistentVolumeClaim(String namespaceName, PersistentVolumeClaim pvc) {
-        client.persistentVolumeClaims().inNamespace(namespaceName).resource(pvc).create();
-    }
-
     public PersistentVolumeClaim getPersistentVolumeClaim(String namespaceName, String pvcName) {
         return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
-    }
-
-    public void deletePersistentVolumeClaim(String namespaceName, String pvcName) {
-        client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).delete();
     }
 
     public List<PersistentVolumeClaim> listPersistentVolumeClaims(String namespaceName, String clusterName) {
@@ -1022,14 +373,6 @@ public class KubeClient {
     // =======================================
     // ---------> PERSISTENT VOLUME <---------
     // =======================================
-
-    public void createPersistentVolume(PersistentVolume pv) {
-        client.persistentVolumes().resource(pv).create();
-    }
-
-    public void updatePersistentVolume(PersistentVolume pv) {
-        client.persistentVolumes().resource(pv).update();
-    }
 
     public PersistentVolume getPersistentVolumeWithName(String pvName) {
         return client.persistentVolumes().withName(pvName).get();
@@ -1043,17 +386,5 @@ public class KubeClient {
                 return containsClusterName && containsClusterNamespace;
             })
             .collect(Collectors.toList());
-    }
-
-    // ===================================
-    // ---------> STORAGE CLASS <---------
-    // ===================================
-
-    public void createStorageClass(StorageClass storageClass) {
-        client.storage().v1().storageClasses().resource(storageClass).create();
-    }
-
-    public void deleteStorageClassWithName(String storageClassName) {
-        client.storage().v1().storageClasses().withName(storageClassName).delete();
     }
 }

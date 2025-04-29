@@ -104,7 +104,7 @@ class UserST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), sharedTestStorage.getClusterName()).build());
 
-        String kafkaUserSecret = ReadWriteUtils.writeObjectToJsonString(kubeClient(Environment.TEST_SUITE_NAMESPACE).getSecret(testStorage.getKafkaUsername()));
+        String kafkaUserSecret = ReadWriteUtils.writeObjectToJsonString(SecretUtils.getInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
@@ -135,7 +135,7 @@ class UserST extends AbstractST {
         KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(Environment.TEST_SUITE_NAMESPACE, observedGeneration, testStorage.getKafkaUsername());
         KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
 
-        String anotherKafkaUserSecret = ReadWriteUtils.writeObjectToJsonString(kubeClient(Environment.TEST_SUITE_NAMESPACE).getSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername()));
+        String anotherKafkaUserSecret = ReadWriteUtils.writeObjectToJsonString(SecretUtils.getInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername()));
 
         assertThat(anotherKafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
@@ -283,8 +283,8 @@ class UserST extends AbstractST {
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), scramShaUserName, testStorage.getClusterName()).build()
         );
 
-        Secret tlsSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + tlsUserName);
-        Secret scramShaSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + scramShaUserName);
+        Secret tlsSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), secretPrefix + tlsUserName);
+        Secret scramShaSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), secretPrefix + scramShaUserName);
 
         LOGGER.info("Checking for existing user Secrets with prefix: {}", secretPrefix);
         assertNotNull(tlsSecret);
@@ -320,8 +320,8 @@ class UserST extends AbstractST {
         LOGGER.info("Checking if Secrets are deleted");
         SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName());
         SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName());
-        assertNull(kubeClient().getSecret(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName()));
-        assertNull(kubeClient().getSecret(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName()));
+        assertNull(SecretUtils.getInNamespace(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName()));
+        assertNull(SecretUtils.getInNamespace(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName()));
     }
 
     @ParallelNamespaceTest
@@ -375,7 +375,7 @@ class UserST extends AbstractST {
 
         // For clients of authentication type tls-external, operator should not create a secret
         KafkaUserUtils.waitForKafkaUserReady(testStorage.getNamespaceName(), testStorage.getKafkaUsername());
-        assertThat(kubeClient().getSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername()), nullValue());
+        assertThat(SecretUtils.getInNamespace(testStorage.getNamespaceName(), testStorage.getKafkaUsername()), nullValue());
         assertThat(CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getKafkaUsername()).get().getStatus().getUsername(), is("CN=" + testStorage.getKafkaUsername()));
 
         SecretUtils.createExternalTlsUserSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName());

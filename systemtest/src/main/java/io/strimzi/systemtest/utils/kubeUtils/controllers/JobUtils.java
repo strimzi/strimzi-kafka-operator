@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
@@ -128,7 +129,7 @@ public class JobUtils {
      * @param jobName       - name of the job, for which we should scrape status
      */
     public static void logCurrentJobStatus(String namespaceName, String jobName) {
-        Job currentJob = kubeClient().getJob(namespaceName, jobName);
+        Job currentJob = KubeResourceManager.get().kubeClient().getClient().batch().v1().jobs().inNamespace(namespaceName).withName(jobName).get();
 
         if (currentJob != null && currentJob.getStatus() != null) {
             List<String> log = new ArrayList<>(asList(TestConstants.JOB, " status:\n"));

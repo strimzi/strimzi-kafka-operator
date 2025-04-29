@@ -36,6 +36,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
@@ -152,8 +153,7 @@ public class KafkaUtils {
     }
 
     public static String getKafkaSecretCertificates(String namespaceName, String secretName, String certType) {
-        String secretCerts = "";
-        secretCerts = kubeClient(namespaceName).getSecret(namespaceName, secretName).getData().get(certType);
+        String secretCerts = SecretUtils.getInNamespace(namespaceName, secretName).getData().get(certType);
         return Util.decodeFromBase64(secretCerts, Charset.defaultCharset());
     }
 
@@ -382,13 +382,17 @@ public class KafkaUtils {
 
     public static String getVersionFromKafkaPodLibs(String namespaceName, String kafkaPodName) {
         String command = "ls libs | grep -Po 'kafka_\\d+.\\d+-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1 | cut -d \"-\" -f2";
-        return cmdKubeClient(namespaceName).execInPodContainer(
-            kafkaPodName,
-            "kafka",
-            "/bin/bash",
-            "-c",
-            command
-        ).out().trim();
+        return KubeResourceManager.get().kubeCmdClient()
+            .inNamespace(namespaceName)
+            .execInPodContainer(
+                kafkaPodName,
+                "kafka",
+                "/bin/bash",
+                "-c",
+                command
+            )
+            .out()
+            .trim();
     }
 
     public static void waitForKafkaDeletion(String namespaceName, String kafkaClusterName) {
@@ -398,7 +402,7 @@ public class KafkaUtils {
                 if (kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
                     CrdClients.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaComponents.getControllerPodSetName(kafkaClusterName)).get() == null  &&
                     CrdClients.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaComponents.getBrokerPodSetName(kafkaClusterName)).get() == null  &&
-                    kubeClient(namespaceName).getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
+                    DeploymentUtils.getInNamespace(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
                     return true;
                 } else {
                     cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);

@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.skodjob.testframe.enums.InstallType;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.OpenShift;
@@ -348,7 +349,7 @@ public class Environment {
             return hostname;
         } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
-            Service service = kubeClient("kube-system").getService("registry");
+            Service service = ServiceUtils.getInNamespace("kube-system", "registry");
 
             if (service == null)    {
                 throw new RuntimeException("Internal registry Service for pushing newly build images not found.");

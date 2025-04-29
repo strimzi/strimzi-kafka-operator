@@ -468,7 +468,7 @@ public class KafkaClients extends BaseClients {
             throw new InvalidParameterException("User name for SCRAM-SHA is not set");
         }
 
-        final String saslJaasConfigEncrypted = kubeClient().getSecret(this.getNamespaceName(), this.getUsername()).getData().get("sasl.jaas.config");
+        final String saslJaasConfigEncrypted = SecretUtils.getInNamespace(this.getNamespaceName(), this.getUsername()).getData().get("sasl.jaas.config");
         final String saslJaasConfigDecrypted = Util.decodeFromBase64(saslJaasConfigEncrypted);
 
         this.setAdditionalConfig(this.getAdditionalConfig() +

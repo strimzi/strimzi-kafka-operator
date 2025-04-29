@@ -59,7 +59,8 @@ public class ClusterOperatorRbacST extends AbstractST {
 
         cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);
 
-        String coPodName = kubeClient().getClusterOperatorPodName(TestConstants.CO_NAMESPACE);
+        String coPodName = KubeResourceManager.get().kubeClient()
+            .listPodsByPrefixInName(TestConstants.CO_NAMESPACE, SetupClusterOperator.getInstance().getOperatorDeploymentName()).get(0).getMetadata().getName();
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(

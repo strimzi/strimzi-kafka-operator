@@ -5,6 +5,9 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlanBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;
@@ -64,7 +67,17 @@ public class OlmUtils {
      */
     public static void approveInstallPlan(String namespaceName, String installPlanName) {
         LOGGER.info("Approving following InstallPlan: {}/{}", namespaceName, installPlanName);
-        kubeClient().approveInstallPlan(namespaceName, installPlanName);
+        InstallPlan installPlan = KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class)
+            .operatorHub().installPlans().inNamespace(namespaceName).withName(installPlanName).get();
+
+        installPlan = new InstallPlanBuilder(installPlan)
+            .editSpec()
+                .withApproved()
+            .endSpec()
+            .build();
+
+        KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class)
+            .operatorHub().installPlans().inNamespace(namespaceName).withName(installPlanName).patch(installPlan);
     }
 
     /**

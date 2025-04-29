@@ -4,12 +4,8 @@
  */
 package io.strimzi.systemtest.utils;
 
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.*;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -22,7 +18,10 @@ import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -63,7 +62,7 @@ public class VerificationUtils {
      * @param cpuRequest    expected value for requested CPU in CPU units
      */
     public static void assertPodResourceRequests(String namespaceName, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = kubeClient().getPod(namespaceName, podName);
+        Pod po = PodUtils.getInNamespace(namespaceName, podName);
         assertThat("Not found an expected Pod  " + namespaceName + "/" + podName + " but found " +
             kubeClient().listPods(namespaceName).stream().map(p -> p.getMetadata().getName()).toList(), po, is(notNullValue()));
 
@@ -261,7 +260,7 @@ public class VerificationUtils {
     public static void verifyConfigMapsLabels(String namespaceName, String clusterName, String additionalClusterName) {
         LOGGER.info("Verifying labels for Config maps");
 
-        kubeClient().listConfigMaps(namespaceName)
+        ConfigMapUtils.listInNamespace(namespaceName)
             .forEach(cm -> {
                 LOGGER.info("Verifying labels for CM {}", cm.getMetadata().getName());
                 if (cm.getMetadata().getName().equals(clusterName.concat("-connect-config"))) {
@@ -292,7 +291,7 @@ public class VerificationUtils {
     public static void verifyServiceLabels(String namespaceName, String serviceName, LabelSelector expectedLabels) {
         LOGGER.info("Verifying labels for KafkaConnect Services");
 
-        Service service = kubeClient().getService(namespaceName, serviceName);
+        Service service = ServiceUtils.getInNamespace(namespaceName, serviceName);
         assertThat(service, is(notNullValue()));
 
         LOGGER.info("Verifying labels for service {}", service.getMetadata().getName());
@@ -308,8 +307,10 @@ public class VerificationUtils {
      */
     public static void verifyServiceAccountsLabels(String namespaceName, String clusterName) {
         LOGGER.info("Verifying labels for Service Accounts");
+        List<ServiceAccount> serviceAccounts = KubeResourceManager.get().kubeClient().getClient().serviceAccounts().inNamespace(namespaceName).list().getItems();
 
-        kubeClient().listServiceAccounts(namespaceName).stream()
+        serviceAccounts
+            .stream()
             .filter(sa -> sa.getMetadata().getName().equals("strimzi-cluster-operator"))
             .forEach(sa -> {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
@@ -317,7 +318,8 @@ public class VerificationUtils {
             }
         );
 
-        kubeClient().listServiceAccounts(namespaceName).stream()
+        serviceAccounts
+            .stream()
             .filter(sa -> sa.getMetadata().getName().startsWith(clusterName))
             .forEach(sa -> {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
@@ -356,7 +358,7 @@ public class VerificationUtils {
             assertThat("Kafka Pod: " + brokerPod + " uses wrong image", imgFromPod, containsString(StUtils.parseImageMap(imgFromDeplConf.get(TestConstants.KAFKA_IMAGE_MAP)).get(kafkaVersion)));
 
             if (rackAwareEnabled) {
-                String initContainerImage = PodUtils.getInitContainerImageName(brokerPod);
+                String initContainerImage = PodUtils.getInitContainerImageName(kafkaNamespaceName, brokerPod);
                 assertThat(initContainerImage, is(imgFromDeplConf.get(TestConstants.KAFKA_INIT_IMAGE)));
             }
         });
@@ -428,7 +430,7 @@ public class VerificationUtils {
      */
     public static Map<String, String> getClusterOperatorDeploymentImages(String clusterOperatorNamespace) {
         Map<String, String> images = new HashMap<>();
-        for (Container container : kubeClient().getDeployment(clusterOperatorNamespace, SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container container : DeploymentUtils.getInNamespace(clusterOperatorNamespace, SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : container.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }

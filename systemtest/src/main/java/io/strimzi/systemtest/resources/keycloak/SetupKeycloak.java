@@ -128,13 +128,11 @@ public class SetupKeycloak {
             .addToData("password", Base64.getEncoder().encodeToString(POSTGRES_PASSWORD.getBytes(StandardCharsets.UTF_8)))
             .build();
 
-
-        kubeClient().createSecret(postgresSecret);
-        SecretUtils.waitForSecretReady(namespaceName, POSTGRES_SECRET_NAME, () -> { });
+        KubeResourceManager.get().createResourceWithWait(postgresSecret);
     }
 
     private static KeycloakInstance createKeycloakInstance(String namespaceName) {
-        Secret keycloakSecret = kubeClient().getSecret(namespaceName, KEYCLOAK_SECRET_NAME);
+        Secret keycloakSecret = SecretUtils.getInNamespace(namespaceName, KEYCLOAK_SECRET_NAME);
 
         String usernameEncoded = keycloakSecret.getData().get("username");
         String username = Util.decodeFromBase64(usernameEncoded, StandardCharsets.UTF_8);

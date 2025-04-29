@@ -96,7 +96,7 @@ class RackAwarenessST extends AbstractST {
 
         LOGGER.info("Kafka cluster deployed successfully");
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
-        Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
+        Pod pod = PodUtils.getInNamespace(testStorage.getNamespaceName(), podName);
 
         KubeResourceManager.get().createResourceWithWait(
             AdminClientTemplates.plainAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).build()
@@ -192,7 +192,7 @@ class RackAwarenessST extends AbstractST {
         LOGGER.info("KafkaConnect cluster deployed successfully");
         String deployName = KafkaConnectResources.componentName(testStorage.getClusterName());
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
-        Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
+        Pod pod = PodUtils.getInNamespace(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration
         Affinity specAffinity = StUtils.getDeploymentOrStrimziPodSetAffinity(testStorage.getNamespaceName(), deployName);
@@ -266,7 +266,7 @@ class RackAwarenessST extends AbstractST {
         LOGGER.info("MirrorMaker2: {}/{} cluster deployed successfully", testStorage.getNamespaceName(), testStorage.getClusterName());
         String deployName = KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName());
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
-        Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
+        Pod pod = PodUtils.getInNamespace(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration
         Affinity specAffinity = StUtils.getDeploymentOrStrimziPodSetAffinity(testStorage.getNamespaceName(), deployName);

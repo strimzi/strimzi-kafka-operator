@@ -129,7 +129,7 @@ public class OauthAbstractST extends AbstractST {
         // this is need for cluster-wide OLM (creating `infra-namespace` for Keycloak)
         // Keycloak do not support cluster-wide namespace, and thus we need it to deploy in non-OLM cluster wide namespace
         // (f.e., our `infra-namespace`)
-        if (kubeClient().getNamespace(Environment.TEST_SUITE_NAMESPACE) == null) {
+        if (!KubeResourceManager.get().kubeClient().namespaceExists(Environment.TEST_SUITE_NAMESPACE)) {
             NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
         }
 

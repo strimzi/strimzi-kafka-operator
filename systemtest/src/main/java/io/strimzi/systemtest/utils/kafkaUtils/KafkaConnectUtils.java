@@ -15,6 +15,7 @@ import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -120,7 +121,7 @@ public class KafkaConnectUtils {
         TestUtils.waitFor("KafkaConnect Pod to have condition: " + conditionReason,
             TestConstants.GLOBAL_POLL_INTERVAL, timeoutMs, () -> {
                 List<String> connectPods = kubeClient().listPodNames(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
-                List<PodCondition> conditions = kubeClient().getPod(namespaceName, connectPods.get(0)).getStatus().getConditions();
+                List<PodCondition> conditions = PodUtils.getInNamespace(namespaceName, connectPods.get(0)).getStatus().getConditions();
                 for (PodCondition condition : conditions) {
                     if (condition.getReason().matches(conditionReason)) {
                         return true;

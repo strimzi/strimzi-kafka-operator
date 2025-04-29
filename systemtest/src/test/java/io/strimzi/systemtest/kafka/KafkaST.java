@@ -258,7 +258,7 @@ class KafkaST extends AbstractST {
                 "-Xmx1G", "-Xms512M", null);
 
         String eoPod = eoPods.keySet().toArray()[0].toString();
-        kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), eoPod).getSpec().getContainers().forEach(container -> {
+        PodUtils.getInNamespace(testStorage.getNamespaceName(), eoPod).getSpec().getContainers().forEach(container -> {
             if (!container.getName().equals("tls-sidecar")) {
                 LOGGER.info("Check if -D java options are present in {}", container.getName());
 
@@ -510,7 +510,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Checking Secrets");
         kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getBrokerPodSetName(testStorage.getClusterName())).forEach(kafkaPod -> {
             String kafkaPodName = kafkaPod.getMetadata().getName();
-            Secret secretWithExt = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), kafkaPodName);
+            Secret secretWithExt = SecretUtils.getInNamespace(testStorage.getNamespaceName(), kafkaPodName);
             assertThat(secretWithExt.getData().get(kafkaPodName + ".crt"), is(not(secretsWithoutExt.get(kafkaPodName).getData().get(kafkaPodName + ".crt"))));
             assertThat(secretWithExt.getData().get(kafkaPodName + ".key"), is(not(secretsWithoutExt.get(kafkaPodName).getData().get(kafkaPodName + ".key"))));
         });
@@ -637,7 +637,8 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> SERVICES <---");
 
-        List<Service> services = kubeClient().listServices(testStorage.getNamespaceName()).stream()
+        List<Service> services = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).list().getItems()
+            .stream()
             .filter(service -> service.getMetadata().getName().startsWith(testStorage.getClusterName())).toList();
 
         for (Service service : services) {
@@ -657,7 +658,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> CONFIG MAPS <---");
 
-        List<ConfigMap> configMaps = kubeClient().listConfigMapsInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
+        List<ConfigMap> configMaps = ConfigMapUtils.listWithPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         for (ConfigMap configMap : configMaps) {
             LOGGER.info("Verifying labels of ConfigMap: {}/{}", configMap.getMetadata().getNamespace(), configMap.getMetadata().getName());
@@ -774,7 +775,7 @@ class KafkaST extends AbstractST {
         ServiceUtils.waitForServiceLabelsChange(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), customSpecifiedLabels);
 
         LOGGER.info("Verifying Kafka labels via Services");
-        Service service = kubeClient().getService(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
+        Service service = ServiceUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
 
         verifyPresentLabels(customSpecifiedLabels, service.getMetadata().getLabels());
 
@@ -785,7 +786,7 @@ class KafkaST extends AbstractST {
             ConfigMapUtils.waitForConfigMapLabelsChange(testStorage.getNamespaceName(), cmName, customSpecifiedLabels);
 
             LOGGER.info("Verifying Kafka labels on ConfigMap {}/{}", testStorage.getNamespaceName(), cmName);
-            ConfigMap configMap = kubeClient(testStorage.getNamespaceName()).getConfigMap(testStorage.getNamespaceName(), cmName);
+            ConfigMap configMap = ConfigMapUtils.getInNamespace(testStorage.getNamespaceName(), cmName);
 
             verifyPresentLabels(customSpecifiedLabels, configMap.getMetadata().getLabels());
         }
@@ -1361,9 +1362,9 @@ class KafkaST extends AbstractST {
 
             LOGGER.info("Getting list of mounted data sources and PVCs on Kafka Pod: " + i);
             for (int j = 0; j < diskCountPerReplica; j++) {
-                dataSourcesOnPod.add(kubeClient(namespaceName).getPod(namespaceName, String.join("-", podSetName, String.valueOf(i)))
+                dataSourcesOnPod.add(PodUtils.getInNamespace(namespaceName, String.join("-", podSetName, String.valueOf(i)))
                         .getSpec().getVolumes().get(j).getName());
-                pvcsOnPod.add(kubeClient(namespaceName).getPod(namespaceName, String.join("-", podSetName, String.valueOf(i)))
+                pvcsOnPod.add(PodUtils.getInNamespace(namespaceName, String.join("-", podSetName, String.valueOf(i)))
                         .getSpec().getVolumes().get(j).getPersistentVolumeClaim().getClaimName());
             }
 

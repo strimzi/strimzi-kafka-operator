@@ -130,7 +130,7 @@ public class AccessOperatorST extends AbstractST {
 
         SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), kafkaAccessName, () -> { });
 
-        Secret accessSecret = kubeClient().getSecret(testStorage.getNamespaceName(), kafkaAccessName);
+        Secret accessSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), kafkaAccessName);
         String bootstrapServer = Util.decodeFromBase64(accessSecret.getData().get("bootstrapServers"));
 
         List<EnvVar> tlsEnvVarsForKafkaAccess = List.of(

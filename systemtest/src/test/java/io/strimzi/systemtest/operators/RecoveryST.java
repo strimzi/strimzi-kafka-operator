@@ -77,9 +77,9 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
 
         String kafkaServiceName = KafkaResources.bootstrapServiceName(sharedClusterName);
-        String kafkaServiceUid = kubeClient().getServiceUid(kafkaServiceName);
+        String kafkaServiceUid = ServiceUtils.getInNamespace(Environment.TEST_SUITE_NAMESPACE, kafkaServiceName).getMetadata().getUid();
 
-        kubeClient().deleteService(kafkaServiceName);
+        KubeResourceManager.get().kubeClient().getClient().services().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(kafkaServiceName).delete();
 
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
         ServiceUtils.waitForServiceRecovery(Environment.TEST_SUITE_NAMESPACE, kafkaServiceName, kafkaServiceUid);
@@ -94,9 +94,9 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
 
         String kafkaHeadlessServiceName = KafkaResources.brokersServiceName(sharedClusterName);
-        String kafkaHeadlessServiceUid = kubeClient().getServiceUid(kafkaHeadlessServiceName);
+        String kafkaHeadlessServiceUid = ServiceUtils.getInNamespace(Environment.TEST_SUITE_NAMESPACE, kafkaHeadlessServiceName).getMetadata().getUid();;
 
-        kubeClient().deleteService(kafkaHeadlessServiceName);
+        KubeResourceManager.get().kubeClient().getClient().services().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(kafkaHeadlessServiceName).delete();
 
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
         ServiceUtils.waitForServiceRecovery(Environment.TEST_SUITE_NAMESPACE, kafkaHeadlessServiceName, kafkaHeadlessServiceUid);
@@ -149,6 +149,7 @@ class RecoveryST extends AbstractST {
 
         LOGGER.info("Deleting most of the Kafka broker pods");
         List<Pod> kafkaPodList = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
+        KubeResourceManager.get().deleteResource();
         kafkaPodList.subList(0, kafkaPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, kafkaSPsName, KAFKA_REPLICAS);

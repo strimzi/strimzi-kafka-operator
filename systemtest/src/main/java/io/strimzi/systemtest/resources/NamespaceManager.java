@@ -106,7 +106,12 @@ public class NamespaceManager {
         }
 
         LOGGER.info("Creating Namespace: {}", namespaceName);
-        kubeClient().createNamespace(namespaceName);
+        KubeResourceManager.get().createResourceWithWait(new NamespaceBuilder()
+            .withNewMetadata()
+                .withName(namespaceName)
+            .endMetadata()
+            .build()
+        );
     }
 
     /**
@@ -188,7 +193,8 @@ public class NamespaceManager {
      */
     public void deleteNamespace(String namespaceName) {
         LOGGER.info("Deleting Namespace: {}", namespaceName);
-        kubeClient().deleteNamespace(namespaceName);
+        Namespace toBeDeleted = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).get();
+        KubeResourceManager.get().deleteResource(toBeDeleted);
     }
 
     /**
@@ -243,7 +249,7 @@ public class NamespaceManager {
      */
     private void waitForNamespaceDeletion(String namespaceName) {
         TestUtils.waitFor("Namespace: " + namespaceName + " to be deleted", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT, () -> {
-            Namespace namespace = kubeClient().getNamespace(namespaceName);
+            Namespace namespace = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).get();
 
             if (namespace == null) {
                 return true;
@@ -265,7 +271,7 @@ public class NamespaceManager {
      */
     private void waitForNamespaceCreation(String namespaceName) {
         TestUtils.waitFor("Namespace: " + namespaceName + "to be created", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT,
-            () -> kubeClient().getNamespace(namespaceName) != null);
+            () -> KubeResourceManager.get().kubeClient().namespaceExists(namespaceName));
     }
 
     /**
@@ -288,7 +294,7 @@ public class NamespaceManager {
      * @return {@code boolean} value determining if the Namespace should be deleted or not
      */
     private boolean shouldDeleteNamespace(String namespaceName) {
-        return kubeClient().getNamespace(namespaceName) != null
+        return KubeResourceManager.get().kubeClient().namespaceExists(namespaceName)
             && !Environment.SKIP_TEARDOWN;
     }
 
@@ -318,7 +324,7 @@ public class NamespaceManager {
                     return false;
                 }
 
-                Namespace namespace = kubeClient().getNamespace(namespaceName);
+                Namespace namespace = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).get();
 
                 if (namespace != null) {
                     Map<String, String> namespaceLabels = namespace.getMetadata().getLabels();

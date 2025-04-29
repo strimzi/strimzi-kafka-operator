@@ -28,6 +28,7 @@ import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.ResourceAnnotations;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.common.PasswordSecretSourceBuilder;
@@ -173,7 +174,7 @@ class ConnectST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), connectReplicasCount, connectPodsSnapshot);
 
         LOGGER.info("Verifying configurations in config map");
-        ConfigMap configMap = kubeClient().namespace(testStorage.getNamespaceName()).getConfigMap(KafkaConnectResources.configMapName(testStorage.getClusterName()));
+        ConfigMap configMap = ConfigMapUtils.getInNamespace(testStorage.getNamespaceName(), KafkaConnectResources.configMapName(testStorage.getClusterName()));
         String connectConfigurations = configMap.getData().get("kafka-connect.properties");
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(exceptedConfig.entrySet()), is(true));
@@ -898,7 +899,7 @@ class ConnectST extends AbstractST {
         VerificationUtils.verifyContainerEnvVariables(testStorage.getNamespaceName(), KafkaConnectResources.componentName(testStorage.getClusterName()), KafkaConnectResources.componentName(testStorage.getClusterName()), envVarUpdated);
 
         LOGGER.info("Verifying configurations in config map after update");
-        ConfigMap configMap = kubeClient().namespace(testStorage.getNamespaceName()).getConfigMap(KafkaConnectResources.configMapName(testStorage.getClusterName()));
+        ConfigMap configMap = ConfigMapUtils.getInNamespace(testStorage.getNamespaceName(), KafkaConnectResources.configMapName(testStorage.getClusterName()));
         String connectConfigurations = configMap.getData().get("kafka-connect.properties");
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(connectConfig.entrySet()), is(true));
@@ -1446,11 +1447,12 @@ class ConnectST extends AbstractST {
                 .build()
         };
 
-        kubeClient(testStorage.getNamespaceName()).createSecret(connectSecret);
-        kubeClient(testStorage.getNamespaceName()).createSecret(dotedConnectSecret);
-
-        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMap);
-        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), dotedConfigMap);
+        KubeResourceManager.get().createResourceWithWait(
+            connectSecret,
+            dotedConnectSecret,
+            configMap,
+            dotedConfigMap
+        );
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1615,7 +1617,7 @@ class ConnectST extends AbstractST {
                 .addToStringData("pwd", "completely_secret_password_long_enough_for_fips")
                 .build();
 
-        kubeClient(testStorage.getNamespaceName()).createSecret(passwordSecret);
+        KubeResourceManager.get().createResourceWithWait(passwordSecret);
 
         KafkaUser kafkaUser =  KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName())
                 .editSpec()
@@ -1664,7 +1666,7 @@ class ConnectST extends AbstractST {
                 .addToStringData("pwd", "completely_different_secret_password_long_enough_for_fips")
                 .build();
 
-        kubeClient(testStorage.getNamespaceName()).createSecret(newPasswordSecret);
+        KubeResourceManager.get().createResourceWithWait(newPasswordSecret);
 
         kafkaUser = KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName())
                 .editSpec()
@@ -1797,7 +1799,7 @@ class ConnectST extends AbstractST {
         ConfigMapUtils.waitForCreationOfConfigMap(testStorage.getNamespaceName(), offsetConfigMap);
 
         // checking the config map
-        ConfigMap offsetsConfigMap = kubeClient().getConfigMap(testStorage.getNamespaceName(), offsetConfigMap);
+        ConfigMap offsetsConfigMap = ConfigMapUtils.getInNamespace(testStorage.getNamespaceName(), offsetConfigMap);
         JsonNode offsets = mapper.readTree(offsetsConfigMap.getData().get("offsets.json"));
 
         assertThat("Offset config map contains correct kafka_offset value", offsets.at("/offsets/0/offset/kafka_offset").asInt(), is(TestConstants.MESSAGE_COUNT));
@@ -1816,7 +1818,7 @@ class ConnectST extends AbstractST {
             .build();
 
         // update the configmap
-        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), offsetsConfigMap);
+        KubeResourceManager.get().updateResource(offsetsConfigMap);
 
         // annotate the KafkaConnector with alter annotation
         KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),

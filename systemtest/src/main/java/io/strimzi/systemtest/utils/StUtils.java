@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Environment;
@@ -25,6 +26,7 @@ import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
@@ -162,11 +164,6 @@ public class StUtils {
                 .withValue(entry.getValue()).build());
         }
         return testEnvs;
-    }
-
-    public static String checkEnvVarInPod(String namespaceName, String podName, String envVarName) {
-        return kubeClient(namespaceName).getPod(podName).getSpec().getContainers().get(0).getEnv()
-                .stream().filter(envVar -> envVar.getName().equals(envVarName)).findFirst().orElseThrow().getValue();
     }
 
     /**
@@ -435,12 +432,12 @@ public class StUtils {
     public static void copyImagePullSecrets(String namespaceName) {
         if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
             LOGGER.info("Checking if Secret: {} is in the default Namespace", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
-            if (kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
+            if (SecretUtils.getInNamespace("default", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
                 throw new RuntimeException(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default Namespace!");
             }
             LOGGER.info("Creating pull Secret: {}/{}", namespaceName, Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
-            Secret pullSecret = kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
-            kubeClient(namespaceName).createSecret(new SecretBuilder()
+            Secret pullSecret = SecretUtils.getInNamespace("default", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+            KubeResourceManager.get().createResourceWithWait(new SecretBuilder()
                 .withApiVersion("v1")
                 .withKind("Secret")
                 .withNewMetadata()
@@ -453,12 +450,12 @@ public class StUtils {
         }
         if (Environment.CONNECT_BUILD_REGISTRY_SECRET != null && !Environment.CONNECT_BUILD_REGISTRY_SECRET.isEmpty()) {
             LOGGER.info("Checking if Secret: {} is in the default Namespace", Environment.CONNECT_BUILD_REGISTRY_SECRET);
-            if (kubeClient("default").getSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET) == null) {
+            if (SecretUtils.getInNamespace("default", Environment.CONNECT_BUILD_REGISTRY_SECRET) == null) {
                 throw new RuntimeException(Environment.CONNECT_BUILD_REGISTRY_SECRET + " is not in the default namespace!");
             }
             LOGGER.info("Creating pull Secret: {}/{}", namespaceName, Environment.CONNECT_BUILD_REGISTRY_SECRET);
-            Secret pullSecret = kubeClient("default").getSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
-            kubeClient(namespaceName).createSecret(new SecretBuilder()
+            Secret pullSecret = SecretUtils.getInNamespace("default", Environment.CONNECT_BUILD_REGISTRY_SECRET);
+            KubeResourceManager.get().createResourceWithWait(new SecretBuilder()
                 .withApiVersion("v1")
                 .withKind("Secret")
                 .withNewMetadata()

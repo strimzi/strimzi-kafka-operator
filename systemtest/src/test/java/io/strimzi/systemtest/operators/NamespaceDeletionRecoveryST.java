@@ -285,11 +285,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void recreatePvcAndUpdatePv(String namespaceName, List<PersistentVolumeClaim> persistentVolumeClaimList) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             pvc.getMetadata().setResourceVersion(null);
-            kubeClient().createPersistentVolumeClaim(namespaceName, pvc);
+            pvc.getMetadata().setNamespace(namespaceName);
+
+            KubeResourceManager.get().createResourceWithWait(pvc);
 
             PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
             pv.getSpec().setClaimRef(null);
-            kubeClient().updatePersistentVolume(pv);
+            KubeResourceManager.get().updateResource(pv);
 
             PersistentVolumeClaimUtils.waitForPersistentVolumeClaimPhase(pv.getMetadata().getName(), TestConstants.PVC_PHASE_BOUND);
         }
@@ -332,13 +334,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .withVolumeBindingMode("WaitForFirstConsumer")
             .build();
 
-        kubeClient().createStorageClass(retainStorageClass);
+        KubeResourceManager.get().createResourceWithWait(retainStorageClass);
     }
 
     @AfterAll
     void teardown() {
-        kubeClient().deleteStorageClassWithName(storageClassName);
-
         kubeClient().getClient().persistentVolumes().list().getItems().stream()
             .filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka"))
             .forEach(pv -> kubeClient().getClient().persistentVolumes().resource(pv).delete());

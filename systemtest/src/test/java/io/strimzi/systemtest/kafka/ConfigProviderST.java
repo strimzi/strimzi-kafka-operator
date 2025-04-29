@@ -172,7 +172,7 @@ public class ConfigProviderST extends AbstractST {
             .endRule()
             .build();
 
-        kubeClient().namespace(testStorage.getNamespaceName()).createOrUpdateRole(configRole);
+        KubeResourceManager.get().createOrUpdateResourceWithWait(configRole);
 
         String configPrefix = "configmaps:" + testStorage.getNamespaceName() + "/connector-config:";
 

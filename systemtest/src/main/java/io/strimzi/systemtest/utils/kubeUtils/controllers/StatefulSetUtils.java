@@ -4,7 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -30,11 +33,13 @@ public class StatefulSetUtils {
     public static void waitForAllStatefulSetPodsReady(String namespaceName, String statefulSetName, int expectPods, long timeout) {
         LOGGER.info("Waiting for StatefulSet: {}/{} to be ready", namespaceName, statefulSetName);
         TestUtils.waitFor("readiness of StatefulSet: " + namespaceName + "/" + statefulSetName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
-            () -> kubeClient(namespaceName).getStatefulSetStatus(namespaceName, statefulSetName)
+            () -> KubeResourceManager.get().kubeClient().getClient().apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).isReady()
         );
 
         LOGGER.info("Waiting for {} Pod(s) of StatefulSet: {}/{} to be ready", expectPods, namespaceName, statefulSetName);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getStatefulSetSelectors(namespaceName, statefulSetName), expectPods, true);
+        LabelSelector labelSelector = KubeResourceManager.get().kubeClient().getClient().apps().statefulSets()
+            .inNamespace(namespaceName).withName(statefulSetName).get().getSpec().getSelector();
+        PodUtils.waitForPodsReady(namespaceName, labelSelector, expectPods, true);
         LOGGER.info("StatefulSet: {}/{} is ready", namespaceName, statefulSetName);
     }
 

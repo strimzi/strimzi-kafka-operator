@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.systemtest.TestConstants;
@@ -26,7 +27,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class PersistentVolumeClaimUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PersistentVolumeClaimUtils.class);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private PersistentVolumeClaimUtils() { }
 
@@ -125,7 +125,8 @@ public class PersistentVolumeClaimUtils {
         List<PersistentVolumeClaim> persistentVolumeClaimsList = kubeClient().listPersistentVolumeClaims(namespaceName, prefix);
 
         for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
-            kubeClient().deletePersistentVolumeClaim(namespaceName, persistentVolumeClaim.getMetadata().getName());
+            KubeResourceManager.get().kubeClient().getClient()
+                .persistentVolumeClaims().inNamespace(namespaceName).withName(persistentVolumeClaim.getMetadata().getName()).delete();
         }
 
         for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {

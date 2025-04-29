@@ -145,7 +145,7 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Verifying configurations in config map");
-        ConfigMap configMap = kubeClient().namespace(testStorage.getNamespaceName()).getConfigMap(KafkaMirrorMaker2Resources.configMapName(testStorage.getClusterName()));
+        ConfigMap configMap = ConfigMapUtils.getInNamespace(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.configMapName(testStorage.getClusterName()));
         String connectConfigurations = configMap.getData().get("kafka-connect.properties");
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(expectedConfig.entrySet()), is(true));
@@ -869,7 +869,7 @@ class MirrorMaker2ST extends AbstractST {
         ConfigMapUtils.waitForCreationOfConfigMap(testStorage.getNamespaceName(), listOffsetsConfigMap);
 
         // checking the config map
-        ConfigMap listConfigMap = kubeClient().getConfigMap(testStorage.getNamespaceName(), listOffsetsConfigMap);
+        ConfigMap listConfigMap = ConfigMapUtils.getInNamespace(testStorage.getNamespaceName(), listOffsetsConfigMap);
         JsonNode offsets = mapper.readTree(listConfigMap.getData().get(sourceConnectorName.replace("->", "--") + ".json"));
 
         assertThat("Offset config map contains correct offset value", offsets.get("offsets").get(0).get("offset").get("offset").asInt(), is(99));

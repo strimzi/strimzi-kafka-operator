@@ -299,7 +299,7 @@ class RollingUpdateST extends AbstractST {
             () -> kubeClient(Environment.TEST_SUITE_NAMESPACE).listPods(Environment.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
                     .map(pod -> pod.getStatus().getPhase()).toList().size() < kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE).size());
 
-        LabelSelector coLabelSelector = kubeClient().getDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getSelector();
+        LabelSelector coLabelSelector = DeploymentUtils.getInNamespace(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator Pod with labels {}", coLabelSelector);
         kubeClient(SetupClusterOperator.getInstance().getOperatorNamespace()).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator Pod deleted");
@@ -375,7 +375,7 @@ class RollingUpdateST extends AbstractST {
             .endValueFrom()
             .build();
 
-        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), metricsCMK);
+        KubeResourceManager.get().createResourceWithWait(metricsCMK);
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -424,7 +424,7 @@ class RollingUpdateST extends AbstractST {
             .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(kafkaMetrics)))
             .build();
 
-        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), metricsCMK);
+        KubeResourceManager.get().updateResource(metricsCMK);
 
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getControllerComponentName());
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());

@@ -278,7 +278,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             .endMetadata()
             .build();
 
-        kubeClient().createSecret(s);
+        KubeResourceManager.get().createResourceWithWait(s);
     }
 
     private void deployKafkaConnectorWithSink(ExtensionContext extensionContext, String clusterName) {
