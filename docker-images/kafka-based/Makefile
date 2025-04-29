@@ -26,6 +26,10 @@ docker_load:
 docker_amend_manifest:
 	./build.sh docker_amend_manifest
 
+# TODO - revisit
+docker_e2e:
+	./build.sh docker_e2e
+
 docker_push_manifest:
 	./build.sh docker_push_manifest
 

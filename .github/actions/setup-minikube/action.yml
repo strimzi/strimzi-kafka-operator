@@ -26,3 +26,4 @@ runs:
         TEST_CLUSTER: minikube
         TEST_KUBECTL_VERSION: ${{ inputs.kubectlVersion }}
         TEST_MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
+        REGISTRY_IMAGE: mirror.gcr.io/registry:latest
