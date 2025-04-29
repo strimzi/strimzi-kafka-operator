@@ -17,6 +17,7 @@ import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -138,6 +139,14 @@ public abstract class AbstractST implements TestSeparator {
 
     @BeforeEach
     void setUpTestCase(ExtensionContext extensionContext) {
+        // Check if we execute tests in parallel to update logger appender dynamically
+        boolean parallelEnabled = Boolean.getBoolean("junit.jupiter.execution.parallel.enabled");
+        if (extensionContext.getTestClass().isPresent() && parallelEnabled) {
+            ThreadContext.put("testClass", extensionContext.getTestClass().get().getSimpleName());
+        }
+        if (extensionContext.getTestMethod().isPresent() && parallelEnabled) {
+            ThreadContext.put("testMethod", extensionContext.getTestMethod().get().getName());
+        }
         ResourceManager.setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("————————————  {}@Before Each - Setup TestCase environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
@@ -147,6 +156,11 @@ public abstract class AbstractST implements TestSeparator {
 
     @BeforeAll
     void setUpTestSuite(ExtensionContext extensionContext) {
+        // Check if we execute tests in parallel to update logger appender dynamically
+        boolean parallelEnabled = Boolean.getBoolean("junit.jupiter.execution.parallel.enabled");
+        if (extensionContext.getTestClass().isPresent() && parallelEnabled) {
+            ThreadContext.put("testClass", extensionContext.getTestClass().get().getSimpleName());
+        }
         ResourceManager.setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@Before All - Setup TestSuite environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
@@ -170,6 +184,7 @@ public abstract class AbstractST implements TestSeparator {
         } finally {
             afterEachMayOverride();
             afterEachMustExecute();
+            ThreadContext.remove("testMethod");
         }
     }
 
@@ -180,5 +195,6 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.debug("———————————— {}@After All - Clean up after TestSuite ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         afterAllMayOverride();
         afterAllMustExecute();
+        ThreadContext.remove("testClass");
     }
 }
