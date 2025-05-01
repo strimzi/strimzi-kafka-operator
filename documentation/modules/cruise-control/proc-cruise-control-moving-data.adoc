@@ -334,3 +334,61 @@ In this example, the log directories for volumes 1 and 2 no longer have partitio
       ]
     }
 ----
+
+. To prevent empty volumes from being used in future rebalances or topic allocations, update the configuration and remove the associated persistent volume claims (PVCs).
+
+.. Update the node pool configuration to exclude the volumes.
++
+WARNING: Before making changes, verify that all partitions have been successfully moved using `kafka-log-dirs.sh`. 
+Removing volumes prematurely can cause data loss.
++
+In this example, volumes 1 and 2 are removed, and only volume 0 is retained:
++
+.Updated node pool configuration with single volume JBOD storage
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-a
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 2000Gi
+        deleteClaim: false
+  # ...
+----
+
+.. Delete the unused PVCs:
++
+PVCs are named using the format `data-<id>-<kafka_cluster_name>-kafka-<pod_id>`. 
+You can list them using:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get pvc -n my-project
+----
++
+Then delete the unused PVCs:
++
+[source,shell,subs="+quotes"]
+----
+kubectl delete pvc data-<id>-<kafka_cluster_name>-kafka-<pod_id> -n my-project
+----
++
+NOTE: Deleting a PVC removes the underlying storage unless `deleteClaim: false` is set in the volume configuration.
+
+.. (Optional) Delete the helper pod used earlier:
++
+[source,shell]
+----
+kubectl delete pod helper-pod
+----
