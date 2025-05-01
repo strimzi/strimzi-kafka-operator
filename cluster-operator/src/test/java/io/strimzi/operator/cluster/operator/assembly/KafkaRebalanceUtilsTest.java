@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatusBuilder;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -169,7 +170,7 @@ public class KafkaRebalanceUtilsTest {
 
     @Test
     public void testUpdateStatusCondition() {
-        KafkaRebalanceStatus status = new KafkaRebalanceStatus();
+        KafkaRebalanceStatus status = new KafkaRebalanceStatusBuilder().withConditions(new ArrayList<>()).build();
 
         // Test Warning condition can be added when there are no existing conditions
         KafkaRebalanceUtils.addWarningCondition(status, exception("Example error 0"));

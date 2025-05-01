@@ -339,7 +339,6 @@ public class KafkaRebalanceAssemblyOperator
                 .compose(existingConfigMap -> {
                     ConfigMap desiredConfigMap = desiredStatusAndMap.getLoadMap();
                     KafkaRebalanceStatus desiredStatus = desiredStatusAndMap.getStatus();
-                    KafkaRebalanceState desiredState = KafkaRebalanceUtils.rebalanceState(desiredStatus);
 
                     if (existingConfigMap == null && desiredConfigMap == null) {
                         return Future.succeededFuture(desiredStatusAndMap);
@@ -357,7 +356,7 @@ public class KafkaRebalanceAssemblyOperator
 
                     // Add progress information to `KafkaRebalance` resource status and ConfigMap.
                     desiredStatus.setProgress(Map.of(REBALANCE_PROGRESS_CONFIG_MAP_KEY, configMapName));
-                    return KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, desiredState, host, cruiseControlPort, apiClient, desiredConfigMap)
+                    return KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, desiredStatus, host, cruiseControlPort, apiClient, desiredConfigMap)
                             .recover(exception -> {
                                 KafkaRebalanceUtils.addWarningCondition(desiredStatus, exception);
                                 return Future.succeededFuture();

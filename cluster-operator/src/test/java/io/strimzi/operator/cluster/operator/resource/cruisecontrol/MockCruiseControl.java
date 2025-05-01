@@ -13,6 +13,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.ReadWriteUtils;
 import org.mockserver.configuration.ConfigurationProperties;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlHeaders.USER_TASK_ID_HEADER;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.ACTIVE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpRequest.request;
@@ -125,14 +127,29 @@ public class MockCruiseControl {
         return server.isRunning();
     }
 
-    private static HttpRequest stateEndpointRequestMatcher(List<Header> headers, String json, String verbose) {
-        return request()
+    private static HttpRequest requestMatcher(List<Header> headers, CruiseControlEndpoints endpoint, String json, String verbose) {
+        HttpRequest request = new HttpRequest()
                 .withMethod("GET")
                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), json))
-                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), verbose))
-                .withPath(CruiseControlEndpoints.STATE.toString())
+                .withPath(endpoint.toString())
                 .withHeaders(headers)
                 .withSecure(true);
+
+        switch (endpoint) {
+            case USER_TASKS:
+                boolean isVerbose = Boolean.parseBoolean(verbose);
+                String userTaskId = isVerbose
+                        ? REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID
+                        : REBALANCE_NO_GOALS_RESPONSE_UTID;
+
+                request.withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
+                        .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.toString(), userTaskId));
+                break;
+            case STATE:
+                request.withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), verbose));
+                break;
+        }
+        return request;
     }
 
     private HttpResponse buildStateResponse(String jsonFileName, String userTaskId, int statusCode) {
@@ -144,86 +161,178 @@ public class MockCruiseControl {
                 .withDelay(TimeUnit.SECONDS, 0);
     }
 
-    private HttpResponse stateEndpointProposalNotReadyResponse() {
-        return buildStateResponse("CC-State-proposal-not-ready.json", STATE_PROPOSAL_NOT_READY_RESPONSE, 200);
-    }
-
-    private HttpResponse stateEndpointInExecutionResponse() {
-        return buildStateResponse("CC-State-inExecution.json", "cruise-control-state", 200);
-    }
-
-    private HttpResponse stateEndpointFetchErrorResponse() {
-        return buildStateResponse("CC-State-fetch-error.json", "cruise-control-state-error", 500);
-    }
-
-    private HttpResponse stateEndpointResponse(boolean verbose) {
-        String fileName = verbose ? "CC-State-verbose.json" : "CC-State.json";
-        String userTaskId = verbose ? "cruise-control-state-verbose" : "cruise-control-state";
-        return buildStateResponse(fileName, userTaskId, 200);
-    }
-
-    private void setupCCStateResponse(int proposalNotReadyCalls, int inExecutionCalls) {
+    /**
+     * Sets up mocked response of the Cruise Control "State" endpoint.
+     *
+     * <p>
+     * This method configures the MockServer to return specific responses based on the provided task status
+     * and error flag.
+     *
+     * @param taskStatus The current {@link CruiseControlUserTaskStatus} of the simulated Cruise Control task.
+     *                   This determines whether the state response should reflect an active proposal,
+     *                   an ongoing execution, or a completed state.
+     * @param fetchError If {@code true}, the mock will return a 500 error response to simulate a fetch failure
+     *                   from the Cruise Control "State" endpoint, regardless of task status.
+     */
+    public void mockStateEndpoint(CruiseControlUserTaskStatus taskStatus, boolean fetchError) {
         List<Header> authHeader = List.of(AUTH_HEADER);
         List<Header> proposalNotReadyHeaders = List.of(header(USER_TASK_ID_HEADER, STATE_PROPOSAL_NOT_READY), authHeader.get(0));
 
-        server
-                .when(
-                        stateEndpointRequestMatcher(proposalNotReadyHeaders, "true|false", "true|false"),
-                        Times.exactly(proposalNotReadyCalls))
-                .respond(
-                        stateEndpointProposalNotReadyResponse());
-        server
-                .when(
-                        stateEndpointRequestMatcher(authHeader, "true|false", "true|false"),
-                        Times.exactly(inExecutionCalls))
-                .respond(
-                        stateEndpointInExecutionResponse());
-        server
-                .when(
-                        stateEndpointRequestMatcher(authHeader, "true", "false"))
-                .respond(
-                        stateEndpointResponse(false));
-        server
-                .when(
-                        stateEndpointRequestMatcher(authHeader, "true", "false"))
-                .respond(
-                        stateEndpointResponse(true));
+        if (fetchError) {
+            server
+                    .when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true|false", "true|false"))
+                    .respond(buildStateResponse("CC-State-fetch-error.json", "cruise-control-state-error", 500));
+            return;
+        }
+
+        switch (taskStatus) {
+            case ACTIVE:
+                server
+                        .when(requestMatcher(proposalNotReadyHeaders, CruiseControlEndpoints.STATE, "true|false", "true|false"))
+                        .respond(buildStateResponse("CC-State-proposal-not-ready.json", STATE_PROPOSAL_NOT_READY_RESPONSE, 200));
+                return;
+
+            case IN_EXECUTION:
+                server
+                        .when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true|false", "true|false"))
+                        .respond(buildStateResponse("CC-State-inExecution.json", "cruise-control-state", 200));
+                return;
+
+            default:
+                server
+                        .when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true", "false"))
+                        .respond(buildStateResponse("CC-State.json", "cruise-control-state", 200));
+        }
+    }
+
+    private HttpResponse userTaskResponse(String state, boolean verbose) {
+        String fileName = "CC-User-task-rebalance-no-goals-" +
+                (verbose ? "verbose-" : "") + state + ".json";
+
+        String userTaskId = verbose
+                ? USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID
+                : USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID;
+
+        JsonBody jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(
+                getClass(), "/" + CC_JSON_ROOT + fileName));
+
+        return response()
+                .withBody(jsonBody)
+                .withStatusCode(200)
+                .withHeaders(header("User-Task-ID", userTaskId))
+                .withDelay(TimeUnit.SECONDS, 0);
     }
 
     /**
-     * Configures mock server responses for Cruise Control's {@code /state} endpoint.
+     * Sets up mocked response of the Cruise Control "User Tasks" endpoint.
      *
-     * @param proposalNotReadyCalls   the total number of calls that should respond where proposal is not ready.
-     * @param inExecutionCalls        the total number of calls that should respond where a rebalance task is in execution.
-     * @param fetchErrorAtCallNumber  if non-null and greater than zero, configures the mock server to respond with
-     *                                a fetch error (HTTP 500) starting at the {@code fetchErrorAtCallNumber}-th call.
-     * @param numFetchErrorCalls      the number of consecutive calls that should return fetch errors after
-     *                                {@code fetchErrorAtCallNumber}.
+     * <p>
+     * This method configures the MockServer to return specific responses based on the provided task status.
+     *
+     * @param taskStatus The current {@link CruiseControlUserTaskStatus} of the simulated Cruise Control task.
+     *                   This determines whether the state response should reflect an active,
+     *                   an ongoing execution, or a completed task.
      */
-    public void setupCCStateResponse(int proposalNotReadyCalls, int inExecutionCalls, Integer fetchErrorAtCallNumber, int numFetchErrorCalls) {
-        if (fetchErrorAtCallNumber != null && fetchErrorAtCallNumber > 0) {
-            int callsBeforeError = fetchErrorAtCallNumber - 1;
+    public void mockUserTasksEndpoint(CruiseControlUserTaskStatus taskStatus) {
+        List<Header> authHeader = List.of(AUTH_HEADER);
+        for (boolean verbose : List.of(false, true)) {
+            HttpRequest request = requestMatcher(authHeader, CruiseControlEndpoints.USER_TASKS, "true", String.valueOf(verbose));
 
-            // Setup calls before error calls
-            int proposalNotReadyCallsBeforeError = Math.min(proposalNotReadyCalls, callsBeforeError);
-            int inExecutionCallsBeforeError = Math.min(inExecutionCalls, callsBeforeError - proposalNotReadyCallsBeforeError);
-            setupCCStateResponse(proposalNotReadyCallsBeforeError, inExecutionCallsBeforeError);
-
-            // Setup fetch error calls
-            server
-                    .when(
-                            stateEndpointRequestMatcher(List.of(AUTH_HEADER), "true|false", "true|false"),
-                            Times.exactly(numFetchErrorCalls))
-                    .respond(
-                            stateEndpointFetchErrorResponse());
-
-            // Remaining calls after error
-            int proposalNotReadyCallsAfterError = proposalNotReadyCalls - proposalNotReadyCallsBeforeError;
-            int inExecutionCallsAfterError = inExecutionCalls - inExecutionCallsBeforeError;
-            setupCCStateResponse(proposalNotReadyCallsAfterError, inExecutionCallsAfterError);
-        } else {
-            setupCCStateResponse(proposalNotReadyCalls, inExecutionCalls);
+            switch (taskStatus) {
+                case ACTIVE:
+                    server
+                            .when(request)
+                            .respond(userTaskResponse("Active", verbose));
+                    break;
+                case IN_EXECUTION:
+                    server
+                            .when(request)
+                            .respond(userTaskResponse("InExecution", verbose));
+                    break;
+                case COMPLETED_WITH_ERROR:
+                    server
+                            .when(request)
+                            .respond(userTaskResponse("CompletedWithError", false));
+                    break;
+                case COMPLETED:
+                    server
+                            .when(request)
+                            .respond(userTaskResponse("Completed", verbose));
+                    break;
+            }
         }
+    }
+
+    private HttpRequest rebalanceRequestMatcher(Boolean verbose) {
+        HttpRequest request = request();
+
+        if (verbose) {
+            request.withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), String.valueOf(verbose)));
+        }
+
+        return request
+                .withMethod("POST")
+                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
+                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
+                .withQueryStringParameter(buildBrokerParameters(CruiseControlEndpoints.REBALANCE))
+                .withPath(CruiseControlEndpoints.REBALANCE.toString())
+                .withHeader(AUTH_HEADER)
+                .withSecure(true);
+    }
+
+    private HttpResponse rebalanceResponse(CruiseControlUserTaskStatus taskStatus, boolean verbose) {
+        String fileName;
+        String userTaskId;
+        HttpResponse response = response();
+
+        if (taskStatus == ACTIVE) {
+            fileName = "CC-Rebalance-no-goals-in-progress.json";
+            userTaskId = REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID;
+            response.withStatusCode(202);
+        } else {
+            if (verbose) {
+                // Rebalance response with no goals set - verbose
+                fileName = "CC-Rebalance-no-goals-verbose.json";
+                userTaskId = REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID;
+            } else {
+                // Rebalance response with no goals set - non-verbose parameter
+                fileName = "CC-Rebalance-no-goals.json";
+                userTaskId = REBALANCE_NO_GOALS_RESPONSE_UTID;
+            }
+        }
+        JsonBody body = new JsonBody(ReadWriteUtils.readFileFromResources(
+                getClass(), "/" + CC_JSON_ROOT + fileName));
+
+        return response
+                .withBody(body)
+                .withHeaders(header("User-Task-ID", userTaskId))
+                .withDelay(TimeUnit.SECONDS, 0);
+    }
+
+    /**
+     * Sets up mocked response of the Cruise Control "Rebalance" endpoint.
+     *
+     * <p>
+     * This method configures the MockServer to return specific responses based on the provided task status.
+     *
+     * @param taskStatus The current {@link CruiseControlUserTaskStatus} of the simulated Cruise Control task.
+     *                   This determines whether the state response should reflect a pending,
+     *                   ongoing execution, or a completed rebalance task.
+     */
+    public void mockRebalanceEndpoint(CruiseControlUserTaskStatus taskStatus) {
+        for (boolean verbose : List.of(false, true)) {
+            server
+                    .when(rebalanceRequestMatcher(verbose))
+                    .respond(rebalanceResponse(taskStatus, verbose));
+
+        }
+    }
+
+    public void mockTask(CruiseControlUserTaskStatus taskStatus, boolean stateEndpointFetchError) {
+        server.clear(request());
+        mockUserTasksEndpoint(taskStatus);
+        mockStateEndpoint(taskStatus, stateEndpointFetchError);
+        mockRebalanceEndpoint(taskStatus);
     }
 
     /**
@@ -404,88 +513,35 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, 0));
     }
 
-    private static HttpRequest userTasksEndpointRequestMatcher(Boolean verbose) {
-        String userTaskId = verbose ? REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID : REBALANCE_NO_GOALS_RESPONSE_UTID;
-        return request()
-                .withMethod("GET")
-                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
-                .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.toString(), userTaskId))
-                .withPath(CruiseControlEndpoints.USER_TASKS.toString())
-                .withHeader(AUTH_HEADER)
-                .withSecure(true);
-    }
-
-    private HttpResponse userTaskResponse(String state, boolean verbose) {
-        String fileName = "CC-User-task-rebalance-no-goals-" +
-                (verbose ? "verbose-" : "") + state + ".json";
-
-        String userTaskId = verbose
-                ? USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID
-                : USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID;
-
-        JsonBody jsonBody = new JsonBody(ReadWriteUtils.readFileFromResources(
-                getClass(), "/" + CC_JSON_ROOT + fileName));
-
-        return response()
-                .withBody(jsonBody)
-                .withStatusCode(200)
-                .withHeaders(header("User-Task-ID", userTaskId))
-                .withDelay(TimeUnit.SECONDS, 0);
-    }
-
-    private HttpResponse userTasksEndpointActiveResponse(boolean verbose) {
-        return userTaskResponse("Active", verbose);
-    }
-
-    private HttpResponse userTasksEndpointInExecutionResponse(boolean verbose) {
-        return userTaskResponse("InExecution", verbose);
-    }
-
-    private HttpResponse userTasksEndpointCompleteResponse(boolean verbose) {
-        return userTaskResponse("Completed",  verbose);
-    }
-
-    private HttpResponse userTasksEndpointCompletedWithErrorResponse() {
-        return userTaskResponse("CompletedWithError",  false);
-    }
-
     /**
      * Sets up the User Tasks endpoint. These endpoints expect the query to contain the user-task-id returned in the header of the response from
      * the rebalance endpoints.
      *
-     * @param activeCalls The number of calls to the User Tasks endpoint that should return "Active" before "inExecution" is returned as the status.
+     * @param activeCalls      The number of calls to the User Tasks endpoint that should return "Active" before "inExecution" is returned as the status.
      * @param inExecutionCalls The number of calls to the User Tasks endpoint that should return "InExecution" before "Completed" is returned as the status.
-     * @param completeWithError If true, the User Tasks endpoint returns "CompletedWithError" as the response.
-     * @throws IOException If there are issues connecting to the network port.
+     * @throws IOException        If there are issues connecting to the network port.
      * @throws URISyntaxException If any of the configured end points are invalid.
      */
-    public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls, boolean completeWithError) throws IOException, URISyntaxException {
+    public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls) throws IOException, URISyntaxException {
+        List<Header> authHeader = List.of(AUTH_HEADER);
         for (boolean verbose : List.of(false, true)) {
-            HttpRequest request = userTasksEndpointRequestMatcher(verbose);
+            HttpRequest request = requestMatcher(authHeader, CruiseControlEndpoints.USER_TASKS, "true", String.valueOf(verbose));
 
             // The first activeCalls times respond that with a status of "Active"
             server
                     .when(request, Times.exactly(activeCalls))
-                    .respond(userTasksEndpointActiveResponse(verbose));
+                    .respond(userTaskResponse("Active", verbose));
 
             // The next inExecutionCalls times respond that with a status of "InExecution"
             server
                     .when(request, Times.exactly(inExecutionCalls))
-                    .respond(userTasksEndpointInExecutionResponse(verbose));
+                    .respond(userTaskResponse("InExecution", verbose));
 
-            if (completeWithError) {
-                // On the N+1 call, respond with a status of "CompletedWithError"
-                server
-                        .when(request, Times.unlimited())
-                        .respond(userTasksEndpointCompletedWithErrorResponse());
+            // On the N+1 call, respond with a status of "Completed".
+            server
+                    .when(request, Times.unlimited())
+                    .respond(userTaskResponse("Completed", verbose));
 
-            } else {
-                // On the N+1 call, respond with a status of "Completed".
-                server
-                        .when(request, Times.unlimited())
-                        .respond(userTasksEndpointCompleteResponse(verbose));
-            }
         }
     }
 

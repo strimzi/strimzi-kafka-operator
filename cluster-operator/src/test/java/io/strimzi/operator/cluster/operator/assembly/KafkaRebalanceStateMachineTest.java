@@ -1135,7 +1135,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krRebalancingCompleted(Vertx vertx, VertxTestContext context, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0, false);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Ready,
@@ -1188,7 +1188,7 @@ public class KafkaRebalanceStateMachineTest {
         // This tests that the optimization proposal is added correctly if it was not ready when the rebalance(dryrun=false) was called.
         // The first poll should see active and then the second should see in execution and add the optimization and cancel the timer
         // so that the status is updated.
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(activeCalls, inExecutionCalls, false);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(activeCalls, inExecutionCalls);
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Rebalancing,
@@ -1240,7 +1240,7 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     private void krRebalancingToStopped(Vertx vertx, VertxTestContext context, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0, false);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
         cruiseControlServer.setupCCStopResponse();
 
         checkTransition(vertx, context,

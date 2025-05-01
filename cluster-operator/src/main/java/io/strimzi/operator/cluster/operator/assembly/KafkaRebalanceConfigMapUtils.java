@@ -7,14 +7,18 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 import io.vertx.core.Future;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Map;
+
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.IN_EXECUTION;
 
 /**
  * Utility class for updating data in KafkaRebalance ConfigMap
@@ -33,12 +37,16 @@ public class KafkaRebalanceConfigMapUtils {
     /**
      * Updates the given KafkaRebalance ConfigMap with progress fields based on the progress of the Kafka rebalance operation.
      *
-     * @param state The current state of the KafkaRebalance resource (e.g., ProposalReady, Rebalancing, Stopped, etc.).
+     * @param state         The current state of the KafkaRebalance resource (e.g., ProposalReady, Rebalancing, Stopped, etc.).
+     * @param taskStartDate The date time the task started represented as a ZonedDateTime object
      * @param executorState The executor state information in JSON format, which is used to calculate progress fields
      *                      in the Rebalancing state.
-     * @param configMap The ConfigMap to be updated with progress information.
+     * @param configMap     The ConfigMap to be updated with progress information.
      */
-    /* test */ static void updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState state, JsonNode executorState, ConfigMap configMap) {
+    /* test */ static void updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState state,
+                                                                      ZonedDateTime taskStartDate,
+                                                                      JsonNode executorState,
+                                                                      ConfigMap configMap) {
         Map<String, String> data = configMap != null ? configMap.getData() : null;
 
         switch (state) {
@@ -48,13 +56,12 @@ public class KafkaRebalanceConfigMapUtils {
                 data.remove(EXECUTOR_STATE_KEY);
                 break;
             case Rebalancing:
-                LocalDateTime taskStartTime = ExecutorStateProcessor.getTaskStartTime(executorState);
                 int totalDataToMove = ExecutorStateProcessor.getTotalDataToMove(executorState);
                 int finishedDataMovement = ExecutorStateProcessor.getFinishedDataMovement(executorState);
 
                 int estimatedTimeToCompletion = KafkaRebalanceProgressUtils.estimateTimeToCompletionInMinutes(
-                        taskStartTime,
-                        LocalDateTime.now(),
+                        taskStartDate,
+                        ZonedDateTime.now(),
                         totalDataToMove,
                         finishedDataMovement);
 
@@ -89,34 +96,53 @@ public class KafkaRebalanceConfigMapUtils {
      * {@link KafkaRebalanceState}.
      *
      * @param reconciliation The reconciliation context
-     * @param state The KafkaRebalance state
-     * @param host The host address of the Cruise Control instance
-     * @param port The port of the Cruise Control instance
-     * @param apiClient The API client to communicate with Cruise Control
-     * @param configMap The desired ConfigMap
-     *
+     * @param status         The KafkaRebalance status
+     * @param host           The host address of the Cruise Control instance
+     * @param port           The port of the Cruise Control instance
+     * @param apiClient      The API client to communicate with Cruise Control
+     * @param configMap      The desired ConfigMap
      * @return A {@link Future} representing the updated ConfigMap (or null if no update was required)
      */
     public static Future<ConfigMap> updateRebalanceConfigMap(Reconciliation reconciliation,
-                                                      KafkaRebalanceState state,
-                                                      String host,
-                                                      int port,
-                                                      CruiseControlApi apiClient,
-                                                      ConfigMap configMap) {
+                                                             KafkaRebalanceStatus status,
+                                                             String host,
+                                                             int port,
+                                                             CruiseControlApi apiClient,
+                                                             ConfigMap configMap) {
+
+
+        KafkaRebalanceState state = KafkaRebalanceUtils.rebalanceState(status);
         if (state == KafkaRebalanceState.Rebalancing) {
-            return VertxUtil.completableFutureToVertxFuture(
-                            apiClient.getCruiseControlState(reconciliation,
-                                    host,
-                                    port,
-                                    false))
-                    .compose(response -> {
-                        JsonNode executorState = response.getJson().get("ExecutorState");
-                        ExecutorStateProcessor.ExecutorState.verifyRebalancingState(executorState);
-                        updateRebalanceConfigMapWithProgressFields(state, executorState, configMap);
-                        return Future.succeededFuture(configMap);
+            return VertxUtil.completableFutureToVertxFuture(apiClient.getUserTaskStatus(reconciliation, host, port, status.getSessionId()))
+                    .compose(cruiseControlResponse -> {
+
+                        if (cruiseControlResponse.isMaxActiveUserTasksReached()) {
+                            throw new IllegalStateException("The maximum number of active user tasks that Cruise Control can run concurrently has been reached, therefore will retry getting user tasks in the next reconciliation. " +
+                                    "If this occurs often, consider increasing the value for max.active.user.tasks in the Cruise Control configuration.");
+                        }
+
+                        CruiseControlUserTaskStatus taskStatus = cruiseControlResponse.getTaskStatus();
+                        ZonedDateTime taskStartTime = cruiseControlResponse.getTaskStartTime();
+                        if (taskStatus == IN_EXECUTION) {
+                            return VertxUtil.completableFutureToVertxFuture(
+                                            apiClient.getCruiseControlState(reconciliation,
+                                                    host,
+                                                    port,
+                                                    false))
+                                    .compose(response -> {
+                                        JsonNode executorState = response.getJson().get("ExecutorState");
+                                        ExecutorStateProcessor.ExecutorState.verifyRebalancingState(executorState);
+                                        updateRebalanceConfigMapWithProgressFields(state, taskStartTime, executorState, configMap);
+                                        return Future.succeededFuture(configMap);
+                                    });
+                        } else {
+                            throw new IllegalStateException(
+                                    String.format("Cruise Control user task is in `%s` state and was started on %s, needs execution data before progress fields can be provided",
+                                            taskStatus, taskStartTime));
+                        }
                     });
         } else {
-            updateRebalanceConfigMapWithProgressFields(state, null, configMap);
+            updateRebalanceConfigMapWithProgressFields(state, null, null, configMap);
             return Future.succeededFuture(configMap);
         }
     }

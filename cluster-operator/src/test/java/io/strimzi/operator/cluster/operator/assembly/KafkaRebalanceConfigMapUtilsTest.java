@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY;
@@ -56,7 +57,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
     public void testProgressFieldsForProposalReadyState() throws Exception {
         JsonNode es = createExecutorState(null);
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.ProposalReady, es, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.ProposalReady, null, es, cm);
 
         Map<String, String> m =  cm.getData();
         assertThat(m.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(false));
@@ -67,11 +68,11 @@ public class KafkaRebalanceConfigMapUtilsTest {
 
     @Test
     public void testProgressFieldsForProposalRebalancingState() throws Exception {
+        ZonedDateTime taskStartTime = ZonedDateTime.now().minusSeconds(2);
         JsonNode es0 = createExecutorState(Map.of("finishedDataMovement",  "250",
-                "totalDataToMove", "10000",
-                "triggeredTaskReason", triggeredTaskTime(2)));
+                "totalDataToMove", "10000"));
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Rebalancing, es0, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Rebalancing, taskStartTime, es0, cm);
 
         Map<String, String> m =  cm.getData();
         assertThat(m.get(ESTIMATED_TIME_TO_COMPLETION_KEY), is("1"));
@@ -82,14 +83,14 @@ public class KafkaRebalanceConfigMapUtilsTest {
 
     @Test
     public void testProgressFieldsForProposalStopped() throws Exception {
+        ZonedDateTime taskStartTime = ZonedDateTime.now().minusSeconds(1);
         ObjectNode es = createExecutorState(Map.of("finishedDataMovement",  "250",
-                "totalDataToMove", "10000",
-                "triggeredTaskReason", triggeredTaskTime(1)));
+                "totalDataToMove", "10000"));
         ConfigMap cm = createKafkaRebalanceConfigMap(Map.of(ESTIMATED_TIME_TO_COMPLETION_KEY, "5",
                 COMPLETED_BYTE_MOVEMENT_KEY, "100",
                 EXECUTOR_STATE_KEY, es.toString(),
                 BROKER_LOAD_KEY, BROKER_LOAD));
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Stopped, es, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Stopped, taskStartTime, es, cm);
 
         Map<String, String> m =  cm.getData();
         assertThat(m.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(false));
@@ -99,7 +100,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
 
         cm = createKafkaRebalanceConfigMap(Map.of(ESTIMATED_TIME_TO_COMPLETION_KEY, "5",
                 BROKER_LOAD_KEY, BROKER_LOAD));
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Stopped, es, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Stopped, null, es, cm);
 
         m =  cm.getData();
         assertThat(m.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(false));
@@ -111,13 +112,12 @@ public class KafkaRebalanceConfigMapUtilsTest {
     @Test
     public void testProgressFieldsForProposalNotReady() throws Exception {
         ObjectNode es = createExecutorState(Map.of("finishedDataMovement",  "250",
-                "totalDataToMove", "10000",
-                "triggeredTaskReason", triggeredTaskTime(2)));
+                "totalDataToMove", "10000"));
         ConfigMap cm = createKafkaRebalanceConfigMap(Map.of(ESTIMATED_TIME_TO_COMPLETION_KEY, "5",
                 COMPLETED_BYTE_MOVEMENT_KEY, "100",
                 EXECUTOR_STATE_KEY, es.toString(),
                 BROKER_LOAD_KEY, BROKER_LOAD));
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.NotReady, es, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.NotReady, null, es, cm);
 
         Map<String, String> m =  cm.getData();
         assertThat(m.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(false));
@@ -127,7 +127,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
 
         cm = createKafkaRebalanceConfigMap(Map.of(ESTIMATED_TIME_TO_COMPLETION_KEY, "5",
                 BROKER_LOAD_KEY, BROKER_LOAD));
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.NotReady, es, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.NotReady, null, es, cm);
 
         m =  cm.getData();
         assertThat(m.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(false));
@@ -140,7 +140,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
     public void testProgressFieldsForReadyState() throws Exception {
         JsonNode es = createExecutorState(null);
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Ready, es, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Ready, null, es, cm);
 
         Map<String, String> m =  cm.getData();
         assertThat(m.get(ESTIMATED_TIME_TO_COMPLETION_KEY), is(TIME_COMPLETED));
@@ -153,7 +153,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
     public void testProgressFieldsForUnsupportedStates() throws Exception {
         JsonNode es = createExecutorState(null);
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.New, es, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.New, null, es, cm);
 
         Map<String, String> m =  cm.getData();
         assertThat(m.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(false));
@@ -163,7 +163,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
 
         es = createExecutorState(null);
         cm =  createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.PendingProposal, es, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.PendingProposal, null, es, cm);
 
         m =  cm.getData();
         assertThat(m.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(false));

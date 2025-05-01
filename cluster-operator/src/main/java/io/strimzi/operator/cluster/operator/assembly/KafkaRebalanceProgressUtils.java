@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 /**
  * Utility class for handling progress fields of KafkaRebalance custom resource
@@ -27,15 +27,15 @@ public class KafkaRebalanceProgressUtils {
      *     - The elapsed time between `taskStartTime` and `currentTime` is zero, making rate calculation impossible.
      *     - The data movement rate is zero, making the time to completion estimation impossible.
      */
-    /* test */ static int estimateTimeToCompletionInMinutes(LocalDateTime taskStartTime,
-                                                            LocalDateTime currentTime,
+    /* test */ static int estimateTimeToCompletionInMinutes(ZonedDateTime taskStartTime,
+                                                            ZonedDateTime currentTime,
                                                             int totalDataToMoveInMB,
                                                             int finishedDataMovementInMB)
             throws IllegalArgumentException, ArithmeticException {
-        if (totalDataToMoveInMB < 0 || finishedDataMovementInMB < 0) {
+        if (taskStartTime == null || currentTime == null || totalDataToMoveInMB < 0 || finishedDataMovementInMB < 0) {
             throw new IllegalArgumentException(
-                    String.format("Invalid negative value(s) provided for one of the following arguments: totalDataToMoveInMB: %d, finishedDataMovementInMB: %d.",
-                            totalDataToMoveInMB, finishedDataMovementInMB)
+                    String.format("Invalid value(s) provided for one of the following arguments: taskStartTime %s, currentTime %s, totalDataToMoveInMB: %d, finishedDataMovementInMB: %d.",
+                            taskStartTime, currentTime, totalDataToMoveInMB, finishedDataMovementInMB)
             );
         }
 

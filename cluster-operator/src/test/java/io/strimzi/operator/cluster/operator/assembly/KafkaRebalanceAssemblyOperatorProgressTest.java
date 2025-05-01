@@ -11,15 +11,12 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY;
@@ -27,6 +24,10 @@ import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfig
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.ESTIMATED_TIME_TO_COMPLETION_KEY;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.EXECUTOR_STATE_KEY;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.REBALANCE_PROGRESS_CONFIG_MAP_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.ACTIVE;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.COMPLETED;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.COMPLETED_WITH_ERROR;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.IN_EXECUTION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -63,10 +64,8 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
      * Test progress fields of `KafkaRebalance` resource and ConfigMap during KafkaRebalance lifecycle.
      */
     @Test
-    public void testProgressFieldsDuringRebalanceLifecycle(VertxTestContext context) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(1, CruiseControlEndpoints.REBALANCE, "true");
-        cruiseControlServer.setupCCStateResponse(0, 1, null, 0);
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0, false);
+    public void testProgressFieldsDuringRebalanceLifecycle(VertxTestContext context) {
+        cruiseControlServer.mockTask(ACTIVE, false);
 
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -83,9 +82,10 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                     KafkaRebalanceStatus status = getKafkaRebalanceStatus();
                     assertThat(status.getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(Boolean.FALSE));
                     configMapOperator.getAsync(namespace, RESOURCE_NAME)
-                            .onComplete(configMap -> {
+                            .onSuccess(configMap -> {
                                 assertThat(configMap, nullValue());
                             });
+                    cruiseControlServer.mockTask(COMPLETED, false);
                 }))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName())))
                 .onComplete(context.succeeding(v -> {
@@ -93,6 +93,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
                     assertStatusHasProgressField(getKafkaRebalanceStatus());
                     assertConfigMapHasProgressFields(configMapOperator, false, true, false, true);
+                    cruiseControlServer.mockTask(IN_EXECUTION, false);
                 }))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
                 .onComplete(context.succeeding(v -> {
@@ -100,6 +101,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                     assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.Rebalancing);
                     assertStatusHasProgressField(getKafkaRebalanceStatus());
                     assertConfigMapHasProgressFields(configMapOperator, true, true, true, true);
+                    cruiseControlServer.mockTask(COMPLETED, false);
                 }))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
                 .onComplete(context.succeeding(v -> {
@@ -115,10 +117,8 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
      *  Test "Warning" is propagated to `KafkaRebalance` condition when Cruise Control REST API cannot be reached.
      */
     @Test
-    public void testWarningConditionPropagationForUnreachableApi(VertxTestContext context) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 1, false);
-        cruiseControlServer.setupCCStateResponse(0, 0, 1, 2);
+    public void testWarningConditionPropagationForUnreachableApi(VertxTestContext context) {
+        cruiseControlServer.mockTask(COMPLETED, false);
 
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -132,6 +132,8 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                 .onComplete(context.succeeding(v -> {
                     // Check resource moved from New to ProposalReady state.
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+
+                    cruiseControlServer.mockTask(IN_EXECUTION, true);
                 }))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
                 .map(v -> {
@@ -159,6 +161,8 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                     assertThat(warningCondition1.getReason(), is(warningCondition2.getReason()));
                     assertThat(warningCondition1.getMessage(), is(warningCondition2.getMessage()));
                     assertThat(warningCondition1.getLastTransitionTime(), is(warningCondition2.getLastTransitionTime()));
+
+                    cruiseControlServer.mockTask(COMPLETED, false);
                 })))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
                 .onComplete(context.succeeding(v -> {
@@ -177,13 +181,11 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
     }
 
     /**
-     *  Test "Warning" is propagated to `KafkaRebalance` condition when Executor State has no ongoing task.
+     *  Test "Warning" is propagated to `KafkaRebalance` condition when executed task hasn't started.
      */
     @Test
-    public void testWarningConditionPropagationForNonExecutingState(VertxTestContext context) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(1, CruiseControlEndpoints.REBALANCE, "true");
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0, false);
-        cruiseControlServer.setupCCStateResponse(0, 0, null, 0);
+    public void testWarningConditionPropagationForNonExecutingState(VertxTestContext context) {
+        cruiseControlServer.mockTask(ACTIVE, false);
 
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -197,11 +199,13 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                 .onComplete(context.succeeding(v -> {
                     // Check resource moved from New to PendingProposal state.
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.PendingProposal);
+                    cruiseControlServer.mockTask(COMPLETED, false);
                 }))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
                 .onComplete(context.succeeding(v -> {
                     // Check resource moved from PendingProposal to ProposalReady state.
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                    cruiseControlServer.mockTask(COMPLETED_WITH_ERROR, false);
                 }))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
                 .onComplete(context.succeeding(v -> {
@@ -221,10 +225,8 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
      *  Test progress fields of `KafkaRebalance` resource and ConfigMap after rebalance failure.
      */
     @Test
-    public void testProgressFieldsOnRebalanceFailure(VertxTestContext context) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
-        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0, true);
-        cruiseControlServer.setupCCStateResponse(0, 1, null, 0);
+    public void testProgressFieldsOnRebalanceFailure(VertxTestContext context)  {
+        cruiseControlServer.mockTask(COMPLETED, false);
 
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -238,14 +240,18 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                 .onComplete(context.succeeding(v -> {
                     // Check resource moved from New to ProposalReady state.
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                    cruiseControlServer.mockTask(IN_EXECUTION, false);
                 }))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
+                .onComplete(context.succeeding(v -> {
+                    cruiseControlServer.mockTask(COMPLETED_WITH_ERROR, false);
+                }))
                 .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME)))
                 .onComplete(context.succeeding(v -> {
                     // Check resource moved from Rebalancing to NotReady state.
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.NotReady);
                     assertStatusHasProgressField(getKafkaRebalanceStatus());
-                    assertConfigMapHasProgressFields(configMapOperator, false, true, false, true);
+                    assertConfigMapHasProgressFields(configMapOperator, false, true, true, true);
                     checkpoint.flag();
                 }));
     }

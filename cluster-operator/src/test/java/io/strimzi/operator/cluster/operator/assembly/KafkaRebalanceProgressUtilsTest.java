@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceProgressUtils.estimateTimeToCompletionInMinutes;
 import static org.hamcrest.CoreMatchers.is;
@@ -17,7 +17,7 @@ public class KafkaRebalanceProgressUtilsTest {
 
     @Test
     public void testEstimateTimeToCompletionInMinutes() {
-        LocalDateTime currentTime = LocalDateTime.now();
+        ZonedDateTime currentTime = ZonedDateTime.now();
 
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minusSeconds(1), currentTime, 1000, 10), is(1));
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minusSeconds(60), currentTime, 1000, 10), is(99));
