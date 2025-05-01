@@ -367,7 +367,7 @@ spec:
   # ...
 ----
 
-.. Delete the unused PVCs:
+.. Delete the unused PVCs.
 +
 PVCs are named using the format `data-<id>-<kafka_cluster_name>-kafka-<pod_id>`. 
 You can list them using:
@@ -390,5 +390,5 @@ NOTE: Deleting a PVC removes the underlying storage unless `deleteClaim: false` 
 +
 [source,shell]
 ----
-kubectl delete pod helper-pod
+kubectl delete pod helper-pod -n my-project
 ----
