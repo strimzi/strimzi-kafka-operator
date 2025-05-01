@@ -134,17 +134,19 @@ public class OpenSslCertManager implements CertManager {
     /**
      * Add basic constraints and subject alt names section to the provided openssl configuration file
      *
-     * @param sbj subject information
-     *
+     * @param sbj      subject information
+     * @param needsAki if true adds AKI (authorityKeyIdentifier)
      * @return openssl configuration file with subject alt names added
-     *
-     * @throws IOException  Throws IOException when IO operations fail
+     * @throws IOException throws IOException when writing to the file fails
      */
-    private Path buildConfigFile(Subject sbj, boolean isCa) throws IOException {
+    private Path buildConfigFile(Subject sbj, boolean isCa, boolean needsAki) throws IOException {
         Path sna = createDefaultConfig();
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna.toFile(), true), StandardCharsets.UTF_8))) {
             if (isCa) {
                 out.append("basicConstraints = critical,CA:true,pathlen:0\n");
+            }
+            if (needsAki) {
+                out.append("authorityKeyIdentifier = keyid,issuer\n");
             }
             if (sbj != null) {
                 if (sbj.hasSubjectAltNames()) {
@@ -282,7 +284,7 @@ public class OpenSslCertManager implements CertManager {
             }
 
             csrFile = Files.createTempFile(null, null);
-            sna = buildConfigFile(subject, true);
+            sna = buildConfigFile(subject, true, false);
             new OpensslArgs("openssl", "req")
                     .opt("-new")
                     .optArg("-config", sna, true)
@@ -468,7 +470,7 @@ public class OpenSslCertManager implements CertManager {
         try {
             if (subject.hasSubjectAltNames()) {
                 // subject alt names need to be in an openssl configuration file
-                sna = buildConfigFile(subject, false);
+                sna = buildConfigFile(subject, false, false);
                 cmd.optArg("-config", sna, true).optArg("-extensions", "v3_req");
             }
 
@@ -532,7 +534,7 @@ public class OpenSslCertManager implements CertManager {
             if (sbj.hasSubjectAltNames()) {
                 cmd.optArg("-extensions", "v3_req");
                 // subject alt names need to be in an openssl configuration file
-                sna = buildConfigFile(sbj, false);
+                sna = buildConfigFile(sbj, false, true);
                 cmd.optArg("-extfile", sna, true);
             }
 
@@ -578,7 +580,7 @@ public class OpenSslCertManager implements CertManager {
      * Helper for building arg lists and environments.
      * The environment is used so that the config file can be parameterised for things like basic constraints.
      * But it's still necessary to use dynamically generated configs for specifying SANs
-     * (see {@link OpenSslCertManager#buildConfigFile(Subject, boolean)}).
+     * (see {@link OpenSslCertManager#buildConfigFile(Subject, boolean, boolean)}).
      */
     private static class OpensslArgs {
         ProcessBuilder pb = new ProcessBuilder();
