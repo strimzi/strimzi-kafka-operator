@@ -89,10 +89,16 @@ If you need to update the Kafka bridge to newer version, you should do it with f
 
 After releasing a RC, we need to run the following System Tests pipelines:
 
-* helm-acceptance
-* upgrade
+* helm-acceptance (only one time by setting the latest supported Kafka version)
+* upgrade (only one time by setting the latest supported Kafka version)
 * regression (multiple times, one for each supported Kafka version)
 * feature-gates-regression (multiple times, one for each supported Kafka version)
+
+Run them manually in Azure pipelines:
+
+* Select the release branch from the list
+* Set the "Release Version" (i.e. `0.45.0-rc1`)
+* Set the "Kafka Version" (i.e. `3.9.0`)
 
 ## Rebuild container image for base image CVEs
 
