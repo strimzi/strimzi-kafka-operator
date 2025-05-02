@@ -233,7 +233,7 @@ public class MockCruiseControl {
      *                   This determines whether the state response should reflect an active,
      *                   an ongoing execution, or a completed task.
      */
-    public void mockUserTasksEndpoint(CruiseControlUserTaskStatus taskStatus) {
+    private void mockUserTasksEndpoint(CruiseControlUserTaskStatus taskStatus) {
         List<Header> authHeader = List.of(AUTH_HEADER);
         for (boolean verbose : List.of(false, true)) {
             HttpRequest request = requestMatcher(authHeader, CruiseControlEndpoints.USER_TASKS, "true", String.valueOf(verbose));

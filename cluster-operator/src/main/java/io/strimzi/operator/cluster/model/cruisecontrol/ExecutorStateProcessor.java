@@ -149,7 +149,7 @@ public class ExecutorStateProcessor {
 
         // Validate the date format
         if (dateString == null || dateString.isEmpty()) {
-            throw new IllegalArgumentException("Invalid date string.");
+            throw new IllegalArgumentException("Date string is null or empty.");
         }
         // Parse the date-time string in ISO 8601 format
         OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateString);

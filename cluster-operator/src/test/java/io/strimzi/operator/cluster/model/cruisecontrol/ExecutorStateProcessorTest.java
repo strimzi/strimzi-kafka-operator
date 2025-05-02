@@ -21,6 +21,11 @@ public class ExecutorStateProcessorTest {
     private static final String DEFAULT_TOTAL_DATA_TO_MOVE = "1000";
     private static final String DEFAULT_TRIGGERED_TASK_REASON = "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T19:41:27Z)";
 
+    private static final String STATE_KEY = "state";
+    private static final String FINISHED_DATA_MOVEMENT_KEY = "finishedDataMovement";
+    private static final String TOTAL_DATA_TO_MOVE_KEY = "totalDataToMove";
+    private static final String TRIGGERED_TASK_REASON =  "triggeredTaskReason";
+
     private static ObjectNode createExecutorState(Map<String, String> executorState) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode objectNode = objectMapper.createObjectNode();
@@ -32,12 +37,22 @@ public class ExecutorStateProcessorTest {
         return objectNode;
     }
 
+    private static ObjectNode createExecutorState(String finishedDataMovement, String totalDataToMove, String triggeredTaskReason) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode objectNode = objectMapper.createObjectNode();
+        objectNode.put(FINISHED_DATA_MOVEMENT_KEY, finishedDataMovement);
+        objectNode.put(TOTAL_DATA_TO_MOVE_KEY, totalDataToMove);
+        objectNode.put(TRIGGERED_TASK_REASON, triggeredTaskReason);
+        return objectNode;
+    }
+
+
     @Test
     public void testVerifyRebalancingState() throws Exception {
-        JsonNode es0 = createExecutorState(Map.of("state", ExecutorState.NO_TASK_IN_PROGRESS.toString()));
+        JsonNode es0 = createExecutorState(Map.of(STATE_KEY, ExecutorState.NO_TASK_IN_PROGRESS.toString()));
         assertThrows(IllegalStateException.class, () -> ExecutorState.verifyRebalancingState(es0));
 
-        JsonNode es1 = createExecutorState(Map.of("state", ExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString()));
+        JsonNode es1 = createExecutorState(Map.of(STATE_KEY, ExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString()));
         ExecutorState.verifyRebalancingState(es1);
 
         JsonNode es2 = createExecutorState(Map.of("", ""));
@@ -46,15 +61,11 @@ public class ExecutorStateProcessorTest {
 
     @Test
     public void testGetFinishedDataMovement() throws Exception {
-        JsonNode es0 = createExecutorState(Map.of("finishedDataMovement",  "50",
-                "totalDataToMove",  DEFAULT_TOTAL_DATA_TO_MOVE,
-                "triggeredTaskReason", DEFAULT_TRIGGERED_TASK_REASON));
+        JsonNode es0 = createExecutorState("50", DEFAULT_TOTAL_DATA_TO_MOVE, DEFAULT_TRIGGERED_TASK_REASON);
         assertThat(ExecutorStateProcessor.getFinishedDataMovement(es0), is(50));
 
         // Test missing field value is zero
-        JsonNode es1 = createExecutorState(Map.of("finishedDataMovement",  "",
-                "totalDataToMove",  DEFAULT_TOTAL_DATA_TO_MOVE,
-                "triggeredTaskReason", DEFAULT_TRIGGERED_TASK_REASON));
+        JsonNode es1 = createExecutorState("", DEFAULT_TOTAL_DATA_TO_MOVE, DEFAULT_TRIGGERED_TASK_REASON);
         assertThat(ExecutorStateProcessor.getFinishedDataMovement(es1), is(0));
 
         // Test missing field throws NoSuchFieldException
@@ -64,15 +75,11 @@ public class ExecutorStateProcessorTest {
 
     @Test
     public void testGetTotalDataToMove() throws Exception {
-        JsonNode es0 = createExecutorState(Map.of("finishedDataMovement",  DEFAULT_FINISHED_DATA_MOVEMENT,
-                "totalDataToMove",  "10000",
-                "triggeredTaskReason", DEFAULT_TRIGGERED_TASK_REASON));
+        JsonNode es0 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, "10000", DEFAULT_TRIGGERED_TASK_REASON);
         assertThat(ExecutorStateProcessor.getTotalDataToMove(es0), is(10000));
 
         // Test missing field value is zero
-        JsonNode es1 = createExecutorState(Map.of("finishedDataMovement",  DEFAULT_FINISHED_DATA_MOVEMENT,
-                "totalDataToMove",  "",
-                "triggeredTaskReason", DEFAULT_TRIGGERED_TASK_REASON));
+        JsonNode es1 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, "", DEFAULT_TRIGGERED_TASK_REASON);
         assertThat(ExecutorStateProcessor.getTotalDataToMove(es1), is(0));
 
         // Test missing field throws NoSuchFieldException
@@ -82,38 +89,31 @@ public class ExecutorStateProcessorTest {
 
     @Test
     public void testGetTaskStartTime() throws Exception {
-        JsonNode es0 = createExecutorState(Map.of("finishedDataMovement", DEFAULT_FINISHED_DATA_MOVEMENT,
-                "totalDataToMove", DEFAULT_TOTAL_DATA_TO_MOVE,
-                "triggeredTaskReason", "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T19:41:27Z)"));
+        JsonNode es0 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE,
+                "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T19:41:27Z)");
         assertThat(ExecutorStateProcessor.getTaskStartTime(es0).toString(), is("2024-11-15T19:41:27"));
 
-        JsonNode es1 = createExecutorState(Map.of("finishedDataMovement", DEFAULT_FINISHED_DATA_MOVEMENT,
-                "totalDataToMove", DEFAULT_TOTAL_DATA_TO_MOVE,
-                "triggeredTaskReason", "(Client: 172.17.0.1, Date: 2024-11-10T23:25:27Z)"));
+        JsonNode es1 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE,
+                "(Client: 172.17.0.1, Date: 2024-11-10T23:25:27Z)");
         assertThat(ExecutorStateProcessor.getTaskStartTime(es1).toString(), is("2024-11-10T23:25:27"));
 
         // Test missing date-string fails
-        JsonNode es2 = createExecutorState(Map.of("finishedDataMovement", DEFAULT_FINISHED_DATA_MOVEMENT,
-                "totalDataToMove", DEFAULT_TOTAL_DATA_TO_MOVE,
-                "triggeredTaskReason", ""));
+        JsonNode es2 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE, "");
         assertThrows(IllegalArgumentException.class, () -> ExecutorStateProcessor.getTaskStartTime(es2));
 
         // Test date-string in a non-UTC timezone fails
-        JsonNode es3 = createExecutorState(Map.of("finishedDataMovement", DEFAULT_FINISHED_DATA_MOVEMENT,
-                "totalDataToMove", DEFAULT_TOTAL_DATA_TO_MOVE,
-                "triggeredTaskReason", "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T20:41:27+01:00)"));
+        JsonNode es3 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE,
+                "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T20:41:27+01:00)");
         assertThrows(IllegalArgumentException.class, () -> ExecutorStateProcessor.getTaskStartTime(es3));
 
         // Test malformed date-string fails
-        JsonNode es4 = createExecutorState(Map.of("finishedDataMovement", DEFAULT_FINISHED_DATA_MOVEMENT,
-                "totalDataToMove", DEFAULT_TOTAL_DATA_TO_MOVE,
-                "triggeredTaskReason", "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T20:41:2"));
+        JsonNode es4 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE,
+                "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T20:41:2");
         assertThrows(IllegalArgumentException.class, () -> ExecutorStateProcessor.getTaskStartTime(es4));
 
         // Test missing date-string fails
-        JsonNode es5 = createExecutorState(Map.of("finishedDataMovement", DEFAULT_FINISHED_DATA_MOVEMENT,
-                "totalDataToMove", DEFAULT_TOTAL_DATA_TO_MOVE,
-                "triggeredTaskReason", "No reason provided (Client: 172.17.0.1)"));
+        JsonNode es5 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE,
+                "No reason provided (Client: 172.17.0.1)");
         assertThrows(IllegalArgumentException.class, () -> ExecutorStateProcessor.getTaskStartTime(es5));
 
         // Test missing field throws NoSuchFieldException

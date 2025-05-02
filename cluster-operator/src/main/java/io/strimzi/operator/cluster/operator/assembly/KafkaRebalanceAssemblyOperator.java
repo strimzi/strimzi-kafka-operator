@@ -337,7 +337,7 @@ public class KafkaRebalanceAssemblyOperator
 
         return configMapOperator.getAsync(configMapNamespace, configMapName)
                 .compose(existingConfigMap -> {
-                    ConfigMap desiredConfigMap = desiredStatusAndMap.getLoadMap();
+                    ConfigMap desiredConfigMap = desiredStatusAndMap.getRebalanceConfigMap();
                     KafkaRebalanceStatus desiredStatus = desiredStatusAndMap.getStatus();
 
                     if (existingConfigMap == null && desiredConfigMap == null) {
@@ -346,7 +346,7 @@ public class KafkaRebalanceAssemblyOperator
 
                     if (existingConfigMap != null) {
                         if (desiredConfigMap == null) {
-                            desiredStatusAndMap.setLoadMap(existingConfigMap);
+                            desiredStatusAndMap.setRebalanceConfigMap(existingConfigMap);
                             desiredConfigMap = existingConfigMap;
                         } else {
                             // Ensure desiredConfigMap retains broker load information if it exists.
@@ -398,7 +398,7 @@ public class KafkaRebalanceAssemblyOperator
                     .compose(desiredStatusAndMap -> {
                         KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(kafkaRebalance);
                         return configMapOperator.reconcile(reconciliation, kafkaRebalance.getMetadata().getNamespace(),
-                                        kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadMap())
+                                        kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getRebalanceConfigMap())
                                 .onComplete(ignoredConfigMapResult -> {
                                     KafkaRebalanceStatus kafkaRebalanceStatus = updateStatus(kafkaRebalance, desiredStatusAndMap.getStatus(), null);
                                     if (kafkaRebalance.getStatus() != null
@@ -642,27 +642,27 @@ public class KafkaRebalanceAssemblyOperator
      */
     static class MapAndStatus<T, K> {
 
-        T loadMap;
+        T rebalanceConfigMap;
         K status;
 
-        public T getLoadMap() {
-            return loadMap;
+        public T getRebalanceConfigMap() {
+            return rebalanceConfigMap;
         }
 
         public K getStatus() {
             return status;
         }
 
-        public void setLoadMap(T loadMap) {
-            this.loadMap = loadMap;
+        public void setRebalanceConfigMap(T rebalanceConfigMap) {
+            this.rebalanceConfigMap = rebalanceConfigMap;
         }
 
         public void setStatus(K status) {
             this.status = status;
         }
 
-        public MapAndStatus(T loadMap, K status) {
-            this.loadMap = loadMap;
+        public MapAndStatus(T rebalanceConfigMap, K status) {
+            this.rebalanceConfigMap = rebalanceConfigMap;
             this.status = status;
         }
     }
@@ -713,7 +713,7 @@ public class KafkaRebalanceAssemblyOperator
         conditions.add(StatusUtils.buildRebalanceCondition(cruiseControlState.toString()));
         conditions.addAll(validation);
         MapAndStatus<ConfigMap, Map<String, Object>> optimizationProposalMapAndStatus = processOptimizationProposal(kafkaRebalance, proposalJson);
-        return new MapAndStatus<>(optimizationProposalMapAndStatus.getLoadMap(), new KafkaRebalanceStatusBuilder()
+        return new MapAndStatus<>(optimizationProposalMapAndStatus.getRebalanceConfigMap(), new KafkaRebalanceStatusBuilder()
                 .withSessionId(sessionID)
                 .withConditions(conditions)
                 .withOptimizationResult(optimizationProposalMapAndStatus.getStatus())

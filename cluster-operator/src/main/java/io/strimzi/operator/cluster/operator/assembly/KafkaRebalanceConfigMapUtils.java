@@ -15,7 +15,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 import io.vertx.core.Future;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Map;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.IN_EXECUTION;
@@ -38,13 +38,13 @@ public class KafkaRebalanceConfigMapUtils {
      * Updates the given KafkaRebalance ConfigMap with progress fields based on the progress of the Kafka rebalance operation.
      *
      * @param state         The current state of the KafkaRebalance resource (e.g., ProposalReady, Rebalancing, Stopped, etc.).
-     * @param taskStartDate The date time the task started represented as a ZonedDateTime object
+     * @param taskStartTime The time the task started represented as an Instant object
      * @param executorState The executor state information in JSON format, which is used to calculate progress fields
      *                      in the Rebalancing state.
      * @param configMap     The ConfigMap to be updated with progress information.
      */
     /* test */ static void updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState state,
-                                                                      ZonedDateTime taskStartDate,
+                                                                      Instant taskStartTime,
                                                                       JsonNode executorState,
                                                                       ConfigMap configMap) {
         Map<String, String> data = configMap != null ? configMap.getData() : null;
@@ -60,8 +60,8 @@ public class KafkaRebalanceConfigMapUtils {
                 int finishedDataMovement = ExecutorStateProcessor.getFinishedDataMovement(executorState);
 
                 int estimatedTimeToCompletion = KafkaRebalanceProgressUtils.estimateTimeToCompletionInMinutes(
-                        taskStartDate,
-                        ZonedDateTime.now(),
+                        taskStartTime,
+                        Instant.now(),
                         totalDataToMove,
                         finishedDataMovement);
 
@@ -122,7 +122,7 @@ public class KafkaRebalanceConfigMapUtils {
                         }
 
                         CruiseControlUserTaskStatus taskStatus = cruiseControlResponse.getTaskStatus();
-                        ZonedDateTime taskStartTime = cruiseControlResponse.getTaskStartTime();
+                        Instant taskStartTime = cruiseControlResponse.getTaskStartTime();
                         if (taskStatus == IN_EXECUTION) {
                             return VertxUtil.completableFutureToVertxFuture(
                                             apiClient.getCruiseControlState(reconciliation,

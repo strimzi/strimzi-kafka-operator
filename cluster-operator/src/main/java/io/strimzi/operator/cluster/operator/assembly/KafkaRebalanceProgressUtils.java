@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 /**
  * Utility class for handling progress fields of KafkaRebalance custom resource
@@ -15,8 +15,8 @@ public class KafkaRebalanceProgressUtils {
     /**
      * Estimates the number of minutes it will take an ongoing partition rebalance to complete.
      *
-     * @param taskStartTime The date time when the task started.
-     * @param currentTime The date time at the moment of the method call.
+     * @param taskStartTime The time when the task started.
+     * @param currentTime The time at the moment of the method call.
      * @param totalDataToMoveInMB The total amount of data that needs to be moved, in megabytes.
      * @param finishedDataMovementInMB The amount of data that has already been moved, in megabytes.
      * @return The estimated time to completion in minutes.
@@ -27,8 +27,8 @@ public class KafkaRebalanceProgressUtils {
      *     - The elapsed time between `taskStartTime` and `currentTime` is zero, making rate calculation impossible.
      *     - The data movement rate is zero, making the time to completion estimation impossible.
      */
-    /* test */ static int estimateTimeToCompletionInMinutes(ZonedDateTime taskStartTime,
-                                                            ZonedDateTime currentTime,
+    /* test */ static int estimateTimeToCompletionInMinutes(Instant taskStartTime,
+                                                            Instant currentTime,
                                                             int totalDataToMoveInMB,
                                                             int finishedDataMovementInMB)
             throws IllegalArgumentException, ArithmeticException {
@@ -48,13 +48,13 @@ public class KafkaRebalanceProgressUtils {
                             taskStartTime, currentTime));
         }
 
-        double rateMBperMinute = ((double) finishedDataMovementInMB / timeElapsed.getSeconds()) * 60;
         if (finishedDataMovementInMB == 0) {
             throw new ArithmeticException("finishedDataMovementInMB is zero, cannot estimate time to completion.");
         }
 
+        float rateMBperMinute = ((float) finishedDataMovementInMB / timeElapsed.getSeconds()) * 60;
         int dataLeftToMoveMB = totalDataToMoveInMB - finishedDataMovementInMB;
-        return (int) (dataLeftToMoveMB / (rateMBperMinute));
+        return Math.round(dataLeftToMoveMB / rateMBperMinute);
     }
 
     /**

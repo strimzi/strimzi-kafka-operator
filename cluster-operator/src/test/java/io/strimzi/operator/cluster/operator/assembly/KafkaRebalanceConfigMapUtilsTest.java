@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY;
@@ -68,7 +67,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
 
     @Test
     public void testProgressFieldsForProposalRebalancingState() throws Exception {
-        ZonedDateTime taskStartTime = ZonedDateTime.now().minusSeconds(2);
+        Instant taskStartTime = Instant.now().minusSeconds(2);
         JsonNode es0 = createExecutorState(Map.of("finishedDataMovement",  "250",
                 "totalDataToMove", "10000"));
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
@@ -83,7 +82,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
 
     @Test
     public void testProgressFieldsForProposalStopped() throws Exception {
-        ZonedDateTime taskStartTime = ZonedDateTime.now().minusSeconds(1);
+        Instant taskStartTime = Instant.now().minusSeconds(1);
         ObjectNode es = createExecutorState(Map.of("finishedDataMovement",  "250",
                 "totalDataToMove", "10000"));
         ConfigMap cm = createKafkaRebalanceConfigMap(Map.of(ESTIMATED_TIME_TO_COMPLETION_KEY, "5",

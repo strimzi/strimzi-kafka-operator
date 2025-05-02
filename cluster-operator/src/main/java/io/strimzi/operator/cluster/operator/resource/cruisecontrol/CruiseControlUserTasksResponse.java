@@ -8,8 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 /**
  * Response to user tasks request
@@ -20,7 +18,7 @@ public class CruiseControlUserTasksResponse extends CruiseControlResponse {
     private static final String START_MS_KEY = "StartMs";
 
     private CruiseControlUserTaskStatus status;
-    private ZonedDateTime taskStartTime;
+    private Instant taskStartTime;
     private boolean isMaxActiveUserTasksReached;
 
     /**
@@ -65,7 +63,7 @@ public class CruiseControlUserTasksResponse extends CruiseControlResponse {
     /**
      * Extracts the task start time from the provided `userTaskJson` JSON object.
      * The task start time is extracted from the "StartMs" field, which contains a
-     * timestamp in of Unix epoch in milliseconds. The timestamp is then parsed into ZonedDateTime object.
+     * timestamp in of Unix epoch in milliseconds. The timestamp is then parsed into Instant object.
      *
      * @param userTaskJson The `JsonNode` object containing the user task json,
      *                      from which the task start time will be extracted.
@@ -75,14 +73,14 @@ public class CruiseControlUserTasksResponse extends CruiseControlResponse {
             // Extract the task start time as Unix epoch in milliseconds
             long taskStartTimeInMilliseconds = userTaskJson.get(START_MS_KEY).asLong();
 
-            this.taskStartTime = Instant.ofEpochMilli(taskStartTimeInMilliseconds).atZone(ZoneId.systemDefault());
+            this.taskStartTime = Instant.ofEpochMilli(taskStartTimeInMilliseconds);
         }
     }
 
     /**
-     * @return start time of user task as date-time string in ISO 8601 format.
+     * @return Start time of user task as an Instant object
      */
-    public ZonedDateTime getTaskStartTime() {
+    public Instant getTaskStartTime() {
         return this.taskStartTime;
     }
 
