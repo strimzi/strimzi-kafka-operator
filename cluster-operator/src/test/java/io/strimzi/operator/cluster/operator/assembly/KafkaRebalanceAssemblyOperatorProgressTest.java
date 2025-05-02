@@ -4,19 +4,21 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
 import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Map;
@@ -44,63 +46,78 @@ import static org.hamcrest.Matchers.nullValue;
 @ExtendWith(VertxExtension.class)
 public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaRebalanceAssemblyOperatorTest  {
 
-    private KafkaRebalanceStatus getKafkaRebalanceStatus() {
-        KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
-        return kafkaRebalance.getStatus();
+    @BeforeEach
+    @Override
+    public void beforeEach(TestInfo testInfo) {
+        super.beforeEach(testInfo);
+
+        // Create Kafka custom resource
+        crdCreateKafka();
+
+        // Create Cruise Control secrets
+        crdCreateCruiseControlSecrets();
+
+        // Create KafkaRebalance custom resource
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
     }
 
-    private record RebalanceConfigMapFields(
+    private record RebalanceConfigMap(
+            boolean configMapExpected,
             boolean containsEstimatedTimeToCompletion,
             boolean containsCompletedByteMovement,
             boolean containsExecutorState,
-            boolean containsBrokerLoadKey
-    ) { }
+            boolean containsBrokerLoad
+    ) {
+        void assertConfigMapFields(ConfigMap configMap) {
+            if (configMapExpected) {
+                assertThat(configMap, notNullValue());
+                Map<String, String> fields = configMap.getData();
+                assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(containsEstimatedTimeToCompletion));
+                assertThat(fields.containsKey(COMPLETED_BYTE_MOVEMENT_KEY), is(containsCompletedByteMovement));
+                assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(containsExecutorState));
+                assertThat(fields.containsKey(BROKER_LOAD_KEY), is(containsBrokerLoad));
+            } else {
+                assertThat(configMap, nullValue());
+            }
+        }
 
-    private static final Map<KafkaRebalanceState, Boolean> CONFIG_MAP_EXISTS_DURING_STATE = Map.of(
-            New, false,
-            PendingProposal, false,
-            ProposalReady, true,
-            Rebalancing, true,
-            Ready, true,
-            NotReady, true
-    );
-
-    private static final Map<KafkaRebalanceState, RebalanceConfigMapFields> STATE_TO_EXPECTED_CONFIG_MAP_FIELDS = Map.of(
-            New, new RebalanceConfigMapFields(false, false, false, false),
-            PendingProposal, new RebalanceConfigMapFields(false, false, false, false),
-            ProposalReady, new RebalanceConfigMapFields(false, true, false, true),
-            Rebalancing, new RebalanceConfigMapFields(true, true, true, true),
-            Ready, new RebalanceConfigMapFields(true, true, false, true),
-            NotReady, new RebalanceConfigMapFields(false, true, true, true)
-    );
-
-    private Future<Void> verifyKafkaRebalanceStateAndMap(VertxTestContext context, KafkaRebalanceState kafkaRebalanceState, ConfigMapOperator configMapOperator) {
-        assertState(context, client, namespace, RESOURCE_NAME, kafkaRebalanceState);
-
-        // Checks `KafkaRebalance` ConfigMap contains expected fields
-        RebalanceConfigMapFields expectedFields = STATE_TO_EXPECTED_CONFIG_MAP_FIELDS.get(kafkaRebalanceState);
-        return configMapOperator.getAsync(namespace, RESOURCE_NAME)
-                .compose(configMap -> {
-                    if (configMap != null) {
-                        assertThat(CONFIG_MAP_EXISTS_DURING_STATE.get(kafkaRebalanceState), is(true));
-                        assertThat(getKafkaRebalanceStatus().getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(true));
-
-                        Map<String, String> fields = configMap.getData();
-                        assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(expectedFields.containsEstimatedTimeToCompletion));
-                        assertThat(fields.containsKey(COMPLETED_BYTE_MOVEMENT_KEY), is(expectedFields.containsCompletedByteMovement));
-                        assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(expectedFields.containsExecutorState));
-                        assertThat(fields.containsKey(BROKER_LOAD_KEY), is(expectedFields.containsBrokerLoadKey));
-                    } else {
-                        assertThat(CONFIG_MAP_EXISTS_DURING_STATE.get(kafkaRebalanceState), is(false));
-                        assertThat(getKafkaRebalanceStatus().getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(false));
-                    }
-                    return Future.succeededFuture();
-                });
+        void assertConfigMapKeyInStatus(KafkaRebalanceStatus status) {
+            assertThat(status.getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(configMapExpected));
+        }
     }
 
-    private Future<Void> mockTaskAndReconcile(CruiseControlUserTaskStatus taskStatus, boolean stateEndpointFetchError, Reconciliation reconciliation) {
+    private static final Map<KafkaRebalanceState, RebalanceConfigMap> STATE_TO_EXPECTED_CONFIG_MAP_FIELDS = Map.of(
+            New, new RebalanceConfigMap(false, false, false, false, false),
+            PendingProposal, new RebalanceConfigMap(false, false, false, false, false),
+            ProposalReady, new RebalanceConfigMap(true, false, true, false, true),
+            Rebalancing, new RebalanceConfigMap(true, true, true, true, true),
+            Ready, new RebalanceConfigMap(true, true, true, false, true),
+            NotReady, new RebalanceConfigMap(true, false, true, true, true)
+    );
+
+    private KafkaRebalanceStatus getKafkaRebalanceStatus() {
+        return Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get().getStatus();
+    }
+
+    private Future<Void> verifyKafkaRebalanceStateAndConfigMap(VertxTestContext context, KafkaRebalanceState state, ConfigMap configMap) {
+        assertState(context, client, namespace, RESOURCE_NAME, state);
+
+        RebalanceConfigMap expectations = STATE_TO_EXPECTED_CONFIG_MAP_FIELDS.get(state);
+        expectations.assertConfigMapFields(configMap);
+        expectations.assertConfigMapKeyInStatus(getKafkaRebalanceStatus());
+
+        return Future.succeededFuture();
+    }
+
+    private Future<ConfigMap> reconcile(Reconciliation reconciliation) {
+        return  krao.reconcile(reconciliation)
+                .compose(res -> this.supplier.configMapOperations.getAsync(namespace, RESOURCE_NAME));
+    }
+
+    private Future<Void> mockCruiseControlTask(CruiseControlUserTaskStatus taskStatus, boolean stateEndpointFetchError) {
         cruiseControlServer.mockTask(taskStatus, stateEndpointFetchError);
-        return krao.reconcile(reconciliation);
+        return Future.succeededFuture();
     }
 
     /**
@@ -108,25 +125,25 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
      */
     @Test
     public void testProgressFieldsDuringRebalanceLifecycle(VertxTestContext context) {
-        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
-        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
-        crdCreateKafka();
-        crdCreateCruiseControlSecrets();
-
-        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
-        ConfigMapOperator configMapOperator = this.supplier.configMapOperations;
-
         Checkpoint checkpoint = context.checkpoint();
-        cruiseControlServer.mockTask(ACTIVE, false);
-        krao.reconcile(reconciliation)
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, PendingProposal, configMapOperator))
-                .compose(v -> mockTaskAndReconcile(COMPLETED, false, reconciliation))
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, ProposalReady, configMapOperator))
-                .compose(v -> mockTaskAndReconcile(IN_EXECUTION, false, reconciliation))
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, Rebalancing, configMapOperator))
-                .compose(v -> mockTaskAndReconcile(COMPLETED, false, reconciliation))
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, Ready, configMapOperator))
-                .onSuccess(v -> checkpoint.flag())
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
+        mockCruiseControlTask(ACTIVE, false)
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, PendingProposal, res))
+
+                .compose(res -> mockCruiseControlTask(COMPLETED, false))
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, ProposalReady, res))
+
+                .compose(res -> mockCruiseControlTask(IN_EXECUTION, false))
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Rebalancing, res))
+
+                .compose(res -> mockCruiseControlTask(COMPLETED, false))
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Ready, res))
+
+                .onSuccess(res -> checkpoint.flag())
                 .onFailure(context::failNow);
     }
 
@@ -135,30 +152,30 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
      */
     @Test
     public void testWarningConditionPropagationForUnreachableApi(VertxTestContext context) {
-        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
-        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
-        crdCreateKafka();
-        crdCreateCruiseControlSecrets();
-
-        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
-        ConfigMapOperator configMapOperator = this.supplier.configMapOperations;
-
         Checkpoint checkpoint = context.checkpoint();
-        cruiseControlServer.mockTask(COMPLETED, false);
-        krao.reconcile(reconciliation)
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, ProposalReady, configMapOperator))
-                .compose(v -> mockTaskAndReconcile(IN_EXECUTION, false, reconciliation))
-                .compose(v -> mockTaskAndReconcile(IN_EXECUTION, true, reconciliation))
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, Rebalancing, configMapOperator))
-                .map(v -> {
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
+        mockCruiseControlTask(COMPLETED, false)
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, ProposalReady, res))
+
+                .compose(res -> mockCruiseControlTask(IN_EXECUTION, false))
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Rebalancing, res))
+
+                .compose(res -> mockCruiseControlTask(IN_EXECUTION, true))
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Rebalancing, res))
+                .map(res -> {
                     // Test that warning condition was added to resource when Cruise Control API is unreachable.
                     Condition warningCondition1 = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());
                     assertThat(warningCondition1, notNullValue());
                     return warningCondition1;
                 })
-                .compose(warningCondition1 -> mockTaskAndReconcile(IN_EXECUTION, true, reconciliation)
-                        .map(v -> {
-                            verifyKafkaRebalanceStateAndMap(context, Rebalancing, configMapOperator);
+                .compose(warningCondition1 ->
+                         mockCruiseControlTask(IN_EXECUTION, true)
+                        .compose(res -> reconcile(reconciliation))
+                        .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Rebalancing, res))
+                        .onSuccess(v -> {
 
                             // Test that the warning condition was not updated.
                             Condition warningCondition2 = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());
@@ -166,12 +183,11 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                             assertThat(warningCondition1.getMessage(), is(warningCondition2.getMessage()));
                             assertThat(warningCondition1.getLastTransitionTime(), is(warningCondition2.getLastTransitionTime()));
 
-                            cruiseControlServer.mockTask(COMPLETED, false);
-                            return null;
                         }))
-                .compose(v ->  mockTaskAndReconcile(COMPLETED, true, reconciliation))
+                .compose(v ->   mockCruiseControlTask(COMPLETED, false))
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Ready, res))
                 .onSuccess(v -> {
-                    verifyKafkaRebalanceStateAndMap(context, Ready, configMapOperator);
 
                     // Test that warning condition is removed
                     Condition warningCondition2 = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());
@@ -187,23 +203,19 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
      */
     @Test
     public void testWarningConditionPropagationForNonExecutingState(VertxTestContext context) {
-        cruiseControlServer.mockTask(ACTIVE, false);
-
-        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
-        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
-        crdCreateKafka();
-        crdCreateCruiseControlSecrets();
-
-        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
-        ConfigMapOperator configMapOperator = this.supplier.configMapOperations;
-
         Checkpoint checkpoint = context.checkpoint();
-        krao.reconcile(reconciliation)
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, PendingProposal, configMapOperator))
-                .compose(v -> mockTaskAndReconcile(COMPLETED, true, reconciliation))
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, ProposalReady, configMapOperator))
-                .compose(v -> mockTaskAndReconcile(COMPLETED_WITH_ERROR, true, reconciliation))
-                .onSuccess(v -> {
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
+        mockCruiseControlTask(ACTIVE, false)
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, PendingProposal, res))
+
+                .compose(res -> mockCruiseControlTask(COMPLETED, true))
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, ProposalReady, res))
+
+                .compose(res -> mockCruiseControlTask(COMPLETED_WITH_ERROR, true))
+                .compose(res -> reconcile(reconciliation))
+                .onSuccess(res -> {
                     assertState(context, client, namespace, RESOURCE_NAME, Rebalancing);
                     Condition warningCondition = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());
                     assertThat(warningCondition, notNullValue());
@@ -217,24 +229,21 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
      */
     @Test
     public void testProgressFieldsOnRebalanceFailure(VertxTestContext context)  {
-        cruiseControlServer.mockTask(COMPLETED, false);
-
-        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
-        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
-        crdCreateKafka();
-        crdCreateCruiseControlSecrets();
-
-        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
-        ConfigMapOperator configMapOperator = this.supplier.configMapOperations;
-
         Checkpoint checkpoint = context.checkpoint();
-        krao.reconcile(reconciliation)
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, ProposalReady, configMapOperator))
-                .compose(v -> mockTaskAndReconcile(IN_EXECUTION, false, reconciliation))
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, Rebalancing, configMapOperator))
-                .compose(v -> mockTaskAndReconcile(COMPLETED_WITH_ERROR, false, reconciliation))
-                .compose(v -> verifyKafkaRebalanceStateAndMap(context, NotReady, configMapOperator))
-                .onSuccess(v -> checkpoint.flag())
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME);
+        mockCruiseControlTask(COMPLETED, false)
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, ProposalReady, res))
+
+                .compose(res -> mockCruiseControlTask(IN_EXECUTION, false))
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Rebalancing, res))
+
+                .compose(res -> mockCruiseControlTask(COMPLETED_WITH_ERROR, false))
+                .compose(res -> reconcile(reconciliation))
+                .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, NotReady, res))
+
+                .onSuccess(res -> checkpoint.flag())
                 .onFailure(context::failNow);
     }
 }
