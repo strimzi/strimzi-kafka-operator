@@ -57,7 +57,10 @@ leaderElection:
 # https://kubernetes.io/docs/tasks/run-application/configure-pdb/
 podDisruptionBudget:
   enabled: false
-  # The PDB definition only has two attributes to control the availability requirements: minAvailable or maxUnavailable (mutually exclusive).
+  # The PDB definition three attributes to control the availability requirements:
+  # minAvailable or maxUnavailable (mutually exclusive).
+  # unhealthyPodEvictionPolicy
+  #
   # Field maxUnavailable tells how many pods can be down and minAvailable tells how many pods must be running in a cluster.
 
   # The pdb template will check values according to below order
@@ -72,6 +75,7 @@ podDisruptionBudget:
   # If both values are set, the template will use the first one and ignore the second one. currently by default minAvailable is set to 1
   minAvailable: 1
   maxUnavailable:
+  unhealthyPodEvictionPolicy: IfHealthyBudget
 
 # If you are using the grafana dashboard sidecar,
 # you can import some default dashboards here
