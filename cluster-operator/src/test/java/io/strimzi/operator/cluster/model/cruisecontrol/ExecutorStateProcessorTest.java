@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor.ExecutorState;
+import static io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor.FINISHED_DATA_MOVEMENT_KEY;
+import static io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor.TOTAL_DATA_TO_MOVE_KEY;
+import static io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor.TRIGGERED_TASK_REASON_KEY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -22,9 +25,6 @@ public class ExecutorStateProcessorTest {
     private static final String DEFAULT_TRIGGERED_TASK_REASON = "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T19:41:27Z)";
 
     private static final String STATE_KEY = "state";
-    private static final String FINISHED_DATA_MOVEMENT_KEY = "finishedDataMovement";
-    private static final String TOTAL_DATA_TO_MOVE_KEY = "totalDataToMove";
-    private static final String TRIGGERED_TASK_REASON =  "triggeredTaskReason";
 
     private static ObjectNode createExecutorState(Map<String, String> executorState) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -37,15 +37,20 @@ public class ExecutorStateProcessorTest {
         return objectNode;
     }
 
-    private static ObjectNode createExecutorState(String finishedDataMovement, String totalDataToMove, String triggeredTaskReason) {
+    public static ObjectNode createExecutorState(String finishedDataMovement, String totalDataToMove, String triggeredTaskReason) {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.put(FINISHED_DATA_MOVEMENT_KEY, finishedDataMovement);
-        objectNode.put(TOTAL_DATA_TO_MOVE_KEY, totalDataToMove);
-        objectNode.put(TRIGGERED_TASK_REASON, triggeredTaskReason);
+        if (finishedDataMovement != null) {
+            objectNode.put(FINISHED_DATA_MOVEMENT_KEY, finishedDataMovement);
+        }
+        if (totalDataToMove != null) {
+            objectNode.put(TOTAL_DATA_TO_MOVE_KEY, totalDataToMove);
+        }
+        if (triggeredTaskReason != null) {
+            objectNode.put(TRIGGERED_TASK_REASON_KEY, triggeredTaskReason);
+        }
         return objectNode;
     }
-
 
     @Test
     public void testVerifyRebalancingState() throws Exception {
@@ -91,11 +96,11 @@ public class ExecutorStateProcessorTest {
     public void testGetTaskStartTime() throws Exception {
         JsonNode es0 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE,
                 "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T19:41:27Z)");
-        assertThat(ExecutorStateProcessor.getTaskStartTime(es0).toString(), is("2024-11-15T19:41:27"));
+        assertThat(ExecutorStateProcessor.getTaskStartTime(es0).toString(), is("2024-11-15T19:41:27Z"));
 
         JsonNode es1 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE,
                 "(Client: 172.17.0.1, Date: 2024-11-10T23:25:27Z)");
-        assertThat(ExecutorStateProcessor.getTaskStartTime(es1).toString(), is("2024-11-10T23:25:27"));
+        assertThat(ExecutorStateProcessor.getTaskStartTime(es1).toString(), is("2024-11-10T23:25:27Z"));
 
         // Test missing date-string fails
         JsonNode es2 = createExecutorState(DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE, "");

@@ -30,8 +30,8 @@ import static io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState.ProposalR
 import static io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState.Ready;
 import static io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState.Rebalancing;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.COMPLETED_BYTE_MOVEMENT_KEY;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.ESTIMATED_TIME_TO_COMPLETION_KEY;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY;
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.EXECUTOR_STATE_KEY;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.REBALANCE_PROGRESS_CONFIG_MAP_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.ACTIVE;
@@ -73,8 +73,8 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
             if (configMapExpected) {
                 assertThat(configMap, notNullValue());
                 Map<String, String> fields = configMap.getData();
-                assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_KEY), is(containsEstimatedTimeToCompletion));
-                assertThat(fields.containsKey(COMPLETED_BYTE_MOVEMENT_KEY), is(containsCompletedByteMovement));
+                assertThat(fields.containsKey(ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY), is(containsEstimatedTimeToCompletion));
+                assertThat(fields.containsKey(COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY), is(containsCompletedByteMovement));
                 assertThat(fields.containsKey(EXECUTOR_STATE_KEY), is(containsExecutorState));
                 assertThat(fields.containsKey(BROKER_LOAD_KEY), is(containsBrokerLoad));
             } else {

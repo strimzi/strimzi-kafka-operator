@@ -6,8 +6,7 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -21,9 +20,9 @@ public class ExecutorStateProcessor {
     // Regular expression pattern to match the date-time in ISO 8601 format (UTC, rounded to the second).
     private static final Pattern ISO_8601_UTC_TIMESTAMP_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z");
 
-    private static final String FINISHED_DATA_MOVEMENT_KEY = "finishedDataMovement";
-    private static final String TOTAL_DATA_TO_MOVE_KEY = "totalDataToMove";
-    private static final String TRIGGERED_TASK_REASON_KEY = "triggeredTaskReason";
+    /* test */ static final String FINISHED_DATA_MOVEMENT_KEY = "finishedDataMovement";
+    /* test */ static final String TOTAL_DATA_TO_MOVE_KEY = "totalDataToMove";
+    /* test */ static final String TRIGGERED_TASK_REASON_KEY = "triggeredTaskReason";
 
     /**
      * Represents the state that the Cruise Control Executor can be in at a moment in time.
@@ -133,13 +132,16 @@ public class ExecutorStateProcessor {
     /**
      * Extracts the task start time from the provided `executorJson` JSON object.
      * The task start time is extracted from the "triggeredTaskReason" field, which contains a
-     * timestamp in ISO 8601 format. The timestamp is then parsed into LocalDateTime object.
+     * timestamp in ISO 8601 format. The timestamp is then parsed into Instant object.
+     *
+     * Update this method to extract the task start time from `StartMs` field once this issue is resolved:
+     * https://github.com/linkedin/cruise-control/issues/2271
      *
      * @param executorJson The `JsonNode` object containing the state of the executor,
      *                      from which the task start time will be extracted.
-     * @return The task start time as a LocalDateTime object.
+     * @return The task start time as an Instant object.
      */
-    public static LocalDateTime getTaskStartTime(JsonNode executorJson) {
+    public static Instant getTaskStartTime(JsonNode executorJson) {
         if (!executorJson.has(TRIGGERED_TASK_REASON_KEY)) {
             throw new IllegalArgumentException(String.format("Executor State does not contain required '%s' field.", TRIGGERED_TASK_REASON_KEY));
         }
@@ -151,9 +153,8 @@ public class ExecutorStateProcessor {
         if (dateString == null || dateString.isEmpty()) {
             throw new IllegalArgumentException("Date string is null or empty.");
         }
-        // Parse the date-time string in ISO 8601 format
-        OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateString);
-        return offsetDateTime.toLocalDateTime();
+
+        return Instant.parse(dateString);
     }
 
     /**
