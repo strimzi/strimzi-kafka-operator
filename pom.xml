@@ -87,6 +87,17 @@
         </developer>
     </developers>
 
+    <repositories>
+        <repository>
+            <!--
+            We use the Kafka staging repository while we use the RC releases of Kafka 3.9.1. This should be removed once
+            we move to the final release of Kafka 3.9.1.
+            -->
+            <id>apache-staging</id>
+            <url>https://repository.apache.org/content/groups/staging/</url>
+        </repository>
+    </repositories>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
@@ -132,7 +143,7 @@
         <fasterxml.jackson-jaxrs.version>2.16.2</fasterxml.jackson-jaxrs.version>
         <vertx.version>4.5.13</vertx.version>
         <vertx-junit5.version>4.5.13</vertx-junit5.version>
-        <kafka.version>3.9.0</kafka.version>
+        <kafka.version>3.9.1</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <zookeeper.version>3.8.4</zookeeper.version>
         <snappy.version>1.1.10.5</snappy.version>
