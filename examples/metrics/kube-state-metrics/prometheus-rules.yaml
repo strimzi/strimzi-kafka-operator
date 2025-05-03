@@ -1,0 +1,88 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: strimzi-kube-state-metrics
+spec:
+  groups:
+    - name: strimzi-kube-state-metrics
+      rules:
+        - alert: KafkaTopicNotReady
+          expr: strimzi_kafka_topic_resource_info{ready!="True"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaTopic {{ $labels.topicName }} is not ready"
+        - alert: KafkaTopicDeprecated
+          expr: strimzi_kafka_topic_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaTopic {{ $labels.topicName }} contains a deprecated configuration"
+        - alert: KafkaUserNotReady
+          expr: strimzi_kafka_user_resource_info{ready!="True"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaUser {{ $labels.username }} is not ready"
+        - alert: KafkaUserDeprecated
+          expr: strimzi_kafka_user_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaUser {{ $labels.username }} contains a deprecated configuration"
+        - alert: KafkaNotReady
+          expr: strimzi_kafka_resource_info{ready!="True"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi Kafka {{ $labels.name }} using {{ $labels.kafka_version }} is not ready"
+        - alert: KafkaDeprecated
+          expr: strimzi_kafka_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi Kafka {{ $labels.name }} contains a deprecated configuration"
+        # KafkaNodePool is not having a ready status as this is implemented via Kafka resource
+        - alert: KafkaNodePoolDeprecated
+          expr: strimzi_kafka_node_pool_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaNodePool {{ $labels.name }} contains a deprecated configuration"
+        # StrimziPodSet is not having any further information as it is an internal resource and doesn't get operated by the user
+        - alert: KafkaRebalanceNotReady
+          expr: strimzi_kafka_rebalance_resource_info{ready!="True",template!="true"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaRebalance {{ $labels.name }} is not ready"
+        - alert: KafkaRebalanceProposalPending
+          expr: strimzi_kafka_rebalance_resource_info{ready="True",template!="true",proposal_ready="True"}
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaRebalance {{ $labels.name }} is in proposal pending state and waits for approval for more than 1h."
+        - alert: KafkaRebalanceRebalancing
+          expr: strimzi_kafka_rebalance_resource_info{ready="True",template!="true",rebalancing="True"}
+          for: 1h
+          labels:
+            severity: info
+          annotations:
+            message: "Strimzi KafkaRebalance {{ $labels.name }} is taking longer than 1h."
+        - alert: KafkaRebalanceDeprecated
+          expr: strimzi_kafka_rebalance_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaRebalance {{ $labels.name }} contains a deprecated configuration"

@@ -30,7 +30,6 @@ rules:
   - kafkanodepools
   - kafkaconnects
   - kafkaconnectors
-  - kafkamirrormakers
   - kafkabridges
   - kafkamirrormaker2s
   - kafkarebalances
@@ -49,7 +48,6 @@ rules:
   - kafkanodepools/status
   - kafkaconnects/status
   - kafkaconnectors/status
-  - kafkamirrormakers/status
   - kafkabridges/status
   - kafkamirrormaker2s/status
   - kafkarebalances/status
@@ -60,7 +58,7 @@ rules:
 - apiGroups:
   - "core.strimzi.io"
   resources:
-  # The cluster operator uses StrimziPodSets to manage the Kafka and ZooKeeper pods
+  # The cluster operator uses StrimziPodSets to manage the Kafka, Kafka Connect, and Kafka MirrorMaker 2 pods
   - strimzipodsets
   verbs:
   - get

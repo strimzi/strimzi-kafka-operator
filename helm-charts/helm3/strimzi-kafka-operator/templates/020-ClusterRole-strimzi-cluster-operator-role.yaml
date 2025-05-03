@@ -69,8 +69,6 @@ rules:
   resources:
     # The cluster operator needs to access and manage deployments to run deployment based Strimzi components
   - deployments
-    # The cluster operator needs to access and manage stateful sets to run stateful sets based Strimzi components
-  - statefulsets
     # The cluster operator needs to access replica-sets to manage Strimzi components and to determine error states
   - replicasets
   verbs:

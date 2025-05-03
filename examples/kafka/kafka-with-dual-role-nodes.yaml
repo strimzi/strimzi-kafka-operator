@@ -1,12 +1,13 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaNodePool
 metadata:
-  name: pool-a
+  name: dual-role
   labels:
     strimzi.io/cluster: my-cluster
 spec:
   replicas: 3
   roles:
+    - controller
     - broker
   storage:
     type: jbod
@@ -15,25 +16,7 @@ spec:
         type: persistent-claim
         size: 100Gi
         deleteClaim: false
----
-
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaNodePool
-metadata:
-  name: pool-b
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  replicas: 3
-  roles:
-    - broker
-  storage:
-    type: jbod
-    volumes:
-      - id: 0
-        type: persistent-claim
-        size: 200Gi
-        deleteClaim: false
+        kraftMetadata: shared
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
@@ -42,9 +25,11 @@ metadata:
   name: my-cluster
   annotations:
     strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
-    version: 3.9.0
+    version: 4.0.0
+    metadataVersion: 4.0-IV3
     listeners:
       - name: plain
         port: 9092
@@ -60,13 +45,6 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-      inter.broker.protocol.version: "3.9"
-  zookeeper:
-    replicas: 3
-    storage:
-      type: persistent-claim
-      size: 100Gi
-      deleteClaim: false
   entityOperator:
     topicOperator: {}
     userOperator: {}
