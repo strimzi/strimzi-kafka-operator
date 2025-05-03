@@ -1,36 +1,21 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaNodePool
 metadata:
-  name: controller
+  name: dual-role
   labels:
     strimzi.io/cluster: my-cluster
 spec:
   replicas: 3
   roles:
     - controller
-  storage:
-    type: jbod
-    volumes:
-      - id: 0
-        type: ephemeral
-        kraftMetadata: shared
----
-
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaNodePool
-metadata:
-  name: broker
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  replicas: 3
-  roles:
     - broker
   storage:
     type: jbod
     volumes:
       - id: 0
-        type: ephemeral
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
         kraftMetadata: shared
 ---
 
@@ -63,25 +48,3 @@ spec:
   entityOperator:
     topicOperator: {}
     userOperator: {}
-  cruiseControl:
-    metricsConfig:
-      type: jmxPrometheusExporter
-      valueFrom:
-        configMapKeyRef:
-          name: cruise-control-metrics
-          key: metrics-config.yml
----
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: cruise-control-metrics
-  labels:
-    app: strimzi
-data:
-  metrics-config.yml: |
-    # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
-    lowercaseOutputName: true
-    rules:
-    - pattern: kafka.cruisecontrol<name=(.+)><>(\w+)
-      name: kafka_cruisecontrol_$1_$2
-      type: GAUGE

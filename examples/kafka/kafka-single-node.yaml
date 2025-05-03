@@ -1,32 +1,13 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaNodePool
 metadata:
-  name: controller
+  name: dual-role
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  replicas: 3
+  replicas: 1
   roles:
     - controller
-  storage:
-    type: jbod
-    volumes:
-      - id: 0
-        type: persistent-claim
-        size: 100Gi
-        kraftMetadata: shared
-        deleteClaim: false
----
-
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaNodePool
-metadata:
-  name: broker
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  replicas: 3
-  roles:
     - broker
   storage:
     type: jbod
@@ -34,8 +15,8 @@ spec:
       - id: 0
         type: persistent-claim
         size: 100Gi
-        kraftMetadata: shared
         deleteClaim: false
+        kraftMetadata: shared
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
@@ -50,20 +31,20 @@ spec:
     version: 4.0.0
     metadataVersion: 4.0-IV3
     listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
       - name: tls
         port: 9093
         type: internal
         tls: true
-        authentication:
-          type: tls
-    authorization:
-      type: simple
     config:
-      offsets.topic.replication.factor: 3
-      transaction.state.log.replication.factor: 3
-      transaction.state.log.min.isr: 2
-      default.replication.factor: 3
-      min.insync.replicas: 2
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 1
+      min.insync.replicas: 1
   entityOperator:
     topicOperator: {}
     userOperator: {}
