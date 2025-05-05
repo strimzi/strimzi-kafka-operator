@@ -261,6 +261,15 @@ public class KafkaResources {
     }
 
     /**
+     * Returns the name of the Entity User Operator certificate and key for a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Entity Operator {@code Secret}.
+     */
+    public static String entityUserOperatorKeyName(String clusterName) {
+        return clusterName + "-entity-user-operator-key";
+    }
+
+    /**
      * Returns the name of the Entity User Operator logging {@code ConfigMap} for a {@code Kafka} cluster of the given name.
      *
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.

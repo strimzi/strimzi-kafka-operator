@@ -68,11 +68,12 @@ public class PemAuthIdentity {
      * entity (i.e. user or topic) operator during TLS client authentication.
      *
      * @param secret Kubernetes Secret containing the client authentication identity
+     * @param keyName Name of the key within the Kubernetes Secret
      *
      * @return PemAuthIdentity to use as the client authentication identity during TLS authentication
      */
-    public static PemAuthIdentity entityOperator(Secret secret) {
-        return new PemAuthIdentity(secret, "entity-operator");
+    public static PemAuthIdentity entityOperator(Secret secret, String keyName) {
+        return new PemAuthIdentity(secret, keyName);
     }
 
     /**
