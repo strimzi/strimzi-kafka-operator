@@ -59,6 +59,14 @@ public class KafkaRebalanceConfigMapUtilsTest {
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
         updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Rebalancing, es0, cm);
 
+        /**
+         * Total Data to Move:          10,000 MB
+         * Data Moved:                  250 MB
+         * Time Since Task Start:       2 seconds
+         * Data Rate:                   125 MB/s
+         * Remaining Data:              9,750 MB
+         * Estimated Time to Complete:  78 seconds
+         */
         Map<String, String> m =  cm.getData();
         assertThat(m.get(ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY), is("1"));
         assertThat(m.get(COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY), is("2"));

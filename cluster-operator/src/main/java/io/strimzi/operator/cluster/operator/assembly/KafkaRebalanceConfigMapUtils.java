@@ -24,8 +24,21 @@ import java.util.Map;
 public class KafkaRebalanceConfigMapUtils {
 
     /* test */ static final String REBALANCE_PROGRESS_CONFIG_MAP_KEY = "rebalanceProgressConfigMap";
+    /**
+     * The estimated time it will take in minutes until the partition rebalance is complete rounded
+     * to the nearest minute.
+     */
     /* test */ static final String ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY = "estimatedTimeToCompletionInMinutes";
+    /**
+     *  The percentage of the byte movement of the partition rebalance that is completed as a rounded down integer
+     *  value in the range [0-100].
+     */
     /* test */ static final String COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY = "completedByteMovementPercentage";
+    /**
+     * The “non-verbose” JSON payload from the /kafkacruisecontrol/state?substates=executor endpoint,
+     * providing details about the executor's current status, including partition movement progress,
+     * concurrency limits, and total data to move.
+     */
     /* test */ static final String EXECUTOR_STATE_KEY = "executorState.json";
 
     /* test */ static final String TIME_COMPLETED = "0";
@@ -58,7 +71,6 @@ public class KafkaRebalanceConfigMapUtils {
 
                 int estimatedTimeToCompletion = KafkaRebalanceProgressUtils.estimateTimeToCompletionInMinutes(
                         taskStartTime,
-                        Instant.now(),
                         totalDataToMove,
                         finishedDataMovement);
 

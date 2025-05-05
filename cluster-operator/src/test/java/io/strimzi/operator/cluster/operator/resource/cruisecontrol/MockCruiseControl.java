@@ -37,6 +37,9 @@ import java.util.logging.LogManager;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlHeaders.USER_TASK_ID_HEADER;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.ACTIVE;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.COMPLETED;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.COMPLETED_WITH_ERROR;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.IN_EXECUTION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpRequest.request;
@@ -205,9 +208,9 @@ public class MockCruiseControl {
         }
     }
 
-    private HttpResponse userTaskResponse(String state, boolean verbose) {
+    private HttpResponse userTaskResponse(CruiseControlUserTaskStatus state, boolean verbose) {
         String fileName = "CC-User-task-rebalance-no-goals-" +
-                (verbose ? "verbose-" : "") + state + ".json";
+                (verbose ? "verbose-" : "") + state.toString() + ".json";
 
         String userTaskId = verbose
                 ? USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID
@@ -242,22 +245,22 @@ public class MockCruiseControl {
                 case ACTIVE:
                     server
                             .when(request)
-                            .respond(userTaskResponse("Active", verbose));
+                            .respond(userTaskResponse(ACTIVE, verbose));
                     break;
                 case IN_EXECUTION:
                     server
                             .when(request)
-                            .respond(userTaskResponse("InExecution", verbose));
+                            .respond(userTaskResponse(IN_EXECUTION, verbose));
                     break;
                 case COMPLETED_WITH_ERROR:
                     server
                             .when(request)
-                            .respond(userTaskResponse("CompletedWithError", false));
+                            .respond(userTaskResponse(COMPLETED_WITH_ERROR, false));
                     break;
                 case COMPLETED:
                     server
                             .when(request)
-                            .respond(userTaskResponse("Completed", verbose));
+                            .respond(userTaskResponse(COMPLETED, verbose));
                     break;
             }
         }
@@ -530,17 +533,17 @@ public class MockCruiseControl {
             // The first activeCalls times respond that with a status of "Active"
             server
                     .when(request, Times.exactly(activeCalls))
-                    .respond(userTaskResponse("Active", verbose));
+                    .respond(userTaskResponse(ACTIVE, verbose));
 
             // The next inExecutionCalls times respond that with a status of "InExecution"
             server
                     .when(request, Times.exactly(inExecutionCalls))
-                    .respond(userTaskResponse("InExecution", verbose));
+                    .respond(userTaskResponse(IN_EXECUTION, verbose));
 
             // On the N+1 call, respond with a status of "Completed".
             server
                     .when(request, Times.unlimited())
-                    .respond(userTaskResponse("Completed", verbose));
+                    .respond(userTaskResponse(COMPLETED, verbose));
 
         }
     }

@@ -16,7 +16,6 @@ public class KafkaRebalanceProgressUtils {
      * Estimates the number of minutes it will take an ongoing partition rebalance to complete.
      *
      * @param taskStartTime The time when the task started.
-     * @param currentTime The time at the moment of the method call.
      * @param totalDataToMoveInMB The total amount of data that needs to be moved, in megabytes.
      * @param finishedDataMovementInMB The amount of data that has already been moved, in megabytes.
      * @return The estimated time to completion in minutes.
@@ -27,15 +26,27 @@ public class KafkaRebalanceProgressUtils {
      *     - The elapsed time between `taskStartTime` and `currentTime` is zero, making rate calculation impossible.
      *     - The data movement rate is zero, making the time to completion estimation impossible.
      */
+    protected static int estimateTimeToCompletionInMinutes(Instant taskStartTime,
+                                                 int totalDataToMoveInMB,
+                                                 int finishedDataMovementInMB)
+            throws IllegalArgumentException, ArithmeticException {
+        return estimateTimeToCompletionInMinutes(
+                taskStartTime,
+                Instant.now(),
+                totalDataToMoveInMB,
+                finishedDataMovementInMB
+        );
+    }
+
     /* test */ static int estimateTimeToCompletionInMinutes(Instant taskStartTime,
                                                             Instant currentTime,
                                                             int totalDataToMoveInMB,
                                                             int finishedDataMovementInMB)
             throws IllegalArgumentException, ArithmeticException {
-        if (taskStartTime == null || currentTime == null || totalDataToMoveInMB < 0 || finishedDataMovementInMB < 0) {
+        if (taskStartTime == null || totalDataToMoveInMB < 0 || finishedDataMovementInMB < 0) {
             throw new IllegalArgumentException(
-                    String.format("Invalid value(s) provided for one of the following arguments: taskStartTime %s, currentTime %s, totalDataToMoveInMB: %d, finishedDataMovementInMB: %d.",
-                            taskStartTime, currentTime, totalDataToMoveInMB, finishedDataMovementInMB)
+                    String.format("Invalid value(s) provided for one of the following arguments: taskStartTime %s, totalDataToMoveInMB: %d, finishedDataMovementInMB: %d.",
+                            taskStartTime, totalDataToMoveInMB, finishedDataMovementInMB)
             );
         }
 
@@ -52,9 +63,9 @@ public class KafkaRebalanceProgressUtils {
             throw new ArithmeticException("finishedDataMovementInMB is zero, cannot estimate time to completion.");
         }
 
-        float rateMBperMinute = ((float) finishedDataMovementInMB / timeElapsed.getSeconds()) * 60;
+        double rateMBperMinute = ((double) finishedDataMovementInMB / timeElapsed.getSeconds()) * 60;
         int dataLeftToMoveMB = totalDataToMoveInMB - finishedDataMovementInMB;
-        return Math.round(dataLeftToMoveMB / rateMBperMinute);
+        return (int) Math.round(dataLeftToMoveMB / rateMBperMinute);
     }
 
     /**

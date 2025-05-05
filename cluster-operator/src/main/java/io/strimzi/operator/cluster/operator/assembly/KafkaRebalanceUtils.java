@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBr
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
-import io.strimzi.operator.cluster.operator.resource.ConditionType;
 import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.ArrayList;
@@ -179,7 +178,7 @@ public class KafkaRebalanceUtils {
 
     /* test */ static Condition getWarningCondition(KafkaRebalanceStatus status) {
         return status.getConditions().stream()
-                .filter(ConditionType::isWarning)
+                .filter(condition -> condition.getType().equals("Warning"))
                 .findFirst()
                 .orElse(null);
     }

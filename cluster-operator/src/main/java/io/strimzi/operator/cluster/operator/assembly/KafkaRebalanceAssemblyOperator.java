@@ -358,6 +358,7 @@ public class KafkaRebalanceAssemblyOperator
                     desiredStatus.setProgress(Map.of(REBALANCE_PROGRESS_CONFIG_MAP_KEY, configMapName));
                     return KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, desiredStatus, host, cruiseControlPort, apiClient, desiredConfigMap)
                             .recover(exception -> {
+                                LOGGER.infoCr(reconciliation, "Progress information of rebalance not updated due to the following error: {}", exception);
                                 KafkaRebalanceUtils.addWarningCondition(desiredStatus, exception);
                                 return Future.succeededFuture();
                             })

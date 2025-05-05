@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -90,11 +89,15 @@ public class ExecutorStateProcessor {
         }
 
         private static ExecutorState fromString(String state) {
-            String normalized = state.trim();
-            return Arrays.stream(ExecutorState.values())
-                    .filter(e -> e.name().equals(normalized))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Unknown ExecutorState: " + state));
+            if (state == null) {
+                throw new IllegalArgumentException("ExecutorState cannot be null");
+            }
+
+            try {
+                return ExecutorState.valueOf(state);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Unknown ExecutorState: " + state, e);
+            }
         }
     }
 

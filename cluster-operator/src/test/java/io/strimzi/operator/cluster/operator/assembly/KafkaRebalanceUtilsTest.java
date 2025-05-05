@@ -175,16 +175,16 @@ public class KafkaRebalanceUtilsTest {
         // Test Warning condition can be added when there are no existing conditions
         KafkaRebalanceUtils.addWarningCondition(status, exception("Example error 0"));
         assertThat(status.getConditions().size(), is(1));
-        assertThat(KafkaRebalanceUtils.getWarningCondition(status).getType(), is("Warning"));
+        assertThat(KafkaRebalanceUtils.getWarningCondition(status), notNullValue());
 
         // Test Warning condition addition doesn't remove existing conditions.
         Condition c0 = new ConditionBuilder()
-                .withType("Rebalancing")
+                .withType(KafkaRebalanceState.Rebalancing.toString())
                 .build();
         status.setConditions(List.of(c0));
         KafkaRebalanceUtils.addWarningCondition(status, exception("Example error 0"));
         assertThat(status.getConditions().size(), is(2));
-        assertThat(KafkaRebalanceUtils.getWarningCondition(status).getType(), is("Warning"));
+        assertThat(KafkaRebalanceUtils.getWarningCondition(status), notNullValue());
 
         // Test original Warning is kept when a new error with same reason and message is thrown.
         String timestamp = "2024-11-05T15:28:23.995129903Z";

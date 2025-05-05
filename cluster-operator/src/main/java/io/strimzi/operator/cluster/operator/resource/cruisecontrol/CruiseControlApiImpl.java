@@ -50,7 +50,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
      */
     public static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1;
     private static final String STATUS_KEY = "Status";
-    private static final String START_MS_KEY = "StartMs";
     private final long idleTimeout;
     private final boolean apiSslEnabled;
     private final HTTPHeader authHttpHeader;
@@ -364,7 +363,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         } else {
                             JsonNode jsonUserTask = userTasks.get(0);
                             String taskStatusStr = jsonUserTask.get(STATUS_KEY).asText();
-                            String taskStartTime = jsonUserTask.get(START_MS_KEY).asText();
                             LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}, status = {}", response.statusCode(), path, userTaskID, taskStatusStr);
                             // This should not be an error with a 200 status but we play it safe
                             if (jsonUserTask.has(CC_REST_API_ERROR_KEY)) {
@@ -374,7 +372,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                             }
 
                             statusJson.put(STATUS_KEY, taskStatusStr);
-                            statusJson.put(START_MS_KEY, taskStartTime);
                             CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusStr);
                             switch (taskStatus) {
                                 case ACTIVE:
