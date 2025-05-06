@@ -307,17 +307,18 @@ public class OpenSslCertManager implements CertManager {
                 opt.optArg("-cert", issuerCaCertFile);
                 opt.optArg("-keyfile", issuerCaKeyFile);
             }
-            sna = buildConfigFile(subject, false, true);
             opt.optArg("-in", csrFile)
                     .optArg("-out", subjectCertFile)
                     .optArg("-startdate", notBefore)
                     .optArg("-enddate", notAfter)
                     .optArg("-subj", subject)
-                    .optArg("-config", sna)
+                    .optArg("-config", defaultConfig)
+                    .optArg("-extensions", "strimzi_x509_extensions")
                     .database(database, attr)
                     .newCertsDir(newCertsDir)
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)
                     .keyUsage("critical,keyCertSign,cRLSign")
+                    .authorityKeyIdentifier()
                     .exec(false);
 
             if (keyInPkcs1) {
@@ -636,6 +637,10 @@ public class OpenSslCertManager implements CertManager {
             pb.environment().put("STRIMZI_keyUsage", keyUsage);
             return this;
         }
+        public OpensslArgs authorityKeyIdentifier() {
+            pb.environment().put("STRIMZI_authorityKeyIdentifier", "keyid,issuer");
+            return this;
+        }
         public OpensslArgs database(Path database, Path attr) throws IOException {
             // Some versions of openssl require the presence of a index.txt.attr file
             // https://serverfault.com/questions/857131/odd-error-while-using-openssl
@@ -665,6 +670,9 @@ public class OpenSslCertManager implements CertManager {
             }
             if (!pb.environment().containsKey("STRIMZI_new_certs_dir")) {
                 pb.environment().put("STRIMZI_new_certs_dir", "/dev/null");
+            }
+            if (!pb.environment().containsKey("STRIMZI_authorityKeyIdentifier")) {
+                pb.environment().put("STRIMZI_authorityKeyIdentifier", "none");
             }
 
             Path out = null;
