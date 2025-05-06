@@ -7,11 +7,11 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlExecutorState;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor.ExecutorState;
 import static io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor.FINISHED_DATA_MOVEMENT_KEY;
 import static io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor.TOTAL_DATA_TO_MOVE_KEY;
 import static io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor.TRIGGERED_TASK_REASON_KEY;
@@ -54,14 +54,14 @@ public class ExecutorStateProcessorTest {
 
     @Test
     public void testVerifyRebalancingState() throws Exception {
-        JsonNode es0 = createExecutorState(Map.of(STATE_KEY, ExecutorState.NO_TASK_IN_PROGRESS.toString()));
-        assertThrows(IllegalStateException.class, () -> ExecutorState.verifyRebalancingState(es0));
+        JsonNode es0 = createExecutorState(Map.of(STATE_KEY, CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString()));
+        assertThrows(IllegalStateException.class, () -> CruiseControlExecutorState.verifyRebalancingState(es0));
 
-        JsonNode es1 = createExecutorState(Map.of(STATE_KEY, ExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString()));
-        ExecutorState.verifyRebalancingState(es1);
+        JsonNode es1 = createExecutorState(Map.of(STATE_KEY, CruiseControlExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString()));
+        CruiseControlExecutorState.verifyRebalancingState(es1);
 
         JsonNode es2 = createExecutorState(Map.of("", ""));
-        assertThrows(IllegalStateException.class, () -> ExecutorState.verifyRebalancingState(es2));
+        assertThrows(IllegalStateException.class, () -> CruiseControlExecutorState.verifyRebalancingState(es2));
     }
 
     @Test

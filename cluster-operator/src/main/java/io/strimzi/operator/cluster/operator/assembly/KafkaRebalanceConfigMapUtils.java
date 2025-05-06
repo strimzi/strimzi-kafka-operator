@@ -12,6 +12,7 @@ import io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlExecutorState;
 import io.vertx.core.Future;
 
 import java.time.Instant;
@@ -129,7 +130,7 @@ public class KafkaRebalanceConfigMapUtils {
                                     false))
                     .compose(response -> {
                         JsonNode executorState = response.getJson().get("ExecutorState");
-                        ExecutorStateProcessor.ExecutorState.verifyRebalancingState(executorState);
+                        CruiseControlExecutorState.verifyRebalancingState(executorState);
                         updateRebalanceConfigMapWithProgressFields(state, executorState, configMap);
                         return Future.succeededFuture(configMap);
                     });
