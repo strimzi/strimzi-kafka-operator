@@ -44,7 +44,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 4
-- agent: "oracle-16cpu-64gb-arm64"
+- agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
   pipeline: "regression"
   profile: "brokers-and-security"
@@ -53,7 +53,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 4
-- agent: "oracle-16cpu-64gb-arm64"
+- agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
   pipeline: "regression"
   profile: "operators"
@@ -62,7 +62,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 4
-- agent: "oracle-16cpu-64gb-arm64"
+- agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
   pipeline: "regression"
   profile: "operands"
@@ -84,7 +84,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 1
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-4cpu-16gb-arm64"
   arch: "arm64"
   pipeline: "smoke"
   profile: "smoke"
@@ -105,7 +105,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 1
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-4cpu-16gb-arm64"
   arch: "arm64"
   pipeline: "upgrade"
   profile: "azp_kraft_upgrade"
@@ -123,7 +123,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 1
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-4cpu-16gb-arm64"
   arch: "arm64"
   pipeline: "upgrade"
   profile: "azp_kafka_upgrade"
@@ -145,7 +145,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
   parallel: 2
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-4cpu-16gb-arm64"
   arch: "arm64"
   pipeline: "acceptance"
   profile: "acceptance"
@@ -153,7 +153,7 @@ pipelines:
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "bundle"
-  parallel: 1
+  parallel: 2
 #######################
 ### Acceptance Helm ###
 #######################
@@ -166,7 +166,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "helm"
   parallel: 2
-- agent: "oracle-2cpu-8gb-arm64"
+- agent: "oracle-4cpu-16gb-arm64"
   arch: "arm64"
   pipeline: "acceptance-helm"
   profile: "acceptance"
@@ -174,7 +174,7 @@ pipelines:
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "helm"
-  parallel: 1
+  parallel: 2
 #######################
 ### Regression RBAC ###
 #######################
@@ -205,7 +205,7 @@ pipelines:
   strimzi_rbac_scope: "NAMESPACE"
   cluster_operator_install_type: "bundle"
   parallel: 4
-- agent: "oracle-16cpu-64gb-arm64"
+- agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
   pipeline: "regression-rbac"
   profile: "brokers-and-security"
@@ -214,7 +214,7 @@ pipelines:
   strimzi_rbac_scope: "NAMESPACE"
   cluster_operator_install_type: "bundle"
   parallel: 4
-- agent: "oracle-16cpu-64gb-arm64"
+- agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
   pipeline: "regression-rbac"
   profile: "operators"
@@ -223,7 +223,7 @@ pipelines:
   strimzi_rbac_scope: "NAMESPACE"
   cluster_operator_install_type: "bundle"
   parallel: 4
-- agent: "oracle-16cpu-64gb-arm64"
+- agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
   pipeline: "regression-rbac"
   profile: "operands"
