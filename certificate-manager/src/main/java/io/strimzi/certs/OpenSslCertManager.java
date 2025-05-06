@@ -307,7 +307,7 @@ public class OpenSslCertManager implements CertManager {
                 opt.optArg("-cert", issuerCaCertFile);
                 opt.optArg("-keyfile", issuerCaKeyFile);
             }
-            sna = buildConfigFile(subject, true, true);
+            sna = buildConfigFile(subject, false, true);
             opt.optArg("-in", csrFile)
                     .optArg("-out", subjectCertFile)
                     .optArg("-startdate", notBefore)
