@@ -481,256 +481,81 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testNullUserConfiguration()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(null, false, false, false)
-                .build();
+    public void testCreateOrAddListConfigDoesNotExists() {
+        KafkaConfiguration config1 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config1, "test-key", "test-value");
+        assertThat(config1.getConfigOption("test-key"), is("test-value"));
 
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
+        KafkaConfiguration config2 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config2, "test-key", "test-value-1,test-value-2");
+        assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2"));
     }
 
     @ParallelTest
-    public void testNullUserConfigurationWithCcMetricsReporter()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(null, true, false, false)
-                .build();
+    public void testCreateOrAddListConfigExists() {
+        KafkaConfiguration config1 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        config1.setConfigOption("test-key", "test-value-1");
 
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config1, "test-key", "test-value-2");
+        assertThat(config1.getConfigOption("test-key"), is("test-value-1,test-value-2"));
+
+        KafkaConfiguration config2 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        config2.setConfigOption("test-key", "test-value-1,test-value-2");
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config2, "test-key", "test-value-3");
+        assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2,test-value-3"));
     }
 
     @ParallelTest
-    public void testNullUserConfigurationWithStrimziMetricsReporter()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(null, false, true, false)
-                .build();
+    public void testCreateOrAddListConfigExistsAndContainsValue() {
+        KafkaConfiguration config1 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        config1.setConfigOption("test-key", "test-value-1");
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config1, "test-key", "test-value-1");
+        assertThat(config1.getConfigOption("test-key"), is("test-value-1"));
 
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "metric.reporters=org.apache.kafka.common.metrics.JmxReporter",
-                "kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter",
-                "metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter"));
+        KafkaConfiguration config2 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        config2.setConfigOption("test-key", "test-value-1,test-value-2");
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config2, "test-key", "test-value-1");
+        assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2"));
     }
 
     @ParallelTest
-    public void testNullUserConfigurationWithCcAndStrimziMetricsReporters() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(null, true, true, false)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter",
-                "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
-                        + ",io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter"));
+    public void testCreateOrAddConfigListWithDuplicate() {
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        config.setConfigOption("test-key", "test-value-1,test-value-1,test-value-2");
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config, "test-key", "test-value-3,test-value-3");
+        assertThat(config.getConfigOption("test-key"), is("test-value-1,test-value-2,test-value-3"));
     }
 
     @ParallelTest
-    public void testEmptyUserConfiguration()  {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(kafkaConfiguration, false, false, false)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
+    public void testCreateOrAddConfigListOrdering() {
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        config.setConfigOption("test-key", "test-value-2,test-value-1");
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config, "test-key", "test-value-3,");
+        assertThat(config.getConfigOption("test-key"), is("test-value-2,test-value-1,test-value-3"));
     }
 
     @ParallelTest
-    public void testUserConfiguration()  {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        userConfiguration.put("auto.create.topics.enable", "false");
-        userConfiguration.put("offsets.topic.replication.factor", 3);
-        userConfiguration.put("transaction.state.log.replication.factor", 3);
-        userConfiguration.put("transaction.state.log.min.isr", 2);
-
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(kafkaConfiguration, false, false, false)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "auto.create.topics.enable=false",
-                "offsets.topic.replication.factor=3",
-                "transaction.state.log.replication.factor=3",
-                "transaction.state.log.min.isr=2"));
+    public void testCreateOrAddConfigListWithNullConfig() {
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        config.setConfigOption("test-key", "test-value-1,test-value-2");
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(null, "test-key", "test-value-3");
+        assertThat(config.getConfigOption("test-key"), is("test-value-1,test-value-2"));
     }
 
     @ParallelTest
-    public void testUserConfigurationWithConfigProviders()  {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        userConfiguration.put("config.providers", "env");
-        userConfiguration.put("config.providers.env.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-
-        // Broker
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(kafkaConfiguration, false, false, false)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=env,strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
-
-        // Controller
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-3", 3, "kafka", true, false))
-                .withUserConfiguration(kafkaConfiguration, false, false, false)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=3",
-                "config.providers=env,strimzienv",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
+    public void testCreateOrAddConfigListWithNullKey() {
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        config.setConfigOption("test-key", "test-value-1,test-value-2");
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config, null, "test-value-3");
+        assertThat(config.getConfigOption("test-key"), is("test-value-1,test-value-2"));
     }
 
     @ParallelTest
-    public void testUserConfigurationWithCcMetricsReporter()  {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        userConfiguration.put("auto.create.topics.enable", "false");
-        userConfiguration.put("offsets.topic.replication.factor", 3);
-        userConfiguration.put("transaction.state.log.replication.factor", 3);
-        userConfiguration.put("transaction.state.log.min.isr", 2);
-
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(kafkaConfiguration, true, false, false)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "auto.create.topics.enable=false",
-                "offsets.topic.replication.factor=3",
-                "transaction.state.log.replication.factor=3",
-                "transaction.state.log.min.isr=2",
-                "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
-    }
-
-    @ParallelTest
-    public void testUserConfigurationWithCCMetricsReporterAndMetricsEnabled()  {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        userConfiguration.put("auto.create.topics.enable", "false");
-        userConfiguration.put("offsets.topic.replication.factor", 3);
-        userConfiguration.put("transaction.state.log.replication.factor", 3);
-        userConfiguration.put("transaction.state.log.min.isr", 2);
-
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(kafkaConfiguration, true, true, true)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "auto.create.topics.enable=false",
-                "offsets.topic.replication.factor=3",
-                "transaction.state.log.replication.factor=3",
-                "transaction.state.log.min.isr=2",
-                "metric.reporters=org.apache.kafka.common.metrics.JmxReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
-    }
-
-    @ParallelTest
-    public void testUserConfigurationWithCcAndOtherMetricsReporters()  {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        userConfiguration.put("metric.reporters", "my.domain.CustomMetricReporter");
-
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(kafkaConfiguration, true, false, true)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
-    }
-
-    @ParallelTest
-    public void testUserConfigurationWithStrimziAndOtherMetricsReporters()  {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        userConfiguration.put("metric.reporters", "my.domain.CustomMetricReporter");
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withUserConfiguration(kafkaConfiguration, false, true, false)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter",
-                "metric.reporters=my.domain.CustomMetricReporter,io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter"));
+    public void testCreateOrAddConfigListWithNullValue() {
+        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
+        config.setConfigOption("test-key", "test-value-1,test-value-2");
+        KafkaBrokerConfigurationBuilder.createOrAddListConfig(config, "test-key", null);
+        assertThat(config.getConfigOption("test-key"), is("test-value-1,test-value-2"));
     }
 
     @ParallelTest
@@ -2564,43 +2389,6 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "metadata.log.dir=/my/kraft/metadata/kafka-log2"
         ));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddConfigListNewConfig()  {
-        String key = "test-key";
-        String value = "test-value";
-
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        KafkaBrokerConfigurationBuilder.createOrAddConfigList(config, key, value);
-
-        assertThat(config.getConfigOption(key), is("test-value"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddConfigListContainsValue()  {
-        String key = "test-key";
-        String value = "test-value";
-        String newValue = "test-value";
-
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption(key, value);
-        KafkaBrokerConfigurationBuilder.createOrAddConfigList(config, key, newValue);
-
-        assertThat(config.getConfigOption(key), is(value));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddConfigListDoesNotContainValue()  {
-        String key = "test-key";
-        String value = "test-value";
-        String newValue = "new-value";
-
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption(key, value);
-        KafkaBrokerConfigurationBuilder.createOrAddConfigList(config, key, newValue);
-
-        assertThat(config.getConfigOption(key), is(String.join(",", value, newValue)));
     }
 
 }
