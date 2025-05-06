@@ -6,6 +6,10 @@ inputs:
     description: "Architecture"
     required: false
     default: "amd64"
+  useMinikube:
+    description: "Flag for using Minikube as images destination"
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -22,12 +26,64 @@ runs:
       shell: bash
       run: rm containers-${{ inputs.architecture }}.tar
 
-    - name: Load Strimzi images
+    # This is for loading images into Minikube
+    - name: Load Strimzi images into Minikube
       shell: bash
+      if: ${{ contains(inputs.useMinikube, 'true') }}
       run: |
         eval $(minikube docker-env)
-        make docker_load docker_tag docker_push docker_e2e docker_delete_archive
+        make docker_load docker_tag docker_delete_archive
         
         docker images -a
+        
+        RETRIES=3
+        COUNT=0
+        until [ $COUNT -ge $RETRIES ]
+        do
+          if make docker_e2e; then
+            echo "Push succeeded"
+            break
+          fi
+          COUNT=$((COUNT+1))
+          echo "Retry $COUNT/$RETRIES failed. Retrying in 10 seconds..."
+          sleep 10
+          echo "Pods"
+          kubectl get po -n kube-system
+          echo "Registry deployment"
+          kubectl get deployment registry -o yaml -n kube-system
+          echo "Registry deployment log"
+          kubectl logs deployment/registry -n kube-system
+          echo "Registry proxy log"
+          kubectl logs daemonset/registry-proxy -n kube-system
+          echo "Kube proxy log"
+          kubectl logs daemonset/kube-proxy -n kube-system
+        done
+
+        if [ $COUNT -eq $RETRIES ]; then
+          echo "Push failed after $RETRIES attempts."
+          exit 1
+        fi
+        
+        echo "Pods"
+        kubectl get po -n kube-system
+        echo "Registry deployment"
+        kubectl get deployment registry -o yaml -n kube-system
+        echo "Registry deployment log"
+        kubectl logs deployment/registry -n kube-system
+        echo "Registry proxy log"
+        kubectl logs daemonset/registry-proxy -n kube-system
+        echo "Kube proxy log"
+        kubectl logs daemonset/kube-proxy -n kube-system
+        docker images -a
+
+      env:
+        DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
+
+    # This is for loading images into external registry
+    - name: Load Strimzi images external registry
+      shell: bash
+      if: ${{ !contains(inputs.useMinikube, 'true') }}
+      run: |
+        make docker_load docker_tag docker_push docker_delete_archive
       env:
         DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
