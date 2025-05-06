@@ -53,15 +53,27 @@ public abstract class BaseMetricsCollectionScheduler {
     }
 
     /**
-     * Generic singleton factory for subclasses.
+     * Generic singleton factory for subclasses of {@link BaseMetricsCollectionScheduler}.
+     * <p>This method ensures that only a single instance of a given scheduler class is created and cached.
+     * It uses the provided {@code supplier} to create the instance if it has not already been initialized.</p>
      *
-     * @param clazz     Class of the scheduler
-     * @param supplier  Supplier that creates the instance if missing
+     * <p><strong>Important:</strong> If you call this method multiple times with the same {@code schedulerClass}
+     * but different supplier parameters (e.g., passing different constructor arguments), only the supplier from
+     * the first invocation will be used. Subsequent suppliers will be ignored, and no exception will be thrown.</p>
+     *
+     * <p>This means that <em>you must ensure</em> the first call to this method uses the desired configuration,
+     * and all later calls are consistent and do not rely on the supplier being evaluated again.</p>
+     *
+     * @param schedulerClass     Class of the scheduler
+     * @param supplier           Supplier that creates the instance if missing
      * @return The singleton instance
      */
     @SuppressWarnings("unchecked")
-    public static <SchedulerType extends BaseMetricsCollectionScheduler> SchedulerType getInstance(Class<SchedulerType> clazz, Supplier<SchedulerType> supplier) {
-        return (SchedulerType) INSTANCES.computeIfAbsent(clazz, key -> supplier.get());
+    protected static <SchedulerType extends BaseMetricsCollectionScheduler> SchedulerType getInstance(Class<SchedulerType> schedulerClass, Supplier<SchedulerType> supplier) {
+        return (SchedulerType) INSTANCES.computeIfAbsent(schedulerClass, cls -> {
+            LOGGER.debug("Creating singleton for {}", cls.getSimpleName());
+            return supplier.get();
+        });
     }
 
     /**
