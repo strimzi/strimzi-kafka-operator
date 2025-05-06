@@ -14,9 +14,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Abstract class BaseMetricsCollectionScheduler provides a structured approach to gather metrics.
@@ -43,9 +45,23 @@ public abstract class BaseMetricsCollectionScheduler {
     protected final Map<Long, Map<String, List<Double>>> metricsStore = new TreeMap<>();
     protected ScheduledExecutorService scheduler;
 
-    public BaseMetricsCollectionScheduler(String selector) {
+    private static final Map<Class<? extends BaseMetricsCollectionScheduler>, BaseMetricsCollectionScheduler> INSTANCES = new ConcurrentHashMap<>();
+
+    protected BaseMetricsCollectionScheduler(String selector) {
         this.selector = selector;
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    /**
+     * Generic singleton factory for subclasses.
+     *
+     * @param clazz     Class of the scheduler
+     * @param supplier  Supplier that creates the instance if missing
+     * @return The singleton instance
+     */
+    @SuppressWarnings("unchecked")
+    public static <SchedulerType extends BaseMetricsCollectionScheduler> SchedulerType getInstance(Class<SchedulerType> clazz, Supplier<SchedulerType> supplier) {
+        return (SchedulerType) INSTANCES.computeIfAbsent(clazz, key -> supplier.get());
     }
 
     /**

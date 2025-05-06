@@ -35,7 +35,14 @@ public class TopicOperatorMetricsCollectionScheduler extends BaseMetricsCollecti
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMetricsCollectionScheduler.class);
     private final TopicOperatorMetricsCollector topicOperatorMetricsCollector;
 
-    public TopicOperatorMetricsCollectionScheduler(TopicOperatorMetricsCollector topicOperatorMetricsCollector, String selector) {
+    public static TopicOperatorMetricsCollectionScheduler getInstance(TopicOperatorMetricsCollector collector, String selector) {
+        return BaseMetricsCollectionScheduler.getInstance(
+            TopicOperatorMetricsCollectionScheduler.class,
+            () -> new TopicOperatorMetricsCollectionScheduler(collector, selector)
+        );
+    }
+
+    private TopicOperatorMetricsCollectionScheduler(TopicOperatorMetricsCollector topicOperatorMetricsCollector, String selector) {
         super(selector);
         this.topicOperatorMetricsCollector = topicOperatorMetricsCollector;
     }

@@ -37,13 +37,20 @@ public class UserOperatorMetricsCollectionScheduler extends BaseMetricsCollectio
     private static final Logger LOGGER = LogManager.getLogger(UserOperatorMetricsCollectionScheduler.class);
     private final UserOperatorMetricsCollector userOperatorMetricsCollector;
 
+    public static UserOperatorMetricsCollectionScheduler getInstance(UserOperatorMetricsCollector collector, String selector) {
+        return BaseMetricsCollectionScheduler.getInstance(
+            UserOperatorMetricsCollectionScheduler.class,
+            () -> new UserOperatorMetricsCollectionScheduler(collector, selector)
+        );
+    }
+
     /**
      * Constructs a {@code UserOperatorMetricsCollectionScheduler} with a specified metrics collector and selector.
      *
      * @param userOperatorMetricsCollector  The {@link UserOperatorMetricsCollector} used for gathering metrics.
      * @param selector                      The selector string that specifies the target resources for metrics collection.
      */
-    public UserOperatorMetricsCollectionScheduler(UserOperatorMetricsCollector userOperatorMetricsCollector, String selector) {
+    private UserOperatorMetricsCollectionScheduler(UserOperatorMetricsCollector userOperatorMetricsCollector, String selector) {
         super(selector);
         this.userOperatorMetricsCollector = userOperatorMetricsCollector;
     }

@@ -176,7 +176,7 @@ public class UserOperatorPerformance extends AbstractST {
                 .withComponent(UserOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
                 .build();
 
-            this.userOperatorMetricsGatherer = new UserOperatorMetricsCollectionScheduler(this.userOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
+            this.userOperatorMetricsGatherer = UserOperatorMetricsCollectionScheduler.getInstance(this.userOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
             this.userOperatorMetricsGatherer.startCollecting();
 
             // we will create incrementally users
