@@ -54,9 +54,13 @@ public class UserOperatorConfig {
      */
     public static final ConfigParameter<String> EO_KEY_SECRET_NAME = new ConfigParameter<>("STRIMZI_EO_KEY_SECRET_NAME", STRING, null, CONFIG_VALUES);
     /**
-     * The name of the Entity Operator key and certificate
+     * The name of the Entity Operator key
      */
     public static final ConfigParameter<String> EO_KEY_NAME = new ConfigParameter<>("STRIMZI_EO_KEY_NAME", STRING, "entity-operator", CONFIG_VALUES);
+    /**
+     * The name of the Entity Operator certificate
+     */
+    public static final ConfigParameter<String> EO_CERT_NAME = new ConfigParameter<>("STRIMZI_EO_CERT_NAME", STRING, "entity-operator", CONFIG_VALUES);
     /**
      * The name of the secret containing the clients Certification Authority key.
      */
@@ -254,12 +258,17 @@ public class UserOperatorConfig {
     }
 
     /**
-     * @return The name of the Entity Operator key and certificate
+     * @return The name of the Entity Operator key
      */
     public String getEuoKeyName() {
         return get(EO_KEY_NAME);
     }
-
+    /**
+     * @return The name of the Entity Operator certificate
+     */
+    public String getEuoCertName() {
+        return get(EO_CERT_NAME);
+    }
     /**
      * @return The namespace of the Client CA if not null or empty, else it will return namespace
      */
