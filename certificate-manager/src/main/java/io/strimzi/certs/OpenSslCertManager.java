@@ -307,12 +307,15 @@ public class OpenSslCertManager implements CertManager {
                 opt.optArg("-cert", issuerCaCertFile);
                 opt.optArg("-keyfile", issuerCaKeyFile);
             }
+            sna = buildConfigFile(subject, true, true);
             opt.optArg("-in", csrFile)
                     .optArg("-out", subjectCertFile)
                     .optArg("-startdate", notBefore)
                     .optArg("-enddate", notAfter)
                     .optArg("-subj", subject)
                     .optArg("-config", defaultConfig)
+                    .optArg("-extensions", "v3_req")
+                    .optArg("-extfile", sna, true)
                     .database(database, attr)
                     .newCertsDir(newCertsDir)
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)

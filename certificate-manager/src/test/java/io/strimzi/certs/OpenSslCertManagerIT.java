@@ -121,6 +121,7 @@ public class OpenSslCertManagerIT {
                 "Expected a certificate with CA:" + true + ", but basic constraints = " + x509Certificate.getBasicConstraints());
         assertEquals(notBefore.toInstant(), x509Certificate.getNotBefore().toInstant());
         assertEquals(notAfter.toInstant(), x509Certificate.getNotAfter().toInstant());
+        assertEquals(x509Certificate.getExtensionValue("2.5.29.35"), x509Certificate.getExtensionValue("2.5.29.14")); // AKI = SKI
 
         // truststore verification
         KeyStore store1 = KeyStore.getInstance("PKCS12");
