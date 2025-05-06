@@ -74,11 +74,18 @@ prepare:
   - name: Install mvn
     how: shell
     script: |
-      mkdir -p /usr/share/maven /usr/share/maven/ref
-      curl -fsSL -o /tmp/apache-maven.tar.gz https://apache.osuosl.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz
-      tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1
-      rm -f /tmp/apache-maven.tar.gz
-      ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
+      MAVEN_VERSION=3.8.8
+      MAVEN_MAJOR_VERSION=3
+      MAVEN_TGZ="apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+      MAVEN_URL="http://mirror.dkm.cz/apache/maven/maven-${MAVEN_MAJOR_VERSION}/${MAVEN_VERSION}/binaries/${MAVEN_TGZ}"
+      INSTALL_DIR="/usr/share/maven"
+      INSTALL_BIN="/usr/bin/mvn"
+
+      mkdir -p ${INSTALL_DIR}
+      wget -q ${MAVEN_URL} -O /tmp/${MAVEN_TGZ}
+      tar -xzf /tmp/${MAVEN_TGZ} -C ${INSTALL_DIR} --strip-components=1
+      rm -f /tmp/${MAVEN_TGZ}
+      ln -sf ${INSTALL_DIR}/bin/mvn ${INSTALL_BIN}
 
   - name: Install kind
     how: shell
