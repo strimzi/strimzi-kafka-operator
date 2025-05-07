@@ -104,7 +104,11 @@ public class UserOperatorMetricsCollectionScheduler extends BaseMetricsCollectio
             metrics.put(entry.getKey(), Collections.singletonList(entry.getValue()));
         }
 
-        metrics.put(PerformanceConstants.JVM_MEMORY_MAX_BYTES, this.userOperatorMetricsCollector.getJvmMemoryMaxBytes());
+        // jvm_memory_max_bytes{area="nonheap",id="CodeHeap 'profiled nmethods'",} 1.22908672E8 etc.
+        for (Map.Entry<String, Double> entry : this.userOperatorMetricsCollector.getJvmMemoryMaxBytes().entrySet()) {
+            metrics.put(entry.getKey(), Collections.singletonList(entry.getValue()));
+        }
+
         metrics.put(PerformanceConstants.PROCESS_CPU_USAGE, this.userOperatorMetricsCollector.getProcessCpuUsage());
         metrics.put(PerformanceConstants.SYSTEM_LOAD_AVERAGE_1M, this.userOperatorMetricsCollector.getSystemLoadAverage1m());
 
