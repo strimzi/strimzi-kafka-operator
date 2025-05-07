@@ -22,5 +22,5 @@ fromExamples: strimzi-0.46.0
 fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.46.0/strimzi-0.46.0.zip
 fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.46.0/kafka-versions.yaml
 filePaths:
-  kafkaBefore: "/examples/kafka/kraft/kafka.yaml"
+  kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
   kafkaAfter: "/examples/kafka/kafka-persistent.yaml"

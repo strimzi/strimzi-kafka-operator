@@ -50,4 +50,4 @@
   featureGatesAfter: ""
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
-    kafkaAfter: "/examples/kafka/kraft/kafka.yaml"
+    kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
