@@ -314,6 +314,7 @@ public class OpenSslCertManager implements CertManager {
                     .optArg("-subj", subject)
                     .optArg("-config", defaultConfig)
                     .optArg("-extensions", "strimzi_x509_extensions")
+                    .optArg("-extfile", defaultConfig, true)
                     .database(database, attr)
                     .newCertsDir(newCertsDir)
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)
