@@ -314,7 +314,7 @@ public class OpenSslCertManager implements CertManager {
                     .optArg("-enddate", notAfter)
                     .optArg("-subj", subject)
                     .optArg("-config", defaultConfig)
-                    .optArg("-extensions", "v3_req")
+                    .optArg("-extensions", "req")
                     .optArg("-extfile", sna, true)
                     .database(database, attr)
                     .newCertsDir(newCertsDir)
