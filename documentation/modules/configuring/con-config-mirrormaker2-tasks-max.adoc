@@ -79,8 +79,3 @@ The example MirrorMaker 2 Grafana dashboard provided with Strimzi shows the foll
 * The number of tasks
 * Replication latency
 * Offset synchronization latency
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:assembly-metrics-{context}[]

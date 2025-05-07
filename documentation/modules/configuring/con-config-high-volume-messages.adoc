@@ -232,9 +232,3 @@ The example MirrorMaker 2 Grafana dashboards provided with Strimzi show the foll
 * The offset commit timeout in milliseconds
 
 You can use these metrics to gauge whether or not you need to tune your configuration based on the volume of messages.
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:assembly-metrics-{context}[]
-* xref:using-kafka-connect-with-plug-ins-{context}[]
