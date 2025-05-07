@@ -148,15 +148,15 @@ env:
   - name: STRIMZI_EO_KEY_SECRET_NAME <2>
     value: my-cluster-entity-operator-certs
   - name: STRIMZI_EO_KEY_NAME <3>
-    value: entity-operator
+    value: entity-operator.key
   - name: STRIMZI_EO_CERT_NAME <4>
-    value: entity-operator
+    value: entity-operator.crt
 # ..."
 ----
 <1> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the CA that signs Kafka broker certificates.
 <2> The Kubernetes `Secret` that contains the certificate public key (`entity-operator.crt`) and private key (`entity-operator.key`) that is used for mTLS authentication against the Kafka cluster.
-<3> The name of the private key that is used for mTLS authentication against the Kafka cluster. The default is `entity-operator`.
-<4> The name of the public key that is used for mTLS authentication against the Kafka cluster. The default is `entity-operator`.
+<3> The name of the private key that is used for mTLS authentication against the Kafka cluster. The default is `entity-operator.key`.
+<4> The name of the public key that is used for mTLS authentication against the Kafka cluster. The default is `entity-operator.crt`.
 
 . Deploy the User Operator.
 +

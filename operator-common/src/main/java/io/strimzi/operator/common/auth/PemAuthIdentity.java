@@ -48,8 +48,8 @@ public class PemAuthIdentity {
         this.certificateName = certificateName;
         this.secretName = secret.getMetadata().getName();
         this.secretNamespace = secret.getMetadata().getNamespace();
-        privateKeyAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.key", keyName));
-        certificateChainAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.crt", certificateName));
+        privateKeyAsPemBytes = Util.decodeBase64FieldFromSecret(secret, keyName);
+        certificateChainAsPemBytes = Util.decodeBase64FieldFromSecret(secret, certificateName);
     }
 
     /**
@@ -62,7 +62,7 @@ public class PemAuthIdentity {
      */
     public static PemAuthIdentity clusterOperator(Secret secret) {
         String privateAndPublicKeyName = "cluster-operator";
-        return new PemAuthIdentity(secret, privateAndPublicKeyName, privateAndPublicKeyName);
+        return new PemAuthIdentity(secret, String.format("%s.key", privateAndPublicKeyName), String.format("%s.crt", privateAndPublicKeyName));
     }
 
     /**
@@ -159,7 +159,7 @@ public class PemAuthIdentity {
             final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
             return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certificateChainAsPemBytes));
         } catch (CertificateException e) {
-            throw new RuntimeException("Bad/corrupt certificate found in data." + certificateName + ".crt of Secret "
+            throw new RuntimeException("Bad/corrupt certificate found in data." + certificateName + " of Secret "
                     + secretName + " in namespace " + secretNamespace);
         }
     }
