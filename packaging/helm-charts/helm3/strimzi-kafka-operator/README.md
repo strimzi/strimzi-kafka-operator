@@ -127,6 +127,7 @@ the documentation for more details.
 | `podDisruptionBudget.enabled`               | Whether to enable the podDisruptionBudget feature                               | `false`                      |
 | `podDisruptionBudget.minAvailable`          | Default value for how many pods must be running in a cluster                    | `1`                          |
 | `podDisruptionBudget.maxUnavailable`        | Default value for how many pods can be down                                     | `nil`                        |
+| `podDisruptionBudget.unhealthyPodEvictionPolicy` | Default value for how to respond to unheathly pods                         | `IfHealthyBudget`                |
 | `extraEnvs`                                 | Extra environment variables for the Cluster operator container                  | `[]`                         |
 | `kafka.image.registry`                      | Override default Kafka image registry                                           | `nil`                        |
 | `kafka.image.repository`                    | Override default Kafka image repository                                         | `nil`                        |
