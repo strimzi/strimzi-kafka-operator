@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.common.model.cruisecontrol;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import java.util.List;
 
 /**
@@ -45,35 +43,44 @@ public enum CruiseControlExecutorState {
      */
     GENERATING_PROPOSALS_FOR_EXECUTION;
 
-    private static final List<CruiseControlExecutorState> REBALANCE_EXECUTOR_STATES = List.of(
+    private static final List<CruiseControlExecutorState> PROGRESS_STATES = List.of(
             INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
             INTRA_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
             LEADER_MOVEMENT_TASK_IN_PROGRESS);
 
     /**
-     * Verifies whether the given executor state is a valid rebalancing state.
-     * If the state is not an active rebalancing state, an {@link IllegalStateException} is thrown.
+     * Verifies whether the given executor state is a valid progress state.
+     * If the state is not an active progress state, an {@link IllegalStateException} is thrown.
      *
-     * @param executorJson the {@link JsonNode} containing the executor state to verify;
-     *                      must have a {@code "state"} field with a valid executor state string.
+     * @param state the {@link CruiseControlExecutorState} containing the executor state to verify;
+     *
      * @throws IllegalStateException if the provided state is not a valid active rebalancing state.
      */
-    public static void verifyRebalancingState(JsonNode executorJson) {
-        if (executorJson == null || !executorJson.has("state")) {
+    public static void verifyProgressState(CruiseControlExecutorState state) {
+        if (!inProgressState(state)) {
             throw new IllegalStateException(
-                    String.format("Executor state: `%s` does not contain \"state\" entry", executorJson));
-        }
-
-        CruiseControlExecutorState state = fromString(executorJson.get("state").asText());
-        if (!REBALANCE_EXECUTOR_STATES.contains(state)) {
-            throw new IllegalStateException(
-                    String.format("Executor has not started rebalance and is currently in non-active state: '%s'. " +
-                                    "Progress estimation fields cannot be provided.",
-                            state.toString()));
+                    String.format("Partition movement information unavailable; executor is in non-active state '%s', progress estimation will be updated shortly.", state));
         }
     }
 
-    private static CruiseControlExecutorState fromString(String state) {
+    /**
+     * Determines if given executor state is in a valid progress state.
+     *
+     * @param state the {@link CruiseControlExecutorState} containing the executor state to verify;
+     * @return True if given executor state is in valid progress state.
+     *         If the state is not an active progress state return false
+     */
+    public static boolean inProgressState(CruiseControlExecutorState state) {
+        return PROGRESS_STATES.contains(state);
+    }
+
+    /**
+     * Converts string to CruiseControlExecutorState object
+     *
+     * @param state The executor status state as a string.
+     * @return The executor status state as a CruiseControlExecutorState object.
+     */
+    public static CruiseControlExecutorState fromString(String state) {
         if (state == null) {
             throw new IllegalArgumentException("ExecutorState cannot be null");
         }

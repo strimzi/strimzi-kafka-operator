@@ -2,74 +2,140 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.model.cruisecontrol;
+package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlExecutorState;
 
 import java.time.Instant;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Utility class for extracting fields from ExecutorState JSON from Cruise Control REST API.
+ * Represents the Executor state information returned from `/kafkacruisecontrol/state` endpoint.
  */
-public class ExecutorStateProcessor {
+public class ExecutorStatus {
 
     // Regular expression pattern to match the date-time in ISO 8601 format (UTC, rounded to the second).
     private static final Pattern ISO_8601_UTC_TIMESTAMP_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z");
 
+    /* test */ static final String STATE_KEY = "state";
     /* test */ static final String FINISHED_DATA_MOVEMENT_KEY = "finishedDataMovement";
     /* test */ static final String TOTAL_DATA_TO_MOVE_KEY = "totalDataToMove";
     /* test */ static final String TRIGGERED_TASK_REASON_KEY = "triggeredTaskReason";
 
+    private JsonNode json;
+    private CruiseControlExecutorState state;
+    private Integer finishedDataMovement;
+    private Integer totalDataToMove;
+    private Instant taskStartTime;
+
     /**
-     * Retrieves the total amount of data to move from the provided `executorJson` JSON object.
+     * Constructor
+     *
+     * @param json          JSON data
+     */
+    public ExecutorStatus(JsonNode json) {
+        this.json = json;
+        state = extractState(json);
+        if (CruiseControlExecutorState.inProgressState(state)) {
+            finishedDataMovement = extractFinishedDataMovement(json);
+            totalDataToMove = extractTotalDataToMove(json);
+            taskStartTime = extractTaskStartTime(json);
+        }
+    }
+
+    /**
+     * @return Executor status JSON
+     */
+    public JsonNode getJson() {
+        return json;
+    }
+
+    /**
+     * @return the value of the "state" field from the Executor status JSON.
+     */
+    public CruiseControlExecutorState getState() {
+        return state;
+    }
+
+    /**
+     * @return the value of the "totalDataToMove" field from the Executor status JSON.
+     */
+    public Integer getTotalDataToMove() {
+        return totalDataToMove;
+    }
+
+    /**
+     * @return the value of the "finishedDataMovement" field from the Executor status JSON.
+     */
+    public Integer getFinishedDataMovement() {
+        return finishedDataMovement;
+    }
+
+    /**
+     * @return the task start time as an Instant object.
+     */
+    public Instant getTaskStartTime() {
+        return taskStartTime;
+    }
+
+    private static CruiseControlExecutorState extractState(JsonNode executorStateJson) {
+        if (executorStateJson == null || !executorStateJson.has(STATE_KEY)) {
+            throw new IllegalArgumentException(
+                    String.format("Executor state: `%s` does not contain \"state\" entry", executorStateJson));
+        }
+        return CruiseControlExecutorState.fromString(executorStateJson.get(STATE_KEY).asText());
+    }
+
+    /**
+     * Retrieves the total amount of data to move from the provided `executorStateJson` JSON object.
      * The value is obtained from the "totalDataToMove" field.
      *
-     * @param executorJson The `JsonNode` object containing the state of the executor,
-     *                      from which the total data to move is extracted.
+     * @param executorStateJson The `JsonNode` object containing the state of the executor,
+     *                          from which the total data to move is extracted.
      * @return The total data to move, in megabytes.
      * @throws NullPointerException if the "totalDataToMove" field is missing or null.
      */
-    public static Integer getTotalDataToMove(JsonNode executorJson) {
-        if (!executorJson.has(TOTAL_DATA_TO_MOVE_KEY)) {
+    private static Integer extractTotalDataToMove(JsonNode executorStateJson) {
+        if (!executorStateJson.has(TOTAL_DATA_TO_MOVE_KEY)) {
             throw new IllegalArgumentException(String.format("Executor State does not contain required '%s' field.", TOTAL_DATA_TO_MOVE_KEY));
         }
-        return executorJson.get(TOTAL_DATA_TO_MOVE_KEY).asInt();
+        return executorStateJson.get(TOTAL_DATA_TO_MOVE_KEY).asInt();
     }
 
     /**
-     * Retrieves the amount of data that has already been moved from the provided `executorJson` JSON object.
+     * Retrieves the amount of data that has already been moved from the provided `executorStateJson` JSON object.
      * The value is obtained from the "finishedDataMovement" field.
      *
-     * @param executorJson The `JsonNode` object containing the state of the executor,
+     * @param executorStateJson The `JsonNode` object containing the state of the executor,
      *                      from which the finished data movement is extracted.
      * @return The amount of data that has already been moved, in megabytes.
      */
-    public static Integer getFinishedDataMovement(JsonNode executorJson) {
-        if (!executorJson.has(FINISHED_DATA_MOVEMENT_KEY)) {
+    private static Integer extractFinishedDataMovement(JsonNode executorStateJson) {
+        if (!executorStateJson.has(FINISHED_DATA_MOVEMENT_KEY)) {
             throw new IllegalArgumentException(String.format("Executor State does not contain required '%s' field.", FINISHED_DATA_MOVEMENT_KEY));
         }
-        return executorJson.get(FINISHED_DATA_MOVEMENT_KEY).asInt();
+        return executorStateJson.get(FINISHED_DATA_MOVEMENT_KEY).asInt();
     }
 
     /**
-     * Extracts the task start time from the provided `executorJson` JSON object.
+     * Extracts the task start time from the provided `executorStateJson` JSON object.
      * The task start time is extracted from the "triggeredTaskReason" field, which contains a
      * timestamp in ISO 8601 format. The timestamp is then parsed into Instant object.
      *
      * Update this method to extract the task start time from `StartMs` field once this issue is resolved:
      * https://github.com/linkedin/cruise-control/issues/2271
      *
-     * @param executorJson The `JsonNode` object containing the state of the executor,
+     * @param executorStateJson The `JsonNode` object containing the state of the executor,
      *                      from which the task start time will be extracted.
      * @return The task start time as an Instant object.
      */
-    public static Instant getTaskStartTime(JsonNode executorJson) {
-        if (!executorJson.has(TRIGGERED_TASK_REASON_KEY)) {
+    private static Instant extractTaskStartTime(JsonNode executorStateJson) {
+        if (!executorStateJson.has(TRIGGERED_TASK_REASON_KEY)) {
             throw new IllegalArgumentException(String.format("Executor State does not contain required '%s' field.", TRIGGERED_TASK_REASON_KEY));
         }
-        String triggeredTaskReason = executorJson.get(TRIGGERED_TASK_REASON_KEY).asText();
+        String triggeredTaskReason = executorStateJson.get(TRIGGERED_TASK_REASON_KEY).asText();
         // Extract the timestamp from the string, assuming it's in ISO 8601 format
         String dateString = extractDateFromTriggeredTaskReason(triggeredTaskReason);
 

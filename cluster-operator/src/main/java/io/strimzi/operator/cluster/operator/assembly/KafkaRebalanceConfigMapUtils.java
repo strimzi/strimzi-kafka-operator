@@ -4,13 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
-import io.strimzi.operator.cluster.model.cruisecontrol.ExecutorStateProcessor;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlExecutorState;
 import io.vertx.core.Future;
@@ -49,13 +48,13 @@ public class KafkaRebalanceConfigMapUtils {
     /**
      * Updates the given KafkaRebalance ConfigMap with progress fields based on the progress of the Kafka rebalance operation.
      *
-     * @param state         The current state of the KafkaRebalance resource (e.g., ProposalReady, Rebalancing, Stopped, etc.).
-     * @param executorState The executor state information in JSON format, which is used to calculate progress fields
-     *                      in the Rebalancing state.
-     * @param configMap     The ConfigMap to be updated with progress information.
+     * @param state          The current state of the KafkaRebalance resource (e.g., ProposalReady, Rebalancing, Stopped, etc.).
+     * @param executorStatus The executor status information of executing task, which is used to calculate progress fields
+     *                       in the Rebalancing state.
+     * @param configMap      The ConfigMap to be updated with progress information.
      */
     /* test */ static void updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState state,
-                                                                      JsonNode executorState,
+                                                                      ExecutorStatus executorStatus,
                                                                       ConfigMap configMap) {
         Map<String, String> data = configMap != null ? configMap.getData() : null;
 
@@ -66,9 +65,9 @@ public class KafkaRebalanceConfigMapUtils {
                 data.remove(EXECUTOR_STATE_KEY);
                 break;
             case Rebalancing:
-                Instant taskStartTime = ExecutorStateProcessor.getTaskStartTime(executorState);
-                int totalDataToMove = ExecutorStateProcessor.getTotalDataToMove(executorState);
-                int finishedDataMovement = ExecutorStateProcessor.getFinishedDataMovement(executorState);
+                Instant taskStartTime = executorStatus.getTaskStartTime();
+                int totalDataToMove = executorStatus.getTotalDataToMove();
+                int finishedDataMovement = executorStatus.getFinishedDataMovement();
 
                 int estimatedTimeToCompletion = KafkaRebalanceProgressUtils.estimateTimeToCompletionInMinutes(
                         taskStartTime,
@@ -81,13 +80,13 @@ public class KafkaRebalanceConfigMapUtils {
 
                 data.put(ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY, String.valueOf(estimatedTimeToCompletion));
                 data.put(COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY, String.valueOf(completedByteMovement));
-                data.put(EXECUTOR_STATE_KEY, executorState.toString());
+                data.put(EXECUTOR_STATE_KEY, executorStatus.getJson().toString());
                 break;
             case Stopped:
             case NotReady:
                 data.remove(ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY);
                 // Use the value of completedByteMovementPercentage from previous update.
-                // Use the value of executorState object from previous update.
+                // Use the value of executorStateJson object from previous update.
                 break;
             case Ready:
                 data.put(ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY, TIME_COMPLETED);
@@ -119,8 +118,6 @@ public class KafkaRebalanceConfigMapUtils {
                                                              int port,
                                                              CruiseControlApi apiClient,
                                                              ConfigMap configMap) {
-
-
         KafkaRebalanceState state = KafkaRebalanceUtils.rebalanceState(status);
         if (state == KafkaRebalanceState.Rebalancing) {
             return VertxUtil.completableFutureToVertxFuture(
@@ -129,9 +126,9 @@ public class KafkaRebalanceConfigMapUtils {
                                     port,
                                     false))
                     .compose(response -> {
-                        JsonNode executorState = response.getJson().get("ExecutorState");
-                        CruiseControlExecutorState.verifyRebalancingState(executorState);
-                        updateRebalanceConfigMapWithProgressFields(state, executorState, configMap);
+                        ExecutorStatus executorStatus = response.getExecutorStatus();
+                        CruiseControlExecutorState.verifyProgressState(executorStatus.getState());
+                        updateRebalanceConfigMapWithProgressFields(state, executorStatus, configMap);
                         return Future.succeededFuture(configMap);
                     });
 
