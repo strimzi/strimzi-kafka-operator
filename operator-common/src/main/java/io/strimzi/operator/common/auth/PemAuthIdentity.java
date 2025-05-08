@@ -61,8 +61,7 @@ public class PemAuthIdentity {
      * @return PemAuthIdentity to use as the client authentication identity during TLS authentication
      */
     public static PemAuthIdentity clusterOperator(Secret secret) {
-        String privateAndPublicKeyName = "cluster-operator";
-        return new PemAuthIdentity(secret, String.format("%s.key", privateAndPublicKeyName), String.format("%s.crt", privateAndPublicKeyName));
+        return new PemAuthIdentity(secret, "cluster-operator.key", "cluster-operator.crt");
     }
 
     /**
