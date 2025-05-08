@@ -19,12 +19,6 @@ public class KafkaRebalanceProgressUtils {
      * @param totalDataToMoveInMB The total amount of data that needs to be moved, in megabytes.
      * @param finishedDataMovementInMB The amount of data that has already been moved, in megabytes.
      * @return The estimated time to completion in minutes.
-     * @throws IllegalArgumentException if:
-     *     - Any of the method argument values are negative.
-     *     - The value of taskStartTime is not greater than value of the currentTime.
-     * @throws ArithmeticException if:
-     *     - The elapsed time between `taskStartTime` and `currentTime` is zero, making rate calculation impossible.
-     *     - The data movement rate is zero, making the time to completion estimation impossible.
      */
     protected static int estimateTimeToCompletionInMinutes(Instant taskStartTime,
                                                  int totalDataToMoveInMB,

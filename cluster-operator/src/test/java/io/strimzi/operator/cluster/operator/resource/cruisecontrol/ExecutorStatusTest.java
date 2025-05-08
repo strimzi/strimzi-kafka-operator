@@ -42,23 +42,19 @@ public class ExecutorStatusTest {
     }
 
     @Test
-    public void testVerifyRebalancingState() throws Exception {
+    public void testIsInProgressState() {
         ExecutorStatus es0 = new ExecutorStatus(createExecutorStatusJson(
                 CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString(), null, null, null));
-        assertThrows(IllegalStateException.class, () -> CruiseControlExecutorState.verifyProgressState(es0.getState()));
+        assertThat(es0.isInProgressState(), is(false));
 
         ExecutorStatus es1 = new ExecutorStatus(createExecutorStatusJson(
                 CruiseControlExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString(),
                 DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE, DEFAULT_TRIGGERED_TASK_REASON));
-        CruiseControlExecutorState.verifyProgressState(es1.getState());
-
-        ExecutorStatus es2 = new ExecutorStatus(createExecutorStatusJson(CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString(),
-                DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE, DEFAULT_TRIGGERED_TASK_REASON));
-        assertThrows(IllegalStateException.class, () -> CruiseControlExecutorState.verifyProgressState(es2.getState()));
+        assertThat(es1.isInProgressState(), is(true));
     }
 
     @Test
-    public void testGetFinishedDataMovement() throws Exception {
+    public void testGetFinishedDataMovement() {
         ExecutorStatus es0 = new ExecutorStatus(createExecutorStatusJson(
                 DEFAULT_STATE, "50", DEFAULT_TOTAL_DATA_TO_MOVE, DEFAULT_TRIGGERED_TASK_REASON));
         assertThat(es0.getFinishedDataMovement(), is(50));
@@ -74,7 +70,7 @@ public class ExecutorStatusTest {
     }
 
     @Test
-    public void testGetTotalDataToMove() throws Exception {
+    public void testGetTotalDataToMove() {
         ExecutorStatus es0 = new ExecutorStatus(createExecutorStatusJson(
                 DEFAULT_STATE, DEFAULT_FINISHED_DATA_MOVEMENT, "10000", DEFAULT_TRIGGERED_TASK_REASON));
         assertThat(es0.getTotalDataToMove(), is(10000));
@@ -90,7 +86,7 @@ public class ExecutorStatusTest {
     }
 
     @Test
-    public void testGetTaskStartTime() throws Exception {
+    public void testGetTaskStartTime() {
         ExecutorStatus es0 = new ExecutorStatus(createExecutorStatusJson(
                 DEFAULT_STATE, DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE,
                 "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T19:41:27Z)"));
@@ -120,7 +116,7 @@ public class ExecutorStatusTest {
                 DEFAULT_STATE, DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE,
                 "No reason provided (Client: 172.17.0.1)")));
 
-        // Test missing field throws NoSuchFieldException
+        // Test missing field throws IllegalArgumentException
         assertThrows(IllegalArgumentException.class, () ->
                 new ExecutorStatus(createExecutorStatusJson(null, null, null, null)));
     }

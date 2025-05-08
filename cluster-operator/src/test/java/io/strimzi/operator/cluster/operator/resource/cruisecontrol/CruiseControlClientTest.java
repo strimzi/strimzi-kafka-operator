@@ -28,7 +28,6 @@ import java.util.function.Consumer;
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasKeys;
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.COMPLETED;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -78,7 +77,7 @@ public class CruiseControlClientTest {
 
     @Test
     public void testGetCCState() {
-        cruiseControlServer.mockStateEndpoint(COMPLETED, false);
+        cruiseControlServer.mockStateEndpoint(null, false);
 
         CruiseControlApi client = cruiseControlClientProvider();
         client.getCruiseControlState(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, false)

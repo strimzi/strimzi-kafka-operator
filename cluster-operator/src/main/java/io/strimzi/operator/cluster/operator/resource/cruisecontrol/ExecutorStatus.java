@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Represents the Executor state information returned from `/kafkacruisecontrol/state` endpoint.
+ * Represents the Executor status information returned from "/kafkacruisecontrol/state" endpoint.
  */
 public class ExecutorStatus {
 
@@ -25,6 +25,7 @@ public class ExecutorStatus {
     /* test */ static final String TRIGGERED_TASK_REASON_KEY = "triggeredTaskReason";
 
     private JsonNode json;
+    private boolean inProgressState;
     private CruiseControlExecutorState state;
     private Integer finishedDataMovement;
     private Integer totalDataToMove;
@@ -38,7 +39,8 @@ public class ExecutorStatus {
     public ExecutorStatus(JsonNode json) {
         this.json = json;
         state = extractState(json);
-        if (CruiseControlExecutorState.inProgressState(state)) {
+        inProgressState = CruiseControlExecutorState.inProgressState(state);
+        if (inProgressState) {
             finishedDataMovement = extractFinishedDataMovement(json);
             totalDataToMove = extractTotalDataToMove(json);
             taskStartTime = extractTaskStartTime(json);
@@ -51,6 +53,14 @@ public class ExecutorStatus {
     public JsonNode getJson() {
         return json;
     }
+
+    /**
+     * @return true if in progress state
+     */
+    public boolean isInProgressState() {
+        return inProgressState;
+    }
+
 
     /**
      * @return the value of the "state" field from the Executor status JSON.
@@ -99,7 +109,7 @@ public class ExecutorStatus {
      */
     private static Integer extractTotalDataToMove(JsonNode executorStateJson) {
         if (!executorStateJson.has(TOTAL_DATA_TO_MOVE_KEY)) {
-            throw new IllegalArgumentException(String.format("Executor State does not contain required '%s' field.", TOTAL_DATA_TO_MOVE_KEY));
+            throw new IllegalArgumentException(String.format("Executor State %s does not contain required '%s' field.", executorStateJson.textValue(), TOTAL_DATA_TO_MOVE_KEY));
         }
         return executorStateJson.get(TOTAL_DATA_TO_MOVE_KEY).asInt();
     }
@@ -148,12 +158,12 @@ public class ExecutorStatus {
     }
 
     /**
-     * Extracts the ISO 8601 date-time string from a Cruise Control task's triggeredTaskReason string.
-     * The triggeredTaskReason string is expected to be in the format "%s (Client: %s, Date: %s)", where
-     * the ISO 8601 date-time string follows "Date:" in UTC and is rounded to the second
+     * Extracts the ISO 8601 date-time string from a Cruise Control task's "triggeredTaskReason" string.
+     * The "triggeredTaskReason" string is expected to be in the format "%s (Client: %s, Date: %s)", where
+     * the ISO 8601 date-time string follows "Date:" in UTC and is rounded to the nearest second.
      * (see: https://github.com/linkedin/cruise-control/blob/main/cruise-control-core/src/main/java/com/linkedin/cruisecontrol/CruiseControlUtils.java#L39-L41).
      *
-     * @param triggeredTaskReason Cruise Control task's triggeredTaskReason string.
+     * @param triggeredTaskReason Cruise Control task's "triggeredTaskReason" string.
      *
      * @return Date-time string in ISO 8601 format.
      */

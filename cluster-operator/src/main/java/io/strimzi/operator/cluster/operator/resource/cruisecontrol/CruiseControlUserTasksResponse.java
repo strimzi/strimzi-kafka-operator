@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
  * Response to user tasks request
  */
 public class CruiseControlUserTasksResponse extends CruiseControlResponse {
-
     private boolean isMaxActiveUserTasksReached;
 
     /**
@@ -36,5 +35,4 @@ public class CruiseControlUserTasksResponse extends CruiseControlResponse {
     protected void setMaxActiveUserTasksReached(boolean maxActiveUserTasksReached) {
         this.isMaxActiveUserTasksReached = maxActiveUserTasksReached;
     }
-
 }

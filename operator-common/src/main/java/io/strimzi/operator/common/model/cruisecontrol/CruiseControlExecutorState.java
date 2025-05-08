@@ -49,26 +49,11 @@ public enum CruiseControlExecutorState {
             LEADER_MOVEMENT_TASK_IN_PROGRESS);
 
     /**
-     * Verifies whether the given executor state is a valid progress state.
-     * If the state is not an active progress state, an {@link IllegalStateException} is thrown.
-     *
-     * @param state the {@link CruiseControlExecutorState} containing the executor state to verify;
-     *
-     * @throws IllegalStateException if the provided state is not a valid active rebalancing state.
-     */
-    public static void verifyProgressState(CruiseControlExecutorState state) {
-        if (!inProgressState(state)) {
-            throw new IllegalStateException(
-                    String.format("Partition movement information unavailable; executor is in non-active state '%s', progress estimation will be updated shortly.", state));
-        }
-    }
-
-    /**
      * Determines if given executor state is in a valid progress state.
      *
      * @param state the {@link CruiseControlExecutorState} containing the executor state to verify;
      * @return True if given executor state is in valid progress state.
-     *         If the state is not an active progress state return false
+     *         If the state is not an active progress state return false.
      */
     public static boolean inProgressState(CruiseControlExecutorState state) {
         return PROGRESS_STATES.contains(state);

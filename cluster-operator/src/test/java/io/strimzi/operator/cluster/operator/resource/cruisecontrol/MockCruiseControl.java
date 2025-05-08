@@ -169,11 +169,11 @@ public class MockCruiseControl {
      *
      * <p>
      * This method configures the MockServer to return specific responses based on the provided task status
-     * and error flag.
+     * and fetch error flag.
      *
      * @param taskStatus The current {@link CruiseControlUserTaskStatus} of the simulated Cruise Control task.
-     *                   This determines whether the state response should reflect an active proposal,
-     *                   an ongoing execution, or a completed state.
+     *                   This determines whether the state response should reflect no task (when "null"), an
+     *                   active proposal generation task, an ongoing executing task, or a completed task.
      * @param fetchError If {@code true}, the mock will return a 500 error response to simulate a fetch failure
      *                   from the Cruise Control "State" endpoint, regardless of task status.
      */
@@ -185,6 +185,13 @@ public class MockCruiseControl {
             server
                     .when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true|false", "true|false"))
                     .respond(buildStateResponse("CC-State-fetch-error.json", "cruise-control-state-error", 500));
+            return;
+        }
+
+        if (taskStatus == null) {
+            server
+                    .when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true", "false"))
+                    .respond(buildStateResponse("CC-State.json", "cruise-control-state", 200));
             return;
         }
 
@@ -227,19 +234,23 @@ public class MockCruiseControl {
     }
 
     /**
-     * Sets up mocked response of the Cruise Control "User Tasks" endpoint.
-     *
-     * <p>
-     * This method configures the MockServer to return specific responses based on the provided task status.
+     * Sets up mocked response of the Cruise Control "User Tasks" endpoint based on the provided task status.
      *
      * @param taskStatus The current {@link CruiseControlUserTaskStatus} of the simulated Cruise Control task.
-     *                   This determines whether the state response should reflect an active,
-     *                   an ongoing execution, or a completed task.
+     *                   This determines whether the state response should reflect no task (when "null"), an
+     *                   active proposal generation task, an ongoing executing task, or a completed task.
      */
     private void mockUserTasksEndpoint(CruiseControlUserTaskStatus taskStatus) {
         List<Header> authHeader = List.of(AUTH_HEADER);
         for (boolean verbose : List.of(false, true)) {
             HttpRequest request = requestMatcher(authHeader, CruiseControlEndpoints.USER_TASKS, "true", String.valueOf(verbose));
+
+            if (taskStatus == null) {
+                server
+                        .when(request)
+                        .respond(userTaskResponse(COMPLETED, verbose)); // or some other sensible fallback
+                continue;
+            }
 
             switch (taskStatus) {
                 case ACTIVE:
@@ -313,14 +324,11 @@ public class MockCruiseControl {
     }
 
     /**
-     * Sets up mocked response of the Cruise Control "Rebalance" endpoint.
-     *
-     * <p>
-     * This method configures the MockServer to return specific responses based on the provided task status.
+     * Sets up mocked response of the Cruise Control "Rebalance" endpoint based on the provided task status.
      *
      * @param taskStatus The current {@link CruiseControlUserTaskStatus} of the simulated Cruise Control task.
-     *                   This determines whether the state response should reflect a pending,
-     *                   ongoing execution, or a completed rebalance task.
+     *                   This determines whether the state response should reflect no task (when "null"), an
+     *                   active proposal generation task, an ongoing executing task, or a completed task.
      */
     public void mockRebalanceEndpoint(CruiseControlUserTaskStatus taskStatus) {
         for (boolean verbose : List.of(false, true)) {
@@ -331,6 +339,16 @@ public class MockCruiseControl {
         }
     }
 
+    /**
+     * Sets up mocked responses from Cruise Control REST API endpoint based on the provided task status
+     * and fetch error flag.
+     *
+     * @param taskStatus The current {@link CruiseControlUserTaskStatus} of the simulated Cruise Control task.
+     *                   This determines whether the state response should reflect no task (when "null"), an
+     *                   active proposal generation task, an ongoing executing task, or a completed task.
+     * @param stateEndpointFetchError If {@code true}, the mock will return a 500 error response to simulate a fetch failure
+     *                   from the Cruise Control "State" endpoint, regardless of task status.
+     */
     public void mockTask(CruiseControlUserTaskStatus taskStatus, boolean stateEndpointFetchError) {
         server.clear(request());
         mockUserTasksEndpoint(taskStatus);
@@ -438,8 +456,6 @@ public class MockCruiseControl {
                                 .withStatusCode(202)
                                 .withDelay(TimeUnit.SECONDS, responseDelay));
 
-
-
         HttpResponse response = response();
 
         if (verbose == null) {
@@ -520,9 +536,9 @@ public class MockCruiseControl {
      * Sets up the User Tasks endpoint. These endpoints expect the query to contain the user-task-id returned in the header of the response from
      * the rebalance endpoints.
      *
-     * @param activeCalls      The number of calls to the User Tasks endpoint that should return "Active" before "inExecution" is returned as the status.
+     * @param activeCalls The number of calls to the User Tasks endpoint that should return "Active" before "inExecution" is returned as the status.
      * @param inExecutionCalls The number of calls to the User Tasks endpoint that should return "InExecution" before "Completed" is returned as the status.
-     * @throws IOException        If there are issues connecting to the network port.
+     * @throws IOException If there are issues connecting to the network port.
      * @throws URISyntaxException If any of the configured end points are invalid.
      */
     public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls) throws IOException, URISyntaxException {

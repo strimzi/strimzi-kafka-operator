@@ -67,8 +67,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
             boolean containsEstimatedTimeToCompletion,
             boolean containsCompletedByteMovement,
             boolean containsExecutorState,
-            boolean containsBrokerLoad
-    ) {
+            boolean containsBrokerLoad) {
         void assertConfigMapFields(ConfigMap configMap) {
             if (configMapExpected) {
                 assertThat(configMap, notNullValue());
@@ -175,7 +174,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                          mockCruiseControlTask(IN_EXECUTION, true)
                         .compose(res -> reconcile(reconciliation))
                         .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Rebalancing, res))
-                        .onSuccess(v -> {
+                        .onSuccess(res -> {
 
                             // Test that the warning condition was not updated.
                             Condition warningCondition2 = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());
@@ -184,10 +183,10 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                             assertThat(warningCondition1.getLastTransitionTime(), is(warningCondition2.getLastTransitionTime()));
 
                         }))
-                .compose(v ->   mockCruiseControlTask(COMPLETED, false))
+                .compose(res ->   mockCruiseControlTask(COMPLETED, false))
                 .compose(res -> reconcile(reconciliation))
                 .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Ready, res))
-                .onSuccess(v -> {
+                .onSuccess(res -> {
 
                     // Test that warning condition is removed
                     Condition warningCondition2 = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());

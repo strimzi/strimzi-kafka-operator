@@ -11,7 +11,6 @@ import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlExecutorState;
 import io.vertx.core.Future;
 
 import java.time.Instant;
@@ -22,7 +21,6 @@ import java.util.Map;
  * Utility class for updating data in KafkaRebalance ConfigMap
  */
 public class KafkaRebalanceConfigMapUtils {
-
     /* test */ static final String REBALANCE_PROGRESS_CONFIG_MAP_KEY = "rebalanceProgressConfigMap";
     /**
      * The estimated time it will take in minutes until the partition rebalance is complete rounded
@@ -35,7 +33,7 @@ public class KafkaRebalanceConfigMapUtils {
      */
     /* test */ static final String COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY = "completedByteMovementPercentage";
     /**
-     * The “non-verbose” JSON payload from the /kafkacruisecontrol/state?substates=executor endpoint,
+     * The “non-verbose” JSON payload from the "/kafkacruisecontrol/state?substates=executor" endpoint,
      * providing details about the executor's current status, including partition movement progress,
      * concurrency limits, and total data to move.
      */
@@ -121,17 +119,20 @@ public class KafkaRebalanceConfigMapUtils {
         KafkaRebalanceState state = KafkaRebalanceUtils.rebalanceState(status);
         if (state == KafkaRebalanceState.Rebalancing) {
             return VertxUtil.completableFutureToVertxFuture(
-                            apiClient.getCruiseControlState(reconciliation,
-                                    host,
-                                    port,
-                                    false))
+                    apiClient.getCruiseControlState(reconciliation, host, port, false))
                     .compose(response -> {
                         ExecutorStatus executorStatus = response.getExecutorStatus();
-                        CruiseControlExecutorState.verifyProgressState(executorStatus.getState());
-                        updateRebalanceConfigMapWithProgressFields(state, executorStatus, configMap);
-                        return Future.succeededFuture(configMap);
+                        if (executorStatus.isInProgressState()) {
+                            // We can only estimate the rate of partition movement once some data has been moved.
+                            if (executorStatus.getFinishedDataMovement() > 0) {
+                                updateRebalanceConfigMapWithProgressFields(state, executorStatus, configMap);
+                                return Future.succeededFuture(configMap);
+                            }
+                        }
+                        throw new IllegalStateException(
+                                String.format("Partition movement information unavailable; executor is in '%s' state, " +
+                                        "progress estimation will be updated on next reconciliation.", executorStatus.getState()));
                     });
-
         } else {
             updateRebalanceConfigMapWithProgressFields(state, null, configMap);
             return Future.succeededFuture(configMap);

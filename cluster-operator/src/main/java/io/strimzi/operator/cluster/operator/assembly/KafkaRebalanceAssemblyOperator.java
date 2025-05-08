@@ -358,7 +358,10 @@ public class KafkaRebalanceAssemblyOperator
                     desiredStatus.setProgress(Map.of(REBALANCE_PROGRESS_CONFIG_MAP_KEY, configMapName));
                     return KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, desiredStatus, host, cruiseControlPort, apiClient, desiredConfigMap)
                             .recover(exception -> {
-                                LOGGER.infoCr(reconciliation, "Progress update of rebalance skipped due to the following error: {}", exception);
+                                exception = new Exception(
+                                        String.format("Progress update of rebalance skipped due to the following reason: %s",
+                                                exception.getMessage()), exception);
+                                LOGGER.infoCr(reconciliation, exception.getMessage());
                                 KafkaRebalanceUtils.addWarningCondition(desiredStatus, exception);
                                 return Future.succeededFuture();
                             })
