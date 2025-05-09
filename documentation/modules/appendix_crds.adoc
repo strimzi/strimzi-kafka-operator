@@ -4352,6 +4352,9 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |sessionId
 |string
 |The session identifier for requests to Cruise Control pertaining to this KafkaRebalance resource. This is used by the Kafka Rebalance operator to track the status of ongoing rebalancing operations.
+|progress
+|map
+|A JSON object describing the progress of the rebalance.
 |optimizationResult
 |map
 |A JSON object describing the optimization result.
