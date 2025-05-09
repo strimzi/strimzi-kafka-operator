@@ -86,3 +86,45 @@ spec:
             severity: warning
           annotations:
             message: "Strimzi KafkaRebalance {{ $labels.name }} contains a deprecated configuration"
+        - alert: KafkaConnectNotReady
+          expr: strimzi_kafka_connect_resource_info{ready!="True"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaConnect {{ $labels.name }} is not ready"
+        - alert: KafkaConnectDeprecated
+          expr: strimzi_kafka_connect_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaConnect {{ $labels.name }} contains a deprecated configuration"
+        - alert: KafkaConnectorNotReady
+          expr: strimzi_kafka_connector_resource_info{ready!="True"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaConnector {{ $labels.name }} is not ready"
+        - alert: KafkaConnectorDeprecated
+          expr: strimzi_kafka_connector_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaConnector {{ $labels.name }} contains a deprecated configuration"
+        - alert: KafkaMirrorMaker2NotReady
+          expr: strimzi_kafka_mm2_resource_info{ready!="True"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaMirrorMaker2 {{ $labels.name }} is not ready"
+        - alert: KafkaMirrorMaker2Deprecated
+          expr: strimzi_kafka_mm2_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaMirrorMaker2 {{ $labels.name }} contains a deprecated configuration"
