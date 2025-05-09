@@ -37,13 +37,20 @@ public class UserOperatorMetricsCollectionScheduler extends BaseMetricsCollectio
     private static final Logger LOGGER = LogManager.getLogger(UserOperatorMetricsCollectionScheduler.class);
     private final UserOperatorMetricsCollector userOperatorMetricsCollector;
 
+    public static UserOperatorMetricsCollectionScheduler getInstance(UserOperatorMetricsCollector collector, String selector) {
+        return BaseMetricsCollectionScheduler.getInstance(
+            UserOperatorMetricsCollectionScheduler.class,
+            () -> new UserOperatorMetricsCollectionScheduler(collector, selector)
+        );
+    }
+
     /**
      * Constructs a {@code UserOperatorMetricsCollectionScheduler} with a specified metrics collector and selector.
      *
      * @param userOperatorMetricsCollector  The {@link UserOperatorMetricsCollector} used for gathering metrics.
      * @param selector                      The selector string that specifies the target resources for metrics collection.
      */
-    public UserOperatorMetricsCollectionScheduler(UserOperatorMetricsCollector userOperatorMetricsCollector, String selector) {
+    private UserOperatorMetricsCollectionScheduler(UserOperatorMetricsCollector userOperatorMetricsCollector, String selector) {
         super(selector);
         this.userOperatorMetricsCollector = userOperatorMetricsCollector;
     }
@@ -97,7 +104,11 @@ public class UserOperatorMetricsCollectionScheduler extends BaseMetricsCollectio
             metrics.put(entry.getKey(), Collections.singletonList(entry.getValue()));
         }
 
-        metrics.put(PerformanceConstants.JVM_MEMORY_MAX_BYTES, this.userOperatorMetricsCollector.getJvmMemoryMaxBytes());
+        // jvm_memory_max_bytes{area="nonheap",id="CodeHeap 'profiled nmethods'",} 1.22908672E8 etc.
+        for (Map.Entry<String, Double> entry : this.userOperatorMetricsCollector.getJvmMemoryMaxBytes().entrySet()) {
+            metrics.put(entry.getKey(), Collections.singletonList(entry.getValue()));
+        }
+
         metrics.put(PerformanceConstants.PROCESS_CPU_USAGE, this.userOperatorMetricsCollector.getProcessCpuUsage());
         metrics.put(PerformanceConstants.SYSTEM_LOAD_AVERAGE_1M, this.userOperatorMetricsCollector.getSystemLoadAverage1m());
 

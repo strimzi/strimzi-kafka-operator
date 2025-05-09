@@ -95,11 +95,12 @@ public class BaseMetricsCollector extends MetricsCollector {
     }
 
     /**
-     * Retrieves the maximum bytes of memory that can be used by the JVM.
-     * @return              A list of {@link Double} values representing the maximum memory bytes of the JVM.
+     * Retrieves JVM max memory metrics grouped by label combinations.
+     *
+     * @return Map of label keys to max memory values.
      */
-    public List<Double> getJvmMemoryMaxBytes() {
-        return collectMetricValues(PerformanceConstants.JVM_MEMORY_MAX_BYTES);
+    public Map<String, Double> getJvmMemoryMaxBytes() {
+        return collectMetricWithLabels(PerformanceConstants.JVM_MEMORY_MAX_BYTES);
     }
 
     /**
@@ -150,12 +151,29 @@ public class BaseMetricsCollector extends MetricsCollector {
         return collectSpecificMetric(pattern);
     }
 
-    protected Map<String, Double> collectMetricWithLabels(String labels) {
-        Map<String, Double> values = new HashMap<>();
+    /**
+     * Collects metric values by name and groups them by label combinations.
+     *
+     * @param metricName Name of the metric to collect (e.g., "jvm_memory_max_bytes").
+     * @return Map where keys are concatenated label strings (e.g., "area=heap,id=G1 Old Gen")
+     *         and values are the corresponding metric values.
+     */
+    private Map<String, Double> collectMetricWithLabels(final String metricName) {
+        final Map<String, Double> values = new HashMap<>();
 
-        for (Map.Entry<String, List<Metric>> entry : this.collectedData.entrySet()) {
-            List<Metric> metrics = collectMetricWithLabels(entry.getKey(), labels);
-            metrics.forEach(metric -> values.put(metric.getName(), MetricsUtils.getDoubleMetricValueBasedOnType(metric)));
+        for (final Map.Entry<String, List<Metric>> entry : this.collectedData.entrySet()) {
+            final List<Metric> metrics = entry.getValue().stream()
+                .filter(metric -> metric.getName().equals(metricName))
+                .toList();
+
+            for (final Metric metric : metrics) {
+                final String labelKey = metric.getLabels().entrySet().stream()
+                    .map(e -> e.getKey() + "=" + e.getValue())
+                    .reduce((a, b) -> a + "," + b)
+                    .orElse("no_labels");
+
+                values.put(labelKey, MetricsUtils.getDoubleMetricValueBasedOnType(metric));
+            }
         }
 
         return values;

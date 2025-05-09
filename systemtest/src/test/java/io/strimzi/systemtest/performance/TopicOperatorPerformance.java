@@ -157,7 +157,7 @@ public class TopicOperatorPerformance extends AbstractST {
                 .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
                 .build();
 
-            this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
+            this.topicOperatorMetricsGatherer = TopicOperatorMetricsCollectionScheduler.getInstance(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
             this.topicOperatorMetricsGatherer.startCollecting();
 
             // we will create incrementally topics
