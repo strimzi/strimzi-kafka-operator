@@ -117,7 +117,7 @@ jobs:
           distribution: "temurin"
           # TODO - maybe change as a parameter?
           java-version: "17"
-          cache: maven
+          cache: 'maven'
 
       - name: Install Helm
         uses: ./.github/actions/install-helm
@@ -138,12 +138,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y dnsutils iproute2
 
-      - name: Install Minikube
-        uses: ./.github/actions/setup-minikube
+#      - name: Install Minikube
+#        uses: ./.github/actions/setup-minikube
+#        with:
+#          architecture: ${{ matrix.config.arch }}
+#          cpu: ${{ matrix.config.cpu }}
+#          memory: ${{ matrix.config.memory }}
+
+      - name: Install Kind
+        uses: ./.github/actions/setup-kind
         with:
           architecture: ${{ matrix.config.arch }}
-          cpu: ${{ matrix.config.cpu }}
-          memory: ${{ matrix.config.memory }}
 
       - name: Set default environment variables
         uses: ./.github/actions/set-defaults
@@ -199,7 +204,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
-          key: "maven-cache | ${{ github.job }} | **/pom.xml"
+          key: "maven-cache | **/pom.xml"
           restore-keys: |
             maven | ${{ github.job }}
             maven

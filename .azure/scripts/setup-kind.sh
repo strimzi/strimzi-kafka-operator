@@ -361,13 +361,15 @@ adjust_inotify_limits
 load_iptables_modules_for_podman
 
 reg_name='kind-registry'
-reg_port='5001'
+reg_port='5000'
 network_name="kind"
 
 configure_network "${network_name}"
 
 if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     hostname=$(hostname --ip-address | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | awk '$1 != "127.0.0.1" { print $1 }' | head -1)
+    # TODO - revert
+    hostname=localhost
 
     # update insecure registries
     updateContainerRuntimeConfiguration "${hostname}:${reg_port}"
@@ -384,7 +386,7 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     # run local container registry
     if [ "$($DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
         $DOCKER_CMD run \
-          -d --restart=always -p "${hostname}:${reg_port}:5000" --name "${reg_name}" --network "${network_name}" \
+          -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" --network "${network_name}" \
           ${REGISTRY_IMAGE}
     fi
 

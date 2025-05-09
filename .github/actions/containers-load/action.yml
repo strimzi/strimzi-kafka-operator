@@ -49,14 +49,11 @@ runs:
           sleep 10
           echo "Pods"
           kubectl get po -n kube-system
-          echo "Registry deployment"
-          kubectl get deployment registry -o yaml -n kube-system
-          echo "Registry deployment log"
-          kubectl logs deployment/registry -n kube-system
-          echo "Registry proxy log"
-          kubectl logs daemonset/registry-proxy -n kube-system
           echo "Kube proxy log"
           kubectl logs daemonset/kube-proxy -n kube-system
+          docker ps -a
+          docker images -a
+          docker logs kind-registry
         done
 
         if [ $COUNT -eq $RETRIES ]; then
@@ -66,14 +63,10 @@ runs:
         
         echo "Pods"
         kubectl get po -n kube-system
-        echo "Registry deployment"
-        kubectl get deployment registry -o yaml -n kube-system
-        echo "Registry deployment log"
-        kubectl logs deployment/registry -n kube-system
-        echo "Registry proxy log"
-        kubectl logs daemonset/registry-proxy -n kube-system
         echo "Kube proxy log"
         kubectl logs daemonset/kube-proxy -n kube-system
+        docker ps -a
+        docker logs kind-registry
         docker images -a
 
       env:
