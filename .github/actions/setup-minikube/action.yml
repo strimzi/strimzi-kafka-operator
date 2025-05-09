@@ -39,7 +39,7 @@ runs:
       uses: actions/cache@v4
       with:
         path: /tmp/registry-image.tar
-        key: minikube-registry-image
+        key: registry-image
 
     - name: Load registry Docker image from cache
       if: steps.cache-registry.outputs.cache-hit == 'true'
@@ -79,10 +79,15 @@ runs:
         TEST_CLUSTER: minikube
         TEST_KUBECTL_VERSION: ${{ inputs.kubectlVersion }}
         TEST_MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
-        REGISTRY_IMAGE: mirror.gcr.io/registry:2.8.3
+        REGISTRY_IMAGE: ${{ inputs.registry }}
         MINIKUBE_MEMORY: ${{ inputs.memory }}
         MINIKUBE_CPU: ${{ inputs.cpu }}
         RETRIES: ${{ inputs.retries }}
+
+    - name: Set DOCKER_REGISTRY
+      shell: bash
+      run: |
+        echo "DOCKER_REGISTRY=localhost:5000" >> $GITHUB_ENV
 
     - name: DEBUG - check running containers
       shell: bash
