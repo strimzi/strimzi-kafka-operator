@@ -24,14 +24,14 @@ runs:
       with:
         distribution: "temurin"
         java-version: "17"
-        cache: maven
+        cache: 'maven'
 
     # Caches for Maven and Kafka
     - name: Cache local Maven repository
       uses: actions/cache@v4
       with:
         path: ~/.m2/repository
-        key: "maven-cache | ${{ github.job }} | **/pom.xml"
+        key: "maven-cache | **/pom.xml"
         restore-keys: |
           maven | ${{ github.job }}
           maven
