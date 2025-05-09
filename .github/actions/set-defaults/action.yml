@@ -28,7 +28,6 @@ runs:
           # Not main, not tag/release => treat as PR
           echo "PULL_REQUEST=true" >> $GITHUB_ENV
           echo "DOCKER_ORG=strimzi" >> $GITHUB_ENV
-          echo "DOCKER_REGISTRY=localhost:5000" >> $GITHUB_ENV
           echo "COMMIT=${{ github.sha }}" >> $GITHUB_ENV
           echo "TAG=pr" >> $GITHUB_ENV
         fi
