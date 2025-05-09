@@ -4,6 +4,8 @@
  */
 package io.strimzi.certs;
 
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -121,6 +123,15 @@ public class OpenSslCertManagerIT {
                 "Expected a certificate with CA:" + true + ", but basic constraints = " + x509Certificate.getBasicConstraints());
         assertEquals(notBefore.toInstant(), x509Certificate.getNotBefore().toInstant());
         assertEquals(notAfter.toInstant(), x509Certificate.getNotAfter().toInstant());
+
+        byte[] skiBytes = x509Certificate.getExtensionValue("2.5.29.14");
+        byte[] akiBytes = x509Certificate.getExtensionValue("2.5.29.35");
+
+        ASN1OctetString skiOctet = ASN1OctetString.getInstance(skiBytes);
+        ASN1OctetString akiOctet = ASN1OctetString.getInstance(akiBytes);
+        AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(akiOctet.getOctets());
+
+        assertEquals(aki.getKeyIdentifier(), skiOctet.getOctets()); // AKI = SKI but may fail on some environments
 
         // truststore verification
         KeyStore store1 = KeyStore.getInstance("PKCS12");
@@ -322,6 +333,9 @@ public class OpenSslCertManagerIT {
 
         ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", subject);
+
+        X509Certificate certificate = loadCertificate(cert);
+        assertThat(certificate.getExtensionValue("2.5.29.35"), is(notNullValue()));
 
         caKey.delete();
         caCert.delete();
