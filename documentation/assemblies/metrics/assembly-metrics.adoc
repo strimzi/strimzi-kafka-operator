@@ -21,7 +21,7 @@ Strimzi provides example Prometheus rules and Grafana dashboards, which you can 
 These tools help visualize metrics and define alerts based on specific conditions.
 Additionally, you can configure your deployment to track messages end-to-end by xref:assembly-distributed-tracing-str[setting up distributed tracing].
 
-NOTE: Strimzi provides example installation files for Prometheus and Grafana to help get you started. 
+NOTE: Strimzi provides example installation files for Prometheus and Grafana to help get you started.
 For further support, refer to the Prometheus and Grafana developer communities.
 
 .Supporting documentation for metrics and monitoring tools

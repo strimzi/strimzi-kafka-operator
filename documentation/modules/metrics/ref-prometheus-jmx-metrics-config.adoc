@@ -3,21 +3,17 @@
 //
 // metrics/assembly-metrics-config-files.adoc
 
-[id='ref-metrics-prometheus-metrics-config-{context}']
+[id='ref-jmx-metrics-prometheus-metrics-config-{context}']
 
-= Example Prometheus metrics configuration
+= Example Prometheus JMX Exporter metrics configuration
 
 [role="_abstract"]
-Strimzi uses the {JMXExporter} to expose metrics through an HTTP endpoint, which can be scraped by the Prometheus server.
 
-Grafana dashboards are dependent on Prometheus JMX Exporter relabeling rules, which are defined for Strimzi components in the custom resource configuration.
+Grafana dashboards with Prometheus JMX Exporter are dependent on relabeling rules, which are defined for Strimzi components in the custom resource configuration.
 
 A label is a name-value pair.
 Relabeling is the process of writing a label dynamically.
 For example, the value of a label may be derived from the name of a Kafka server and client ID.
-
-Strimzi provides example custom resource configuration YAML files with relabeling rules.
-When deploying Prometheus metrics configuration, you can can deploy the example custom resource or copy the metrics configuration to your own custom resource definition.
 
 .Example custom resources with metrics configuration
 [cols="3*",options="header",stripes="none"]
