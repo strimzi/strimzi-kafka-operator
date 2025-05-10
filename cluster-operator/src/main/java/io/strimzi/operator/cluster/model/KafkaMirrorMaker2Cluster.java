@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Spec;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
