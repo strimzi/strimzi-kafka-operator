@@ -57,9 +57,9 @@ The release process should normally look like this:
         ```
         helm repo index <PATH_TO_THE_DIRECTORY_WITH_THE_ARTIFACTS> --merge <PATH_TO_THE_INDEX_YAML> --url <URL_OF_THE_GITHUB_RELEASE_PAGE>
         ```
-        For example, for Strimzi 0.45.0 release, if you unpacked the release artifacts to `./strimzi-0.45.0-rc1/` and have the Strimzi website checkout in `strimzi.github.io/`, you would run:
+        For example, for Strimzi 0.45.0 release, if you unpacked the release artifacts to `./strimzi-0.45.0/` and have the Strimzi website checkout in `strimzi.github.io/`, you would run:
         ```
-        helm repo index ./strimzi-0.45.0-rc1/ --merge ./strimzi.github.io/charts/index.yaml --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.45.0/
+        helm repo index ./strimzi-0.45.0/ --merge ./strimzi.github.io/charts/index.yaml --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.45.0/
         ```
       * The updated `index.yaml` will be generated in the directory with the artifacts.
         Verify the added data and the digest and if they are correct, copy it to `charts/index.yaml` on the website. 
