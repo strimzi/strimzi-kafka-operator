@@ -59,7 +59,7 @@ The release process should normally look like this:
         ```
         For example, for Strimzi 0.45.0 release, if you unpacked the release artifacts to `./strimzi-0.45.0-rc1/` and have the Strimzi website checkout in `strimzi.github.io/`, you would run:
         ```
-        helm repo index ./strimzi-0.45.0/ --merge ./strimzi.github.io/charts/index.yaml --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.45.0/
+        helm repo index ./strimzi-0.45.0-rc1/ --merge ./strimzi.github.io/charts/index.yaml --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.45.0/
         ```
       * The updated `index.yaml` will be generated in the directory with the artifacts.
         Verify the added data and the digest and if they are correct, copy it to `charts/index.yaml` on the website. 
@@ -137,12 +137,13 @@ The metadata are described through a `ClusterServiceVersion` (CSV) resource decl
 
 The bundle for the OperatorHub.io is available in the [Community-Operators](https://github.com/k8s-operatorhub/community-operators/tree/main/operators/strimzi-kafka-operator) GitHub repo.
 
-In order provide the bundle for a new release, you can use the previous one as a base.  
+In order to provide the bundle for a new release, you can use the previous one as a base.  
 Create a folder for the new release by copying the previous one and make the following changes:
 
 * if releasing a new minor or major version (rather than fix), change the `metadata/annotations.yaml` to update the second channel listed next to `operators.operatorframework.io.bundle.channels.v1` to the new release version range (e.g. `strimzi-0.45.x`).
 * copy the CRDs and the Cluster Roles YAML to the `manifests` folder by taking them from the `install/cluster-operator` folder (within the Strimzi repo).
 * take the `strimzi-cluster-operator.v<VERSION>.clusterserviceversion.yaml` CSV file (by using the new release as `<VERSION>`) in order to update the following:
+  * `createAt` field with date/time creation of the current CSV file.
   * `metadata.annotations.alm-examples-metadata` section by using the examples from the `examples` folder (within the Strimzi repo).
   * `containerImage` field with the new operator image (using the SHA).
   * `name` field by setting the new version in the operator name.
