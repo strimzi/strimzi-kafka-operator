@@ -24,7 +24,7 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "mode", "brokers", "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
-    "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies", "moveReplicasOffVolumes" })
+    "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "logDirThrottle", "replicaMovementStrategies", "moveReplicasOffVolumes" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaRebalanceSpec extends Spec {
@@ -45,6 +45,7 @@ public class KafkaRebalanceSpec extends Spec {
     private int concurrentIntraBrokerPartitionMovements;
     private int concurrentLeaderMovements;
     private long replicationThrottle;
+    private long logDirThrottle;
     private List<String> replicaMovementStrategies;
     private List<BrokerAndVolumeIds> moveReplicasOffVolumes;
 
@@ -150,7 +151,7 @@ public class KafkaRebalanceSpec extends Spec {
         this.concurrentLeaderMovements = movements;
     }
 
-    @Description("The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default.")
+    @Description("The upper bound, in bytes per second, on the bandwidth used to move replicas between brokers (i.e., inter-broker replica movements). There is no limit by default.")
     @Minimum(0)
     public long getReplicationThrottle() {
         return replicationThrottle;
@@ -158,6 +159,16 @@ public class KafkaRebalanceSpec extends Spec {
 
     public void setReplicationThrottle(long bandwidth) {
         this.replicationThrottle = bandwidth;
+    }
+
+    @Description("The upper bound, in bytes per second, on the bandwidth used to move replicas between disks (i.e., intra-broker replica movements). There is no limit by default.")
+    @Minimum(0)
+    public long getLogDirThrottle() {
+        return logDirThrottle;
+    }
+
+    public void setLogDirThrottle(long bandwidth) {
+        this.logDirThrottle = bandwidth;
     }
 
     @Description("A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. " +
