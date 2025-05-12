@@ -87,9 +87,8 @@ dashboards:
   annotations: {}
   extraLabels: {}
 
-# Docker images that operator uses to provision various components of Strimzi. To use your own registry prefix the
-# repository name with your registry URL.
-# Ex) repository: registry.xyzcorp.com/strimzi/kafka
+# Docker images that operator uses to provision various components of Strimzi.
+# To use your own registry or repository, define them for each component below or generally via defaultImageRegistry and defaultImageRepository above
 kafka:
   image:
     registry: ""
