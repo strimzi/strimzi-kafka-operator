@@ -2860,12 +2860,6 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 |clusterRoleBinding
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for the Kafka Connect ClusterRoleBinding.
-|role
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|Template for the Kafka Connect Role.
-|roleBinding
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|Template for the Kafka Connect RoleBinding.
 |buildPod
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.

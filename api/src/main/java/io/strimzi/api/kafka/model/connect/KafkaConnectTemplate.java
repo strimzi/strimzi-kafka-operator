@@ -34,7 +34,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"deployment", "podSet", "pod", "apiService", "headlessService", "connectContainer", "initContainer",
-    "podDisruptionBudget", "serviceAccount", "clusterRoleBinding", "role", "roleBinding", "buildPod", "buildContainer", "buildConfig",
+    "podDisruptionBudget", "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig",
     "buildServiceAccount", "jmxSecret"})
 @EqualsAndHashCode
 @ToString
@@ -51,8 +51,6 @@ public class KafkaConnectTemplate implements HasJmxSecretTemplate, UnknownProper
     private ContainerTemplate buildContainer;
     private BuildConfigTemplate buildConfig;
     private ResourceTemplate clusterRoleBinding;
-    private ResourceTemplate role;
-    private ResourceTemplate roleBinding;
     private ResourceTemplate serviceAccount;
     private ResourceTemplate buildServiceAccount;
     private ResourceTemplate jmxSecret;
@@ -181,26 +179,6 @@ public class KafkaConnectTemplate implements HasJmxSecretTemplate, UnknownProper
 
     public void setClusterRoleBinding(ResourceTemplate clusterRoleBinding) {
         this.clusterRoleBinding = clusterRoleBinding;
-    }
-
-    @Description("Template for the Kafka Connect Role")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getRole() {
-        return role;
-    }
-
-    public void setRole(ResourceTemplate role) {
-        this.role = role;
-    }
-
-    @Description("Template for the Kafka Connect RoleBinding")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getRoleBinding() {
-        return roleBinding;
-    }
-
-    public void setRoleBinding(ResourceTemplate roleBinding) {
-        this.roleBinding = roleBinding;
     }
 
     @Description("Template for the Kafka Connect service account.")

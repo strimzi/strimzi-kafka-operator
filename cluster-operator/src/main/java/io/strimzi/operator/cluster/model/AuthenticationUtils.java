@@ -129,7 +129,7 @@ public class AuthenticationUtils {
      * @param volumeNamePrefix Prefix used for volume names
      * @param createOAuthSecretVolumes   Indicates whether OAuth secret volumes will be added to the list
      */
-    public static void configurePKCSClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift, String volumeNamePrefix, boolean createOAuthSecretVolumes)   {
+    public static void configurePKCS12ClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift, String volumeNamePrefix, boolean createOAuthSecretVolumes)   {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
                 addNewVolume(volumeList, volumeNamePrefix, tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift);
@@ -228,7 +228,7 @@ public class AuthenticationUtils {
      * @param mountOAuthSecretVolumes Indicates whether OAuth secret volume mounts will be added to the list
      * @param oauthSecretsVolumeMount Path where the OAuth secrets would be mounted
      */
-    public static void configurePKCSClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthCertsVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthSecretsVolumeMount) {
+    public static void configurePKCS12ClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthCertsVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthSecretsVolumeMount) {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
 

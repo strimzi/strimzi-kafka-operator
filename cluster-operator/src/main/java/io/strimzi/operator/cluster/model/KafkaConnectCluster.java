@@ -151,8 +151,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     // Templates
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected ResourceTemplate templateInitClusterRoleBinding;
-    protected ResourceTemplate templateRole;
-    protected ResourceTemplate templateRoleBinding;
     protected DeploymentTemplate templateDeployment;
     protected ResourceTemplate templatePodSet;
     protected PodTemplate templatePod;
@@ -305,8 +303,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
-            result.templateRole = template.getRole();
-            result.templateRoleBinding = template.getRoleBinding();
             result.templateDeployment = template.getDeployment();
             result.templatePodSet = template.getPodSet();
             result.templatePod = template.getPod();
@@ -861,7 +857,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 .withResourceNames(certSecretNames)
                 .build());
 
-        Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, templateRole);
+        Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
         return role;
     }
 
@@ -884,7 +880,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 .build();
 
         RoleBinding rb = RbacUtils
-                .createRoleBinding(KafkaConnectResources.connectRoleBindingName(cluster), namespace, roleRef, List.of(subject), labels, ownerReference, templateRoleBinding);
+                .createRoleBinding(KafkaConnectResources.connectRoleBindingName(cluster), namespace, roleRef, List.of(subject), labels, ownerReference, null);
 
         return rb;
     }
