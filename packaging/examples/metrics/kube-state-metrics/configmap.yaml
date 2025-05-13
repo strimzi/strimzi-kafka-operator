@@ -142,7 +142,7 @@ data:
           metricNamePrefix: strimzi_kafka_connect
           metrics:
             - name: resource_info
-              help: "The current state of a Strimzi kafka connect resource."
+              help: "The current state of a Strimzi Kafka Connect resource."
               each:
                 type: Info
                 info:
@@ -165,7 +165,7 @@ data:
           metricNamePrefix: strimzi_kafka_connector
           metrics:
             - name: resource_info
-              help: "The current state of a Strimzi kafka connector resource."
+              help: "The current state of a Strimzi Kafka Connector resource."
               each:
                 type: Info
                 info:
@@ -187,7 +187,7 @@ data:
           metricNamePrefix: strimzi_kafka_mm2
           metrics:
             - name: resource_info
-              help: "The current state of a Strimzi kafka mirrormaker2 resource."
+              help: "The current state of a Strimzi Kafka MirrorMaker2 resource."
               each:
                 type: Info
                 info:
