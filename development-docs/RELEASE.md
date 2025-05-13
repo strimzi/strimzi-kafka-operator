@@ -187,11 +187,11 @@ For further details about the following steps, you can also refer to the officia
 In this step, you are going to create a container image containing the bundle with the operator manifests and metadata. 
 Inside the bundle directory (i.e. `operators/strimzi-kafka-operator/0.45.0`), export the following environment variables to specify the operator version and the container registry and user used to push the bundle and catalog images:
 
-``shell
+```shell
 export OPERATOR_VERSION=0.45.0
 export DOCKER_REGISTRY=quay.io
 export DOCKER_USER=ppatierno
-``
+```
 
 Run the following command in order to generate a `bundle.Dockerfile` representing the operator bundle image.
 
