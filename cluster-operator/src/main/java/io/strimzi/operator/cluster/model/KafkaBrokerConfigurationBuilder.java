@@ -1025,25 +1025,26 @@ public class KafkaBrokerConfigurationBuilder {
      * @param key List configuration key.
      * @param values List configuration values.
      */
-    public static void createOrAddListConfig(AbstractConfiguration kafkaConfig, String key, String values) {
-        if (kafkaConfig != null && key != null && !key.isBlank() && values != null && !values.isBlank()) {
-            String existingConfig = kafkaConfig.getConfigOption(key);
-            // using an ordered set to preserve ordering of the existing kafkaConfig
-            Set<String> existingSet = existingConfig == null ? new LinkedHashSet<>() :
-                    Arrays.stream(existingConfig.split(","))
-                            .map(String::trim)
-                            .filter(s -> !s.isEmpty())
-                            .collect(Collectors.toCollection(LinkedHashSet::new));
-            Set<String> newValues = Arrays.stream(values.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-            // add only new values
-            boolean updated = existingSet.addAll(newValues);
-            if (updated) {
-                String updatedConfig = String.join(",", existingSet);
-                kafkaConfig.setConfigOption(key, updatedConfig);
-            }
+    static void createOrAddListConfig(AbstractConfiguration kafkaConfig, String key, String values) {
+        if (kafkaConfig == null) throw new IllegalArgumentException("Configuration is required");
+        if (key == null || key.isBlank()) throw new IllegalArgumentException("Configuration key is required");
+        if (values == null || values.isBlank()) throw new IllegalArgumentException("Configuration values are required");
+        String existingConfig = kafkaConfig.getConfigOption(key);
+        // using an ordered set to preserve ordering of the existing kafkaConfig as values could potentially be user-provided.
+        Set<String> existingSet = existingConfig == null ? new LinkedHashSet<>() :
+                Arrays.stream(existingConfig.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<String> newValues = Arrays.stream(values.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        // add only new values
+        boolean updated = existingSet.addAll(newValues);
+        if (updated) {
+            String updatedConfig = String.join(",", existingSet);
+            kafkaConfig.setConfigOption(key, updatedConfig);
         }
     }
 
