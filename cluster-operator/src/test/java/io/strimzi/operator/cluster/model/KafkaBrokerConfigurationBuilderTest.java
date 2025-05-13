@@ -2680,11 +2680,11 @@ public class KafkaBrokerConfigurationBuilderTest {
     public void testCreateOrAddListConfigWithNullConfig() {
         KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         config.setConfigOption("test-key", "test-value-1,test-value-2");
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            KafkaBrokerConfigurationBuilder.createOrAddListConfig(null, "test-key", "test-value-3");
+        });
 
-        Stream.of(null, "", " ")
-                .map(key -> assertThrows(IllegalArgumentException.class, () -> KafkaBrokerConfigurationBuilder.createOrAddListConfig(config, key, "test-value-3")))
-                .forEach(e -> assertThat(e.getMessage(), is("Configuration key is required")
-                ));
+        assertThat(exception.getMessage(), is(equalTo("Configuration is required")));
     }
 
     @ParallelTest
