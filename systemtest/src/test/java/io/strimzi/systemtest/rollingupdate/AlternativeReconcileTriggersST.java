@@ -37,7 +37,9 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,7 +56,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.ROLLING_UPDATE;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -241,10 +242,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
-        Pod brokerPod = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
+        Pod brokerPod = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
         String brokerPodName = brokerPod.getMetadata().getName();
 
-        Pod controllerPod = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
+        Pod controllerPod = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
         String controllerPodName = controllerPod.getMetadata().getName();
 
         // snapshot of one single Kafka pod
@@ -260,8 +261,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
                     .editMetadata()
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
                     .endMetadata()
-                    .build()
-            );
+                    .build());
 
         // here we are waiting just to one pod's snapshot will be changed and all 3 pods ready -> if we set expectedPods to 1,
         // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
@@ -275,8 +275,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
                     .editMetadata()
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
                     .endMetadata()
-                    .build()
-            );
+                    .build());
 
         // same as above
         controllerSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerSnapshot);
@@ -408,7 +407,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         StUtils.waitUntilSupplierIsSatisfied("there are 6 Kafka volumes", () -> {
             // ensure there are 6 Kafka Volumes (2 per each of 3 broker)
-            List<PersistentVolume> kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            List<PersistentVolume> kafkaPvcs = PersistentVolumeUtils.listClaimed(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                     .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName())).toList();
             LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
             return kafkaPvcs.size() == 6;
@@ -428,7 +427,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ensure there are 3 Kafka Volumes (1 per each of 3 broker)
         PersistentVolumeClaimUtils.waitForPvcCount(testStorage, 3);
         StUtils.waitUntilSupplierIsSatisfied("there are 3 Kafka volumes", () -> {
-            List<PersistentVolume> kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            List<PersistentVolume> kafkaPvcs = PersistentVolumeUtils.listClaimed(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                     .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName()) && pv.getStatus().getPhase().equals("Bound")).toList();
             LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
             return kafkaPvcs.size() == 3;

@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
@@ -28,7 +29,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -156,7 +156,7 @@ public class CruiseControlUtils {
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {
-        String cmName = kubeClient().listPods(namespaceName, LabelSelectors.kafkaLabelSelector(clusterName, KafkaComponents.getBrokerPodSetName(clusterName))).get(0).getMetadata().getName();
+        String cmName = KubeResourceManager.get().kubeClient().listPods(namespaceName, LabelSelectors.kafkaLabelSelector(clusterName, KafkaComponents.getBrokerPodSetName(clusterName))).get(0).getMetadata().getName();
 
         InputStream configurationFileStream = new ByteArrayInputStream(ConfigMapUtils.getInNamespace(namespaceName, cmName)
                 .getData().get("server.config").getBytes(StandardCharsets.UTF_8));

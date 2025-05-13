@@ -78,7 +78,6 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -407,7 +406,7 @@ class CustomResourceStatusST extends AbstractST {
                     assertThat("Plain bootstrap has incorrect host", listener.getAddresses().get(0).getHost(), is(internalAddress));
                     break;
                 case TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME:
-                    Service extBootstrapService = kubeClient(Environment.TEST_SUITE_NAMESPACE).getClient().services()
+                    Service extBootstrapService = KubeResourceManager.get().kubeClient().getClient().services()
                             .inNamespace(Environment.TEST_SUITE_NAMESPACE)
                             .withName(sharedTestStorage.getClusterName() + "-kafka-external-bootstrap")
                             .get();

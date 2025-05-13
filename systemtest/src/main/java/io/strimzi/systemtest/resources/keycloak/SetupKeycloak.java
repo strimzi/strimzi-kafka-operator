@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class SetupKeycloak {
     private static final List<String> KEYCLOAK_REALMS_FILE_NAMES = List.of("internal_realm.json", "authorization_realm.json", "scope_audience_realm.json");
@@ -189,14 +188,14 @@ public class SetupKeycloak {
     private static void deleteKeycloak(String namespaceName) {
         LOGGER.info("Deleting Keycloak in Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).delete(KEYCLOAK_INSTANCE_FILE_PATH);
-        kubeClient().deleteSecret(namespaceName, KEYCLOAK_SECRET_NAME);
+        SecretUtils.deleteSecretWithWait(namespaceName, KEYCLOAK_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, KEYCLOAK_DEPLOYMENT_NAME);
     }
 
     private static void deletePostgres(String namespaceName) {
         LOGGER.info("Deleting Postgres in Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).delete(POSTGRES_FILE_PATH);
-        kubeClient().deleteSecret(namespaceName, POSTGRES_SECRET_NAME);
+        SecretUtils.deleteSecretWithWait(namespaceName, POSTGRES_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, "postgres");
     }
 }

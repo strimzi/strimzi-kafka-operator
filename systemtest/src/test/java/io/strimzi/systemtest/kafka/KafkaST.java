@@ -46,8 +46,6 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.api.kafka.model.topic.KafkaTopicList;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -100,7 +98,6 @@ import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -233,7 +230,7 @@ class KafkaST extends AbstractST {
         final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         final Map<String, String> eoPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), eoDepName);
 
-        String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
 
         LOGGER.info("Verifying resources and JVM configuration of Kafka Broker Pod");
         VerificationUtils.assertPodResourceRequests(testStorage.getNamespaceName(), brokerPodName, "kafka",
@@ -243,7 +240,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Verifying resources, JVM configuration, and environment variables of Entity Operator's components");
 
-        Optional<Pod> pod = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName())
+        Optional<Pod> pod = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName())
                 .stream().filter(p -> p.getMetadata().getName().startsWith(KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName())))
                 .findFirst();
         assertThat("EO Pod does not exist", pod.isPresent(), is(true));
@@ -321,7 +318,7 @@ class KafkaST extends AbstractST {
         PodUtils.waitUntilPodContainersCount(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()), 1);
 
         // Checking that UO was removed
-        kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName())).forEach(pod -> {
+        PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName())).forEach(pod -> {
             pod.getSpec().getContainers().forEach(container -> {
                 assertThat(container.getName(), not(containsString("user-operator")));
             });
@@ -336,7 +333,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Verifying that Entity Operator and all its component are correctly recreated");
         // names of containers present in EO pod
-        List<String> entityOperatorContainerNames = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()))
+        List<String> entityOperatorContainerNames = PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()))
                 .get(0).getSpec().getContainers()
                 .stream()
                 .map(Container::getName)
@@ -352,7 +349,7 @@ class KafkaST extends AbstractST {
 
         //Checking that TO was removed
         LOGGER.info("Verifying that Topic Operator container is no longer present in Entity Operator Pod");
-        kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName())).forEach(pod -> {
+        PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName())).forEach(pod -> {
             pod.getSpec().getContainers().forEach(container -> {
                 assertThat(container.getName(), not(containsString("topic-operator")));
             });
@@ -434,12 +431,12 @@ class KafkaST extends AbstractST {
         });
 
         TestUtils.waitFor("PVC(s)' annotation to change according to Kafka JBOD storage 'delete claim'", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.SAFETY_RECONCILIATION_INTERVAL,
-            () -> kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            () -> PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().startsWith("data-0") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName()))
                 .allMatch(volume -> "false".equals(volume.getMetadata().getAnnotations().get("strimzi.io/delete-claim")))
         );
 
-        final int volumesCount = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).size();
+        final int volumesCount = PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).size();
 
         LOGGER.info("Deleting Kafka: {}/{} cluster", testStorage.getNamespaceName(), testStorage.getClusterName());
         // we cannot use ResourceManager here, as it would delete all the PVCs (part of the KafkaResource#delete method)
@@ -450,7 +447,7 @@ class KafkaST extends AbstractST {
         PersistentVolumeClaimUtils.waitForJbodStorageDeletion(testStorage.getNamespaceName(), volumesCount, testStorage.getBrokerComponentName(), List.of(idZeroVolumeModified, idOneVolumeOriginal));
 
         LOGGER.info("Verifying that PVC which are supposed to remain, really persist even after Kafka cluster un-deployment");
-        List<String> remainingPVCNames =  kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).stream().map(e -> e.getMetadata().getName()).toList();
+        List<String> remainingPVCNames =  PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).stream().map(e -> e.getMetadata().getName()).toList();
         brokerPods.keySet().forEach(broker -> assertThat("Kafka Broker: " + broker + " does not preserve its JBOD storage's PVC",
             remainingPVCNames.stream().anyMatch(e -> e.equals("data-0-" + broker))));
     }
@@ -479,7 +476,7 @@ class KafkaST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
-        Map<String, Secret> secretsWithoutExt = kubeClient(testStorage.getNamespaceName()).listSecrets()
+        Map<String, Secret> secretsWithoutExt = SecretUtils.listInNamespace(testStorage.getNamespaceName())
                 .stream()
                 .collect(Collectors.toMap(secret -> secret.getMetadata().getName(), secret -> secret));
 
@@ -508,7 +505,7 @@ class KafkaST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()));
 
         LOGGER.info("Checking Secrets");
-        kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getBrokerPodSetName(testStorage.getClusterName())).forEach(kafkaPod -> {
+        PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), KafkaComponents.getBrokerPodSetName(testStorage.getClusterName())).forEach(kafkaPod -> {
             String kafkaPodName = kafkaPod.getMetadata().getName();
             Secret secretWithExt = SecretUtils.getInNamespace(testStorage.getNamespaceName(), kafkaPodName);
             assertThat(secretWithExt.getData().get(kafkaPodName + ".crt"), is(not(secretsWithoutExt.get(kafkaPodName).getData().get(kafkaPodName + ".crt"))));
@@ -616,7 +613,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> PODS <---");
 
-        List<Pod> pods = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName());
+        List<Pod> pods = PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         for (Pod pod : pods) {
             LOGGER.info("Verifying labels of  Pod: {}/{}", pod.getMetadata().getNamespace(), pod.getMetadata().getName());
@@ -648,8 +645,8 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> SECRETS <---");
 
-        List<Secret> secrets = kubeClient().listSecrets(testStorage.getNamespaceName()).stream()
-            .filter(secret -> secret.getMetadata().getName().startsWith(testStorage.getClusterName()) && secret.getType().equals("Opaque")).toList();
+        List<Secret> secrets = SecretUtils.listInNamespace(testStorage.getNamespaceName())
+            .stream().filter(secret -> secret.getMetadata().getName().startsWith(testStorage.getClusterName()) && secret.getType().equals("Opaque")).toList();
 
         for (Secret secret : secrets) {
             LOGGER.info("Verifying labels of Secret: {}/{}", secret.getMetadata().getNamespace(), secret.getMetadata().getName());
@@ -667,7 +664,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> PVC (both labels and annotation) <---");
 
-        List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+        List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
 
         for (PersistentVolumeClaim pvc : pvcs) {
@@ -758,7 +755,7 @@ class KafkaST extends AbstractST {
         PersistentVolumeClaimUtils.waitUntilPVCLabelsChange(testStorage.getNamespaceName(), testStorage.getClusterName(), customSpecifiedLabelOrAnnotationPvc, pvcLabelOrAnnotationKey);
         PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(testStorage.getNamespaceName(), testStorage.getClusterName(), customSpecifiedLabelOrAnnotationPvc, pvcLabelOrAnnotationKey);
 
-        pvcs = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+        pvcs = PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
         LOGGER.info(pvcs.toString());
 
@@ -800,7 +797,7 @@ class KafkaST extends AbstractST {
         verifyPresentLabels(customSpecifiedLabels, StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()));
 
         LOGGER.info("Verifying via Kafka Pods");
-        Map<String, String> podLabels = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).stream().findFirst().orElseThrow().getMetadata().getLabels();
+        Map<String, String> podLabels = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).stream().findFirst().orElseThrow().getMetadata().getLabels();
 
         for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
             assertThat("Label exists in Kafka Pods", label.getValue().equals(podLabels.get(label.getKey())));
@@ -848,7 +845,7 @@ class KafkaST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 1, 1).build());
 
-        String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
 
         TestUtils.waitFor("KafkaTopic creation inside Kafka Pod", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
@@ -892,11 +889,11 @@ class KafkaST extends AbstractST {
 
         assertThat("Topic has no data", topicData, notNullValue());
 
-        List<Pod> brokerPods = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
+        List<Pod> brokerPods = PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
 
         for (Pod kafkaPod : brokerPods) {
             LOGGER.info("Deleting Kafka Pod: {}/{}", testStorage.getNamespaceName(), kafkaPod.getMetadata().getName());
-            kubeClient(testStorage.getNamespaceName()).deletePod(testStorage.getNamespaceName(), kafkaPod);
+            KubeResourceManager.get().deleteResourceWithoutWait(kafkaPod);
         }
 
         LOGGER.info("Waiting for Kafka rolling restart");
@@ -1252,11 +1249,9 @@ class KafkaST extends AbstractST {
             .build());
 
         // 1. check Kafka pods
-        List<Pod> kafkaPods = kubeClient(testStorage.getNamespaceName())
-                .listPodsByPrefixInName(testStorage.getBrokerComponentName());
+        List<Pod> kafkaPods = PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
         // controller pods
-        kafkaPods.addAll(kubeClient(testStorage.getNamespaceName())
-                .listPodsByPrefixInName(testStorage.getControllerComponentName()));
+        kafkaPods.addAll(PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getControllerComponentName()));
 
         for (Pod kafkaPod : kafkaPods) {
             verifyPodSecretVolume(testStorage.getNamespaceName(), kafkaPod, "kafka", secretMountPath, secretValueBase64, secretKeyBase64);
@@ -1264,14 +1259,15 @@ class KafkaST extends AbstractST {
         }
 
         // 2. check Connect pods
-        List<Pod> connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
+        List<Pod> connectPods = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
         for (Pod connectPod : connectPods) {
             verifyPodSecretVolume(testStorage.getNamespaceName(), connectPod, KafkaConnectResources.componentName(testStorage.getClusterName()), secretMountPath, secretValueBase64, secretKeyBase64);
             verifyPodConfigMapVolume(testStorage.getNamespaceName(), connectPod, KafkaConnectResources.componentName(testStorage.getClusterName()), configMapMountPath, configMapValue, configMapKey);
         }
 
         // 3. check Bridge pods
-        List<Pod> bridgePods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaBridgeResources.componentName(testStorage.getClusterName()));
+        List<Pod> bridgePods = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(),
+            testStorage.getBridgeSelector());
 
         for (Pod bridgePod : bridgePods) {
             verifyPodSecretVolume(testStorage.getNamespaceName(), bridgePod, KafkaBridgeResources.componentName(testStorage.getClusterName()), secretMountPath, secretValueBase64, secretKeyBase64);
@@ -1336,7 +1332,7 @@ class KafkaST extends AbstractST {
     void verifyVolumeNamesAndLabels(String namespaceName, String clusterName, String podSetName, int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {
         ArrayList<String> pvcs = new ArrayList<>();
 
-        kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
+        PersistentVolumeClaimUtils.listByPrefixInNamespace(namespaceName, clusterName).stream()
             .filter(pvc -> pvc.getMetadata().getName().contains(podSetName))
             .forEach(volume -> {
                 String volumeName = volume.getMetadata().getName();
@@ -1404,12 +1400,12 @@ class KafkaST extends AbstractST {
             cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
         }
 
-        kubeClient(namespaceName).listPods(namespaceName).stream()
+        KubeResourceManager.get().kubeClient().listPods(namespaceName).stream()
             .filter(p -> p.getMetadata().getName().startsWith(OPENSHIFT_CLUSTER_NAME))
             .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getNamespace(), p.getMetadata().getName()));
 
-        kubeClient(namespaceName).getClient().resources(KafkaTopic.class, KafkaTopicList.class).inNamespace(namespaceName).delete();
-        kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
+        CrdClients.kafkaTopicClient().inNamespace(namespaceName).delete();
+        KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
 
         testSuiteNamespaceManager.deleteParallelNamespace();
     }

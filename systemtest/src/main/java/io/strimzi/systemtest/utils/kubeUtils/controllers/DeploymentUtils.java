@@ -25,7 +25,6 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 
 public class DeploymentUtils {
@@ -62,6 +61,18 @@ public class DeploymentUtils {
     }
 
     /**
+     * Returns {@link LabelSelector} from the spec of the desired {@link Deployment}.
+     *
+     * @param namespaceName     Namespace name where the Deployment should be present.
+     * @param deploymentName    name of the desired Deployment.
+     *
+     * @return  {@link LabelSelector} from the spec of the desired {@link Deployment}.
+     */
+    public static LabelSelector getDeploymentSelectorsInNamespace(String namespaceName, String deploymentName) {
+        return getInNamespace(namespaceName, deploymentName).getSpec().getSelector();
+    }
+
+    /**
      * Log actual status of deployment with pods
      * @param deployment - every Deployment, that HasMetadata and has status (fabric8 status)
      **/
@@ -77,10 +88,10 @@ public class DeploymentUtils {
                 log.add("\tMessage: " + deploymentCondition.getMessage() + "\n");
             }
 
-            if (kubeClient(namespaceName).listPodsByPrefixInName(name).size() != 0) {
+            if (PodUtils.listPodsByPrefixInNamespace(namespaceName, name).size() != 0) {
                 log.add("\nPods with conditions and messages:\n\n");
 
-                for (Pod pod : kubeClient(namespaceName).listPodsByPrefixInName(name)) {
+                for (Pod pod : PodUtils.listPodsByPrefixInNamespace(namespaceName, name)) {
                     log.add(pod.getMetadata().getName() + ":");
                     for (PodCondition podCondition : pod.getStatus().getConditions()) {
                         if (podCondition.getMessage() != null) {
@@ -178,7 +189,7 @@ public class DeploymentUtils {
 
         TestUtils.waitFor("readiness of Deployment: " + namespaceName + "/" + deploymentName,
             TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> kubeClient(namespaceName).getDeploymentStatus(namespaceName, deploymentName),
+            () -> KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(namespaceName).withName(deploymentName).isReady(),
             () -> DeploymentUtils.logCurrentDeploymentStatus(namespaceName, DeploymentUtils.getInNamespace(namespaceName, deploymentName)));
 
         LOGGER.info("Deployment: {}/{} is ready", namespaceName, deploymentName);
@@ -195,7 +206,7 @@ public class DeploymentUtils {
         waitForDeploymentReady(namespaceName, deploymentName);
 
         LOGGER.info("Waiting for {} Pod(s) of Deployment: {}/{} to be ready", expectPods, namespaceName, deploymentName);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, deploymentName), expectPods, true,
+        PodUtils.waitForPodsReady(namespaceName, getDeploymentSelectorsInNamespace(namespaceName, deploymentName), expectPods, true,
             () -> DeploymentUtils.logCurrentDeploymentStatus(namespaceName, getInNamespace(namespaceName, deploymentName)));
         LOGGER.info("Deployment: {}/{} is ready", namespaceName, deploymentName);
         return true;
@@ -223,6 +234,6 @@ public class DeploymentUtils {
 
     public static void waitForCreationOfDeploymentWithPrefix(String namespaceName, String deploymentNamePrefix) {
         TestUtils.waitFor(String.format("creation of Deployment with prefix: %s in Namespace: %s", deploymentNamePrefix, namespaceName), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient().getDeploymentNameByPrefix(namespaceName, deploymentNamePrefix) != null);
+            () -> KubeResourceManager.get().kubeClient().getDeploymentNameByPrefix(namespaceName, deploymentNamePrefix) != null);
     }
 }

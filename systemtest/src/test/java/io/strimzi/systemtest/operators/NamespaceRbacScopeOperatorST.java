@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -62,7 +61,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
         // Assert that no ClusterRoles are present on the server that have app strimzi
         // Naturally returns false positives if another Strimzi operator has been installed
-        List<ClusterRole> strimziClusterRoles = kubeClient().listClusterRoles().stream()
+        List<ClusterRole> strimziClusterRoles = KubeResourceManager.get().kubeClient().getClient().rbac().clusterRoles().list().getItems().stream()
             .filter(cr -> {
                 Map<String, String> labels = cr.getMetadata().getLabels() != null ? cr.getMetadata().getLabels() : Collections.emptyMap();
                 return "strimzi".equals(labels.get("app"));

@@ -63,7 +63,6 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.types.KafkaType.kafkaClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaUtils {
@@ -274,8 +273,7 @@ public class KafkaUtils {
      * false = if specific property doesn't match the excepted property
      */
     public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
-
-        List<Pod> brokerPods = kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
+        List<Pod> brokerPods = PodUtils.listPodsByPrefixInNamespace(namespaceName, kafkaPodNamePrefix);
         int[] brokerId = {0};
 
         for (Pod pod : brokerPods) {
@@ -533,7 +531,7 @@ public class KafkaUtils {
      *                                  This dictates how many volume directories the method will check within each Kafka pod.
      */
     public static void verifyKafkaKraftMetadataLog(final TestStorage testStorage, final int kraftMetadataVolumeId, final int numberOfVolumes) {
-        final List<Pod> kafkaPods = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        final List<Pod> kafkaPods = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         int kafkaIndex = 0; // Ensure this index is managed appropriately if used outside this method context.
 
         for (final Pod kafkaPod : kafkaPods) {

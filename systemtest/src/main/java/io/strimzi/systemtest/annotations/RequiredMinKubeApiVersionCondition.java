@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.annotations;
 
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,13 +25,13 @@ public class RequiredMinKubeApiVersionCondition implements ExecutionCondition {
         KubeClusterResource clusterResource = KubeClusterResource.getInstance();
         double version = annotation.get().version();
 
-        if (Double.parseDouble(clusterResource.client().clusterKubernetesVersion()) >= version) {
+        if (Double.parseDouble(StUtils.getKubernetesClusterVersion()) >= version) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
             LOGGER.info("{} is @RequiredMinKubeApiVersion with version {}, but the running on cluster with {}: Ignoring {}",
                     extensionContext.getDisplayName(),
                     version,
-                    clusterResource.client().clusterKubernetesVersion(),
+                    StUtils.getKubernetesClusterVersion(),
                     extensionContext.getDisplayName()
             );
             return ConditionEvaluationResult.disabled("Test is disabled");

@@ -14,9 +14,6 @@ import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
  * for use with {@code @BeforeAll} (or {@code BeforeEach}.
@@ -36,7 +33,6 @@ public class KubeClusterResource {
 
     private KubeCluster kubeCluster;
     private KubeCmdClient cmdClient;
-    private KubeClient client;
     private static KubeClusterResource kubeClusterResource;
 
     private String namespace;
@@ -97,35 +93,11 @@ public class KubeClusterResource {
         return kubeClusterResource.cmdClient().namespace(inNamespace);
     }
 
-    /**
-     * Provides appropriate Kubernetes client for running cluster
-     * @return Kubernetes client
-     */
-    public static KubeClient kubeClient() {
-        return kubeClusterResource.client().namespace(kubeClusterResource.getNamespace());
-    }
-
-    /**
-     * Provides appropriate Kubernetes client with expected namespace for running cluster
-     * @param inNamespace Namespace will be used as a current namespace for client
-     * @return Kubernetes client with expected namespace in configuration
-     */
-    public static KubeClient kubeClient(String inNamespace) {
-        return kubeClusterResource.client().namespace(inNamespace);
-    }
-
     public KubeCmdClient<?> cmdClient() {
         if (cmdClient == null) {
             cmdClient = cluster().defaultCmdClient();
         }
         return cmdClient;
-    }
-
-    public KubeClient client() {
-        if (client == null) {
-            this.client = cluster().defaultClient();
-        }
-        return client;
     }
 
     public KubeCluster cluster() {

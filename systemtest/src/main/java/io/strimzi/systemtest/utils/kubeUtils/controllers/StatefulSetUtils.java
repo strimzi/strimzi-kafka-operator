@@ -7,14 +7,11 @@ package io.strimzi.systemtest.utils.kubeUtils.controllers;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class StatefulSetUtils {
 

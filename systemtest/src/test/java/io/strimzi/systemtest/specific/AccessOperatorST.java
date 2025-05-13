@@ -40,7 +40,6 @@ import org.junit.jupiter.api.Tag;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Class for testing the usage of Kafka Access Operator together with operators and Kafka/KafkaUser CRs in real environment.

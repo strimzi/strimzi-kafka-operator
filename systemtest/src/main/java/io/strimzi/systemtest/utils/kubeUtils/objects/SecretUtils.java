@@ -6,6 +6,8 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Util;
@@ -16,7 +18,6 @@ import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.OpenSsl;
 import io.strimzi.systemtest.security.SystemTestCertManager;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,10 +33,10 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class SecretUtils {
 
@@ -55,6 +56,21 @@ public class SecretUtils {
      */
     public static Secret getInNamespace(String namespaceName, String secretName) {
         return KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).get();
+    }
+
+    /**
+     * Patches {@link Secret} in specific Namespace
+     * @param namespaceName     Namespace name where the Secret should be present.
+     * @param secretName        Name of the Secret that should be patched.
+     * @param patch             Patch of the Secret
+     */
+    public static void patchInNamespace(String namespaceName, String secretName, Secret patch) {
+        KubeResourceManager.get().kubeClient().getClient()
+            .secrets().inNamespace(namespaceName).withName(secretName).patch(PatchContext.of(PatchType.JSON), patch);
+    }
+
+    public static List<Secret> listInNamespace(String namespaceName) {
+        return KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).list().getItems();
     }
 
     public static void waitForSecretReady(String namespaceName, String secretName, Runnable onTimeout) {
@@ -193,7 +209,7 @@ public class SecretUtils {
     }
 
     public static void deleteSecretWithWait(String namespaceName, String secretName) {
-        kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).delete();
+        KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).delete();
 
         LOGGER.info("Waiting for Secret: {}/{} to be deleted", namespaceName, secretName);
         TestUtils.waitFor(String.format("Deletion of Secret %s#%s", namespaceName, secretName), TestConstants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
@@ -241,27 +257,6 @@ public class SecretUtils {
     }
 
     /**
-     * Method which waits for {@code secretName} Secret in {@code namespace} namespace to have
-     * label with {@code labelKey} key and {@code labelValue} value.
-     *
-     * @param namespaceName name of Namespace
-     * @param secretName    name of Secret
-     * @param labelKey      label key
-     * @param labelValue    label value
-     */
-    public static void waitForSpecificLabelKeyValue(String namespaceName, String secretName, String labelKey, String labelValue) {
-        LOGGER.info("Waiting for Secret: {}/{} (corresponding to KafkaUser) to have expected label: {}={}", namespaceName, secretName, labelKey, labelValue);
-        TestUtils.waitFor("Secret: " + namespaceName + "/" + secretName + " to exist with the corresponding label: " + labelKey + "=" + labelValue + " for the Kafka cluster", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> kubeClient().listSecrets(namespaceName)
-                .stream()
-                .anyMatch(secret -> secretName.equals(secret.getMetadata().getName())
-                    && secret.getMetadata().getLabels().containsKey(Labels.STRIMZI_CLUSTER_LABEL)
-                    && secret.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(labelValue)
-                )
-        );
-    }
-
-    /**
      * To test tls-external authentication, client needs to have an external certificates provided
      * To simulate externally provided certs, these steps are done:
      * 1. Generate private key and csr (containing at least common name CN) for user
@@ -276,9 +271,9 @@ public class SecretUtils {
             File clientPrivateKey = OpenSsl.generatePrivateKey();
 
             File csr = OpenSsl.generateCertSigningRequest(clientPrivateKey, "/CN=" + userName);
-            String caCrt = KubeClusterResource.SecretUtils.getInNamespace(
+            String caCrt = SecretUtils.getInNamespace(namespaceName,
                 KafkaResources.clientsCaCertificateSecretName(clusterName)).getData().get("ca.crt");
-            String caKey = KubeClusterResource.SecretUtils.getInNamespace(KafkaResources.clientsCaKeySecretName(clusterName)).getData().get("ca.key");
+            String caKey = SecretUtils.getInNamespace(namespaceName, KafkaResources.clientsCaKeySecretName(clusterName)).getData().get("ca.key");
 
             File clientCert = OpenSsl.generateSignedCert(csr,
                                                          SystemTestCertManager.exportCaDataToFile(Util.decodeFromBase64(caCrt, StandardCharsets.UTF_8), "ca", ".crt"),

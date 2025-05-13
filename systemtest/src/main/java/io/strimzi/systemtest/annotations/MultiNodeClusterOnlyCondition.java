@@ -6,7 +6,6 @@ package io.strimzi.systemtest.annotations;
 
 import io.fabric8.kubernetes.api.model.Node;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.junit.platform.commons.support.AnnotationSupport.findAnnotation;
 

@@ -60,7 +60,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -74,7 +73,6 @@ import static io.strimzi.systemtest.TestConstants.PATH_TO_KAFKA_TOPIC_CONFIG;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING_EXAMPLES;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -194,10 +192,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * @param testStorage Test-related configuration and storage
      */
     private void verifyKafkaConnectorFileSink(final TestStorage testStorage) {
-        String connectorPodName = kubeClient().listPods(
-            testStorage.getNamespaceName(),
-            Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)
-        ).get(0).getMetadata().getName();
+        String connectorPodName = PodUtils.listPodNamesInNamespace(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(
             testStorage.getNamespaceName(),
@@ -624,7 +619,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     }
 
     protected void checkContainerImages(String namespaceName, LabelSelector labelSelector, int container, String image) {
-        List<Pod> pods1 = kubeClient(namespaceName).listPods(labelSelector);
+        List<Pod> pods1 = KubeResourceManager.get().kubeClient().listPods(namespaceName, labelSelector);
         for (Pod pod : pods1) {
             if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
                 LOGGER.debug("Expected image for Pod: {}/{}: {} \nCurrent image: {}", pod.getMetadata().getNamespace(), pod.getMetadata().getName(), image, pod.getSpec().getContainers().get(container).getImage());
@@ -655,7 +650,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected void logPodImages(String namespaceName, LabelSelector... labelSelectors) {
         Arrays.stream(labelSelectors)
             .parallel()
-            .map(selector -> kubeClient().listPods(namespaceName, selector))
+            .map(selector -> KubeResourceManager.get().kubeClient().listPods(namespaceName, selector))
             .flatMap(Collection::stream)
             .forEach(pod ->
                 pod.getSpec().getContainers().forEach(container ->

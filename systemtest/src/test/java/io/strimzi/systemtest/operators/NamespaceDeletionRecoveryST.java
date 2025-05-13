@@ -33,6 +33,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -43,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.RECOVERY;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Suite for testing topic recovery in case of namespace deletion.
@@ -70,7 +70,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         // Get list of topics and list of PVC needed for recovery
         List<KafkaTopic> kafkaTopicList = CrdClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
-        List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
+        List<PersistentVolumeClaim> persistentVolumeClaimList = KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace(testStorage.getNamespaceName());
 
         recreatePvcAndUpdatePv(testStorage.getNamespaceName(), persistentVolumeClaimList);
@@ -128,11 +128,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         prepareEnvironmentForRecovery(testStorage);
 
         // Get list of topics and list of PVC needed for recovery
-        List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName());
+        List<PersistentVolumeClaim> persistentVolumeClaimList = PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("List of PVCs inside Namespace: {}", testStorage.getNamespaceName());
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
-            PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
+            PersistentVolume pv = PersistentVolumeUtils.get(pvc.getSpec().getVolumeName());
             LOGGER.info("Claim: {} has bounded Volume: {}", pvc.getMetadata().getName(), pv.getMetadata().getName());
         }
 
@@ -144,7 +144,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .getStatus()
             .getClusterId();
 
-        final String kafkaPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector()).get(0).getMetadata().getName();
+        final String kafkaPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector()).get(0).getMetadata().getName();
 
         LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespaceName(), kafkaPodName,
             KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
@@ -289,7 +289,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
             KubeResourceManager.get().createResourceWithWait(pvc);
 
-            PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
+            PersistentVolume pv = PersistentVolumeUtils.get(pvc.getSpec().getVolumeName());
             pv.getSpec().setClaimRef(null);
             KubeResourceManager.get().updateResource(pv);
 
@@ -317,11 +317,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     @BeforeAll
     void createStorageClass() {
         // Delete specific StorageClass if present from previous
-        kubeClient().getClient().storage().v1().storageClasses().withName(storageClassName).delete();
+        KubeResourceManager.get().kubeClient().getClient().storage().v1().storageClasses().withName(storageClassName).delete();
 
         final String storageClassKubernetesIo = "storageclass.kubernetes.io/is-default-class";
         // Get default StorageClass and change reclaim policy
-        StorageClass defaultStorageClass =  kubeClient().getClient().storage().v1().storageClasses().list().getItems().stream().filter(sg -> {
+        StorageClass defaultStorageClass =  KubeResourceManager.get().kubeClient().getClient().storage().v1().storageClasses().list().getItems().stream().filter(sg -> {
             Map<String, String> annotations = sg.getMetadata().getAnnotations();
             return annotations != null && annotations.containsKey(storageClassKubernetesIo) && annotations.get(storageClassKubernetesIo).equals("true");
         }).findFirst().get();
@@ -339,8 +339,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     @AfterAll
     void teardown() {
-        kubeClient().getClient().persistentVolumes().list().getItems().stream()
+        KubeResourceManager.get().kubeClient().getClient().persistentVolumes().list().getItems().stream()
             .filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka"))
-            .forEach(pv -> kubeClient().getClient().persistentVolumes().resource(pv).delete());
+            .forEach(pv -> KubeResourceManager.get().kubeClient().getClient().persistentVolumes().resource(pv).delete());
     }
 }

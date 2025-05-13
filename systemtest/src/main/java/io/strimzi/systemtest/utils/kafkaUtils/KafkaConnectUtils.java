@@ -4,13 +4,14 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -30,7 +31,6 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.CrdClients.kafkaConnectClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectUtils {
 
@@ -118,9 +118,11 @@ public class KafkaConnectUtils {
      * @param timeoutMs       Max wait time in ms
      */
     public static void waitForConnectPodCondition(String namespaceName, String conditionReason, String clusterName, long timeoutMs) {
+        LabelSelector labelSelector = LabelSelectors.connectLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
+
         TestUtils.waitFor("KafkaConnect Pod to have condition: " + conditionReason,
             TestConstants.GLOBAL_POLL_INTERVAL, timeoutMs, () -> {
-                List<String> connectPods = kubeClient().listPodNames(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+                List<String> connectPods = PodUtils.listPodNamesInNamespace(namespaceName, labelSelector);
                 List<PodCondition> conditions = PodUtils.getInNamespace(namespaceName, connectPods.get(0)).getStatus().getConditions();
                 for (PodCondition condition : conditions) {
                     if (condition.getReason().matches(conditionReason)) {

@@ -15,14 +15,13 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class AdminClientTemplates {
 

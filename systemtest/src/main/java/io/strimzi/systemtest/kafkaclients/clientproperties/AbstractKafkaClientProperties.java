@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.kafka.clients.CommonClientConfigs;
@@ -34,8 +35,6 @@ import java.security.cert.CertificateFactory;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Class KafkaClientProperties, which holds inner class builder for fluent way to invoke objects. It is used inside

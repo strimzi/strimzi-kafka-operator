@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlanBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -18,8 +19,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 /**
  * Class containing utilization methods for everything related to OLM
  */
@@ -28,6 +27,37 @@ public class OlmUtils {
     private static final Logger LOGGER = LogManager.getLogger(OlmUtils.class);
 
     private OlmUtils() {}
+
+    public static ClusterServiceVersion getCsvInNamespace(String namespaceName, String csvName) {
+        return KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class).operatorHub().clusterServiceVersions().inNamespace(namespaceName).withName(csvName).get();
+    }
+
+    public static ClusterServiceVersion getCsvWithPrefixInNamespace(String namespaceName, String csvNamePrefix) {
+        return KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class)
+            .operatorHub()
+            .clusterServiceVersions()
+            .inNamespace(namespaceName)
+            .list()
+            .getItems()
+            .stream()
+            .filter(csv -> csv.getMetadata().getName().contains(csvNamePrefix))
+            .findFirst()
+            .get();
+    }
+
+    public static InstallPlan getNonApprovedInstallPlanForCsvNamePrefixInNamespace(String namespaceName, String csvNamePrefix) {
+        return KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class)
+            .operatorHub()
+            .installPlans()
+            .inNamespace(namespaceName)
+            .list()
+            .getItems()
+            .stream()
+            .filter(installPlan -> !installPlan.getSpec().getApproved()
+                && installPlan.getSpec().getClusterServiceVersionNames().get(0).contains(csvNamePrefix))
+            .findFirst()
+            .get();
+    }
 
     /**
      * Method that waits for appearance of non-approved InstallPlan for specified CSV name (or its prefix) in particular
@@ -42,7 +72,7 @@ public class OlmUtils {
             "unused InstallPlan with CSV name or prefix: " + namespaceName + "/" + csvNameOrPrefix + " to be present",
             TestConstants.OLM_UPGRADE_INSTALL_PLAN_POLL,
             TestConstants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
-            () -> kubeClient().getNonApprovedInstallPlanForCsvNameOrPrefix(namespaceName, csvNameOrPrefix) != null
+            () -> getNonApprovedInstallPlanForCsvNamePrefixInNamespace(namespaceName, csvNameOrPrefix) != null
         );
     }
 
@@ -54,7 +84,7 @@ public class OlmUtils {
      * @param csvNameOrPrefix   CSV name or prefix, that is in the non-approved InstallPLan
      */
     public static void approveNonApprovedInstallPlan(String namespaceName, String csvNameOrPrefix) {
-        InstallPlan nonApprovedInstallPlan = kubeClient().getNonApprovedInstallPlanForCsvNameOrPrefix(namespaceName, csvNameOrPrefix);
+        InstallPlan nonApprovedInstallPlan = getNonApprovedInstallPlanForCsvNamePrefixInNamespace(namespaceName, csvNameOrPrefix);
 
         approveInstallPlan(namespaceName, nonApprovedInstallPlan.getMetadata().getName());
     }
@@ -93,7 +123,7 @@ public class OlmUtils {
             "for creation of CSV: " + namespaceName + "/" + csvName,
             TestConstants.OLM_UPGRADE_INSTALL_PLAN_POLL,
             TestConstants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
-            () -> kubeClient().getCsv(namespaceName, csvName) != null
+            () -> getCsvInNamespace(namespaceName, csvName) != null
         );
     }
 
@@ -108,7 +138,7 @@ public class OlmUtils {
      * @return  full name of the Deployment, by which is the new installation done
      */
     public static String approveNonApprovedInstallPlanAndReturnDeploymentName(String namespaceName, String csvNameOrPrefix) {
-        InstallPlan nonApprovedInstallPlan = kubeClient().getNonApprovedInstallPlanForCsvNameOrPrefix(namespaceName, csvNameOrPrefix);
+        InstallPlan nonApprovedInstallPlan = getNonApprovedInstallPlanForCsvNamePrefixInNamespace(namespaceName, csvNameOrPrefix);
 
         approveInstallPlan(namespaceName, nonApprovedInstallPlan.getMetadata().getName());
 
@@ -116,7 +146,7 @@ public class OlmUtils {
 
         waitForCsvWithNameCreation(namespaceName, csvName);
 
-        return kubeClient().getCsv(namespaceName, csvName).getSpec().getInstall().getSpec().getDeployments().get(0).getName();
+        return getCsvInNamespace(namespaceName, csvName).getSpec().getInstall().getSpec().getDeployments().get(0).getName();
     }
 
     /**
@@ -128,7 +158,7 @@ public class OlmUtils {
      * @return  Map of examples that particular CSV contains
      */
     public static Map<String, JsonObject> getExamplesFromCsv(String coNamespaceName, String olmBundlePrefix) {
-        JsonArray examples = new JsonArray(kubeClient().getCsvWithPrefix(coNamespaceName, olmBundlePrefix).getMetadata().getAnnotations().get("alm-examples"));
+        JsonArray examples = new JsonArray(getCsvWithPrefixInNamespace(coNamespaceName, olmBundlePrefix).getMetadata().getAnnotations().get("alm-examples"));
         return examples.stream().map(o -> (JsonObject) o).collect(Collectors.toMap(object -> object.getString("kind"), object -> object));
     }
 }

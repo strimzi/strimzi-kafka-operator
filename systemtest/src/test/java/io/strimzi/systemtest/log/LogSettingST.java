@@ -7,6 +7,7 @@ package io.strimzi.systemtest.log;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
@@ -76,7 +77,6 @@ import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -475,8 +475,11 @@ class LogSettingST extends AbstractST {
     private synchronized void checkContainersHaveProcessOneAsTini(String namespaceName, String resourceClusterName) {
         //Used [/] in the grep command so that grep process does not return itself
         String command = "cat /proc/1/cmdline";
+        LabelSelector labelSelector = new LabelSelectorBuilder()
+            .withMatchLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, resourceClusterName))
+            .build();
 
-        for (Pod pod : kubeClient(namespaceName).listPods(Labels.STRIMZI_CLUSTER_LABEL, resourceClusterName)) {
+        for (Pod pod : KubeResourceManager.get().kubeClient().listPods(namespaceName, labelSelector)) {
             String podName = pod.getMetadata().getName();
             if (!podName.contains("build") && !podName.contains("deploy") && !podName.contains("kafka-clients")) {
                 for (Container container : pod.getSpec().getContainers()) {
@@ -533,7 +536,7 @@ class LogSettingST extends AbstractST {
 
     private synchronized void checkGcLoggingPods(String namespaceName, LabelSelector selector, boolean expectedValue) {
         LOGGER.info("Checking Pods with selector: {}", selector);
-        List<Pod> pods = kubeClient(namespaceName).getClient().pods().inNamespace(namespaceName).withLabelSelector(selector).list().getItems();
+        List<Pod> pods = KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withLabelSelector(selector).list().getItems();
 
         for (Pod pod : pods)    {
             LOGGER.info("Checking Pod: {}/{}, container: {}", namespaceName, pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getName());

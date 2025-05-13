@@ -33,8 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 /**
  * Class which holds environment variables for system tests.
  */

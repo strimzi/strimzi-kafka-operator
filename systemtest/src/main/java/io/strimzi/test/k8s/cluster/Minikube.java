@@ -4,9 +4,7 @@
  */
 package io.strimzi.test.k8s.cluster;
 
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.test.executor.Exec;
-import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.cmdClient.Kubectl;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
@@ -44,11 +42,6 @@ public class Minikube implements KubeCluster {
     @Override
     public KubeCmdClient defaultCmdClient() {
         return new Kubectl();
-    }
-
-    @Override
-    public KubeClient defaultClient() {
-        return new KubeClient(new KubernetesClientBuilder().withConfig(CONFIG).build(), "default");
     }
 
     public String toString() {

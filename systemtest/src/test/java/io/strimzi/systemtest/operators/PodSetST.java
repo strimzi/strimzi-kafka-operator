@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * This suite contains tests related to StrimziPodSet and its features.<br>
@@ -102,7 +101,7 @@ public class PodSetST extends AbstractST {
         RollingUpdateUtils.waitForNoKafkaRollingUpdate(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerPods);
 
         LOGGER.info("Deleting one Kafka pod, the should be recreated");
-        kubeClient().deletePodWithName(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        KubeResourceManager.get().deleteResourceWithoutWait(PodUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)));
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), replicas, true);
 
         brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());

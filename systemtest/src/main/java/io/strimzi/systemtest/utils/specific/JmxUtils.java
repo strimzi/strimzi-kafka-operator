@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.specific;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +15,6 @@ import org.apache.logging.log4j.Logger;
 import java.nio.charset.StandardCharsets;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class JmxUtils {
 
@@ -61,7 +61,7 @@ public class JmxUtils {
     }
 
     public static String collectJmxMetricsWithWait(String namespaceName, String serviceName, String secretName, String podName, String commands) {
-        Secret jmxSecret = SecretUtils.getInNamespace(secretName);
+        Secret jmxSecret = SecretUtils.getInNamespace(namespaceName, secretName);
 
         LOGGER.info("Getting username and password for Service: {}/{} and Secret: {}/{}", namespaceName, serviceName, namespaceName, secretName);
         String userName = Util.decodeFromBase64(jmxSecret.getData().get("jmx-username"), StandardCharsets.UTF_8);

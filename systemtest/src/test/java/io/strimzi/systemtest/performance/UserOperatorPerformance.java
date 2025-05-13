@@ -24,6 +24,7 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,7 +46,6 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestTags.USER_CAPACITY;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class UserOperatorPerformance extends AbstractST {
 
@@ -169,7 +169,7 @@ public class UserOperatorPerformance extends AbstractST {
             );
 
             this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
-                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
+                PodUtils.listPodsByPrefixInNamespace(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
 
             // -- Metrics POLL --
             // Assuming 'testStorage' contains necessary details like namespace and scraperPodName

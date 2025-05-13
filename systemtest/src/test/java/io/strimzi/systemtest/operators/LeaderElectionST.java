@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -69,7 +68,7 @@ public class LeaderElectionST extends AbstractST {
             )
             .install();
 
-        Lease oldLease = kubeClient().getClient().leases().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).get();
+        Lease oldLease = KubeResourceManager.get().kubeClient().getClient().leases().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).get();
         String oldLeaderPodName = oldLease.getSpec().getHolderIdentity();
 
         LOGGER.info("Changing image of the leader pod: {} to not available image - to cause CrashLoopBackOff and change of leader to second Pod (failover)", oldLeaderPodName);
@@ -88,7 +87,7 @@ public class LeaderElectionST extends AbstractST {
 
         PodUtils.waitUntilPodIsInCrashLoopBackOff(SetupClusterOperator.getInstance().getOperatorNamespace(), oldLeaderPodName);
 
-        Lease currentLease = kubeClient().getClient().leases().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).get();
+        Lease currentLease = KubeResourceManager.get().kubeClient().getClient().leases().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).get();
         String currentLeaderPodName = currentLease.getSpec().getHolderIdentity();
 
         String logFromNewLeader = StUtils.getLogFromPodByTime(SetupClusterOperator.getInstance().getOperatorNamespace(), currentLeaderPodName, SetupClusterOperator.getInstance().getOperatorDeploymentName(), "300s");
@@ -112,8 +111,8 @@ public class LeaderElectionST extends AbstractST {
             )
             .install();
 
-        String coPodName = kubeClient().listPodsByPrefixInName(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).get(0).getMetadata().getName();
-        Lease notExistingLease = kubeClient().getClient().leases().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).get();
+        String coPodName = PodUtils.listPodsByPrefixInNamespace(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).get(0).getMetadata().getName();
+        Lease notExistingLease = KubeResourceManager.get().kubeClient().getClient().leases().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).get();
         String logFromCoPod = StUtils.getLogFromPodByTime(SetupClusterOperator.getInstance().getOperatorNamespace(), coPodName, SetupClusterOperator.getInstance().getOperatorDeploymentName(), "300s");
 
         // Assert that the Lease does not exist

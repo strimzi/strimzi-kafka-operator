@@ -43,6 +43,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -65,7 +66,6 @@ import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
 import static io.strimzi.systemtest.k8s.Events.Started;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -96,7 +96,7 @@ public class KafkaRollerST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), initialBrokerReplicaCount).build());
 
         LOGGER.info("Verify expected number of replicas '{}' is present in in Kafka Cluster: {}/{}", initialBrokerReplicaCount, testStorage.getNamespaceName(), testStorage.getClusterName());
-        final int observedReplicas = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getBrokerSelector()).size();
+        final int observedReplicas = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).size();
         assertEquals(initialBrokerReplicaCount, observedReplicas);
 
         LOGGER.info("Create kafkaTopic: {}/{} with replica on each (of 3) broker", testStorage.getNamespaceName(), topicNameWith3Replicas);
@@ -128,7 +128,7 @@ public class KafkaRollerST extends AbstractST {
         final int scaledBrokerPodIndex = 6;
         String uid = PodUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), KafkaComponents.getBrokerPoolName(testStorage.getClusterName()), scaledBrokerPodIndex))
             .getMetadata().getUid();
-        List<Event> events = kubeClient(testStorage.getNamespaceName()).listEventsByResourceUid(uid);
+        List<Event> events = StUtils.listEventsByResourceUidInNamespace(testStorage.getNamespaceName(), uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
         clients = new KafkaClientsBuilder(clients)
@@ -265,7 +265,7 @@ public class KafkaRollerST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
-        String kafkaImage = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getBrokerSelector()).get(0).getSpec().getContainers().get(0).getImage();
+        String kafkaImage = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getSpec().getContainers().get(0).getImage();
 
         KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
@@ -484,7 +484,7 @@ public class KafkaRollerST extends AbstractST {
     }
 
     boolean checkIfExactlyOneKafkaPodIsNotReady(String namespaceName, String clusterName) {
-        List<Pod> kafkaPods = kubeClient().listPods(namespaceName, LabelSelectors.allKafkaPodsLabelSelector(clusterName));
+        List<Pod> kafkaPods = KubeResourceManager.get().kubeClient().listPods(namespaceName, LabelSelectors.allKafkaPodsLabelSelector(clusterName));
         int runningKafkaPods = (int) kafkaPods.stream().filter(pod -> pod.getStatus().getPhase().equals("Running")).count();
 
         return runningKafkaPods == (kafkaPods.size() - 1);

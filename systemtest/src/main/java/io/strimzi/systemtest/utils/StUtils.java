@@ -12,10 +12,13 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.VersionInfo;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
@@ -26,6 +29,7 @@ import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.DecodeException;
@@ -55,9 +59,9 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class StUtils {
 
@@ -291,7 +295,17 @@ public class StUtils {
         if (maxKubernetesVersion.equals("latest")) {
             return true;
         }
-        return Double.parseDouble(kubeClient().clusterKubernetesVersion()) < Double.parseDouble(maxKubernetesVersion);
+        return Double.parseDouble(getKubernetesClusterVersion()) < Double.parseDouble(maxKubernetesVersion);
+    }
+
+    /**
+     * Method which return kubernetes version
+     * @return kubernetes version
+     */
+    public static String getKubernetesClusterVersion() {
+        // This is basically workaround cause this.client.getVersion() returns null every time
+        VersionInfo versionInfo = new KubernetesClientBuilder().build().getKubernetesVersion();
+        return versionInfo.getMajor() + "." + versionInfo.getMinor().replace("+", "");
     }
 
     /**
@@ -547,7 +561,7 @@ public class StUtils {
      * @return                  List with ConfigMaps containing the configuration
      */
     public static List<String> getKafkaConfigurationConfigMaps(String namespaceName, String kafkaClusterName) {
-        return kubeClient().listPodNames(namespaceName, LabelSelectors.kafkaLabelSelector(kafkaClusterName, KafkaComponents.getBrokerPodSetName(kafkaClusterName)));
+        return PodUtils.listPodNamesInNamespace(namespaceName, LabelSelectors.kafkaLabelSelector(kafkaClusterName, KafkaComponents.getBrokerPodSetName(kafkaClusterName)));
     }
 
     public static void waitUntilSuppliersAreMatching(final Supplier<?> sup, final Supplier<?> anotherSup) {
@@ -641,5 +655,16 @@ public class StUtils {
         }
 
         return testCaseName;
+    }
+
+    public static List<Event> listEventsByResourceUidInNamespace(String namespaceName, String resourceUid) {
+        return KubeResourceManager.get().kubeClient().getClient().v1().events().list().getItems().stream()
+            .filter(event -> {
+                if (event.getInvolvedObject().getUid() == null) {
+                    return false;
+                }
+                return event.getInvolvedObject().getUid().equals(resourceUid);
+            })
+            .collect(Collectors.toList());
     }
 }

@@ -4,13 +4,19 @@
  */
 package io.strimzi.systemtest.utils;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -33,7 +39,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -64,7 +69,7 @@ public class VerificationUtils {
     public static void assertPodResourceRequests(String namespaceName, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = PodUtils.getInNamespace(namespaceName, podName);
         assertThat("Not found an expected Pod  " + namespaceName + "/" + podName + " but found " +
-            kubeClient().listPods(namespaceName).stream().map(p -> p.getMetadata().getName()).toList(), po, is(notNullValue()));
+            KubeResourceManager.get().kubeClient().listPods(namespaceName).stream().map(p -> p.getMetadata().getName()).toList(), po, is(notNullValue()));
 
         Optional<Container> optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
         assertThat("Not found an expected container " + containerName, optional.isPresent(), is(true));
@@ -136,34 +141,6 @@ public class VerificationUtils {
     }
 
     /**
-     * Verifies container configuration for specific component (kafka/bridge/mm) by environment key.
-     * @param namespaceName Namespace name where container is located
-     * @param podNamePrefix Name of pod where container is located
-     * @param containerName The container where verifying is expected
-     * @param configKey Expected configuration key
-     * @param config Expected component configuration
-     */
-    public static void verifyComponentConfiguration(String namespaceName, String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
-        LOGGER.info("Getting Pods by prefix: {} in Pod name", podNamePrefix);
-        List<Pod> pods = kubeClient().listPodsByPrefixInName(namespaceName, podNamePrefix);
-
-        if (pods.size() != 0) {
-            LOGGER.info("Testing configuration for container {}", containerName);
-
-            Map<String, Object> actual = pods.stream()
-                .flatMap(p -> p.getSpec().getContainers().stream()) // get containers
-                .filter(c -> c.getName().equals(containerName))
-                .flatMap(c -> c.getEnv().stream().filter(envVar -> envVar.getName().equals(configKey)))
-                .map(envVar -> StUtils.loadProperties(envVar.getValue()))
-                .toList().get(0);
-
-            assertThat(actual.entrySet().containsAll(config.entrySet()), is(true));
-        } else {
-            fail("Pod with prefix " + podNamePrefix + " in name, not found");
-        }
-    }
-
-    /**
      * Verifies container environment variables passed as a map.
      * @param namespaceName Namespace name where container is located
      * @param podNamePrefix Name of pod where container is located
@@ -172,7 +149,7 @@ public class VerificationUtils {
      */
     public static void verifyContainerEnvVariables(String namespaceName, String podNamePrefix, String containerName, Map<String, String> config) {
         LOGGER.info("Getting Pods by prefix: {} in Pod name", podNamePrefix);
-        List<Pod> pods = kubeClient().listPodsByPrefixInName(namespaceName, podNamePrefix);
+        List<Pod> pods = PodUtils.listPodsByPrefixInNamespace(namespaceName, podNamePrefix);
 
         if (pods.size() != 0) {
             LOGGER.info("Testing EnvVars configuration for container {}", containerName);
@@ -201,7 +178,7 @@ public class VerificationUtils {
      */
     public static void verifyReadinessAndLivenessProbes(String namespaceName, String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds, int periodSeconds, int successThreshold, int failureThreshold) {
         LOGGER.info("Getting Pods by prefix: {} in Pod name", podNamePrefix);
-        List<Pod> pods = kubeClient().listPodsByPrefixInName(namespaceName, podNamePrefix);
+        List<Pod> pods = PodUtils.listPodsByPrefixInNamespace(namespaceName, podNamePrefix);
 
         if (pods.size() != 0) {
             LOGGER.info("Verifying Readiness and Liveness configuration for container {}", containerName);
@@ -241,7 +218,7 @@ public class VerificationUtils {
      */
     public static void verifyPodsLabels(String namespaceName, String podNamePrefix, LabelSelector expectedLabels) {
         LOGGER.info("Verifying labels on pods with prefix {}", podNamePrefix);
-        kubeClient().listPods(namespaceName).stream()
+        KubeResourceManager.get().kubeClient().listPods(namespaceName).stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(podNamePrefix))
             .forEach(pod -> {
                 LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
@@ -278,8 +255,7 @@ public class VerificationUtils {
                 } else {
                     LOGGER.info("CM {} is not related to current test", cm.getMetadata().getName());
                 }
-            }
-        );
+            });
     }
 
     /**
@@ -315,8 +291,7 @@ public class VerificationUtils {
             .forEach(sa -> {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
                 assertThat(sa.getMetadata().getLabels().get("app"), is("strimzi"));
-            }
-        );
+            });
 
         serviceAccounts
             .stream()
@@ -330,8 +305,7 @@ public class VerificationUtils {
                     assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(Kafka.RESOURCE_KIND));
                 }
                 assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
-            }
-        );
+            });
     }
 
     /**
@@ -348,9 +322,9 @@ public class VerificationUtils {
         //Verifying docker image for cluster-operator
 
         Map<String, String> imgFromDeplConf = getClusterOperatorDeploymentImages(clusterOperatorNamespaceName);
-        List<String> brokerPods = kubeClient().listPodNames(clusterOperatorNamespaceName, LabelSelectors.kafkaLabelSelector(clusterName, KafkaComponents.getBrokerPodSetName(clusterName)));
+        List<String> brokerPods = PodUtils.listPodNamesInNamespace(clusterOperatorNamespaceName, LabelSelectors.kafkaLabelSelector(clusterName, KafkaComponents.getBrokerPodSetName(clusterName)));
 
-        final String kafkaVersion = Optional.ofNullable(Crds.kafkaOperation(kubeClient(kafkaNamespaceName).getClient()).inNamespace(kafkaNamespaceName).withName(clusterName).get().getSpec().getKafka().getVersion()).orElse(Environment.ST_KAFKA_VERSION);
+        final String kafkaVersion = Optional.ofNullable(CrdClients.kafkaClient().inNamespace(kafkaNamespaceName).withName(clusterName).get().getSpec().getKafka().getVersion()).orElse(Environment.ST_KAFKA_VERSION);
 
         //Verifying docker image for kafka pods
         brokerPods.forEach(brokerPod -> {
@@ -385,10 +359,10 @@ public class VerificationUtils {
         LOGGER.info("Verifying docker image name of KafkaConnect in CO");
         Map<String, String> imgFromDeplConf = VerificationUtils.getClusterOperatorDeploymentImages(clusterOperatorNamespace);
         //Verifying docker image for kafka connect
-        String connectImageName = PodUtils.getFirstContainerImageNameFromPod(connectNamespaceName, kubeClient().listPodsByPrefixInName(connectNamespaceName, KafkaConnectResources.componentName(clusterName)).
+        String connectImageName = PodUtils.getFirstContainerImageNameFromPod(connectNamespaceName, PodUtils.listPodsByPrefixInNamespace(connectNamespaceName, KafkaConnectResources.componentName(clusterName)).
                 get(0).getMetadata().getName());
 
-        String connectVersion = Crds.kafkaConnectOperation(kubeClient().namespace(connectNamespaceName).getClient()).inNamespace(connectNamespaceName).withName(clusterName).get().getSpec().getVersion();
+        String connectVersion = CrdClients.kafkaConnectClient().inNamespace(connectNamespaceName).withName(clusterName).get().getSpec().getVersion();
         if (connectVersion == null) {
             connectVersion = Environment.ST_KAFKA_VERSION;
         }
@@ -409,9 +383,10 @@ public class VerificationUtils {
         LOGGER.info("Verifying docker image of MM2 in CO");
         // we must use INFRA_NAMESPACE because there is CO deployed
         Map<String, String> imgFromDeplConf = VerificationUtils.getClusterOperatorDeploymentImages(clusterOperatorNamespace);
+        String kmm2PodName = KubeResourceManager.get().kubeClient().listPods(mirrorMakerNamespace, LabelSelectors.mirrorMaker2LabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName)))
+            .get(0).getMetadata().getName();
         // Verifying docker image for kafka mirrormaker2
-        String mirrormaker2ImageName = PodUtils.getFirstContainerImageNameFromPod(mirrorMakerNamespace, kubeClient().listPods(mirrorMakerNamespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND)
-            .get(0).getMetadata().getName());
+        String mirrormaker2ImageName = PodUtils.getFirstContainerImageNameFromPod(mirrorMakerNamespace, kmm2PodName);
 
         String mirrormaker2Version = CrdClients.kafkaMirrorMaker2Client().inNamespace(mirrorMakerNamespace).withName(clusterName).get().getSpec().getVersion();
         if (mirrormaker2Version == null) {

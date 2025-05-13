@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 public class ConfigMapUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ConfigMapUtils.class);

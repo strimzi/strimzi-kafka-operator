@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 /**
  * Class for managing Namespaces during test execution.
  * It collects all Namespace related methods on one place, which removes duplicates that were originally across classes and
@@ -194,7 +192,7 @@ public class NamespaceManager {
     public void deleteNamespace(String namespaceName) {
         LOGGER.info("Deleting Namespace: {}", namespaceName);
         Namespace toBeDeleted = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).get();
-        KubeResourceManager.get().deleteResource(toBeDeleted);
+        KubeResourceManager.get().deleteResourceWithWait(toBeDeleted);
     }
 
     /**
@@ -312,7 +310,7 @@ public class NamespaceManager {
             TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 try {
-                    kubeClient().getClient().namespaces().withName(namespaceName).edit(namespace ->
+                    KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).edit(namespace ->
                         new NamespaceBuilder(namespace)
                             .editOrNewMetadata()
                                 .addToLabels(labels)

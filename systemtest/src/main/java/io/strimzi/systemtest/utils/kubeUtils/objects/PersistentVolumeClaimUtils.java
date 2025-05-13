@@ -9,10 +9,8 @@ import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,7 +20,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class PersistentVolumeClaimUtils {
 
@@ -30,12 +27,23 @@ public class PersistentVolumeClaimUtils {
 
     private PersistentVolumeClaimUtils() { }
 
+    public static PersistentVolumeClaim getInNamespace(String namespaceName, String pvcName) {
+        return KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
+    }
+
+    public static List<PersistentVolumeClaim> listByPrefixInNamespace(String namespaceName, String prefix) {
+        return KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).list().getItems()
+            .stream()
+            .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().startsWith(prefix))
+            .toList();
+    }
+
     public static void waitUntilPVCLabelsChange(String namespaceName, String clusterName, Map<String, String> newLabels, String labelKey) {
         LOGGER.info("Waiting for PVC labels to change {}", newLabels.toString());
         TestUtils.waitFor("PVC labels to change -> " + newLabels.toString(), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
-                    kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
+                    listByPrefixInNamespace(namespaceName, clusterName).stream()
                         // filter specific pvc which belongs to cluster-name
                         .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
                         // map each value if it is changed [False, True, True] etc.
@@ -55,7 +63,7 @@ public class PersistentVolumeClaimUtils {
         TestUtils.waitFor("PVC labels to change -> " + newAnnotation.toString(), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
-                    kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
+                    listByPrefixInNamespace(namespaceName, clusterName).stream()
                         // filter specific pvc which belongs to cluster-name
                         .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
                         // map each value if it is changed [False, True, True] etc.
@@ -72,7 +80,7 @@ public class PersistentVolumeClaimUtils {
 
     public static void waitForPersistentVolumeClaimPhase(String persistentVolumeName, String wantedPhase) {
         TestUtils.waitFor("PV: " + persistentVolumeName + " to be in phase: " + wantedPhase, TestConstants.RECONCILIATION_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
-            String currentPhase = kubeClient().getPersistentVolumeWithName(persistentVolumeName).getStatus().getPhase();
+            String currentPhase = PersistentVolumeUtils.get(persistentVolumeName).getStatus().getPhase();
             LOGGER.info("PV: {} is in phase: {}", persistentVolumeName, currentPhase);
             return currentPhase.equals(wantedPhase);
         });
@@ -80,7 +88,7 @@ public class PersistentVolumeClaimUtils {
 
     public static void waitForPersistentVolumeClaimDeletion(String namespaceName, String pvcName) {
         TestUtils.waitFor("PVC deletion", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
-            if (kubeClient().getPersistentVolumeClaim(namespaceName, pvcName) != null) {
+            if (getInNamespace(namespaceName, pvcName) != null) {
                 LOGGER.warn("PVC: {}/{} has not been deleted yet! Triggering force delete using cmd client!", namespaceName, pvcName);
                 cmdKubeClient(namespaceName).deleteByName("pvc", pvcName);
                 return false;
@@ -92,7 +100,7 @@ public class PersistentVolumeClaimUtils {
     public static void waitForPersistentVolumeClaimDeletion(TestStorage testStorage, int expectedNum) {
         LOGGER.info("Waiting for PVC(s): {}/{} to reach expected amount: {}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
         TestUtils.waitFor("PVC(s) to be created/deleted", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
-            () -> KubeClusterResource.kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            () -> listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).collect(Collectors.toList()).size() == expectedNum
         );
     }
@@ -100,7 +108,7 @@ public class PersistentVolumeClaimUtils {
     public static void waitForPvcCount(TestStorage testStorage, int expectedNum) {
         LOGGER.info("Waiting for PVC(s): {}/{} to reach expected amount: {}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
         TestUtils.waitFor("PVC(s) to be created/deleted", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
-            () -> KubeClusterResource.kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            () -> listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).toList().size() == expectedNum
         );
     }
@@ -111,7 +119,7 @@ public class PersistentVolumeClaimUtils {
         ).collect(Collectors.toList()).size();
 
         TestUtils.waitFor("JBOD storage deletion", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(6).toMillis(), () -> {
-            List<String> pvcs = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
+            List<String> pvcs = listByPrefixInNamespace(namespaceName, clusterName).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
                 .map(pvc -> pvc.getMetadata().getName())
                 .collect(Collectors.toList());
@@ -122,7 +130,7 @@ public class PersistentVolumeClaimUtils {
     }
 
     public static void deletePvcsByPrefixWithWait(String namespaceName, String prefix) {
-        List<PersistentVolumeClaim> persistentVolumeClaimsList = kubeClient().listPersistentVolumeClaims(namespaceName, prefix);
+        List<PersistentVolumeClaim> persistentVolumeClaimsList = listByPrefixInNamespace(namespaceName, prefix);
 
         for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
             KubeResourceManager.get().kubeClient().getClient()
@@ -153,8 +161,7 @@ public class PersistentVolumeClaimUtils {
             TestConstants.GLOBAL_POLL_INTERVAL,
             TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                final List<PersistentVolumeClaim> pvcs = kubeClient(testStorage.getNamespaceName())
-                    .listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                final List<PersistentVolumeClaim> pvcs = listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                     .filter(pvc -> pvc.getMetadata().getName().startsWith(pvcPrefixName)).toList();
 
                 if (pvcs.isEmpty()) {
