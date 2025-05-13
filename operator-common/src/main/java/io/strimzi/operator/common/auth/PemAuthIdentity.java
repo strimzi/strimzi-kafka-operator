@@ -33,22 +33,23 @@ public class PemAuthIdentity {
     public static final String PEM_SUFFIX = "pem";
     private final byte[] privateKeyAsPemBytes;
     private final byte[] certificateChainAsPemBytes;
-    private final String secretCertName;
+    private final String certificateName;
     private final String secretName;
     private final String secretNamespace;
 
     /**
      * Constructs the PemAuthIdentity.
      * @param secret Kubernetes Secret containing the Cluster Operator public and private key
-     * @param secretCertName Key in the Kubernetes Secret that is associated with the requested identity
+     * @param keyName Private key in the Kubernetes Secret that is associated with the requested identity
+     * @param certificateName Public key in the Kubernetes Secret that is associated with the requested identity
      */
-    private PemAuthIdentity(Secret secret, String secretCertName) {
+    private PemAuthIdentity(Secret secret, String keyName, String certificateName) {
         Objects.requireNonNull(secret, "Cannot extract auth identity from null secret.");
-        this.secretCertName = secretCertName;
+        this.certificateName = certificateName;
         this.secretName = secret.getMetadata().getName();
         this.secretNamespace = secret.getMetadata().getNamespace();
-        privateKeyAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.key", secretCertName));
-        certificateChainAsPemBytes = Util.decodeBase64FieldFromSecret(secret, String.format("%s.crt", secretCertName));
+        privateKeyAsPemBytes = Util.decodeBase64FieldFromSecret(secret, keyName);
+        certificateChainAsPemBytes = Util.decodeBase64FieldFromSecret(secret, certificateName);
     }
 
     /**
@@ -60,7 +61,7 @@ public class PemAuthIdentity {
      * @return PemAuthIdentity to use as the client authentication identity during TLS authentication
      */
     public static PemAuthIdentity clusterOperator(Secret secret) {
-        return new PemAuthIdentity(secret, "cluster-operator");
+        return new PemAuthIdentity(secret, "cluster-operator.key", "cluster-operator.crt");
     }
 
     /**
@@ -68,11 +69,13 @@ public class PemAuthIdentity {
      * entity (i.e. user or topic) operator during TLS client authentication.
      *
      * @param secret Kubernetes Secret containing the client authentication identity
+     * @param keyName Name of the private key within the Kubernetes Secret
+     * @param certName Name of the public key within the Kubernetes Secret
      *
      * @return PemAuthIdentity to use as the client authentication identity during TLS authentication
      */
-    public static PemAuthIdentity entityOperator(Secret secret) {
-        return new PemAuthIdentity(secret, "entity-operator");
+    public static PemAuthIdentity entityOperator(Secret secret, String keyName, String certName) {
+        return new PemAuthIdentity(secret, keyName, certName);
     }
 
     /**
@@ -155,7 +158,7 @@ public class PemAuthIdentity {
             final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
             return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certificateChainAsPemBytes));
         } catch (CertificateException e) {
-            throw new RuntimeException("Bad/corrupt certificate found in data." + secretCertName + ".crt of Secret "
+            throw new RuntimeException("Bad/corrupt certificate found in data." + certificateName + " of Secret "
                     + secretName + " in namespace " + secretNamespace);
         }
     }
