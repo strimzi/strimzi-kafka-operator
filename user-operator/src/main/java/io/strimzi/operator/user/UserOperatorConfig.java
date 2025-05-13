@@ -263,12 +263,14 @@ public class UserOperatorConfig {
     public String getEuoKeyName() {
         return get(EO_KEY_NAME);
     }
+
     /**
      * @return The name of the Entity Operator certificate
      */
     public String getEuoCertName() {
         return get(EO_CERT_NAME);
     }
+
     /**
      * @return The namespace of the Client CA if not null or empty, else it will return namespace
      */
@@ -410,6 +412,8 @@ public class UserOperatorConfig {
                 "\n\tcaKeySecretName='" + getCaKeySecretName() + '\'' +
                 "\n\tclusterCaCertSecretName='" + getClusterCaCertSecretName() + '\'' +
                 "\n\teuoKeySecretName='" + getEuoKeySecretName() + '\'' +
+                "\n\teuoCertName='" + getEuoCertName() + '\'' +
+                "\n\teuoKeyName='" + getEuoKeyName() + '\'' +
                 "\n\tcaNamespace='" + getCaNamespaceOrNamespace() + '\'' +
                 "\n\tsecretPrefix='" + getSecretPrefix() + '\'' +
                 "\n\tclientsCaValidityDays=" + getClientsCaValidityDays() +
