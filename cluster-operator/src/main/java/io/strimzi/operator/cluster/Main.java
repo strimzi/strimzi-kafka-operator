@@ -271,7 +271,7 @@ public class Main {
                 })
                 .listen(HEALTH_SERVER_PORT).onComplete(ar -> {
                     if (ar.succeeded()) {
-                        LOGGER.info("Health and metrics server is ready on port {})", HEALTH_SERVER_PORT);
+                        LOGGER.info("Health and metrics server is ready on port {}", HEALTH_SERVER_PORT);
                     } else {
                         LOGGER.error("Failed to start health and metrics webserver on port {}", HEALTH_SERVER_PORT, ar.cause());
                     }

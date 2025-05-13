@@ -130,7 +130,7 @@ public class ClusterOperator extends AbstractVerticle {
         Future.join(startFutures)
                 .compose(f -> {
                     LOGGER.info("Setting up periodic reconciliation for namespace {}", namespace);
-                    this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), res2 -> {
+                    this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), timerId -> {
                         if (!config.isPodSetReconciliationOnly()) {
                             LOGGER.info("Triggering periodic reconciliation for namespace {}", namespace);
                             reconcileAll("timer");
@@ -184,8 +184,7 @@ public class ClusterOperator extends AbstractVerticle {
      */
     private void reconcileAll(String trigger) {
         if (!config.isPodSetReconciliationOnly()) {
-            Handler<AsyncResult<Void>> ignore = ignored -> {
-            };
+            Handler<AsyncResult<Void>> ignore = ignored -> {};
             kafkaAssemblyOperator.reconcileAll(trigger, namespace, ignore);
             kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace, ignore);
             kafkaMirrorMaker2AssemblyOperator.reconcileAll(trigger, namespace, ignore);
