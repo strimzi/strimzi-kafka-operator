@@ -184,7 +184,7 @@ public class ClusterOperator extends AbstractVerticle {
      */
     private void reconcileAll(String trigger) {
         if (!config.isPodSetReconciliationOnly()) {
-            Handler<AsyncResult<Void>> ignore = ignored -> {};
+            Handler<AsyncResult<Void>> ignore = ignored -> { };
             kafkaAssemblyOperator.reconcileAll(trigger, namespace, ignore);
             kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace, ignore);
             kafkaMirrorMaker2AssemblyOperator.reconcileAll(trigger, namespace, ignore);
