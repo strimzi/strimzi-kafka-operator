@@ -36,8 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-
 public class SecretUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(SecretUtils.class);
@@ -240,8 +238,8 @@ public class SecretUtils {
 
     public static String annotateSecret(String namespaceName, String secretName, String annotationKey, String annotationValue) {
         LOGGER.info("Annotating Secret: {}/{} with annotation {}={}", namespaceName, secretName, annotationKey, annotationValue);
-        return cmdKubeClient().namespace(namespaceName)
-                .execInCurrentNamespace("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
+                .exec("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
                 .out()
                 .trim();
     }

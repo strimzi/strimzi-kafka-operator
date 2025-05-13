@@ -17,8 +17,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-
 public class MinioUtils {
     private static final Logger LOGGER = LogManager.getLogger(SetupMinio.class);
 
@@ -39,7 +37,7 @@ public class MinioUtils {
 
         final String minioPod = KubeResourceManager.get().kubeClient().listPods(namespaceName, labelSelector).get(0).getMetadata().getName();
 
-        return cmdKubeClient().namespace(namespaceName).execInPod(minioPod,
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(minioPod,
             "mc",
             "stat",
             "local/" + bucketName).out();

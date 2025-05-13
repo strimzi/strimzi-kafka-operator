@@ -26,7 +26,6 @@ import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -85,7 +84,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         File kafkaYaml = new File(dir, olmUpgradeData.getFromExamples() + olmUpgradeData.getKafkaFilePathBefore());
 
         LOGGER.info("Deploying Kafka in Namespace: {} from file: {}", CO_NAMESPACE, kafkaYaml.getPath());
-        KubeClusterResource.cmdKubeClient(CO_NAMESPACE).create(kafkaYaml);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(CO_NAMESPACE).create(kafkaYaml);
         waitForReadinessOfKafkaCluster(CO_NAMESPACE);
 
         // Create KafkaTopic

@@ -60,7 +60,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -360,7 +359,7 @@ class HttpBridgeST extends AbstractST {
 
         LOGGER.info("-------> Scaling KafkaBridge subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
-        cmdKubeClient(testStorage.getNamespaceName()).scaleByName(KafkaBridge.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaBridge.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), KafkaBridgeResources.componentName(testStorage.getClusterName()), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);

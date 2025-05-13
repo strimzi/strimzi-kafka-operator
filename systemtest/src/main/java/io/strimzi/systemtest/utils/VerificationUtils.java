@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -91,7 +90,7 @@ public class VerificationUtils {
      */
     private static List<List<String>> containerJavaCmdLines(String namespaceName, String podName, String containerName) {
         List<List<String>> result = new ArrayList<>();
-        String output = cmdKubeClient().namespace(namespaceName).execInPodContainer(podName, containerName, "/bin/bash", "-c",
+        String output = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(podName, containerName, "/bin/bash", "-c",
                 "for proc in $(ls -1 /proc/ | grep [0-9]); do if echo \"$(ls -lh /proc/$proc/exe 2>/dev/null || true)\" | grep -q java; then cat /proc/$proc/cmdline; fi; done"
         ).out();
         for (String cmdLine : output.split("\n")) {
@@ -338,7 +337,7 @@ public class VerificationUtils {
         });
 
         //Verifying docker image for entity-operator
-        String entityOperatorPodName = cmdKubeClient(kafkaNamespaceName).listResourcesByLabel("pod",
+        String entityOperatorPodName = KubeResourceManager.get().kubeCmdClient().inNamespace(kafkaNamespaceName).listResourcesByLabel("pod",
                 Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
 
         String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "user-operator");

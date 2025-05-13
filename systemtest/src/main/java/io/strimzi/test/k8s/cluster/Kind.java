@@ -5,8 +5,6 @@
 package io.strimzi.test.k8s.cluster;
 
 import io.strimzi.test.executor.Exec;
-import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
-import io.strimzi.test.k8s.cmdClient.Kubectl;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,16 +49,6 @@ public class Kind implements KubeCluster {
             LOGGER.debug(e);
             return false;
         }
-    }
-
-    /**
-     * Retrieves the default command line client for interaction with the cluster.
-     *
-     * @return a {@link KubeCmdClient} instance.
-     */
-    @Override
-    public KubeCmdClient defaultCmdClient() {
-        return new Kubectl();
     }
 
     /**

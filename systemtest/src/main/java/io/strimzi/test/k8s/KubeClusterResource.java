@@ -10,7 +10,6 @@ import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.Microshift;
 import io.strimzi.test.k8s.cluster.Minikube;
 import io.strimzi.test.k8s.cluster.OpenShift;
-import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,7 +31,6 @@ public class KubeClusterResource {
     private static final Logger LOGGER = LogManager.getLogger(KubeClusterResource.class);
 
     private KubeCluster kubeCluster;
-    private KubeCmdClient cmdClient;
     private static KubeClusterResource kubeClusterResource;
 
     private String namespace;
@@ -40,21 +38,12 @@ public class KubeClusterResource {
     public static synchronized KubeClusterResource getInstance() {
         if (kubeClusterResource == null) {
             kubeClusterResource = new KubeClusterResource();
-            initNamespaces();
             LOGGER.info("Cluster default namespace is '{}'", kubeClusterResource.getNamespace());
         }
         return kubeClusterResource;
     }
 
     private KubeClusterResource() { }
-
-    private static void initNamespaces() {
-        kubeClusterResource.setDefaultNamespace(cmdKubeClient().defaultNamespace());
-    }
-
-    public void setDefaultNamespace(String namespace) {
-        this.namespace = namespace;
-    }
 
     /**
      * Sets the namespace value for Kubernetes clients
@@ -74,30 +63,6 @@ public class KubeClusterResource {
      */
     public String getNamespace() {
         return namespace;
-    }
-
-    /**
-     * Provides appropriate CMD client for running cluster
-     * @return CMD client
-     */
-    public static KubeCmdClient<?> cmdKubeClient() {
-        return kubeClusterResource.cmdClient().namespace(kubeClusterResource.getNamespace());
-    }
-
-    /**
-     * Provides appropriate CMD client with expected namespace for running cluster
-     * @param inNamespace Namespace will be used as a current namespace for client
-     * @return CMD client with expected namespace in configuration
-     */
-    public static KubeCmdClient<?> cmdKubeClient(String inNamespace) {
-        return kubeClusterResource.cmdClient().namespace(inNamespace);
-    }
-
-    public KubeCmdClient<?> cmdClient() {
-        if (cmdClient == null) {
-            cmdClient = cluster().defaultCmdClient();
-        }
-        return cmdClient;
     }
 
     public KubeCluster cluster() {

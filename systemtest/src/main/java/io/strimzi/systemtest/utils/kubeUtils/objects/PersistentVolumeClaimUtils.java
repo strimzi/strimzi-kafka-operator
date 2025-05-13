@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-
 public class PersistentVolumeClaimUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PersistentVolumeClaimUtils.class);
@@ -90,7 +88,7 @@ public class PersistentVolumeClaimUtils {
         TestUtils.waitFor("PVC deletion", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
             if (getInNamespace(namespaceName, pvcName) != null) {
                 LOGGER.warn("PVC: {}/{} has not been deleted yet! Triggering force delete using cmd client!", namespaceName, pvcName);
-                cmdKubeClient(namespaceName).deleteByName("pvc", pvcName);
+                KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName("pvc", pvcName);
                 return false;
             }
             return true;

@@ -97,7 +97,6 @@ import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -440,8 +439,8 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Deleting Kafka: {}/{} cluster", testStorage.getNamespaceName(), testStorage.getClusterName());
         // we cannot use ResourceManager here, as it would delete all the PVCs (part of the KafkaResource#delete method)
-        cmdKubeClient(testStorage.getNamespaceName()).deleteByName(Kafka.RESOURCE_KIND, testStorage.getClusterName());
-        cmdKubeClient(testStorage.getNamespaceName()).deleteByName(KafkaNodePool.RESOURCE_KIND, testStorage.getBrokerPoolName());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).deleteByName(Kafka.RESOURCE_KIND, testStorage.getClusterName());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).deleteByName(KafkaNodePool.RESOURCE_KIND, testStorage.getBrokerPoolName());
 
         LOGGER.info("Waiting for PVCs deletion");
         PersistentVolumeClaimUtils.waitForJbodStorageDeletion(testStorage.getNamespaceName(), volumesCount, testStorage.getBrokerComponentName(), List.of(idZeroVolumeModified, idOneVolumeOriginal));
@@ -849,7 +848,7 @@ class KafkaST extends AbstractST {
 
         TestUtils.waitFor("KafkaTopic creation inside Kafka Pod", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                String output = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName, "/bin/bash",
+                String output = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(brokerPodName, "/bin/bash",
                     "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out();
                 if (output.contains(testStorage.getTopicName())) {
                     return true;
@@ -859,14 +858,14 @@ class KafkaST extends AbstractST {
                 }
             });
 
-        String topicDirNameInPod = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName, "/bin/bash",
+        String topicDirNameInPod = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(brokerPodName, "/bin/bash",
             "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/" + testStorage.getTopicName() + "/p'").out();
 
         String commandToGetDataFromTopic =
             "cd /var/lib/kafka/data/kafka-log0/" + topicDirNameInPod + "/;cat 00000000000000000000.log";
 
         LOGGER.info("Executing command: {} in {}", commandToGetDataFromTopic, brokerPodName);
-        String topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName,
+        String topicData = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(brokerPodName,
             "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
         LOGGER.info("Topic: {} is present in Kafka Broker: {} with no data", testStorage.getTopicName(), brokerPodName);
@@ -878,13 +877,13 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Verifying presence of files created to store offsets Topic");
         String commandToGetFiles = "cd /var/lib/kafka/data/kafka-log0/; ls -l | grep __consumer_offsets | wc -l";
-        String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName,
+        String result = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(brokerPodName,
             "/bin/bash", "-c", commandToGetFiles).out();
 
         assertThat("Folder kafka-log0 doesn't contain 100 files related to storing consumer offsets", Integer.parseInt(result.trim()) == 100);
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, brokerPodName);
-        topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName,
+        topicData = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(brokerPodName,
             "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
@@ -900,7 +899,7 @@ class KafkaST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 1, brokerPodsSnapshot);
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, brokerPodName);
-        topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName,
+        topicData = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(brokerPodName,
             "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
@@ -1289,14 +1288,14 @@ class KafkaST extends AbstractST {
     private void verifyPodSecretVolume(final String namespace, final Pod pod, final String containerName,
                                        final String secretMountPath, final String secretValueBase64, final String secretKeyBase64) {
         final String podName = pod.getMetadata().getName();
-        final String secretMountCheck = cmdKubeClient().namespace(namespace)
+        final String secretMountCheck = KubeResourceManager.get().kubeCmdClient().inNamespace(namespace)
                 .execInPodContainer(podName, containerName, "sh", "-c", "cat /proc/mounts | grep " + secretMountPath).out().trim();
 
         // Assert that secret mount exists
         assertThat(secretMountCheck, containsString(secretMountPath));
 
         // Verify content inside the secret volume
-        final String secretContentCheck = cmdKubeClient().namespace(namespace)
+        final String secretContentCheck = KubeResourceManager.get().kubeCmdClient().inNamespace(namespace)
                 .execInPodContainer(podName, containerName, "sh", "-c", "cat " + secretMountPath + "/" + secretKeyBase64).out().trim();
 
         assertThat(secretContentCheck, is(secretValueBase64));
@@ -1316,14 +1315,14 @@ class KafkaST extends AbstractST {
     private void verifyPodConfigMapVolume(final String namespace, final Pod pod, final String containerName,
                                           final String configMapMountPath, final String configMapValue, final String configMapKey) {
         final String podName = pod.getMetadata().getName();
-        final String configMountCheck = cmdKubeClient().namespace(namespace)
+        final String configMountCheck = KubeResourceManager.get().kubeCmdClient().inNamespace(namespace)
             .execInPodContainer(podName, containerName, "sh", "-c", "cat /proc/mounts | grep " + configMapMountPath).out().trim();
 
         // Assert that config map mount exists
         assertThat(configMountCheck, containsString(configMapMountPath));
 
         // Verify content inside the config map volume
-        final String configContentCheck = cmdKubeClient().namespace(namespace)
+        final String configContentCheck = KubeResourceManager.get().kubeCmdClient().inNamespace(namespace)
                 .execInPodContainer(podName, containerName, "sh", "-c", "cat " + configMapMountPath + "/" + configMapKey).out().trim();
 
         assertThat(configContentCheck, is(configMapValue));
@@ -1397,7 +1396,7 @@ class KafkaST extends AbstractST {
 
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, KubeResourceManager.get().getTestContext());
         if (CrdClients.kafkaClient().inNamespace(namespaceName).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
-            cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
+            KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
         }
 
         KubeResourceManager.get().kubeClient().listPods(namespaceName).stream()

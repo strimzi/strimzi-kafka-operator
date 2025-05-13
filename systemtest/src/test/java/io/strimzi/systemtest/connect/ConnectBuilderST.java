@@ -69,7 +69,6 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.SANITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -230,7 +229,7 @@ class ConnectBuilderST extends AbstractST {
         String scraperPodName = PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Checking if KafkaConnect API contains EchoSink KafkaConnector");
-        String plugins = cmdKubeClient(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
+        String plugins = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
 
         assertTrue(plugins.contains(TestConstants.ECHO_SINK_CLASS_NAME));
 
@@ -424,7 +423,7 @@ class ConnectBuilderST extends AbstractST {
         String scraperPodName = PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Checking that KafkaConnect API contains EchoSink KafkaConnector and not Camel-Telegram Connector class name");
-        String plugins = cmdKubeClient(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
+        String plugins = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
 
         assertFalse(plugins.contains(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME));
         assertTrue(plugins.contains(TestConstants.ECHO_SINK_CLASS_NAME));
@@ -587,7 +586,7 @@ class ConnectBuilderST extends AbstractST {
     }
 
     private String getPluginFileNameFromConnectPod(final String namespaceName, final String connectPodName) {
-        return cmdKubeClient(namespaceName).execInPod(connectPodName,
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(connectPodName,
             "/bin/bash", "-c", "ls plugins/plugin-with-other-type/*").out().trim();
     }
 

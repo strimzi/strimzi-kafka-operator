@@ -18,8 +18,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-
 public class KeycloakUtils {
 
     public final static String LATEST_KEYCLOAK_VERSION = "25.0.2";
@@ -238,7 +236,7 @@ public class KeycloakUtils {
 
         TestUtils.waitFor("request to Keycloak API will be successful", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
             try {
-                String commandOutput = cmdKubeClient(namespaceName).execInPod(scraperPodName, request).out().trim();
+                String commandOutput = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(scraperPodName, request).out().trim();
 
                 if (!commandOutput.contains("Connection refused")) {
                     response.set(commandOutput);

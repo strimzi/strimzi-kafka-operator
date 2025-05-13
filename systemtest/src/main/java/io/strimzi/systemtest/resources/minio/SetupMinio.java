@@ -24,8 +24,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-
 public class SetupMinio {
     private static final Logger LOGGER = LogManager.getLogger(SetupMinio.class);
 
@@ -116,7 +114,7 @@ public class SetupMinio {
 
         final String minioPod = PodUtils.listPodNamesInNamespace(namespace, labelSelector).get(0);
 
-        cmdKubeClient().namespace(namespace).execInPod(minioPod,
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespace).execInPod(minioPod,
             "mc",
             "config",
             "host",
@@ -138,7 +136,7 @@ public class SetupMinio {
 
         final String minioPod = PodUtils.listPodNamesInNamespace(namespace, labelSelector).get(0);
 
-        cmdKubeClient().namespace(namespace).execInPod(minioPod,
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespace).execInPod(minioPod,
             "mc",
             "mb",
             MINIO_STORAGE_ALIAS + "/" + bucketName);

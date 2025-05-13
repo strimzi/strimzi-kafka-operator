@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.CrdClients.kafkaUserClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaUserUtils {
 
@@ -82,7 +81,7 @@ public class KafkaUserUtils {
                     return true;
                 } else {
                     LOGGER.warn("KafkaUser: {}/{} is not deleted yet! Triggering force delete via cmd client!", namespaceName, userName);
-                    cmdKubeClient().deleteByName(KafkaUser.RESOURCE_KIND, userName);
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(KafkaUser.RESOURCE_KIND, userName);
                     return false;
                 }
             },

@@ -35,7 +35,6 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.ClassDescriptor;
@@ -60,8 +59,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class StUtils {
 
@@ -272,7 +269,7 @@ public class StUtils {
         TestUtils.waitFor("JSON log to be present in " + pods, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
             boolean isJSON = false;
             for (String podName : pods.keySet()) {
-                String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(Level.TRACE, "logs", podName, "-c", containerName, "--tail=100").out();
+                String log = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec("logs", podName, "-c", containerName, "--tail=100").out();
 
                 JsonArray jsonArray = getJsonArrayFromLog(log);
 
@@ -317,7 +314,7 @@ public class StUtils {
      * @return log from the pod
      */
     public static String getLogFromPodByTime(String namespaceName, String podName, String containerName, String timeSince) {
-        return cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("logs", podName, "-c", containerName, "--since=" + timeSince).out();
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec("logs", podName, "-c", containerName, "--since=" + timeSince).out();
     }
 
     /**
@@ -381,9 +378,9 @@ public class StUtils {
 
     public static String getLineFromPodContainer(String namespaceName, String podName, String containerName, String filePath, String grepString) {
         if (containerName == null) {
-            return cmdKubeClient(namespaceName).execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
         } else {
-            return cmdKubeClient(namespaceName).execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
         }
     }
 

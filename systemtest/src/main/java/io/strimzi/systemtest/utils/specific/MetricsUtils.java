@@ -28,7 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.is;
@@ -49,7 +48,7 @@ public class MetricsUtils {
         command.add("cat");
         command.add("/tmp/run.sh");
         ArrayList<String> executableCommand = new ArrayList<>();
-        executableCommand.addAll(Arrays.asList(cmdKubeClient().toString(), "exec", podName, "-n", namespaceName, "--"));
+        executableCommand.addAll(Arrays.asList(KubeResourceManager.get().kubeCmdClient().cmd(), "exec", podName, "-n", namespaceName, "--"));
         executableCommand.addAll(command);
 
         Exec exec = new Exec();

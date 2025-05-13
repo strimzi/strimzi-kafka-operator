@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static java.util.Arrays.asList;
 
 public class DeploymentUtils {
@@ -225,7 +224,7 @@ public class DeploymentUtils {
                     return true;
                 } else {
                     LOGGER.warn("Deployment: {}/{} is not deleted yet! Triggering force delete by cmd client!", namespaceName, name);
-                    cmdKubeClient(namespaceName).deleteByName(TestConstants.DEPLOYMENT, name);
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(TestConstants.DEPLOYMENT, name);
                     return false;
                 }
             });

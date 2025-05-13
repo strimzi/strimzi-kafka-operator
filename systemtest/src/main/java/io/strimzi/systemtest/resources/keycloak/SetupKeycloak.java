@@ -37,8 +37,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-
 public class SetupKeycloak {
     private static final List<String> KEYCLOAK_REALMS_FILE_NAMES = List.of("internal_realm.json", "authorization_realm.json", "scope_audience_realm.json");
     private static final String KEYCLOAK_INSTALL_FILES_BASE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/oauth2";
@@ -90,7 +88,7 @@ public class SetupKeycloak {
 
     private static void deployKeycloak(String namespaceName) {
         LOGGER.info("Deploying Keycloak instance into Namespace: {}", namespaceName);
-        cmdKubeClient(namespaceName).apply(KEYCLOAK_INSTANCE_FILE_PATH);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).apply(KEYCLOAK_INSTANCE_FILE_PATH);
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, "keycloak", 1);
 
@@ -108,7 +106,7 @@ public class SetupKeycloak {
             final String postgresYaml =  Files.readString(Paths.get(POSTGRES_FILE_PATH)).replace(
                 "${POSTGRES_IMAGE}", Environment.POSTGRES_IMAGE
             );
-            cmdKubeClient(namespaceName).applyContent(postgresYaml);
+            KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(postgresYaml);
         } catch (IOException e) {
             throw new RuntimeException("Failed to update the Postgres deployment YAML", e);
         }
@@ -187,14 +185,14 @@ public class SetupKeycloak {
 
     private static void deleteKeycloak(String namespaceName) {
         LOGGER.info("Deleting Keycloak in Namespace: {}", namespaceName);
-        cmdKubeClient(namespaceName).delete(KEYCLOAK_INSTANCE_FILE_PATH);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).delete(KEYCLOAK_INSTANCE_FILE_PATH);
         SecretUtils.deleteSecretWithWait(namespaceName, KEYCLOAK_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, KEYCLOAK_DEPLOYMENT_NAME);
     }
 
     private static void deletePostgres(String namespaceName) {
         LOGGER.info("Deleting Postgres in Namespace: {}", namespaceName);
-        cmdKubeClient(namespaceName).delete(POSTGRES_FILE_PATH);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).delete(POSTGRES_FILE_PATH);
         SecretUtils.deleteSecretWithWait(namespaceName, POSTGRES_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, "postgres");
     }

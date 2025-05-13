@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -12,8 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.function.Predicate;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class NfsUtils {
     private static final Logger LOGGER = LogManager.getLogger(NfsUtils.class);
@@ -39,7 +38,7 @@ public class NfsUtils {
      * @param path          the path to check size
      */
     private static String getSizeOfDirectoryInPod(final String namespaceName, String podName, String path) {
-        return cmdKubeClient().namespace(namespaceName).execInPod(podName, "du", "-sb", path).out();
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "du", "-sb", path).out();
     }
 
     /**

@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.resources.CrdClients.kafkaNodePoolClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaNodePoolUtils {
 
@@ -72,7 +71,7 @@ public class KafkaNodePoolUtils {
                 ) {
                     return true;
                 } else {
-                    cmdKubeClient(namespaceName).deleteByName(KafkaNodePool.RESOURCE_KIND, kafkaNodePoolName);
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(KafkaNodePool.RESOURCE_KIND, kafkaNodePoolName);
                     return false;
                 }
             },

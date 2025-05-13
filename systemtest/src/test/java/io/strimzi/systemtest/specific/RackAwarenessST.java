@@ -48,7 +48,6 @@ import java.util.Map;
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -202,7 +201,7 @@ class RackAwarenessST extends AbstractST {
         assertThat(podNodeRequirement.getOperator(), is("Exists"));
 
         // check Kafka client rack awareness configuration
-        String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName,
+        String commandOut = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(podName,
                 "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
         assertThat(commandOut.contains("consumer.client.rack=${strimzidir:/opt/kafka/init:rack.id}"), is(true));
 
@@ -276,7 +275,7 @@ class RackAwarenessST extends AbstractST {
         assertThat(podNodeRequirement.getOperator(), is("Exists"));
 
         // check Kafka client rack awareness configuration
-        String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
+        String commandOut = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
         assertThat(commandOut.contains("${strimzidir:/opt/kafka/init:rack.id}"), is(true));
 
         // Mirroring messages by: Producing to the Source Kafka Cluster and consuming them from mirrored KafkaTopic in target Kafka Cluster.

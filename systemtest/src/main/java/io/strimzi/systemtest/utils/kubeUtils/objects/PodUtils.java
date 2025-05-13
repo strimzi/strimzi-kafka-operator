@@ -21,8 +21,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-
 public class PodUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PodUtils.class);
@@ -201,7 +199,7 @@ public class PodUtils {
                     for (Pod pod : pods) {
                         if (pod.getStatus().getPhase().equals("Terminating")) {
                             LOGGER.debug("Deleting Pod: {}/{}", namespaceName, pod.getMetadata().getName());
-                            cmdKubeClient(namespaceName).deleteByName("pod", pod.getMetadata().getName());
+                            KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName("pod", pod.getMetadata().getName());
                         }
                     }
                     return false;
@@ -360,7 +358,7 @@ public class PodUtils {
 
     public static void annotatePod(String namespaceName, String podName, String annotationKey, String annotationValue) {
         LOGGER.info("Annotating Pod: {}/{} with annotation {}={}", namespaceName, podName, annotationKey, annotationValue);
-        cmdKubeClient().namespace(namespaceName)
-                .execInCurrentNamespace("annotate", "pod", podName, annotationKey + "=" + annotationValue);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
+                .exec("annotate", "pod", podName, annotationKey + "=" + annotationValue);
     }
 }
