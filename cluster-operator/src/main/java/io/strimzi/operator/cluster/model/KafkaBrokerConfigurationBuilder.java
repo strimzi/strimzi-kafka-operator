@@ -1026,9 +1026,16 @@ public class KafkaBrokerConfigurationBuilder {
      * @param values List configuration values.
      */
     static void createOrAddListConfig(AbstractConfiguration kafkaConfig, String key, String values) {
-        if (kafkaConfig == null) throw new IllegalArgumentException("Configuration is required");
-        if (key == null || key.isBlank()) throw new IllegalArgumentException("Configuration key is required");
-        if (values == null || values.isBlank()) throw new IllegalArgumentException("Configuration values are required");
+        if (kafkaConfig == null) {
+            throw new IllegalArgumentException("Configuration is required");
+        }
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("Configuration key is required");
+        }
+        if (values == null || values.isBlank()) {
+            throw new IllegalArgumentException("Configuration values are required");
+        }
+
         String existingConfig = kafkaConfig.getConfigOption(key);
         // using an ordered set to preserve ordering of the existing kafkaConfig as values could potentially be user-provided.
         Set<String> existingSet = existingConfig == null ? new LinkedHashSet<>() :

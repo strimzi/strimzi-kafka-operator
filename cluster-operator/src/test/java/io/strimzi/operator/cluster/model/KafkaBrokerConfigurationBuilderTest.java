@@ -2696,7 +2696,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .map(key -> assertThrows(IllegalArgumentException.class, () -> KafkaBrokerConfigurationBuilder.createOrAddListConfig(config, key, "test-value-3")))
                 .forEach(e -> assertThat(e.getMessage(), is("Configuration key is required")
                 ));
-
     }
 
     @ParallelTest
