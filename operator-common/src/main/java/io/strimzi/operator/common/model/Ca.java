@@ -296,7 +296,7 @@ public abstract class Ca {
     protected Map<String, String> caCertData;
     protected Map<String, String> caKeyData;
     protected RenewalType renewalType;
-    protected boolean caCertsRemoved = false;
+    protected boolean caCertsRemoved;
     protected final CertificateExpirationPolicy policy;
 
     /**
