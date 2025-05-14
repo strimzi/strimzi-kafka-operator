@@ -234,7 +234,7 @@ opm alpha bundle validate --tag $DOCKER_REGISTRY/$DOCKER_USER/strimzi-kafka-oper
 #### Create the catalog image
 
 In this step, you are going to create a catalog and put the operator bundle into it.
-Inside the bundle directory (i.e. `operators/strimzi-kafka-operator/0.45.0`), create a folder for the catalog:
+Inside the root operator directory (i.e. `operators/strimzi-kafka-operator`), create a folder for the catalog:
 
 ```shell
 mkdir -p strimzi-catalog
@@ -271,6 +271,19 @@ entries:
 EOF
 ```
 
+When adding more than one operator version/bundle, each operator entry has to have the `replaces` field to specify which release it's going to replace:
+
+```yaml
+schema: olm.channel
+package: strimzi-kafka-operator
+name: stable
+entries:
+  - name: strimzi-cluster-operator.v0.45.0
+    replaces: strimzi-cluster-operator.v0.44.0
+  - name: strimzi-cluster-operator.v0.44.0
+    replaces: strimzi-cluster-operator.v0.43.0
+```
+
 Build and push the catalog image:
 
 ```shell
@@ -301,6 +314,18 @@ You can now list the operator as part of the "Strimzi Catalog" catalog and not t
 ```shell
 kubectl get packagemanifest -n olm | grep strimzi-kafka-operator
 ```
+
+You can test operator upgrades by starting from an existing catalog and then building a new catalog with a new operator version/bundle.
+In this case, the new catalog image is pulled by Kubernetes/OpenShift.
+It happens automatically if you are using a specific tag for the catalog image, for example going from `$DOCKER_REGISTRY/$DOCKER_USER/olm-catalog:1.0` to `$DOCKER_REGISTRY/$DOCKER_USER/olm-catalog:1.1`.
+If you are using the `latest` tag instead, you have to force pulling the new catalog image and one way is to kill the pod running the catalog.
+
+```shell
+kubectl get pods -n olm
+kubectl delete pod strimzi-catalog-<id> -n olm
+```
+
+Remember to use the `openshift-marketplace` namespace instead if you are using OpenShift.
 
 ### Install the operator
 
