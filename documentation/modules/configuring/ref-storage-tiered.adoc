@@ -5,8 +5,8 @@
 Tiered storage introduces a flexible approach to managing Kafka data whereby log segments are moved to a separate storage system. 
 For example, you can combine the use of block storage on brokers for frequently accessed data and offload older or less frequently accessed data from the block storage to more cost-effective, scalable remote storage solutions, such as Amazon S3, without compromising data accessibility and durability.
 
-WARNING: Tiered storage is a production ready Kafka feature since Kafka 3.9.0, which is also available in Strimzi.
-Please read the https://kafka.apache.org/documentation/#tiered_storage_limitation[limitations^] of this feature before using it.
+NOTE: Tiered storage is a production-ready feature in Kafka since version 3.9.0, and it is also supported in Strimzi.
+Before introducing tiered storage to your environment, review the https://kafka.apache.org/documentation/#tiered_storage_limitation[known limitations^] of this feature.
 
 Tiered storage requires an implementation of Kafka's `RemoteStorageManager` interface to handle communication between Kafka and the remote storage system, which is enabled through configuration of the `Kafka` resource.
 Strimzi uses Kafka's https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java[`TopicBasedRemoteLogMetadataManager`^] for Remote Log Metadata Management (RLMM) when custom tiered storage is enabled.
