@@ -32,6 +32,8 @@
 * [Cloudera](https://www.cloudera.com/products/stream-processing.html)
 * [SURF](https://surf.nl)
    * Use Strimzi to create a (streaming) telemetry platform and EDA for Network Orchestration.
+* [AppsFlyer](https://www.appsflyer.com/)
+  * Running dozens of high-throughput clusters, handling tens of millions of messages per second, relying on the local ephemeral storage.
 
 Are you currently using Strimzi in production?
 Please let us know by adding your company name and, if you want, a description of your use case to this document!
