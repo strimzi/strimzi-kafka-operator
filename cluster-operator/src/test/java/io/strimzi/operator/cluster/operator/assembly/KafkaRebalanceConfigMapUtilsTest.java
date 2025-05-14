@@ -39,9 +39,9 @@ public class KafkaRebalanceConfigMapUtilsTest {
     }
 
     @Test
-    public void testProgressFieldsForProposalReadyState() throws Exception {
+    public void testProgressFieldsForProposalReadyState() {
         ExecutorStatus es = new ExecutorStatus(createExecutorStatusJson(
-                CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString(), null, null, null));
+                CruiseControlExecutorState.NO_TASK_IN_PROGRESS, null, null, null));
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
         updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.ProposalReady, es, cm);
 
@@ -53,15 +53,15 @@ public class KafkaRebalanceConfigMapUtilsTest {
     }
 
     @Test
-    public void testProgressFieldsForProposalRebalancingState() throws Exception {
+    public void testProgressFieldsForProposalRebalancingState() {
         Instant taskStartTime = Instant.now().minusSeconds(2).truncatedTo(ChronoUnit.SECONDS);
         ExecutorStatus es0 = new ExecutorStatus(createExecutorStatusJson(
-                CruiseControlExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString(), "250", "10000",
+                CruiseControlExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS, "250", "10000",
                 String.format("No reason provided (Client: 172.17.0.1, Date: %s)", taskStartTime.toString())));
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
         updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Rebalancing, es0, cm);
 
-        /**
+        /*
          * Total Data to Move:          10,000 MB
          * Data Moved:                  250 MB
          * Time Since Task Start:       2 seconds
@@ -80,7 +80,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
     public void testProgressFieldsForProposalStopped() throws Exception {
         Instant taskStartTime = Instant.now().minusSeconds(1).truncatedTo(ChronoUnit.SECONDS);
         ExecutorStatus es = new ExecutorStatus(createExecutorStatusJson(
-                CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString(), "250", "10000",
+                CruiseControlExecutorState.NO_TASK_IN_PROGRESS, "250", "10000",
                 String.format("No reason provided (Client: 172.17.0.1, Date: %s)", taskStartTime.toString())));
         ConfigMap cm = createKafkaRebalanceConfigMap(Map.of(ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY, "5",
                 COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY, "100",
@@ -106,9 +106,9 @@ public class KafkaRebalanceConfigMapUtilsTest {
     }
 
     @Test
-    public void testProgressFieldsForProposalNotReady() throws Exception {
+    public void testProgressFieldsForProposalNotReady() {
         ExecutorStatus es = new ExecutorStatus(createExecutorStatusJson(
-                CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString(), "250", "10000", null));
+                CruiseControlExecutorState.NO_TASK_IN_PROGRESS, "250", "10000", null));
         ConfigMap cm = createKafkaRebalanceConfigMap(Map.of(ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY, "5",
                 COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY, "100",
                 EXECUTOR_STATE_KEY, es.toString(),
@@ -133,9 +133,9 @@ public class KafkaRebalanceConfigMapUtilsTest {
     }
 
     @Test
-    public void testProgressFieldsForReadyState() throws Exception {
+    public void testProgressFieldsForReadyState() {
         ExecutorStatus es = new ExecutorStatus(createExecutorStatusJson(
-                CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString(), null, null, null));
+                CruiseControlExecutorState.NO_TASK_IN_PROGRESS, null, null, null));
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
         updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Ready, es, cm);
 
@@ -147,9 +147,9 @@ public class KafkaRebalanceConfigMapUtilsTest {
     }
 
     @Test
-    public void testProgressFieldsForUnsupportedStates() throws Exception {
+    public void testProgressFieldsForNewAndPendingProposalStates() {
         ExecutorStatus es = new ExecutorStatus(createExecutorStatusJson(
-                CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString(), null, null, null));
+                CruiseControlExecutorState.NO_TASK_IN_PROGRESS, null, null, null));
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
         updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.New, es, cm);
 
@@ -160,7 +160,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
         assertThat(m.get(BROKER_LOAD_KEY), is(BROKER_LOAD));
 
         es = new ExecutorStatus(createExecutorStatusJson(
-                CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString(), null, null, null));
+                CruiseControlExecutorState.NO_TASK_IN_PROGRESS, null, null, null));
         cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
         updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.PendingProposal, es, cm);
 

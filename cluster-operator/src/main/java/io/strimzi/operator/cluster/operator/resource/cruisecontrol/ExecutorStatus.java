@@ -24,11 +24,11 @@ public class ExecutorStatus {
     /* test */ static final String TOTAL_DATA_TO_MOVE_KEY = "totalDataToMove";
     /* test */ static final String TRIGGERED_TASK_REASON_KEY = "triggeredTaskReason";
 
-    private JsonNode json;
-    private boolean inProgressState;
-    private CruiseControlExecutorState state;
-    private Integer finishedDataMovement;
-    private Integer totalDataToMove;
+    private final JsonNode json;
+    private final boolean inProgressState;
+    private final CruiseControlExecutorState state;
+    private int finishedDataMovement;
+    private int totalDataToMove;
     private Instant taskStartTime;
 
     /**
@@ -72,14 +72,14 @@ public class ExecutorStatus {
     /**
      * @return the value of the "totalDataToMove" field from the Executor status JSON.
      */
-    public Integer getTotalDataToMove() {
+    public int getTotalDataToMove() {
         return totalDataToMove;
     }
 
     /**
      * @return the value of the "finishedDataMovement" field from the Executor status JSON.
      */
-    public Integer getFinishedDataMovement() {
+    public int getFinishedDataMovement() {
         return finishedDataMovement;
     }
 
@@ -124,7 +124,7 @@ public class ExecutorStatus {
      */
     private static Integer extractFinishedDataMovement(JsonNode executorStateJson) {
         if (!executorStateJson.has(FINISHED_DATA_MOVEMENT_KEY)) {
-            throw new IllegalArgumentException(String.format("Executor State does not contain required '%s' field.", FINISHED_DATA_MOVEMENT_KEY));
+            throw new IllegalArgumentException(String.format("Executor Status does not contain required '%s' field.", FINISHED_DATA_MOVEMENT_KEY));
         }
         return executorStateJson.get(FINISHED_DATA_MOVEMENT_KEY).asInt();
     }
@@ -169,7 +169,8 @@ public class ExecutorStatus {
      */
     private static String extractDateFromTriggeredTaskReason(String triggeredTaskReason) {
         if (triggeredTaskReason == null || triggeredTaskReason.isEmpty()) {
-            throw new IllegalArgumentException("Triggered task reason is missing.");
+            throw new IllegalArgumentException(String.format("Executor State '%s' field has null or empty value",
+                    TRIGGERED_TASK_REASON_KEY));
         }
 
         Matcher matcher = ISO_8601_UTC_TIMESTAMP_PATTERN.matcher(triggeredTaskReason);

@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 @ExtendWith(VertxExtension.class)
-public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaRebalanceAssemblyOperatorTest  {
+public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaRebalanceAssemblyOperatorTest {
 
     @BeforeEach
     @Override
@@ -183,7 +183,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                             assertThat(warningCondition1.getLastTransitionTime(), is(warningCondition2.getLastTransitionTime()));
 
                         }))
-                .compose(res ->   mockCruiseControlTask(COMPLETED, false))
+                .compose(res -> mockCruiseControlTask(COMPLETED, false))
                 .compose(res -> reconcile(reconciliation))
                 .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Ready, res))
                 .onSuccess(res -> {

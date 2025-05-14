@@ -54,7 +54,10 @@ public class KafkaRebalanceConfigMapUtils {
     /* test */ static void updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState state,
                                                                       ExecutorStatus executorStatus,
                                                                       ConfigMap configMap) {
-        Map<String, String> data = configMap != null ? configMap.getData() : null;
+        if (configMap == null || configMap.getData() == null) {
+            return;
+        }
+        Map<String, String> data = configMap.getData();
 
         switch (state) {
             case ProposalReady:

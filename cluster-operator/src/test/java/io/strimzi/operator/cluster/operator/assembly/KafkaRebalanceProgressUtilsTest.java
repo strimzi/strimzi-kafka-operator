@@ -20,7 +20,7 @@ public class KafkaRebalanceProgressUtilsTest {
     public void testEstimateTimeToCompletionInMinutes() {
         Instant currentTime = Instant.now();
 
-        /**
+        /*
          * Total Data to Move:          1000 MB
          * Data Moved:                  10 MB
          * Time Since Task Start:       1 second
@@ -29,7 +29,7 @@ public class KafkaRebalanceProgressUtilsTest {
          * Estimated Time to Complete:  1.5 seconds -> 2 minutes
          */
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minusSeconds(1), currentTime, 1000, 10), is(2));
-        /**
+        /*
          * Total Data to Move:          1000 MB
          * Data Moved:                  10 MB
          * Time Since Task Start:       60 seconds
@@ -38,7 +38,7 @@ public class KafkaRebalanceProgressUtilsTest {
          * Estimated Time to Complete:  5940 seconds -> 99 minutes
          */
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minusSeconds(60), currentTime, 1000, 10), is(99));
-        /**
+        /*
          * Total Data to Move:          1000 MB
          * Data Moved:                  500 MB
          * Time Since Task Start:       60 seconds
@@ -47,7 +47,7 @@ public class KafkaRebalanceProgressUtilsTest {
          * Estimated Time to Complete:  60 seconds -> 1 minute
          */
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minusSeconds(60), currentTime, 1000, 500), is(1));
-        /**
+        /*
          * Total Data to Move:          1,000,000 MB
          * Data Moved:                  100 MB
          * Time Since Task Start:       60 seconds
@@ -56,7 +56,7 @@ public class KafkaRebalanceProgressUtilsTest {
          * Estimated Time to Complete:  599,940 seconds -> 9999 minutes
          */
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minusSeconds(60), currentTime, 1000000, 100), is(9999));
-        /**
+        /*
          * Total Data to Move:          1000 MB
          * Data Moved:                  990 MB
          * Time Since Task Start:       60 seconds
@@ -65,7 +65,7 @@ public class KafkaRebalanceProgressUtilsTest {
          * Estimated Time to Complete:  ~0.6 seconds -> 0 minutes
          */
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minusSeconds(60), currentTime, 1000, 990), is(0));
-        /**
+        /*
          * Total Data to Move:          2,147,483,647 MB (Integer.MAX_VALUE)
          * Data Moved:                  1,073,741,823.5 MB
          * Time Since Task Start:       1000 seconds
@@ -74,7 +74,7 @@ public class KafkaRebalanceProgressUtilsTest {
          * Estimated Time to Complete:  ~1000 seconds -> 17 minutes
          */
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minusSeconds(1000), currentTime, Integer.MAX_VALUE, Integer.MAX_VALUE / 2), is(17));
-        /**
+        /*
          * Total Data to Move:          1000 MB
          * Data Moved:                  10 MB
          * Time Since Task Start:       1000 seconds
@@ -83,7 +83,7 @@ public class KafkaRebalanceProgressUtilsTest {
          * Estimated Time to Complete:  99000 seconds -> 1650 minutes
          */
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minusSeconds(1000), currentTime, 1000, 10), is(1650));
-        /**
+        /*
          * Total Data to Move:          1 MB
          * Data Moved:                  1 MB
          * Time Since Task Start:       1 hour (3600 seconds)
@@ -92,7 +92,7 @@ public class KafkaRebalanceProgressUtilsTest {
          * Estimated Time to Complete:  0 seconds -> 0 minutes
          */
         assertThat(estimateTimeToCompletionInMinutes(currentTime.minus(1, ChronoUnit.HOURS), currentTime, 1, 1), is(0));
-        /**
+        /*
         * Total Data to Move:          1000 MB
         * Data Moved:                  500 MB
         * Time Since Task Start:       30 days (2,592,000 seconds)
@@ -107,8 +107,8 @@ public class KafkaRebalanceProgressUtilsTest {
         assertThrows(IllegalArgumentException.class, () -> estimateTimeToCompletionInMinutes(currentTime.minus(30, ChronoUnit.DAYS), currentTime, 1000, -1));
 
         assertThrows(IllegalArgumentException.class, () -> estimateTimeToCompletionInMinutes(currentTime, currentTime, 1000, 10));
-        assertThrows(ArithmeticException.class, () -> estimateTimeToCompletionInMinutes(currentTime.minus(1, ChronoUnit.HOURS), currentTime,  0, 0));
-        assertThrows(ArithmeticException.class, () -> estimateTimeToCompletionInMinutes(currentTime.minus(10, ChronoUnit.HOURS), currentTime, 1000, 0));
+        assertThrows(IllegalArgumentException.class, () -> estimateTimeToCompletionInMinutes(currentTime.minus(1, ChronoUnit.HOURS), currentTime,  0, 0));
+        assertThrows(IllegalArgumentException.class, () -> estimateTimeToCompletionInMinutes(currentTime.minus(10, ChronoUnit.HOURS), currentTime, 1000, 0));
     }
 
     @Test

@@ -18,16 +18,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ExecutorStatusTest {
-    private static final String DEFAULT_STATE = CruiseControlExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString();
+    private static final CruiseControlExecutorState DEFAULT_STATE = CruiseControlExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS;
     private static final String DEFAULT_FINISHED_DATA_MOVEMENT = "50";
     private static final String DEFAULT_TOTAL_DATA_TO_MOVE = "1000";
     private static final String DEFAULT_TRIGGERED_TASK_REASON = "No reason provided (Client: 172.17.0.1, Date: 2024-11-15T19:41:27Z)";
 
-    public static ObjectNode createExecutorStatusJson(String state, String finishedDataMovement, String totalDataToMove, String triggeredTaskReason) {
+    public static ObjectNode createExecutorStatusJson(CruiseControlExecutorState state, String finishedDataMovement, String totalDataToMove, String triggeredTaskReason) {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode objectNode = objectMapper.createObjectNode();
         if (state != null) {
-            objectNode.put(STATE_KEY, state);
+            objectNode.put(STATE_KEY, state.toString());
         }
         if (finishedDataMovement != null) {
             objectNode.put(FINISHED_DATA_MOVEMENT_KEY, finishedDataMovement);
@@ -44,11 +44,11 @@ public class ExecutorStatusTest {
     @Test
     public void testIsInProgressState() {
         ExecutorStatus es0 = new ExecutorStatus(createExecutorStatusJson(
-                CruiseControlExecutorState.NO_TASK_IN_PROGRESS.toString(), null, null, null));
+                CruiseControlExecutorState.NO_TASK_IN_PROGRESS, null, null, null));
         assertThat(es0.isInProgressState(), is(false));
 
         ExecutorStatus es1 = new ExecutorStatus(createExecutorStatusJson(
-                CruiseControlExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS.toString(),
+                CruiseControlExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS,
                 DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE, DEFAULT_TRIGGERED_TASK_REASON));
         assertThat(es1.isInProgressState(), is(true));
     }
@@ -82,7 +82,7 @@ public class ExecutorStatusTest {
 
         // Test missing field throws IllegalArgumentException
         assertThrows(IllegalArgumentException.class, () ->
-                new ExecutorStatus(createExecutorStatusJson(null, null, null, null)));
+                new ExecutorStatus(createExecutorStatusJson(DEFAULT_STATE, DEFAULT_FINISHED_DATA_MOVEMENT, null, DEFAULT_TRIGGERED_TASK_REASON)));
     }
 
     @Test
@@ -118,6 +118,6 @@ public class ExecutorStatusTest {
 
         // Test missing field throws IllegalArgumentException
         assertThrows(IllegalArgumentException.class, () ->
-                new ExecutorStatus(createExecutorStatusJson(null, null, null, null)));
+                new ExecutorStatus(createExecutorStatusJson(DEFAULT_STATE, DEFAULT_FINISHED_DATA_MOVEMENT, DEFAULT_TOTAL_DATA_TO_MOVE, null)));
     }
 }

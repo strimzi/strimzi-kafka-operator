@@ -37,7 +37,7 @@ public class KafkaRebalanceProgressUtils {
                                                             int totalDataToMoveInMB,
                                                             int finishedDataMovementInMB)
             throws IllegalArgumentException, ArithmeticException {
-        if (taskStartTime == null || totalDataToMoveInMB < 0 || finishedDataMovementInMB < 0) {
+        if (taskStartTime == null || totalDataToMoveInMB < 0 || finishedDataMovementInMB <= 0) {
             throw new IllegalArgumentException(
                     String.format("Invalid value(s) provided for one of the following arguments: taskStartTime %s, totalDataToMoveInMB: %d, finishedDataMovementInMB: %d.",
                             taskStartTime, totalDataToMoveInMB, finishedDataMovementInMB)
@@ -51,10 +51,6 @@ public class KafkaRebalanceProgressUtils {
             throw new IllegalArgumentException(
                     String.format("Invalid time range: taskStartTime (%s) must be before currentTime (%s). Cannot calculate byte movement rate.",
                             taskStartTime, currentTime));
-        }
-
-        if (finishedDataMovementInMB == 0) {
-            throw new ArithmeticException("finishedDataMovementInMB is zero, cannot estimate time to completion.");
         }
 
         double rateMBperMinute = ((double) finishedDataMovementInMB / timeElapsed.getSeconds()) * 60;
