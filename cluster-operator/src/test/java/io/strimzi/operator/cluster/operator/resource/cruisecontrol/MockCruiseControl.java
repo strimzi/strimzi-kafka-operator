@@ -182,35 +182,30 @@ public class MockCruiseControl {
         List<Header> proposalNotReadyHeaders = List.of(header(USER_TASK_ID_HEADER, STATE_PROPOSAL_NOT_READY), authHeader.get(0));
 
         if (fetchError) {
-            server
-                    .when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true|false", "true|false"))
+            server.when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true|false", "true|false"))
                     .respond(buildStateResponse("CC-State-fetch-error.json", "cruise-control-state-error", 500));
             return;
         }
 
         if (taskStatus == null) {
-            server
-                    .when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true", "false"))
+            server.when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true", "false"))
                     .respond(buildStateResponse("CC-State.json", "cruise-control-state", 200));
             return;
         }
 
         switch (taskStatus) {
             case ACTIVE:
-                server
-                        .when(requestMatcher(proposalNotReadyHeaders, CruiseControlEndpoints.STATE, "true|false", "true|false"))
+                server.when(requestMatcher(proposalNotReadyHeaders, CruiseControlEndpoints.STATE, "true|false", "true|false"))
                         .respond(buildStateResponse("CC-State-proposal-not-ready.json", STATE_PROPOSAL_NOT_READY_RESPONSE, 200));
                 return;
 
             case IN_EXECUTION:
-                server
-                        .when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true|false", "true|false"))
+                server.when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true|false", "true|false"))
                         .respond(buildStateResponse("CC-State-inExecution.json", "cruise-control-state", 200));
                 return;
 
             default:
-                server
-                        .when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true", "false"))
+                server.when(requestMatcher(authHeader, CruiseControlEndpoints.STATE, "true", "false"))
                         .respond(buildStateResponse("CC-State.json", "cruise-control-state", 200));
         }
     }
@@ -246,31 +241,26 @@ public class MockCruiseControl {
             HttpRequest request = requestMatcher(authHeader, CruiseControlEndpoints.USER_TASKS, "true", String.valueOf(verbose));
 
             if (taskStatus == null) {
-                server
-                        .when(request)
+                server.when(request)
                         .respond(userTaskResponse(COMPLETED, verbose)); // or some other sensible fallback
                 continue;
             }
 
             switch (taskStatus) {
                 case ACTIVE:
-                    server
-                            .when(request)
+                    server.when(request)
                             .respond(userTaskResponse(ACTIVE, verbose));
                     break;
                 case IN_EXECUTION:
-                    server
-                            .when(request)
+                    server.when(request)
                             .respond(userTaskResponse(IN_EXECUTION, verbose));
                     break;
                 case COMPLETED_WITH_ERROR:
-                    server
-                            .when(request)
+                    server.when(request)
                             .respond(userTaskResponse(COMPLETED_WITH_ERROR, false));
                     break;
                 case COMPLETED:
-                    server
-                            .when(request)
+                    server.when(request)
                             .respond(userTaskResponse(COMPLETED, verbose));
                     break;
             }
@@ -332,8 +322,7 @@ public class MockCruiseControl {
      */
     public void mockRebalanceEndpoint(CruiseControlUserTaskStatus taskStatus) {
         for (boolean verbose : List.of(false, true)) {
-            server
-                    .when(rebalanceRequestMatcher(verbose))
+            server.when(rebalanceRequestMatcher(verbose))
                     .respond(rebalanceResponse(taskStatus, verbose));
 
         }
@@ -547,18 +536,15 @@ public class MockCruiseControl {
             HttpRequest request = requestMatcher(authHeader, CruiseControlEndpoints.USER_TASKS, "true", String.valueOf(verbose));
 
             // The first activeCalls times respond that with a status of "Active"
-            server
-                    .when(request, Times.exactly(activeCalls))
+            server.when(request, Times.exactly(activeCalls))
                     .respond(userTaskResponse(ACTIVE, verbose));
 
             // The next inExecutionCalls times respond that with a status of "InExecution"
-            server
-                    .when(request, Times.exactly(inExecutionCalls))
+            server.when(request, Times.exactly(inExecutionCalls))
                     .respond(userTaskResponse(IN_EXECUTION, verbose));
 
             // On the N+1 call, respond with a status of "Completed".
-            server
-                    .when(request, Times.unlimited())
+            server.when(request, Times.unlimited())
                     .respond(userTaskResponse(COMPLETED, verbose));
 
         }

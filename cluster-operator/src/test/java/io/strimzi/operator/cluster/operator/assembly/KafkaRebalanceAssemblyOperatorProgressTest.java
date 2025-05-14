@@ -33,13 +33,14 @@ import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemb
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY;
 import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.EXECUTOR_STATE_KEY;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.REBALANCE_PROGRESS_CONFIG_MAP_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.ACTIVE;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.COMPLETED;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.COMPLETED_WITH_ERROR;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.IN_EXECUTION;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -81,8 +82,13 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
             }
         }
 
-        void assertConfigMapKeyInStatus(KafkaRebalanceStatus status) {
-            assertThat(status.getProgress().containsKey(REBALANCE_PROGRESS_CONFIG_MAP_KEY), is(configMapExpected));
+        void assertConfigMapInStatus(KafkaRebalanceStatus status) {
+            if (configMapExpected) {
+                assertThat(status.getProgress(), notNullValue());
+                assertThat(status.getProgress().getRebalanceProgressConfigMap(), not(emptyOrNullString()));
+            } else {
+                assertThat(status.getProgress(), nullValue());
+            }
         }
     }
 
@@ -104,7 +110,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
 
         RebalanceConfigMap expectations = STATE_TO_EXPECTED_CONFIG_MAP_FIELDS.get(state);
         expectations.assertConfigMapFields(configMap);
-        expectations.assertConfigMapKeyInStatus(getKafkaRebalanceStatus());
+        expectations.assertConfigMapInStatus(getKafkaRebalanceStatus());
 
         return Future.succeededFuture();
     }

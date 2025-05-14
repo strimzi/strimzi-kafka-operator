@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceProgress;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
@@ -75,7 +76,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE_TEMPLATE;
-import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceConfigMapUtils.REBALANCE_PROGRESS_CONFIG_MAP_KEY;
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL;
@@ -355,7 +355,10 @@ public class KafkaRebalanceAssemblyOperator
                     }
 
                     // Add progress information to `KafkaRebalance` resource status and ConfigMap.
-                    desiredStatus.setProgress(Map.of(REBALANCE_PROGRESS_CONFIG_MAP_KEY, configMapName));
+                    KafkaRebalanceProgress progress = new KafkaRebalanceProgress();
+                    progress.setRebalanceProgressConfigMap(configMapName);
+                    desiredStatus.setProgress(progress);
+
                     return KafkaRebalanceConfigMapUtils.updateRebalanceConfigMap(reconciliation, desiredStatus, host, cruiseControlPort, apiClient, desiredConfigMap)
                             .recover(exception -> {
                                 exception = new Exception(

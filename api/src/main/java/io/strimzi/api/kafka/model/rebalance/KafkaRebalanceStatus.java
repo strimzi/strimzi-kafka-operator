@@ -30,7 +30,7 @@ import java.util.Map;
 @ToString(callSuper = true)
 public class KafkaRebalanceStatus extends Status {
     private String sessionId;
-    private Map<String, Object> progress = new HashMap<>(0);
+    private KafkaRebalanceProgress progress;
     private Map<String, Object> optimizationResult = new HashMap<>(0);
 
     @Description("A JSON object describing the optimization result")
@@ -43,13 +43,13 @@ public class KafkaRebalanceStatus extends Status {
         this.optimizationResult = optimizationResult;
     }
 
-    @Description("A JSON object describing the progress of the rebalance")
+    @Description("An object with information related to the progress of the rebalance.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<String, Object> getProgress() {
+    public KafkaRebalanceProgress getProgress() {
         return progress;
     }
 
-    public void setProgress(Map<String, Object> progress) {
+    public void setProgress(KafkaRebalanceProgress progress) {
         this.progress = progress;
     }
 

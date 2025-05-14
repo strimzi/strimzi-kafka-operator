@@ -21,7 +21,6 @@ import java.util.Map;
  * Utility class for updating data in KafkaRebalance ConfigMap
  */
 public class KafkaRebalanceConfigMapUtils {
-    /* test */ static final String REBALANCE_PROGRESS_CONFIG_MAP_KEY = "rebalanceProgressConfigMap";
     /**
      * The estimated time it will take in minutes until the partition rebalance is complete rounded
      * to the nearest minute.

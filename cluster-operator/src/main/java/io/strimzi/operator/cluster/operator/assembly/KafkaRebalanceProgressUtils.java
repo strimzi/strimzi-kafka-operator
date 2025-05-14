@@ -53,9 +53,9 @@ public class KafkaRebalanceProgressUtils {
                             taskStartTime, currentTime));
         }
 
-        double rateMBperMinute = ((double) finishedDataMovementInMB / timeElapsed.getSeconds()) * 60;
+        double rateMBPerMinute = ((double) finishedDataMovementInMB / timeElapsed.getSeconds()) * 60;
         int dataLeftToMoveMB = totalDataToMoveInMB - finishedDataMovementInMB;
-        return (int) Math.round(dataLeftToMoveMB / rateMBperMinute);
+        return (int) Math.round(dataLeftToMoveMB / rateMBPerMinute);
     }
 
     /**
