@@ -10,6 +10,8 @@
 * [Marlow Navigation](https://marlow-navigation.com/)
 * [Red Hat](https://www.redhat.com/en/)
     * [AMQ Streams](https://www.redhat.com/en/resources/amq-streams-datasheet)
+* [Randoli](https://www.randoli.io)
+    * Use Strimzi for powering a distributed control plane in our Observability & Cost Management solutions
 * [SBB CFF FFS](https://www.sbb.ch/en/home.html)
 * [Swisscom](https://www.swisscom.ch/)
 * [CN Group](https://www.cngroup.dk/)
