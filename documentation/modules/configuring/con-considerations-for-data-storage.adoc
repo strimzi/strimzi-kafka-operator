@@ -6,8 +6,9 @@
 = Storage considerations
 
 [role="_abstract"]
-Efficient data storage is essential for Strimzi to operate effectively, and block storage is strongly recommended. 
-Strimzi has been tested only with block storage, and file storage solutions like NFS are not guaranteed to work. 
+Efficient data storage is essential for Strimzi to operate effectively. 
+Strimzi has been tested with block storage as the primary storage type for Kafka brokers, and block storage is strongly recommended. 
+File system-based storage (such as NFS) is not guaranteed to work for primary broker storage and may cause stability or performance issues. 
 
 Common block storage types supported by Kubernetes include:
 
@@ -27,6 +28,19 @@ Strimzi is compatible with the XFS and ext4 file systems, which are commonly use
 Consider the underlying architecture and requirements of your deployment when choosing and setting up your file system.
 
 For more information, refer to {ApacheKafkaFileSystem} in the Kafka documentation.
+
+== Tiered storage
+
+Kafka’s tiered storage feature is supported in Strimzi as an optional capability. 
+
+With tiered storage enabled:
+
+* Primary broker storage,such as persistent volumes or JBOD, handles recent data
+* Remote tiered storage, such as object storage, is used for historical data
+
+AWS S3 and NFS-backed storage are supported for the remote tier.
+Other S3-compatible or cloud-based object storage systems might also work, but they have not been tested.
+If you use an untested storage backend, validate its performance and compatibility in your environment before using it in production.
 
 == Disk usage
 Solid-state drives (SSDs), though not essential, can improve the performance of Kafka in large clusters where data is sent to and received from multiple topics asynchronously.
