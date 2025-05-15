@@ -6,8 +6,7 @@ package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.systemtest.TestConstants;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 
 /**
  * Concrete implementation of BaseMetricsComponent for the Cluster Operator.
@@ -37,7 +36,7 @@ public class ClusterOperatorMetricsComponent extends BaseMetricsComponent {
      */
     @Override
     public LabelSelector getLabelSelector() {
-        return kubeClient().getDeploymentSelectors(namespaceName, componentName);
+        return DeploymentUtils.getDeploymentSelectorsInNamespace(namespaceName, componentName);
     }
 
     @Override

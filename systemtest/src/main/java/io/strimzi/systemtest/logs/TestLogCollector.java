@@ -230,7 +230,7 @@ public class TestLogCollector {
 
     /**
      * Method that encapsulates {@link #collectLogs(String, String)}, taking the test-class and test-case names from
-     * {@link ResourceManager#getTestContext()}
+     * {@link KubeResourceManager#getTestContext()}
      */
     public void collectLogs() {
         collectLogs(

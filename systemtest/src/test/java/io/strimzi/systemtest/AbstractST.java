@@ -62,7 +62,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -142,7 +141,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} second(s)", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(TestConstants.DEPLOYMENT, SetupClusterOperator.getInstance().getOperatorDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
+        String clusterOperatorLog = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).searchInLog(TestConstants.DEPLOYMENT, SetupClusterOperator.getInstance().getOperatorDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
@@ -158,10 +157,9 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void afterEachMayOverride() throws Exception {
+    protected void afterEachMayOverride() {
         if (!Environment.SKIP_TEARDOWN) {
             KubeResourceManager.get().deleteResources();
-            testSuiteNamespaceManager.deleteParallelNamespace();
         }
     }
 

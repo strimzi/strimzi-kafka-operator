@@ -40,7 +40,6 @@ import java.util.Map;
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.OAUTH;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -123,9 +122,9 @@ public class OauthScopeST extends OauthAbstractST {
 
         // Kafka connect passed the validation process (implicit the KafkaConnect is up)
         // explicitly verifying also logs
-        String kafkaConnectPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPodSetName(oauthClusterName)).get(0).getMetadata().getName();
+        String kafkaConnectPodName = PodUtils.listPodsByPrefixInNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPodSetName(oauthClusterName)).get(0).getMetadata().getName();
 
-        String kafkaLog = kubeClient().logsInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName);
+        String kafkaLog = KubeResourceManager.get().kubeClient().getLogsFromPod(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName);
         assertThat("Kafka's log doesn't contain information about expiration of the access token",
             kafkaLog.contains("Access token expires at"), is(true));
         assertThat("Kafka's log doesn't contain information about evaluating path",

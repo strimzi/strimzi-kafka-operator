@@ -34,6 +34,7 @@ import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +54,6 @@ import static io.strimzi.systemtest.TestTags.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.ROLLING_UPDATE;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -111,12 +111,12 @@ public class DynamicConfST extends AbstractST {
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, testStorage.getScraperName()).build()
         );
 
-        String scraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, testStorage.getScraperName()).get(0).getMetadata().getName();
-        String brokerPodName = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        String scraperPodName = PodUtils.listPodsByPrefixInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getScraperName()).get(0).getMetadata().getName();
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector()).get(0).getMetadata().getName();
         int podNum = KafkaComponents.getPodNumFromPodName(testStorage.getBrokerComponentName(), brokerPodName);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName())) {
-            String kafkaConfiguration = kubeClient().getConfigMap(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
+            String kafkaConfiguration = ConfigMapUtils.getInNamespace(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
             assertThat("Kafka configuration CM doesn't contain 'offsets.topic.replication.factor=1'", kafkaConfiguration.contains("offsets.topic.replication.factor=1"), is(true));
             assertThat("Kafka configuration CM doesn't contain 'transaction.state.log.replication.factor=1'", kafkaConfiguration.contains("transaction.state.log.replication.factor=1"), is(true));
         }
@@ -135,7 +135,7 @@ public class DynamicConfST extends AbstractST {
         LOGGER.info("Verifying values after update");
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName())) {
-            String kafkaConfiguration = kubeClient().getConfigMap(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
+            String kafkaConfiguration = ConfigMapUtils.getInNamespace(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
             assertThat("Kafka configuration CM doesn't contain 'offsets.topic.replication.factor=1'", kafkaConfiguration.contains("offsets.topic.replication.factor=1"), is(true));
             assertThat("Kafka configuration CM doesn't contain 'transaction.state.log.replication.factor=1'", kafkaConfiguration.contains("transaction.state.log.replication.factor=1"), is(true));
             assertThat("Kafka configuration CM doesn't contain 'unclean.leader.election.enable=true'", kafkaConfiguration.contains("unclean.leader.election.enable=true"), is(true));
@@ -196,8 +196,8 @@ public class DynamicConfST extends AbstractST {
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, testStorage.getScraperName()).build()
         );
 
-        String scraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, testStorage.getScraperName()).get(0).getMetadata().getName();
-        String brokerPodName = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        String scraperPodName = PodUtils.listPodsByPrefixInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getScraperName()).get(0).getMetadata().getName();
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector()).get(0).getMetadata().getName();
         int podNum = KafkaComponents.getPodNumFromPodName(testStorage.getBrokerComponentName(), brokerPodName);
 
         String kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);

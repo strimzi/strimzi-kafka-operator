@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -23,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.security.SystemTestCertManager.convertPrivateKeyToPKCS8File;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Provides representation of custom chain key-pair (i.e., {@code strimziRootCa}, {@code intermediateCa},
@@ -85,8 +85,7 @@ public class SystemTestCertHolder {
             //      b) Create the new (custom) secret.
 
             Secret secret = SecretUtils.createSecretFromFile(namespaceName, "ca.key", this.caKeySecretName, strimziKeyPKCS8.getAbsolutePath(), additionalSecretLabels);
-            kubeClient().namespace(namespaceName).createSecret(secret);
-            SecretUtils.waitForSecretReady(namespaceName, this.caKeySecretName, () -> { });
+            KubeResourceManager.get().createResourceWithWait(secret);
 
             // 4. Annotate the secrets
             SecretUtils.annotateSecret(namespaceName, this.caCertSecretName, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0");
@@ -113,7 +112,7 @@ public class SystemTestCertHolder {
             int generationNumber = Integer.parseInt(clusterCaSecretAnnotations.get(annotationKey));
             clusterCaSecretAnnotations.put(annotationKey, String.valueOf(++generationNumber));
         }
-        kubeClient(testStorage.getNamespaceName()).patchSecret(testStorage.getNamespaceName(), secret.getMetadata().getName(), secret);
+        SecretUtils.patchInNamespace(testStorage.getNamespaceName(), secret.getMetadata().getName(), secret);
     }
 
     public SystemTestCertAndKey getStrimziRootCa() {

@@ -79,7 +79,6 @@ public class TestSuiteNamespaceManager {
      * In test cases, where Kafka cluster is deployed we always create another namespace. Such test case is then
      * annotated as @ParallelNamespaceTest. This method creates from @code{extensionContext} this type of namespace
      * and store it to the @code{KubeClusterResource} instance, which then it will be needed in the @AfterEach phase.
-     * The inverse operation to this one is implement in {@link #deleteParallelNamespace()}.
      *
      */
     public void createParallelNamespace() {
@@ -96,25 +95,6 @@ public class TestSuiteNamespaceManager {
                 LOGGER.info("Creating Namespace: {} for TestCase: {}", namespaceTestCase, StUtils.removePackageName(testCaseName));
 
                 NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceTestCase, CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(), testCaseName));
-            }
-        }
-    }
-
-    /**
-     * Analogically to the {@link #createParallelNamespace()}.
-     *
-     */
-    public void deleteParallelNamespace() {
-        // if 'parallel namespace test' we are gonna delete namespace
-        if (StUtils.isParallelNamespaceTest(KubeResourceManager.get().getTestContext())) {
-            // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-            if (!Environment.isNamespaceRbacScope()) {
-                final String namespaceToDelete = KubeResourceManager.get().getTestContext().getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
-                final String testCaseName = KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
-
-                LOGGER.info("Deleting Namespace: {} for TestCase: {}", namespaceToDelete, StUtils.removePackageName(testCaseName));
-
-                NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(namespaceToDelete, CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(), testCaseName));
             }
         }
     }

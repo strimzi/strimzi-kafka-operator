@@ -28,6 +28,7 @@ import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.ScraperUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,7 +39,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
@@ -271,7 +271,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 2;
         final int increasedTopicReplicationFactor = 3;
-        final String ccPodName = kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName())).get(0).getMetadata().getName();
+        final String ccPodName = PodUtils.listPodsByPrefixInNamespace(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName())).get(0).getMetadata().getName();
         final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), sharedTestStorage.getClusterName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         // -- 1st stage (start with 2 replicas)
@@ -295,7 +295,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final Map<String, String> ccPod = DeploymentUtils.depSnapshot(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName()));
 
         // --- 3rd stage (during ongoing replicaChange task we induce chaos and delete CruiseControl Pod)
-        kubeClient().deletePodWithName(sharedTestStorage.getNamespaceName(), ccPodName);
+        KubeResourceManager.get().deleteResourceWithoutWait(PodUtils.getInNamespace(sharedTestStorage.getNamespaceName(), ccPodName));
 
         // we should see that KafkaTopic is ongoing
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
@@ -333,7 +333,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 3;
-        final String eoPodName = kubeClient().listPods(sharedTestStorage.getNamespaceName(),
+        final String eoPodName = KubeResourceManager.get().kubeClient().listPods(sharedTestStorage.getNamespaceName(),
                         LabelSelectors.entityOperatorLabelSelector(sharedTestStorage.getClusterName())).stream()
                 .findFirst()
                 .orElseThrow()
@@ -363,7 +363,7 @@ public class TopicReplicasChangeST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(sharedTestStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(sharedTestStorage.getClusterName()));
 
         // delete EntityOperator Pod during replicaChange process
-        kubeClient().deletePodWithName(sharedTestStorage.getNamespaceName(), eoPodName);
+        KubeResourceManager.get().deleteResourceWithoutWait(PodUtils.getInNamespace(sharedTestStorage.getNamespaceName(), eoPodName));
 
         // we should see that KafkaTopic is ongoing
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());

@@ -7,8 +7,7 @@ package io.strimzi.systemtest.metrics;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.systemtest.TestConstants;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 
 /**
  * Concrete implementation of BaseMetricsComponent for the Kafka Bridge.
@@ -47,6 +46,6 @@ public class KafkaBridgeMetricsComponent extends BaseMetricsComponent {
      */
     @Override
     public LabelSelector getLabelSelector() {
-        return kubeClient().getDeploymentSelectors(namespaceName, KafkaBridgeResources.componentName(componentName));
+        return DeploymentUtils.getDeploymentSelectorsInNamespace(namespaceName, KafkaBridgeResources.componentName(componentName));
     }
 }

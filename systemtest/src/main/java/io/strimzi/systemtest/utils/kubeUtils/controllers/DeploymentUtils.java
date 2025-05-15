@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 
 public class DeploymentUtils {
@@ -50,6 +48,30 @@ public class DeploymentUtils {
     }
 
     /**
+     * Returns {@link Deployment} from specified Namespace with specified name.
+     *
+     * @param namespaceName     Namespace name where the Deployment should be present.
+     * @param deploymentName    name of the desired Deployment.
+     *
+     * @return  {@link Deployment} from specified Namespace with specified name.
+     */
+    public static Deployment getInNamespace(String namespaceName, String deploymentName) {
+        return KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(namespaceName).withName(deploymentName).get();
+    }
+
+    /**
+     * Returns {@link LabelSelector} from the spec of the desired {@link Deployment}.
+     *
+     * @param namespaceName     Namespace name where the Deployment should be present.
+     * @param deploymentName    name of the desired Deployment.
+     *
+     * @return  {@link LabelSelector} from the spec of the desired {@link Deployment}.
+     */
+    public static LabelSelector getDeploymentSelectorsInNamespace(String namespaceName, String deploymentName) {
+        return getInNamespace(namespaceName, deploymentName).getSpec().getSelector();
+    }
+
+    /**
      * Log actual status of deployment with pods
      * @param deployment - every Deployment, that HasMetadata and has status (fabric8 status)
      **/
@@ -65,10 +87,10 @@ public class DeploymentUtils {
                 log.add("\tMessage: " + deploymentCondition.getMessage() + "\n");
             }
 
-            if (kubeClient(namespaceName).listPodsByPrefixInName(name).size() != 0) {
+            if (PodUtils.listPodsByPrefixInNamespace(namespaceName, name).size() != 0) {
                 log.add("\nPods with conditions and messages:\n\n");
 
-                for (Pod pod : kubeClient(namespaceName).listPodsByPrefixInName(name)) {
+                for (Pod pod : PodUtils.listPodsByPrefixInNamespace(namespaceName, name)) {
                     log.add(pod.getMetadata().getName() + ":");
                     for (PodCondition podCondition : pod.getStatus().getConditions()) {
                         if (podCondition.getMessage() != null) {
@@ -109,7 +131,7 @@ public class DeploymentUtils {
      * @return A map of pod name to resource version for Pods in the given Deployment.
      */
     public static Map<String, String> depSnapshot(String namespaceName, String name) {
-        Deployment deployment = kubeClient(namespaceName).getDeployment(namespaceName, name);
+        Deployment deployment = getInNamespace(namespaceName, name);
         LabelSelector selector = deployment.getSpec().getSelector();
         return PodUtils.podSnapshot(namespaceName, selector);
     }
@@ -123,7 +145,7 @@ public class DeploymentUtils {
      */
     public static boolean depHasRolled(String namespaceName, String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}/{}", namespaceName, new TreeMap<>(snapshot));
-        Map<String, String> map = PodUtils.podSnapshot(namespaceName, kubeClient(namespaceName).getDeployment(namespaceName, name).getSpec().getSelector());
+        Map<String, String> map = PodUtils.podSnapshot(namespaceName, getInNamespace(namespaceName, name).getSpec().getSelector());
         LOGGER.debug("Current  snapshot: {}/{}", namespaceName, new TreeMap<>(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
@@ -161,24 +183,13 @@ public class DeploymentUtils {
         return depSnapshot(namespaceName, deploymentName);
     }
 
-    /**
-     * Wait until the given Deployment has been recovered.
-     * @param name The name of the Deployment.
-     */
-    public static void waitForDeploymentRecovery(String namespaceName, String name, String deploymentUid) {
-        LOGGER.info("Waiting for Deployment: {}/{}-{} recovery", namespaceName, name, deploymentUid);
-        TestUtils.waitFor("recovery of Deployment: " + namespaceName + "/" + name, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.TIMEOUT_FOR_RESOURCE_RECOVERY,
-            () -> !kubeClient().getDeploymentUid(namespaceName, name).equals(deploymentUid));
-        LOGGER.info("Deployment: {}/{} was recovered", namespaceName, name);
-    }
-
     public static boolean waitForDeploymentReady(String namespaceName, String deploymentName) {
         LOGGER.info("Waiting for Deployment: {}/{} to be ready", namespaceName, deploymentName);
 
         TestUtils.waitFor("readiness of Deployment: " + namespaceName + "/" + deploymentName,
             TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> kubeClient(namespaceName).getDeploymentStatus(namespaceName, deploymentName),
-            () -> DeploymentUtils.logCurrentDeploymentStatus(namespaceName, kubeClient().getDeployment(namespaceName, deploymentName)));
+            () -> KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(namespaceName).withName(deploymentName).isReady(),
+            () -> DeploymentUtils.logCurrentDeploymentStatus(namespaceName, DeploymentUtils.getInNamespace(namespaceName, deploymentName)));
 
         LOGGER.info("Deployment: {}/{} is ready", namespaceName, deploymentName);
         return true;
@@ -194,8 +205,8 @@ public class DeploymentUtils {
         waitForDeploymentReady(namespaceName, deploymentName);
 
         LOGGER.info("Waiting for {} Pod(s) of Deployment: {}/{} to be ready", expectPods, namespaceName, deploymentName);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, deploymentName), expectPods, true,
-            () -> DeploymentUtils.logCurrentDeploymentStatus(namespaceName, kubeClient(namespaceName).getDeployment(namespaceName, deploymentName)));
+        PodUtils.waitForPodsReady(namespaceName, getDeploymentSelectorsInNamespace(namespaceName, deploymentName), expectPods, true,
+            () -> DeploymentUtils.logCurrentDeploymentStatus(namespaceName, getInNamespace(namespaceName, deploymentName)));
         LOGGER.info("Deployment: {}/{} is ready", namespaceName, deploymentName);
         return true;
     }
@@ -209,11 +220,11 @@ public class DeploymentUtils {
         LOGGER.debug("Waiting for Deployment: {}/{} deletion", namespaceName, name);
         TestUtils.waitFor("deletion of Deployment: " + namespaceName + "/" + name, TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
-                if (kubeClient(namespaceName).getDeployment(namespaceName, name) == null) {
+                if (getInNamespace(namespaceName, name) == null) {
                     return true;
                 } else {
                     LOGGER.warn("Deployment: {}/{} is not deleted yet! Triggering force delete by cmd client!", namespaceName, name);
-                    cmdKubeClient(namespaceName).deleteByName(TestConstants.DEPLOYMENT, name);
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(TestConstants.DEPLOYMENT, name);
                     return false;
                 }
             });
@@ -222,6 +233,6 @@ public class DeploymentUtils {
 
     public static void waitForCreationOfDeploymentWithPrefix(String namespaceName, String deploymentNamePrefix) {
         TestUtils.waitFor(String.format("creation of Deployment with prefix: %s in Namespace: %s", deploymentNamePrefix, namespaceName), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient().getDeploymentNameByPrefix(namespaceName, deploymentNamePrefix) != null);
+            () -> KubeResourceManager.get().kubeClient().getDeploymentNameByPrefix(namespaceName, deploymentNamePrefix) != null);
     }
 }
