@@ -2,8 +2,8 @@
 //
 // metrics/assembly_metrics-kafka.adoc
 
-[id='proc-metrics-kafka-deploy-options-{context}']
-= Enabling Prometheus metrics through configuration
+[id='proc-jmx-exporter-metrics-kafka-deploy-options-{context}']
+= Enabling Prometheus JMX Exporter
 
 [role="_abstract"]
 To enable and expose metrics in Strimzi for Prometheus, configure the appropriate properties in the custom resources for the components you want to monitor.
@@ -39,7 +39,7 @@ You can create your own Prometheus configuration or use the xref:ref-metrics-pro
 * `kafka-cruise-control-metrics.yaml`
 * `oauth-metrics.yaml`
 
-These files include relabeling rules and example metrics configuration, and are a good starting point for trying Prometheus with Strimzi. 
+These files include relabeling rules and example metrics configuration, and are a good starting point for trying Prometheus with Strimzi.
 
 This procedure shows how to deploy example Prometheus metrics configuration to the `Kafka` resource.
 The same steps apply when deploying the example files for other resources.
