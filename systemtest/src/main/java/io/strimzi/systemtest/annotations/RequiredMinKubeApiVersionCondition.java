@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.annotations;
 
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -22,7 +21,6 @@ public class RequiredMinKubeApiVersionCondition implements ExecutionCondition {
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
         Optional<RequiredMinKubeApiVersion> annotation = findAnnotation(extensionContext.getElement(), RequiredMinKubeApiVersion.class);
-        KubeClusterResource clusterResource = KubeClusterResource.getInstance();
         double version = annotation.get().version();
 
         if (Double.parseDouble(StUtils.getKubernetesClusterVersion()) >= version) {

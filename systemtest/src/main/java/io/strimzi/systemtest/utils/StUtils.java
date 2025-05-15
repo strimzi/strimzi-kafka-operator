@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
@@ -300,8 +299,7 @@ public class StUtils {
      * @return kubernetes version
      */
     public static String getKubernetesClusterVersion() {
-        // This is basically workaround cause this.client.getVersion() returns null every time
-        VersionInfo versionInfo = new KubernetesClientBuilder().build().getKubernetesVersion();
+        VersionInfo versionInfo = KubeResourceManager.get().kubeClient().getClient().getKubernetesVersion();
         return versionInfo.getMajor() + "." + versionInfo.getMinor().replace("+", "");
     }
 

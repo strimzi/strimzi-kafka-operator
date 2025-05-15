@@ -110,7 +110,7 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
-    void testCreateDeleteCreate() throws InterruptedException {
+    void testCreateDeleteCreate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName())
