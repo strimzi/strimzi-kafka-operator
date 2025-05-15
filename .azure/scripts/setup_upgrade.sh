@@ -21,6 +21,9 @@ sed -i "s#quay.io/strimzi/jmxtrans#${DOCKER_REGISTRY}/${DOCKER_ORG}/jmxtrans#g" 
 sed -i "s#strimzi/kafka:latest#${DOCKER_ORG}/kafka:${DOCKER_TAG}#g" systemtest/src/test/resources/upgrade/BundleUpgrade.yaml
 sed -i "s#strimzi/operator:latest#${DOCKER_ORG}/operator:${DOCKER_TAG}#g" systemtest/src/test/resources/upgrade/BundleUpgrade.yaml
 
+# Set ImagePullPolicy=IfNotPresent to make it working with CI Minikube
+yq -i eval '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
+
 cat packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
 cat systemtest/src/test/resources/upgrade/BundleUpgrade.yaml
 cat systemtest/src/test/resources/upgrade/BundleDowngrade.yaml
