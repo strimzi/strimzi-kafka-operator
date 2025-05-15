@@ -86,6 +86,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 import static java.util.Collections.singletonMap;
@@ -2243,11 +2244,14 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @ParallelTest
     public void testPodSetWithRack() {
+        String clientRackInitImage = "client-rack-init-image";
+        
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editOrNewSpec()
                     .withNewRack()
                         .withTopologyKey("topology-key")
                     .endRack()
+                    .withClientRackInitImage(clientRackInitImage)
                 .endSpec()
                 .build();
 
@@ -2261,8 +2265,9 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(initContainers, is(notNullValue()));
             assertThat(initContainers.size() > 0, is(true));
 
-            boolean isKafkaInitContainer = initContainers.stream().anyMatch(container -> container.getName().equals(KafkaConnectCluster.INIT_NAME));
-            assertThat(isKafkaInitContainer, is(true));
+            Optional<Container> matchedKafkaInitContainer = initContainers.stream().filter(container -> container.getName().equals(KafkaConnectCluster.INIT_NAME)).findAny();
+            assertThat(matchedKafkaInitContainer.isPresent(), is(true));
+            assertThat(matchedKafkaInitContainer.get().getImage(), is(clientRackInitImage));
         });
     }
 
