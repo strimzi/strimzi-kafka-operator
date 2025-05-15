@@ -130,7 +130,7 @@ public class ClusterOperator extends AbstractVerticle {
         Future.join(startFutures)
                 .compose(f -> {
                     LOGGER.info("Setting up periodic reconciliation for namespace {}", namespace);
-                    this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), timerId -> {
+                    this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), ignored -> {
                         if (!config.isPodSetReconciliationOnly()) {
                             LOGGER.info("Triggering periodic reconciliation for namespace {}", namespace);
                             reconcileAll("timer");
