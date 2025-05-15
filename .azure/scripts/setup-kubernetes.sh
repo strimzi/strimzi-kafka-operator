@@ -64,13 +64,10 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     docker run -d -p 5000:5000 ${MINIKUBE_REGISTRY_IMAGE}
 
     export KUBECONFIG=$HOME/.kube/config
-    # TODO - check if ITs are working with cni=calico
-    # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
-    # We have to allow trafic for ITS when NPs are turned on
-    # We can allow NP after Strimzi#4092 which should fix some issues on STs side
+    # We can turn on network polices support by adding the following options --cni=calico
+    # However, it seems not working properly with kube 1.25, we should revisit it once we drop it
     minikube start --driver=docker --kubernetes-version=${KUBE_VERSION} \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
-      --cni calico \
       --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY} --force
 
     if [ $? -ne 0 ]
