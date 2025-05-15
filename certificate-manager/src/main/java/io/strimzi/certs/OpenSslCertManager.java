@@ -134,17 +134,19 @@ public class OpenSslCertManager implements CertManager {
     /**
      * Add basic constraints and subject alt names section to the provided openssl configuration file
      *
-     * @param sbj subject information
-     *
+     * @param sbj      subject information
+     * @param needsAki if true adds AKI (authorityKeyIdentifier)
      * @return openssl configuration file with subject alt names added
-     *
-     * @throws IOException  Throws IOException when IO operations fail
+     * @throws IOException throws IOException when writing to the file fails
      */
-    private Path buildConfigFile(Subject sbj, boolean isCa) throws IOException {
+    private Path buildConfigFile(Subject sbj, boolean isCa, boolean needsAki) throws IOException {
         Path sna = createDefaultConfig();
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna.toFile(), true), StandardCharsets.UTF_8))) {
             if (isCa) {
                 out.append("basicConstraints = critical,CA:true,pathlen:0\n");
+            }
+            if (needsAki) {
+                out.append("authorityKeyIdentifier = keyid,issuer\n");
             }
             if (sbj != null) {
                 if (sbj.hasSubjectAltNames()) {
@@ -282,7 +284,7 @@ public class OpenSslCertManager implements CertManager {
             }
 
             csrFile = Files.createTempFile(null, null);
-            sna = buildConfigFile(subject, true);
+            sna = buildConfigFile(subject, true, false);
             new OpensslArgs("openssl", "req")
                     .opt("-new")
                     .optArg("-config", sna, true)
@@ -311,10 +313,13 @@ public class OpenSslCertManager implements CertManager {
                     .optArg("-enddate", notAfter)
                     .optArg("-subj", subject)
                     .optArg("-config", defaultConfig)
+                    .optArg("-extensions", "strimzi_x509_extensions")
+                    .optArg("-extfile", defaultConfig, true)
                     .database(database, attr)
                     .newCertsDir(newCertsDir)
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)
                     .keyUsage("critical,keyCertSign,cRLSign")
+                    .authorityKeyIdentifier()
                     .exec(false);
 
             if (keyInPkcs1) {
@@ -468,7 +473,7 @@ public class OpenSslCertManager implements CertManager {
         try {
             if (subject.hasSubjectAltNames()) {
                 // subject alt names need to be in an openssl configuration file
-                sna = buildConfigFile(subject, false);
+                sna = buildConfigFile(subject, false, false);
                 cmd.optArg("-config", sna, true).optArg("-extensions", "v3_req");
             }
 
@@ -532,7 +537,7 @@ public class OpenSslCertManager implements CertManager {
             if (sbj.hasSubjectAltNames()) {
                 cmd.optArg("-extensions", "v3_req");
                 // subject alt names need to be in an openssl configuration file
-                sna = buildConfigFile(sbj, false);
+                sna = buildConfigFile(sbj, false, true);
                 cmd.optArg("-extfile", sna, true);
             }
 
@@ -578,7 +583,7 @@ public class OpenSslCertManager implements CertManager {
      * Helper for building arg lists and environments.
      * The environment is used so that the config file can be parameterised for things like basic constraints.
      * But it's still necessary to use dynamically generated configs for specifying SANs
-     * (see {@link OpenSslCertManager#buildConfigFile(Subject, boolean)}).
+     * (see {@link OpenSslCertManager#buildConfigFile(Subject, boolean, boolean)}).
      */
     private static class OpensslArgs {
         ProcessBuilder pb = new ProcessBuilder();
@@ -633,6 +638,10 @@ public class OpenSslCertManager implements CertManager {
             pb.environment().put("STRIMZI_keyUsage", keyUsage);
             return this;
         }
+        public OpensslArgs authorityKeyIdentifier() {
+            pb.environment().put("STRIMZI_authorityKeyIdentifier", "keyid,issuer");
+            return this;
+        }
         public OpensslArgs database(Path database, Path attr) throws IOException {
             // Some versions of openssl require the presence of a index.txt.attr file
             // https://serverfault.com/questions/857131/odd-error-while-using-openssl
@@ -662,6 +671,9 @@ public class OpenSslCertManager implements CertManager {
             }
             if (!pb.environment().containsKey("STRIMZI_new_certs_dir")) {
                 pb.environment().put("STRIMZI_new_certs_dir", "/dev/null");
+            }
+            if (!pb.environment().containsKey("STRIMZI_authorityKeyIdentifier")) {
+                pb.environment().put("STRIMZI_authorityKeyIdentifier", "none");
             }
 
             Path out = null;
