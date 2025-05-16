@@ -5,7 +5,6 @@
 package io.strimzi.api.kafka.model.common.metrics;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.ExternalConfigurationReference;
@@ -15,7 +14,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * JMX Prometheus Exporter metrics config
+ * Prometheus JMX Exporter metrics config
  */
 @Buildable(
         editableEnabled = false,
@@ -30,8 +29,7 @@ public class JmxPrometheusExporterMetrics extends MetricsConfig {
 
     private ExternalConfigurationReference valueFrom;
 
-    @Description("ConfigMap entry where the Prometheus JMX Exporter configuration is stored. ")
-    @JsonProperty(required = true)
+    @Description("ConfigMap entry where the Prometheus JMX Exporter configuration is stored.")
     public ExternalConfigurationReference getValueFrom() {
         return valueFrom;
     }
