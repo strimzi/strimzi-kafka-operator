@@ -38,9 +38,8 @@ With tiered storage enabled:
 * Primary broker storage,such as persistent volumes or JBOD, handles recent data
 * Remote tiered storage, such as object storage, is used for historical data
 
-AWS S3 and NFS-backed storage are supported for the remote tier.
-Other S3-compatible or cloud-based object storage systems might also work, but they have not been tested.
-If you use an untested storage backend, validate its performance and compatibility in your environment before using it in production.
+Strimzi allows users to integrate their own tiered storage plugins to support specific remote storage backends.
+If using a custom plugin, ensure that it meets performance and compatibility requirements before deploying to production.
 
 == Disk usage
 Solid-state drives (SSDs), though not essential, can improve the performance of Kafka in large clusters where data is sent to and received from multiple topics asynchronously.
