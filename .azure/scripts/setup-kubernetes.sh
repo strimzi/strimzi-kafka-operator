@@ -64,10 +64,9 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     docker run -d -p 5000:5000 ${MINIKUBE_REGISTRY_IMAGE}
 
     export KUBECONFIG=$HOME/.kube/config
-    # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
-    # We have to allow trafic for ITS when NPs are turned on
-    # We can allow NP after Strimzi#4092 which should fix some issues on STs side
-    minikube start --vm-driver=docker --kubernetes-version=${KUBE_VERSION} \
+    # We can turn on network polices support by adding the following options --cni=calico
+    # However, it seems not working properly with kube 1.25, we should revisit it once we drop it
+    minikube start --driver=docker --kubernetes-version=${KUBE_VERSION} \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
       --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY} --force
 
@@ -103,15 +102,8 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
         minikube image load ${ARCH}/registry:2.8.2 gcr.io/google_containers/kube-registry-proxy:0.4-${ARCH}
         minikube addons enable registry --images="Registry=${ARCH}/registry:2.8.0-beta.1,KubeRegistryProxy=google_containers/kube-registry-proxy:0.4-${ARCH}"
         rm -rf kubernetes
-    elif [[ "$ARCH" = "arm64" ]]; then
-        git clone -b v1.9.11 --depth 1 https://github.com/kubernetes/kubernetes.git
-        sed -i 's/:1.11/:1.25.0/' kubernetes/cluster/addons/registry/images/Dockerfile
-        minikube image build -t google_containers/kube-registry-proxy:0.5-SNAPSHOT kubernetes/cluster/addons/registry/images/
-        minikube addons enable registry --images="Registry=arm64v8/registry:2.8.2,KubeRegistryProxy=google_containers/kube-registry-proxy:0.5-SNAPSHOT"
-        rm -rf kubernetes
     else
-
-        minikube addons enable registry --images="KubeRegistryProxy=gcr.io/google_containers/kube-registry-proxy:0.4"
+        minikube addons enable registry --images="Registry=${MINIKUBE_REGISTRY_IMAGE}"
     fi
 
     minikube addons enable registry-aliases
