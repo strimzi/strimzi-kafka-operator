@@ -27,7 +27,7 @@ You can also create and migrate to node pools with new storage specifications.
 
 .Tiered storage (advanced)
 
-Tiered storage, currently available as an early access feature, provides additional flexibility for managing Kafka data by combining different storage types with varying performance and cost characteristics. 
+Tiered storage provides additional flexibility for managing Kafka data by combining different storage types with varying performance and cost characteristics. 
 It allows Kafka to offload older data to cheaper, long-term storage (such as object storage) while keeping recent, frequently accessed data on faster, more expensive storage (such as block storage).
 
 Tiered storage is an add-on capability. 
