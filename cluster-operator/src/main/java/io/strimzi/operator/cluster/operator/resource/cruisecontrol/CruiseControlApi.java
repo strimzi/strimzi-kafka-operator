@@ -31,7 +31,7 @@ public interface CruiseControlApi {
      * @param verbose Whether the response from state endpoint should include more details.
      * @return A future for the response from the Cruise Control server with details of the Cruise Control server state.
      */
-    CompletableFuture<CruiseControlResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose);
+    CompletableFuture<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance.

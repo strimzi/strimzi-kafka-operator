@@ -4385,9 +4385,26 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |sessionId
 |string
 |The session identifier for requests to Cruise Control pertaining to this KafkaRebalance resource. This is used by the Kafka Rebalance operator to track the status of ongoing rebalancing operations.
+|progress
+|xref:type-KafkaRebalanceProgress-{context}[`KafkaRebalanceProgress`]
+|An object with information related to the progress of the rebalance.
 |optimizationResult
 |map
 |A JSON object describing the optimization result.
+|====
+
+[id='type-KafkaRebalanceProgress-{context}']
+= `KafkaRebalanceProgress` schema reference
+
+Used in: xref:type-KafkaRebalanceStatus-{context}[`KafkaRebalanceStatus`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|rebalanceProgressConfigMap
+|string
+|The name of the `ConfigMap` containing information related to the progress of a partition rebalance.
 |====
 
 [id='type-KafkaNodePool-{context}']
