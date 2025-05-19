@@ -10,6 +10,9 @@ import com.yammer.metrics.core.Metric;
 import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.MetricsRegistry;
 import com.yammer.metrics.core.MetricsRegistryListener;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -35,6 +38,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -72,10 +76,8 @@ public class KafkaAgent {
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
     private static final byte BROKER_UNKNOWN_STATE = 127;
-    private String sslKeyStorePath;
-    private String sslKeyStorePassword;
-    private String sslTruststorePath;
-    private String sslTruststorePassword;
+    private Secret caCertSecret;
+    private Secret nodeCertSecret;
     private MetricName brokerStateName;
     private Gauge brokerState;
     private Gauge remainingLogsToRecover;
@@ -84,16 +86,18 @@ public class KafkaAgent {
     /**
      * Constructor of the KafkaAgent
      *
-     * @param sslKeyStorePath       Keystore containing the broker certificate
-     * @param sslKeyStorePass       Password for keystore
-     * @param sslTruststorePath     Truststore containing CA certs for authenticating clients
-     * @param sslTruststorePass     Password for truststore
+     * @param client       Keystore containing the broker certificate
+     * @param caCertSecretName       Password for keystore
+     * @param nodeCertSecretName     Truststore containing CA certs for authenticating clients
+     * @param namespace     Password for truststore
      */
-    /* test */ KafkaAgent(String sslKeyStorePath, String sslKeyStorePass, String sslTruststorePath, String sslTruststorePass) {
-        this.sslKeyStorePath = sslKeyStorePath;
-        this.sslKeyStorePassword = sslKeyStorePass;
-        this.sslTruststorePath = sslTruststorePath;
-        this.sslTruststorePassword = sslTruststorePass;
+    /* test */ KafkaAgent(KubernetesClient client, String caCertSecretName, String nodeCertSecretName, String namespace) {
+        this.caCertSecret = getKubernetesSecret(client, caCertSecretName, namespace);
+        this.nodeCertSecret = getKubernetesSecret(client, nodeCertSecretName, namespace);
+    }
+
+    private Secret getKubernetesSecret(KubernetesClient client, String caCertSecretName, String namespace) {
+        return client.secrets().inNamespace(namespace).withName(caCertSecretName).get();
     }
 
     /**
@@ -255,15 +259,12 @@ public class KafkaAgent {
         };
     }
 
-    private SslContextFactory.Server getSSLContextFactory() {
+    private SslContextFactory.Server getSSLContextFactory() throws GeneralSecurityException, IOException {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
+        sslContextFactory.setTrustStore(KafkaAgentUtils.jksTrustStore(caCertSecret));
 
-        sslContextFactory.setKeyStorePath(sslKeyStorePath);
-        sslContextFactory.setKeyStorePassword(sslKeyStorePassword);
-        sslContextFactory.setKeyManagerPassword(sslKeyStorePassword);
-
-        sslContextFactory.setTrustStorePath(sslTruststorePath);
-        sslContextFactory.setTrustStorePassword(sslTruststorePassword);
+        sslContextFactory.setKeyStore(KafkaAgentUtils.jksKeyStore(nodeCertSecret));
+        sslContextFactory.setKeyStorePassword("changeit");
         sslContextFactory.setNeedClientAuth(true);
         return  sslContextFactory;
     }
@@ -325,22 +326,16 @@ public class KafkaAgent {
                 System.exit(1);
             }
 
-            final String sslKeyStorePath = agentConfigs.get("sslKeyStorePath");
-            final String sslKeyStorePass = agentConfigs.get("sslKeyStorePass");
-            final String sslTrustStorePath = agentConfigs.get("sslTrustStorePath");
-            final String sslTrustStorePass = agentConfigs.get("sslTrustStorePass");
-            if (sslKeyStorePath.isEmpty() || sslTrustStorePath.isEmpty()) {
-                LOGGER.error("SSLKeyStorePath or SSLTrustStorePath is empty: sslKeyStorePath={} sslTrustStore={} ", sslKeyStorePath, sslTrustStorePath);
-                System.exit(1);
-            } else if (sslKeyStorePass.isEmpty()) {
-                LOGGER.error("Keystore password is empty");
-                System.exit(1);
-            } else if (sslTrustStorePass.isEmpty()) {
-                LOGGER.error("Truststore password is empty");
+            final String caCertSecretName = agentConfigs.get("sslTrustStoreSecretName");
+            final String nodeCertSecretName = agentConfigs.get("sslKeyStoreSecretName");
+            final String namespace = agentConfigs.get("namespace");
+            if (caCertSecretName.isEmpty() || nodeCertSecretName.isEmpty() || namespace.isEmpty()) {
+                LOGGER.error("Missing the required Secret information: sslTrustStoreSecretName={} sslKeyStoreSecretName={} namespace={}", caCertSecretName, nodeCertSecretName, namespace);
                 System.exit(1);
             } else {
-                LOGGER.info("Starting KafkaAgent with sslKeyStorePath={} and sslTrustStore={}", sslKeyStorePath, sslTrustStorePath);
-                new KafkaAgent(sslKeyStorePath, sslKeyStorePass, sslTrustStorePath, sslTrustStorePass).run();
+                LOGGER.info("Starting KafkaAgent with sslTrustStoreSecretName={} sslKeyStoreSecretName={} namespace={}", caCertSecretName, nodeCertSecretName, namespace);
+                KubernetesClient client = new KubernetesClientBuilder().build();
+                new KafkaAgent(client, caCertSecretName, nodeCertSecretName, namespace).run();
             }
         }
     }
