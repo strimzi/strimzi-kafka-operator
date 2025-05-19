@@ -67,7 +67,11 @@ public class JobUtils {
      * @param namespace name of the Namespace
      */
     public static void deleteJobWithWait(String namespace, String name) {
-        KubeResourceManager.get().deleteResourceWithWait(getInNamespace(namespace, name));
+        Job job = getInNamespace(namespace, name);
+
+        if (job != null) {
+            KubeResourceManager.get().deleteResourceWithWait(job);
+        }
     }
 
     /**

@@ -256,17 +256,16 @@ public abstract class AbstractNamespaceST extends AbstractST {
     final void testDeployKafkaConnectAndKafkaConnectorInNamespaceDifferentFromCO(ExtensionContext extensionContext) {
 
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        String kafkaConnectName = testStorage.getClusterName() + "kafka-connect";
 
         // Deploy Kafka Connect in other namespace than CO
-        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(MAIN_TEST_NAMESPACE, kafkaConnectName, PRIMARY_KAFKA_NAME, 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(MAIN_TEST_NAMESPACE, testStorage.getClusterName(), PRIMARY_KAFKA_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
 
-        LOGGER.info("Deploying KafkaConnector: {}/{}", MAIN_TEST_NAMESPACE, kafkaConnectName);
-        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName);
+        LOGGER.info("Deploying KafkaConnector: {}/{}", MAIN_TEST_NAMESPACE, testStorage.getClusterName());
+        deployKafkaConnectorWithSink(extensionContext, testStorage.getClusterName());
     }
 
     private void copySecret(Secret sourceSecret, String targetNamespace, String targetName) {

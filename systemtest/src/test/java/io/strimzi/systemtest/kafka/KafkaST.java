@@ -430,12 +430,12 @@ class KafkaST extends AbstractST {
         });
 
         TestUtils.waitFor("PVC(s)' annotation to change according to Kafka JBOD storage 'delete claim'", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.SAFETY_RECONCILIATION_INTERVAL,
-            () -> PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            () -> PersistentVolumeClaimUtils.listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().startsWith("data-0") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName()))
                 .allMatch(volume -> "false".equals(volume.getMetadata().getAnnotations().get("strimzi.io/delete-claim")))
         );
 
-        final int volumesCount = PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).size();
+        final int volumesCount = PersistentVolumeClaimUtils.listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).size();
 
         LOGGER.info("Deleting Kafka: {}/{} cluster", testStorage.getNamespaceName(), testStorage.getClusterName());
         // we cannot use ResourceManager here, as it would delete all the PVCs (part of the KafkaResource#delete method)
@@ -446,7 +446,7 @@ class KafkaST extends AbstractST {
         PersistentVolumeClaimUtils.waitForJbodStorageDeletion(testStorage.getNamespaceName(), volumesCount, testStorage.getBrokerComponentName(), List.of(idZeroVolumeModified, idOneVolumeOriginal));
 
         LOGGER.info("Verifying that PVC which are supposed to remain, really persist even after Kafka cluster un-deployment");
-        List<String> remainingPVCNames =  PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).stream().map(e -> e.getMetadata().getName()).toList();
+        List<String> remainingPVCNames =  PersistentVolumeClaimUtils.listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).stream().map(e -> e.getMetadata().getName()).toList();
         brokerPods.keySet().forEach(broker -> assertThat("Kafka Broker: " + broker + " does not preserve its JBOD storage's PVC",
             remainingPVCNames.stream().anyMatch(e -> e.equals("data-0-" + broker))));
     }
@@ -663,7 +663,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> PVC (both labels and annotation) <---");
 
-        List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+        List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils.listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
 
         for (PersistentVolumeClaim pvc : pvcs) {
@@ -754,7 +754,7 @@ class KafkaST extends AbstractST {
         PersistentVolumeClaimUtils.waitUntilPVCLabelsChange(testStorage.getNamespaceName(), testStorage.getClusterName(), customSpecifiedLabelOrAnnotationPvc, pvcLabelOrAnnotationKey);
         PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(testStorage.getNamespaceName(), testStorage.getClusterName(), customSpecifiedLabelOrAnnotationPvc, pvcLabelOrAnnotationKey);
 
-        pvcs = PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+        pvcs = PersistentVolumeClaimUtils.listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
         LOGGER.info(pvcs.toString());
 
@@ -1248,7 +1248,7 @@ class KafkaST extends AbstractST {
             .build());
 
         // 1. check Kafka pods
-        List<Pod> kafkaPods = PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
+        List<Pod> kafkaPods = new ArrayList<>(PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()));
         // controller pods
         kafkaPods.addAll(PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getControllerComponentName()));
 
@@ -1331,7 +1331,7 @@ class KafkaST extends AbstractST {
     void verifyVolumeNamesAndLabels(String namespaceName, String clusterName, String podSetName, int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {
         ArrayList<String> pvcs = new ArrayList<>();
 
-        PersistentVolumeClaimUtils.listByPrefixInNamespace(namespaceName, clusterName).stream()
+        PersistentVolumeClaimUtils.listByNameSubstringInNamespace(namespaceName, clusterName).stream()
             .filter(pvc -> pvc.getMetadata().getName().contains(podSetName))
             .forEach(volume -> {
                 String volumeName = volume.getMetadata().getName();

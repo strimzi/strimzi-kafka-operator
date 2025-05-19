@@ -31,7 +31,6 @@ import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.types.KafkaAccessType;
 import io.strimzi.systemtest.resources.types.KafkaBridgeType;
@@ -173,7 +172,6 @@ public abstract class AbstractST implements TestSeparator {
         if (!Environment.SKIP_TEARDOWN) {
             KubeResourceManager.get().deleteResources();
             testSuiteNamespaceManager.deleteTestSuiteNamespace();
-            NamespaceManager.getInstance().deleteAllNamespacesFromSet();
         }
     }
 

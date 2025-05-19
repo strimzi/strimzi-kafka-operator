@@ -1399,6 +1399,7 @@ class ConnectST extends AbstractST {
         ConfigMap configMap = new ConfigMapBuilder()
             .editOrNewMetadata()
                 .withName(configMapName)
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .addToData(configMapKey, configMapValue)
             .build();
@@ -1415,6 +1416,7 @@ class ConnectST extends AbstractST {
         ConfigMap dotedConfigMap = new ConfigMapBuilder()
             .editOrNewMetadata()
                 .withName(dotedConfigMapName)
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .addToData(configMapKey, configMapValue)
             .build();

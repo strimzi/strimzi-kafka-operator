@@ -29,10 +29,10 @@ public class PersistentVolumeClaimUtils {
         return KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
     }
 
-    public static List<PersistentVolumeClaim> listByPrefixInNamespace(String namespaceName, String prefix) {
+    public static List<PersistentVolumeClaim> listByNameSubstringInNamespace(String namespaceName, String substring) {
         return KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).list().getItems()
             .stream()
-            .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().startsWith(prefix))
+            .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(substring))
             .toList();
     }
 
@@ -41,7 +41,7 @@ public class PersistentVolumeClaimUtils {
         TestUtils.waitFor("PVC labels to change -> " + newLabels.toString(), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
-                    listByPrefixInNamespace(namespaceName, clusterName).stream()
+                    listByNameSubstringInNamespace(namespaceName, clusterName).stream()
                         // filter specific pvc which belongs to cluster-name
                         .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
                         // map each value if it is changed [False, True, True] etc.
@@ -61,7 +61,7 @@ public class PersistentVolumeClaimUtils {
         TestUtils.waitFor("PVC labels to change -> " + newAnnotation.toString(), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
-                    listByPrefixInNamespace(namespaceName, clusterName).stream()
+                    listByNameSubstringInNamespace(namespaceName, clusterName).stream()
                         // filter specific pvc which belongs to cluster-name
                         .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
                         // map each value if it is changed [False, True, True] etc.
@@ -98,7 +98,7 @@ public class PersistentVolumeClaimUtils {
     public static void waitForPersistentVolumeClaimDeletion(TestStorage testStorage, int expectedNum) {
         LOGGER.info("Waiting for PVC(s): {}/{} to reach expected amount: {}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
         TestUtils.waitFor("PVC(s) to be created/deleted", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
-            () -> listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            () -> listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).collect(Collectors.toList()).size() == expectedNum
         );
     }
@@ -106,7 +106,7 @@ public class PersistentVolumeClaimUtils {
     public static void waitForPvcCount(TestStorage testStorage, int expectedNum) {
         LOGGER.info("Waiting for PVC(s): {}/{} to reach expected amount: {}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
         TestUtils.waitFor("PVC(s) to be created/deleted", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
-            () -> listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            () -> listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).toList().size() == expectedNum
         );
     }
@@ -117,7 +117,7 @@ public class PersistentVolumeClaimUtils {
         ).collect(Collectors.toList()).size();
 
         TestUtils.waitFor("JBOD storage deletion", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(6).toMillis(), () -> {
-            List<String> pvcs = listByPrefixInNamespace(namespaceName, clusterName).stream()
+            List<String> pvcs = listByNameSubstringInNamespace(namespaceName, clusterName).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
                 .map(pvc -> pvc.getMetadata().getName())
                 .collect(Collectors.toList());
@@ -128,7 +128,7 @@ public class PersistentVolumeClaimUtils {
     }
 
     public static void deletePvcsByPrefixWithWait(String namespaceName, String prefix) {
-        List<PersistentVolumeClaim> persistentVolumeClaimsList = listByPrefixInNamespace(namespaceName, prefix);
+        List<PersistentVolumeClaim> persistentVolumeClaimsList = listByNameSubstringInNamespace(namespaceName, prefix);
 
         for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
             KubeResourceManager.get().kubeClient().getClient()
@@ -159,7 +159,7 @@ public class PersistentVolumeClaimUtils {
             TestConstants.GLOBAL_POLL_INTERVAL,
             TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                final List<PersistentVolumeClaim> pvcs = listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                final List<PersistentVolumeClaim> pvcs = listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                     .filter(pvc -> pvc.getMetadata().getName().startsWith(pvcPrefixName)).toList();
 
                 if (pvcs.isEmpty()) {

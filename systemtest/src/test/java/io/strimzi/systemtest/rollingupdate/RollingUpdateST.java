@@ -226,7 +226,7 @@ class RollingUpdateST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Verify number of PVCs is increased to 5 after scaling Kafka: {}/{} Up to 5 replicas", testStorage.getNamespaceName(), testStorage.getClusterName());
-        assertThat((int) PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+        assertThat((int) PersistentVolumeClaimUtils.listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             pvc -> pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).count(), is(scaleTo));
 
         // scale down

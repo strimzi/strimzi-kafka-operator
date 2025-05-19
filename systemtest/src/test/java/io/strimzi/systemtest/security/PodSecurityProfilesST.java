@@ -39,6 +39,7 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -167,7 +168,7 @@ public class PodSecurityProfilesST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // verifies that Pods and Containers have proper generated SC
-        final List<Pod> podsWithProperlyGeneratedSecurityContexts = PodUtils.getKafkaClusterPods(testStorage);
+        final List<Pod> podsWithProperlyGeneratedSecurityContexts = new ArrayList<>(PodUtils.getKafkaClusterPods(testStorage));
         podsWithProperlyGeneratedSecurityContexts.addAll(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBridgeSelector()));
         podsWithProperlyGeneratedSecurityContexts.addAll(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()));
         podsWithProperlyGeneratedSecurityContexts.addAll(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getMM2Selector()));

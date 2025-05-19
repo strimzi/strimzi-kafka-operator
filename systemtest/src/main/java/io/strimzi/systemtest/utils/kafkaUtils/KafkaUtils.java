@@ -537,7 +537,7 @@ public class KafkaUtils {
             // Directly iterate over volumes instead of creating a list
             for (int volumeId = 0; volumeId < numberOfVolumes; volumeId++) {
                 final String dir = buildDirectoryPath(volumeId, kafkaIndex);
-                final int result = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPodContainer(false,
+                final int result = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPodContainer(false, false,
                     kafkaPod.getMetadata().getName(),
                     "kafka",
                     "/bin/bash", "-c", "test -d " + dir).returnCode();

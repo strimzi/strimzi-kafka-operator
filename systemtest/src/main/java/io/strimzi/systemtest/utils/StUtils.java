@@ -653,7 +653,7 @@ public class StUtils {
     }
 
     public static List<Event> listEventsByResourceUidInNamespace(String namespaceName, String resourceUid) {
-        return KubeResourceManager.get().kubeClient().getClient().v1().events().list().getItems().stream()
+        return KubeResourceManager.get().kubeClient().getClient().v1().events().inNamespace(namespaceName).list().getItems().stream()
             .filter(event -> {
                 if (event.getInvolvedObject().getUid() == null) {
                     return false;

@@ -173,7 +173,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
             Duration.ofSeconds(30).toMillis(), TestConstants.TIMEOUT_FOR_MIRROR_MAKER_2_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 LOGGER.info("Deleting Job: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getConsumerName());
-                JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
+                JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, testStorage.getConsumerName());
 
                 LOGGER.info("Creating new client with new consumer group and also to point on {} cluster", testStorage.getTargetClusterName());
 

@@ -192,7 +192,9 @@ public class NamespaceManager {
     public void deleteNamespace(String namespaceName) {
         LOGGER.info("Deleting Namespace: {}", namespaceName);
         Namespace toBeDeleted = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).get();
-        KubeResourceManager.get().deleteResourceWithWait(toBeDeleted);
+        if (toBeDeleted != null) {
+            KubeResourceManager.get().deleteResourceWithWait(toBeDeleted);
+        }
     }
 
     /**
@@ -219,20 +221,6 @@ public class NamespaceManager {
         if (collectorElement != null) {
             removeNamespaceFromSet(namespaceName, collectorElement);
         }
-    }
-
-    /**
-     * For all entries inside the {@link #MAP_WITH_SUITE_NAMESPACES} it deletes all Namespaces in the particular Set
-     * After that, it clears the whole Map
-     * It is used mainly in {@code AbstractST.afterAllMayOverride} to remove everything after all test cases are executed
-     */
-    public void deleteAllNamespacesFromSet() {
-        MAP_WITH_SUITE_NAMESPACES.values()
-            .forEach(setOfNamespaces ->
-                setOfNamespaces.parallelStream()
-                    .forEach(this::deleteNamespaceWithWait));
-
-        MAP_WITH_SUITE_NAMESPACES.clear();
     }
 
     /**

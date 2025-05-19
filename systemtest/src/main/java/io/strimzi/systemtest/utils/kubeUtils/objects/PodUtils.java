@@ -16,6 +16,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -347,7 +348,7 @@ public class PodUtils {
      */
     public static List<Pod> getKafkaClusterPods(final TestStorage testStorage) {
         // broker pods
-        List<Pod> kafkaClusterPods = listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
+        List<Pod> kafkaClusterPods = new ArrayList<>(listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()));
         // controller pods
         kafkaClusterPods.addAll(listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getControllerComponentName()));
         // eo pod

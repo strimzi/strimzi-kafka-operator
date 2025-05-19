@@ -128,7 +128,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         prepareEnvironmentForRecovery(testStorage);
 
         // Get list of topics and list of PVC needed for recovery
-        List<PersistentVolumeClaim> persistentVolumeClaimList = PersistentVolumeClaimUtils.listByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
+        List<PersistentVolumeClaim> persistentVolumeClaimList = PersistentVolumeClaimUtils.listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("List of PVCs inside Namespace: {}", testStorage.getNamespaceName());
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
