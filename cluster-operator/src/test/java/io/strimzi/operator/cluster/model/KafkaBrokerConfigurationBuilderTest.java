@@ -32,7 +32,6 @@ import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimziBuilder;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
-import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
@@ -169,12 +168,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS",
                 CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PKCS12",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION + "=/tmp/kafka/cluster.keystore.p12",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD + "=${strimzienv:CERTS_STORE_PASSWORD}",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PKCS12",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${strimzienv:CERTS_STORE_PASSWORD}",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PEM",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN + "=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_KEY + "=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PEM",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES + "=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
@@ -202,12 +200,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS",
                 CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PKCS12",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION + "=/tmp/kafka/cluster.keystore.p12",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD + "=${strimzienv:CERTS_STORE_PASSWORD}",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PKCS12",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12",
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${strimzienv:CERTS_STORE_PASSWORD}",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PEM",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN + "=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_KEY + "=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PEM",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES + "=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=2",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=3",
@@ -355,9 +352,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.client.id=my-client-id",
                 "strimzi.authorization.delegate.to.kafka.acl=false",
                 "strimzi.authorization.kafka.cluster.name=my-cluster",
-                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12",
-                "strimzi.authorization.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "strimzi.authorization.ssl.truststore.type=PKCS12",
+                "strimzi.authorization.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-kafka-authz-trusted-certs:*.crt}",
+                "strimzi.authorization.ssl.truststore.type=PEM",
                 "strimzi.authorization.ssl.endpoint.identification.algorithm=",
                 "strimzi.authorization.grants.refresh.period.seconds=120",
                 "strimzi.authorization.grants.refresh.pool.size=10",
@@ -396,9 +392,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.client.id=my-client-id",
                 "strimzi.authorization.delegate.to.kafka.acl=false",
                 "strimzi.authorization.kafka.cluster.name=my-cluster",
-                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12",
-                "strimzi.authorization.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "strimzi.authorization.ssl.truststore.type=PKCS12",
+                "strimzi.authorization.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-kafka-authz-trusted-certs:*.crt}",
+                "strimzi.authorization.ssl.truststore.type=PEM",
                 "strimzi.authorization.ssl.endpoint.identification.algorithm=HTTPS",
                 "strimzi.authorization.read.timeout.seconds=30",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
@@ -480,9 +475,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "opa.authorizer.cache.initial.capacity=1000",
                 "opa.authorizer.cache.maximum.size=10000",
                 "opa.authorizer.cache.expire.after.seconds=60",
-                "opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12",
-                "opa.authorizer.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "opa.authorizer.truststore.type=PKCS12",
+                "opa.authorizer.truststore.certificates=${strimzisecrets:namespace/my-cluster-kafka-authz-trusted-certs:*.crt}",
+                "opa.authorizer.truststore.type=PEM",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
     }
 
@@ -493,13 +487,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"));
     }
 
     @Test
@@ -509,13 +504,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
     }
 
@@ -529,13 +525,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"));
     }
 
     @Test
@@ -553,13 +550,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "auto.create.topics.enable=false",
                 "offsets.topic.replication.factor=3",
                 "transaction.state.log.replication.factor=3",
@@ -580,14 +578,15 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=env,strimzienv,strimzifile,strimzidir",
+                "config.providers=env,strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
+                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"));
 
         // Controller
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-3", 3, "kafka", true, false))
@@ -595,10 +594,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=3",
-                "config.providers=env,strimzienv",
+                "config.providers=env,strimzienv,strimzisecrets",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
+                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"));
     }
     
     @Test
@@ -624,13 +624,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "metric.reporters=org.apache.kafka.common.metrics.JmxReporter"));
     }
 
@@ -640,13 +641,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withUserConfiguration(null, false, false, true)
                 .build();
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS,
                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
     }
@@ -659,13 +661,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
                         + "," + StrimziMetricsReporterConfig.KAFKA_CLASS,
                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
@@ -678,13 +681,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
                         + ",org.apache.kafka.common.metrics.JmxReporter"
                         + "," + StrimziMetricsReporterConfig.KAFKA_CLASS,
@@ -698,13 +702,14 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaConfiguration userConfig = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
 
         String expectedConfig = "node.id=2\n"
-                + "config.providers=strimzienv,strimzifile,strimzidir\n"
+                + "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir\n"
                 + "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider\n"
                 + "config.providers.strimzienv.param.allowlist.pattern=.*\n"
                 + "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider\n"
                 + "config.providers.strimzifile.param.allowed.paths=/opt/kafka\n"
                 + "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider\n"
-                + "config.providers.strimzidir.param.allowed.paths=/opt/kafka\n";
+                + "config.providers.strimzidir.param.allowed.paths=/opt/kafka\n"
+                + "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider\n";
 
         // testing 8 combinations of 3 boolean values
         return Stream.of(
@@ -770,13 +775,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS,
                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
     }
@@ -847,23 +853,19 @@ public class KafkaBrokerConfigurationBuilderTest {
     @Test
     public void testWithNoListeners() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", emptyList(), null, null)
+                .withListeners("my-cluster", "my-namespace", emptyList(), null, null)
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091",
@@ -914,23 +916,19 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", asList(listener1, listener2, listener3, listener4), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", asList(listener1, listener2, listener3, listener4), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listener.name.listener1-9100.max.connections=100",
                 "listener.name.listener1-9100.max.connection.creation.rate=10",
@@ -954,23 +952,19 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9092",
@@ -998,7 +992,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         NodeRef nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 2).findFirst().get();
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef)
                 .withKRaft("my-cluster", "my-namespace", nodes)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
 
         // KRaft controller or mixed node with version 3.9 or later should have advertised listeners configured with controller listener
@@ -1007,18 +1001,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "controller.listener.names=CONTROLPLANE-9090",
                 "controller.quorum.voters=0@my-cluster-kafka-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-kafka-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9092",
@@ -1050,7 +1040,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         NodeRef nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 2).findFirst().get();
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef)
                 .withKRaft("my-cluster", "my-namespace", nodes)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
@@ -1059,12 +1049,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "controller.listener.names=CONTROLPLANE-9090",
                 "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL",
                 "sasl.enabled.mechanisms=",
@@ -1074,7 +1063,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         // Broker-only node
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef)
                 .withKRaft("my-cluster", "my-namespace", nodes)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=11",
@@ -1082,18 +1071,16 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "controller.listener.names=CONTROLPLANE-9090",
                 "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc:9092",
@@ -1144,7 +1131,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION,
                 nodes.stream().filter(nodeRef -> nodeRef.nodeId() == 2).findFirst().get())
                 .withKRaft("my-cluster", "my-namespace", nodes)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
@@ -1153,12 +1140,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "controller.listener.names=CONTROLPLANE-9090",
                 "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL",
                 "sasl.enabled.mechanisms=",
@@ -1169,7 +1155,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION,
                 nodes.stream().filter(nodeRef -> nodeRef.nodeId() == 11).findFirst().get())
                 .withKRaft("my-cluster", "my-namespace", nodes)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=11",
@@ -1177,18 +1163,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "controller.listener.names=CONTROLPLANE-9090",
                 "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc:9092",
@@ -1208,7 +1190,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION,
                 nodes.stream().filter(nodeRef -> nodeRef.nodeId() == 14).findFirst().get())
                 .withKRaft("my-cluster", "my-namespace", nodes)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=14",
@@ -1216,18 +1198,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "controller.listener.names=CONTROLPLANE-9090",
                 "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9092",
@@ -1256,23 +1234,19 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
@@ -1294,23 +1268,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,TLS-9093://0.0.0.0:9093",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,TLS-9093://dummy-advertised-address:1919",
@@ -1318,9 +1290,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.tls-9093.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.tls-9093.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.tls-9093.ssl.keystore.type=PKCS12"));
+                "listener.name.tls-9093.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.tls-9093.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.tls-9093.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1335,23 +1307,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,TLS-9093://0.0.0.0:9093",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,TLS-9093://dummy-advertised-address:1919",
@@ -1360,12 +1330,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.tls-9093.ssl.client.auth=required",
-                "listener.name.tls-9093.ssl.truststore.location=/tmp/kafka/clients.truststore.p12",
-                "listener.name.tls-9093.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.tls-9093.ssl.truststore.type=PKCS12",
-                "listener.name.tls-9093.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.tls-9093.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.tls-9093.ssl.keystore.type=PKCS12"));
+                "listener.name.tls-9093.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-clients-ca-cert:*.crt}",
+                "listener.name.tls-9093.ssl.truststore.type=PEM",
+                "listener.name.tls-9093.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.tls-9093.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.tls-9093.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1385,23 +1354,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,TLS-9093://0.0.0.0:9093",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,TLS-9093://dummy-advertised-address:1919",
@@ -1409,9 +1376,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.tls-9093.ssl.keystore.location=/tmp/kafka/custom-tls-9093.keystore.p12",
-                "listener.name.tls-9093.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.tls-9093.ssl.keystore.type=PKCS12"));
+                "listener.name.tls-9093.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-secret:my.crt}",
+                "listener.name.tls-9093.ssl.keystore.key=${strimzisecrets:namespace/my-secret:my.key}",
+                "listener.name.tls-9093.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1424,23 +1391,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1448,9 +1413,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.external-9094.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.keystore.type=PKCS12"));
+                "listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.external-9094.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1465,23 +1430,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1490,12 +1453,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.ssl.client.auth=required",
-                "listener.name.external-9094.ssl.truststore.location=/tmp/kafka/clients.truststore.p12",
-                "listener.name.external-9094.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.truststore.type=PKCS12",
-                "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.external-9094.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.keystore.type=PKCS12"));
+                "listener.name.external-9094.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-clients-ca-cert:*.crt}",
+                "listener.name.external-9094.ssl.truststore.type=PEM",
+                "listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.external-9094.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1510,23 +1472,19 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1536,9 +1494,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required ;",
                 "listener.name.external-9094.sasl.enabled.mechanisms=SCRAM-SHA-512",
-                "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.external-9094.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.keystore.type=PKCS12"));
+                "listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.external-9094.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1558,23 +1516,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1582,9 +1538,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/custom-external-9094.keystore.p12",
-                "listener.name.external-9094.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.keystore.type=PKCS12"));
+                "listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-secret:my.crt}",
+                "listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-secret:my.key}",
+                "listener.name.external-9094.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1597,23 +1553,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1621,9 +1575,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.external-9094.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.keystore.type=PKCS12"));
+                "listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.external-9094.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1636,23 +1590,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "my-lb.com", listenerId -> "9094")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "my-lb.com", listenerId -> "9094")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://my-lb.com:9094",
@@ -1660,9 +1612,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.external-9094.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.keystore.type=PKCS12"));
+                "listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.external-9094.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1675,23 +1627,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1711,23 +1661,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1735,9 +1683,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.external-9094.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.keystore.type=PKCS12"));
+                "listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.external-9094.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1750,23 +1698,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1786,23 +1732,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "${strimzienv:STRIMZI_NODEPORT_DEFAULT_ADDRESS}", listenerId -> "31234")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "${strimzienv:STRIMZI_NODEPORT_DEFAULT_ADDRESS}", listenerId -> "31234")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:PLAINTEXT",
@@ -1834,23 +1778,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1858,9 +1800,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.external-9094.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.keystore.type=PKCS12"));
+                "listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.external-9094.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1882,23 +1824,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1906,9 +1846,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.external-9094.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.external-9094.ssl.keystore.type=PKCS12"));
+                "listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.external-9094.ssl.keystore.type=PEM"));
     }
 
     @Test
@@ -1930,23 +1870,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
@@ -1986,23 +1924,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
@@ -2043,23 +1979,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
@@ -2086,23 +2020,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
@@ -2139,23 +2071,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
@@ -2164,7 +2094,15 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.jwks.endpoint.uri=\"https://jwks\" oauth.username.claim=\"preferred_username\" oauth.ssl.endpoint.identification.algorithm=\"\" oauth.config.id=\"PLAIN-9092\" oauth.ssl.truststore.location=\"/tmp/kafka/oauth-plain-9092.truststore.p12\" oauth.ssl.truststore.password=\"${strimzienv:CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\";",
+                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
+                        "unsecuredLoginStringClaim_sub=\"thePrincipalName\" " +
+                        "oauth.valid.issuer.uri=\"https://valid-issuer\" " +
+                        "oauth.jwks.endpoint.uri=\"https://jwks\" " +
+                        "oauth.username.claim=\"preferred_username\" " +
+                        "oauth.ssl.endpoint.identification.algorithm=\"\" " +
+                        "oauth.config.id=\"PLAIN-9092\" " +
+                        "oauth.ssl.truststore.location=\"/opt/kafka/certificates/my-cluster-kafka-oauth-trusted-certs/my-cluster-kafka-oauth-trusted-certs.crt\" " +
+                        "oauth.ssl.truststore.type=\"PEM\";",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER",
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
     }
@@ -2190,23 +2128,21 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
@@ -2311,7 +2247,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_SSL"));
@@ -2331,7 +2267,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_PLAINTEXT"));
@@ -2352,7 +2288,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:PLAINTEXT"));
@@ -2372,7 +2308,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, not(containsString("ssl.keystore.path")));
@@ -2397,27 +2333,25 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
-                "listener.name.custom-listener-9092.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.custom-listener-9092.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.custom-listener-9092.ssl.keystore.type=PKCS12",
+                "listener.name.custom-listener-9092.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.custom-listener-9092.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.custom-listener-9092.ssl.keystore.type=PEM",
                 "listeners=REPLICATION-9091://0.0.0.0:9091,CUSTOM-LISTENER-9092://0.0.0.0:9092",
                 "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,CUSTOM-LISTENER-9092://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_SSL",
@@ -2449,27 +2383,25 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.replication-9091.ssl.keystore.type=PEM",
+                "listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.replication-9091.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.client.auth=required",
-                "listener.name.custom-listener-9092.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.custom-listener-9092.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "listener.name.custom-listener-9092.ssl.keystore.type=PKCS12",
+                "listener.name.custom-listener-9092.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "listener.name.custom-listener-9092.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "listener.name.custom-listener-9092.ssl.keystore.type=PEM",
                 "listener.name.custom-listener-9092.ssl.truststore.location=/opt/kafka/custom-authn-secrets/custom-listener-external-9094/custom-truststore/ca.crt",
                 "listener.name.custom-listener-9092.ssl.truststore.type=PEM",
                 "listener.name.custom-listener-9092.ssl.client.auth=required",
@@ -2512,12 +2444,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "remote.log.metadata.manager.listener.name=REPLICATION-9091",
                 "rlmm.config.remote.log.metadata.common.client.bootstrap.servers=test-cluster-1-kafka-brokers:9091",
                 "rlmm.config.remote.log.metadata.common.client.security.protocol=SSL",
-                "rlmm.config.remote.log.metadata.common.client.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "rlmm.config.remote.log.metadata.common.client.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "rlmm.config.remote.log.metadata.common.client.ssl.keystore.type=PKCS12",
-                "rlmm.config.remote.log.metadata.common.client.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "rlmm.config.remote.log.metadata.common.client.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PKCS12",
+                "rlmm.config.remote.log.metadata.common.client.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+                "rlmm.config.remote.log.metadata.common.client.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+                "rlmm.config.remote.log.metadata.common.client.ssl.keystore.type=PEM",
+                "rlmm.config.remote.log.metadata.common.client.ssl.truststore.certificates=${strimzisecrets:namespace/test-cluster-1-cluster-ca-cert:*.crt}",
+                "rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PEM",
                 "remote.log.storage.manager.class.name=com.example.kafka.tiered.storage.s3.S3RemoteStorageManager",
                 "remote.log.storage.manager.class.path=/opt/kafka/plugins/tiered-storage-s3/*",
                 "remote.log.storage.manager.impl.prefix=rsm.config.",
@@ -2563,12 +2494,11 @@ public class KafkaBrokerConfigurationBuilderTest {
             "client.quota.callback.class=io.strimzi.kafka.quotas.StaticQuotaCallback",
             "client.quota.callback.static.kafka.admin.bootstrap.servers=my-personal-cluster-kafka-brokers:9091",
             "client.quota.callback.static.kafka.admin.security.protocol=SSL",
-            "client.quota.callback.static.kafka.admin.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-            "client.quota.callback.static.kafka.admin.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-            "client.quota.callback.static.kafka.admin.ssl.keystore.type=PKCS12",
-            "client.quota.callback.static.kafka.admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-            "client.quota.callback.static.kafka.admin.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-            "client.quota.callback.static.kafka.admin.ssl.truststore.type=PKCS12",
+            "client.quota.callback.static.kafka.admin.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
+            "client.quota.callback.static.kafka.admin.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
+            "client.quota.callback.static.kafka.admin.ssl.keystore.type=PEM",
+            "client.quota.callback.static.kafka.admin.ssl.truststore.certificates=${strimzisecrets:namespace/my-personal-cluster-cluster-ca-cert:*.crt}",
+            "client.quota.callback.static.kafka.admin.ssl.truststore.type=PEM",
             "client.quota.callback.static.produce=1000",
             "client.quota.callback.static.fetch=1000",
             "client.quota.callback.static.storage.per.volume.limit.min.available.bytes=200000",
