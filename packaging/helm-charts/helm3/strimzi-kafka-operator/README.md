@@ -106,6 +106,7 @@ the documentation for more details.
 | `defaultImageRegistry`                      | Default image registry for all the images                                       | `quay.io`                    |
 | `defaultImageRepository`                    | Default image registry for all the images                                       | `strimzi`                    |
 | `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.46.0`                     |
+| `deploymentAnnotations`                     | Annotations for the operator deployment                                         | `{}`                         |
 | `image.registry`                            | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                          | Override default Cluster Operator image repository                              | `nil`                        |
 | `image.name`                                | Cluster Operator image name                                                     | `operator`                   |

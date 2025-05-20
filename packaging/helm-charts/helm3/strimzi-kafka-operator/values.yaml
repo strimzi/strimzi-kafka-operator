@@ -41,6 +41,7 @@ affinity: {}
 annotations: {}
 labels: {}
 nodeSelector: {}
+deploymentAnnotations: {}
 priorityClassName: ""
 
 podSecurityContext: {}
