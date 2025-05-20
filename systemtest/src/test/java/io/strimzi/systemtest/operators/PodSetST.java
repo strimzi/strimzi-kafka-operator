@@ -7,7 +7,6 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -101,7 +100,8 @@ public class PodSetST extends AbstractST {
         RollingUpdateUtils.waitForNoKafkaRollingUpdate(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerPods);
 
         LOGGER.info("Deleting one Kafka pod, the should be recreated");
-        KubeResourceManager.get().deleteResourceWithoutWait(PodUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)));
+        String kafkaPodName = PodUtils.listPodNamesInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
+        KubeResourceManager.get().deleteResourceWithoutWait(PodUtils.getInNamespace(testStorage.getNamespaceName(), kafkaPodName));
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), replicas, true);
 
         brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());

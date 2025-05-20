@@ -191,7 +191,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * @param testStorage Test-related configuration and storage
      */
     private void verifyKafkaConnectorFileSink(final TestStorage testStorage) {
-        String connectorPodName = PodUtils.listPodNamesInNamespace(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0);
+        String connectorPodName = PodUtils.listPodNamesInNamespace(testStorage.getNamespaceName(),
+            LabelSelectors.connectLabelSelector(CLUSTER_NAME, KafkaConnectResources.componentName(CLUSTER_NAME))).get(0);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(
             testStorage.getNamespaceName(),
@@ -310,7 +311,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         }
 
         // Modify + apply installation files
-        modifyApplyClusterOperatorWithCRDsFromFile(clusterOperatorNamespaceName, componentsNamespaceName, coDir, upgradeData.getFeatureGatesBefore());
+        modifyApplyClusterOperatorWithCRDsFromFile(true, clusterOperatorNamespaceName, componentsNamespaceName, coDir, upgradeData.getFeatureGatesBefore());
 
         LOGGER.info("Waiting for Cluster Operator Deployment: {}", clusterOperatorConfiguration.getOperatorDeploymentName());
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperatorNamespaceName, clusterOperatorConfiguration.getOperatorDeploymentName(), 1);
@@ -497,7 +498,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             coDir = new File(dir, versionModificationData.getToExamples() + "/install/cluster-operator/");
         }
 
-        modifyApplyClusterOperatorWithCRDsFromFile(clusterOperatorNamespaceName, componentsNamespaceName, coDir, versionModificationData.getFeatureGatesAfter());
+        modifyApplyClusterOperatorWithCRDsFromFile(false, clusterOperatorNamespaceName, componentsNamespaceName, coDir, versionModificationData.getFeatureGatesAfter());
 
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitTillDepHasRolled(clusterOperatorNamespaceName, clusterOperatorConfiguration.getOperatorDeploymentName(), 1, coPods);
@@ -508,12 +509,19 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * to watch multiple (single) namespace. All role based access control resources are modified so the subject is found
      * in operator namespace. Role bindings concerning operands are modified to be deployed in watched namespace.
      *
+     * @param applyContent                   boolean value determining, if the content should be applied or replaced.
      * @param clusterOperatorNamespaceName   the name of the namespace where the Strimzi operator is deployed.
-     * @param componentsNamespaceName    the name of the single namespace being watched and managed by the Strimzi operator.
-     * @param root                    the root directory containing the YAML files to be processed.
-     * @param strimziFeatureGatesValue the value of the Strimzi feature gates to be injected into deployment configurations.
+     * @param componentsNamespaceName        the name of the single namespace being watched and managed by the Strimzi operator.
+     * @param root                           the root directory containing the YAML files to be processed.
+     * @param strimziFeatureGatesValue       the value of the Strimzi feature gates to be injected into deployment configurations.
      */
-    protected void modifyApplyClusterOperatorWithCRDsFromFile(String clusterOperatorNamespaceName, String componentsNamespaceName, File root, final String strimziFeatureGatesValue) {
+    protected void modifyApplyClusterOperatorWithCRDsFromFile(
+        boolean applyContent,
+        String clusterOperatorNamespaceName,
+        String componentsNamespaceName,
+        File root,
+        final String strimziFeatureGatesValue
+    ) {
         KubeClusterResource.getInstance().setNamespace(clusterOperatorNamespaceName);
 
         final List<String> watchedNsRoleBindingFilePrefixes = List.of(
@@ -523,14 +531,26 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         );
 
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
+            String content;
+            String namespaceName = clusterOperatorNamespaceName;
+
             if (watchedNsRoleBindingFilePrefixes.stream().anyMatch((rbFilePrefix) -> f.getName().startsWith(rbFilePrefix))) {
-                KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).replaceContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                content = StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName);
+                namespaceName = componentsNamespaceName;
             } else if (f.getName().matches(".*RoleBinding.*")) {
-                KubeResourceManager.get().kubeCmdClient().inNamespace(clusterOperatorNamespaceName).replaceContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                content = StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName);
             } else if (f.getName().matches(".*Deployment.*")) {
-                KubeResourceManager.get().kubeCmdClient().inNamespace(clusterOperatorNamespaceName).replaceContent(StUtils.changeDeploymentConfiguration(componentsNamespaceName, f, strimziFeatureGatesValue));
+                content = StUtils.changeDeploymentConfiguration(componentsNamespaceName, f, strimziFeatureGatesValue);
             } else {
-                KubeResourceManager.get().kubeCmdClient().inNamespace(clusterOperatorNamespaceName).replaceContent(ReadWriteUtils.readFile(f));
+                content = ReadWriteUtils.readFile(f);
+            }
+
+            // in case that we are doing first deployment of CO, we want to use `apply` operation
+            if (applyContent) {
+                KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(content);
+            } else {
+                // otherwise, we want to replace the content
+                KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).replaceContent(content);
             }
         });
     }

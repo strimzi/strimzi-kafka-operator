@@ -203,9 +203,9 @@ public class TopicST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
-        LOGGER.info("Try to delete KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        CrdClients.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaTopicUtils.waitForTopicStatusMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), "TopicDeletionDisabledException");
+        LOGGER.info("Try to delete KafkaTopic: {}/{}", testStorage.getNamespaceName(), testStorage.getTopicName());
+        CrdClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaTopicUtils.waitForTopicStatusMessage(testStorage.getNamespaceName(), testStorage.getTopicName(), "TopicDeletionDisabledException");
 
         KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
@@ -215,9 +215,11 @@ public class TopicST extends AbstractST {
         KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().setConfig(Map.of("delete.topic.enable", true)));
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaPods);
 
-        LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
-        KafkaTopic kafkaTopic = CrdClients.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).get();
-        KubeResourceManager.get().deleteResource(kafkaTopic);
+        KafkaTopic kafkaTopic = CrdClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getTopicName()).get();
+        if (kafkaTopic != null) {
+            LOGGER.info("Deleting KafkaTopic: {}/{}", testStorage.getNamespaceName(), testStorage.getTopicName());
+            KubeResourceManager.get().deleteResource(kafkaTopic);
+        }
     }
 
     @ParallelTest
