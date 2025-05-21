@@ -4,13 +4,15 @@ set -xe
 rm -rf ~/.kube
 
 # There is a bug in 0.24.0 - https://github.com/kubernetes-sigs/kind/issues/3713
-KIND_VERSION=${KIND_VERSION:-"v0.23.0"}
+KIND_VERSION=${KIND_VERSION:-"v0.28.0"}
 KIND_CLOUD_PROVIDER_VERSION=${KIND_CLOUD_PROVIDER_VERSION:-"v0.6.0"}
 # To properly upgrade Kind version check the releases in github https://github.com/kubernetes-sigs/kind/releases and use proper image based on Kind version
 KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-"kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 DOCKER_CMD="${DOCKER_CMD:-docker}"
 REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry:2"}
+CONTROL_NODES=${CONTROL_NODES:-3}
+WORKER_NODES=${WORKER_NODES:-3}
 
 KIND_CLUSTER_NAME="kind-cluster"
 
@@ -214,6 +216,7 @@ function adjust_inotify_limits {
 '
 function create_kind_cluster {
     local control_planes="$1"
+    local worker_nodes="$2"
 
 # Start the cluster configuration
     cat <<EOF > /tmp/kind-config.yaml
@@ -228,11 +231,9 @@ EOF
     done
 
     # Add worker nodes
-    cat <<EOF >> /tmp/kind-config.yaml
-    - role: worker
-    - role: worker
-    - role: worker
-EOF
+    for i in $(seq 1 "$worker_nodes"); do
+        echo "    - role: worker" >> /tmp/kind-config.yaml
+    done
 
     # Add specific containerd configuration for IPv4/IPv6
     if [[ "$IP_FAMILY" == "ipv6" ]]; then
@@ -361,12 +362,6 @@ load_iptables_modules_for_podman
 reg_name='kind-registry'
 reg_port='5001'
 network_name="kind"
-# by default using podman we have to use single control-plane because of https://github.com/kubernetes-sigs/kind/issues/2858
-control_planes=1
-
-if is_docker; then
-    control_planes=3
-fi
 
 configure_network "${network_name}"
 
@@ -384,7 +379,7 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     # https://github.com/kubernetes-sigs/kind/issues/2875
     # https://github.com/containerd/containerd/blob/main/docs/cri/config.md#registry-configuration
     # See: https://github.com/containerd/containerd/blob/main/docs/hosts.md
-    create_kind_cluster ${control_planes}
+    create_kind_cluster ${CONTROL_NODES} ${WORKER_NODES}
     # run local container registry
     if [ "$($DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
         $DOCKER_CMD run \
@@ -424,7 +419,7 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
     # but without the interface dependency and some of the other challenges of link-local addresses.
     # (link-local starts as fe80::) but we will use ULA fd01
     updateContainerRuntimeConfiguration "" "${ula_fixed_ipv6}" "${reg_port}" "${registry_dns}"
-    create_kind_cluster ${control_planes}
+    create_kind_cluster ${CONTROL_NODES} ${WORKER_NODES}
 
     # run local container registry
     if [ "$($DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
