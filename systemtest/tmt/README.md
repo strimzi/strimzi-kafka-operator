@@ -105,3 +105,13 @@ The jobs are grouped based on specific use-case.
 |                 | performance-common              | Common performance tests                                                                      |
 |                 | capacity                        | Capacity tests for operators                                                                  |
 
+#### Passing configuration env variables
+You can pass environment variables and change configuration for tests or env setup.
+Packit allows that with arg `--env` that can be repeated multiple-times in format `--env KEY=VALUE`.
+
+```
+/packit test --labels regresion --env KIND_NODE_IMAGE=kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f --env CLUSTER_OPERATOR_INSTALL_TYPE=helm
+```
+
+The above example will use `kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f` as a Kubernetes image, and it will also change Strimzi install type in tests to `helm`.
+For more details about which env variables can be set see [Environment](../src/main/java/io/strimzi/systemtest/Environment.java) or [setup-kind.sh](../../.azure/scripts/setup-kind.sh).
