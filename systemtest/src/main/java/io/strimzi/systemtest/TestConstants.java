@@ -291,6 +291,7 @@ public interface TestConstants {
     String MIXED_SELECTOR_KEY = "MIXED_SELECTOR";
     String KAFKA_CONNECT_SELECTOR_KEY = "KAFKA_CONNECT_SELECTOR";
     String MM2_SELECTOR_KEY = "MM2_SELECTOR";
+    String BRIDGE_SELECTOR_KEY = "BRIDGE_SELECTOR";
     String MESSAGE_COUNT_KEY = "MESSAGE_COUNT";
     String CONTINUOUS_MESSAGE_COUNT_KEY = "CONTINUOUS_MESSAGE_COUNT";
     String TEST_EXECUTION_START_TIME_KEY = "TEST_EXECUTION_START_TIME";
@@ -343,4 +344,9 @@ public interface TestConstants {
      * OLM related constants
      */
     String OLM_OPERATOR_GROUP_NAME = "strimzi-group";
+
+    /**
+     * Label for Kubernetes worker nodes
+     */
+    String WORKER_NODE_LABEL = "node-role.kubernetes.io/worker";
 }

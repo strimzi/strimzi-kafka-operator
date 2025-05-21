@@ -47,8 +47,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 /**
  * Class for handling the Yaml manifest installation.
  * Everything is done by resources and ResourceManager.
@@ -169,7 +167,7 @@ public class YamlInstallation implements InstallationMethod {
                 case TestConstants.LEASE:
                     // Loads the resource through Fabric8 Kubernetes Client => that way we do not need to add a direct
                     // dependency on Jackson Datatype JSR310 to decode the Lease resource
-                    Lease lease = kubeClient().getClient().leases().load(operatorFile).item();
+                    Lease lease = KubeResourceManager.get().kubeClient().getClient().leases().load(operatorFile).item();
                     KubeResourceManager.get().createOrUpdateResourceWithWait(new LeaseBuilder(lease)
                         .editMetadata()
                             .withNamespace(clusterOperatorConfiguration.getNamespaceName())

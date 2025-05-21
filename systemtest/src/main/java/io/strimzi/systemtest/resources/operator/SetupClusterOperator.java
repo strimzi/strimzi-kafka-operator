@@ -120,7 +120,7 @@ public class SetupClusterOperator {
         if (KubeResourceManager.get().kubeClient().namespaceExists(clusterOperatorConfiguration.getNamespaceName())) {
             if (clusterOperatorConfiguration.shouldDeleteNamespace()) {
                 Namespace coNamespace = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(clusterOperatorConfiguration.getNamespaceName()).get();
-                KubeResourceManager.get().deleteResource(coNamespace);
+                KubeResourceManager.get().deleteResourceWithWait(coNamespace);
             } else {
                 // in case we are skipping the deletion, there is no need recreating the Namespace
                 return;

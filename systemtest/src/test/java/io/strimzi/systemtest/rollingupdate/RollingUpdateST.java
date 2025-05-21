@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.skodjob.testframe.MetricsCollector;
@@ -42,6 +43,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -52,13 +54,13 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.COMPONENT_SCALING;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.ROLLING_UPDATE;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -173,7 +175,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", testStorage.getClusterName());
 
-        final int initialReplicas = kubeClient().getClient().pods().inNamespace(testStorage.getNamespaceName()).withLabelSelector(testStorage.getBrokerSelector()).list().getItems().size();
+        final int initialReplicas = KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(testStorage.getNamespaceName()).withLabelSelector(testStorage.getBrokerSelector()).list().getItems().size();
         assertEquals(3, initialReplicas);
 
         // communicate with topic before scaling up/down
@@ -224,7 +226,7 @@ class RollingUpdateST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Verify number of PVCs is increased to 5 after scaling Kafka: {}/{} Up to 5 replicas", testStorage.getNamespaceName(), testStorage.getClusterName());
-        assertThat((int) kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+        assertThat((int) PersistentVolumeClaimUtils.listByNameSubstringInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             pvc -> pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).count(), is(scaleTo));
 
         // scale down
@@ -296,12 +298,13 @@ class RollingUpdateST extends AbstractST {
         });
 
         TestUtils.waitFor("rolling update starts", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient(Environment.TEST_SUITE_NAMESPACE).listPods(Environment.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
-                    .map(pod -> pod.getStatus().getPhase()).toList().size() < kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE).size());
+            () -> KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
+                    .map(pod -> pod.getStatus().getPhase()).toList().size() < KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE).size());
 
-        LabelSelector coLabelSelector = kubeClient().getDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getSelector();
+        LabelSelector coLabelSelector = DeploymentUtils.getInNamespace(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator Pod with labels {}", coLabelSelector);
-        kubeClient(SetupClusterOperator.getInstance().getOperatorNamespace()).deletePodsByLabelSelector(coLabelSelector);
+        List<Pod> coPod = KubeResourceManager.get().kubeClient().listPods(SetupClusterOperator.getInstance().getOperatorNamespace(), coLabelSelector);
+        KubeResourceManager.get().deleteResourceWithoutWait(coPod.get(0));
         LOGGER.info("Cluster Operator Pod deleted");
 
         LOGGER.info("Rolling Update is taking place, starting with roll of controller Pods with labels {}", testStorage.getControllerSelector());
@@ -311,7 +314,8 @@ class RollingUpdateST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasStartedRolling(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), brokerPods);
 
         LOGGER.info("Deleting Cluster Operator Pod with labels {}, while Rolling update rolls Kafka Pods", coLabelSelector);
-        kubeClient(SetupClusterOperator.getInstance().getOperatorNamespace()).deletePodsByLabelSelector(coLabelSelector);
+        coPod = KubeResourceManager.get().kubeClient().listPods(SetupClusterOperator.getInstance().getOperatorNamespace(), coLabelSelector);
+        KubeResourceManager.get().deleteResourceWithoutWait(coPod.get(0));
         LOGGER.info("Cluster Operator Pod deleted");
 
         LOGGER.info("Wait until Rolling Update finish successfully despite Cluster Operator being deleted in beginning of Rolling Update and also during Kafka Pods rolling");
@@ -375,7 +379,7 @@ class RollingUpdateST extends AbstractST {
             .endValueFrom()
             .build();
 
-        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), metricsCMK);
+        KubeResourceManager.get().createResourceWithWait(metricsCMK);
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -424,7 +428,7 @@ class RollingUpdateST extends AbstractST {
             .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(kafkaMetrics)))
             .build();
 
-        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), metricsCMK);
+        KubeResourceManager.get().updateResource(metricsCMK);
 
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getControllerComponentName());
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
@@ -435,11 +439,11 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if Kafka metrics are changed");
         ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-        String kafkaMetricsConf = kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(metricsCMNameK).get().getData().get("metrics-config.yml");
+        String kafkaMetricsConf = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(metricsCMNameK).get().getData().get("metrics-config.yml");
         Object kafkaMetricsJsonToYaml = yamlReader.readValue(kafkaMetricsConf, Object.class);
         ObjectMapper jsonWriter = new ObjectMapper();
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getNamespaceName(), testStorage.getClusterName())) {
-            assertThat(kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(cmName).get().getData().get(
+            assertThat(KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(cmName).get().getData().get(
                     TestConstants.METRICS_CONFIG_JSON_NAME),
                 is(jsonWriter.writeValueAsString(kafkaMetricsJsonToYaml)));
         }

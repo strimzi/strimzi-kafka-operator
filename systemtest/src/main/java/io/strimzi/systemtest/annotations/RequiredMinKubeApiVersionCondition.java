@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.annotations;
 
-import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -21,16 +21,15 @@ public class RequiredMinKubeApiVersionCondition implements ExecutionCondition {
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
         Optional<RequiredMinKubeApiVersion> annotation = findAnnotation(extensionContext.getElement(), RequiredMinKubeApiVersion.class);
-        KubeClusterResource clusterResource = KubeClusterResource.getInstance();
         double version = annotation.get().version();
 
-        if (Double.parseDouble(clusterResource.client().clusterKubernetesVersion()) >= version) {
+        if (Double.parseDouble(StUtils.getKubernetesClusterVersion()) >= version) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
             LOGGER.info("{} is @RequiredMinKubeApiVersion with version {}, but the running on cluster with {}: Ignoring {}",
                     extensionContext.getDisplayName(),
                     version,
-                    clusterResource.client().clusterKubernetesVersion(),
+                    StUtils.getKubernetesClusterVersion(),
                     extensionContext.getDisplayName()
             );
             return ConditionEvaluationResult.disabled("Test is disabled");

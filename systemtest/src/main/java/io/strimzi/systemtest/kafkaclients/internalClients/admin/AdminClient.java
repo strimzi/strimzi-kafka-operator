@@ -6,12 +6,11 @@ package io.strimzi.systemtest.kafkaclients.internalClients.admin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.strimzi.test.executor.ExecResult;
+import io.skodjob.testframe.executor.ExecResult;
+import io.skodjob.testframe.resources.KubeResourceManager;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class AdminClient {
 
@@ -29,7 +28,7 @@ public class AdminClient {
         AdminTopicCommand adminTopicCommand = new AdminTopicCommand()
             .withListSubCommand();
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
         return result.returnCode() == 0 ? result.out() : result.err();
 
     }
@@ -41,7 +40,7 @@ public class AdminClient {
             .withFromIndex(fromIndex)
             .withTopicCount(topicCount);
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
         return result.returnCode() == 0 ? result.out() : result.err();
 
     }
@@ -52,7 +51,7 @@ public class AdminClient {
             .withTopicPrefix(topicPrefix)
             .withTopicCount(topicCount);
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
         return result.returnCode() == 0 ? result.out() : result.err();
 
     }
@@ -63,7 +62,7 @@ public class AdminClient {
             .withTopicPrefix(topicPrefix)
             .withAll();
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
         return result.returnCode() == 0 ? result.out() : result.err();
     }
 
@@ -73,7 +72,7 @@ public class AdminClient {
             .withTopicName(topicName)
             .withOutputJson();
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
         KafkaTopicDescription[] descriptions = responseFromJSONExecResult(result, KafkaTopicDescription[].class);
         if (descriptions.length == 0) {
             throw new KafkaAdminException("topic: " + topicName + " is not present");
@@ -100,7 +99,7 @@ public class AdminClient {
             .withTopicPrefix(topicPrefix)
             .withFromIndex(fromIndex);
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
         return result.returnCode() == 0 ? result.out() : result.err();
 
     }
@@ -113,12 +112,12 @@ public class AdminClient {
             .withTopicReplicas(topicReplicas)
             .withTopicPrefix(topicPrefix);
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
         return result.returnCode() == 0 ? result.out() : result.err();
     }
 
     public void configureFromEnv() {
-        cmdKubeClient(namespaceName).execInPod(podName, CMD, "configure", "common", "--from-env");
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, CMD, "configure", "common", "--from-env");
     }
 
     public String fetchOffsets(String topicName, String time) {
@@ -128,7 +127,7 @@ public class AdminClient {
             .withTime(time)
             .withOutputJson();
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
         return result.returnCode() == 0 ? result.out() : result.err();
     }
 
@@ -138,7 +137,7 @@ public class AdminClient {
             .withNodeIds(nodeIds)
             .withOutputJson();
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminNodeCommand.getCommand());
+        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminNodeCommand.getCommand());
         return result.returnCode() == 0 ? result.out() : result.err();
     }
 

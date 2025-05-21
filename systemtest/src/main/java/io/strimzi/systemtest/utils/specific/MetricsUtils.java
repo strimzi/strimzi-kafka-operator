@@ -10,6 +10,7 @@ import io.skodjob.testframe.metrics.Gauge;
 import io.skodjob.testframe.metrics.Histogram;
 import io.skodjob.testframe.metrics.Metric;
 import io.skodjob.testframe.metrics.Summary;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.metrics.ClusterOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
@@ -27,8 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.is;
@@ -49,7 +48,7 @@ public class MetricsUtils {
         command.add("cat");
         command.add("/tmp/run.sh");
         ArrayList<String> executableCommand = new ArrayList<>();
-        executableCommand.addAll(Arrays.asList(cmdKubeClient().toString(), "exec", podName, "-n", namespaceName, "--"));
+        executableCommand.addAll(Arrays.asList(KubeResourceManager.get().kubeCmdClient().cmd(), "exec", podName, "-n", namespaceName, "--"));
         executableCommand.addAll(command);
 
         Exec exec = new Exec();
@@ -66,7 +65,7 @@ public class MetricsUtils {
 
     public static BaseMetricsCollector setupCOMetricsCollectorInNamespace(String coNamespace, String coName, String coScraperName) {
         LabelSelector scraperDeploymentPodLabel = new LabelSelector(null, Map.of(TestConstants.APP_POD_LABEL, coScraperName));
-        String coScraperPodName = kubeClient().listPods(coNamespace, scraperDeploymentPodLabel).get(0).getMetadata().getName();
+        String coScraperPodName = KubeResourceManager.get().kubeClient().listPods(coNamespace, scraperDeploymentPodLabel).get(0).getMetadata().getName();
 
         return new BaseMetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)

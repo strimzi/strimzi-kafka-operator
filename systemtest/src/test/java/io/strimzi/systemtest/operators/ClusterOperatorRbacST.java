@@ -20,7 +20,6 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -29,8 +28,6 @@ import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -59,7 +56,8 @@ public class ClusterOperatorRbacST extends AbstractST {
 
         cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);
 
-        String coPodName = kubeClient().getClusterOperatorPodName(TestConstants.CO_NAMESPACE);
+        String coPodName = KubeResourceManager.get().kubeClient()
+            .listPodsByPrefixInName(TestConstants.CO_NAMESPACE, SetupClusterOperator.getInstance().getOperatorDeploymentName()).get(0).getMetadata().getName();
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", testStorage.getClusterName());
 
         KubeResourceManager.get().createResourceWithWait(
@@ -68,15 +66,15 @@ public class ClusterOperatorRbacST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for Kafka");
-        String log = cmdKubeClient().namespace(TestConstants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
-        assertTrue(log.contains("Kafka(" + cmdKubeClient().namespace() + "/" + testStorage.getClusterName() + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
+        String log = KubeResourceManager.get().kubeCmdClient().inNamespace(TestConstants.CO_NAMESPACE).logs(coPodName);
+        assertTrue(log.contains("Kafka(" + Environment.TEST_SUITE_NAMESPACE + "/" + testStorage.getClusterName() + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", testStorage.getClusterName());
         KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 1).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
-        log = cmdKubeClient().namespace(TestConstants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
-        assertTrue(log.contains("KafkaConnect(" + cmdKubeClient().namespace() + "/" + testStorage.getClusterName() + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
+        log = KubeResourceManager.get().kubeCmdClient().inNamespace(TestConstants.CO_NAMESPACE).logs(coPodName);
+        assertTrue(log.contains("KafkaConnect(" + Environment.TEST_SUITE_NAMESPACE + "/" + testStorage.getClusterName() + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")

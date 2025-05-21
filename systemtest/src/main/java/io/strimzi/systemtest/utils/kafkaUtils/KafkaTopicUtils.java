@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.skodjob.testframe.executor.ExecResult;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
@@ -18,7 +19,6 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.Matchers;
@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.CrdClients.kafkaTopicClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
@@ -116,7 +115,7 @@ public class KafkaTopicUtils {
                     return true;
                 } else {
                     LOGGER.warn("KafkaTopic: {}/{} is not deleted yet! Triggering force delete by cmd client!", namespaceName, topicName);
-                    cmdKubeClient(namespaceName).deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
                     return false;
                 }
             },
@@ -471,7 +470,7 @@ public class KafkaTopicUtils {
         List<KafkaTopic> topicsToDelete = getAllKafkaTopicsWithPrefix(namespace, prefix, start, end);
 
         topicsToDelete.forEach(topic ->
-            cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
+            KubeResourceManager.get().kubeCmdClient().inNamespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
         );
 
         LOGGER.info("Deleted Kafka topics from {} to {} in namespace {} with prefix {}", start, end, namespace, prefix);

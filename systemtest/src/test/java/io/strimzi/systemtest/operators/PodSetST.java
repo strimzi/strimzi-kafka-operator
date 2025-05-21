@@ -7,7 +7,6 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -32,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * This suite contains tests related to StrimziPodSet and its features.<br>
@@ -52,7 +50,7 @@ public class PodSetST extends AbstractST {
         final int probeTimeoutSeconds = 6;
 
         EnvVar reconciliationEnv = new EnvVar(Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV, "true", null);
-        List<EnvVar> envVars = kubeClient().getDeployment(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        List<EnvVar> envVars = DeploymentUtils.getInNamespace(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         envVars.add(reconciliationEnv);
 
         LOGGER.info("Deploy Kafka configured to create topics more resilient against data loss or unavailability");
@@ -102,7 +100,8 @@ public class PodSetST extends AbstractST {
         RollingUpdateUtils.waitForNoKafkaRollingUpdate(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerPods);
 
         LOGGER.info("Deleting one Kafka pod, the should be recreated");
-        kubeClient().deletePodWithName(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        String kafkaPodName = PodUtils.listPodNamesInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
+        KubeResourceManager.get().deleteResourceWithoutWait(PodUtils.getInNamespace(testStorage.getNamespaceName(), kafkaPodName));
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), replicas, true);
 
         brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());

@@ -7,6 +7,7 @@ package io.strimzi.systemtest.log;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
@@ -47,10 +48,10 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -74,8 +75,6 @@ import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -439,7 +438,7 @@ class LogSettingST extends AbstractST {
         final String debugText = " DEBUG ";
         String cruiseControlPodName = PodUtils.getPodNameByPrefix(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME + "-" + TestConstants.CRUISE_CONTROL_CONTAINER_NAME);
         LOGGER.info("Check that default/actual root logging level is info");
-        String containerLogLevel = cmdKubeClient().namespace(Environment.TEST_SUITE_NAMESPACE).execInPod(cruiseControlPodName, "grep", "-i", "rootlogger.level",
+        String containerLogLevel = KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).execInPod(cruiseControlPodName, "grep", "-i", "rootlogger.level",
                 TestConstants.CRUISE_CONTROL_LOG_FILE_PATH).out().trim().split("=")[1];
         assertThat(containerLogLevel.toUpperCase(Locale.ENGLISH), is(not(debugText.strip())));
 
@@ -467,15 +466,18 @@ class LogSettingST extends AbstractST {
     // only one thread can access (eliminate data-race)
     private synchronized void kubectlGetStrimziUntilOperationIsSuccessful(String namespaceName, String resourceName) {
         TestUtils.waitFor("Checking if kubectl get strimzi contains:" + resourceName, Duration.ofSeconds(10).toMillis(),
-            TestConstants.GLOBAL_TIMEOUT, () -> cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("get", "strimzi").out().contains(resourceName));
+            TestConstants.GLOBAL_TIMEOUT, () -> KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec("get", "strimzi").out().contains(resourceName));
     }
 
     // only one thread can access (eliminate data-race)
     private synchronized void checkContainersHaveProcessOneAsTini(String namespaceName, String resourceClusterName) {
         //Used [/] in the grep command so that grep process does not return itself
         String command = "cat /proc/1/cmdline";
+        LabelSelector labelSelector = new LabelSelectorBuilder()
+            .withMatchLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, resourceClusterName))
+            .build();
 
-        for (Pod pod : kubeClient(namespaceName).listPods(Labels.STRIMZI_CLUSTER_LABEL, resourceClusterName)) {
+        for (Pod pod : KubeResourceManager.get().kubeClient().listPods(namespaceName, labelSelector)) {
             String podName = pod.getMetadata().getName();
             if (!podName.contains("build") && !podName.contains("deploy") && !podName.contains("kafka-clients")) {
                 for (Container container : pod.getSpec().getContainers()) {
@@ -483,7 +485,7 @@ class LogSettingST extends AbstractST {
 
                     PodUtils.waitForPodContainerReady(namespaceName, podName, containerName);
                     LOGGER.info("Checking tini process for Pod: {}/{} with container {}", namespaceName, podName, containerName);
-                    String processOne = cmdKubeClient().namespace(namespaceName).execInPodContainer(Level.DEBUG, podName, containerName, "/bin/bash", "-c", command).out().trim();
+                    String processOne = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(podName, containerName, "/bin/bash", "-c", command).out().trim();
                     assertThat(processOne, startsWith("/usr/bin/tini"));
                 }
             }
@@ -491,7 +493,7 @@ class LogSettingST extends AbstractST {
     }
 
     private synchronized String configMap(String namespaceName, String configMapName) {
-        Map<String, String> configMapData = kubeClient(namespaceName).getConfigMap(configMapName).getData();
+        Map<String, String> configMapData = ConfigMapUtils.getInNamespace(namespaceName, configMapName).getData();
         // tries to get a log4j2 configuration file first (operator, bridge, ...) otherwise log4j one (kafka, ...)
         String configMapKey = configMapData.keySet()
                 .stream()
@@ -520,7 +522,7 @@ class LogSettingST extends AbstractST {
 
     private synchronized Boolean checkGcLoggingDeployments(String namespaceName, String deploymentName, String containerName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        List<Container> containers = kubeClient(namespaceName).getDeployment(namespaceName, deploymentName).getSpec().getTemplate().getSpec().getContainers();
+        List<Container> containers = DeploymentUtils.getInNamespace(namespaceName, deploymentName).getSpec().getTemplate().getSpec().getContainers();
         Container container = getContainerByName(containerName, containers);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
@@ -532,7 +534,7 @@ class LogSettingST extends AbstractST {
 
     private synchronized void checkGcLoggingPods(String namespaceName, LabelSelector selector, boolean expectedValue) {
         LOGGER.info("Checking Pods with selector: {}", selector);
-        List<Pod> pods = kubeClient(namespaceName).getClient().pods().inNamespace(namespaceName).withLabelSelector(selector).list().getItems();
+        List<Pod> pods = KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withLabelSelector(selector).list().getItems();
 
         for (Pod pod : pods)    {
             LOGGER.info("Checking Pod: {}/{}, container: {}", namespaceName, pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getName());

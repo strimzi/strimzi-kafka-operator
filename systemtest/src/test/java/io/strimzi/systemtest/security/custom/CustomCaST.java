@@ -48,7 +48,6 @@ import java.util.Date;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -98,7 +97,7 @@ public class CustomCaST extends AbstractST {
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
 
         // Get old certificate ca.crt field name
-        Secret clusterCaCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
+        Secret clusterCaCertificateSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
         final String oldCaCertName = clusterCa.retrieveOldCertificateName(clusterCaCertificateSecret, "ca.crt");
 
         manuallyRenewCa(testStorage, clusterCa, newClusterCa);
@@ -128,12 +127,12 @@ public class CustomCaST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Get new certificate secret and assert old value is still present
-        clusterCaCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
+        clusterCaCertificateSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
         assertNotNull(clusterCaCertificateSecret.getData().get(oldCaCertName));
 
         // Remove outdated certificate from the secret configuration to ensure that the cluster no longer trusts them.
         clusterCaCertificateSecret.getData().remove(oldCaCertName);
-        kubeClient().patchSecret(testStorage.getNamespaceName(), clusterCaCertificateSecret.getMetadata().getName(), clusterCaCertificateSecret);
+        SecretUtils.patchInNamespace(testStorage.getNamespaceName(), clusterCaCertificateSecret.getMetadata().getName(), clusterCaCertificateSecret);
 
         // Start a manual rolling update of your cluster to pick up the changes made to the secret configuration.
         StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
@@ -219,9 +218,9 @@ public class CustomCaST extends AbstractST {
         clientsCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
         clusterCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        final X509Certificate clientsCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
+        final X509Certificate clientsCert = SecretUtils.getCertificateFromSecret(SecretUtils.getInNamespace(testStorage.getNamespaceName(),
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName())), "ca.crt");
-        final X509Certificate clusterCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
+        final X509Certificate clusterCert = SecretUtils.getCertificateFromSecret(SecretUtils.getInNamespace(testStorage.getNamespaceName(),
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName())), "ca.crt");
 
         checkCustomCaCorrectness(clientsCa, clientsCert);
@@ -245,8 +244,8 @@ public class CustomCaST extends AbstractST {
         );
 
         LOGGER.info("Check Kafka(s) certificates");
-        String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        final X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        final X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(SecretUtils.getInNamespace(testStorage.getNamespaceName(),
                 brokerPodName), brokerPodName + ".crt");
         assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
@@ -256,7 +255,7 @@ public class CustomCaST extends AbstractST {
         LOGGER.info("Check KafkaUser certificate");
         final KafkaUser user = KafkaUserTemplates.tlsUser(testStorage).build();
         KubeResourceManager.get().createResourceWithWait(user);
-        final X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
+        final X509Certificate userCert = SecretUtils.getCertificateFromSecret(SecretUtils.getInNamespace(testStorage.getNamespaceName(),
             testStorage.getUsername()), "user.crt");
         assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(userCert.getIssuerX500Principal().getName(), clientsCa.getSubjectDn()));
@@ -294,14 +293,14 @@ public class CustomCaST extends AbstractST {
         final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         final Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
-        Secret clusterCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
+        Secret clusterCASecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
         final Date initialCertStartTime = cacert.getNotBefore();
         final Date initialCertEndTime = cacert.getNotAfter();
 
         // Check Broker kafka certificate dates
-        String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        Secret brokerCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), brokerPodName);
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        Secret brokerCertCreationSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), brokerPodName);
         X509Certificate kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, brokerPodName + ".crt");
         final Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         final Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
@@ -334,13 +333,13 @@ public class CustomCaST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
 
         // Read renewed secret/certs again
-        clusterCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
+        clusterCASecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
         cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
         final Date changedCertStartTime = cacert.getNotBefore();
         final Date changedCertEndTime = cacert.getNotAfter();
 
         // Check renewed Broker kafka certificate dates
-        brokerCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), brokerPodName);
+        brokerCertCreationSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), brokerPodName);
         kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, brokerPodName + ".crt");
         final Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         final Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
@@ -383,13 +382,13 @@ public class CustomCaST extends AbstractST {
         final Map<String, String> entityPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
 
         // Check initial clientsCA validity days
-        Secret clientsCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
+        Secret clientsCASecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
         final Date initialCertStartTime = cacert.getNotBefore();
         final Date initialCertEndTime = cacert.getNotAfter();
 
         // Check initial kafkauser validity days
-        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUsername()), "user.crt");
+        X509Certificate userCert = SecretUtils.getCertificateFromSecret(SecretUtils.getInNamespace(testStorage.getNamespaceName(), testStorage.getUsername()), "user.crt");
         final Date initialKafkaUserCertStartTime = userCert.getNotBefore();
         final Date initialKafkaUserCertEndTime = userCert.getNotAfter();
 
@@ -413,12 +412,12 @@ public class CustomCaST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, entityPods);
 
         // Read renewed secret/certs again
-        clientsCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
+        clientsCASecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
         cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
         final Date changedCertStartTime = cacert.getNotBefore();
         final Date changedCertEndTime = cacert.getNotAfter();
 
-        userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUsername()), "user.crt");
+        userCert = SecretUtils.getCertificateFromSecret(SecretUtils.getInNamespace(testStorage.getNamespaceName(), testStorage.getUsername()), "user.crt");
         final Date changedKafkaUserCertStartTime = userCert.getNotBefore();
         final Date changedKafkaUserCertEndTime = userCert.getNotAfter();
 
@@ -464,8 +463,8 @@ public class CustomCaST extends AbstractST {
         }
 
         // Retrieve current CA cert and key
-        Secret caCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), certSecretName);
-        Secret caKeySecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), keySecretName);
+        Secret caCertificateSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), certSecretName);
+        Secret caKeySecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), keySecretName);
 
         // Get old certifcate ca.crt key name in format of YEAR-MONTH-DAY'T'HOUR-MINUTE-SECOND'Z'
         final String oldCaCertName = oldCa.retrieveOldCertificateName(caCertificateSecret, "ca.crt");
@@ -514,7 +513,7 @@ public class CustomCaST extends AbstractST {
         //  a) Cluster or Clients CA
         certificateAuthority.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        final X509Certificate certificate = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
+        final X509Certificate certificate = SecretUtils.getCertificateFromSecret(SecretUtils.getInNamespace(testStorage.getNamespaceName(),
                 certificateAuthority.getCaCertSecretName()), "ca.crt");
         checkCustomCaCorrectness(certificateAuthority, certificate);
 

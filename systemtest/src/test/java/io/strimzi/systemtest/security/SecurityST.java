@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateAuthorityBuilder;
-import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -26,7 +25,6 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Ca;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -50,6 +48,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.kafka.common.config.SslConfigs;
@@ -85,7 +84,6 @@ import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.ROLLING_UPDATE;
 import static io.strimzi.systemtest.TestTags.SANITY;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -180,17 +178,17 @@ class SecurityST extends AbstractST {
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaCerts = new HashMap<>();
         for (String secretName : secrets) {
-            Secret secret = kubeClient().getSecret(testStorage.getNamespaceName(), secretName);
+            Secret secret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), secretName);
             String value = secret.getData().get("ca.crt");
             assertThat("ca.crt in " + secretName + " should not be null", value, is(notNullValue()));
             initialCaCerts.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                 .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
                 .endMetadata()
                 .build();
             LOGGER.info("Patching Secret: {} with {}", secretName, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW);
-            kubeClient().patchSecret(testStorage.getNamespaceName(), secretName, annotated);
+            SecretUtils.patchInNamespace(testStorage.getNamespaceName(), secretName, annotated);
         }
 
         if (kafkaShouldRoll) {
@@ -210,7 +208,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Ensuring the certificates have been replaced");
         for (String secretName : secrets) {
-            Secret secret = kubeClient().getSecret(testStorage.getNamespaceName(), secretName);
+            Secret secret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), secretName);
             assertThat("Secret " + secretName + " should exist", secret, is(notNullValue()));
             assertThat("CA cert in " + secretName + " should have non-null 'data'", is(notNullValue()));
             String value = secret.getData().get("ca.crt");
@@ -326,7 +324,7 @@ class SecurityST extends AbstractST {
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaKeys = new HashMap<>();
         for (String secretName : secrets) {
-            Secret secret = kubeClient().getSecret(testStorage.getNamespaceName(), secretName);
+            Secret secret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), secretName);
             String value = secret.getData().get("ca.key");
             assertThat("ca.key in " + secretName + " should not be null", value, is(Matchers.notNullValue()));
             initialCaKeys.put(secretName, value);
@@ -336,14 +334,14 @@ class SecurityST extends AbstractST {
                     .endMetadata()
                     .build();
             LOGGER.info("Patching Secret: {}/{} with {}", testStorage.getNamespaceName(), secretName, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE);
-            kubeClient().patchSecret(testStorage.getNamespaceName(), secretName, annotated);
+            SecretUtils.patchInNamespace(testStorage.getNamespaceName(), secretName, annotated);
         }
 
         for (int i = 1; i <= expectedRolls; i++) {
             // In case the first rolling update is finished, shut down cluster operator to see if the rolling update can be finished
             if (i == 2) {
-                Pod coPod = kubeClient().listPodsByPrefixInName(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).get(0);
-                kubeClient().deletePod(SetupClusterOperator.getInstance().getOperatorNamespace(), coPod);
+                Pod coPod = PodUtils.listPodsByPrefixInNamespace(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).get(0);
+                KubeResourceManager.get().deleteResourceWithoutWait(coPod);
             }
 
             if (kafkaShouldRoll) {
@@ -378,7 +376,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Ensuring the certificates have been replaced");
         for (String secretName : secrets) {
-            Secret secret = kubeClient().getSecret(testStorage.getNamespaceName(), secretName);
+            Secret secret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), secretName);
             assertThat("Secret " + secretName + " should exist", secret, is(notNullValue()));
             assertThat("CA key in " + secretName + " should have non-null 'data'", secret.getData(), is(notNullValue()));
             String value = secret.getData().get("ca.key");
@@ -555,7 +553,7 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        Secret kafkaUserSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUsername());
+        Secret kafkaUserSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), testStorage.getUsername());
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
@@ -570,8 +568,8 @@ class SecurityST extends AbstractST {
         );
 
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
-        Secret secretCaCluster = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), clusterSecretName);
-        Secret secretCaClients = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), clientsSecretName);
+        Secret secretCaCluster = SecretUtils.getInNamespace(testStorage.getNamespaceName(), clusterSecretName);
+        Secret secretCaClients = SecretUtils.getInNamespace(testStorage.getNamespaceName(), clientsSecretName);
         assertThat("Cluster CA certificate has been renewed outside of maintenanceTimeWindows",
                 secretCaCluster.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
         assertThat("Clients CA certificate has been renewed outside of maintenanceTimeWindows",
@@ -590,9 +588,9 @@ class SecurityST extends AbstractST {
         LOGGER.info("Waiting for rolling update to trigger during maintenanceTimeWindows");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
-        Secret kafkaUserSecretRolled = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUsername());
-        secretCaCluster = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), clusterSecretName);
-        secretCaClients = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), clientsSecretName);
+        Secret kafkaUserSecretRolled = SecretUtils.getInNamespace(testStorage.getNamespaceName(), testStorage.getUsername());
+        secretCaCluster = SecretUtils.getInNamespace(testStorage.getNamespaceName(), clusterSecretName);
+        secretCaClients = SecretUtils.getInNamespace(testStorage.getNamespaceName(), clientsSecretName);
 
         assertThat("Cluster CA certificate has not been renewed within maintenanceTimeWindows",
                 secretCaCluster.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
@@ -623,7 +621,7 @@ class SecurityST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        List<Secret> secrets = kubeClient().listSecrets(testStorage.getNamespaceName()).stream()
+        List<Secret> secrets = SecretUtils.listInNamespace(testStorage.getNamespaceName()).stream()
             .filter(secret ->
                 secret.getMetadata().getName().startsWith(testStorage.getClusterName()) &&
                 secret.getMetadata().getName().endsWith("ca-cert"))
@@ -636,7 +634,7 @@ class SecurityST extends AbstractST {
 
         for (Secret s : secrets) {
             LOGGER.info("Deleting Secret: {}/{}", testStorage.getNamespaceName(), s.getMetadata().getName());
-            kubeClient().deleteSecret(testStorage.getNamespaceName(), s.getMetadata().getName());
+            SecretUtils.deleteSecretWithWait(testStorage.getNamespaceName(), s.getMetadata().getName());
         }
 
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
@@ -646,7 +644,7 @@ class SecurityST extends AbstractST {
             SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), s.getMetadata().getName(), () -> { });
         }
 
-        List<Secret> regeneratedSecrets = kubeClient().listSecrets(testStorage.getNamespaceName()).stream()
+        List<Secret> regeneratedSecrets = SecretUtils.listInNamespace(testStorage.getNamespaceName()).stream()
                 .filter(secret -> secret.getMetadata().getName().endsWith("ca-cert"))
                 .toList();
 
@@ -672,7 +670,7 @@ class SecurityST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
         LOGGER.info("Getting IP of the bootstrap service");
 
-        String ipOfBootstrapService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getClusterName())).getSpec().getClusterIP();
+        String ipOfBootstrapService = ServiceUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getClusterName())).getSpec().getClusterIP();
 
         LOGGER.info("KafkaConnect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
@@ -690,11 +688,11 @@ class SecurityST extends AbstractST {
 
         PodUtils.waitUntilPodIsPresent(testStorage.getNamespaceName(), testStorage.getClusterName() + "-connect");
 
-        String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0).getMetadata().getName();
 
         PodUtils.waitUntilPodIsInCrashLoopBackOff(testStorage.getNamespaceName(), kafkaConnectPodName);
 
-        assertThat("CrashLoopBackOff", is(kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), kafkaConnectPodName).getStatus().getContainerStatuses()
+        assertThat("CrashLoopBackOff", is(PodUtils.getInNamespace(testStorage.getNamespaceName(), kafkaConnectPodName).getStatus().getContainerStatuses()
                 .get(0).getState().getWaiting().getReason()));
 
         KafkaConnectUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> {
@@ -928,7 +926,7 @@ class SecurityST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
-        final String clusterCaCert = kubeClient().getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName())).getData().get("ca.crt");
+        final String clusterCaCert = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName())).getData().get("ca.crt");
 
         final ResourceRequirements requirements = new ResourceRequirementsBuilder()
             .addToRequests("cpu", new Quantity("100000m"))
@@ -944,7 +942,7 @@ class SecurityST extends AbstractST {
         TestUtils.waitFor("any Kafka Pod to be in the pending phase because of selected high cpu resource",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> pendingPods = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerComponentName())
+                List<Pod> pendingPods = PodUtils.listPodsByPrefixInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerComponentName())
                     .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
                 if (pendingPods.isEmpty()) {
                     LOGGER.info("No Pods of {} are in desired state", testStorage.getBrokerComponentName());
@@ -1157,7 +1155,7 @@ class SecurityST extends AbstractST {
             .build());
 
         LOGGER.info("Listing all cluster CAs for {}", testStorage.getClusterName());
-        List<Secret> caSecrets = kubeClient(testStorage.getNamespaceName()).listSecrets(testStorage.getNamespaceName()).stream()
+        List<Secret> caSecrets = SecretUtils.listInNamespace(testStorage.getNamespaceName()).stream()
             .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(testStorage.getClusterName())) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()))).collect(Collectors.toList());
 
         LOGGER.info("Deleting Kafka: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -1170,10 +1168,10 @@ class SecurityST extends AbstractST {
         caSecrets.forEach(caSecret -> {
             String secretName = caSecret.getMetadata().getName();
             LOGGER.info("Checking that Secret: {} is still present", secretName);
-            assertNotNull(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), secretName));
+            assertNotNull(SecretUtils.getInNamespace(testStorage.getNamespaceName(), secretName));
 
             LOGGER.info("Deleting Secret: {}/{}", testStorage.getNamespaceName(), secretName);
-            kubeClient(testStorage.getNamespaceName()).deleteSecret(testStorage.getNamespaceName(), secretName);
+            SecretUtils.deleteSecretWithWait(testStorage.getNamespaceName(), secretName);
         });
 
         LOGGER.info("Deploying Kafka with generateSecretOwnerReference set to true");
@@ -1192,7 +1190,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        caSecrets = kubeClient(testStorage.getNamespaceName()).listSecrets(testStorage.getNamespaceName()).stream()
+        caSecrets = SecretUtils.listInNamespace(testStorage.getNamespaceName()).stream()
             .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(secondClusterName)) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(secondClusterName))).collect(Collectors.toList());
 
         LOGGER.info("Deleting Kafka: {}", secondClusterName);
@@ -1204,7 +1202,7 @@ class SecurityST extends AbstractST {
             String secretName = caSecret.getMetadata().getName();
             LOGGER.info("Checking that Secret: {} is deleted", secretName);
             TestUtils.waitFor("deletion of Secret: " + secretName, TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-                () -> kubeClient().getSecret(testStorage.getNamespaceName(), secretName) == null);
+                () -> SecretUtils.getInNamespace(testStorage.getNamespaceName(), secretName) == null);
         });
     }
 
@@ -1225,18 +1223,18 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
         final Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
         final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         final Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
-        Secret clusterCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
+        Secret clusterCASecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
         Date initialCertStartTime = cacert.getNotBefore();
         Date initialCertEndTime = cacert.getNotAfter();
 
         // Check Broker kafka certificate dates
-        Secret brokerCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), brokerPodName);
+        Secret brokerCertCreationSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), brokerPodName);
         X509Certificate kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret,
             brokerPodName + ".crt");
         Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
@@ -1258,13 +1256,13 @@ class SecurityST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
 
         // Read renewed secret/certs again
-        clusterCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
+        clusterCASecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
         cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
         Date changedCertStartTime = cacert.getNotBefore();
         Date changedCertEndTime = cacert.getNotAfter();
 
         // Check renewed Broker kafka certificate dates
-        brokerCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), brokerPodName);
+        brokerCertCreationSecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), brokerPodName);
         kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, brokerPodName + ".crt");
         Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
@@ -1308,13 +1306,13 @@ class SecurityST extends AbstractST {
         final Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
         // Check initial clientsCA validity days
-        Secret clientsCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
+        Secret clientsCASecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
         Date initialCertStartTime = cacert.getNotBefore();
         Date initialCertEndTime = cacert.getNotAfter();
 
         // Check initial kafkauser validity days
-        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), username), "user.crt");
+        X509Certificate userCert = SecretUtils.getCertificateFromSecret(SecretUtils.getInNamespace(testStorage.getNamespaceName(), username), "user.crt");
         Date initialKafkaUserCertStartTime = userCert.getNotBefore();
         Date initialKafkaUserCertEndTime = userCert.getNotAfter();
 
@@ -1336,12 +1334,12 @@ class SecurityST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
 
         // Read renewed secret/certs again
-        clientsCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
+        clientsCASecret = SecretUtils.getInNamespace(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
         cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
         Date changedCertStartTime = cacert.getNotBefore();
         Date changedCertEndTime = cacert.getNotAfter();
 
-        userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), username), "user.crt");
+        userCert = SecretUtils.getCertificateFromSecret(SecretUtils.getInNamespace(testStorage.getNamespaceName(), username), "user.crt");
         Date changedKafkaUserCertStartTime = userCert.getNotBefore();
         Date changedKafkaUserCertEndTime = userCert.getNotAfter();
 
