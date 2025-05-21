@@ -571,7 +571,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected void changeKafkaVersion(final String componentsNamespaceName, CommonVersionModificationData versionModificationData, boolean replaceEvenIfMissing) throws IOException {
         // Get Kafka version
         String kafkaVersionFromCR = CrdClients.kafkaClient().inNamespace(componentsNamespaceName).withName(CLUSTER_NAME).get().getSpec().getKafka().getVersion();
-        kafkaVersionFromCR = kafkaVersionFromCR.equals("") ? null : kafkaVersionFromCR;
         // Get Kafka metadata version
         String currentMetadataVersion = CrdClients.kafkaClient().inNamespace(componentsNamespaceName).withName(CLUSTER_NAME).get().getSpec().getKafka().getMetadataVersion();
 
@@ -587,7 +586,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         // #######################################################################
 
-        if (versionModificationData.getProcedures() != null && (!currentMetadataVersion.isEmpty() || replaceEvenIfMissing)) {
+        if (versionModificationData.getProcedures() != null && (currentMetadataVersion != null || replaceEvenIfMissing)) {
 
             if (kafkaVersionFromProcedure != null && !kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.contains(kafkaVersionFromProcedure)) {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
