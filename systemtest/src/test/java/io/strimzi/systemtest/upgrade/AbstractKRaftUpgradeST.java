@@ -549,8 +549,14 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             if (applyContent) {
                 KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(content);
             } else {
-                // otherwise, we want to replace the content
-                KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).replaceContent(content);
+                try {
+                    // otherwise, we want to replace the content
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).replaceContent(content);
+                } catch (Exception e) {
+                    // in case that the replace fails (because for example CRD of some resource was removed or added into new version etc.)
+                    // we want to apply the content instead of replacing it
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(content);
+                }
             }
         });
     }
