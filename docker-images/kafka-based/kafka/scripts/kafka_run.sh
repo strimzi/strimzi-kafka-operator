@@ -43,15 +43,6 @@ fi
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
 
-# Generate temporary keystore password
-CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
-export CERTS_STORE_PASSWORD
-
-mkdir -p /tmp/kafka
-
-# Import certificates into keystore and truststore
-./kafka_tls_prepare_certificates.sh
-
 # Generate and print the config file
 echo "Starting Kafka with configuration:"
 tee /tmp/strimzi.properties < "$KAFKA_HOME/custom-config/server.config" | sed -e 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' -e 's/password=.*/password=[hidden]/g'
@@ -88,11 +79,11 @@ fi
 echo ""
 echo "Preparing Kafka Agent configuration"
 rm -f /tmp/kafka-agent.properties
+NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 cat <<EOF > /tmp/kafka-agent.properties
-sslKeyStorePath=/tmp/kafka/cluster.keystore.p12
-sslKeyStorePass=${CERTS_STORE_PASSWORD}
-sslTrustStorePath=/tmp/kafka/cluster.truststore.p12
-sslTrustStorePass=${CERTS_STORE_PASSWORD}
+sslTrustStoreSecretName=${KAFKA_CLUSTER_NAME}-cluster-ca-cert
+sslKeyStoreSecretName=${HOSTNAME}
+namespace=${NAMESPACE}
 EOF
 echo ""
 
