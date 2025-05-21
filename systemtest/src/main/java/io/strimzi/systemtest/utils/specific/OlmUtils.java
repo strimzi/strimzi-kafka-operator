@@ -28,10 +28,26 @@ public class OlmUtils {
 
     private OlmUtils() {}
 
+    /**
+     * Returns {@link ClusterServiceVersion} from specified Namespace with specified name.
+     *
+     * @param namespaceName     Namespace name where the ClusterServiceVersion should be present.
+     * @param csvName           Name of the desired ClusterServiceVersion.
+     *
+     * @return  {@link ClusterServiceVersion} from specified Namespace with specified name.
+     */
     public static ClusterServiceVersion getCsvInNamespace(String namespaceName, String csvName) {
         return KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class).operatorHub().clusterServiceVersions().inNamespace(namespaceName).withName(csvName).get();
     }
 
+    /**
+     * Returns {@link ClusterServiceVersion} from specified Namespace containing specified prefix in its name.
+     *
+     * @param namespaceName     Namespace name where the ClusterServiceVersion should be present.
+     * @param csvNamePrefix     Prefix in name of the desired ClusterServiceVersion.
+     *
+     * @return  {@link ClusterServiceVersion} from specified Namespace containing specified prefix in its name.
+     */
     public static ClusterServiceVersion getCsvWithPrefixInNamespace(String namespaceName, String csvNamePrefix) {
         return KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class)
             .operatorHub()
@@ -45,6 +61,15 @@ public class OlmUtils {
             .get();
     }
 
+    /**
+     * Returns non-approved {@link InstallPlan} from specified Namespace and for specific {@link ClusterServiceVersion}
+     * searched by prefix and not complete name.
+     *
+     * @param namespaceName     Namespace name where the InstallPlan should be present.
+     * @param csvNamePrefix     ClusterServiceVersion prefix InstallPlan should contain.
+     *
+     * @return  non-approved {@link InstallPlan} from specified Namespace and for specific {@link ClusterServiceVersion}.
+     */
     public static InstallPlan getNonApprovedInstallPlanForCsvNamePrefixInNamespace(String namespaceName, String csvNamePrefix) {
         return KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class)
             .operatorHub()

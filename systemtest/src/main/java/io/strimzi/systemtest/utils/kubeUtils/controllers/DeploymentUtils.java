@@ -51,7 +51,7 @@ public class DeploymentUtils {
      * Returns {@link Deployment} from specified Namespace with specified name.
      *
      * @param namespaceName     Namespace name where the Deployment should be present.
-     * @param deploymentName    name of the desired Deployment.
+     * @param deploymentName    Name of the desired Deployment.
      *
      * @return  {@link Deployment} from specified Namespace with specified name.
      */
@@ -63,7 +63,7 @@ public class DeploymentUtils {
      * Returns {@link LabelSelector} from the spec of the desired {@link Deployment}.
      *
      * @param namespaceName     Namespace name where the Deployment should be present.
-     * @param deploymentName    name of the desired Deployment.
+     * @param deploymentName    Name of the desired Deployment.
      *
      * @return  {@link LabelSelector} from the spec of the desired {@link Deployment}.
      */

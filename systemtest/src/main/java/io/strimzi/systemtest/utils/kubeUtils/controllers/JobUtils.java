@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -25,24 +24,57 @@ import static java.util.Arrays.asList;
 public class JobUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(JobUtils.class);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private JobUtils() { }
 
+    /**
+     * Returns {@link Job} from specified Namespace with specified name.
+     *
+     * @param namespaceName     Namespace name where the Job should be present.
+     * @param jobName           Name of the desired Job.
+     *
+     * @return  {@link Job} from specified Namespace with specified name.
+     */
     public static Job getInNamespace(String namespaceName, String jobName) {
         return KubeResourceManager.get().kubeClient().getClient().batch().v1().jobs().inNamespace(namespaceName).withName(jobName).get();
     }
 
+    /**
+     * Returns status of {@link Job} from specified Namespace with specified name.
+     *
+     * @param namespaceName     Namespace name where the Job should be present.
+     * @param jobName           Name of the desired Job.
+     *
+     * @return  status of {@link Job} from specified Namespace with specified name.
+     */
     public static JobStatus getStatusInNamespace(String namespaceName, String jobName) {
         Job job = KubeResourceManager.get().kubeClient().getClient().batch().v1().jobs().inNamespace(namespaceName).withName(jobName).get();
         return job == null ? null : job.getStatus();
     }
 
+    /**
+     * Checks if {@link Job} running in specified Namespace succeeded or not - based on number
+     * of successful Pods.
+     *
+     * @param namespaceName             Namespace name where the Job should be present.
+     * @param jobName                   Name of the Job for which the status should be checked.
+     * @param expectedSucceededPods     Expected number of succeeded Pods
+     * @return  if {@link Job} running in specified Namespace succeeded or not
+     */
     public static boolean checkSucceededJobStatus(String namespaceName, String jobName, int expectedSucceededPods) {
         JobStatus jobStatus = getStatusInNamespace(namespaceName, jobName);
         return jobStatus != null && jobStatus.getSucceeded() != null && jobStatus.getSucceeded().equals(expectedSucceededPods);
     }
 
+    /**
+     * Checks if {@link Job} running in specified Namespace failed or not - based on number
+     * of failed Pods.
+     *
+     * @param namespaceName         Namespace name where the Job should be present.
+     * @param jobName               Name of the Job for which the status should be checked.
+     * @param expectedFailedPods    Expected number of failed Pods
+     * @return  if {@link Job} running in specified Namespace failed or not
+     */
     public static boolean checkFailedJobStatus(String namespaceName, String jobName, int expectedFailedPods) {
         JobStatus jobStatus = getStatusInNamespace(namespaceName, jobName);
         return jobStatus != null && jobStatus.getFailed() != null && jobStatus.getFailed().equals(expectedFailedPods);

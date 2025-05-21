@@ -25,10 +25,26 @@ public class PersistentVolumeClaimUtils {
 
     private PersistentVolumeClaimUtils() { }
 
+    /**
+     * Returns {@link PersistentVolumeClaim} from specified Namespace with specified name.
+     *
+     * @param namespaceName     Namespace name where the PersistentVolumeClaim should be present.
+     * @param pvcName           Name of the desired PersistentVolumeClaim.
+     *
+     * @return  {@link PersistentVolumeClaim} from specified Namespace with specified name.
+     */
     public static PersistentVolumeClaim getInNamespace(String namespaceName, String pvcName) {
         return KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
     }
 
+    /**
+     * Returns filtered list of PVCs in specified Namespace with specified sub-String in their name.
+     *
+     * @param namespaceName     Namespace where the PVCs should be present.
+     * @param substring         Sub-String that the names of PVCs contain.
+     *
+     * @return  filtered list of PVCs in specified Namespace with specified sub-String in their name.
+     */
     public static List<PersistentVolumeClaim> listByNameSubstringInNamespace(String namespaceName, String substring) {
         return KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).list().getItems()
             .stream()

@@ -56,7 +56,7 @@ public class ConfigMapUtils {
      * Returns {@link ConfigMap} from specified Namespace and with specified name.
      *
      * @param namespaceName     Namespace name where the ConfigMap should be present.
-     * @param configMapName     name of the desired ConfigMap.
+     * @param configMapName     Name of the desired ConfigMap.
      *
      * @return  {@link ConfigMap} from specified Namespace and with specified name.
      */

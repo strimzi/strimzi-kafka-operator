@@ -34,7 +34,7 @@ public class PodUtils {
      * Returns {@link Pod} from specified Namespace and with specified name.
      *
      * @param namespaceName     Namespace name where the Pod should be present.
-     * @param podName           name of the desired Pod.
+     * @param podName           Name of the desired Pod.
      *
      * @return  {@link Pod} from specified Namespace and with specified name.
      */

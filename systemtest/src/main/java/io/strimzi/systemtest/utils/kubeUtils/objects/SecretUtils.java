@@ -48,7 +48,7 @@ public class SecretUtils {
      * Returns {@link Secret} from specified Namespace with specified name.
      *
      * @param namespaceName     Namespace name where the Secret should be present.
-     * @param secretName        name of the desired Secret.
+     * @param secretName        Name of the desired Secret.
      *
      * @return  {@link Secret} from specified Namespace with specified name.
      */

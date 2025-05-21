@@ -26,7 +26,7 @@ public class ServiceUtils {
      * Returns {@link Service} from specified Namespace with specified name.
      *
      * @param namespaceName     Namespace name where the Service should be present.
-     * @param serviceName       name of the desired Service.
+     * @param serviceName       Name of the desired Service.
      *
      * @return  {@link Service} from specified Namespace with specified name.
      */
