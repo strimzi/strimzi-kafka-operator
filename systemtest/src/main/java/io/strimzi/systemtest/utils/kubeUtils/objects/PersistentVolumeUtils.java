@@ -10,6 +10,10 @@ import io.skodjob.testframe.resources.KubeResourceManager;
 import java.util.List;
 
 public class PersistentVolumeUtils {
+    /**
+     * Private constructor to prevent instantiating.
+     */
+    private PersistentVolumeUtils() { }
 
     /**
      * Returns {@link PersistentVolume} with specified name.

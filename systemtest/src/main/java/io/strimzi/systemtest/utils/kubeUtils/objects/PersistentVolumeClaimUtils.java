@@ -20,9 +20,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PersistentVolumeClaimUtils {
-
     private static final Logger LOGGER = LogManager.getLogger(PersistentVolumeClaimUtils.class);
 
+    /**
+     * Private constructor to prevent instantiating.
+     */
     private PersistentVolumeClaimUtils() { }
 
     /**

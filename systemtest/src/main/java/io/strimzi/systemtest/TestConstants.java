@@ -344,4 +344,9 @@ public interface TestConstants {
      * OLM related constants
      */
     String OLM_OPERATOR_GROUP_NAME = "strimzi-group";
+
+    /**
+     * Label for Kubernetes worker nodes
+     */
+    String WORKER_NODE_LABEL = "node-role.kubernetes.io/worker";
 }

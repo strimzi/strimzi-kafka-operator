@@ -6,6 +6,7 @@ package io.strimzi.systemtest.annotations;
 
 import io.fabric8.kubernetes.api.model.Node;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.strimzi.systemtest.TestConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -30,7 +31,7 @@ public class MultiNodeClusterOnlyCondition implements ExecutionCondition {
             .list()
             .getItems()
             .stream()
-            .filter(node -> node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/worker"))
+            .filter(node -> node.getMetadata().getLabels().containsKey(TestConstants.WORKER_NODE_LABEL))
             .toList();
 
         if (nodes.size() > expectedNodeCount) {
