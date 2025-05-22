@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: observability/jaeger-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   labels:
     name: jaeger-operator
   name: jaegers.jaegertracing.io
@@ -7280,6 +7280,8 @@ spec:
                           type: string
                         skipLogout:
                           type: boolean
+                        timeout:
+                          type: string
                       type: object
                     options:
                       type: object
@@ -16207,7 +16209,7 @@ spec:
               value: DEBUG
             - name: KAFKA-PROVISIONING-MINIMAL
               value: "true"
-          image: quay.io/jaegertracing/jaeger-operator:1.57.0
+          image: quay.io/jaegertracing/jaeger-operator:1.65.0
           livenessProbe:
             httpGet:
               path: /healthz
