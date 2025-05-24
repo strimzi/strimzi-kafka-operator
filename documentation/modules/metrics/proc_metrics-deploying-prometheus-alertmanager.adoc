@@ -27,7 +27,7 @@ The following resources are defined on deployment:
 * A `Service` to provide an easy to reference hostname for other services to connect to Alertmanager (such as Prometheus).
 
 .Prerequisites
-* xref:proc-metrics-kafka-deploy-options-{context}[Metrics are configured for the Kafka cluster resource]
+* xref:assembly-metrics-setup-{context}[Metrics are enabled and exposed]
 * xref:assembly-metrics-prometheus-{context}[Prometheus is deployed]
 
 .Procedure

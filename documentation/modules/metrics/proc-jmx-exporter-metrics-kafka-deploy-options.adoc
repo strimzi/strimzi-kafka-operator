@@ -30,7 +30,7 @@ To include xref:con-metrics-kafka-exporter-lag-str[Kafka Exporter] metrics, add 
 IMPORTANT: Kafka Exporter provides additional metrics for consumer lag and offsets only.
 You still need to configure Prometheus metrics in the `Kafka` resource to collect standard Kafka metrics.
 
-You can create your own Prometheus configuration or use the xref:ref-metrics-prometheus-metrics-config-{context}[example custom resource files] provided with Strimzi:
+You can create your own Prometheus configuration or use the xref:assembly-metrics-config-files-{context}[example custom resource files] provided with Strimzi:
 
 * `kafka-metrics.yaml`
 * `kafka-connect-metrics.yaml`
