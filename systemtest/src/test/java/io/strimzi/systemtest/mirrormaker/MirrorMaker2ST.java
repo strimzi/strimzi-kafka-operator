@@ -94,13 +94,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(MIRROR_MAKER2)
 @Tag(CONNECT_COMPONENTS)
 @SuiteDoc(
-    description = @Desc("System test suite for verifying all major MirrorMaker2 features in Strimzi. " +
-        "Covers message mirroring between clusters, security/auth integration, rolling updates, scaling, header mirroring, replication policy, " +
-        "offset restoration, and connector state/offset management."),
-    beforeTestSteps = {
-        @Step(value = "Install the Cluster Operator.", expected = "Cluster Operator is installed and ready."),
-        @Step(value = "Set up Kafka clusters, topics, users, and related resources in source and target namespaces.", expected = "Resources are deployed."),
-    },
+    description = @Desc("Tests message mirroring, TLS/SCRAM/mTLS security, offset and header replication, scaling, rolling updates (secrets/certs), and connector state management."),
     labels = {
         @Label(TestDocsLabels.MIRROR_MAKER_2),
     }
