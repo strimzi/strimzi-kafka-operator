@@ -23,6 +23,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Stack;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static io.strimzi.systemtest.TestConstants.JAEGER_DEPLOYMENT_POLL;
 import static io.strimzi.systemtest.TestConstants.JAEGER_DEPLOYMENT_TIMEOUT;
@@ -106,6 +108,9 @@ public class SetupOpenTelemetry {
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT, 1);
+        // Workaround cert-manager readiness unstability by adding sleep for 60 seconds
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(60));
+        LOGGER.info("Cert-manager {}/{} is ready", CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT);
     }
 
     /**
