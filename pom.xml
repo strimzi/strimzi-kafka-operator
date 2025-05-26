@@ -87,17 +87,6 @@
         </developer>
     </developers>
 
-    <repositories>
-        <repository>
-            <!--
-            We use the Kafka staging repository while we use the RC releases of Kafka 3.9.1. This should be removed once
-            we move to the final release of Kafka 3.9.1.
-            -->
-            <id>apache-staging</id>
-            <url>https://repository.apache.org/content/groups/staging/</url>
-        </repository>
-    </repositories>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
