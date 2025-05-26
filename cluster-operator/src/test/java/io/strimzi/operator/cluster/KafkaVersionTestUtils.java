@@ -21,7 +21,7 @@ public class KafkaVersionTestUtils {
 
     private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
-    public static final String LATEST_KAFKA_VERSION = "3.9.0";
+    public static final String LATEST_KAFKA_VERSION = "3.9.1";
     public static final String LATEST_FORMAT_VERSION = "3.9";
     public static final String LATEST_PROTOCOL_VERSION = "3.9";
     public static final String LATEST_METADATA_VERSION = "3.9-IV0";

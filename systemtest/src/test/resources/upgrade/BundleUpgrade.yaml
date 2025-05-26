@@ -36,8 +36,8 @@
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.44.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:latest-kafka-3.9.0
-    kafka: strimzi/kafka:latest-kafka-3.9.0
+    zookeeper: strimzi/kafka:latest-kafka-3.9.1
+    kafka: strimzi/kafka:latest-kafka-3.9.1
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
