@@ -539,7 +539,7 @@ Evaluates user operator performance with different configurations, including:
   - Successful Kafka users created
   - Detailed system metrics and history
 
-What is worth mentioning is that those capacity tests runs in average **10 hours** depending on your HW specs.
+What is worth mentioning is that these capacity tests take on average **23 minutes** for the Topic Operator and **5 hours 22 minutes** for the User Operator, depending on your HW specs.
 
 #### 2. Scalability Tests
 
@@ -566,7 +566,8 @@ One can also run them locally as our standard system tests using some IDE or dir
 Currently, there are two possible triggers:
 ```
 /packit test --labels performance
-/packit test --labels capacity
+/packit test --labels user-capacity
+/packit test --labels topic-capacity
 ```
 
 #### Jenkins
