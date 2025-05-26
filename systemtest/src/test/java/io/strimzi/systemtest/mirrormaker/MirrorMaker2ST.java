@@ -9,6 +9,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
@@ -25,6 +30,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
@@ -87,11 +93,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(REGRESSION)
 @Tag(MIRROR_MAKER2)
 @Tag(CONNECT_COMPONENTS)
+@SuiteDoc(
+    description = @Desc("System test suite for verifying all major MirrorMaker2 features in Strimzi. " +
+        "Covers message mirroring between clusters, security/auth integration, rolling updates, scaling, header mirroring, replication policy, " +
+        "offset restoration, and connector state/offset management."),
+    beforeTestSteps = {
+        @Step(value = "Install the Cluster Operator.", expected = "Cluster Operator is installed and ready."),
+        @Step(value = "Set up Kafka clusters, topics, users, and related resources in source and target namespaces.", expected = "Resources are deployed."),
+    },
+    labels = {
+        @Label(TestDocsLabels.MIRROR_MAKER_2),
+    }
+)
 class MirrorMaker2ST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MirrorMaker2ST.class);
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Verifies MM2 mirrors messages between two clusters and handles rolling update events."),
+        steps = {
+            @Step(value = "Deploy source and target Kafka clusters with default settings.", expected = "Kafka clusters are ready."),
+            @Step(value = "Deploy MirrorMaker 2 and a source topic.", expected = "MirrorMaker 2 is deployed and initial topic exists."),
+            @Step(value = "Produce and consume messages on the source cluster.", expected = "Clients successfully send and receive messages."),
+            @Step(value = "Check MirrorMaker2 config map, pod labels, and other metadata.", expected = "Configuration and labels match expectations."),
+            @Step(value = "Verify messages are mirrored to the target cluster.", expected = "Target cluster consumer receives mirrored messages."),
+            @Step(value = "Trigger a manual rolling update of MM2 via annotation.", expected = "MM2 pods roll and state is preserved."),
+            @Step(value = "Verify partition count propagation by updating topic.", expected = "Partition update is reflected on the mirrored topic.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     void testMirrorMaker2() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int mirrorMakerReplicasCount = 2;
@@ -198,6 +231,20 @@ class MirrorMaker2ST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
+    @TestDoc(
+        description = @Desc("Checks message mirroring over TLS with mTLS authentication."),
+        steps = {
+            @Step(value = "Deploy source and target Kafka clusters with TLS listeners and mTLS auth.", expected = "TLS clusters and users are ready."),
+            @Step(value = "Deploy topic and TLS users.", expected = "Topic and users with TLS auth exist."),
+            @Step(value = "Produce/consume messages over TLS on the source.", expected = "TLS client operations succeed."),
+            @Step(value = "Deploy MM2 with TLS+mTLS configs and trusted certs.", expected = "MM2 connects using mTLS."),
+            @Step(value = "Consume from mirrored topic on the target cluster.", expected = "Mirrored messages are readable via TLS."),
+            @Step(value = "Verify mirrored topic's partition count.", expected = "Partition counts match.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     void testMirrorMaker2TlsAndTlsClientAuth() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -327,6 +374,19 @@ class MirrorMaker2ST extends AbstractST {
      */
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Checks message mirroring over TLS with SCRAM-SHA-512 authentication."),
+        steps = {
+            @Step(value = "Deploy source and target Kafka clusters with TLS listeners and SCRAM-SHA-512 auth.", expected = "Clusters and SCRAM users ready."),
+            @Step(value = "Produce/consume messages over TLS+SCRAM on the source.", expected = "SCRAM-SHA-512 client ops succeed."),
+            @Step(value = "Deploy MM2 with SCRAM-SHA-512 credentials and trusted certs.", expected = "MM2 connects using SCRAM-SHA-512."),
+            @Step(value = "Consume from mirrored topic on the target cluster.", expected = "Mirrored messages are readable via SCRAM-SHA-512."),
+            @Step(value = "Verify mirrored topic's partition count.", expected = "Partition counts match.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     void testMirrorMaker2TlsAndScramSha512Auth() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int partitionCount = 3;
@@ -450,6 +510,19 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
+    @TestDoc(
+        description = @Desc("Verifies scaling MM2 up and down (including scale-to-zero)."),
+        steps = {
+            @Step(value = "Deploy source and target Kafka clusters.", expected = "Clusters are ready."),
+            @Step(value = "Deploy MM2 with initial replica count.", expected = "MM2 starts successfully."),
+            @Step(value = "Scale MM2 up and verify observedGeneration and pod names.", expected = "Pods increase and new pods are named correctly."),
+            @Step(value = "Scale MM2 down to zero and verify pod removal.", expected = "All MM2 pods are removed, observedGeneration increases, status is Ready."),
+            @Step(value = "Wait until MM2 status URL is null.", expected = "Status reflects shutdown.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     void testScaleMirrorMaker2UpAndDownToZero() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -518,6 +591,17 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Checks that Kafka headers are correctly mirrored by MM2."),
+        steps = {
+            @Step(value = "Deploy clusters, topic, and MM2.", expected = "Prerequisites are ready."),
+            @Step(value = "Produce messages with headers on source.", expected = "Headers are sent to Kafka."),
+            @Step(value = "Consume from mirrored topic on target.", expected = "Headers are present in consumer log.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     void testMirrorMaker2CorrectlyMirrorsHeaders() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -570,6 +654,18 @@ class MirrorMaker2ST extends AbstractST {
      * This test is using the Kafka Identity Replication policy. This is what should be used by all new users.
      */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Checks MM2 with IdentityReplicationPolicy, preserving topic names between clusters."),
+        steps = {
+            @Step(value = "Deploy source and target clusters and a scraper pod.", expected = "Test infra is ready."),
+            @Step(value = "Deploy MM2 with IdentityReplicationPolicy.", expected = "MM2 uses identity policy."),
+            @Step(value = "Produce and consume messages in source.", expected = "Source cluster works."),
+            @Step(value = "Consume mirrored messages in target.", expected = "Target cluster sees unmodified topic names.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     void testIdentityReplicationPolicy() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -614,6 +710,18 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Tests offset checkpoint/restore in consumer groups with MM2 active-active mode."),
+        steps = {
+            @Step(value = "Deploy clusters and MM2 in active-active setup.", expected = "Active-active MM2 is ready."),
+            @Step(value = "Send and consume messages across both clusters.", expected = "Clients work on both sides."),
+            @Step(value = "Produce new messages, read part from each cluster.", expected = "Offsets diverge and sync is tested."),
+            @Step(value = "Validate offset checkpoints prevent duplicate consumption.", expected = "Consumer jobs timeout as expected on empty offsets.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     void testRestoreOffsetsInConsumerGroup() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -762,6 +870,18 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Checks MM2 connector state transitions and offset management, including error handling."),
+        steps = {
+            @Step(value = "Deploy clusters and MM2 with wrong config to force connector failure.", expected = "MM2 shows NotReady with error."),
+            @Step(value = "Fix config, MM2 becomes Ready.", expected = "Connectors start working after fix."),
+            @Step(value = "Pause/resume connector and verify state transitions.", expected = "Connector state and message mirroring respond as expected."),
+            @Step(value = "Verify offsets using scraper and config maps.", expected = "Offset values are correct in external store.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     void testKafkaMirrorMaker2ConnectorsStateAndOffsetManagement() throws JsonProcessingException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -878,6 +998,18 @@ class MirrorMaker2ST extends AbstractST {
      * while user Scram passwords, CA cluster and clients certificates are changed.
      */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Validates rolling update of MM2 after changing SCRAM-SHA user secrets and certificates."),
+        steps = {
+            @Step(value = "Deploy clusters and users with SCRAM-SHA.", expected = "SCRAM users and clusters are ready."),
+            @Step(value = "Deploy MM2 with SCRAM and CA credentials.", expected = "MM2 mirrors messages."),
+            @Step(value = "Update source and target user passwords, verify MM2 pod roll.", expected = "MM2 is rolled after secret update."),
+            @Step(value = "Produce and consume after rolling update.", expected = "Mirroring continues to work after secrets change.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -1015,6 +1147,18 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
+    @TestDoc(
+        description = @Desc("Validates rolling update of MM2 after changing TLS user secrets and cluster certificates."),
+        steps = {
+            @Step(value = "Deploy clusters and users with TLS.", expected = "TLS users and clusters are ready."),
+            @Step(value = "Deploy MM2 with TLS credentials and trusted certs.", expected = "MM2 mirrors messages."),
+            @Step(value = "Renew client and cluster CA secrets, verify MM2 and Kafka pods roll.", expected = "Pods are rolled after CA update."),
+            @Step(value = "Produce and consume after rolling update.", expected = "Mirroring continues to work after secret/cert change.")
+        },
+        labels = {
+            @Label(TestDocsLabels.MIRROR_MAKER_2),
+        }
+    )
     void testKMM2RollAfterSecretsCertsUpdateTLS() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
