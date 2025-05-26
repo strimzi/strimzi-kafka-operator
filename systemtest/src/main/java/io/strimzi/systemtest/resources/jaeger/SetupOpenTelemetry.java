@@ -108,8 +108,8 @@ public class SetupOpenTelemetry {
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT, 1);
-        // Workaround cert-manager readiness unstability by adding sleep for 60 seconds
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(60));
+        // Workaround cert-manager readiness unstability by adding sleep for 120 seconds
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(120));
         LOGGER.info("Cert-manager {}/{} is ready", CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT);
     }
 
