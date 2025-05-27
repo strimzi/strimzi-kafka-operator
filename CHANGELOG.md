@@ -4,6 +4,7 @@
 
 * Add support for Kafka 3.9.1
 * Fixed MirrorMaker 2 client rack init container override being ignored.
+* Dependency updates (Vert.x 5.0.0, Netty 4.2.1.Final)
 
 ## 0.46.0
 
