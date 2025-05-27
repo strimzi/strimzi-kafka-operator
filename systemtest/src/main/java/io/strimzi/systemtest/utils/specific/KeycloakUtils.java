@@ -185,7 +185,6 @@ public class KeycloakUtils {
      */
     public static void updatePolicyOfRealmClient(String namespaceName, String baseURI, String token, JsonObject policy, String desiredRealm, String clientId) {
         final String testSuiteScraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, TestConstants.SCRAPER_NAME).get(0).getMetadata().getName();
-        final String testSuiteScraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, TestConstants.SCRAPER_NAME).get(0).getMetadata().getName();
 
         executeRequestAndReturnData(
             namespaceName,
@@ -214,7 +213,6 @@ public class KeycloakUtils {
      */
     public static String importRealm(String namespaceName, String baseURI, String token, String realmData) {
         final String testSuiteScraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, TestConstants.SCRAPER_NAME).get(0).getMetadata().getName();
-        final String testSuiteScraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, TestConstants.SCRAPER_NAME).get(0).getMetadata().getName();
 
         return executeRequestAndReturnData(
             namespaceName,

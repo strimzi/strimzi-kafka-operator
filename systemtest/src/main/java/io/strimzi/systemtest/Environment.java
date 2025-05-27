@@ -179,7 +179,7 @@ public class Environment {
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
     private static final String PERFORMANCE_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/performance/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
-    public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = TestConstants.ALWAYS_IMAGE_PULL_POLICY;
+    public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = TestConstants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = TestConstants.ALWAYS_IMAGE_PULL_POLICY;
     public static final String OLM_OPERATOR_NAME_DEFAULT = "strimzi-kafka-operator";
     public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = TestConstants.STRIMZI_DEPLOYMENT_NAME;

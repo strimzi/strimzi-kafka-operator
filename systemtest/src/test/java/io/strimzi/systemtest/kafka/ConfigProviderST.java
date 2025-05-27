@@ -17,7 +17,6 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;

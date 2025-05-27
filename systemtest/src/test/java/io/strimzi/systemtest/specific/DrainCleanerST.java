@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)
 @MicroShiftNotSupported

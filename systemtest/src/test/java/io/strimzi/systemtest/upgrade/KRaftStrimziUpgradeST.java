@@ -4,12 +4,12 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
