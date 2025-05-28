@@ -124,6 +124,7 @@ public interface TestConstants {
      */
     String APP_POD_LABEL = "app";
     String APP_KUBERNETES_INSTANCE_LABEL = "app.kubernetes.io/instance";
+    String APP_KUBERNETES_NAME_LABEL = "app.kubernetes.io/name";
     String APP_CONTROLLER_LABEL = "controlled-by";
 
     /**

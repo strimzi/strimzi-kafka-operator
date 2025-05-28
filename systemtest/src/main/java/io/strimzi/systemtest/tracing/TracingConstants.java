@@ -18,10 +18,9 @@ public interface TracingConstants {
     String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
 
     String JAEGER_INSTANCE_NAME = "my-jaeger";
-    String JAEGER_OPERATOR_DEPLOYMENT_NAME = "jaeger-operator";
     String JAEGER_NAMESPACE = "jaeger";
-    String JAEGER_QUERY_SERVICE = JAEGER_INSTANCE_NAME + "-query";
     String JAEGER_COLLECTOR_NAME = JAEGER_INSTANCE_NAME + "-collector";
+    String JAEGER_QUERY_SERVICE = JAEGER_COLLECTOR_NAME;
     String JAEGER_COLLECTOR_OTLP_URL = "http://" + JAEGER_COLLECTOR_NAME + ":4317";
 
     String CERT_MANAGER_WEBHOOK_DEPLOYMENT = "cert-manager-webhook";
@@ -32,4 +31,6 @@ public interface TracingConstants {
     String OTEL_SERVICE_ENV = "OTEL_SERVICE_NAME";
 
     String OPEN_TELEMETRY = "OpenTelemetry";
+    String OPEN_TELEMETRY_OPERATOR_NAME = "opentelemetry-operator";
+    String OPEN_TELEMETRY_OPERATOR_DEPLOYMENT_NAME = OPEN_TELEMETRY_OPERATOR_NAME + "-controller-manager";
 }

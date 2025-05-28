@@ -12,6 +12,7 @@ import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.tracing.TracingConstants;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
@@ -29,22 +30,23 @@ import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_CA_INJ
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_NAMESPACE;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_WEBHOOK_DEPLOYMENT;
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_NAME;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_INSTANCE_NAME;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_NAMESPACE;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_OPERATOR_DEPLOYMENT_NAME;
+import static io.strimzi.systemtest.tracing.TracingConstants.OPEN_TELEMETRY_OPERATOR_DEPLOYMENT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 /**
- * Class containing methods for deployment and deletion of Jaeger operator, Cert Manager, and Jaeger instance.
+ * Class containing methods for deployment and deletion of OpenTelemetry operator, Cert Manager, and Jaeger instance.
  * Jaeger instances are created for each parallel namespace specified by `namespaceName` parameter.
  */
-public class SetupJaeger {
+public class SetupOpenTelemetry {
 
-    private static final Logger LOGGER = LogManager.getLogger(SetupJaeger.class);
+    private static final Logger LOGGER = LogManager.getLogger(SetupOpenTelemetry.class);
 
     private static final String CERT_MANAGER_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/cert-manager.yaml";
     private static final String JAEGER_INSTANCE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
-    private static final String JAEGER_OPERATOR_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-operator.yaml";
+    private static final String OPEN_TELEMETRY_OPERATOR_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/open-telemetry-operator.yaml";
     private static final String CERT_MANAGER = "cert-manager";
     private static final String JAEGER = "jaeger";
 
@@ -56,17 +58,17 @@ public class SetupJaeger {
     }
 
     /**
-     * Encapsulates two methods for deploying Cert Manager and Jaeger operator
+     * Encapsulates two methods for deploying Cert Manager and OpenTelemetry operator
      */
-    public static void deployJaegerOperatorAndCertManager() {
+    public static void deployOpenTelemetryOperatorAndCertManager() {
         deployAndWaitForCertManager();
         allowNetworkPolicySettingsForCertManagerWebhook();
-        deployJaegerOperator();
-        allowNetworkPolicySettingsForJaegerOperator();
+        deployOpenTelemetryOperator();
+        allowNetworkPolicySettingsForOpenTelemetryOperator();
     }
 
-    public static void allowNetworkPolicySettingsForJaegerOperator() {
-        NetworkPolicyResource.allowNetworkPolicySettingsForWebhook(JAEGER_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, Map.of("name", JAEGER_OPERATOR_DEPLOYMENT_NAME));
+    public static void allowNetworkPolicySettingsForOpenTelemetryOperator() {
+        NetworkPolicyResource.allowNetworkPolicySettingsForWebhook(JAEGER_NAMESPACE, OPEN_TELEMETRY_OPERATOR_DEPLOYMENT_NAME, Map.of("app.kubernetes.io/name", TracingConstants.OPEN_TELEMETRY_OPERATOR_NAME));
     }
 
     public static void allowNetworkPolicySettingsForCertManagerWebhook() {
@@ -94,7 +96,7 @@ public class SetupJaeger {
         // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick
         cmdKubeClient("").apply(CERT_MANAGER_PATH);
 
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(SetupJaeger::deleteCertManager));
+        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(SetupOpenTelemetry::deleteCertManager));
     }
 
     /**
@@ -115,36 +117,36 @@ public class SetupJaeger {
     }
 
     /**
-     * Applies YAML file of Jaeger operator in a loop.
-     * Loop is needed because of issue with Cert Manager, that can have problem injecting CA for Jaeger operator
+     * Applies YAML file of OpenTelemetry operator in a loop.
+     * Loop is needed because of issue with Cert Manager, that can have problem injecting CA for OpenTelemetry operator
      */
-    private static void deployJaegerContent() {
-        TestUtils.waitFor("Jaeger Operator deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
+    private static void deployOpenTelemetryOperatorContent() {
+        TestUtils.waitFor("OpenTelemetry Operator deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
             try {
-                String jaegerOperator = Files.readString(Paths.get(JAEGER_OPERATOR_PATH)).replace("observability", JAEGER_NAMESPACE);
+                String openTelemetryOperator = Files.readString(Paths.get(OPEN_TELEMETRY_OPERATOR_PATH)).replace("opentelemetry-operator-system", JAEGER_NAMESPACE);
 
-                LOGGER.info("Creating Jaeger Operator (and needed resources) from {}", JAEGER_OPERATOR_PATH);
-                cmdKubeClient(JAEGER_NAMESPACE).applyContent(jaegerOperator);
-                ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteJaeger(jaegerOperator)));
+                LOGGER.info("Creating OpenTelemetry Operator (and needed resources) from {}", OPEN_TELEMETRY_OPERATOR_PATH);
+                cmdKubeClient(JAEGER_NAMESPACE).applyContent(openTelemetryOperator);
+                ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteJaeger(openTelemetryOperator)));
 
                 return true;
             } catch (Exception e) {
-                LOGGER.error("Following exception has been thrown during Jaeger Deployment: {}", e.getMessage());
+                LOGGER.error("Following exception has been thrown during OpenTelemetry Operator Deployment: {}", e.getMessage());
                 return false;
             }
         });
-        DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_NAMESPACE, OPEN_TELEMETRY_OPERATOR_DEPLOYMENT_NAME, 1);
     }
 
     /**
-     * Deploys Jaeger operator and NetworkPolicy needed for its proper function, waits for readiness of NetworkPolicy
+     * Deploys OpenTelemetry operator and NetworkPolicy needed for its proper function, waits for readiness of NetworkPolicy
      */
-    private static void deployJaegerOperator() {
-        LOGGER.info("=== Applying Jaeger Operator install files ===");
+    private static void deployOpenTelemetryOperator() {
+        LOGGER.info("=== Applying Open Telemetry Operator install files ===");
 
         // create namespace `jaeger` and add it to stack, to collect logs from it
         NamespaceManager.getInstance().createNamespaceAndPrepare(JAEGER_NAMESPACE, CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName()));
-        deployJaegerContent();
+        deployOpenTelemetryOperatorContent();
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
@@ -165,21 +167,21 @@ public class SetupJaeger {
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResourceWithWait(networkPolicy);
-        LOGGER.info("Network policy for jaeger successfully created");
+        LOGGER.info("Network policy for Jaeger successfully created");
     }
 
     /**
      * Install of Jaeger instance
      */
     public static void deployJaegerInstance(String namespaceName) {
-        LOGGER.info("=== Applying jaeger instance install file ===");
+        LOGGER.info("=== Applying Jaeger instance install file ===");
 
         String instanceYamlContent = ReadWriteUtils.readFile(JAEGER_INSTANCE_PATH);
 
         TestUtils.waitFor("Jaeger Instance deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
             try {
 
-                LOGGER.info("Creating Jaeger Instance from {}", JAEGER_OPERATOR_PATH);
+                LOGGER.info("Creating Jaeger Instance from {}", JAEGER_INSTANCE_PATH);
                 cmdKubeClient(namespaceName).applyContent(instanceYamlContent);
 
                 return true;
@@ -191,9 +193,9 @@ public class SetupJaeger {
                 ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
             }
         });
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_INSTANCE_NAME, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_COLLECTOR_NAME, 1);
 
-        NetworkPolicyResource.allowNetworkPolicyBetweenScraperPodAndMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-allow", Map.of(TestConstants.APP_POD_LABEL, JAEGER));
-        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-traces-allow", Map.of(TestConstants.APP_POD_LABEL, JAEGER));
+        NetworkPolicyResource.allowNetworkPolicyBetweenScraperPodAndMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-allow", Map.of(TestConstants.APP_KUBERNETES_NAME_LABEL, JAEGER_COLLECTOR_NAME));
+        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-traces-allow", Map.of(TestConstants.APP_KUBERNETES_NAME_LABEL, JAEGER_COLLECTOR_NAME));
     }
 }
