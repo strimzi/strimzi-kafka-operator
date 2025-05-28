@@ -14,7 +14,7 @@ But these are some of the tasks you usually have to do.
 * If the version you are adding is the latest
   * Update the Kafka versions and protocol versions in the documentation `attributes.adoc`
   * If needed, update the examples (only in the `packaging/examples` directory):
-    * The `version` and the `inter.broker.protocol.version` fields
+    * The `version` field
     * The Docker image tag in the Kafka connect Build example
   * Update the main `pom.xml` to use the latest Kafka version in the operator
   * Update `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` with the new version
