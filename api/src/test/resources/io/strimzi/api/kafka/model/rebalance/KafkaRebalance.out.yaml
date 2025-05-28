@@ -13,3 +13,4 @@ spec:
   concurrentIntraBrokerPartitionMovements: 0
   concurrentLeaderMovements: 0
   replicationThrottle: 0
+  logDirThrottle: 0

@@ -132,6 +132,7 @@ public class PathBuilder {
             addIfNotZero(builder, CruiseControlParameters.CONCURRENT_PARTITION_MOVEMENTS, options.getConcurrentPartitionMovementsPerBroker());
             addIfNotZero(builder, CruiseControlParameters.CONCURRENT_LEADER_MOVEMENTS, options.getConcurrentLeaderMovements());
             addIfNotZero(builder, CruiseControlParameters.REPLICATION_THROTTLE, options.getReplicationThrottle());
+            addIfNotZero(builder, CruiseControlParameters.LOG_DIR_THROTTLE, options.getLogDirThrottle());
 
             if (options.getGoals() != null) {
                 builder.withParameter(CruiseControlParameters.GOALS, options.getGoals());
