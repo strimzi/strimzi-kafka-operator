@@ -2684,12 +2684,6 @@ public class ListenersST extends AbstractST {
         }
     }
 
-    @ParallelNamespaceTest
-    void test() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-    }
-
     @AfterEach
     void afterEach() {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, ResourceManager.getTestContext());
