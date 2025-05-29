@@ -708,7 +708,7 @@ class MirrorMaker2ST extends AbstractST {
         description = @Desc("Tests offset checkpoint/restore in consumer groups with MM2 active-active mode."),
         steps = {
             @Step(value = "Deploy Kafka clusters and MM2 in active-active setup.", expected = "Active-active MM2 is ready."),
-            @Step(value = "Produce and consume messages across both Kafka clusters.", expected = "Messages were producer and consumed without issues."),
+            @Step(value = "Produce and consume messages across both Kafka clusters.", expected = "Messages were produced and consumed without issues."),
             @Step(value = "Produce new messages, then consume a portion from the source cluster and a portion from the target cluster.", expected = "Offsets diverge between Kafka clusters and synchronization is tested."),
             @Step(value = "Validate offset checkpoints prevent duplicate consumption.", expected = "Consumer jobs timeout as expected on empty offsets.")
         },
