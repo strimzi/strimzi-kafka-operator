@@ -166,7 +166,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy Kafka clusters and MM2 in active-active setup. | Active-active MM2 is ready. |
-| 2. | Produce and consume messages across both Kafka clusters. | Messages were producer and consumed without issues. |
+| 2. | Produce and consume messages across both Kafka clusters. | Messages were produced and consumed without issues. |
 | 3. | Produce new messages, then consume a portion from the source cluster and a portion from the target cluster. | Offsets diverge between Kafka clusters and synchronization is tested. |
 | 4. | Validate offset checkpoints prevent duplicate consumption. | Consumer jobs timeout as expected on empty offsets. |
 
