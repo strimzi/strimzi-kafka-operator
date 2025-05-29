@@ -188,11 +188,11 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                     .withNamespace(namespaceName)
                 .endMetadata()
                 .editSpec()
-                    // keeping ingress empty to allow all connections to the Keycloak Pod
                     .addNewIngress()
-                        .addNewFrom()
-                            .withNamespaceSelector(new LabelSelector())
-                        .endFrom()
+                    // We can keep this empty as we would like to open the ingress for everything including kube-api server
+                    // In some envs like Kind where CNI=cilium kube-api-server cannot be match by namespace or pod label selector
+                    // and instead of adding node IP cidr to allow list we can open full access to webhooks of external services we use
+                    // to make our lives easier
                     .endIngress()
                     .withNewPodSelector()
                         .addToMatchLabels(matchLabels)

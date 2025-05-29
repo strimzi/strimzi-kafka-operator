@@ -19,7 +19,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeTracingClientsBu
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.jaeger.SetupJaeger;
+import io.strimzi.systemtest.resources.jaeger.SetupOpenTelemetry;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -370,7 +370,7 @@ public class OpenTelemetryST extends AbstractST {
     private TestStorage deployInitialResourcesAndGetTestStorage() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        SetupJaeger.deployJaegerInstance(testStorage.getNamespaceName());
+        SetupOpenTelemetry.deployJaegerInstance(testStorage.getNamespaceName());
 
         resourceManager.createResourceWithWait(ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
         testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY, kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
@@ -407,6 +407,6 @@ public class OpenTelemetryST extends AbstractST {
             .runInstallation();
 
         ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
-        SetupJaeger.deployJaegerOperatorAndCertManager();
+        SetupOpenTelemetry.deployOpenTelemetryOperatorAndCertManager();
     }
 }

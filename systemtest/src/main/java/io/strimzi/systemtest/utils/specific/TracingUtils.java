@@ -18,8 +18,8 @@ public class TracingUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(TracingUtils.class);
 
-    private static final String JAEGER_QUERY_SERVICE_ENDPOINT = "/jaeger/api/services";
-    private static final String JAEGER_QUERY_SERVICE_TRACES_ENDPOINT = "/jaeger/api/traces";
+    private static final String JAEGER_QUERY_SERVICE_ENDPOINT = "/api/services";
+    private static final String JAEGER_QUERY_SERVICE_TRACES_ENDPOINT = "/api/traces";
     private static final String JAEGER_QUERY_SERVICE_PARAM_SERVICE = "?service=";
     private static final String JAEGER_QUERY_SERVICE_PARAM_OPERATION = "&operation=";
     private static final int JAEGER_QUERY_PORT = 16686;
@@ -38,6 +38,8 @@ public class TracingUtils {
     private static void verifyThatServiceIsPresent(String namespaceName, String componentJaegerServiceName, String clientPodName, String jaegerServiceName) {
         TestUtils.waitFor("Jaeger Service: " + componentJaegerServiceName + " to be present", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
             JsonObject jaegerServices = new JsonObject(cmdKubeClient(namespaceName).execInPod(clientPodName, "/bin/bash", "-c", "curl " + jaegerServiceName + ":" + JAEGER_QUERY_PORT + JAEGER_QUERY_SERVICE_ENDPOINT).out());
+
+            LOGGER.debug("Collected services: {}", jaegerServices);
 
             if (jaegerServices.getJsonArray("data").contains(componentJaegerServiceName)) {
                 LOGGER.info("Jaeger Service: {}/{} is present", namespaceName, componentJaegerServiceName);
@@ -60,6 +62,9 @@ public class TracingUtils {
 
             JsonObject jaegerServicesTraces = new JsonObject(cmdKubeClient(namespaceName).execInPod(clientPodName,
                 "/bin/bash", "-c", "curl " + query).out());
+
+            LOGGER.debug("Collected traces: {}", jaegerServicesTraces);
+
             JsonArray traces = jaegerServicesTraces.getJsonArray("data");
 
             if (!(jaegerServicesTraces.getJsonArray("data").size() > 0)) {

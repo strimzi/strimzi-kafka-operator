@@ -1,31 +1,35 @@
-apiVersion: jaegertracing.io/v1
-kind: Jaeger
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
 metadata:
   name: my-jaeger
 spec:
-  strategy: allInOne
-  allInOne:
-    image: 'quay.io/jaegertracing/all-in-one:1.65.0'
-    options:
-      log-level: debug
-      query:
-        base-path: /jaeger
-  ingress:
-    openshift: {}
-    resources: {}
-    security: none
-  ui:
-    options:
-      dependencies:
-        menuEnabled: false
-      tracking:
-        gaID: UA-000000-2
-      menu:
-        - label: About Jaeger
-          items:
-            - label: Documentation
-              url: 'https://www.jaegertracing.io/docs/latest'
-  storage:
-    options:
-      memory:
-        max-traces: 100000
+  image: quay.io/jaegertracing/jaeger:2.6.0
+  ports:
+    - name: jaeger
+      port: 16686
+  config:
+    service:
+      extensions: [jaeger_storage, jaeger_query]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [jaeger_storage_exporter]
+    extensions:
+      jaeger_query:
+        storage:
+          traces: memstore
+      jaeger_storage:
+        backends:
+          memstore:
+            memory:
+              max_traces: 100000
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    exporters:
+      jaeger_storage_exporter:
+        trace_storage: memstore
