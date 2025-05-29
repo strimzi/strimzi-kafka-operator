@@ -1,6 +1,6 @@
 # MirrorMaker2ST
 
-**Description:** Tests message mirroring, TLS/SCRAM/mTLS security, offset and header replication, scaling, rolling updates (secrets/certs), and connector state management.
+**Description:** Tests MirrorMaker2 cross-cluster replication with various security (TLS, SCRAM), header and offset synchronisation, scaling and rolling update handling, and connector error state transitions.
 
 **Labels:**
 
@@ -10,16 +10,16 @@
 
 ## testIdentityReplicationPolicy
 
-**Description:** Checks MM2 with IdentityReplicationPolicy, preserving topic names between clusters.
+**Description:** Checks MM2 with IdentityReplicationPolicy, preserving topic names between Kafka clusters.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy source and target clusters and a scraper pod. | Test infra is ready. |
+| 1. | Deploy source and target Kafka clusters and a scraper pod. | Kafka clusters and scraper pod are ready. |
 | 2. | Deploy MM2 with IdentityReplicationPolicy. | MM2 uses identity policy. |
-| 3. | Produce and consume messages in source. | Source cluster works. |
-| 4. | Consume mirrored messages in target. | Target cluster sees unmodified topic names. |
+| 3. | Produce and consume messages to/from the source Kafka cluster. | Messages are successfully produced and consumed in the source Kafka cluster. |
+| 4. | Consume messages from the mirrored topic on the target Kafka cluster. | Mirrored topic has the same (unmodified) name as the source topic, and messages are consumed successfully. |
 
 **Labels:**
 
@@ -34,8 +34,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy clusters and MM2 with wrong config to force connector failure. | MM2 shows NotReady with error. |
-| 2. | Fix config, MM2 becomes Ready. | Connectors start working after fix. |
+| 1. | Deploy Kafka clusters and MM2 with wrong config to force connector failure. | MM2 shows NotReady with error. |
+| 2. | Correct the MM2 configuration (fix bootstrap server address) to resolve connector failure. MM2 becomes Ready. | Connectors transition from FAILED to RUNNING state after the configuration fix. |
 | 3. | Pause/resume connector and verify state transitions. | Connector state and message mirroring respond as expected. |
 | 4. | Verify offsets using scraper and config maps. | Offset values are correct in external store. |
 
@@ -52,9 +52,9 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy clusters and users with SCRAM-SHA. | SCRAM users and clusters are ready. |
-| 2. | Deploy MM2 with SCRAM and CA credentials. | MM2 mirrors messages. |
-| 3. | Update source and target user passwords, verify MM2 pod roll. | MM2 is rolled after secret update. |
+| 1. | Deploy Kafka clusters and users with SCRAM-SHA. | SCRAM-SHA users and Kafka clusters are ready. |
+| 2. | Deploy MM2 with SCRAM-SHA and CA credentials. | MM2 mirrors messages. |
+| 3. | Update source and target user passwords, verify MM2 pod rolling update. | MM2 is rolled after secret update. |
 | 4. | Produce and consume after rolling update. | Mirroring continues to work after secrets change. |
 
 **Labels:**
@@ -70,7 +70,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy clusters and users with TLS. | TLS users and clusters are ready. |
+| 1. | Deploy Kafka clusters and users with TLS. | TLS users and Kafka clusters are ready. |
 | 2. | Deploy MM2 with TLS credentials and trusted certs. | MM2 mirrors messages. |
 | 3. | Renew client and cluster CA secrets, verify MM2 and Kafka pods roll. | Pods are rolled after CA update. |
 | 4. | Produce and consume after rolling update. | Mirroring continues to work after secret/cert change. |
@@ -90,9 +90,9 @@
 | - | - | - |
 | 1. | Deploy source and target Kafka clusters with default settings. | Kafka clusters are ready. |
 | 2. | Deploy MirrorMaker 2 and a source topic. | MirrorMaker 2 is deployed and initial topic exists. |
-| 3. | Produce and consume messages on the source cluster. | Clients successfully send and receive messages. |
+| 3. | Produce and consume messages on the source cluster. | Clients successfully produce and consume messages. |
 | 4. | Check MirrorMaker2 config map, pod labels, and other metadata. | Configuration and labels match expectations. |
-| 5. | Verify messages are mirrored to the target cluster. | Target cluster consumer receives mirrored messages. |
+| 5. | Verify messages are mirrored to the target cluster. | Target cluster consumer consumes mirrored messages. |
 | 6. | Trigger a manual rolling update of MM2 via annotation. | MM2 pods roll and state is preserved. |
 | 7. | Verify partition count propagation by updating topic. | Partition update is reflected on the mirrored topic. |
 
@@ -109,9 +109,9 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy clusters, topic, and MM2. | Prerequisites are ready. |
-| 2. | Produce messages with headers on source. | Headers are sent to Kafka. |
-| 3. | Consume from mirrored topic on target. | Headers are present in consumer log. |
+| 1. | Deploy Kafka clusters, topic, and MM2. | Kafka clusters, topic and MM2 are ready. |
+| 2. | Produce messages with specific headers to the source Kafka cluster. | Messages with headers are produced to source Kafka cluster. |
+| 3. | Consume from mirrored topic on target Kafka cluster. | Headers are present in consumer log. |
 
 **Labels:**
 
@@ -126,11 +126,11 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy source and target Kafka clusters with TLS listeners and SCRAM-SHA-512 auth. | Clusters and SCRAM users ready. |
-| 2. | Produce/consume messages over TLS+SCRAM on the source. | SCRAM-SHA-512 client ops succeed. |
-| 3. | Deploy MM2 with SCRAM-SHA-512 credentials and trusted certs. | MM2 connects using SCRAM-SHA-512. |
-| 4. | Consume from mirrored topic on the target cluster. | Mirrored messages are readable via SCRAM-SHA-512. |
-| 5. | Verify mirrored topic's partition count. | Partition counts match. |
+| 1. | Deploy source and target Kafka clusters with TLS listeners and SCRAM-SHA-512 auth. | Kafka clusters and SCRAM users ready. |
+| 2. | Produce/consume messages over TLS+SCRAM to the source Kafka cluster. | Producer and consumer clients successfully operate using SCRAM-SHA-512 authentication over TLS. |
+| 3. | Deploy MM2 with SCRAM-SHA-512 credentials and trusted certs. | MM2 is running and ready with SCRAM-SHA-512 connections |
+| 4. | Consume from mirrored topic on the target cluster. | Mirrored messages are successfully consumed using SCRAM-SHA-512 authentication. |
+| 5. | Check the partition count of the mirrored topic in the target cluster. | Partition count matches the source topic’s partition count. |
 
 **Labels:**
 
@@ -145,12 +145,12 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy source and target Kafka clusters with TLS listeners and mTLS auth. | TLS clusters and users are ready. |
+| 1. | Deploy source and target Kafka clusters with TLS listeners and mTLS auth. | Kafka clusters and users are deployed with TLS/mTLS. |
 | 2. | Deploy topic and TLS users. | Topic and users with TLS auth exist. |
 | 3. | Produce/consume messages over TLS on the source. | TLS client operations succeed. |
-| 4. | Deploy MM2 with TLS+mTLS configs and trusted certs. | MM2 connects using mTLS. |
-| 5. | Consume from mirrored topic on the target cluster. | Mirrored messages are readable via TLS. |
-| 6. | Verify mirrored topic's partition count. | Partition counts match. |
+| 4. | Deploy MM2 with TLS+mTLS configs and trusted certs. | MM2 is running and ready with mTLS connections. |
+| 5. | Consume from mirrored topic on the target cluster. | Mirrored messages are successfully consumed using TLS. |
+| 6. | Check the partition count of the mirrored topic in the target cluster. | Partition count matches the source topic’s partition count. |
 
 **Labels:**
 
@@ -165,9 +165,9 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy clusters and MM2 in active-active setup. | Active-active MM2 is ready. |
-| 2. | Send and consume messages across both clusters. | Clients work on both sides. |
-| 3. | Produce new messages, read part from each cluster. | Offsets diverge and sync is tested. |
+| 1. | Deploy Kafka clusters and MM2 in active-active setup. | Active-active MM2 is ready. |
+| 2. | Produce and consume messages across both Kafka clusters. | Messages were producer and consumed without issues. |
+| 3. | Produce new messages, then consume a portion from the source cluster and a portion from the target cluster. | Offsets diverge between Kafka clusters and synchronization is tested. |
 | 4. | Validate offset checkpoints prevent duplicate consumption. | Consumer jobs timeout as expected on empty offsets. |
 
 **Labels:**
@@ -183,11 +183,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy source and target Kafka clusters. | Clusters are ready. |
+| 1. | Deploy source and target Kafka clusters. | Kafka clusters are ready. |
 | 2. | Deploy MM2 with initial replica count. | MM2 starts successfully. |
 | 3. | Scale MM2 up and verify observedGeneration and pod names. | Pods increase and new pods are named correctly. |
-| 4. | Scale MM2 down to zero and verify pod removal. | All MM2 pods are removed, observedGeneration increases, status is Ready. |
-| 5. | Wait until MM2 status URL is null. | Status reflects shutdown. |
+| 4. | Scale MM2 down to zero replicas and wait until MM2 status URL is null. | All MM2 pods are removed (replicas=0), and status reflects shutdown (URL is null). |
 
 **Labels:**
 
