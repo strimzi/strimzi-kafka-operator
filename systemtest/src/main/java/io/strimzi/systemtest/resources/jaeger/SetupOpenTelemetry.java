@@ -11,6 +11,7 @@ import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.tracing.TracingConstants;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.test.ReadWriteUtils;
