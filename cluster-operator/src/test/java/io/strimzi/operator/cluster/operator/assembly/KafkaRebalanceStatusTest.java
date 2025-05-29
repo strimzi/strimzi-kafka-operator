@@ -144,7 +144,7 @@ public class KafkaRebalanceStatusTest {
 
         KafkaRebalanceAssemblyOperator.MapAndStatus<ConfigMap, Map<String, Object>> output = KafkaRebalanceAssemblyOperator.processOptimizationProposal(kr, proposal);
 
-        Map<String, String> brokerMap = output.getLoadMap().getData();
+        Map<String, String> brokerMap = output.getRebalanceConfigMap().getData();
 
         try {
 
