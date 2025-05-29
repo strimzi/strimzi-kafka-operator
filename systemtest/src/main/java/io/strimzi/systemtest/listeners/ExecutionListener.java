@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.engine.TestTag;
+import org.junit.platform.engine.UniqueId;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
@@ -58,7 +59,7 @@ public class ExecutionListener implements TestExecutionListener {
      * @return                  true if test suite contains Parallel or Isolated test case. Otherwise, false.
      */
     public static boolean requiresSharedNamespace(final ExtensionContext extensionContext) {
-        Set<TestIdentifier> testCases = testPlan.getChildren(extensionContext.getUniqueId());
+        Set<TestIdentifier> testCases = testPlan.getChildren(UniqueId.parse(extensionContext.getUniqueId()));
 
         // name of suites or tags which indicates need of creation of shared namespace test-suite-namespace
         final Set<String> identifiersRequiringSharedNamespace = Set.of(

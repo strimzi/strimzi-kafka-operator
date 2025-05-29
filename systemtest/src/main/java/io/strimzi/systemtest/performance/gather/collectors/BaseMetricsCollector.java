@@ -126,7 +126,7 @@ public class BaseMetricsCollector extends MetricsCollector {
      * @return              A list of {@link Double} values collected based on the specified metric name and selector.
      */
     protected List<Double> collectMetricValues(String metricName, String selector) {
-        Pattern pattern = Pattern.compile(metricName + "\\{kind=\"" + KafkaTopic.RESOURCE_KIND + "\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\",.*\\}\\s(\\d+\\.?\\d*)");
+        Pattern pattern = Pattern.compile(metricName + "\\{kind=\"" + KafkaTopic.RESOURCE_KIND + "\",namespace=\"" + this.getNamespaceName() + "\",selector=\"" + selector + "\".*\\}\\s(\\d+\\.?\\d*)");
         return collectSpecificMetric(pattern);
     }
 
