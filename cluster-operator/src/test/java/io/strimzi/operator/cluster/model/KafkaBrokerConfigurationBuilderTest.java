@@ -569,8 +569,9 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testUserConfigurationWithConfigProviders()  {
         Map<String, Object> userConfiguration = new HashMap<>();
-        userConfiguration.put("config.providers", "env");
+        userConfiguration.put("config.providers", "env,strimzienv");
         userConfiguration.put("config.providers.env.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        userConfiguration.put("config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.UserConfigProvider");
 
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
