@@ -1307,22 +1307,22 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |Name to use for the volume. Required.
 |secret
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretvolumesource-v1-core[SecretVolumeSource]
-|Secret to use populate the volume.
+|`Secret` to use populate the volume.
 |configMap
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
-|ConfigMap to use to populate the volume.
+|`ConfigMap` to use to populate the volume.
 |emptyDir
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#emptydirvolumesource-v1-core[EmptyDirVolumeSource]
-|EmptyDir to use to populate the volume.
+|`EmptyDir` to use to populate the volume.
 |persistentVolumeClaim
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#persistentvolumeclaimvolumesource-v1-core[PersistentVolumeClaimVolumeSource]
-|PersistentVolumeClaim object to use to populate the volume.
+|`PersistentVolumeClaim` object to use to populate the volume.
 |csi
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#csivolumesource-v1-core[CSIVolumeSource]
-|CSIVolumeSource object to use to populate the volume.
+|`CSIVolumeSource` object to use to populate the volume.
 |image
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#imagevolumesource-v1-core[ImageVolumeSource]
-|ImageVolumeSource object to use to populate the volume.
+|`ImageVolumeSource` object to use to populate the volume.
 |====
 
 [id='type-InternalServiceTemplate-{context}']
@@ -2548,7 +2548,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |Configures how the Connect container image should be built. Optional.
 |plugins
 |xref:type-MountedPlugin-{context}[`MountedPlugin`] array
-|List of connector plugins which should be mounted to the Kafka Connect.
+|List of connector plugins to mount into the `KafkaConnect` pod.
 |====
 
 [id='type-ClientTls-{context}']
@@ -3219,10 +3219,10 @@ include::../api/io.strimzi.api.kafka.model.connect.MountedPlugin.adoc[leveloffse
 |Property |Property type |Description
 |name
 |string
-|The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be mounted. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
+|A unique name for the connector plugin. This name is used to generate the mount path for the connector artifacts. The name has to be unique within the KafkaConnect resource. The name must be unique within the `KafkaConnect` resource and match the pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
 |artifacts
 |xref:type-ImageArtifact-{context}[`ImageArtifact`] array
-|List of artifacts which belong to this connector plugin. Required.
+|List of artifacts associated with this connector plugin. Required.
 |====
 
 [id='type-ImageArtifact-{context}']
@@ -3241,14 +3241,16 @@ It must have the value `image` for the type `ImageArtifact`.
 |Must be `image`.
 |reference
 |string
-|Image or artifact reference to be used. Required.
+|Reference to the container image (OCI artifact) containing the connector plugin. The image is mounted as a volume and provides the plugin binary. Required.
 |pullPolicy
 |string
-|Policy for pulling OCI objects. Possible values are:
+|Policy that determines when the container image (OCI artifact) is pulled.
 
-* `Always`: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
-* `Never`: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
-* `IfNotPresent`: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+Possible values are:
+
+* `Always`: Always pull the image. If the pull fails, container creation fails.
+* `Never`: Never pull the image. Use only a locally available image. Container creation fails if the image isn’t present.
+* `IfNotPresent`: Pull the image only if it’s not already available locally. Container creation fails if the image isn’t present and the pull fails.
 
 Defaults to `Always` if `:latest` tag is specified, or `IfNotPresent` otherwise.
 |====

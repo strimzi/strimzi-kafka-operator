@@ -8,14 +8,14 @@
 [role="_abstract"]
 Configure Kafka Connect so that connectors are automatically mounted as link:https://kubernetes.io/docs/concepts/storage/volumes/#image[Kubernetes Image Volumes^].
 You define the connector plugins using the `.spec.plugins` property of the `KafkaConnect` custom resource.
-Strimzi will automatically mount them into the Kafka Connect deployment.
+Strimzi automatically mounts them into the Kafka Connect deployment.
 
 IMPORTANT: This feature requires that the Kubernetes Image Volume feature is enabled and supported by your Kubernetes cluster.
 
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
-* Your connector plugins are available in your container registry as container images or OCI artifacts
+* Your connector plugins must be available in your container registry as container images (OCI artifacts).
 
 .Procedure
 
@@ -43,7 +43,7 @@ spec: # <1>
   #...
 ----
 <1> link:{BookURLConfiguring}#type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster^].
-<2> (Required) List of connector plugins and their artifacts to add to mount in the Kafka Connect deployment. Each plugin must be configured with at least one `artifact`.
+<2> (Required) List of connector plugins and their artifacts to mount in the Kafka Connect deployment. Each plugin must be configured with at least one `artifact`.
 
 . Create or update the resource:
 +
@@ -54,7 +54,7 @@ $ kubectl apply -f <kafka_connect_configuration_file>
 
 . Wait for the Kafka Connect cluster to be deployed.
 
-. Use the Kafka Connect REST API or `KafkaConnector` custom resources to use the connector plugins you added.
+. Use the Kafka Connect REST API or `KafkaConnector` custom resources to configure and run connectors based on the plugins you added.
 
 [role="_additional-resources"]
 .Additional resources

@@ -1109,7 +1109,7 @@ spec:
                                     type: boolean
                                   secretName:
                                     type: string
-                                description: Secret to use populate the volume.
+                                description: '`Secret` to use populate the volume.'
                               configMap:
                                 type: object
                                 properties:
@@ -1130,7 +1130,7 @@ spec:
                                     type: string
                                   optional:
                                     type: boolean
-                                description: ConfigMap to use to populate the volume.
+                                description: '`ConfigMap` to use to populate the volume.'
                               emptyDir:
                                 type: object
                                 properties:
@@ -1143,7 +1143,7 @@ spec:
                                         type: string
                                       format:
                                         type: string
-                                description: EmptyDir to use to populate the volume.
+                                description: '`EmptyDir` to use to populate the volume.'
                               persistentVolumeClaim:
                                 type: object
                                 properties:
@@ -1151,7 +1151,7 @@ spec:
                                     type: string
                                   readOnly:
                                     type: boolean
-                                description: PersistentVolumeClaim object to use to populate the volume.
+                                description: '`PersistentVolumeClaim` object to use to populate the volume.'
                               csi:
                                 type: object
                                 properties:
@@ -1170,7 +1170,7 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                description: CSIVolumeSource object to use to populate the volume.
+                                description: '`CSIVolumeSource` object to use to populate the volume.'
                               image:
                                 type: object
                                 properties:
@@ -1178,7 +1178,7 @@ spec:
                                     type: string
                                   reference:
                                     type: string
-                                description: ImageVolumeSource object to use to populate the volume.
+                                description: '`ImageVolumeSource` object to use to populate the volume.'
                             oneOf:
                               - properties:
                                   secret: {}
@@ -2164,7 +2164,7 @@ spec:
                                     type: boolean
                                   secretName:
                                     type: string
-                                description: Secret to use populate the volume.
+                                description: '`Secret` to use populate the volume.'
                               configMap:
                                 type: object
                                 properties:
@@ -2185,7 +2185,7 @@ spec:
                                     type: string
                                   optional:
                                     type: boolean
-                                description: ConfigMap to use to populate the volume.
+                                description: '`ConfigMap` to use to populate the volume.'
                               emptyDir:
                                 type: object
                                 properties:
@@ -2198,7 +2198,7 @@ spec:
                                         type: string
                                       format:
                                         type: string
-                                description: EmptyDir to use to populate the volume.
+                                description: '`EmptyDir` to use to populate the volume.'
                               persistentVolumeClaim:
                                 type: object
                                 properties:
@@ -2206,7 +2206,7 @@ spec:
                                     type: string
                                   readOnly:
                                     type: boolean
-                                description: PersistentVolumeClaim object to use to populate the volume.
+                                description: '`PersistentVolumeClaim` object to use to populate the volume.'
                               csi:
                                 type: object
                                 properties:
@@ -2225,7 +2225,7 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                description: CSIVolumeSource object to use to populate the volume.
+                                description: '`CSIVolumeSource` object to use to populate the volume.'
                               image:
                                 type: object
                                 properties:
@@ -2233,7 +2233,7 @@ spec:
                                     type: string
                                   reference:
                                     type: string
-                                description: ImageVolumeSource object to use to populate the volume.
+                                description: '`ImageVolumeSource` object to use to populate the volume.'
                             oneOf:
                               - properties:
                                   secret: {}
@@ -2679,7 +2679,7 @@ spec:
                       name:
                         type: string
                         pattern: "^[a-z0-9][-_a-z0-9]*[a-z0-9]$"
-                        description: "The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be mounted. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required."
+                        description: "A unique name for the connector plugin. This name is used to generate the mount path for the connector artifacts. The name has to be unique within the KafkaConnect resource. The name must be unique within the `KafkaConnect` resource and match the pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required."
                       artifacts:
                         type: array
                         items:
@@ -2688,16 +2688,18 @@ spec:
                             pullPolicy:
                               type: string
                               description: |-
-                                Policy for pulling OCI objects. Possible values are:
+                                Policy that determines when the container image (OCI artifact) is pulled.
 
-                                * `Always`: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.
-                                * `Never`: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.
-                                * `IfNotPresent`: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.
+                                Possible values are:
+
+                                * `Always`: Always pull the image. If the pull fails, container creation fails.
+                                * `Never`: Never pull the image. Use only a locally available image. Container creation fails if the image isn’t present.
+                                * `IfNotPresent`: Pull the image only if it’s not already available locally. Container creation fails if the image isn’t present and the pull fails.
 
                                 Defaults to `Always` if `:latest` tag is specified, or `IfNotPresent` otherwise.
                             reference:
                               type: string
-                              description: Image or artifact reference to be used. Required.
+                              description: Reference to the container image (OCI artifact) containing the connector plugin. The image is mounted as a volume and provides the plugin binary. Required.
                             type:
                               type: string
                               enum:
@@ -2706,11 +2708,11 @@ spec:
                           required:
                             - reference
                             - type
-                        description: List of artifacts which belong to this connector plugin. Required.
+                        description: List of artifacts associated with this connector plugin. Required.
                     required:
                       - name
                       - artifacts
-                  description: List of connector plugins which should be mounted to the Kafka Connect.
+                  description: List of connector plugins to mount into the `KafkaConnect` pod.
               required:
                 - bootstrapServers
               description: The specification of the Kafka Connect cluster.

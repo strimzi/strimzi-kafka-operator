@@ -94,7 +94,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
         this.build = build;
     }
 
-    @Description("List of connector plugins which should be mounted to the Kafka Connect.")
+    @Description("List of connector plugins to mount into the `KafkaConnect` pod.")
     public List<MountedPlugin> getPlugins() {
         return plugins;
     }

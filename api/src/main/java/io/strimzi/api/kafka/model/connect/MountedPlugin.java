@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Representation a connector plugin within a Kafka Connect (not Kafka Connect Build)
+ * Represents a connector plugin in Kafka Connect (not in Kafka Connect Build)
  */
 @Buildable(
         editableEnabled = false,
@@ -37,10 +37,10 @@ public class MountedPlugin implements UnknownPropertyPreserving {
     private List<MountedArtifact> artifacts;
     private Map<String, Object> additionalProperties;
 
-    @Description("The unique name of the connector plugin. " +
-            "Will be used to generate the path where the connector artifacts will be mounted. " +
+    @Description("A unique name for the connector plugin. " +
+            "This name is used to generate the mount path for the connector artifacts. " +
             "The name has to be unique within the KafkaConnect resource. " +
-            "The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. " +
+            "The name must be unique within the `KafkaConnect` resource and match the pattern: `^[a-z][-_a-z0-9]*[a-z]$`. " +
             "Required")
     @JsonProperty(required = true)
     @Pattern("^[a-z0-9][-_a-z0-9]*[a-z0-9]$")
@@ -52,7 +52,7 @@ public class MountedPlugin implements UnknownPropertyPreserving {
         this.name = name;
     }
 
-    @Description("List of artifacts which belong to this connector plugin. " +
+    @Description("List of artifacts associated with this connector plugin. " +
             "Required.")
     @JsonProperty(required = true)
     public List<MountedArtifact> getArtifacts() {
