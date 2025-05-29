@@ -35,7 +35,8 @@ public class ImageArtifact extends MountedArtifact {
         return TYPE_IMAGE;
     }
 
-    @Description("Image or artifact reference to be used. " +
+    @Description("Reference to the container image (OCI artifact) containing the connector plugin. " +
+            "The image is mounted as a volume and provides the plugin binary. " +
             "Required.")
     @JsonProperty(required = true)
     public String getReference() {
@@ -46,11 +47,11 @@ public class ImageArtifact extends MountedArtifact {
         this.reference = reference;
     }
 
-    @Description("Policy for pulling OCI objects. " +
+    @Description("Policy that determines when the container image (OCI artifact) is pulled.\n\n" +
             "Possible values are:\n\n" +
-            "* `Always`: the kubelet always attempts to pull the reference. Container creation will fail If the pull fails.\n" +
-            "* `Never`: the kubelet never pulls the reference and only uses a local image or artifact. Container creation will fail if the reference isn't present.\n" +
-            "* `IfNotPresent`: the kubelet pulls if the reference isn't already present on disk. Container creation will fail if the reference isn't present and the pull fails.\n\n" +
+            "* `Always`: Always pull the image. If the pull fails, container creation fails.\n" +
+            "* `Never`: Never pull the image. Use only a locally available image. Container creation fails if the image isn’t present.\n" +
+            "* `IfNotPresent`: Pull the image only if it’s not already available locally. Container creation fails if the image isn’t present and the pull fails.\n\n" +
             "Defaults to `Always` if `:latest` tag is specified, or `IfNotPresent` otherwise.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getPullPolicy() {

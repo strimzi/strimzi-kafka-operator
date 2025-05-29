@@ -756,7 +756,7 @@ For more information, see link:{BookURLDeploying}#assembly-loading-config-with-p
 
 You can also use additional volumes to mount custom plugins:
 
-* For the User and Topic Operators, you can use the environment variable `JAVA_CLASSPATH` to modify the Java classpath and have your custom plugin(s) included in it.
-* For the Kafka operands and Cruise Control, you can use the environment variable `CLASSPATH` to modify the Java classpath and have your custom plugin(s) included in it.
-* For adding Kafka Connect connectors, see link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-str[Adding Kafka Connect connectors^].
-* Some other plugins - such as the Tiered Storage plugins - might use their own classpath configuration.
+* To include custom plugins in the User Operator and Topic Operator, set the `JAVA_CLASSPATH` environment variable  to modify the Java classpath.
+* To include custom plugins in the Kafka operands and Cruise Control, set the `CLASSPATH` environment variable to modify the Java classpath.
+* To add Kafka Connect connectors, see link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-str[Adding Kafka Connect connectors^].
+* Some plugins, such as the Tiered Storage plugins, may require their own classpath configuration.

@@ -62,7 +62,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.name = name;
     }
 
-    @Description("Secret to use populate the volume.")
+    @Description("`Secret` to use populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "secretvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public SecretVolumeSource getSecret() {
@@ -73,7 +73,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.secret = secret;
     }
 
-    @Description("ConfigMap to use to populate the volume.")
+    @Description("`ConfigMap` to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "configmapvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ConfigMapVolumeSource getConfigMap() {
@@ -84,7 +84,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.configMap = configMap;
     }
 
-    @Description("EmptyDir to use to populate the volume.")
+    @Description("`EmptyDir` to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "emptydirvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public EmptyDirVolumeSource getEmptyDir() {
@@ -95,7 +95,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.emptyDir = emptyDir;
     }
 
-    @Description("PersistentVolumeClaim object to use to populate the volume.")
+    @Description("`PersistentVolumeClaim` object to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "persistentvolumeclaimvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PersistentVolumeClaimVolumeSource getPersistentVolumeClaim() {
@@ -106,7 +106,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.persistentVolumeClaim = persistentVolumeClaim;
     }
 
-    @Description("CSIVolumeSource object to use to populate the volume.")
+    @Description("`CSIVolumeSource` object to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "csivolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public CSIVolumeSource getCsi() {
@@ -117,7 +117,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.csi = csi;
     }
 
-    @Description("ImageVolumeSource object to use to populate the volume.")
+    @Description("`ImageVolumeSource` object to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "imagevolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ImageVolumeSource getImage() {
