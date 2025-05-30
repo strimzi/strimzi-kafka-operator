@@ -166,6 +166,7 @@ public class TestLogCollector {
             .withKubeCmdClient(new Kubectl())
             .withRootFolderPath(Environment.TEST_LOG_DIR)
             .withNamespacedResources(resources.toArray(new String[0]))
+            .withCollectPreviousLogs()
             .build();
     }
 
