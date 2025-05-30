@@ -4,6 +4,7 @@
 
 * Add support for Kafka 3.9.1
 * Fixed MirrorMaker 2 client rack init container override being ignored.
+* Kafka nodes are now configured with PEM certificates instead of P12/JKS for keystore and truststore.
 
 ## 0.46.0
 
