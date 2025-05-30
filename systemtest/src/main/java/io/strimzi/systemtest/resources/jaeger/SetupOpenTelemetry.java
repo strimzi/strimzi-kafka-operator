@@ -106,6 +106,7 @@ public class SetupOpenTelemetry {
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT, 1);
+        LOGGER.info("Cert-manager {}/{} is ready", CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT);
     }
 
     /**

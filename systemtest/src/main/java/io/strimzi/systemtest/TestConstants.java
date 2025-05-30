@@ -173,6 +173,7 @@ public interface TestConstants {
     String IMAGE_STREAM = "ImageStream";
     String INSTALL_PLAN = "InstallPlan";
     String CLUSTER_SERVICE_VERSION = "ClusterServiceVersion";
+    String CERTIFICATE = "Certificate";
 
     /**
      * KafkaBridge JSON encoding with JSON embedded format

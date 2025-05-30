@@ -138,6 +138,7 @@ public class TestLogCollector {
             TestConstants.DEPLOYMENT.toLowerCase(Locale.ROOT),
             TestConstants.CONFIG_MAP.toLowerCase(Locale.ROOT),
             TestConstants.SERVICE.toLowerCase(Locale.ROOT),
+            TestConstants.CERTIFICATE.toLowerCase(Locale.ROOT),
             Kafka.RESOURCE_SINGULAR,
             KafkaNodePool.RESOURCE_SINGULAR,
             KafkaConnect.RESOURCE_SINGULAR,
