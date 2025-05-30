@@ -65,6 +65,7 @@ import java.util.Set;
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
+import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.generateCruiseControlDefaultPropertiesMap;
 import static java.lang.String.format;
 
 /**
@@ -197,7 +198,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             result.image = image;
 
             KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
-            result.updateConfigurationWithDefaults(ccSpec, kafkaConfiguration);
+            result.updateConfigurationWithDefaults(ccSpec, kafkaConfiguration, kafkaBrokerResources);
 
             CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
@@ -243,8 +244,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
     }
 
-    private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration) {
-        Map<String, String> defaultCruiseControlProperties = new HashMap<>(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
+    private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec,
+                                                 KafkaConfiguration kafkaConfiguration,
+                                                 Map<String, ResourceRequirements> kafkaBrokerResources) {
+        Map<String, String> defaultCruiseControlProperties = generateCruiseControlDefaultPropertiesMap(ccSpec.getBrokerCapacity(), kafkaBrokerResources);
         if (kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR) != null)  {
             defaultCruiseControlProperties.put(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR));
         }

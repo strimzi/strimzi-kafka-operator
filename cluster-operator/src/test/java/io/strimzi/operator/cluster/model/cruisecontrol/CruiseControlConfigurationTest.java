@@ -1,0 +1,167 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+package io.strimzi.operator.cluster.model.cruisecontrol;
+
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverride;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverrideBuilder;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+
+import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.filterResourceGoalsWithoutCapacityConfig;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals.CPU_CAPACITY_GOAL;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals.CPU_USAGE_DISTRIBUTION_GOAL;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals.LEADER_BYTES_IN_DISTRIBUTION_GOAL;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals.NETWORK_INBOUND_CAPACITY_GOAL;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals.NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals.NETWORK_OUTBOUND_CAPACITY_GOAL;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals.NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals.POTENTIAL_NETWORK_OUTAGE_GOAL;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+
+public class CruiseControlConfigurationTest {
+
+    private static final String DEFAULT_CPU_CAPACITY = "1000m";
+    private static final String DEFAULT_NETWORK_CAPACITY = "10000KiB/s";
+
+    private static final List<String> GOAL_LIST = List.of(
+            NETWORK_INBOUND_CAPACITY_GOAL.toString(),
+            NETWORK_OUTBOUND_CAPACITY_GOAL.toString(),
+            CPU_CAPACITY_GOAL.toString(),
+            POTENTIAL_NETWORK_OUTAGE_GOAL.toString(),
+            NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL.toString(),
+            NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL.toString(),
+            CPU_USAGE_DISTRIBUTION_GOAL.toString(),
+            LEADER_BYTES_IN_DISTRIBUTION_GOAL.toString());
+
+
+    private static BrokerCapacity createBrokerCapacity(String cpuCapacity,
+                                                       String inboundNetworkCapacity,
+                                                       String outboundNetworkCapacity) {
+        return new BrokerCapacityBuilder()
+                .withCpu(cpuCapacity)
+                .withInboundNetwork(inboundNetworkCapacity)
+                .withOutboundNetwork(outboundNetworkCapacity)
+                .build();
+    }
+
+    private static BrokerCapacityOverride createBrokerCapacityOverride(List<Integer> brokerIds,
+                                                                       String cpuCapacity,
+                                                                       String inboundNetworkCapacity,
+                                                                       String outboundNetworkCapacity) {
+        return new BrokerCapacityOverrideBuilder()
+                .addAllToBrokers(brokerIds)
+                .withCpu(cpuCapacity)
+                .withInboundNetwork(inboundNetworkCapacity)
+                .withOutboundNetwork(outboundNetworkCapacity)
+                .build();
+    }
+
+    private static ResourceRequirements createCpuResourceRequirement(String request, String limit) {
+        return new ResourceRequirementsBuilder()
+                .addToRequests("cpu", new Quantity(request))
+                .addToLimits("cpu", new Quantity(limit))
+                .build();
+    }
+
+    private void assertGoalsPresent(List<String> actual, CruiseControlGoals... expected) {
+        for (CruiseControlGoals goal : expected) {
+            assertThat("Expected goal to be present: " + goal, actual.contains(goal.toString()), is(true));
+        }
+    }
+
+    private void assertGoalsAbsent(List<String> actual, CruiseControlGoals... expected) {
+        for (CruiseControlGoals goal : expected) {
+            assertThat("Expected goal to be absent: " + goal, actual.contains(goal.toString()), is(false));
+        }
+    }
+
+    @Test
+    public void testFilterResourceGoalsWithoutCapacityConfig() {
+        // The capacities of resources are all properly configured - no goals should be filtered.
+        BrokerCapacity bc = createBrokerCapacity(DEFAULT_CPU_CAPACITY, DEFAULT_NETWORK_CAPACITY, DEFAULT_NETWORK_CAPACITY);
+        BrokerCapacityOverride bco = null;
+        Map<String, ResourceRequirements>  kafkaBrokerResources = null;
+        List<String> filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, bc, kafkaBrokerResources);
+        assertThat(filteredGoals, containsInAnyOrder(GOAL_LIST.toArray()));
+
+        // Default CPU capacity not specified; Filter CPU goals.
+        bc = createBrokerCapacity(null, DEFAULT_NETWORK_CAPACITY, DEFAULT_NETWORK_CAPACITY);
+        filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, bc, kafkaBrokerResources);
+        assertGoalsAbsent(filteredGoals, CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL);
+        assertGoalsPresent(filteredGoals,
+                NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_INBOUND_CAPACITY_GOAL,
+                NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_OUTBOUND_CAPACITY_GOAL, POTENTIAL_NETWORK_OUTAGE_GOAL);
+
+        // CPU resource limits == requests; Don't filter CPU goals.
+        kafkaBrokerResources = Map.of("pool1", createCpuResourceRequirement(DEFAULT_CPU_CAPACITY, DEFAULT_CPU_CAPACITY));
+        filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, bc, kafkaBrokerResources);
+        assertGoalsPresent(filteredGoals,
+                CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL,
+                NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_INBOUND_CAPACITY_GOAL,
+                NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_OUTBOUND_CAPACITY_GOAL, POTENTIAL_NETWORK_OUTAGE_GOAL);
+
+        // CPU resource limits != requests; Filter CPU goals
+        kafkaBrokerResources = Map.of("pool1", createCpuResourceRequirement(DEFAULT_CPU_CAPACITY, "2000m"));
+        filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, bc, kafkaBrokerResources);
+        assertGoalsAbsent(filteredGoals, CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL);
+        assertGoalsPresent(filteredGoals,
+                NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_INBOUND_CAPACITY_GOAL,
+                NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_OUTBOUND_CAPACITY_GOAL, POTENTIAL_NETWORK_OUTAGE_GOAL);
+
+        // CPU override capacities provided; Don't filter CPU goals
+        bco = createBrokerCapacityOverride(List.of(1, 2, 3), DEFAULT_CPU_CAPACITY, null, null);
+        bc.setOverrides(List.of(bco));
+        filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, bc, null);
+        assertGoalsPresent(filteredGoals,
+                CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL,
+                NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_INBOUND_CAPACITY_GOAL,
+                NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_OUTBOUND_CAPACITY_GOAL, POTENTIAL_NETWORK_OUTAGE_GOAL);
+
+        // Default inbound network capacity not specified; Filter inbound network related goals.
+        bc = createBrokerCapacity(DEFAULT_CPU_CAPACITY, null, DEFAULT_NETWORK_CAPACITY);
+        filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, bc, null);
+        assertGoalsAbsent(filteredGoals, NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_INBOUND_CAPACITY_GOAL);
+        assertGoalsPresent(filteredGoals,
+                NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_OUTBOUND_CAPACITY_GOAL,
+                POTENTIAL_NETWORK_OUTAGE_GOAL, CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL);
+
+        // Inbound network override capacities provided; Don't filter inbound network goals
+        bco = createBrokerCapacityOverride(List.of(1, 2, 3), DEFAULT_CPU_CAPACITY, DEFAULT_NETWORK_CAPACITY, DEFAULT_NETWORK_CAPACITY);
+        bc.setOverrides(List.of(bco));
+        filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, bc, null);
+        assertGoalsPresent(filteredGoals,
+                CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL,
+                NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_INBOUND_CAPACITY_GOAL,
+                NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_OUTBOUND_CAPACITY_GOAL, POTENTIAL_NETWORK_OUTAGE_GOAL);
+
+        // Default outbound network capacity not specified; Filter outbound network related goals.
+        bc = createBrokerCapacity(DEFAULT_CPU_CAPACITY, DEFAULT_NETWORK_CAPACITY, null);
+        filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, bc, null);
+        assertGoalsAbsent(filteredGoals,
+                NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_OUTBOUND_CAPACITY_GOAL, POTENTIAL_NETWORK_OUTAGE_GOAL);
+        assertGoalsPresent(filteredGoals,
+                NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_INBOUND_CAPACITY_GOAL,
+                CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL);
+
+        // Outbound network override capacities provided; Don't filter outbound network goals
+        bco = createBrokerCapacityOverride(List.of(1, 2, 3), DEFAULT_CPU_CAPACITY, DEFAULT_NETWORK_CAPACITY, DEFAULT_NETWORK_CAPACITY);
+        bc.setOverrides(List.of(bco));
+        filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, bc, null);
+        assertGoalsPresent(filteredGoals,
+                CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL,
+                NETWORK_INBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_INBOUND_CAPACITY_GOAL,
+                NETWORK_OUTBOUND_USAGE_DISTRIBUTION_GOAL, NETWORK_OUTBOUND_CAPACITY_GOAL, POTENTIAL_NETWORK_OUTAGE_GOAL);
+    }
+}

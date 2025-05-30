@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaSpec;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverride;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -20,6 +21,7 @@ import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.resourcerequirements.ResourceRequirementsUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -28,6 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
+import static io.strimzi.operator.cluster.model.cruisecontrol.CapacityResourceType.CPU;
+import static io.strimzi.operator.cluster.model.cruisecontrol.CapacityResourceType.DISK;
+import static io.strimzi.operator.cluster.model.cruisecontrol.CapacityResourceType.INBOUND_NETWORK;
+import static io.strimzi.operator.cluster.model.cruisecontrol.CapacityResourceType.OUTBOUND_NETWORK;
 
 /**
  * Uses information in a Kafka Custom Resource to generate a capacity configuration file to be used for
@@ -125,7 +132,7 @@ import java.util.TreeMap;
 public class Capacity {
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Capacity.class.getName());
     private final Reconciliation reconciliation;
-    private final TreeMap<Integer, BrokerCapacity> capacityEntries;
+    private final TreeMap<Integer, BrokerCapacityEntry> capacityEntries;
 
     /**
      * Broker capacities key
@@ -137,51 +144,10 @@ public class Capacity {
      */
     public static final String CAPACITY_KEY = "capacity";
 
-    /**
-     * Disk key
-     */
-    public static final String DISK_KEY = "DISK";
-
-    /**
-     * CPU key
-     */
-    public static final String CPU_KEY = "CPU";
-
-    /**
-     * Inbound network key
-     */
-    public static final String INBOUND_NETWORK_KEY = "NW_IN";
-
-    /**
-     * Outbound network key
-     */
-    public static final String OUTBOUND_NETWORK_KEY = "NW_OUT";
-
-    /**
-     * Resource type
-     */
-    public static final String RESOURCE_TYPE = "cpu";
-
     private static final String KAFKA_MOUNT_PATH = "/var/lib/kafka";
     private static final String KAFKA_LOG_DIR = "kafka-log";
     private static final String BROKER_ID_KEY = "brokerId";
     private static final String DOC_KEY = "doc";
-
-    private enum ResourceRequirementType {
-        REQUEST,
-        LIMIT;
-
-        private Quantity getQuantity(ResourceRequirements resources) {
-            Map<String, Quantity> resourceRequirement = switch (this) {
-                case REQUEST -> resources.getRequests();
-                case LIMIT -> resources.getLimits();
-            };
-            if (resourceRequirement != null) {
-                return resourceRequirement.get(RESOURCE_TYPE);
-            }
-            return null;
-        }
-    }
 
     /**
      * Constructor
@@ -205,26 +171,38 @@ public class Capacity {
         processCapacityEntries(spec.getCruiseControl(), kafkaBrokerNodes, kafkaStorage, kafkaBrokerResources);
     }
 
-    private static Integer getResourceRequirement(ResourceRequirements resources, ResourceRequirementType requirementType) {
-        if (resources != null) {
-            Quantity quantity = requirementType.getQuantity(resources);
-            if (quantity != null) {
-                return Quantities.parseCpuAsMilliCpus(quantity.toString());
+    /**
+     * Checks whether all Kafka broker pods have their CPU resource requests equal to their CPU limits.
+     *
+     * @param kafkaBrokerResources a map of broker pod names to their {@link ResourceRequirements}
+     * @return {@code true} if all brokers have matching CPU requests and limits; {@code false} otherwise
+     */
+    public static boolean cpuRequestsMatchLimits(Map<String, ResourceRequirements> kafkaBrokerResources) {
+        if (kafkaBrokerResources == null) {
+            return false;
+        }
+        for (ResourceRequirements resourceRequirements : kafkaBrokerResources.values()) {
+            Quantity request = ResourceRequirementsUtils.getCpuRequest(resourceRequirements);
+            Quantity limit = ResourceRequirementsUtils.getCpuLimit(resourceRequirements);
+            if (request == null || limit == null || request.compareTo(limit) != 0) {
+                return false;
             }
         }
-        return null;
+        return true;
     }
 
     private static CpuCapacity getCpuBasedOnRequirements(ResourceRequirements resourceRequirements) {
-        Integer request = getResourceRequirement(resourceRequirements, ResourceRequirementType.REQUEST);
-        Integer limit = getResourceRequirement(resourceRequirements, ResourceRequirementType.LIMIT);
+        Quantity request = ResourceRequirementsUtils.getCpuRequest(resourceRequirements);
+        Quantity limit = ResourceRequirementsUtils.getCpuLimit(resourceRequirements);
 
         if (request != null) {
-            return new CpuCapacity(CpuCapacity.milliCpuToCpu(request));
+            int milliCpus = Quantities.parseCpuAsMilliCpus(request.toString());
+            return new CpuCapacity(CpuCapacity.milliCpuToCpu(milliCpus));
         } else if (limit != null) {
-            return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
+            int milliCpus = Quantities.parseCpuAsMilliCpus(limit.toString());
+            return new CpuCapacity(CpuCapacity.milliCpuToCpu(milliCpus));
         } else {
-            return new CpuCapacity(BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
+            return new CpuCapacity(BrokerCapacityEntry.DEFAULT_CPU_CORE_CAPACITY);
         }
     }
 
@@ -265,7 +243,7 @@ public class Capacity {
         } else if (bc != null && bc.getInboundNetwork() != null) {
             return getThroughputInKiB(bc.getInboundNetwork());
         } else {
-            return BrokerCapacity.DEFAULT_INBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
+            return BrokerCapacityEntry.DEFAULT_INBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
         }
     }
 
@@ -275,7 +253,7 @@ public class Capacity {
         } else if (bc != null && bc.getOutboundNetwork() != null) {
             return getThroughputInKiB(bc.getOutboundNetwork());
         } else {
-            return BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
+            return BrokerCapacityEntry.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
         }
     }
 
@@ -317,7 +295,7 @@ public class Capacity {
             if (((EphemeralStorage) storage).getSizeLimit() != null) {
                 return DiskCapacity.of(getSizeInMiB(((EphemeralStorage) storage).getSizeLimit()));
             } else {
-                return DiskCapacity.of(BrokerCapacity.DEFAULT_DISK_CAPACITY_IN_MIB);
+                return DiskCapacity.of(BrokerCapacityEntry.DEFAULT_DISK_CAPACITY_IN_MIB);
             }
         } else if (storage == null) {
             throw new IllegalStateException("The storage declaration is missing");
@@ -335,7 +313,7 @@ public class Capacity {
      */
     private static String getSizeInMiB(String size) {
         if (size == null) {
-            return BrokerCapacity.DEFAULT_DISK_CAPACITY_IN_MIB;
+            return BrokerCapacityEntry.DEFAULT_DISK_CAPACITY_IN_MIB;
         }
         return String.valueOf(StorageUtils.convertTo(size, "Mi"));
     }
@@ -353,7 +331,7 @@ public class Capacity {
     }
 
     private void processCapacityEntries(CruiseControlSpec spec, Set<NodeRef> kafkaBrokerNodes, Map<String, Storage> kafkaStorage, Map<String, ResourceRequirements> kafkaBrokerResources) {
-        io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity brokerCapacity = spec.getBrokerCapacity();
+        BrokerCapacity brokerCapacity = spec.getBrokerCapacity();
 
         String inboundNetwork = processInboundNetwork(brokerCapacity, null);
         String outboundNetwork = processOutboundNetwork(brokerCapacity, null);
@@ -363,7 +341,7 @@ public class Capacity {
             DiskCapacity disk = processDisk(kafkaStorage.get(node.poolName()), node.nodeId());
             CpuCapacity cpu = processCpu(null, brokerCapacity, kafkaBrokerResources.get(node.poolName()));
 
-            BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
+            BrokerCapacityEntry broker = new BrokerCapacityEntry(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), broker);
         }
 
@@ -382,12 +360,12 @@ public class Capacity {
                         inboundNetwork = processInboundNetwork(brokerCapacity, override);
                         outboundNetwork = processOutboundNetwork(brokerCapacity, override);
                         for (int id : ids) {
-                            if (id == BrokerCapacity.DEFAULT_BROKER_ID) {
+                            if (id == BrokerCapacityEntry.DEFAULT_BROKER_ID) {
                                 LOGGER.warnCr(reconciliation, "Ignoring broker capacity override with illegal broker id -1.");
                             } else {
                                 if (capacityEntries.containsKey(id)) {
                                     if (overrideIds.add(id)) {
-                                        BrokerCapacity brokerCapacityEntry = capacityEntries.get(id);
+                                        BrokerCapacityEntry brokerCapacityEntry = capacityEntries.get(id);
                                         brokerCapacityEntry.setCpu(processCpu(override, brokerCapacity, kafkaBrokerResources.get(Integer.toString(id))));
                                         brokerCapacityEntry.setInboundNetwork(inboundNetwork);
                                         brokerCapacityEntry.setOutboundNetwork(outboundNetwork);
@@ -411,14 +389,14 @@ public class Capacity {
      * @param brokerCapacity Broker capacity object
      * @return Broker entry as a JsonObject
      */
-    private JsonObject generateBrokerCapacity(BrokerCapacity brokerCapacity) {
+    private JsonObject generateBrokerCapacityEntry(BrokerCapacityEntry brokerCapacity) {
         return new JsonObject()
             .put(BROKER_ID_KEY, brokerCapacity.getId())
             .put(CAPACITY_KEY, new JsonObject()
-                .put(DISK_KEY, brokerCapacity.getDisk().getJson())
-                .put(CPU_KEY, brokerCapacity.getCpu().getJson())
-                .put(INBOUND_NETWORK_KEY, brokerCapacity.getInboundNetwork())
-                .put(OUTBOUND_NETWORK_KEY, brokerCapacity.getOutboundNetwork())
+                .put(DISK.getKey(), brokerCapacity.getDisk().getJson())
+                .put(CPU.getKey(), brokerCapacity.getCpu().getJson())
+                .put(INBOUND_NETWORK.getKey(), brokerCapacity.getInboundNetwork())
+                .put(OUTBOUND_NETWORK.getKey(), brokerCapacity.getOutboundNetwork())
             )
             .put(DOC_KEY, brokerCapacity.getDoc());
     }
@@ -430,8 +408,8 @@ public class Capacity {
      */
     public JsonObject generateCapacityConfig() {
         JsonArray brokerList = new JsonArray();
-        for (BrokerCapacity brokerCapacity : capacityEntries.values()) {
-            JsonObject brokerEntry = generateBrokerCapacity(brokerCapacity);
+        for (BrokerCapacityEntry brokerCapacity : capacityEntries.values()) {
+            JsonObject brokerEntry = generateBrokerCapacityEntry(brokerCapacity);
             brokerList.add(brokerEntry);
         }
 
@@ -449,7 +427,7 @@ public class Capacity {
     /**
      * @return  Capacity entries
      */
-    public TreeMap<Integer, BrokerCapacity> getCapacityEntries() {
+    public TreeMap<Integer, BrokerCapacityEntry> getCapacityEntries() {
         return capacityEntries;
     }
 }

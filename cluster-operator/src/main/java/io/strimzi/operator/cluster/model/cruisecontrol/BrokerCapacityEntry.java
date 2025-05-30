@@ -5,9 +5,9 @@
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
 /**
- * Configures the Kafka broker capacity
+ * Configures the Kafka broker capacity entry.
  */
-public class BrokerCapacity {
+public class BrokerCapacityEntry {
     // CC allows specifying a generic "default" broker entry in the capacity configuration to apply to all brokers without a specific broker entry.
     // CC designates the id of this default broker entry as "-1".
     /**
@@ -44,7 +44,7 @@ public class BrokerCapacity {
      * @param inboundNetwork    Inbound network capacity
      * @param outboundNetwork   Outbound network capacity
      */
-    public BrokerCapacity(int brokerId, CpuCapacity cpu, DiskCapacity disk, String inboundNetwork, String outboundNetwork) {
+    public BrokerCapacityEntry(int brokerId, CpuCapacity cpu, DiskCapacity disk, String inboundNetwork, String outboundNetwork) {
         this.id = brokerId;
         this.cpu = cpu;
         this.disk = disk;
