@@ -31,6 +31,7 @@ import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.resources.types.ExtendedNamespaceType;
 import io.strimzi.systemtest.resources.types.KafkaAccessType;
 import io.strimzi.systemtest.resources.types.KafkaBridgeType;
 import io.strimzi.systemtest.resources.types.KafkaConnectType;
@@ -41,7 +42,6 @@ import io.strimzi.systemtest.resources.types.KafkaRebalanceType;
 import io.strimzi.systemtest.resources.types.KafkaTopicType;
 import io.strimzi.systemtest.resources.types.KafkaType;
 import io.strimzi.systemtest.resources.types.KafkaUserType;
-import io.strimzi.systemtest.resources.types.NamespaceType;
 import io.strimzi.systemtest.resources.types.StrimziPodSetType;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.interfaces.TestSeparator;
@@ -79,7 +79,7 @@ public abstract class AbstractST implements TestSeparator {
             new ClusterRoleType(),
             new CustomResourceDefinitionType(),
             new DeploymentType(),
-            new NamespaceType(),
+            new ExtendedNamespaceType(),
             new JobType(),
             new NetworkPolicyType(),
             new RoleBindingType(),

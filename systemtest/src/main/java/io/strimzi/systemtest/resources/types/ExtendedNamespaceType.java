@@ -12,7 +12,7 @@ import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
  * {@link Namespace} resource type class that is extending the one from Test-Frame - {@link io.skodjob.testframe.resources.NamespaceType}.
  * It changes the {@link #isDeleted(Namespace)} method to also check that the Namespace is stuck (or not) on finalizers.
  */
-public class NamespaceType extends io.skodjob.testframe.resources.NamespaceType {
+public class ExtendedNamespaceType extends io.skodjob.testframe.resources.NamespaceType {
 
     /**
      * Checks if the {@link Namespace} is deleted.
