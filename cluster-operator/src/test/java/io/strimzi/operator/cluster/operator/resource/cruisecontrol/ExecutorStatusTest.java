@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlExecutorState;
+import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlExecutorState;
 import org.junit.jupiter.api.Test;
 
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus.FINISHED_DATA_MOVEMENT_KEY;

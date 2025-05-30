@@ -7,8 +7,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
+import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlExecutorState;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.ExecutorStatus;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlExecutorState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

@@ -155,7 +155,7 @@ spec:
                     rebalanceProgressConfigMap:
                       type: string
                       description: The name of the `ConfigMap` containing information related to the progress of a partition rebalance.
-                  description: An object with information related to the progress of the rebalance.
+                  description: A reference to Config Map with the progress information.
                 optimizationResult:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object

@@ -43,7 +43,7 @@ public class KafkaRebalanceStatus extends Status {
         this.optimizationResult = optimizationResult;
     }
 
-    @Description("An object with information related to the progress of the rebalance.")
+    @Description("A reference to Config Map with the progress information.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaRebalanceProgress getProgress() {
         return progress;

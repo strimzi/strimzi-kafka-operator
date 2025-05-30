@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.strimzi.operator.common.model.cruisecontrol.CruiseControlExecutorState;
+import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlExecutorState;
 
 import java.time.Instant;
 import java.util.regex.Matcher;
