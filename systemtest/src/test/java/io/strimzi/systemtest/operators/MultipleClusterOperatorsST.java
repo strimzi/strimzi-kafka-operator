@@ -22,7 +22,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.CrdClients;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -40,6 +39,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -152,7 +152,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         NetworkPolicyUtils.allowNetworkPolicySettingsForClusterOperator(SECOND_NAMESPACE);
 
         LOGGER.info("Deploying Namespace: {} to host all additional operands", testStorage.getNamespaceName());
-        NamespaceManager.getInstance().createNamespaceAndPrepare(testStorage.getNamespaceName());
+        NamespaceUtils.createNamespaceAndPrepare(testStorage.getNamespaceName());
 
         LOGGER.info("Set cluster namespace to {}, as all operands will be from now on deployd here", testStorage.getNamespaceName());
         cluster.setNamespace(testStorage.getNamespaceName());

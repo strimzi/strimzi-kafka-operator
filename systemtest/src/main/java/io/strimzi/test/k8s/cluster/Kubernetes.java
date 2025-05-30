@@ -4,8 +4,8 @@
  */
 package io.strimzi.test.k8s.cluster;
 
-import io.strimzi.test.executor.Exec;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import io.skodjob.testframe.clients.KubeClusterException;
+import io.skodjob.testframe.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

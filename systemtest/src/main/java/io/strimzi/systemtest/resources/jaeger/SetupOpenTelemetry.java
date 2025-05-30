@@ -9,9 +9,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.logs.CollectorElement;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.tracing.TracingConstants;
+import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.test.ReadWriteUtils;
@@ -87,8 +86,8 @@ public class SetupOpenTelemetry {
      * Deploys Cert Manager and adds it to the stack of resources to be deleted on clean up
      */
     private static void deployCertManager() {
-        // create namespace `cert-manager` and add it to stack, to collect logs from it
-        NamespaceManager.getInstance().createNamespaceAndPrepare(CERT_MANAGER_NAMESPACE, CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName()));
+        // create namespace `cert-manager`
+        NamespaceUtils.createNamespaceAndPrepare(CERT_MANAGER_NAMESPACE);
 
         LOGGER.info("Deploying CertManager from {}", CERT_MANAGER_PATH);
         // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick
@@ -141,8 +140,8 @@ public class SetupOpenTelemetry {
     private static void deployOpenTelemetryOperator() {
         LOGGER.info("=== Applying Open Telemetry Operator install files ===");
 
-        // create namespace `jaeger` and add it to stack, to collect logs from it
-        NamespaceManager.getInstance().createNamespaceAndPrepare(JAEGER_NAMESPACE, CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName()));
+        // create namespace `jaeger`
+        NamespaceUtils.createNamespaceAndPrepare(JAEGER_NAMESPACE);
         deployOpenTelemetryOperatorContent();
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()

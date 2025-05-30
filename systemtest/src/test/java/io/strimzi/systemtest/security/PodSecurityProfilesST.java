@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.utils.KubeUtils;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
@@ -18,7 +19,6 @@ import io.strimzi.systemtest.annotations.RequiredMinKubeOrOcpBasedKubeVersion;
 import io.strimzi.systemtest.enums.PodSecurityProfile;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -40,7 +40,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
@@ -95,8 +94,7 @@ public class PodSecurityProfilesST extends AbstractST {
         final String mm2SourceMirroredTopicName = testStorage.getClusterName() + "." + testStorage.getTopicName();
 
         // Label particular Namespace with pod-security.kubernetes.io/enforce: restricted
-        NamespaceManager.labelNamespace(testStorage.getNamespaceName(),
-            Collections.singletonMap("pod-security.kubernetes.io/enforce", "restricted"));
+        KubeUtils.labelNamespace(testStorage.getNamespaceName(), "pod-security.kubernetes.io/enforce", "restricted");
 
         // 1 source Kafka Cluster, 2 target Kafka Cluster, 1 for MM1 and MM2 each having different target Kafka Cluster,
 
