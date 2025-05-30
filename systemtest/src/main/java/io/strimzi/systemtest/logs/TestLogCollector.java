@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.utils.StUtils;
 
 import java.io.File;
@@ -264,12 +263,8 @@ public class TestLogCollector {
             .withRootFolderPath(rootPathToLogsForTestCase.toString())
             .build();
 
-        List<String> namespaces = new ArrayList<>();
-
-        // Old way of keeping the list of Namespaces - delete this once we are done with the integration
-        namespaces.addAll(NamespaceManager.getInstance().getListOfNamespacesForTestClassAndTestCase(testClass, testCase));
-        // New way using labels on the Namespaces
-        namespaces.addAll(getListOfNamespaces(testClassShortName, testCase));
+        // List Namespaces with specified test class name and test case name
+        List<String> namespaces = new ArrayList<>(getListOfNamespaces(testClassShortName, testCase));
 
         namespaces = namespaces.stream().distinct().toList();
 

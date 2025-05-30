@@ -29,7 +29,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.CrdClients;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -47,6 +46,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.crds.CrdUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -762,8 +762,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * This method creates and prepares the necessary namespaces if operator is installed from example files
      */
     protected void setUpStrimziUpgradeTestNamespaces() {
-        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
-        NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
+        NamespaceUtils.createNamespaceAndPrepare(CO_NAMESPACE);
+        NamespaceUtils.createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
     }
 
     /**
@@ -772,8 +772,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected void cleanUpStrimziUpgradeTestNamespaces() {
         cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
         deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
-        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
-        NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
+        NamespaceUtils.deleteNamespace(CO_NAMESPACE);
+        NamespaceUtils.deleteNamespace(Environment.TEST_SUITE_NAMESPACE);
     }
 
     protected void cleanUpKafkaTopics(String componentsNamespaceName) {

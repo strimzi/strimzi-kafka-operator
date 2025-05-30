@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.skodjob.testframe.executor.Exec;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.operator.common.Util;
@@ -22,9 +23,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.Exec;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -60,7 +59,7 @@ public class SetupKeycloak {
     public static void deployKeycloakOperator(final String deploymentNamespace, final String watchNamespace) {
         LOGGER.info("Preparing Keycloak Operator in Namespace: {} while watching Namespace: {}", deploymentNamespace, watchNamespace);
 
-        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
+        Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentAndPodsReady(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME, 1);
 
         KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
@@ -70,7 +69,7 @@ public class SetupKeycloak {
 
     public static void deleteKeycloakOperator(final String deploymentNamespace, final String watchNamespace) {
         LOGGER.info("Tearing down Keycloak Operator in Namespace: {} with watching Namespace: {}", deploymentNamespace, watchNamespace);
-        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
+        Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentDeletion(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME);
     }
 

@@ -6,11 +6,11 @@ package io.strimzi.systemtest.kafkaclients.clientproperties;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.testframe.executor.Exec;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.Exec;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;

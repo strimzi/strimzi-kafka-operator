@@ -8,9 +8,8 @@ import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.listeners.ExecutionListener;
-import io.strimzi.systemtest.logs.CollectorElement;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -50,7 +49,7 @@ public class TestSuiteNamespaceManager {
         if (ExecutionListener.requiresSharedNamespace(KubeResourceManager.get().getTestContext())) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
+                NamespaceUtils.createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
             } else {
                 LOGGER.info("We are not gonna create additional namespace: {}, because test suite: {} does not " +
                         "contains @ParallelTest or @IsolatedTest.", Environment.TEST_SUITE_NAMESPACE, testSuiteName);
@@ -69,7 +68,7 @@ public class TestSuiteNamespaceManager {
                 final String testSuiteName = KubeResourceManager.get().getTestContext().getRequiredTestClass().getName();
 
                 LOGGER.info("Deleting Namespace: {} for TestSuite: {}", Environment.TEST_SUITE_NAMESPACE, StUtils.removePackageName(testSuiteName));
-                NamespaceManager.getInstance().deleteNamespaceWithWaitAndRemoveFromSet(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
+                NamespaceUtils.deleteNamespace(Environment.TEST_SUITE_NAMESPACE);
             }
         }
 
@@ -94,7 +93,7 @@ public class TestSuiteNamespaceManager {
                 // create namespace by
                 LOGGER.info("Creating Namespace: {} for TestCase: {}", namespaceTestCase, StUtils.removePackageName(testCaseName));
 
-                NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceTestCase, CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(), testCaseName));
+                NamespaceUtils.createNamespaceAndPrepare(namespaceTestCase);
             }
         }
     }

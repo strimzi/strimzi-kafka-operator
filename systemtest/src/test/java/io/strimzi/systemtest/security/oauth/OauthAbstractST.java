@@ -14,10 +14,10 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IPv6NotSupported;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.keycloak.SetupKeycloak;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -129,7 +129,7 @@ public class OauthAbstractST extends AbstractST {
         // Keycloak do not support cluster-wide namespace, and thus we need it to deploy in non-OLM cluster wide namespace
         // (f.e., our `infra-namespace`)
         if (!KubeResourceManager.get().kubeClient().namespaceExists(Environment.TEST_SUITE_NAMESPACE)) {
-            NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
+            NamespaceUtils.createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE);
         }
 
         SetupKeycloak.deployKeycloakOperator(Environment.TEST_SUITE_NAMESPACE, keycloakNamespace);

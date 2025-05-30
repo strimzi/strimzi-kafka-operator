@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.executor.Exec;
 import io.skodjob.testframe.metrics.Counter;
 import io.skodjob.testframe.metrics.Gauge;
 import io.skodjob.testframe.metrics.Histogram;
@@ -15,7 +16,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.metrics.ClusterOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -53,7 +53,7 @@ public class MetricsUtils {
 
         Exec exec = new Exec();
         // 20 seconds should be enough for collect data from the Pod
-        int ret = exec.execute(null, executableCommand, 20_000);
+        int ret = exec.execute(null, executableCommand, null, 20_000);
 
         synchronized (LOCK) {
             LOGGER.info("Metrics collection for Pod: {}/{} return code - {}", namespaceName, podName, ret);

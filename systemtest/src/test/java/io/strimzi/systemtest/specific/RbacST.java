@@ -20,9 +20,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.CrdClients;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.operator.YamlInstallation;
@@ -31,6 +29,7 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.rbac.RbacUtils;
 import io.strimzi.test.ReadWriteUtils;
 import org.hamcrest.CoreMatchers;
@@ -62,8 +61,7 @@ public class RbacST extends AbstractST {
         final ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfiguration();
 
         // create namespace, where we will be able to deploy CustomResources
-        NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved,
-            CollectorElement.createCollectorElement(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(), KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName()));
+        NamespaceUtils.createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved);
 
         // --- a) defining Role and ClusterRoles
         final Role strimziClusterOperator020 = ReadWriteUtils.readObjectFromYamlFilepath(RbacUtils.switchClusterRolesToRolesIfNeeded(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);

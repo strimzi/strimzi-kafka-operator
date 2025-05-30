@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators;
 
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.storage.StorageClass;
@@ -21,7 +22,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.CrdClients;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -31,6 +31,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import org.apache.logging.log4j.LogManager;
@@ -307,10 +308,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
     private void deleteAndRecreateNamespace(String namespace) {
-        NamespaceManager.getInstance().deleteNamespaceWithWait(namespace);
+        Namespace namespaceToBeDeleted = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespace).get();
+        KubeResourceManager.get().deleteResourceWithWait(namespaceToBeDeleted);
 
         // Recreate namespace
-        NamespaceManager.getInstance().createNamespaceAndPrepare(namespace);
+        NamespaceUtils.createNamespaceAndPrepare(namespace);
     }
 
     @BeforeAll
