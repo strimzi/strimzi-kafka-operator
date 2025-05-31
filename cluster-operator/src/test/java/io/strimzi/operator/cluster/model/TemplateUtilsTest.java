@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.CSIVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.ImageVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
@@ -128,12 +129,16 @@ public class TemplateUtilsTest {
                         new AdditionalVolumeBuilder()
                                 .withName("csi-volume")
                                 .withCsi(new CSIVolumeSourceBuilder().withDriver("csi.cert-manager.io").withReadOnly().withVolumeAttributes(Map.of("csi.cert-manager.io/issuer-name", "my-ca", "csi.cert-manager.io/dns-names", "${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local")).build())
+                                .build(),
+                        new AdditionalVolumeBuilder()
+                                .withName("oci-volume")
+                                .withImage(new ImageVolumeSourceBuilder().withReference("my-custom-oci-plugin:latest").withPullPolicy("Never").build())
                                 .build())
                 .build();
 
         TemplateUtils.addAdditionalVolumes(templatePod, existingVolumes);
 
-        assertThat(existingVolumes.size(), is(6));
+        assertThat(existingVolumes.size(), is(7));
 
         assertThat(existingVolumes.get(0).getName(), is("existingVolume1"));
 
@@ -143,6 +148,7 @@ public class TemplateUtilsTest {
         assertThat(existingVolumes.get(1).getEmptyDir(), is(nullValue()));
         assertThat(existingVolumes.get(1).getPersistentVolumeClaim(), is(nullValue()));
         assertThat(existingVolumes.get(1).getCsi(), is(nullValue()));
+        assertThat(existingVolumes.get(1).getImage(), is(nullValue()));
 
         assertThat(existingVolumes.get(2).getName(), is("cm-volume"));
         assertThat(existingVolumes.get(2).getConfigMap().getName(), is("my-cm"));
@@ -150,6 +156,7 @@ public class TemplateUtilsTest {
         assertThat(existingVolumes.get(2).getEmptyDir(), is(nullValue()));
         assertThat(existingVolumes.get(2).getPersistentVolumeClaim(), is(nullValue()));
         assertThat(existingVolumes.get(2).getCsi(), is(nullValue()));
+        assertThat(existingVolumes.get(2).getImage(), is(nullValue()));
 
         assertThat(existingVolumes.get(3).getName(), is("empty-dir-volume"));
         assertThat(existingVolumes.get(3).getEmptyDir().getMedium(), is("Memory"));
@@ -158,6 +165,7 @@ public class TemplateUtilsTest {
         assertThat(existingVolumes.get(3).getConfigMap(), is(nullValue()));
         assertThat(existingVolumes.get(3).getPersistentVolumeClaim(), is(nullValue()));
         assertThat(existingVolumes.get(3).getCsi(), is(nullValue()));
+        assertThat(existingVolumes.get(3).getImage(), is(nullValue()));
 
         assertThat(existingVolumes.get(4).getName(), is("pvc-volume"));
         assertThat(existingVolumes.get(4).getPersistentVolumeClaim().getClaimName(), is("my-pvc"));
@@ -165,6 +173,7 @@ public class TemplateUtilsTest {
         assertThat(existingVolumes.get(4).getConfigMap(), is(nullValue()));
         assertThat(existingVolumes.get(4).getEmptyDir(), is(nullValue()));
         assertThat(existingVolumes.get(4).getCsi(), is(nullValue()));
+        assertThat(existingVolumes.get(4).getImage(), is(nullValue()));
 
         assertThat(existingVolumes.get(5).getName(), is("csi-volume"));
         assertThat(existingVolumes.get(5).getCsi().getDriver(), is("csi.cert-manager.io"));
@@ -175,6 +184,16 @@ public class TemplateUtilsTest {
         assertThat(existingVolumes.get(5).getConfigMap(), is(nullValue()));
         assertThat(existingVolumes.get(5).getEmptyDir(), is(nullValue()));
         assertThat(existingVolumes.get(5).getPersistentVolumeClaim(), is(nullValue()));
+        assertThat(existingVolumes.get(5).getImage(), is(nullValue()));
+
+        assertThat(existingVolumes.get(6).getName(), is("oci-volume"));
+        assertThat(existingVolumes.get(6).getImage().getReference(), is("my-custom-oci-plugin:latest"));
+        assertThat(existingVolumes.get(6).getImage().getPullPolicy(), is("Never"));
+        assertThat(existingVolumes.get(6).getSecret(), is(nullValue()));
+        assertThat(existingVolumes.get(6).getConfigMap(), is(nullValue()));
+        assertThat(existingVolumes.get(6).getEmptyDir(), is(nullValue()));
+        assertThat(existingVolumes.get(6).getPersistentVolumeClaim(), is(nullValue()));
+        assertThat(existingVolumes.get(6).getCsi(), is(nullValue()));
     }
 
     @ParallelTest

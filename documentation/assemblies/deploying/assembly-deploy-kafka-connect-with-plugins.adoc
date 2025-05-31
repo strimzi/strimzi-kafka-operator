@@ -28,6 +28,8 @@ You can also create new connector instances using these options.
 
 //Procedure to create container images using Strimzi and Kafka Connect build
 include::../../modules/deploying/proc-deploy-kafka-connect-using-kafka-connect-build.adoc[leveloffset=+1]
+//Procedure to use Image Volumes to add connector plugins to Kafka Connect
+include::../../modules/deploying/proc-deploy-kafka-connect-using-image-volumes.adoc[leveloffset=+1]
 //Procedure to create container images from base image
 include::../../modules/deploying/proc-deploy-kafka-connect-new-image-from-base.adoc[leveloffset=+1]
 //Procedure to deploy a KafkaConnector resource
