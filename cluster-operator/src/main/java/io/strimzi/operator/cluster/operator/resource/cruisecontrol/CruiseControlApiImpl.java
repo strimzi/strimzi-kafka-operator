@@ -74,7 +74,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public CompletableFuture<CruiseControlResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose) {
+    public CompletableFuture<CruiseControlStateResponse> getCruiseControlState(Reconciliation reconciliation, String host, int port, boolean verbose) {
         String path = new PathBuilder(CruiseControlEndpoints.STATE)
                 .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(verbose))
                 .withParameter(CruiseControlParameters.JSON, "true")
@@ -111,7 +111,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                     "Error for request: " + host + ":" + port + path + ". Server returned: " +
                                             json.get(CC_REST_API_ERROR_KEY)));
                         } else {
-                            return CompletableFuture.completedFuture(new CruiseControlResponse(userTaskID, json));
+                            return CompletableFuture.completedFuture(new CruiseControlStateResponse(userTaskID, json));
                         }
                     } else {
                         return CompletableFuture.failedFuture(new CruiseControlRestException(
