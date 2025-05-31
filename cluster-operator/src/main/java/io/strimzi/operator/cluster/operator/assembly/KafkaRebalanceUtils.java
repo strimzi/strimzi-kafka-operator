@@ -16,11 +16,9 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.operator.common.model.StatusUtils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -145,41 +143,5 @@ public class KafkaRebalanceUtils {
                 kafkaStatus.setAutoRebalance(builder.build());
             }
         }
-    }
-
-    /**
-     * Updates the {@code KafkaRebalanceStatus} with a new Warning condition based
-     * on the provided {@link Throwable}. If a Warning condition with the same reason
-     * and message already exists, no update is performed.
-     *
-     * @param status    The {@link KafkaRebalanceStatus} object whose conditions will be updated.
-     * @param exception The {@link Throwable} containing the reason and message for the Warning condition.
-     */
-    public static void addWarningCondition(KafkaRebalanceStatus status, Throwable exception) {
-        List<Condition> conditions = status.getConditions() != null ? new ArrayList<>(status.getConditions()) : new ArrayList<>();
-
-        Condition newCondition = StatusUtils.buildWarningCondition("CruiseControlExecutorState", exception.getMessage());
-        Condition oldCondition = getWarningCondition(status);
-
-        if (oldCondition != null) {
-            // If existing Warning condition has same reason & message, do nothing
-            if (Objects.equals(newCondition.getReason(), oldCondition.getReason()) &&
-                Objects.equals(newCondition.getMessage(), oldCondition.getMessage())) {
-                return;
-            }
-            // Otherwise, remove existing Warning condition
-            conditions.remove(oldCondition);
-        }
-
-        // Add new Warning condition
-        conditions.add(newCondition);
-        status.setConditions(conditions);
-    }
-
-    /* test */ static Condition getWarningCondition(KafkaRebalanceStatus status) {
-        return status.getConditions().stream()
-                .filter(condition -> condition.getType().equals("Warning"))
-                .findFirst()
-                .orElse(null);
     }
 }

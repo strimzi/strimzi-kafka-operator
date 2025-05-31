@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.KafkaStatusBuilder;
@@ -17,13 +16,11 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatusBuilder;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -166,53 +163,5 @@ public class KafkaRebalanceUtilsTest {
         assertThat(kafkaStatus.getAutoRebalance().getModes().size(), is(1));
         assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.ADD_BROKERS));
         assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getBrokers().stream().collect(Collectors.toSet()).equals(Set.of(3, 4, 5, 6)), is(true));
-    }
-
-    @Test
-    public void testUpdateStatusCondition() {
-        KafkaRebalanceStatus status = new KafkaRebalanceStatusBuilder().withConditions(new ArrayList<>()).build();
-
-        // Test Warning condition can be added when there are no existing conditions
-        KafkaRebalanceUtils.addWarningCondition(status, exception("Example error 0"));
-        assertThat(status.getConditions().size(), is(1));
-        assertThat(KafkaRebalanceUtils.getWarningCondition(status), notNullValue());
-
-        // Test Warning condition addition doesn't remove existing conditions.
-        Condition c0 = new ConditionBuilder()
-                .withType(KafkaRebalanceState.Rebalancing.toString())
-                .build();
-        status.setConditions(List.of(c0));
-        KafkaRebalanceUtils.addWarningCondition(status, exception("Example error 0"));
-        assertThat(status.getConditions().size(), is(2));
-        assertThat(KafkaRebalanceUtils.getWarningCondition(status), notNullValue());
-
-        // Test original Warning is kept when a new error with same reason and message is thrown.
-        String timestamp = "2024-11-05T15:28:23.995129903Z";
-        String errorMessage = "Example error 1";
-        Condition c1 = new ConditionBuilder()
-                .withLastTransitionTime(timestamp)
-                .withStatus("True")
-                .withType("Warning")
-                .withReason("CruiseControlExecutorState")
-                .withMessage(errorMessage)
-                .build();
-        status.setConditions(List.of(c0, c1));
-        KafkaRebalanceUtils.addWarningCondition(status, exception(errorMessage));
-        Condition condition = KafkaRebalanceUtils.getWarningCondition(status);
-        assertThat(status.getConditions().size(), is(2));
-        assertThat(condition.getMessage(), is(errorMessage));
-        assertThat(condition.getLastTransitionTime(), is(timestamp));
-
-        // Test Warning condition is replaced when a new error with a different reason or message is thrown.
-        errorMessage = "Example error 2";
-        KafkaRebalanceUtils.addWarningCondition(status, exception(errorMessage));
-        condition = KafkaRebalanceUtils.getWarningCondition(status);
-        assertThat(status.getConditions().size(), is(2));
-        assertThat(condition.getMessage(), is(errorMessage));
-        assertThat(condition.getLastTransitionTime(), not(timestamp));
-    }
-
-    private Exception exception(String msg) {
-        return new Exception(msg, new NullPointerException("Null value"));
     }
 }

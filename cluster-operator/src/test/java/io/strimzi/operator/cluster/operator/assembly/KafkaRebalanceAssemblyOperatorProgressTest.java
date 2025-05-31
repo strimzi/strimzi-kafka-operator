@@ -125,6 +125,13 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
         return Future.succeededFuture();
     }
 
+    private static Condition getWarningCondition(KafkaRebalanceStatus status) {
+        return status.getConditions().stream()
+                .filter(condition -> condition.getType().equals("Warning"))
+                .findFirst()
+                .orElse(null);
+    }
+
     /**
      * Test progress fields of `KafkaRebalance` resource and ConfigMap during KafkaRebalance lifecycle.
      */
@@ -172,7 +179,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                 .compose(res -> verifyKafkaRebalanceStateAndConfigMap(context, Rebalancing, res))
                 .map(res -> {
                     // Test that warning condition was added to resource when Cruise Control API is unreachable.
-                    Condition warningCondition1 = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());
+                    Condition warningCondition1 = getWarningCondition(getKafkaRebalanceStatus());
                     assertThat(warningCondition1, notNullValue());
                     return warningCondition1;
                 })
@@ -183,7 +190,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                         .onSuccess(res -> {
 
                             // Test that the warning condition was not updated.
-                            Condition warningCondition2 = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());
+                            Condition warningCondition2 = getWarningCondition(getKafkaRebalanceStatus());
                             assertThat(warningCondition1.getReason(), is(warningCondition2.getReason()));
                             assertThat(warningCondition1.getMessage(), is(warningCondition2.getMessage()));
                             assertThat(warningCondition1.getLastTransitionTime(), is(warningCondition2.getLastTransitionTime()));
@@ -195,7 +202,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                 .onSuccess(res -> {
 
                     // Test that warning condition is removed
-                    Condition warningCondition2 = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());
+                    Condition warningCondition2 = getWarningCondition(getKafkaRebalanceStatus());
                     assertThat(warningCondition2, nullValue());
 
                     checkpoint.flag();
@@ -222,7 +229,7 @@ public class KafkaRebalanceAssemblyOperatorProgressTest extends AbstractKafkaReb
                 .compose(res -> reconcile(reconciliation))
                 .onSuccess(res -> {
                     assertState(context, client, namespace, RESOURCE_NAME, Rebalancing);
-                    Condition warningCondition = KafkaRebalanceUtils.getWarningCondition(getKafkaRebalanceStatus());
+                    Condition warningCondition = getWarningCondition(getKafkaRebalanceStatus());
                     assertThat(warningCondition, notNullValue());
                     checkpoint.flag();
                 })
