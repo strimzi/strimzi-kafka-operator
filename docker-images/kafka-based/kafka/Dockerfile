@@ -81,8 +81,8 @@ COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
 # Add Prometheus JMX Exporter
 #####
 ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
-ENV JMX_EXPORTER_VERSION=1.1.0
-ENV JMX_EXPORTER_CHECKSUM="63f9ff5297c6add9ecd19633a54300ffcec0df2e09afca7212e80506b801ea20aa009efc4b582b6ed8a4616b1ed68c98e30cc5b9dbf2cf6fe68b7cf2e3c5db3c  jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
+ENV JMX_EXPORTER_VERSION=1.3.0
+ENV JMX_EXPORTER_CHECKSUM="58b87e0c7f14cdbd3cdac3408e377be0bf0b30b3cd878669e94bf48181e878e3e4d30b2c2219c74da7f694fe85bcf81014520d84294da44e302247126bd92753  jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
 
 RUN set -ex; \
     curl -LO https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar; \
