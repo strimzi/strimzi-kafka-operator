@@ -4,6 +4,12 @@
  */
 package io.strimzi.systemtest.olm;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -21,24 +27,62 @@ import static io.strimzi.systemtest.TestTags.OLM;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Tag(OLM)
+@SuiteDoc(
+    description = @Desc("Tests Strimzi deployments managed by OLM when configured to watch a single, specific namespace."),
+    labels = {
+        @Label(TestDocsLabels.OLM)
+    }
+)
 public class OlmSingleNamespaceST extends OlmAbstractST {
 
     public static final String NAMESPACE = "olm-namespace";
 
     @Test
     @Order(1)
+    @TestDoc(
+        description = @Desc("Verifies the deployment of a Kafka cluster using the OLM example in a single-namespace watch configuration."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster using the OLM example in the designated single namespace.", expected = "Kafka cluster is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
+        },
+        labels = {
+            @Label(TestDocsLabels.OLM),
+            @Label(TestDocsLabels.KAFKA)
+        }
+    )
     void testDeployExampleKafka() {
         doTestDeployExampleKafka();
     }
 
     @Test
     @Order(2)
+    @TestDoc(
+        description = @Desc("Verifies the deployment of a KafkaUser using the OLM example in a single-namespace watch configuration."),
+        steps = {
+            @Step(value = "Deploy KafkaUser using the OLM example in the designated single namespace.", expected = "KafkaUser is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
+        },
+        labels = {
+            @Label(TestDocsLabels.OLM),
+        }
+    )
     void testDeployExampleKafkaUser() {
         doTestDeployExampleKafkaUser();
     }
 
     @Test
     @Order(3)
+    @TestDoc(
+        description = @Desc("Verifies the deployment of a KafkaTopic using the OLM example in a single-namespace watch configuration."),
+        steps = {
+            @Step(value = "Deploy KafkaTopic using the OLM example in the designated single namespace.", expected = "KafkaTopic is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
+        },
+        labels = {
+            @Label(TestDocsLabels.OLM),
+            @Label(TestDocsLabels.KAFKA)
+        }
+    )
     void testDeployExampleKafkaTopic() {
         doTestDeployExampleKafkaTopic();
     }
@@ -46,6 +90,17 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @Test
     @Order(4)
     @Tag(CONNECT)
+    @TestDoc(
+        description = @Desc("Verifies the deployment of a KafkaConnect cluster using the OLM example in a single-namespace watch configuration."),
+        steps = {
+            @Step(value = "Deploy KafkaConnect cluster using the OLM example in the designated single namespace.", expected = "KafkaConnect cluster is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
+        },
+        labels = {
+            @Label(TestDocsLabels.OLM),
+            @Label(TestDocsLabels.CONNECT)
+        }
+    )
     void testDeployExampleKafkaConnect() {
         doTestDeployExampleKafkaConnect();
     }
@@ -53,6 +108,17 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @Test
     @Order(5)
     @Tag(BRIDGE)
+    @TestDoc(
+        description = @Desc("Verifies the deployment of a KafkaBridge using the OLM example in a single-namespace watch configuration."),
+        steps = {
+            @Step(value = "Deploy KafkaBridge using the OLM example in the designated single namespace.", expected = "KafkaBridge is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
+        },
+        labels = {
+            @Label(TestDocsLabels.OLM),
+            @Label(TestDocsLabels.BRIDGE)
+        }
+    )
     void testDeployExampleKafkaBridge() {
         doTestDeployExampleKafkaBridge();
     }
@@ -60,6 +126,17 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @Test
     @Order(7)
     @Tag(MIRROR_MAKER2)
+    @TestDoc(
+        description = @Desc("Verifies the deployment of a KafkaMirrorMaker2 cluster using the OLM example in a single-namespace watch configuration."),
+        steps = {
+            @Step(value = "Deploy KafkaMirrorMaker2 cluster using the OLM example in the designated single namespace.", expected = "KafkaMirrorMaker2 cluster is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
+        },
+        labels = {
+            @Label(TestDocsLabels.OLM),
+            @Label(TestDocsLabels.MIRROR_MAKER_2)
+        }
+    )
     void testDeployExampleKafkaMirrorMaker2() {
         doTestDeployExampleKafkaMirrorMaker2();
     }
@@ -67,6 +144,17 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @Test
     @Order(8)
     @Tag(CRUISE_CONTROL)
+    @TestDoc(
+        description = @Desc("Verifies the deployment of a KafkaRebalance resource using the OLM example in a single-namespace watch configuration."),
+        steps = {
+            @Step(value = "Deploy KafkaRebalance resource using the OLM example in the designated single namespace.", expected = "KafkaRebalance resource is deployed and reaches PendingProposal state within the watched namespace."),
+            @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
+        },
+        labels = {
+            @Label(TestDocsLabels.OLM),
+            @Label(TestDocsLabels.CRUISE_CONTROL)
+        }
+    )
     void testDeployExampleKafkaRebalance() {
         doTestDeployExampleKafkaRebalance();
     }
