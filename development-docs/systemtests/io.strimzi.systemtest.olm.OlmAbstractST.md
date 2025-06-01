@@ -4,6 +4,6 @@
 
 **Labels:**
 
-* `olm` (description file doesn't exist)
+* [olm](labels/olm.md)
 
 <hr style="border:1px solid">

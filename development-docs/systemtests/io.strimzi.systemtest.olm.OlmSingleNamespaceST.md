@@ -4,7 +4,7 @@
 
 **Labels:**
 
-* `olm` (description file doesn't exist)
+* [olm](labels/olm.md)
 
 <hr style="border:1px solid">
 
@@ -21,7 +21,7 @@
 
 **Labels:**
 
-* `olm` (description file doesn't exist)
+* [olm](labels/olm.md)
 * [kafka](labels/kafka.md)
 
 
@@ -38,7 +38,7 @@
 
 **Labels:**
 
-* `olm` (description file doesn't exist)
+* [olm](labels/olm.md)
 * [bridge](labels/bridge.md)
 
 
@@ -55,7 +55,7 @@
 
 **Labels:**
 
-* `olm` (description file doesn't exist)
+* [olm](labels/olm.md)
 * [connect](labels/connect.md)
 
 
@@ -72,7 +72,7 @@
 
 **Labels:**
 
-* `olm` (description file doesn't exist)
+* [olm](labels/olm.md)
 * `mirror-maker-2` (description file doesn't exist)
 
 
@@ -89,7 +89,7 @@
 
 **Labels:**
 
-* `olm` (description file doesn't exist)
+* [olm](labels/olm.md)
 * [cruise-control](labels/cruise-control.md)
 
 
@@ -106,7 +106,7 @@
 
 **Labels:**
 
-* `olm` (description file doesn't exist)
+* [olm](labels/olm.md)
 * [kafka](labels/kafka.md)
 
 
@@ -123,5 +123,5 @@
 
 **Labels:**
 
-* `olm` (description file doesn't exist)
+* [olm](labels/olm.md)
 
