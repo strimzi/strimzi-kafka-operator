@@ -5,6 +5,11 @@
 * Add support for Kafka 3.9.1
 * Fixed MirrorMaker 2 client rack init container override being ignored.
 
+### Major changes, deprecations and removals
+
+* Strimzi 0.47.0 (and any of its patch releases) is the last Strimzi version with support for Kubernetes 1.25 and 1.26.
+  From Strimzi 0.48.0 on, we will support only Kubernetes 1.27 and newer.
+
 ## 0.46.0
 
 * Add support for Kafka 4.0.0.
