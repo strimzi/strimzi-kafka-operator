@@ -157,8 +157,8 @@ EOF
     fi
 
     if is_docker; then
-        echo "$docker_config" | tee /etc/docker/daemon.json
-        systemctl restart docker
+        echo "$docker_config" | sudo tee /etc/docker/daemon.json
+        sudo systemctl restart docker
     else
         # Ensure the podman_config is inserted correctly after unqualified-search-registries
         sudo awk -v config="$podman_config" '
