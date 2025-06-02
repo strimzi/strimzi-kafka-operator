@@ -121,7 +121,7 @@ public class KafkaConnectTemplates {
                 .addToConfig("offset.storage.replication.factor", "-1")
                 .addToConfig("status.storage.replication.factor", "-1")
                 .withNewInlineLogging()
-                    .addToLoggers(rootLogger, "INFO")
+                    .addToLoggers(rootLogger, "DEBUG")
                 .endInlineLogging()
             .endSpec();
     }
