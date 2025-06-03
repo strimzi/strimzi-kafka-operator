@@ -450,12 +450,13 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test custom listener configured with TLS and with user defined configuration for ssl.* fields."),
         steps = {
-            @Step(value = "Generate custom CA and end app certificates for mTLS configured for custom listener.", expected = "Secrets with generated CA and end app certs are available."),
+            @Step(value = "Generate 2 custom root CA and 2 user certificates (each user cert signed by different root CA) for mTLS configured for custom listener.", expected = "Secrets with generated CA and user certs are available."),
             @Step(value = "Create a broker and controller KafkaNodePools.", expected = "KafkaNodePools are created."),
-            @Step(value = "Create a Kafka cluster with custom listener using TLS authentication and custom certs defined via 'ssl.truststore.location'.", expected = "Kafka cluster with custom listener is ready."),
+            @Step(value = "Create a Kafka cluster with custom listener using TLS authentication and both custom CA certs defined via 'ssl.truststore.location'.", expected = "Kafka cluster with custom listener is ready."),
             @Step(value = "Create a Kafka topic and TLS.", expected = "Kafka topic and user are created."),
-            @Step(value = "Transmit messages over TLS to custom listener with end app certs generated during the firs step.", expected = "Messages are transmitted successfully."),
-            @Step(value = "Transmit messages over TLS to custom listener with Strimzi certs generated for KafkaUser.", expected = "Producer/consumer time-outed.")
+            @Step(value = "Transmit messages over TLS to custom listener with user-1 certs generated during the firs step.", expected = "Messages are transmitted successfully."),
+            @Step(value = "Transmit messages over TLS to custom listener with Strimzi certs generated for KafkaUser.", expected = "Producer/consumer time-outed."),
+            @Step(value = "Transmit messages over TLS to custom listener with user-2 certs generated during the firs step.", expected = "Messages are transmitted successfully.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -465,17 +466,23 @@ public class ListenersST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         String customCaCertName = "custom-ca";
-        String customUserCertName = "custom-user-cert";
+        String customUserCertName1 = "custom-user-1-cert";
+        String customUserCertName2 = "custom-user-2-cert";
         String mountPath = "/mnt/kafka/custom-authn-secrets/my-listener";
 
-        final CertAndKey rootCa = generateRootCaCertAndKey();
-        final CertAndKey intermediate = generateIntermediateCaCertAndKey(rootCa);
-        final CertAndKey user = generateEndEntityCertAndKey(intermediate, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
+        final CertAndKey rootCa1 = generateRootCaCertAndKey();
+        final CertAndKey rootCa2 = generateRootCaCertAndKey();
+        final CertAndKey intermediate1 = generateIntermediateCaCertAndKey(rootCa1);
+        final CertAndKey intermediate2 = generateIntermediateCaCertAndKey(rootCa2);
+        final CertAndKey user1 = generateEndEntityCertAndKey(rootCa1, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
+        final CertAndKey user2 = generateEndEntityCertAndKey(rootCa2, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
 
-        final CertAndKeyFiles rootCertAndKey = exportToPemFiles(rootCa);
-        final CertAndKeyFiles chainCertAndKey = exportToPemFiles(user, intermediate, rootCa);
+        final CertAndKeyFiles rootCertAndKey = exportToPemFiles(rootCa1, rootCa2);
+        final CertAndKeyFiles chainCertAndKey1 = exportToPemFiles(user1);
+        final CertAndKeyFiles chainCertAndKey2 = exportToPemFiles(user2);
 
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customUserCertName, chainCertAndKey, "user");
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customUserCertName1, chainCertAndKey1, "user");
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customUserCertName2, chainCertAndKey2, "user");
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCaCertName, rootCertAndKey);
 
         resourceManager.createResourceWithWait(
@@ -528,8 +535,8 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Transmitting messages over tls using tls auth with bootstrap address: {}", boostrapAddress);
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage, boostrapAddress);
 
-        // Use custom cert for mTLS
-        kafkaClients.setUsername(customUserCertName);
+        // Use custom cert 1 for mTLS
+        kafkaClients.setUsername(customUserCertName1);
         resourceManager.createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
@@ -547,6 +554,16 @@ public class ListenersST extends AbstractST {
 
         // TODO - we should rework this to allow timeout specification as this is not efficient
         ClientUtils.waitForInstantClientsTimeout(testStorage);
+        JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName());
+
+        // Use custom cert 2 for mTLS
+        kafkaClients.setUsername(customUserCertName2);
+        resourceManager.createResourceWithWait(
+            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
+            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     @ParallelNamespaceTest
