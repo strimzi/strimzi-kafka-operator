@@ -4,12 +4,13 @@
  */
 package io.strimzi.systemtest.security;
 
+import io.skodjob.testframe.security.CertAndKey;
+import io.skodjob.testframe.security.CertAndKeyFiles;
 import io.strimzi.systemtest.storage.TestStorage;
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.util.io.pem.PemObject;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -19,32 +20,30 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 
-import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.endEntityCertBuilder;
-import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.intermediateCaCertBuilder;
-import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.rootCaCertBuilder;
-import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.strimziCaCertBuilder;
+import static io.skodjob.testframe.security.CertAndKeyBuilder.appCaCertBuilder;
+import static io.skodjob.testframe.security.CertAndKeyBuilder.endEntityCertBuilder;
+import static io.skodjob.testframe.security.CertAndKeyBuilder.intermediateCaCertBuilder;
+import static io.skodjob.testframe.security.CertAndKeyBuilder.rootCaCertBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class SystemTestCertManager {
+public class SystemTestCertGenerator {
 
     static final String STRIMZI_ROOT_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziRootCA";
     static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
     static final String STRIMZI_END_SUBJECT = "C=CZ, L=Prague, O=Strimzi, CN=kafka.strimzi.io";
 
-    public static SystemTestCertAndKey generateRootCaCertAndKey() {
+    public static CertAndKey generateRootCaCertAndKey() {
         return rootCaCertBuilder()
                 .withIssuerDn(STRIMZI_ROOT_CA)
                 .withSubjectDn(STRIMZI_ROOT_CA)
                 .build();
     }
 
-    public static SystemTestCertAndKey generateRootCaCertAndKey(final String rootCaDn, final ASN1Encodable[] sanDnsNames) {
+    public static CertAndKey generateRootCaCertAndKey(final String rootCaDn, final ASN1Encodable[] sanDnsNames) {
         return rootCaCertBuilder()
             .withIssuerDn(rootCaDn)
             .withSubjectDn(rootCaDn)
@@ -52,19 +51,19 @@ public class SystemTestCertManager {
             .build();
     }
 
-    public static SystemTestCertAndKey generateIntermediateCaCertAndKey(SystemTestCertAndKey rootCert) {
+    public static CertAndKey generateIntermediateCaCertAndKey(CertAndKey rootCert) {
         return intermediateCaCertBuilder(rootCert)
                 .withSubjectDn(STRIMZI_INTERMEDIATE_CA)
                 .build();
     }
 
-    public static SystemTestCertAndKey generateStrimziCaCertAndKey(SystemTestCertAndKey rootCert, String subjectDn) {
-        return strimziCaCertBuilder(rootCert)
+    public static CertAndKey generateStrimziCaCertAndKey(CertAndKey rootCert, String subjectDn) {
+        return appCaCertBuilder(rootCert)
                 .withSubjectDn(subjectDn)
                 .build();
     }
 
-    public static SystemTestCertAndKey generateEndEntityCertAndKey(final SystemTestCertAndKey intermediateCert,
+    public static CertAndKey generateEndEntityCertAndKey(final CertAndKey intermediateCert,
                                                                    final ASN1Encodable[] sansNames) {
         return endEntityCertBuilder(intermediateCert)
                 .withSubjectDn(STRIMZI_END_SUBJECT)
@@ -72,7 +71,7 @@ public class SystemTestCertManager {
                 .build();
     }
 
-    public static SystemTestCertAndKey generateEndEntityCertAndKey(SystemTestCertAndKey intermediateCert) {
+    public static CertAndKey generateEndEntityCertAndKey(CertAndKey intermediateCert) {
         return endEntityCertBuilder(intermediateCert)
                 .withSubjectDn(STRIMZI_END_SUBJECT)
                 .withSanDnsName("*.127.0.0.1.nip.io")
@@ -88,40 +87,38 @@ public class SystemTestCertManager {
      * @return A {@link CertAndKeyFiles} object with the broker certificate and key in PEM format.
      */
     public static CertAndKeyFiles createBrokerCertChain(final TestStorage testStorage) {
-        final SystemTestCertAndKey root = generateRootCaCertAndKey();
-        final SystemTestCertAndKey intermediate = generateIntermediateCaCertAndKey(root);
-        final SystemTestCertAndKey brokerCertAndKey = generateEndEntityCertAndKey(intermediate, retrieveKafkaBrokerSANs(testStorage));
+        final CertAndKey root = generateRootCaCertAndKey();
+        final CertAndKey intermediate = generateIntermediateCaCertAndKey(root);
+        final CertAndKey brokerCertAndKey = generateEndEntityCertAndKey(intermediate, retrieveKafkaBrokerSANs(testStorage));
 
         return exportToPemFiles(brokerCertAndKey);
     }
 
-    public static CertAndKeyFiles exportToPemFiles(SystemTestCertAndKey... certs) {
+    public static CertAndKeyFiles exportToPemFiles(CertAndKey... certs) {
         if (certs.length == 0) {
             throw new IllegalArgumentException("List of certificates should has at least one element");
         }
         try {
-            File keyFile = exportPrivateKeyToPemFile(certs[0].getPrivateKey());
-            File certFile = exportCertsToPemFile(certs);
+            File keyFile = convertPrivateKeyToPKCS8Format(certs[0].getPrivateKey());
+            File certFile = exportCertsToPemFormat(certs);
             return new CertAndKeyFiles(certFile, keyFile);
-        } catch (IOException e) {
+        } catch (IOException | InvalidKeySpecException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static File convertPrivateKeyToPKCS8File(PrivateKey privatekey) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+    public static File convertPrivateKeyToPKCS8Format(PrivateKey privatekey) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
         byte[] encoded = privatekey.getEncoded();
-        final PrivateKeyInfo privateKeyInfo = PrivateKeyInfo.getInstance(encoded);
 
-        final ASN1Encodable asn1Encodable = privateKeyInfo.parsePrivateKey();
-        final byte[] privateKeyPKCS8Formatted = asn1Encodable.toASN1Primitive().getEncoded(ASN1Encoding.DER);
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyPKCS8Formatted);
+        File keyFile = Files.createTempFile("key-", ".key").toFile();
+        try (JcaPEMWriter w = new JcaPEMWriter(new FileWriter(keyFile, UTF_8))) {
+            w.writeObject(new PemObject("PRIVATE KEY", encoded));
+        }
 
-        KeyFactory kf = KeyFactory.getInstance(SystemTestCertAndKeyBuilder.KEY_PAIR_ALGORITHM);
-        PrivateKey privateKey = kf.generatePrivate(keySpec);
-        return  exportPrivateKeyToPemFile(privateKey);
+        return keyFile;
     }
 
-    private static File exportPrivateKeyToPemFile(PrivateKey privateKey) throws IOException {
+    private static File exportPrivateKeyToPemFormat(PrivateKey privateKey) throws IOException {
         File keyFile = Files.createTempFile("key-", ".key").toFile();
         try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(keyFile, UTF_8))) {
             pemWriter.writeObject(privateKey);
@@ -130,10 +127,10 @@ public class SystemTestCertManager {
         return keyFile;
     }
 
-    private static File exportCertsToPemFile(SystemTestCertAndKey... certs) throws IOException {
+    private static File exportCertsToPemFormat(CertAndKey... certs) throws IOException {
         File certFile = Files.createTempFile("crt-", ".crt").toFile();
         try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(certFile, UTF_8))) {
-            for (SystemTestCertAndKey certAndKey : certs) {
+            for (CertAndKey certAndKey : certs) {
                 pemWriter.writeObject(certAndKey.getCertificate());
             }
             pemWriter.flush();

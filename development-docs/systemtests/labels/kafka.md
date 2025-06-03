@@ -79,6 +79,7 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testRegenerateCertExternalAddressChange](../io.strimzi.systemtest.kafka.KafkaST.md)
 - [testRemoveComponentsFromEntityOperator](../io.strimzi.systemtest.kafka.KafkaST.md)
 - [testResizeJbodVolumes](../io.strimzi.systemtest.kafka.KafkaST.md)
+- [testSendMessagesCustomListenerTlsCustomization](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testSendMessagesCustomListenerTlsScramSha](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testSendMessagesPlainAnonymous](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testSendMessagesPlainScramSha](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)

@@ -16,8 +16,8 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
-import io.strimzi.systemtest.security.SystemTestCertHolder;
-import io.strimzi.systemtest.security.SystemTestCertManager;
+import io.strimzi.systemtest.security.SystemTestCertBundle;
+import io.strimzi.systemtest.security.SystemTestCertGenerator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -79,7 +79,7 @@ public class CustomCaST extends AbstractST {
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // Generate root and intermediate certificate authority with cluster CA
-        SystemTestCertHolder clusterCa = new SystemTestCertHolder(
+        SystemTestCertBundle clusterCa = new SystemTestCertBundle(
             "CN=" + testStorage.getTestName() + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
@@ -92,7 +92,7 @@ public class CustomCaST extends AbstractST {
         Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
         // Create new CA and renew old one with it
-        final SystemTestCertHolder newClusterCa = new SystemTestCertHolder(
+        final SystemTestCertBundle newClusterCa = new SystemTestCertBundle(
             "CN=" + testStorage.getTestName() + "ClusterCAv2",
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
@@ -157,7 +157,7 @@ public class CustomCaST extends AbstractST {
     void testReplacingCustomClientsKeyPairToInvokeRenewalProcess() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // Generate root and intermediate certificate authority with clients CA
-        final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
+        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
             "CN=" + testStorage.getTestName() + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
@@ -170,7 +170,7 @@ public class CustomCaST extends AbstractST {
         final Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
         LOGGER.info("Generating a new custom 'User certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles");
-        final SystemTestCertHolder newClientsCa = new SystemTestCertHolder(
+        final SystemTestCertBundle newClientsCa = new SystemTestCertBundle(
             "CN=" + testStorage.getTestName() + "ClientsCAv2",
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
@@ -206,18 +206,18 @@ public class CustomCaST extends AbstractST {
     void testCustomClusterCaAndClientsCaCertificates() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
+        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
             "CN=" + testStorage.getTestName() + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
-        final SystemTestCertHolder clusterCa = new SystemTestCertHolder(
+        final SystemTestCertBundle clusterCa = new SystemTestCertBundle(
             "CN=" + testStorage.getTestName() + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
 
         // prepare custom Ca and copy that to the related Secrets
-        clientsCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
-        clusterCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+        clientsCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+        clusterCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         final X509Certificate clientsCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName())), "ca.crt");
@@ -249,7 +249,7 @@ public class CustomCaST extends AbstractST {
         final X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
                 brokerPodName), brokerPodName + ".crt");
         assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerDN(),
-                SystemTestCertManager.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
+                SystemTestCertGenerator.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
@@ -259,7 +259,7 @@ public class CustomCaST extends AbstractST {
         final X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
             testStorage.getUsername()), "user.crt");
         assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
-                SystemTestCertManager.containsAllDN(userCert.getIssuerX500Principal().getName(), clientsCa.getSubjectDn()));
+                SystemTestCertGenerator.containsAllDN(userCert.getIssuerX500Principal().getName(), clientsCa.getSubjectDn()));
 
         LOGGER.info("Send and receive messages over TLS");
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
@@ -282,7 +282,7 @@ public class CustomCaST extends AbstractST {
         final int validityDays = 20;
         final int newValidityDays = 200;
 
-        SystemTestCertHolder clusterCa = new SystemTestCertHolder(
+        SystemTestCertBundle clusterCa = new SystemTestCertBundle(
             "CN=" + testStorage.getTestName() + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
@@ -372,7 +372,7 @@ public class CustomCaST extends AbstractST {
         final int validityDays = 20;
         final int newValidityDays = 200;
 
-        final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
+        final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
             "CN=" + testStorage.getTestName() + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
@@ -447,7 +447,7 @@ public class CustomCaST extends AbstractST {
      * @param oldCa represents currently deployed CA which will be replaced - needed for retaining ca.crt value
      * @param newCa stands for a CA which will be used after the renewal is done
      */
-    private void manuallyRenewCa(TestStorage testStorage, SystemTestCertHolder oldCa, SystemTestCertHolder newCa) {
+    private void manuallyRenewCa(TestStorage testStorage, SystemTestCertBundle oldCa, SystemTestCertBundle newCa) {
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
         KafkaUtils.annotateKafka(testStorage.getNamespaceName(), testStorage.getClusterName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
@@ -475,27 +475,27 @@ public class CustomCaST extends AbstractST {
             // Put new CA cert into the ca-cert secret
             caCertificateSecret.getData().put("ca.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(newCa.getBundle().getCertPath()))));
             // Put new CA key into the ca secret
-            final File strimziKeyPKCS8 = SystemTestCertManager.convertPrivateKeyToPKCS8File(newCa.getSystemTestCa().getPrivateKey());
+            final File strimziKeyPKCS8 = SystemTestCertGenerator.convertPrivateKeyToPKCS8Format(newCa.getSystemTestCa().getPrivateKey());
             caKeySecret.getData().put("ca.key", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(strimziKeyPKCS8.getAbsolutePath()))));
         } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);
         }
 
         // Patch secrets with new values and increase generation counter
-        SystemTestCertHolder.increaseCertGenerationCounterInSecret(caCertificateSecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
-        SystemTestCertHolder.increaseCertGenerationCounterInSecret(caKeySecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION);
+        SystemTestCertBundle.patchSecretAndIncreaseGeneration(caCertificateSecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
+        SystemTestCertBundle.patchSecretAndIncreaseGeneration(caKeySecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION);
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka CustomResource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
         KafkaUtils.removeAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
     }
 
-    private void checkCustomCaCorrectness(final SystemTestCertHolder caHolder, final X509Certificate certificate) {
+    private void checkCustomCaCorrectness(final SystemTestCertBundle caHolder, final X509Certificate certificate) {
         LOGGER.info("Check ClusterCA and ClientsCA certificates");
         assertThat("Generated ClientsCA or ClusterCA does not have expected Issuer: " + certificate.getIssuerDN(),
-            SystemTestCertManager.containsAllDN(certificate.getIssuerX500Principal().getName(), STRIMZI_INTERMEDIATE_CA));
+            SystemTestCertGenerator.containsAllDN(certificate.getIssuerX500Principal().getName(), STRIMZI_INTERMEDIATE_CA));
         assertThat("Generated ClientsCA or ClusterCA does not have expected Subject: " + certificate.getSubjectDN(),
-            SystemTestCertManager.containsAllDN(certificate.getSubjectX500Principal().getName(), caHolder.getSubjectDn()));
+            SystemTestCertGenerator.containsAllDN(certificate.getSubjectX500Principal().getName(), caHolder.getSubjectDn()));
     }
 
     /**
@@ -507,12 +507,12 @@ public class CustomCaST extends AbstractST {
      * @param certificateAuthority          certificate authority of Clients or Cluster
      * @param testStorage                            auxiliary resources for test case
      */
-    private void prepareTestCaWithBundleAndKafkaCluster(final SystemTestCertHolder certificateAuthority,
+    private void prepareTestCaWithBundleAndKafkaCluster(final SystemTestCertBundle certificateAuthority,
                                                         final TestStorage testStorage, int renewalDays, int validityDays) {
 
         // 1. Prepare correspondent Secrets from generated custom CA certificates
         //  a) Cluster or Clients CA
-        certificateAuthority.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+        certificateAuthority.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         final X509Certificate certificate = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
                 certificateAuthority.getCaCertSecretName()), "ca.crt");
@@ -523,18 +523,18 @@ public class CustomCaST extends AbstractST {
         //     (f.e., Clients CA should not be generated, but the secrets were not found.)
         if (certificateAuthority.getCaCertSecretName().equals(KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName())) &&
             certificateAuthority.getCaKeySecretName().equals(KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()))) {
-            final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
+            final SystemTestCertBundle clientsCa = new SystemTestCertBundle(
                 "CN=" + testStorage.getTestName() + "ClientsCA",
                 KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
                 KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
-            clientsCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+            clientsCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
         } else {
             // otherwise we generate Cluster CA
-            final SystemTestCertHolder clusterCa = new SystemTestCertHolder(
+            final SystemTestCertBundle clusterCa = new SystemTestCertBundle(
                 "CN=" + testStorage.getTestName() + "ClusterCA",
                 KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
                 KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
-            clusterCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+            clusterCa.createCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
         }
 
         resourceManager.createResourceWithWait(

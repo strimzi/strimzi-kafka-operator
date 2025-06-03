@@ -451,6 +451,26 @@
 * [kafka](labels/kafka.md)
 
 
+## testSendMessagesCustomListenerTlsCustomization
+
+**Description:** Test custom listener configured with TLS and with user defined configuration for ssl.* fields.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Generate custom CA and end app certificates for mTLS configured for custom listener. | Secrets with generated CA and end app certs are available. |
+| 2. | Create a broker and controller KafkaNodePools. | KafkaNodePools are created. |
+| 3. | Create a Kafka cluster with custom listener using TLS authentication and custom certs defined via 'ssl.truststore.location'. | Kafka cluster with custom listener is ready. |
+| 4. | Create a Kafka topic and TLS. | Kafka topic and user are created. |
+| 5. | Transmit messages over TLS to custom listener with end app certs generated during the firs step. | Messages are transmitted successfully. |
+| 6. | Transmit messages over TLS to custom listener with Strimzi certs generated for KafkaUser. | Producer/consumer time-outed. |
+
+**Labels:**
+
+* [kafka](labels/kafka.md)
+
+
 ## testSendMessagesCustomListenerTlsScramSha
 
 **Description:** Test custom listener configured with scram SHA authentication and TLS.

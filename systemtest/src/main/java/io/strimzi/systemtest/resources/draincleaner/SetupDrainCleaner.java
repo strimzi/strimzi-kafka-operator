@@ -17,11 +17,11 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
+import io.skodjob.testframe.security.CertAndKey;
+import io.skodjob.testframe.security.CertAndKeyFiles;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.security.CertAndKeyFiles;
-import io.strimzi.systemtest.security.SystemTestCertAndKey;
-import io.strimzi.systemtest.security.SystemTestCertManager;
+import io.strimzi.systemtest.security.SystemTestCertGenerator;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
@@ -58,7 +58,7 @@ public class SetupDrainCleaner {
 
         if (DRAIN_CLEANER_DIRECTORY.equals(KUBERNETES_DIRECTORY)) {
             // we need to create our own certificates before applying install-files
-            final SystemTestCertAndKey drainCleanerKeyPair = SystemTestCertManager
+            final CertAndKey drainCleanerKeyPair = SystemTestCertGenerator
                 .generateRootCaCertAndKey("C=CZ, L=Prague, O=Strimzi Drain Cleaner, CN=StrimziDrainCleanerCA",
                     // add hostnames (i.e., SANs) to the certificate
                     new ASN1Encodable[]{
@@ -67,7 +67,7 @@ public class SetupDrainCleaner {
                         new GeneralName(GeneralName.dNSName, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME + ".svc"),
                         new GeneralName(GeneralName.dNSName, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME + ".svc.cluster.local")
                     });
-            final CertAndKeyFiles drainCleanerKeyPairPemFormat = SystemTestCertManager.exportToPemFiles(drainCleanerKeyPair);
+            final CertAndKeyFiles drainCleanerKeyPairPemFormat = SystemTestCertGenerator.exportToPemFiles(drainCleanerKeyPair);
 
             final Map<String, String> certsPaths = new HashMap<>();
             certsPaths.put("tls.crt", drainCleanerKeyPairPemFormat.getCertPath());
