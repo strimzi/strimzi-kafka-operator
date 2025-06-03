@@ -7,7 +7,7 @@
         <groupId>io.strimzi</groupId>
         <version>0.47.0-SNAPSHOT</version>
     </parent>
-    <name>Strimzi CRDs generator</name>
+    <name>Strimzi CRD generator</name>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>crd-generator</artifactId>
 
