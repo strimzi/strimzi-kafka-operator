@@ -17,12 +17,11 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy Kafka cluster using the OLM example. | Kafka cluster is deployed and becomes ready. |
-| 2. | Ensure operator (watching all namespaces) manages the Kafka cluster in the designated test namespace. | Kafka cluster is operational and managed by the operator. |
+| 2. | Wait for readiness of the Kafka cluster, meaning that the operator (watching all namespaces) manages the Kafka cluster in the designated test namespace. | Kafka cluster is operational and managed by the operator. |
 
 **Labels:**
 
 * [olm](labels/olm.md)
-* [kafka](labels/kafka.md)
 
 
 ## testDeployExampleKafkaBridge
@@ -34,7 +33,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy KafkaBridge using the OLM example. | KafkaBridge is deployed and becomes ready. |
-| 2. | Ensure operator (watching all namespaces) manages the KafkaBridge in the designated test namespace. | KafkaBridge is operational and managed by the operator. |
+| 2. | Wait for readiness of the KafkaBridge, meaning that the operator (watching all namespaces) manages the KafkaBridge in the designated test namespace. | KafkaBridge is operational and managed by the operator. |
 
 **Labels:**
 
@@ -51,7 +50,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy KafkaConnect cluster using the OLM example. | KafkaConnect cluster is deployed and becomes ready. |
-| 2. | Ensure operator (watching all namespaces) manages the KafkaConnect cluster in the designated test namespace. | KafkaConnect cluster is operational and managed by the operator. |
+| 2. | Wait for readiness of the KafkaConnect, meaning that the operator (watching all namespaces) manages the KafkaConnect cluster in the designated test namespace. | KafkaConnect cluster is operational and managed by the operator. |
 
 **Labels:**
 
@@ -68,7 +67,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy KafkaMirrorMaker2 cluster using the OLM example. | KafkaMirrorMaker2 cluster is deployed and becomes ready. |
-| 2. | Ensure operator (watching all namespaces) manages the KafkaMirrorMaker2 cluster in the designated test namespace. | KafkaMirrorMaker2 cluster is operational and managed by the operator. |
+| 2. | Wait for readiness of the KafkaMirrorMaker2, meaning that the operator (watching all namespaces) manages the KafkaMirrorMaker2 cluster in the designated test namespace. | KafkaMirrorMaker2 cluster is operational and managed by the operator. |
 
 **Labels:**
 
@@ -85,7 +84,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy KafkaRebalance resource using the OLM example. | KafkaRebalance resource is deployed and reaches PendingProposal state. |
-| 2. | Ensure operator (watching all namespaces) manages the KafkaRebalance resource in the designated test namespace. | KafkaRebalance resource is operational and managed by the operator. |
+| 2. | Wait for readiness of the KafkaRebalance, meaning that the operator (watching all namespaces) manages the KafkaRebalance resource in the designated test namespace. | KafkaRebalance resource is operational and managed by the operator. |
 
 **Labels:**
 
@@ -102,12 +101,11 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy KafkaTopic using the OLM example. | KafkaTopic is deployed and becomes ready. |
-| 2. | Ensure operator (watching all namespaces) manages the KafkaTopic in the designated test namespace. | KafkaTopic is operational and managed by the operator. |
+| 2. | Wait for readiness of the KafkaTopic, meaning that the operator (watching all namespaces) manages the KafkaTopic in the designated test namespace. | KafkaTopic is operational and managed by the operator. |
 
 **Labels:**
 
 * [olm](labels/olm.md)
-* [kafka](labels/kafka.md)
 
 
 ## testDeployExampleKafkaUser
@@ -118,8 +116,9 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaUser using the OLM example. | KafkaUser is deployed and becomes ready. |
-| 2. | Ensure operator (watching all namespaces) manages the KafkaUser in the designated test namespace. | KafkaUser is operational and managed by the operator. |
+| 1. | Deploy Kafka cluster with simple authorization. | Kafka cluster with simple authz is deployed and ready. |
+| 2. | Deploy KafkaUser using the OLM example. | KafkaUser is deployed and becomes ready. |
+| 3. | Wait for readiness of the KafkaUser, meaning that the operator (watching all namespaces) manages the KafkaUser in the designated test namespace. | KafkaUser is operational and managed by the operator. |
 
 **Labels:**
 
