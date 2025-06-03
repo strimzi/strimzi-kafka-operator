@@ -6,6 +6,7 @@
         <artifactId>strimzi</artifactId>
         <version>0.45.1</version>
     </parent>
+    <name>Strimzi operators common logic</name>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>operator-common</artifactId>
 

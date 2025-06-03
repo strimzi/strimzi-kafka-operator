@@ -6,6 +6,7 @@
         <artifactId>strimzi</artifactId>
         <version>0.45.1</version>
     </parent>
+    <name>Strimzi User Operator</name>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>user-operator</artifactId>
 
