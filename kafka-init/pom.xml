@@ -7,6 +7,7 @@
         <groupId>io.strimzi</groupId>
         <version>0.46.0</version>
     </parent>
+    <name>Kafka Init Container application</name>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>kafka-init</artifactId>
 
