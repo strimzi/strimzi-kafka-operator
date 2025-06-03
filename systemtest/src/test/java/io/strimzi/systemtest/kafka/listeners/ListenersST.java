@@ -421,11 +421,6 @@ public class ListenersST extends AbstractST {
                             .withSasl(true)
                             .addToListenerConfig("scram-sha-512.sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required;")
                             .addToListenerConfig("sasl.enabled.mechanisms", "SCRAM-SHA-512")
-                            // Change ssl config to see if user can actually change it
-                            .addToListenerConfig("ssl.principal.mapping.rules", "RULE:^.*CN=([^,\\/]+).*$/$1/L,DEFAULT")
-//                        .withListenerConfig(Map.of("scram-sha-512.sasl.jaas.config",
-//                                "org.apache.kafka.common.security.scram.ScramLoginModule required;",
-//                                "sasl.enabled.mechanisms", "SCRAM-SHA-512"))
                         .endKafkaListenerAuthenticationCustomAuth()
                         .build())
                 .endKafka()
@@ -436,7 +431,6 @@ public class ListenersST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
-
 
         final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122";
         LOGGER.info("Transmitting messages over tls using scram sha auth with bootstrap address: {}", boostrapAddress);
@@ -470,10 +464,9 @@ public class ListenersST extends AbstractST {
     void testSendMessagesCustomListenerTlsCustomization() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        String customCaName = "custom-ca";
+        String customCaCertName = "custom-ca";
         String customUserCertName = "custom-user-cert";
         String mountPath = "/mnt/kafka/custom-authn-secrets/my-listener";
-        String key = "ca.crt";
 
         final CertAndKey rootCa = generateRootCaCertAndKey();
         final CertAndKey intermediate = generateIntermediateCaCertAndKey(rootCa);
@@ -483,7 +476,7 @@ public class ListenersST extends AbstractST {
         final CertAndKeyFiles chainCertAndKey = exportToPemFiles(user, intermediate, rootCa);
 
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customUserCertName, chainCertAndKey, "user");
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCaName, rootCertAndKey);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCaCertName, rootCertAndKey);
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -496,16 +489,16 @@ public class ListenersST extends AbstractST {
                     .editTemplate()
                         .editPod()
                             .addToVolumes(new AdditionalVolumeBuilder()
-                                .withName(customCaName)
+                                .withName(customCaCertName)
                                 .withSecret(new SecretVolumeSourceBuilder()
-                                    .withSecretName(customCaName)
+                                    .withSecretName(customCaCertName)
                                     .build())
                                 .build())
                         .endPod()
                         .editKafkaContainer()
                             .addToVolumeMounts(new VolumeMountBuilder()
-                                .withName(customCaName)
-                                .withMountPath(mountPath + "/" + customCaName)
+                                .withName(customCaCertName)
+                                .withMountPath(mountPath + "/" + customCaCertName)
                                 .build())
                         .endKafkaContainer()
                     .endTemplate()
@@ -518,7 +511,7 @@ public class ListenersST extends AbstractST {
                             .withSasl(false)
                             // Change ssl config to see if user can actually change it
                             .addToListenerConfig("ssl.client.auth", "required")
-                            .addToListenerConfig("ssl.truststore.location", mountPath + "/" + customCaName + "/" + key)
+                            .addToListenerConfig("ssl.truststore.location", mountPath + "/" + customCaCertName + "/ca.crt")
                             .addToListenerConfig("ssl.truststore.type", "PEM")
                         .endKafkaListenerAuthenticationCustomAuth()
                         .build())
