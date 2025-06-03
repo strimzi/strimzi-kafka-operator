@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddress;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.user.KafkaUser;
+import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -445,6 +446,7 @@ public class ListenersST extends AbstractST {
     /**
      * Test custom listener configured with tls and user's ssl.* config.
      */
+    @SuppressWarnings({"checkstyle:methodlength"})
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @TestDoc(
@@ -452,11 +454,15 @@ public class ListenersST extends AbstractST {
         steps = {
             @Step(value = "Generate 2 custom root CA and 2 user certificates (each user cert signed by different root CA) for mTLS configured for custom listener.", expected = "Secrets with generated CA and user certs are available."),
             @Step(value = "Create a broker and controller KafkaNodePools.", expected = "KafkaNodePools are created."),
-            @Step(value = "Create a Kafka cluster with custom listener using TLS authentication and both custom CA certs defined via 'ssl.truststore.location'.", expected = "Kafka cluster with custom listener is ready."),
-            @Step(value = "Create a Kafka topic and TLS.", expected = "Kafka topic and user are created."),
+            @Step(value = "Create a Kafka cluster with custom listener using TLS authentication " +
+                "and both custom CA certs defined via 'ssl.truststore.location'. " +
+                "Kafka also contains simple authorization config with superuser 'pepa'.", expected = "Kafka cluster with custom listener is ready."),
+            @Step(value = "Create a Kafka topic and Kafka TLS users wit respective ACL configuration.", expected = "Kafka topic and users are created."),
             @Step(value = "Transmit messages over TLS to custom listener with user-1 certs generated during the firs step.", expected = "Messages are transmitted successfully."),
-            @Step(value = "Transmit messages over TLS to custom listener with Strimzi certs generated for KafkaUser.", expected = "Producer/consumer time-outed."),
-            @Step(value = "Transmit messages over TLS to custom listener with user-2 certs generated during the firs step.", expected = "Messages are transmitted successfully.")
+            @Step(value = "Transmit messages over TLS to custom listener with Strimzi certs generated for KafkaUser.", expected = "Producer/consumer time-outed due to wrong certificate used."),
+            @Step(value = "Transmit messages over TLS to custom listener with user-2 certs generated during the firs step.", expected = "Messages are transmitted successfully."),
+            @Step(value = "Remove 'ssl.principal.mapping.rules' configuration from Kafka's listener.", expected = "Rolling update of Kafka brokers is performed successfully."),
+            @Step(value = "Transmit messages over TLS to custom listener with user-1 certs generated during the firs step.", expected = "Producer/consumer time-outed due to not-authorized error as KafkaUser CN doesn't match."),
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -465,6 +471,7 @@ public class ListenersST extends AbstractST {
     void testSendMessagesCustomListenerTlsCustomization() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
+        String superuserName = "pepa";
         String customCaCertName = "custom-ca";
         String customUserCertName1 = "custom-user-1-cert";
         String customUserCertName2 = "custom-user-2-cert";
@@ -472,10 +479,12 @@ public class ListenersST extends AbstractST {
 
         final CertAndKey rootCa1 = generateRootCaCertAndKey();
         final CertAndKey rootCa2 = generateRootCaCertAndKey();
-        final CertAndKey intermediate1 = generateIntermediateCaCertAndKey(rootCa1);
-        final CertAndKey intermediate2 = generateIntermediateCaCertAndKey(rootCa2);
-        final CertAndKey user1 = generateEndEntityCertAndKey(rootCa1, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
-        final CertAndKey user2 = generateEndEntityCertAndKey(rootCa2, SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage));
+        final CertAndKey user1 = generateEndEntityCertAndKey(rootCa1,
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + testStorage.getUsername());
+        final CertAndKey user2 = generateEndEntityCertAndKey(rootCa2,
+            SystemTestCertGenerator.retrieveKafkaBrokerSANs(testStorage),
+            "C=CZ, L=Prague, O=Strimzi, CN=" + superuserName);
 
         final CertAndKeyFiles rootCertAndKey = exportToPemFiles(rootCa1, rootCa2);
         final CertAndKeyFiles chainCertAndKey1 = exportToPemFiles(user1);
@@ -509,6 +518,9 @@ public class ListenersST extends AbstractST {
                                 .build())
                         .endKafkaContainer()
                     .endTemplate()
+                    .withNewKafkaAuthorizationSimple()
+                        .addToSuperUsers("CN=" + superuserName)
+                    .endKafkaAuthorizationSimple()
                     .withListeners(new GenericKafkaListenerBuilder()
                         .withType(KafkaListenerType.INTERNAL)
                         .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -520,6 +532,7 @@ public class ListenersST extends AbstractST {
                             .addToListenerConfig("ssl.client.auth", "required")
                             .addToListenerConfig("ssl.truststore.location", mountPath + "/" + customCaCertName + "/ca.crt")
                             .addToListenerConfig("ssl.truststore.type", "PEM")
+                            .addToListenerConfig("ssl.principal.mapping.rules", "RULE:^CN=(.*?),(.*)$/CN=$1/")
                         .endKafkaListenerAuthenticationCustomAuth()
                         .build())
                 .endKafka()
@@ -528,14 +541,38 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
-            KafkaUserTemplates.tlsUser(testStorage).build()
+            // KafkaUser with ACLs to check mapping rule
+            KafkaUserTemplates.tlsUser(testStorage)
+                .editSpec()
+                    .withNewKafkaUserAuthorizationSimple()
+                        .addNewAcl()
+                            .withNewAclRuleTopicResource()
+                                .withName(testStorage.getTopicName())
+                            .endAclRuleTopicResource()
+                            .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
+                        .endAcl()
+                        .addNewAcl()
+                            .withNewAclRuleGroupResource()
+                                .withName("*")
+                            .endAclRuleGroupResource()
+                            .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
+                        .endAcl()
+                    .endKafkaUserAuthorizationSimple()
+                .endSpec().build(),
+            // KafkaUser with superuser rights
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), superuserName, testStorage.getClusterName())
+                .editSpec()
+                .endSpec().build()
         );
 
         final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122";
         LOGGER.info("Transmitting messages over tls using tls auth with bootstrap address: {}", boostrapAddress);
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage, boostrapAddress);
 
-        // Use custom cert 1 for mTLS
+        // ###########################################################
+        // Check that KafkaUser with ACLs can produce/consume to Kafka
+        // Use user certs signed by custom root CA 1
+        // ###########################################################
         kafkaClients.setUsername(customUserCertName1);
         resourceManager.createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
@@ -545,7 +582,10 @@ public class ListenersST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
         JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName());
 
-        // Switch to Strimzi generated certs that should be rejected by our custom listener
+        // ###########################################################
+        // Check that KafkaUser with ACLs cannot produce/consume to Kafka
+        // due to wrong user certs signed by Strimzi CA
+        // ###########################################################
         kafkaClients.setUsername(testStorage.getUsername());
         resourceManager.createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
@@ -556,7 +596,10 @@ public class ListenersST extends AbstractST {
         ClientUtils.waitForInstantClientsTimeout(testStorage);
         JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName());
 
-        // Use custom cert 2 for mTLS
+        // ###########################################################
+        // Check that KafkaUser with superuser right can produce/consume to Kafka
+        // Use user certs signed by custom root CA 2
+        // ###########################################################
         kafkaClients.setUsername(customUserCertName2);
         resourceManager.createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
@@ -564,6 +607,44 @@ public class ListenersST extends AbstractST {
         );
 
         ClientUtils.waitForInstantClientSuccess(testStorage);
+        JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName());
+
+        // ###########################################################
+        // Remove ssl.principal.mapping.rules config from Kafka listener
+        // This should prevent KafkaUser with ACLs to be rejected by Kafka
+        // ###########################################################
+        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+
+        // Remove rules mapping from Kafka config
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+            LOGGER.info("Removing ssl.principal.mapping.rules for listeners config");
+            kafka.getSpec().getKafka().setListeners(Collections.singletonList(
+                new GenericKafkaListenerBuilder()
+                    .withType(KafkaListenerType.INTERNAL)
+                    .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
+                    .withPort(9122)
+                    .withTls(true)
+                    .withNewKafkaListenerAuthenticationCustomAuth()
+                    .withSasl(false)
+                        // Change ssl config to see if user can actually change it
+                        .addToListenerConfig("ssl.client.auth", "required")
+                        .addToListenerConfig("ssl.truststore.location", mountPath + "/" + customCaCertName + "/ca.crt")
+                        .addToListenerConfig("ssl.truststore.type", "PEM")
+                    .endKafkaListenerAuthenticationCustomAuth()
+                    .build()
+            ));
+        });
+
+        // Wait for Kafka RU
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
+
+        // Check that KafkaUser with ACL rights cannot produce/consume to/from Kafka
+        kafkaClients.setUsername(testStorage.getUsername());
+        resourceManager.createResourceWithWait(
+            kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
+            kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+        ClientUtils.waitForInstantClientsTimeout(testStorage);
     }
 
     @ParallelNamespaceTest

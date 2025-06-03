@@ -461,11 +461,13 @@
 | - | - | - |
 | 1. | Generate 2 custom root CA and 2 user certificates (each user cert signed by different root CA) for mTLS configured for custom listener. | Secrets with generated CA and user certs are available. |
 | 2. | Create a broker and controller KafkaNodePools. | KafkaNodePools are created. |
-| 3. | Create a Kafka cluster with custom listener using TLS authentication and both custom CA certs defined via 'ssl.truststore.location'. | Kafka cluster with custom listener is ready. |
-| 4. | Create a Kafka topic and TLS. | Kafka topic and user are created. |
+| 3. | Create a Kafka cluster with custom listener using TLS authentication and both custom CA certs defined via 'ssl.truststore.location'. Kafka also contains simple authorization config with superuser 'pepa'. | Kafka cluster with custom listener is ready. |
+| 4. | Create a Kafka topic and Kafka TLS users wit respective ACL configuration. | Kafka topic and users are created. |
 | 5. | Transmit messages over TLS to custom listener with user-1 certs generated during the firs step. | Messages are transmitted successfully. |
-| 6. | Transmit messages over TLS to custom listener with Strimzi certs generated for KafkaUser. | Producer/consumer time-outed. |
+| 6. | Transmit messages over TLS to custom listener with Strimzi certs generated for KafkaUser. | Producer/consumer time-outed due to wrong certificate used. |
 | 7. | Transmit messages over TLS to custom listener with user-2 certs generated during the firs step. | Messages are transmitted successfully. |
+| 8. | Remove 'ssl.principal.mapping.rules' configuration from Kafka's listener. | Rolling update of Kafka brokers is performed successfully. |
+| 9. | Transmit messages over TLS to custom listener with user-1 certs generated during the firs step. | Producer/consumer time-outed due to not-authorized error as KafkaUser CN doesn't match. |
 
 **Labels:**
 

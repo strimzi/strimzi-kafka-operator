@@ -64,9 +64,15 @@ public class SystemTestCertGenerator {
     }
 
     public static CertAndKey generateEndEntityCertAndKey(final CertAndKey intermediateCert,
-                                                                   final ASN1Encodable[] sansNames) {
+                                                         final ASN1Encodable[] sansNames) {
+        return generateEndEntityCertAndKey(intermediateCert, sansNames, STRIMZI_END_SUBJECT);
+    }
+
+    public static CertAndKey generateEndEntityCertAndKey(final CertAndKey intermediateCert,
+                                                                   final ASN1Encodable[] sansNames,
+                                                         final String subjectDn) {
         return endEntityCertBuilder(intermediateCert)
-                .withSubjectDn(STRIMZI_END_SUBJECT)
+                .withSubjectDn(subjectDn)
                 .withSanDnsNames(sansNames)
                 .build();
     }
