@@ -7,7 +7,7 @@
         <groupId>io.strimzi</groupId>
         <version>0.47.0-SNAPSHOT</version>
     </parent>
-    <name>Project to generate CRDs in YAML format starting from model Java classes</name>
+    <name>Strimzi CRDs generator</name>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>crd-generator</artifactId>
 
