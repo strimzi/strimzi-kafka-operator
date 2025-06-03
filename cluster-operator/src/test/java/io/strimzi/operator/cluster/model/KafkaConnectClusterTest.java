@@ -65,9 +65,11 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSourceBuilder;
+import io.strimzi.api.kafka.model.connect.ImageArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.api.kafka.model.connect.MountedPluginBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -2289,5 +2291,68 @@ public class KafkaConnectClusterTest {
         ConfigMap cm = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
         assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(nullValue()));
         assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
+    }
+
+    /**
+     * This test uses the same secret to hold the certs for TLS and the credentials for SCRAM SHA 512 client authentication. It checks that
+     * the volumes and volume mounts that reference the secret are correctly created and that each volume name is only created once - volumes
+     * with duplicate names will cause Kubernetes to reject the deployment.
+     */
+    @ParallelTest
+    public void testOciConnectorPlugins() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+            .editSpec()
+                .withPlugins(
+                        new MountedPluginBuilder()
+                                .withName("first-connector")
+                                .withArtifacts(new ImageArtifactBuilder().withReference("first-artifact:latest").build(),
+                                        new ImageArtifactBuilder().withReference("second-artifact:0.2.0").withPullPolicy("Never").build())
+                                .build(),
+                        new MountedPluginBuilder()
+                                .withName("second-connector")
+                                .withArtifacts(new ImageArtifactBuilder().withReference("third-artifact:latest").withPullPolicy("IfNotPresent").build())
+                                .build()
+                )
+            .endSpec()
+            .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        // Check PodSet
+        StrimziPodSet podSet = kc.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
+        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+            assertThat(pod.getSpec().getVolumes().size(), is(5));
+            // Default volumes used for /tmp an for Connect configuration Config Map
+            assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is("kafka-connect-configurations"));
+
+            // Connector plugin volumes
+            assertThat(pod.getSpec().getVolumes().get(2).getName(), is("plugin-first-connector-0a4dc47f"));
+            assertThat(pod.getSpec().getVolumes().get(2).getImage().getReference(), is("first-artifact:latest"));
+            assertThat(pod.getSpec().getVolumes().get(2).getImage().getPullPolicy(), is(nullValue()));
+            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("plugin-first-connector-73d69cbd"));
+            assertThat(pod.getSpec().getVolumes().get(3).getImage().getReference(), is("second-artifact:0.2.0"));
+            assertThat(pod.getSpec().getVolumes().get(3).getImage().getPullPolicy(), is("Never"));
+            assertThat(pod.getSpec().getVolumes().get(4).getName(), is("plugin-second-connector-695ab9d6"));
+            assertThat(pod.getSpec().getVolumes().get(4).getImage().getReference(), is("third-artifact:latest"));
+            assertThat(pod.getSpec().getVolumes().get(4).getImage().getPullPolicy(), is("IfNotPresent"));
+
+            List<Container> containers = pod.getSpec().getContainers();
+
+            assertThat(containers.get(0).getVolumeMounts().size(), is(5));
+            // Default volume mounts used for /tmp an for Connect configuration Config Map
+            assertThat(containers.get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(containers.get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+            assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
+            assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/custom-config/"));
+
+            // Connector plugin volume mounts
+            assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is("plugin-first-connector-0a4dc47f"));
+            assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/plugins/first-connector/0a4dc47f"));
+            assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is("plugin-first-connector-73d69cbd"));
+            assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is("/opt/kafka/plugins/first-connector/73d69cbd"));
+            assertThat(containers.get(0).getVolumeMounts().get(4).getName(), is("plugin-second-connector-695ab9d6"));
+            assertThat(containers.get(0).getVolumeMounts().get(4).getMountPath(), is("/opt/kafka/plugins/second-connector/695ab9d6"));
+        });
     }
 }

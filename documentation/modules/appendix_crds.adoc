@@ -1307,19 +1307,22 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |Name to use for the volume. Required.
 |secret
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretvolumesource-v1-core[SecretVolumeSource]
-|Secret to use populate the volume.
+|`Secret` to use to populate the volume.
 |configMap
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
-|ConfigMap to use to populate the volume.
+|`ConfigMap` to use to populate the volume.
 |emptyDir
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#emptydirvolumesource-v1-core[EmptyDirVolumeSource]
-|EmptyDir to use to populate the volume.
+|`EmptyDir` to use to populate the volume.
 |persistentVolumeClaim
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#persistentvolumeclaimvolumesource-v1-core[PersistentVolumeClaimVolumeSource]
-|PersistentVolumeClaim object to use to populate the volume.
+|`PersistentVolumeClaim` object to use to populate the volume.
 |csi
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#csivolumesource-v1-core[CSIVolumeSource]
-|CSIVolumeSource object to use to populate the volume.
+|`CSIVolumeSource` object to use to populate the volume.
+|image
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#imagevolumesource-v1-core[ImageVolumeSource]
+|`ImageVolumeSource` object to use to populate the volume.
 |====
 
 [id='type-InternalServiceTemplate-{context}']
@@ -2543,6 +2546,9 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |build
 |xref:type-Build-{context}[`Build`]
 |Configures how the Connect container image should be built. Optional.
+|plugins
+|xref:type-MountedPlugin-{context}[`MountedPlugin`] array
+|List of connector plugins to mount into the `KafkaConnect` pod.
 |====
 
 [id='type-ClientTls-{context}']
@@ -3193,6 +3199,60 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |insecure
 |boolean
 |By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.
+|====
+
+[id='type-MountedPlugin-{context}']
+= `MountedPlugin` schema reference
+
+Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+
+xref:type-MountedPlugin-schema-{context}[Full list of `MountedPlugin` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.connect.MountedPlugin.adoc[leveloffset=+1]
+
+[id='type-MountedPlugin-schema-{context}']
+== `MountedPlugin` schema properties
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|name
+|string
+|A unique name for the connector plugin. This name is used to generate the mount path for the connector artifacts. The name has to be unique within the KafkaConnect resource. The name must be unique within the `KafkaConnect` resource and match the pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
+|artifacts
+|xref:type-ImageArtifact-{context}[`ImageArtifact`] array
+|List of artifacts associated with this connector plugin. Required.
+|====
+
+[id='type-ImageArtifact-{context}']
+= `ImageArtifact` schema reference
+
+Used in: xref:type-MountedPlugin-{context}[`MountedPlugin`]
+
+
+The `type` property is a discriminator that distinguishes use of the `ImageArtifact` type from other subtypes which may be added in the future.
+It must have the value `image` for the type `ImageArtifact`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `image`.
+|reference
+|string
+|Reference to the container image (OCI artifact) containing the Kafka Connect plugin. The image is mounted as a volume and provides the plugin binary. Required.
+|pullPolicy
+|string
+|Policy that determines when the container image (OCI artifact) is pulled.
+
+Possible values are:
+
+* `Always`: Always pull the image. If the pull fails, container creation fails.
+* `Never`: Never pull the image. Use only a locally available image. Container creation fails if the image isn’t present.
+* `IfNotPresent`: Pull the image only if it’s not already available locally. Container creation fails if the image isn’t present and the pull fails.
+
+Defaults to `Always` if `:latest` tag is specified, or `IfNotPresent` otherwise.
 |====
 
 [id='type-KafkaConnectStatus-{context}']

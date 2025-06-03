@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.CSIVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
+import io.fabric8.kubernetes.api.model.ImageVolumeSource;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.strimzi.api.kafka.model.common.Constants;
@@ -28,14 +29,15 @@ import java.util.Map;
  */
 @Buildable(editableEnabled = false, builderPackage = Constants.FABRIC8_KUBERNETES_API)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "name", "secret", "configMap", "emptyDir", "persistentVolumeClaim", "csi" })
+@JsonPropertyOrder({ "name", "secret", "configMap", "emptyDir", "persistentVolumeClaim", "csi", "image" })
 @OneOf({
     @OneOf.Alternative({
         @OneOf.Alternative.Property(value = "secret", required = false),
         @OneOf.Alternative.Property(value = "configMap", required = false),
         @OneOf.Alternative.Property(value = "emptyDir", required = false),
         @OneOf.Alternative.Property(value = "persistentVolumeClaim", required = false),
-        @OneOf.Alternative.Property(value = "csi", required = false)
+        @OneOf.Alternative.Property(value = "csi", required = false),
+        @OneOf.Alternative.Property(value = "image", required = false)
         })
 })
 @EqualsAndHashCode
@@ -47,6 +49,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
     private EmptyDirVolumeSource emptyDir;
     private PersistentVolumeClaimVolumeSource persistentVolumeClaim;
     private CSIVolumeSource csi;
+    private ImageVolumeSource image;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Name to use for the volume. Required.")
@@ -59,7 +62,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.name = name;
     }
 
-    @Description("Secret to use populate the volume.")
+    @Description("`Secret` to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "secretvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public SecretVolumeSource getSecret() {
@@ -70,7 +73,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.secret = secret;
     }
 
-    @Description("ConfigMap to use to populate the volume.")
+    @Description("`ConfigMap` to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "configmapvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ConfigMapVolumeSource getConfigMap() {
@@ -81,7 +84,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.configMap = configMap;
     }
 
-    @Description("EmptyDir to use to populate the volume.")
+    @Description("`EmptyDir` to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "emptydirvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public EmptyDirVolumeSource getEmptyDir() {
@@ -92,7 +95,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.emptyDir = emptyDir;
     }
 
-    @Description("PersistentVolumeClaim object to use to populate the volume.")
+    @Description("`PersistentVolumeClaim` object to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "persistentvolumeclaimvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PersistentVolumeClaimVolumeSource getPersistentVolumeClaim() {
@@ -103,7 +106,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.persistentVolumeClaim = persistentVolumeClaim;
     }
 
-    @Description("CSIVolumeSource object to use to populate the volume.")
+    @Description("`CSIVolumeSource` object to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "csivolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public CSIVolumeSource getCsi() {
@@ -112,6 +115,17 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
 
     public void setCsi(CSIVolumeSource csi) {
         this.csi = csi;
+    }
+
+    @Description("`ImageVolumeSource` object to use to populate the volume.")
+    @KubeLink(group = "core", version = "v1", kind = "imagevolumesource")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ImageVolumeSource getImage() {
+        return image;
+    }
+
+    public void setImage(ImageVolumeSource image) {
+        this.image = image;
     }
 
     @Override

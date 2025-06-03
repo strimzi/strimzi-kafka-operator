@@ -1326,7 +1326,7 @@ spec:
                                     type: boolean
                                   secretName:
                                     type: string
-                                description: Secret to use populate the volume.
+                                description: '`Secret` to use to populate the volume.'
                               configMap:
                                 type: object
                                 properties:
@@ -1347,7 +1347,7 @@ spec:
                                     type: string
                                   optional:
                                     type: boolean
-                                description: ConfigMap to use to populate the volume.
+                                description: '`ConfigMap` to use to populate the volume.'
                               emptyDir:
                                 type: object
                                 properties:
@@ -1360,7 +1360,7 @@ spec:
                                         type: string
                                       format:
                                         type: string
-                                description: EmptyDir to use to populate the volume.
+                                description: '`EmptyDir` to use to populate the volume.'
                               persistentVolumeClaim:
                                 type: object
                                 properties:
@@ -1368,7 +1368,7 @@ spec:
                                     type: string
                                   readOnly:
                                     type: boolean
-                                description: PersistentVolumeClaim object to use to populate the volume.
+                                description: '`PersistentVolumeClaim` object to use to populate the volume.'
                               csi:
                                 type: object
                                 properties:
@@ -1387,7 +1387,15 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                description: CSIVolumeSource object to use to populate the volume.
+                                description: '`CSIVolumeSource` object to use to populate the volume.'
+                              image:
+                                type: object
+                                properties:
+                                  pullPolicy:
+                                    type: string
+                                  reference:
+                                    type: string
+                                description: '`ImageVolumeSource` object to use to populate the volume.'
                             oneOf:
                               - properties:
                                   secret: {}
@@ -1395,6 +1403,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect `Pods`.
                     apiService:
@@ -2372,7 +2381,7 @@ spec:
                                     type: boolean
                                   secretName:
                                     type: string
-                                description: Secret to use populate the volume.
+                                description: '`Secret` to use to populate the volume.'
                               configMap:
                                 type: object
                                 properties:
@@ -2393,7 +2402,7 @@ spec:
                                     type: string
                                   optional:
                                     type: boolean
-                                description: ConfigMap to use to populate the volume.
+                                description: '`ConfigMap` to use to populate the volume.'
                               emptyDir:
                                 type: object
                                 properties:
@@ -2406,7 +2415,7 @@ spec:
                                         type: string
                                       format:
                                         type: string
-                                description: EmptyDir to use to populate the volume.
+                                description: '`EmptyDir` to use to populate the volume.'
                               persistentVolumeClaim:
                                 type: object
                                 properties:
@@ -2414,7 +2423,7 @@ spec:
                                     type: string
                                   readOnly:
                                     type: boolean
-                                description: PersistentVolumeClaim object to use to populate the volume.
+                                description: '`PersistentVolumeClaim` object to use to populate the volume.'
                               csi:
                                 type: object
                                 properties:
@@ -2433,7 +2442,15 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                description: CSIVolumeSource object to use to populate the volume.
+                                description: '`CSIVolumeSource` object to use to populate the volume.'
+                              image:
+                                type: object
+                                properties:
+                                  pullPolicy:
+                                    type: string
+                                  reference:
+                                    type: string
+                                description: '`ImageVolumeSource` object to use to populate the volume.'
                             oneOf:
                               - properties:
                                   secret: {}
@@ -2441,6 +2458,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                     buildContainer:
