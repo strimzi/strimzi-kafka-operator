@@ -62,7 +62,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.name = name;
     }
 
-    @Description("`Secret` to use populate the volume.")
+    @Description("`Secret` to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "secretvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public SecretVolumeSource getSecret() {

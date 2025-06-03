@@ -1307,7 +1307,7 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |Name to use for the volume. Required.
 |secret
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretvolumesource-v1-core[SecretVolumeSource]
-|`Secret` to use populate the volume.
+|`Secret` to use to populate the volume.
 |configMap
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
 |`ConfigMap` to use to populate the volume.
@@ -3241,7 +3241,7 @@ It must have the value `image` for the type `ImageArtifact`.
 |Must be `image`.
 |reference
 |string
-|Reference to the container image (OCI artifact) containing the connector plugin. The image is mounted as a volume and provides the plugin binary. Required.
+|Reference to the container image (OCI artifact) containing the Kafka Connect plugin. The image is mounted as a volume and provides the plugin binary. Required.
 |pullPolicy
 |string
 |Policy that determines when the container image (OCI artifact) is pulled.

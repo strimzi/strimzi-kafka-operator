@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
- * JAR artifact represents an artifact which is simply downloaded
+ * Image Volume artifact represents an artifact which is mounted as a Kubernetes Image Volume
  */
 @Buildable(
         editableEnabled = false,
@@ -35,7 +35,7 @@ public class ImageArtifact extends MountedArtifact {
         return TYPE_IMAGE;
     }
 
-    @Description("Reference to the container image (OCI artifact) containing the connector plugin. " +
+    @Description("Reference to the container image (OCI artifact) containing the Kafka Connect plugin. " +
             "The image is mounted as a volume and provides the plugin binary. " +
             "Required.")
     @JsonProperty(required = true)

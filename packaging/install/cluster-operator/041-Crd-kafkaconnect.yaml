@@ -1108,7 +1108,7 @@ spec:
                                   type: boolean
                                 secretName:
                                   type: string
-                              description: '`Secret` to use populate the volume.'
+                              description: '`Secret` to use to populate the volume.'
                             configMap:
                               type: object
                               properties:
@@ -2163,7 +2163,7 @@ spec:
                                   type: boolean
                                 secretName:
                                   type: string
-                              description: '`Secret` to use populate the volume.'
+                              description: '`Secret` to use to populate the volume.'
                             configMap:
                               type: object
                               properties:
@@ -2698,7 +2698,7 @@ spec:
                               Defaults to `Always` if `:latest` tag is specified, or `IfNotPresent` otherwise.
                           reference:
                             type: string
-                            description: Reference to the container image (OCI artifact) containing the connector plugin. The image is mounted as a volume and provides the plugin binary. Required.
+                            description: Reference to the container image (OCI artifact) containing the Kafka Connect plugin. The image is mounted as a volume and provides the plugin binary. Required.
                           type:
                             type: string
                             enum:
