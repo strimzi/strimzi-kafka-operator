@@ -96,8 +96,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
             @Step(value = "Wait for readiness of the KafkaConnect, meaning that the operator (watching all namespaces) manages the KafkaConnect cluster in the designated test namespace.", expected = "KafkaConnect cluster is operational and managed by the operator.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.CONNECT)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafkaConnect() {
@@ -114,8 +113,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
             @Step(value = "Wait for readiness of the KafkaBridge, meaning that the operator (watching all namespaces) manages the KafkaBridge in the designated test namespace.", expected = "KafkaBridge is operational and managed by the operator.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.BRIDGE)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafkaBridge() {
@@ -132,8 +130,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
             @Step(value = "Wait for readiness of the KafkaMirrorMaker2, meaning that the operator (watching all namespaces) manages the KafkaMirrorMaker2 cluster in the designated test namespace.", expected = "KafkaMirrorMaker2 cluster is operational and managed by the operator.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.MIRROR_MAKER_2)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafkaMirrorMaker2() {
@@ -150,8 +147,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
             @Step(value = "Wait for readiness of the KafkaRebalance, meaning that the operator (watching all namespaces) manages the KafkaRebalance resource in the designated test namespace.", expected = "KafkaRebalance resource is operational and managed by the operator.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.CRUISE_CONTROL)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafkaRebalance() {
