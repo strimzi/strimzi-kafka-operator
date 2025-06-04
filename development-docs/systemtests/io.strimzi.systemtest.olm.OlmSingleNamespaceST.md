@@ -112,8 +112,9 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaUser using the OLM example in the designated single namespace. | KafkaUser is deployed and becomes ready within the watched namespace. |
-| 2. | Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace. | The resource is operational and managed by the operator within its watched namespace. |
+| 1. | Deploy Kafka cluster with simple authorization. | Kafka cluster with simple authz is deployed and ready. |
+| 2. | Deploy KafkaUser using the OLM example in the designated single namespace. | KafkaUser is deployed and becomes ready within the watched namespace. |
+| 3. | Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace. | The resource is operational and managed by the operator within its watched namespace. |
 
 **Labels:**
 

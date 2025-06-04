@@ -59,6 +59,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaUser using the OLM example in a single-namespace watch configuration."),
         steps = {
+            @Step(value = "Deploy Kafka cluster with simple authorization.", expected = "Kafka cluster with simple authz is deployed and ready."),
             @Step(value = "Deploy KafkaUser using the OLM example in the designated single namespace.", expected = "KafkaUser is deployed and becomes ready within the watched namespace."),
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
