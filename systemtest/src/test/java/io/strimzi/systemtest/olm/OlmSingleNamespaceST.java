@@ -47,8 +47,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.KAFKA)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafka() {
@@ -80,8 +79,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.KAFKA)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafkaTopic() {
@@ -98,8 +96,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.CONNECT)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafkaConnect() {
@@ -116,8 +113,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.BRIDGE)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafkaBridge() {
@@ -134,8 +130,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.MIRROR_MAKER_2)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafkaMirrorMaker2() {
@@ -152,8 +147,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
-            @Label(TestDocsLabels.OLM),
-            @Label(TestDocsLabels.CRUISE_CONTROL)
+            @Label(TestDocsLabels.OLM)
         }
     )
     void testDeployExampleKafkaRebalance() {

@@ -22,7 +22,6 @@
 **Labels:**
 
 * [olm](labels/olm.md)
-* [kafka](labels/kafka.md)
 
 
 ## testDeployExampleKafkaBridge
@@ -39,7 +38,6 @@
 **Labels:**
 
 * [olm](labels/olm.md)
-* [bridge](labels/bridge.md)
 
 
 ## testDeployExampleKafkaConnect
@@ -56,7 +54,6 @@
 **Labels:**
 
 * [olm](labels/olm.md)
-* [connect](labels/connect.md)
 
 
 ## testDeployExampleKafkaMirrorMaker2
@@ -73,7 +70,6 @@
 **Labels:**
 
 * [olm](labels/olm.md)
-* `mirror-maker-2` (description file doesn't exist)
 
 
 ## testDeployExampleKafkaRebalance
@@ -90,7 +86,6 @@
 **Labels:**
 
 * [olm](labels/olm.md)
-* [cruise-control](labels/cruise-control.md)
 
 
 ## testDeployExampleKafkaTopic
@@ -107,7 +102,6 @@
 **Labels:**
 
 * [olm](labels/olm.md)
-* [kafka](labels/kafka.md)
 
 
 ## testDeployExampleKafkaUser

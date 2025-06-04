@@ -20,7 +20,6 @@ maintaining data consistency and availability in a streaming ecosystem.
 - [testConnectorOffsetManagement](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testConnectorTaskAutoRestart](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testCustomAndUpdatedValues](../io.strimzi.systemtest.connect.ConnectST.md)
-- [testDeployExampleKafkaConnect](../io.strimzi.systemtest.olm.OlmSingleNamespaceST.md)
 - [testDeployRollUndeploy](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testJvmAndResources](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testKafkaConnectAndConnectorFileSinkPlugin](../io.strimzi.systemtest.connect.ConnectST.md)

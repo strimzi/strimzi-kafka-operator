@@ -13,7 +13,6 @@ These tests ensure that the bridge behaves as expected under various configurati
 - [testCorsForbidden](../io.strimzi.systemtest.bridge.HttpBridgeCorsST.md)
 - [testCorsOriginAllowed](../io.strimzi.systemtest.bridge.HttpBridgeCorsST.md)
 - [testCustomAndUpdatedValues](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
-- [testDeployExampleKafkaBridge](../io.strimzi.systemtest.olm.OlmSingleNamespaceST.md)
 - [testKafkaBridgeMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testReceiveSimpleMessage](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testReceiveSimpleMessageTls](../io.strimzi.systemtest.bridge.HttpBridgeTlsST.md)
