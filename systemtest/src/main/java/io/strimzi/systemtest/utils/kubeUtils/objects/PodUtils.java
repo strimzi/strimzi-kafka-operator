@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.readiness.Readiness;
+import io.skodjob.testframe.enums.LogLevel;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -333,6 +334,6 @@ public class PodUtils {
     public static void annotatePod(String namespaceName, String podName, String annotationKey, String annotationValue) {
         LOGGER.info("Annotating Pod: {}/{} with annotation {}={}", namespaceName, podName, annotationKey, annotationValue);
         KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
-                .exec("annotate", "pod", podName, annotationKey + "=" + annotationValue);
+                .exec(LogLevel.DEBUG, "annotate", "pod", podName, annotationKey + "=" + annotationValue);
     }
 }

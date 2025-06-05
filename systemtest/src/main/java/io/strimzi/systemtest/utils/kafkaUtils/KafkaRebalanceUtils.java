@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.skodjob.testframe.enums.LogLevel;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
@@ -71,7 +72,7 @@ public class KafkaRebalanceUtils {
     public static String annotateKafkaRebalanceResource(String namespaceName, String resourceName, KafkaRebalanceAnnotation annotation) {
         LOGGER.info("Annotating KafkaRebalance: {} with annotation: {}", resourceName, annotation.toString());
         return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
-            .exec("annotate", "kafkarebalance", resourceName, Annotations.ANNO_STRIMZI_IO_REBALANCE + "=" + annotation)
+            .exec(true, LogLevel.DEBUG, true, "annotate", "kafkarebalance", resourceName, Annotations.ANNO_STRIMZI_IO_REBALANCE + "=" + annotation)
             .out()
             .trim();
     }

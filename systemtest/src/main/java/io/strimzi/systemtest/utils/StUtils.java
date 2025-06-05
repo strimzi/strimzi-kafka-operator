@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.VersionInfo;
+import io.skodjob.testframe.enums.LogLevel;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
@@ -267,7 +268,7 @@ public class StUtils {
         TestUtils.waitFor("JSON log to be present in " + pods, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
             boolean isJSON = false;
             for (String podName : pods.keySet()) {
-                String log = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec("logs", podName, "-c", containerName, "--tail=100").out();
+                String log = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec(LogLevel.DEBUG, "logs", podName, "-c", containerName, "--tail=100").out();
 
                 JsonArray jsonArray = getJsonArrayFromLog(log);
 
@@ -311,7 +312,7 @@ public class StUtils {
      * @return log from the pod
      */
     public static String getLogFromPodByTime(String namespaceName, String podName, String containerName, String timeSince) {
-        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec("logs", podName, "-c", containerName, "--since=" + timeSince).out();
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec(true, false, "logs", podName, "-c", containerName, "--since=" + timeSince).out();
     }
 
     /**
@@ -375,9 +376,9 @@ public class StUtils {
 
     public static String getLineFromPodContainer(String namespaceName, String podName, String containerName, String filePath, String grepString) {
         if (containerName == null) {
-            return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(LogLevel.DEBUG, podName, "grep", "-i", grepString, filePath).out().trim();
         } else {
-            return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(LogLevel.DEBUG, podName, containerName, "grep", "-i", grepString, filePath).out().trim();
         }
     }
 

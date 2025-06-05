@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.skodjob.testframe.enums.LogLevel;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -88,7 +89,7 @@ public class VerificationUtils {
      */
     private static List<List<String>> containerJavaCmdLines(String namespaceName, String podName, String containerName) {
         List<List<String>> result = new ArrayList<>();
-        String output = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(podName, containerName, "/bin/bash", "-c",
+        String output = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(LogLevel.DEBUG, podName, containerName, "/bin/bash", "-c",
                 "for proc in $(ls -1 /proc/ | grep [0-9]); do if echo \"$(ls -lh /proc/$proc/exe 2>/dev/null || true)\" | grep -q java; then cat /proc/$proc/cmdline; fi; done"
         ).out();
         for (String cmdLine : output.split("\n")) {

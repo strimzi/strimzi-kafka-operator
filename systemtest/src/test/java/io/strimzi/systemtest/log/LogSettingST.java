@@ -14,6 +14,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.enums.LogLevel;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.InlineLogging;
@@ -484,7 +485,8 @@ class LogSettingST extends AbstractST {
 
                     PodUtils.waitForPodContainerReady(namespaceName, podName, containerName);
                     LOGGER.info("Checking tini process for Pod: {}/{} with container {}", namespaceName, podName, containerName);
-                    String processOne = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(podName, containerName, "/bin/bash", "-c", command).out().trim();
+                    String processOne = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(LogLevel.DEBUG,
+                        podName, containerName, "/bin/bash", "-c", command).out().trim();
                     assertThat(processOne, startsWith("/usr/bin/tini"));
                 }
             }

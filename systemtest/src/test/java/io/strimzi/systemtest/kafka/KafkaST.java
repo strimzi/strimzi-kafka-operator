@@ -23,6 +23,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.enums.LogLevel;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.JvmOptions;
@@ -1289,14 +1290,14 @@ class KafkaST extends AbstractST {
                                        final String secretMountPath, final String secretValueBase64, final String secretKeyBase64) {
         final String podName = pod.getMetadata().getName();
         final String secretMountCheck = KubeResourceManager.get().kubeCmdClient().inNamespace(namespace)
-                .execInPodContainer(podName, containerName, "sh", "-c", "cat /proc/mounts | grep " + secretMountPath).out().trim();
+                .execInPodContainer(LogLevel.DEBUG, podName, containerName, "sh", "-c", "cat /proc/mounts | grep " + secretMountPath).out().trim();
 
         // Assert that secret mount exists
         assertThat(secretMountCheck, containsString(secretMountPath));
 
         // Verify content inside the secret volume
         final String secretContentCheck = KubeResourceManager.get().kubeCmdClient().inNamespace(namespace)
-                .execInPodContainer(podName, containerName, "sh", "-c", "cat " + secretMountPath + "/" + secretKeyBase64).out().trim();
+                .execInPodContainer(LogLevel.DEBUG, podName, containerName, "sh", "-c", "cat " + secretMountPath + "/" + secretKeyBase64).out().trim();
 
         assertThat(secretContentCheck, is(secretValueBase64));
     }
@@ -1316,14 +1317,14 @@ class KafkaST extends AbstractST {
                                           final String configMapMountPath, final String configMapValue, final String configMapKey) {
         final String podName = pod.getMetadata().getName();
         final String configMountCheck = KubeResourceManager.get().kubeCmdClient().inNamespace(namespace)
-            .execInPodContainer(podName, containerName, "sh", "-c", "cat /proc/mounts | grep " + configMapMountPath).out().trim();
+            .execInPodContainer(LogLevel.DEBUG, podName, containerName, "sh", "-c", "cat /proc/mounts | grep " + configMapMountPath).out().trim();
 
         // Assert that config map mount exists
         assertThat(configMountCheck, containsString(configMapMountPath));
 
         // Verify content inside the config map volume
         final String configContentCheck = KubeResourceManager.get().kubeCmdClient().inNamespace(namespace)
-                .execInPodContainer(podName, containerName, "sh", "-c", "cat " + configMapMountPath + "/" + configMapKey).out().trim();
+                .execInPodContainer(LogLevel.DEBUG, podName, containerName, "sh", "-c", "cat " + configMapMountPath + "/" + configMapKey).out().trim();
 
         assertThat(configContentCheck, is(configMapValue));
     }

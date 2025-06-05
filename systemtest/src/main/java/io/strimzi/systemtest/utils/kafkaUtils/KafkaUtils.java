@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.skodjob.testframe.enums.LogLevel;
 import io.skodjob.testframe.executor.ExecResult;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
@@ -647,7 +648,7 @@ public class KafkaUtils {
         LOGGER.info("Executing command in broker {} volume {}: {}", brokerId, volumeId, command);
 
         final ExecResult execResult = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
-            .execInPodContainer(brokerPodName, "kafka", "bash", "-c", command);
+            .execInPodContainer(LogLevel.DEBUG, brokerPodName, "kafka", "bash", "-c", command);
 
         if (execResult.returnCode() != 0) {
             throw new RuntimeException("Failed to execute command " + command + " in pod " + brokerPodName + ": " + execResult.out() + " " + execResult.err());

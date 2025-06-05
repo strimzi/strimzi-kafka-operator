@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.skodjob.testframe.enums.LogLevel;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Util;
@@ -210,7 +211,7 @@ public class SecretUtils {
     public static String annotateSecret(String namespaceName, String secretName, String annotationKey, String annotationValue) {
         LOGGER.info("Annotating Secret: {}/{} with annotation {}={}", namespaceName, secretName, annotationKey, annotationValue);
         return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
-                .exec("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
+                .exec(LogLevel.DEBUG, "annotate", "secret", secretName, annotationKey + "=" + annotationValue)
                 .out()
                 .trim();
     }

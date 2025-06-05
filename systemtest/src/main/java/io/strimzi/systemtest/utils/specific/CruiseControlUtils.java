@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.skodjob.testframe.enums.LogLevel;
 import io.skodjob.testframe.executor.ExecResult;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
@@ -109,7 +110,7 @@ public class CruiseControlUtils {
         }
 
         String curl = "curl -X " + method.name() + " " + args + " " + scheme + "://localhost:" + port + endpoint + endpointParameters;
-        return new ApiResult(KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(ccPodName, CONTAINER_NAME, "/bin/bash", "-c", curl));
+        return new ApiResult(KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(LogLevel.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c", curl));
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
