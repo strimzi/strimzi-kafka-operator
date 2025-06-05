@@ -55,11 +55,11 @@ public class KafkaRebalanceConfigMapUtilsTest {
     @Test
     public void testProgressFieldsForProposalRebalancingState() {
         Instant taskStartTime = Instant.now().minusSeconds(2).truncatedTo(ChronoUnit.SECONDS);
-        ExecutorStatus es0 = new ExecutorStatus(createExecutorStatusJson(
+        ExecutorStatus es = new ExecutorStatus(createExecutorStatusJson(
                 CruiseControlExecutorState.INTER_BROKER_REPLICA_MOVEMENT_TASK_IN_PROGRESS, "250", "10000",
                 String.format("No reason provided (Client: 172.17.0.1, Date: %s)", taskStartTime.toString())));
         ConfigMap cm = createKafkaRebalanceConfigMap(BROKER_LOAD_MAP);
-        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Rebalancing, es0, cm);
+        updateRebalanceConfigMapWithProgressFields(KafkaRebalanceState.Rebalancing, es, cm);
 
         /*
          * Total Data to Move:          10,000 MB
@@ -72,7 +72,7 @@ public class KafkaRebalanceConfigMapUtilsTest {
         Map<String, String> m =  cm.getData();
         assertThat(m.get(ESTIMATED_TIME_TO_COMPLETION_IN_MINUTES_KEY), is("1"));
         assertThat(m.get(COMPLETED_BYTE_MOVEMENT_PERCENTAGE_KEY), is("2"));
-        assertThat(m.get(EXECUTOR_STATE_KEY), is(es0.getJson().toString()));
+        assertThat(m.get(EXECUTOR_STATE_KEY), is(es.getJson().toString()));
         assertThat(m.get(BROKER_LOAD_KEY), is(BROKER_LOAD));
     }
 

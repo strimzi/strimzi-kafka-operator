@@ -63,20 +63,20 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
     protected static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
     protected static final Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
-            .withName(CLUSTER_NAME)
-            .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
+                .withName(CLUSTER_NAME)
+                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
             .endMetadata()
             .withNewSpec()
-            .withNewKafka()
-            .withListeners(new GenericKafkaListenerBuilder()
-                    .withName("plain")
-                    .withPort(9092)
-                    .withType(KafkaListenerType.INTERNAL)
-                    .withTls(false)
-                    .build())
-            .endKafka()
-            .withNewCruiseControl()
-            .endCruiseControl()
+                .withNewKafka()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .build())
+                .endKafka()
+                .withNewCruiseControl()
+                .endCruiseControl()
             .endSpec()
             .build();
     protected static final KafkaRebalanceSpec EMPTY_KAFKA_REBALANCE_SPEC = new KafkaRebalanceSpecBuilder().build();
@@ -171,11 +171,11 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
     protected void crdCreateKafka() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .withNewStatus()
-                .withObservedGeneration(1L)
-                .withConditions(new ConditionBuilder()
-                        .withType("Ready")
-                        .withStatus("True")
-                        .build())
+                    .withObservedGeneration(1L)
+                    .withConditions(new ConditionBuilder()
+                            .withType("Ready")
+                            .withStatus("True")
+                            .build())
                 .endStatus()
                 .build();
 
@@ -186,15 +186,15 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
     protected void crdCreateCruiseControlSecrets() {
         Secret ccSecret = new SecretBuilder(MockCruiseControl.CC_SECRET)
                 .editMetadata()
-                .withName(CruiseControlResources.secretName(CLUSTER_NAME))
-                .withNamespace(namespace)
+                    .withName(CruiseControlResources.secretName(CLUSTER_NAME))
+                    .withNamespace(namespace)
                 .endMetadata()
                 .build();
 
         Secret ccApiSecret = new SecretBuilder(MockCruiseControl.CC_API_SECRET)
                 .editMetadata()
-                .withName(CruiseControlResources.apiSecretName(CLUSTER_NAME))
-                .withNamespace(namespace)
+                    .withName(CruiseControlResources.apiSecretName(CLUSTER_NAME))
+                    .withNamespace(namespace)
                 .endMetadata()
                 .build();
 
@@ -206,10 +206,10 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
                                                 KafkaRebalanceSpec kafkaRebalanceSpec, boolean isAutoApproval) {
         return new KafkaRebalanceBuilder()
                 .withNewMetadata()
-                .withNamespace(namespace)
-                .withName(resourceName)
-                .withLabels(clusterName != null ? Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME) : null)
-                .withAnnotations(isAutoApproval ? Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true") : null)
+                    .withNamespace(namespace)
+                    .withName(resourceName)
+                    .withLabels(clusterName != null ? Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME) : null)
+                    .withAnnotations(isAutoApproval ? Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true") : null)
                 .endMetadata()
                 .withSpec(kafkaRebalanceSpec)
                 .build();

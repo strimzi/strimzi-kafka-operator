@@ -367,7 +367,7 @@ public class KafkaRebalanceAssemblyOperator
                                 exception = new Exception(
                                         String.format("Progress update of rebalance skipped due to the following reason: %s",
                                                 exception.getMessage()), exception);
-                                LOGGER.infoCr(reconciliation, exception.getMessage());
+                                LOGGER.warnCr(reconciliation, exception.getMessage());
                                 desiredStatus.addCondition(
                                         StatusUtils.buildWarningCondition(
                                                 "CruiseControlExecutorState",

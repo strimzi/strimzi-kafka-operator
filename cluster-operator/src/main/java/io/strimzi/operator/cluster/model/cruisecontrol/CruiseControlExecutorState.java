@@ -8,6 +8,9 @@ import java.util.List;
 
 /**
  * Represents the state that the Cruise Control Executor can be in at a moment in time.
+ *
+ * This matches the ExecutorState.State enum in Cruise Control:
+ * https://github.com/linkedin/cruise-control/blob/main/cruise-control/src/main/java/com/linkedin/kafka/cruisecontrol/executor/ExecutorState.java
  */
 public enum CruiseControlExecutorState {
     /**
