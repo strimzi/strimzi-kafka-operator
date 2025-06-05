@@ -35,7 +35,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
+import io.strimzi.operator.cluster.model.cruisecontrol.CapacityConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.HashLoginServiceApiCredentials;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
@@ -65,6 +65,7 @@ import java.util.Set;
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
+import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.generateCruiseControlDefaultPropertiesMap;
 import static java.lang.String.format;
 
 /**
@@ -111,7 +112,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     private boolean authEnabled;
     private HashLoginServiceApiCredentials apiCredentials;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
-    protected Capacity capacity;
+    protected CapacityConfiguration capacityConfiguration;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private MetricsModel metrics;
     private LoggingModel logging;
@@ -197,7 +198,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             result.image = image;
 
             KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
-            result.updateConfigurationWithDefaults(ccSpec, kafkaConfiguration);
+            result.capacityConfiguration = new CapacityConfiguration(reconciliation, kafkaCr.getSpec(), kafkaBrokerNodes, kafkaStorage, kafkaBrokerResources);
+            result.updateConfigurationWithDefaults(ccSpec, result.capacityConfiguration, kafkaConfiguration);
 
             CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
@@ -207,7 +209,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
-            result.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), kafkaBrokerNodes, kafkaStorage, kafkaBrokerResources);
             result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(ccSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
             result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(ccSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
             result.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
@@ -243,8 +244,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
     }
 
-    private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration) {
-        Map<String, String> defaultCruiseControlProperties = new HashMap<>(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
+    private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec,
+                                                 CapacityConfiguration capacityConfiguration,
+                                                 KafkaConfiguration kafkaConfiguration) {
+        Map<String, String> defaultCruiseControlProperties = generateCruiseControlDefaultPropertiesMap(capacityConfiguration);
         if (kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR) != null)  {
             defaultCruiseControlProperties.put(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR));
         }
@@ -530,7 +533,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     public ConfigMap generateConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> configMapData = new HashMap<>();
         configMapData.put(SERVER_CONFIG_FILENAME, configuration.asOrderedProperties().asPairs());
-        configMapData.put(CAPACITY_CONFIG_FILENAME, capacity.toString());
+        configMapData.put(CAPACITY_CONFIG_FILENAME, capacityConfiguration.toString());
         configMapData.putAll(ConfigMapUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging));
 
         return ConfigMapUtils

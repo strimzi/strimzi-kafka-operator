@@ -2,6 +2,7 @@
 
 ## 0.47.0
 
+* Disable CC resource goals when resource capacities are not set.
 * Fixed MirrorMaker 2 client rack init container override being ignored.
 
 ## 0.46.0
