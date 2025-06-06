@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Informable;
@@ -49,15 +50,29 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             R extends Resource<T>>
         extends AbstractResourceOperator<C, T, L, R> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractNamespacedResourceOperator.class);
+    private final boolean useServerSideApply;
 
     /**
      * Constructor.
      * @param vertx The vertx instance.
      * @param client The kubernetes client.
-     * @param resourceKind The mind of Kubernetes resource (used for logging).
+     * @param resourceKind The kind of Kubernetes resource (used for logging).
      */
     public AbstractNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
+        this.useServerSideApply = false;
+    }
+
+    /**
+     * Constructor.
+     * @param vertx                 The vertx instance.
+     * @param client                The kubernetes client.
+     * @param resourceKind          The kind of Kubernetes resource (used for logging).
+     * @param useServerSideApply    Determines if Server Side Apply should be used
+     */
+    public AbstractNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, boolean useServerSideApply) {
+        super(vertx, client, resourceKind);
+        this.useServerSideApply = useServerSideApply;
     }
 
     protected abstract MixedOperation<T, L, R> operation();
@@ -96,22 +111,25 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
 
         return getAsync(namespace, name)
                 .compose(current -> {
-                    if (desired != null) {
+                    if (desired == null) {
                         if (current == null) {
+                            LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
+                            return Future.succeededFuture(ReconcileResult.noop(null));
+                        } else {
+                            // Deletion is desired
+                            LOGGER.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
+                            return internalDelete(reconciliation, namespace, name);
+                        }
+                    } else {
+                        if (useServerSideApply) {
+                            LOGGER.debugCr(reconciliation, "{} {}/{} is desired, patching it", resourceKind, namespace, name);
+                            return internalServerSideApply(reconciliation, namespace, name, desired);
+                        } else if (current == null) {
                             LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
                             return internalCreate(reconciliation, namespace, name, desired);
                         } else {
                             LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
                             return internalUpdate(reconciliation, namespace, name, current, desired);
-                        }
-                    } else {
-                        if (current != null) {
-                            // Deletion is desired
-                            LOGGER.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                            return internalDelete(reconciliation, namespace, name);
-                        } else {
-                            LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
-                            return Future.succeededFuture(ReconcileResult.noop(null));
                         }
                     }
                 });
@@ -244,6 +262,44 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
     }
+
+    protected Future<ReconcileResult<T>> internalServerSideApply(Reconciliation reconciliation, String namespace, String name, T desired) {
+        R resourceOp = operation().inNamespace(namespace).withName(name);
+
+        try {
+            T result;
+
+            try {
+                LOGGER.debugCr(reconciliation, "{} {}/{} is being patched using Server Side Apply", resourceKind, namespace, name);
+                result = resourceOp.patch(serverSideApplyPatchContext(false), desired);
+            } catch (KubernetesClientException e) {
+                // in case that error code is 409, we have conflict with other operator when using SSA
+                // so we will use force
+                if (e.getCode() == 409) {
+                    LOGGER.warnCr(reconciliation, "{} {}/{} failed to patch because of conflict: {}, applying force", resourceKind, namespace, name, e.getMessage());
+                    result = resourceOp.patch(serverSideApplyPatchContext(true), desired);
+                } else {
+                    // otherwise throw the exception
+                    throw e;
+                }
+            }
+
+            LOGGER.debugCr(reconciliation, "{} {}/{} has been patched", resourceKind, namespace, name);
+            return Future.succeededFuture(ReconcileResult.patchedWithServerSideApply(result));
+        } catch (Exception e) {
+            LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            return Future.failedFuture(e);
+        }
+    }
+
+    private static PatchContext serverSideApplyPatchContext(boolean useForce) {
+        return new PatchContext.Builder()
+            .withFieldManager("strimzi-kafka-operator")
+            .withForce(useForce)
+            .withPatchType(PatchType.SERVER_SIDE_APPLY)
+            .build();
+    }
+
 
     /**
      * Method for patching or replacing a resource. By default, is using JSON-type patch. Overriding this method can be
