@@ -6,15 +6,15 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.skodjob.testframe.security.CertAndKeyFiles;
+import io.skodjob.testframe.security.OpenSsl;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.security.CertAndKeyFiles;
-import io.strimzi.systemtest.security.OpenSsl;
-import io.strimzi.systemtest.security.SystemTestCertManager;
+import io.strimzi.systemtest.security.SystemTestCertGenerator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -134,28 +134,36 @@ public class SecretUtils {
             .endMetadata();
     }
 
-    public static void createCustomSecret(String namespaceName, String clusterName, String name, CertAndKeyFiles certAndKeyFiles) {
+    public static void createCustomCertSecret(String namespaceName, String clusterName, String name, CertAndKeyFiles certAndKeyFiles) {
+        createCustomCertSecret(namespaceName, clusterName, name, certAndKeyFiles, "ca");
+    }
+
+    public static void createCustomCertSecret(String namespaceName, String clusterName, String name, CertAndKeyFiles certAndKeyFiles, String dataPathPrefix) {
         Map<String, String> secretLabels = new HashMap<>();
         secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
         secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
 
         Map<String, String> certsPaths = new HashMap<>();
-        certsPaths.put("ca.crt", certAndKeyFiles.getCertPath());
-        certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
+        certsPaths.put(dataPathPrefix + ".crt", certAndKeyFiles.getCertPath());
+        certsPaths.put(dataPathPrefix + ".key", certAndKeyFiles.getKeyPath());
 
         Secret secret = createSecretFromFile(namespaceName, name, certsPaths, secretLabels);
         kubeClient().namespace(namespaceName).createSecret(secret);
         waitForSecretReady(namespaceName, name, () -> { });
     }
 
-    public static void updateCustomSecret(String namespaceName, String clusterName, String name, CertAndKeyFiles certAndKeyFiles) {
+    public static void updateCustomCertSecret(String namespaceName, String clusterName, String name, CertAndKeyFiles certAndKeyFiles) {
+        updateCustomCertSecret(namespaceName, clusterName, name, certAndKeyFiles, "ca");
+    }
+
+    public static void updateCustomCertSecret(String namespaceName, String clusterName, String name, CertAndKeyFiles certAndKeyFiles, String dataPathPrefix) {
         Map<String, String> secretLabels = new HashMap<>();
         secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
         secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
 
         Map<String, String> certsPaths = new HashMap<>();
-        certsPaths.put("ca.crt", certAndKeyFiles.getCertPath());
-        certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
+        certsPaths.put(dataPathPrefix + ".crt", certAndKeyFiles.getCertPath());
+        certsPaths.put(dataPathPrefix + ".key", certAndKeyFiles.getKeyPath());
 
         Secret secret = createSecretFromFile(namespaceName, name, certsPaths, secretLabels);
         kubeClient().namespace(namespaceName).updateSecret(secret);
@@ -268,8 +276,8 @@ public class SecretUtils {
             String caKey = KubeClusterResource.kubeClient(namespaceName).getSecret(KafkaResources.clientsCaKeySecretName(clusterName)).getData().get("ca.key");
 
             File clientCert = OpenSsl.generateSignedCert(csr,
-                                                         SystemTestCertManager.exportCaDataToFile(Util.decodeFromBase64(caCrt, StandardCharsets.UTF_8), "ca", ".crt"),
-                                                         SystemTestCertManager.exportCaDataToFile(Util.decodeFromBase64(caKey, StandardCharsets.UTF_8), "ca", ".key"));
+                                                         SystemTestCertGenerator.exportCaDataToFile(Util.decodeFromBase64(caCrt, StandardCharsets.UTF_8), "ca", ".crt"),
+                                                         SystemTestCertGenerator.exportCaDataToFile(Util.decodeFromBase64(caKey, StandardCharsets.UTF_8), "ca", ".key"));
 
             Secret secretBuilder = new SecretBuilder()
                 .withNewMetadata()
