@@ -20,58 +20,58 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
-public class ServiceOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
+public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResourceOperatorServerSideApplyIT<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList,
                 ServiceResource<Service>> operator() {
-        return new ServiceOperator(vertx, client, false);
+        return new ServiceOperator(vertx, client, true);
     }
 
     @Override
     protected Service getOriginal()  {
         ServicePort servicePort = new ServicePortBuilder()
-                .withName("http")
-                .withProtocol("TCP")
-                .withPort(80)
-                .withNewTargetPort(80)
-                .build();
+            .withName("http")
+            .withProtocol("TCP")
+            .withPort(80)
+            .withNewTargetPort(80)
+            .build();
 
         return new ServiceBuilder()
-                .withNewMetadata()
-                    .withName(resourceName)
-                    .withNamespace(namespace)
-                    .withLabels(singletonMap("state", "new"))
-                .endMetadata()
-                .withNewSpec()
-                    .withType("ClusterIP")
-                    .withSelector(singletonMap("app", "kafka"))
-                    .withPorts(servicePort)
-                .endSpec()
-                .build();
+            .withNewMetadata()
+                .withName(resourceName)
+                .withNamespace(namespace)
+                .withLabels(singletonMap("state", "new"))
+            .endMetadata()
+            .withNewSpec()
+                .withType("ClusterIP")
+                .withSelector(singletonMap("app", "kafka"))
+                .withPorts(servicePort)
+            .endSpec()
+            .build();
     }
 
     @Override
     protected Service getModified()  {
         ServicePort servicePort = new ServicePortBuilder()
-                .withName("https")
-                .withProtocol("TCP")
-                .withPort(443)
-                .withNewTargetPort(443)
-                .build();
+            .withName("https")
+            .withProtocol("TCP")
+            .withPort(443)
+            .withNewTargetPort(443)
+            .build();
 
         return new ServiceBuilder()
-                .withNewMetadata()
-                    .withName(resourceName)
-                    .withNamespace(namespace)
-                    .withLabels(singletonMap("state", "modified"))
-                .endMetadata()
-                .withNewSpec()
-                    .withType("ClusterIP")
-                    .withSelector(singletonMap("app", "kafka"))
-                    .withPorts(servicePort)
-                .endSpec()
-                .build();
+            .withNewMetadata()
+                .withName(resourceName)
+                .withNamespace(namespace)
+                .withLabels(singletonMap("state", "modified"))
+            .endMetadata()
+            .withNewSpec()
+                .withType("ClusterIP")
+                .withSelector(singletonMap("app", "kafka"))
+                .withPorts(servicePort)
+            .endSpec()
+            .build();
     }
 
     @Override
