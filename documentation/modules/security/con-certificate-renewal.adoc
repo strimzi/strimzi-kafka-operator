@@ -6,7 +6,7 @@
 = Certificate renewal and validity periods
 
 [role="_abstract"]
-Cluster CA and clients CA certificates are valid for a limited time, known as the validity period. 
+Cluster CA and clients CA certificates are valid for a limited time, known as the validity period.
 This is defined as the number of days from the date the certificate was generated.
 
 For CA certificates automatically created by the Cluster Operator, configure the validity period for certificates in the `kafka` resource:
@@ -15,7 +15,7 @@ For CA certificates automatically created by the Cluster Operator, configure the
 * `Kafka.spec.clientsCa.validityDays` for Clients CA certificates
 
 The default validity period for both certificates is 365 days.
-For manually-installed CA certificates, set validity through your certificate management system.
+For manually-installed custom CA certificates, set validity through your certificate management system.
 
 When a CA certificate expires, components and clients that still trust the old certificate do not accept connections from peers whose certificates were signed by the CA private key.
 The components and clients must trust the _new_ CA certificate instead.
@@ -28,6 +28,8 @@ Configure the renewal period of the certificates created by the Cluster Operator
 * `Kafka.spec.clientsCa.renewalDays` for Clients CA certificates
 
 The default renewal period for both certificates is 30 days from the expiry date of the current certificate.
+Changing the `validityDays` or `renewalDays` values does not trigger immediate certificate renewal. 
+The updated values are applied the next time the certificate is renewed, either automatically or through manual renewal.
 
 .Validity period against renewal period
 [source]
@@ -40,9 +42,10 @@ Not Before                                     Not After
 
 To schedule the renewal period at a convenient time, use xref:con-maintenance-time-window-definition-{context}[maintenance time windows].
 
-IMPORTANT: `maintenanceTimeWindows` apply *only* to certificates generated automatically by the Cluster Operator. 
-They do *not* apply to custom or externally managed certificates. 
-When using custom certificates, restarts may occur outside the defined maintenance windows.
+IMPORTANT: `maintenanceTimeWindows` apply *only* to certificates generated automatically by the Cluster Operator.  
+They do *not* apply to custom or externally managed certificates, so restarts triggered by updates to those certificates may occur outside the defined windows.
+With a custom Certificate Authority (CA), the Cluster Operator still manages the validity and renewal of the server certificates it generates.  
+In this case, `validityDays` and `renewalDays` apply to those server certificates, not to the CA itself.
 
 To change validity and renewal periods after creating the Kafka cluster:
 
