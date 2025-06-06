@@ -467,7 +467,7 @@ public class ListenersST extends AbstractST {
         }
     )
     void testSendMessagesCustomListenerTlsCustomization() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String superuserName = "pepa";
         final String customCaCertName = "custom-ca";
@@ -494,12 +494,12 @@ public class ListenersST extends AbstractST {
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customUserCertName2, chainCertAndKey2, usedKeyInSecret);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCaCertName, rootCertAndKey);
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
         // Use a Kafka with plain listener disabled
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .editTemplate()
@@ -539,7 +539,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
             // KafkaUser with ACLs to check mapping rule
             KafkaUserTemplates.tlsUser(testStorage)
@@ -574,7 +574,7 @@ public class ListenersST extends AbstractST {
         // Use user certs signed by custom root CA 1
         // ###########################################################
         kafkaClients.setUsername(customUserCertName1);
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
@@ -587,7 +587,7 @@ public class ListenersST extends AbstractST {
         // due to wrong user certs signed by Strimzi CA
         // ###########################################################
         kafkaClients.setUsername(testStorage.getUsername());
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
@@ -601,7 +601,7 @@ public class ListenersST extends AbstractST {
         // Use user certs signed by custom root CA 2
         // ###########################################################
         kafkaClients.setUsername(customUserCertName2);
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
@@ -616,7 +616,7 @@ public class ListenersST extends AbstractST {
         Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
         // Remove rules mapping from Kafka config
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Removing ssl.principal.mapping.rules for listeners config");
             kafka.getSpec().getKafka().setListeners(Collections.singletonList(
                 new GenericKafkaListenerBuilder()
@@ -640,7 +640,7 @@ public class ListenersST extends AbstractST {
 
         // Check that KafkaUser with ACL rights cannot produce/consume to/from Kafka
         kafkaClients.setUsername(testStorage.getUsername());
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
