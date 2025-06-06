@@ -28,11 +28,12 @@ public class ConfigMapOperator extends AbstractNamespacedResourceOperator<Kubern
     /**
      * Constructor
      *
-     * @param vertx The Vertx instance
-     * @param client The Kubernetes client
+     * @param vertx                 The Vertx instance
+     * @param client                The Kubernetes client
+     * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public ConfigMapOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "ConfigMap");
+    public ConfigMapOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "ConfigMap", useServerSideApply);
     }
 
     @Override

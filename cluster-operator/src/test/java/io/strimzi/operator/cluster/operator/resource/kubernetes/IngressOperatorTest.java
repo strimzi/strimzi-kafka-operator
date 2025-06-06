@@ -70,7 +70,7 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new IngressOperator(vertx, mockClient);
+        return new IngressOperator(vertx, mockClient, useServerSideApply());
     }
 
     @Test
@@ -99,7 +99,7 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        IngressOperator op = new IngressOperator(vertx, client);
+        IngressOperator op = new IngressOperator(vertx, client, useServerSideApply());
         op.patchIngressClassName(current, desired);
 
         assertThat(desired.getSpec().getIngressClassName(), is(current.getSpec().getIngressClassName()));
@@ -131,7 +131,7 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        IngressOperator op = new IngressOperator(vertx, client);
+        IngressOperator op = new IngressOperator(vertx, client, useServerSideApply());
         op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io/publicEndpoints"), equalTo("foo"));
