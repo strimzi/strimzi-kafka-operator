@@ -83,7 +83,7 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceAccountOperator(vertx, mockClient);
+        return new ServiceAccountOperator(vertx, mockClient, false);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, false);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
@@ -169,7 +169,7 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, false);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)
@@ -232,7 +232,7 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, false);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)

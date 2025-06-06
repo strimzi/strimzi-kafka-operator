@@ -64,7 +64,7 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
 
     @Override
     protected PvcOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PvcOperator(vertx, mockClient);
+        return new PvcOperator(vertx, mockClient, false);
     }
 
     @Test

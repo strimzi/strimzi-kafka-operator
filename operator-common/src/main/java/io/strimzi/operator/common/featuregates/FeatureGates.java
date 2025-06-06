@@ -18,12 +18,11 @@ import static java.util.Arrays.asList;
 public class FeatureGates {
     /* test */ static final FeatureGates NONE = new FeatureGates("");
 
-    // As we currently don't have any real feature gate, this dummy feature gate is used to make it clear how to add a
-    // real feature gates in the future and allows us to test the feature gates.
-    private static final String DUMMY_FEATURE_GATE = "DummyFeatureGate";
+    // Enables the usage of Server Side Apply
+    private static final String USE_SERVER_SIDE_APPLY = "UseServerSideApply";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
-    private final FeatureGate dummyFeatureGate = new FeatureGate(DUMMY_FEATURE_GATE, false);
+    private final FeatureGate useServerSideApply = new FeatureGate(USE_SERVER_SIDE_APPLY, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -45,8 +44,8 @@ public class FeatureGates {
                 featureGate = featureGate.substring(1);
 
                 switch (featureGate) {
-                    case DUMMY_FEATURE_GATE:
-                        setValueOnlyOnce(dummyFeatureGate, value);
+                    case USE_SERVER_SIDE_APPLY:
+                        setValueOnlyOnce(useServerSideApply, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -82,10 +81,10 @@ public class FeatureGates {
     }
 
     /**
-     * @return  Returns true when the DummyFeatureGate feature gate is enabled
+     * @return  Returns true when the UseServerSideApply feature gate is enabled
      */
-    public boolean dummyFeatureGateEnabled() {
-        return dummyFeatureGate.isEnabled();
+    public boolean serverSideApplyEnabled() {
+        return useServerSideApply.isEnabled();
     }
 
     /**
@@ -94,13 +93,13 @@ public class FeatureGates {
      * @return  List of all Feature Gates
      */
     /*test*/ List<FeatureGate> allFeatureGates()  {
-        return List.of(dummyFeatureGate);
+        return List.of(useServerSideApply);
     }
 
     @Override
     public String toString() {
         return "FeatureGates(" +
-            "DummyFeatureGate=" + dummyFeatureGate.isEnabled() +
+            "UseServerSideApply=" + useServerSideApply.isEnabled() +
             ")";
     }
 
@@ -132,13 +131,13 @@ public class FeatureGates {
             return false;
         } else {
             FeatureGates other = (FeatureGates) o;
-            return Objects.equals(dummyFeatureGate, other.dummyFeatureGate);
+            return Objects.equals(useServerSideApply, other.useServerSideApply);
         }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(dummyFeatureGate);
+        return Objects.hashCode(useServerSideApply);
     }
 
     /**

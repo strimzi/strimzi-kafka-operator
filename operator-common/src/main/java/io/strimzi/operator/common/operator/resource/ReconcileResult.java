@@ -91,8 +91,25 @@ public abstract class ReconcileResult<R> {
      * @param <R>   Resource type for which the result is being indicated
      */
     public static class Patched<R> extends ReconcileResult<R> {
+        private final boolean useServerSideApply;
+
         private Patched(R resource) {
             super(Optional.of(resource));
+            this.useServerSideApply = false;
+        }
+
+        private Patched(R resource, boolean serverSideApplyUsed) {
+            super(Optional.of(resource));
+            this.useServerSideApply = serverSideApplyUsed;
+        }
+
+        /**
+         * Returns if Server Side Apply was used for patching.
+         *
+         * @return  if Server Side Apply was used for patching.
+         */
+        public boolean usedServerSideApply() {
+            return useServerSideApply;
         }
 
         @Override
@@ -108,6 +125,16 @@ public abstract class ReconcileResult<R> {
      * @param <D> The type of resource.
      */
     public static <D> Patched<D> patched(D resource) {
+        return new Patched<>(resource);
+    }
+
+    /**
+     * Return a reconciliation result that indicates the resource was patched using Server Side Apply.
+     * @param resource The patched resource.
+     * @return a reconciliation result that indicates the resource was patched using Server Side Apply.
+     * @param <D> The type of resource
+     */
+    public static <D> Patched<D> patchedUsingServerSideApply(D resource) {
         return new Patched<>(resource);
     }
 

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Informable;
@@ -49,15 +50,29 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             R extends Resource<T>>
         extends AbstractResourceOperator<C, T, L, R> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractNamespacedResourceOperator.class);
+    private boolean useServerSideApply;
 
     /**
      * Constructor.
      * @param vertx The vertx instance.
      * @param client The kubernetes client.
-     * @param resourceKind The mind of Kubernetes resource (used for logging).
+     * @param resourceKind The kind of Kubernetes resource (used for logging).
      */
-    public AbstractNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
+    protected AbstractNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
+        this.useServerSideApply = false;
+    }
+
+    /**
+     * Constructor.
+     * @param vertx                 The vertx instance.
+     * @param client                The kubernetes client.
+     * @param resourceKind          The kind of Kubernetes resource (used for logging).
+     * @param useServerSideApply    Determines if Server Side Apply should be used
+     */
+    public AbstractNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, boolean useServerSideApply) {
+        super(vertx, client, resourceKind);
+        this.useServerSideApply = useServerSideApply;
     }
 
     protected abstract MixedOperation<T, L, R> operation();
@@ -92,6 +107,16 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             return Future.failedFuture("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
         } else if (desired != null && !name.equals(desired.getMetadata().getName())) {
             return Future.failedFuture("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName());
+        }
+
+        if (useServerSideApply) {
+            if (desired != null) {
+                LOGGER.debugCr(reconciliation, "{} {}/{} is desired, patching it", resourceKind, namespace, name);
+                return internalPatch(reconciliation, namespace, name, desired);
+            } else {
+                LOGGER.debugCr(reconciliation, "{} {}/{} is no longer desired, deleting it", resourceKind, namespace, name);
+                return internalDelete(reconciliation, namespace, name);
+            }
         }
 
         return getAsync(namespace, name)
@@ -244,6 +269,36 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
     }
+
+    protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String namespace, String name, T desired) {
+        R resourceOp = operation().inNamespace(namespace).withName(name);
+
+        try {
+            T result;
+            try {
+                LOGGER.debugCr(reconciliation, "{} {}/{} is being patched using Server Side Apply", resourceKind, namespace, name);
+                result = resourceOp.patch(serverSideApplyPatchContext(false), desired);
+            } catch (KubernetesClientException e) {
+                LOGGER.warnCr(reconciliation, "{} {}/{} failed to patch, applying force", resourceKind, namespace, name);
+                result = resourceOp.patch(serverSideApplyPatchContext(true), desired);
+            }
+
+            LOGGER.debugCr(reconciliation, "{} {}/{} has been patched", resourceKind, namespace, name);
+            return Future.succeededFuture(ReconcileResult.patchedUsingServerSideApply(result));
+        } catch (KubernetesClientException e) {
+            LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            return Future.failedFuture(e);
+        }
+    }
+
+    private PatchContext serverSideApplyPatchContext(boolean useForce) {
+        return new PatchContext.Builder()
+            .withFieldManager("strimzi-kafka-operator")
+            .withForce(useForce)
+            .withPatchType(PatchType.SERVER_SIDE_APPLY)
+            .build();
+    }
+
 
     /**
      * Method for patching or replacing a resource. By default, is using JSON-type patch. Overriding this method can be

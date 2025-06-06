@@ -66,7 +66,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
 
     @Override
     protected ServiceOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceOperator(vertx, mockClient);
+        return new ServiceOperator(vertx, mockClient, false);
     }
 
     @Test
@@ -119,7 +119,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.patchNodePorts(current, desired);
 
         assertThat(current.getSpec().getPorts().get(0).getNodePort(), is(desired.getSpec().getPorts().get(1).getNodePort()));
@@ -157,7 +157,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io~1publicEndpoints"), equalTo("foo"));
@@ -190,7 +190,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.patchHealthCheckPorts(current, desired);
 
         assertThat(current.getSpec().getHealthCheckNodePort(), is(desired.getSpec().getHealthCheckNodePort()));
@@ -294,7 +294,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
 
         op.patchDualStackNetworking(current, desired);
         assertThat(current.getSpec().getIpFamilyPolicy(), is(desired.getSpec().getIpFamilyPolicy()));
@@ -348,7 +348,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.patchLoadBalancerClass(current, desired);
 
         assertThat(current.getSpec().getLoadBalancerClass(), is(desired.getSpec().getLoadBalancerClass()));

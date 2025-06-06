@@ -230,15 +230,17 @@ public class ResourceOperatorSupplier {
      * @param metricsProvider       Metrics provider
      * @param pfa                   Platform Availability Features
      * @param operatorName          Name of this operator instance
+     * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, String operatorName) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, String operatorName, boolean useServerSideApply) {
         this(vertx,
-                client,
-                new DefaultAdminClientProvider(),
-                new DefaultKafkaAgentClientProvider(),
-                metricsProvider,
-                pfa,
-                new KubernetesRestartEventPublisher(client, operatorName)
+            client,
+            new DefaultAdminClientProvider(),
+            new DefaultKafkaAgentClientProvider(),
+            metricsProvider,
+            pfa,
+            new KubernetesRestartEventPublisher(client, operatorName),
+            useServerSideApply
         );
     }
 
@@ -275,14 +277,33 @@ public class ResourceOperatorSupplier {
                                      MetricsProvider metricsProvider,
                                      PlatformFeaturesAvailability pfa,
                                      KubernetesRestartEventPublisher restartEventPublisher) {
-        this(new ServiceOperator(vertx, client),
+        this(vertx,
+            client,
+            adminClientProvider,
+            kafkaAgentClientProvider,
+            metricsProvider,
+            pfa,
+            restartEventPublisher,
+            false
+        );
+    }
+
+    private ResourceOperatorSupplier(Vertx vertx,
+                                     KubernetesClient client,
+                                     AdminClientProvider adminClientProvider,
+                                     KafkaAgentClientProvider kafkaAgentClientProvider,
+                                     MetricsProvider metricsProvider,
+                                     PlatformFeaturesAvailability pfa,
+                                     KubernetesRestartEventPublisher restartEventPublisher,
+                                     boolean useServerSideApply) {
+        this(new ServiceOperator(vertx, client, useServerSideApply),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new ConfigMapOperator(vertx, client),
+                new ConfigMapOperator(vertx, client, useServerSideApply),
                 new SecretOperator(vertx, client),
-                new PvcOperator(vertx, client),
+                new PvcOperator(vertx, client, useServerSideApply),
                 new DeploymentOperator(vertx, client),
-                new ServiceAccountOperator(vertx, client),
+                new ServiceAccountOperator(vertx, client, useServerSideApply),
                 new RoleBindingOperator(vertx, client),
                 new RoleOperator(vertx, client),
                 new ClusterRoleBindingOperator(vertx, client),
