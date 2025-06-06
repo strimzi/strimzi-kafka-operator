@@ -58,6 +58,8 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.json.JsonArray;
+import org.apache.kafka.common.config.SslClientAuth;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -471,11 +473,13 @@ public class ListenersST extends AbstractST {
     void testSendMessagesCustomListenerTlsCustomization() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        String superuserName = "pepa";
-        String customCaCertName = "custom-ca";
-        String customUserCertName1 = "custom-user-1-cert";
-        String customUserCertName2 = "custom-user-2-cert";
-        String mountPath = "/mnt/kafka/custom-authn-secrets/my-listener";
+        final String superuserName = "pepa";
+        final String customCaCertName = "custom-ca";
+        final String customUserCertName1 = "custom-user-1-cert";
+        final String customUserCertName2 = "custom-user-2-cert";
+        final String mountPath = "/mnt/kafka/custom-authn-secrets/my-listener";
+        // This is needed due to test-client implementation, it doesn't accept other keys for mTLS
+        final String usedKeyInSecret = "user";
 
         final CertAndKey rootCa1 = generateRootCaCertAndKey();
         final CertAndKey rootCa2 = generateRootCaCertAndKey();
@@ -490,8 +494,8 @@ public class ListenersST extends AbstractST {
         final CertAndKeyFiles chainCertAndKey1 = exportToPemFiles(user1);
         final CertAndKeyFiles chainCertAndKey2 = exportToPemFiles(user2);
 
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customUserCertName1, chainCertAndKey1, "user");
-        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customUserCertName2, chainCertAndKey2, "user");
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customUserCertName1, chainCertAndKey1, usedKeyInSecret);
+        SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customUserCertName2, chainCertAndKey2, usedKeyInSecret);
         SecretUtils.createCustomCertSecret(testStorage.getNamespaceName(), testStorage.getClusterName(), customCaCertName, rootCertAndKey);
 
         resourceManager.createResourceWithWait(
@@ -529,9 +533,9 @@ public class ListenersST extends AbstractST {
                         .withNewKafkaListenerAuthenticationCustomAuth()
                             .withSasl(false)
                             // Change ssl config to see if user can actually change it
-                            .addToListenerConfig("ssl.client.auth", "required")
-                            .addToListenerConfig("ssl.truststore.location", mountPath + "/" + customCaCertName + "/ca.crt")
-                            .addToListenerConfig("ssl.truststore.type", "PEM")
+                            .addToListenerConfig("ssl.client.auth", SslClientAuth.REQUIRED)
+                            .addToListenerConfig(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, mountPath + "/" + customCaCertName + "/ca.crt")
+                            .addToListenerConfig(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM")
                             .addToListenerConfig("ssl.principal.mapping.rules", "RULE:^CN=(.*?),(.*)$/CN=$1/")
                         .endKafkaListenerAuthenticationCustomAuth()
                         .build())
