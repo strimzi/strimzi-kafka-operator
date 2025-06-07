@@ -37,6 +37,7 @@
 * Update OAuth library to 0.16.2.
 * Update HTTP bridge to 0.32.0.
 * Kubernetes events emitted during a Pod restart updated to have the Kafka resource as the `regardingObject` and the Pod in the `related` field.
+* Kafka Connect truststore and keystore configurations now uses Kafka Kubernetes Config Provider to load PEM certificates directly from secrets.
 
 ### Major changes, deprecations and removals
 
@@ -62,6 +63,8 @@
 * Kubernetes events for Pod restarts no longer have the Pod as the `regardingObject`.
   If you are using `regardingObject` as a `field-selector` for listing events you must update the selector to specify the Kafka resource instead.
 * From Kafka 4.0.0, to enable the JMXReporter you must either enable metrics in `.spec.kafka.metrics`, or explicitly add JMXReporter in `metric.reporters`.
+* KafkaConnect now uses PEM files instead of P12/JKS for keystore and truststore. 
+  * If you override "ssl.truststore.location" and "ssl.keystore.location" in your Connector configurations, then you would need update them to override "ssl.truststore.certificates" and "ssl.keystore.certificate.chain" with PEM files instead.
 
 ## 0.45.0
 
