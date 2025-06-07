@@ -227,7 +227,7 @@ public class ServiceUtils {
      * @return  Created port
      */
     public static ServicePort createServicePort(String name, int port, int targetPort, String targetPortName, String protocol)   {
-        return createServicePort(name, port, targetPort, targetPortName,null, protocol);
+        return createServicePort(name, port, targetPort, targetPortName, null, protocol);
     }
 
     /**
