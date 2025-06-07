@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.sundr.builder.annotations.Buildable;
 
 import java.security.InvalidParameterException;
@@ -43,7 +42,7 @@ public abstract class BaseClients {
     }
 
     public void setNamespaceName(String namespaceName) {
-        this.namespaceName = (namespaceName == null || namespaceName.isEmpty()) ? ResourceManager.kubeClient().getNamespace() : namespaceName;
+        this.namespaceName = namespaceName;
     }
 
     public String getAdditionalConfig() {

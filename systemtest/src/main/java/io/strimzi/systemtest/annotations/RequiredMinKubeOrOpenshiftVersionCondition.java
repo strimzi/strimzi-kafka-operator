@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.annotations;
 
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,14 +28,14 @@ public class RequiredMinKubeOrOpenshiftVersionCondition implements ExecutionCond
         final double kubeVersion = annotation.get().kubeVersion();
         final boolean isOcp = cluster.isOpenShift();
 
-        if ((isOcp && Double.parseDouble(cluster.client().clusterKubernetesVersion()) >= ocpBasedKubeVersion) ||
-            !isOcp && Double.parseDouble(cluster.client().clusterKubernetesVersion()) >= kubeVersion) {
+        if ((isOcp && Double.parseDouble(StUtils.getKubernetesClusterVersion()) >= ocpBasedKubeVersion) ||
+            !isOcp && Double.parseDouble(StUtils.getKubernetesClusterVersion()) >= kubeVersion) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
             LOGGER.info("@RequiredMinKubeOrOpenshiftVersion with type of cluster: {} and version {}, but the running on cluster with {}: Ignoring {}",
                 cluster.cluster().getClass().toString(),
                 isOcp ? ocpBasedKubeVersion : kubeVersion,
-                cluster.client().clusterKubernetesVersion(),
+                StUtils.getKubernetesClusterVersion(),
                 extensionContext.getDisplayName()
             );
             return ConditionEvaluationResult.disabled("Test is disabled");

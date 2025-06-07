@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.tracing.TracingConstants;
 import io.sundr.builder.annotations.Buildable;
 
@@ -19,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @Buildable(editableEnabled = false)
-public class KafkaTracingClients  extends KafkaClients {
+public class KafkaTracingClients extends KafkaClients {
     private String jaegerServiceProducerName;
     private String jaegerServiceConsumerName;
     private String jaegerServiceStreamsName;
@@ -155,7 +154,7 @@ public class KafkaTracingClients  extends KafkaClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(getNamespaceName())
                 .withLabels(kafkaStreamLabels)
                 .withName(kafkaStreamsName)
             .endMetadata()

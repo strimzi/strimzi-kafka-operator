@@ -8,12 +8,14 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.resources.operator.specific.HelmResource;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.HelmInstallation;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.YamlInstallation;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
@@ -23,10 +25,8 @@ import org.junit.jupiter.api.Tag;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -60,18 +60,23 @@ public class LeaderElectionST extends AbstractST {
     @IsolatedTest
     void testLeaderElection() {
         // create CO with 2 replicas, wait for Deployment readiness and leader election
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withReplicas(2)
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withReplicas(2)
+                .build()
+            )
+            .install();
 
-        Lease oldLease = kubeClient().getClient().leases().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).get();
+        Lease oldLease = KubeResourceManager.get().kubeClient().getClient().leases().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).get();
         String oldLeaderPodName = oldLease.getSpec().getHolderIdentity();
 
         LOGGER.info("Changing image of the leader pod: {} to not available image - to cause CrashLoopBackOff and change of leader to second Pod (failover)", oldLeaderPodName);
 
-        kubeClient().editPod(clusterOperator.getDeploymentNamespace(), oldLeaderPodName).edit(pod -> new PodBuilder(pod)
+        KubeResourceManager.get().kubeClient().getClient().pods()
+            .inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
+            .withName(oldLeaderPodName)
+            .edit(pod -> new PodBuilder(pod)
             .editOrNewSpec()
                 .editContainer(0)
                     .withImage("wrong-image/name:latest")
@@ -80,12 +85,12 @@ public class LeaderElectionST extends AbstractST {
             .build()
         );
 
-        PodUtils.waitUntilPodIsInCrashLoopBackOff(clusterOperator.getDeploymentNamespace(), oldLeaderPodName);
+        PodUtils.waitUntilPodIsInCrashLoopBackOff(SetupClusterOperator.getInstance().getOperatorNamespace(), oldLeaderPodName);
 
-        Lease currentLease = kubeClient().getClient().leases().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).get();
+        Lease currentLease = KubeResourceManager.get().kubeClient().getClient().leases().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).get();
         String currentLeaderPodName = currentLease.getSpec().getHolderIdentity();
 
-        String logFromNewLeader = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), currentLeaderPodName, clusterOperator.getClusterOperatorName(), "300s");
+        String logFromNewLeader = StUtils.getLogFromPodByTime(SetupClusterOperator.getInstance().getOperatorNamespace(), currentLeaderPodName, SetupClusterOperator.getInstance().getOperatorDeploymentName(), "300s");
 
         LOGGER.info("Checking if the new leader is elected");
         assertThat("Log doesn't contains mention about election of the new leader", logFromNewLeader.contains(LEADER_MESSAGE), is(true));
@@ -98,15 +103,17 @@ public class LeaderElectionST extends AbstractST {
         assumeTrue(!Environment.isHelmInstall());
 
         // create CO with 1 replicas and with disabled leader election, wait for Deployment readiness
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withExtraEnvVars(Collections.singletonList(LEADER_DISABLED_ENV))
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withExtraEnvVars(LEADER_DISABLED_ENV)
+                .build()
+            )
+            .install();
 
-        String coPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).get(0).getMetadata().getName();
-        Lease notExistingLease = kubeClient().getClient().leases().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).get();
-        String logFromCoPod = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), coPodName, clusterOperator.getClusterOperatorName(), "300s");
+        String coPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).get(0).getMetadata().getName();
+        Lease notExistingLease = KubeResourceManager.get().kubeClient().getClient().leases().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).get();
+        String logFromCoPod = StUtils.getLogFromPodByTime(SetupClusterOperator.getInstance().getOperatorNamespace(), coPodName, SetupClusterOperator.getInstance().getOperatorDeploymentName(), "300s");
 
         // Assert that the Lease does not exist
         assertThat("Lease for CO exists", notExistingLease, is(nullValue()));
@@ -117,9 +124,9 @@ public class LeaderElectionST extends AbstractST {
         String pathToDepFile = "";
 
         if (Environment.isHelmInstall()) {
-            pathToDepFile = HelmResource.HELM_CHART + "templates/060-Deployment-strimzi-cluster-operator.yaml";
+            pathToDepFile = HelmInstallation.HELM_CHART + "templates/060-Deployment-strimzi-cluster-operator.yaml";
         } else {
-            pathToDepFile = BundleResource.PATH_TO_CO_CONFIG;
+            pathToDepFile = YamlInstallation.PATH_TO_CO_CONFIG;
         }
 
         String clusterOperatorDep = Files.readString(Paths.get(pathToDepFile));

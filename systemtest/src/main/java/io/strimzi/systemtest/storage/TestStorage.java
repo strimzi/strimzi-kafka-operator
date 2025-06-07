@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.storage;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
@@ -12,11 +13,8 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClients;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -83,6 +81,7 @@ final public class TestStorage {
     private LabelSelector mixedSelector;
     private LabelSelector kafkaConnectSelector;
     private LabelSelector mm2Selector;
+    private LabelSelector bridgeSelector;
     private int messageCount;
     private int continuousMessageCount;
     private long testExecutionStartTime;
@@ -127,17 +126,18 @@ final public class TestStorage {
         this.targetUsername = username + "-target";
         this.kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
         this.eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
-        this.brokerComponentName = StrimziPodSetResource.getBrokerComponentName(clusterName);
-        this.controllerComponentName = StrimziPodSetResource.getControllerComponentName(clusterName);
-        this.mixedComponentName = KafkaResource.getStrimziPodSetName(clusterName, KafkaNodePoolResource.getMixedPoolName(clusterName));
-        this.brokerSelector = KafkaResource.getLabelSelector(clusterName, brokerComponentName);
-        this.brokerPoolSelector = KafkaNodePoolResource.getLabelSelector(clusterName, this.brokerPoolName, ProcessRoles.BROKER);
-        this.controllerPoolSelector = KafkaNodePoolResource.getLabelSelector(clusterName, this.controllerPoolName, ProcessRoles.CONTROLLER);
-        this.mixedPoolSelector = KafkaNodePoolResource.getLabelSelector(clusterName, this.mixedPoolName, ProcessRoles.CONTROLLER);
-        this.controllerSelector = KafkaResource.getLabelSelector(clusterName, controllerComponentName);
-        this.mixedSelector = KafkaResource.getLabelSelector(clusterName, mixedComponentName);
-        this.kafkaConnectSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
-        this.mm2Selector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName));
+        this.brokerComponentName = KafkaComponents.getBrokerPodSetName(clusterName);
+        this.controllerComponentName = KafkaComponents.getControllerPodSetName(clusterName);
+        this.mixedComponentName = KafkaComponents.getPodSetName(clusterName, KafkaComponents.getMixedPoolName(clusterName));
+        this.brokerSelector = LabelSelectors.kafkaLabelSelector(clusterName, brokerComponentName);
+        this.brokerPoolSelector = LabelSelectors.nodePoolLabelSelector(clusterName, this.brokerPoolName, ProcessRoles.BROKER);
+        this.controllerPoolSelector = LabelSelectors.nodePoolLabelSelector(clusterName, this.controllerPoolName, ProcessRoles.CONTROLLER);
+        this.mixedPoolSelector = LabelSelectors.nodePoolLabelSelector(clusterName, this.mixedPoolName, ProcessRoles.CONTROLLER);
+        this.controllerSelector = LabelSelectors.kafkaLabelSelector(clusterName, controllerComponentName);
+        this.mixedSelector = LabelSelectors.kafkaLabelSelector(clusterName, mixedComponentName);
+        this.kafkaConnectSelector = LabelSelectors.connectLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
+        this.mm2Selector = LabelSelectors.mirrorMaker2LabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName));
+        this.bridgeSelector = LabelSelectors.bridgeLabelSelector(clusterName, KafkaBridgeResources.componentName(clusterName));
         this.messageCount = messageCount;
         this.continuousMessageCount = CONTINUOUS_MESSAGE_COUNT;
         this.testExecutionStartTime = System.currentTimeMillis();
@@ -181,6 +181,7 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIXED_SELECTOR_KEY, this.mixedSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_CONNECT_SELECTOR_KEY, this.kafkaConnectSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MM2_SELECTOR_KEY, this.mm2Selector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BRIDGE_SELECTOR_KEY, this.bridgeSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MESSAGE_COUNT_KEY, this.messageCount);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTINUOUS_MESSAGE_COUNT_KEY, this.continuousMessageCount);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TEST_EXECUTION_START_TIME_KEY, this.testExecutionStartTime);
@@ -352,6 +353,10 @@ final public class TestStorage {
 
     public LabelSelector getMM2Selector() {
         return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.MM2_SELECTOR_KEY);
+    }
+
+    public LabelSelector getBridgeSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.BRIDGE_SELECTOR_KEY);
     }
 
     public int getMessageCount() {

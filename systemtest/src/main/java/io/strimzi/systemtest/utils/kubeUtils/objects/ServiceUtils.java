@@ -4,9 +4,9 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,12 +15,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 public class ServiceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ServiceUtils.class);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private ServiceUtils() { }
 
@@ -33,19 +30,9 @@ public class ServiceUtils {
                 LOGGER.info("Waiting for Service label to change {} -> {}", entry.getKey(), entry.getValue());
                 TestUtils.waitFor("Service label to change " + entry.getKey() + " -> " + entry.getValue(), TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     TestConstants.GLOBAL_TIMEOUT, () ->
-                        kubeClient(namespaceName).getService(namespaceName, serviceName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                        KubeResourceManager.get().kubeClient().getClient().services().inNamespace(namespaceName).withName(serviceName).get().getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
-        }
-    }
-
-    public static void waitForServiceLabelsDeletion(String namespaceName, String serviceName, String... labelKeys) {
-        for (final String labelKey : labelKeys) {
-            LOGGER.info("Service label {} to change to {}", labelKey, null);
-            TestUtils.waitFor("Service label: " + labelKey + " change to " + null, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                DELETION_TIMEOUT, () ->
-                    kubeClient(namespaceName).getService(namespaceName, serviceName).getMetadata().getLabels().get(labelKey) == null
-            );
         }
     }
 
@@ -58,7 +45,7 @@ public class ServiceUtils {
         LOGGER.info("Waiting for Service: {}/{}-{} to be recovered", namespaceName, serviceName, serviceUid);
 
         TestUtils.waitFor("recovery of Service: " + serviceName + "/" + namespaceName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.TIMEOUT_FOR_RESOURCE_RECOVERY,
-            () -> !kubeClient().getServiceUid(serviceName).equals(serviceUid));
+            () -> !KubeResourceManager.get().kubeClient().getClient().services().inNamespace(namespaceName).withName(serviceName).get().getMetadata().getUid().equals(serviceUid));
         LOGGER.info("Service: {}/{} is recovered", namespaceName, serviceName);
     }
 

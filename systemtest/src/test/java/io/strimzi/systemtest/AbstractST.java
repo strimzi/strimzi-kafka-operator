@@ -4,14 +4,45 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.Namespace;
+import io.skodjob.testframe.resources.BuildConfigType;
+import io.skodjob.testframe.resources.ClusterRoleBindingType;
+import io.skodjob.testframe.resources.ClusterRoleType;
+import io.skodjob.testframe.resources.ConfigMapType;
+import io.skodjob.testframe.resources.CustomResourceDefinitionType;
+import io.skodjob.testframe.resources.DeploymentType;
+import io.skodjob.testframe.resources.ImageStreamType;
+import io.skodjob.testframe.resources.JobType;
+import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.LeaseType;
+import io.skodjob.testframe.resources.NetworkPolicyType;
+import io.skodjob.testframe.resources.OperatorGroupType;
+import io.skodjob.testframe.resources.RoleBindingType;
+import io.skodjob.testframe.resources.RoleType;
+import io.skodjob.testframe.resources.SecretType;
+import io.skodjob.testframe.resources.ServiceAccountType;
+import io.skodjob.testframe.resources.ServiceType;
+import io.skodjob.testframe.resources.SubscriptionType;
+import io.skodjob.testframe.resources.ValidatingWebhookConfigurationType;
+import io.skodjob.testframe.utils.KubeUtils;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
-import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.resources.types.ExtendedNamespaceType;
+import io.strimzi.systemtest.resources.types.KafkaAccessType;
+import io.strimzi.systemtest.resources.types.KafkaBridgeType;
+import io.strimzi.systemtest.resources.types.KafkaConnectType;
+import io.strimzi.systemtest.resources.types.KafkaConnectorType;
+import io.strimzi.systemtest.resources.types.KafkaMirrorMaker2Type;
+import io.strimzi.systemtest.resources.types.KafkaNodePoolType;
+import io.strimzi.systemtest.resources.types.KafkaRebalanceType;
+import io.strimzi.systemtest.resources.types.KafkaTopicType;
+import io.strimzi.systemtest.resources.types.KafkaType;
+import io.strimzi.systemtest.resources.types.KafkaUserType;
+import io.strimzi.systemtest.resources.types.StrimziPodSetType;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -31,22 +62,77 @@ import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith({TestExecutionWatcher.class})
 @DisplayNameGeneration(IndicativeSentences.class)
+@io.skodjob.testframe.annotations.ResourceManager
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
     static {
         LB_FINALIZERS = Environment.LB_FINALIZERS ? List.of(TestConstants.LOAD_BALANCER_CLEANUP) : null;
+
+        KubeResourceManager.get().setResourceTypes(
+            new ClusterRoleBindingType(),
+            new ClusterRoleType(),
+            new CustomResourceDefinitionType(),
+            new DeploymentType(),
+            new ExtendedNamespaceType(),
+            new JobType(),
+            new NetworkPolicyType(),
+            new RoleBindingType(),
+            new ServiceType(),
+            new ConfigMapType(),
+            new LeaseType(),
+            new ServiceAccountType(),
+            new RoleType(),
+            new SecretType(),
+            new ValidatingWebhookConfigurationType(),
+            new SubscriptionType(),
+            new OperatorGroupType(),
+            new BuildConfigType(),
+            new ImageStreamType(),
+            new KafkaAccessType(),
+            new KafkaBridgeType(),
+            new KafkaConnectorType(),
+            new KafkaConnectType(),
+            new KafkaMirrorMaker2Type(),
+            new KafkaNodePoolType(),
+            new KafkaRebalanceType(),
+            new KafkaTopicType(),
+            new KafkaType(),
+            new KafkaUserType(),
+            new StrimziPodSetType()
+        );
+
+        KubeResourceManager.get().addCreateCallback(resource -> {
+            if (resource instanceof Namespace namespace) {
+                String testClass = StUtils.removePackageName(KubeResourceManager.get().getTestContext().getRequiredTestClass().getName());
+
+                KubeUtils.labelNamespace(
+                    namespace.getMetadata().getName(),
+                    TestConstants.TEST_SUITE_NAME_LABEL,
+                    testClass
+                );
+
+                if (KubeResourceManager.get().getTestContext().getTestMethod().isPresent()) {
+                    String testCaseName = KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
+
+                    KubeUtils.labelNamespace(
+                        namespace.getMetadata().getName(),
+                        TestConstants.TEST_CASE_NAME_LABEL,
+                        StUtils.trimTestCaseBaseOnItsLength(testCaseName)
+                    );
+                }
+            }
+        });
     }
 
-    protected final ResourceManager resourceManager = ResourceManager.getInstance();
+    // Test-Frame integration stuff, remove everything else when not needed
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
     private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
-    protected SetupClusterOperator clusterOperator = SetupClusterOperator.getInstance();
     protected KubeClusterResource cluster;
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
 
@@ -55,42 +141,38 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} second(s)", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(TestConstants.DEPLOYMENT, ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
+        String clusterOperatorLog = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).searchInLog(TestConstants.DEPLOYMENT, SetupClusterOperator.getInstance().getOperatorDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
     private void afterEachMustExecute() {
         if (cluster.cluster().isClusterUp()) {
-            if (StUtils.isParallelTest(ResourceManager.getTestContext()) ||
-                StUtils.isParallelNamespaceTest(ResourceManager.getTestContext())) {
-                parallelSuiteController.notifyParallelTestToAllowExecution(ResourceManager.getTestContext());
-                parallelSuiteController.removeParallelTest(ResourceManager.getTestContext());
+            if (StUtils.isParallelTest(KubeResourceManager.get().getTestContext()) ||
+                StUtils.isParallelNamespaceTest(KubeResourceManager.get().getTestContext())) {
+                parallelSuiteController.notifyParallelTestToAllowExecution(KubeResourceManager.get().getTestContext());
+                parallelSuiteController.removeParallelTest(KubeResourceManager.get().getTestContext());
             }
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
-    protected void afterEachMayOverride() throws Exception {
+    protected void afterEachMayOverride() {
         if (!Environment.SKIP_TEARDOWN) {
-            ResourceManager.getInstance().deleteResources();
-            testSuiteNamespaceManager.deleteParallelNamespace();
+            KubeResourceManager.get().deleteResources();
         }
     }
 
     private void afterAllMustExecute()  {
-        if (cluster.cluster().isClusterUp()) {
-            clusterOperator = SetupClusterOperator.getInstance();
-        } else {
+        if (!cluster.cluster().isClusterUp()) {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
     protected synchronized void afterAllMayOverride() {
         if (!Environment.SKIP_TEARDOWN) {
-            ResourceManager.getInstance().deleteResources();
+            KubeResourceManager.get().deleteResources();
             testSuiteNamespaceManager.deleteTestSuiteNamespace();
-            NamespaceManager.getInstance().deleteAllNamespacesFromSet();
         }
     }
 
@@ -110,10 +192,10 @@ public abstract class AbstractST implements TestSeparator {
 
     private void beforeEachMustExecute() {
         if (cluster.cluster().isClusterUp()) {
-            if (StUtils.isParallelNamespaceTest(ResourceManager.getTestContext()) ||
-                StUtils.isParallelTest(ResourceManager.getTestContext())) {
-                parallelSuiteController.addParallelTest(ResourceManager.getTestContext());
-                parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(ResourceManager.getTestContext());
+            if (StUtils.isParallelNamespaceTest(KubeResourceManager.get().getTestContext()) ||
+                StUtils.isParallelTest(KubeResourceManager.get().getTestContext())) {
+                parallelSuiteController.addParallelTest(KubeResourceManager.get().getTestContext());
+                parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(KubeResourceManager.get().getTestContext());
             }
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
@@ -147,7 +229,7 @@ public abstract class AbstractST implements TestSeparator {
         if (extensionContext.getTestMethod().isPresent() && parallelEnabled) {
             ThreadContext.put("testMethod", extensionContext.getTestMethod().get().getName());
         }
-        ResourceManager.setTestContext(extensionContext);
+        KubeResourceManager.get().setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("————————————  {}@Before Each - Setup TestCase environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         beforeEachMustExecute();
@@ -161,7 +243,7 @@ public abstract class AbstractST implements TestSeparator {
         if (extensionContext.getTestClass().isPresent() && parallelEnabled) {
             ThreadContext.put("testClass", extensionContext.getTestClass().get().getSimpleName());
         }
-        ResourceManager.setTestContext(extensionContext);
+        KubeResourceManager.get().setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@Before All - Setup TestSuite environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         beforeAllMayOverride();
@@ -170,7 +252,7 @@ public abstract class AbstractST implements TestSeparator {
 
     @AfterEach
     void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
-        ResourceManager.setTestContext(extensionContext);
+        KubeResourceManager.get().setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@After Each - Clean up after test ————————————", StUtils.removePackageName(this.getClass().getName()));
         // try with finally is needed because in worst case possible if the Cluster is unable to delete namespaces, which
@@ -180,7 +262,7 @@ public abstract class AbstractST implements TestSeparator {
         try {
             // This method needs to be disabled for the moment, as it brings flakiness and is unstable due to regexes and current matcher checks.
             // Needs to be reworked on what errors to ignore. Better error logging should be added.
-//            assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY));
+//            assertNoCoErrorsLogged(SetupClusterOperator.getInstance().getOperatorNamespace(), (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY));
         } finally {
             afterEachMayOverride();
             afterEachMustExecute();
@@ -190,7 +272,7 @@ public abstract class AbstractST implements TestSeparator {
 
     @AfterAll
     void tearDownTestSuite(ExtensionContext extensionContext) {
-        ResourceManager.setTestContext(extensionContext);
+        KubeResourceManager.get().setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@After All - Clean up after TestSuite ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         afterAllMayOverride();

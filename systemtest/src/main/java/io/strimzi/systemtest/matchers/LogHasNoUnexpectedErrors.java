@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.matchers;
 
-import io.strimzi.test.executor.Exec;
+import io.skodjob.testframe.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.BaseMatcher;
