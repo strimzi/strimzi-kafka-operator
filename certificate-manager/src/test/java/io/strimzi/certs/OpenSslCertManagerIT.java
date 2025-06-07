@@ -323,6 +323,9 @@ public class OpenSslCertManagerIT {
         ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", subject);
 
+        X509Certificate certificate = loadCertificate(cert);
+        assertThat(certificate.getExtensionValue("2.5.29.35"), is(notNullValue()));
+
         caKey.delete();
         caCert.delete();
         key.delete();
