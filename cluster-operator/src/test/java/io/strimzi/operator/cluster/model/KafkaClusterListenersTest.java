@@ -1169,7 +1169,7 @@ public class KafkaClusterListenersTest {
         for (Service service : perPodServices) {
             assertThat(service.getSpec().getAllocateLoadBalancerNodePorts(), is(false));
             assertThat(service.getSpec().getPorts(), hasSize(1));
-            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
+            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-lb1"));
         }
     }
 
