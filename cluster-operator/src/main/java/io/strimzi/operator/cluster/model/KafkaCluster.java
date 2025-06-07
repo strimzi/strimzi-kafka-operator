@@ -650,10 +650,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<GenericKafkaListener> internalListeners = ListenersUtils.internalListeners(listeners);
 
         List<ServicePort> ports = new ArrayList<>(internalListeners.size() + 1);
-        ports.add(ServiceUtils.createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT,REPLICATION_PORT_NAME, "TCP"));
+        ports.add(ServiceUtils.createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, REPLICATION_PORT_NAME, "TCP"));
 
         for (GenericKafkaListener listener : internalListeners) {
-            ports.add(ServiceUtils.createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(),ListenersUtils.backwardsCompatiblePortName(listener), "TCP"));
+            ports.add(ServiceUtils.createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), ListenersUtils.backwardsCompatiblePortName(listener), "TCP"));
         }
 
         return ports;
@@ -669,12 +669,12 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<GenericKafkaListener> internalListeners = ListenersUtils.internalListeners(listeners);
 
         List<ServicePort> ports = new ArrayList<>(internalListeners.size() + 3);
-        ports.add(ServiceUtils.createServicePort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, CONTROLPLANE_PORT, CONTROLPLANE_PORT_NAME,"TCP"));
-        ports.add(ServiceUtils.createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, REPLICATION_PORT_NAME,"TCP"));
-        ports.add(ServiceUtils.createServicePort(KAFKA_AGENT_PORT_NAME, KAFKA_AGENT_PORT, KAFKA_AGENT_PORT, KAFKA_AGENT_PORT_NAME,"TCP"));
+        ports.add(ServiceUtils.createServicePort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, CONTROLPLANE_PORT, CONTROLPLANE_PORT_NAME, "TCP"));
+        ports.add(ServiceUtils.createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, REPLICATION_PORT_NAME, "TCP"));
+        ports.add(ServiceUtils.createServicePort(KAFKA_AGENT_PORT_NAME, KAFKA_AGENT_PORT, KAFKA_AGENT_PORT, KAFKA_AGENT_PORT_NAME, "TCP"));
 
         for (GenericKafkaListener listener : internalListeners) {
-            ports.add(ServiceUtils.createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(),ListenersUtils.backwardsCompatiblePortName(listener), "TCP"));
+            ports.add(ServiceUtils.createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), ListenersUtils.backwardsCompatiblePortName(listener), "TCP"));
         }
 
         ports.addAll(jmx.servicePorts());

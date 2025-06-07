@@ -4,7 +4,9 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
 import io.strimzi.api.kafka.model.common.template.HasMetadataTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
@@ -217,6 +219,7 @@ public class ServiceUtils {
      * @param name          Name of the port
      * @param port          The port on the service which can be accessed by clients
      * @param targetPort    The port on the container / Pod where the connections will be routed
+     * @param targetPortName the name of the target port on the container / Pod where the connections will be routed
      * @param protocol      Protocol used by this port
      *
      * @return  Created port
@@ -231,6 +234,7 @@ public class ServiceUtils {
      * @param name          Name of the port
      * @param port          The port on the service which can be accessed by clients
      * @param targetPort    The port on the container / Pod where the connections will be routed
+     * @param targetPortName the name of the target port on the container / Pod where the connections will be routed
      * @param nodePort      The desired node port number
      * @param protocol      Protocol used by this port
      *
