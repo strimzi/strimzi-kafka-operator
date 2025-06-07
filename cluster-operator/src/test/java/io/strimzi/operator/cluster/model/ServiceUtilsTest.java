@@ -58,7 +58,7 @@ public class ServiceUtilsTest {
 
         assertThat(port.getName(), is(PORT_NAME));
         assertThat(port.getPort(), is(1234));
-        assertThat(port.getTargetPort().getIntVal(), is(5678));
+        assertThat(port.getTargetPort().getStrVal(), is(PORT_NAME));
         assertThat(port.getNodePort(), is(nullValue()));
         assertThat(port.getProtocol(), is("HTTP"));
     }
@@ -69,7 +69,7 @@ public class ServiceUtilsTest {
 
         assertThat(port.getName(), is(PORT_NAME));
         assertThat(port.getPort(), is(1234));
-        assertThat(port.getTargetPort().getIntVal(), is(5678));
+        assertThat(port.getTargetPort().getStrVal(), is(PORT_NAME));
         assertThat(port.getNodePort(), is(30000));
         assertThat(port.getProtocol(), is("HTTP"));
     }

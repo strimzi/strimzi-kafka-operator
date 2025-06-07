@@ -73,7 +73,7 @@ public class JmxModelTest {
         assertThat(jmx.servicePorts().size(), is(1));
         assertThat(jmx.servicePorts().get(0).getName(), is("jmx"));
         assertThat(jmx.servicePorts().get(0).getPort(), is(9999));
-        assertThat(jmx.servicePorts().get(0).getTargetPort().getIntVal(), is(9999));
+        assertThat(jmx.servicePorts().get(0).getTargetPort().getStrVal(), is("jmx"));
         assertThat(jmx.servicePorts().get(0).getProtocol(), is("TCP"));
 
         assertThat(jmx.containerPorts().size(), is(1));
@@ -86,7 +86,7 @@ public class JmxModelTest {
 
         assertThat(jmx.networkPolicyIngresRules().size(), is(1));
         assertThat(jmx.networkPolicyIngresRules().get(0).getPorts().size(), is(1));
-        assertThat(jmx.networkPolicyIngresRules().get(0).getPorts().get(0).getPort().getIntVal(), is(9999));
+        assertThat(jmx.networkPolicyIngresRules().get(0).getPorts().get(0).getPort().getStrVal(), is("jmx"));
         assertThat(jmx.networkPolicyIngresRules().get(0).getFrom(), is(List.of()));
 
         assertThat(jmx.jmxSecret(null), is(nullValue()));
@@ -108,7 +108,7 @@ public class JmxModelTest {
         assertThat(jmx.servicePorts().size(), is(1));
         assertThat(jmx.servicePorts().get(0).getName(), is("jmx"));
         assertThat(jmx.servicePorts().get(0).getPort(), is(9999));
-        assertThat(jmx.servicePorts().get(0).getTargetPort().getIntVal(), is(9999));
+        assertThat(jmx.servicePorts().get(0).getTargetPort().getStrVal(), is("jmx"));
         assertThat(jmx.servicePorts().get(0).getProtocol(), is("TCP"));
 
         assertThat(jmx.containerPorts().size(), is(1));
@@ -127,7 +127,7 @@ public class JmxModelTest {
 
         assertThat(jmx.networkPolicyIngresRules().size(), is(1));
         assertThat(jmx.networkPolicyIngresRules().get(0).getPorts().size(), is(1));
-        assertThat(jmx.networkPolicyIngresRules().get(0).getPorts().get(0).getPort().getIntVal(), is(9999));
+        assertThat(jmx.networkPolicyIngresRules().get(0).getPorts().get(0).getPort().getStrVal(), is("jmx"));
         assertThat(jmx.networkPolicyIngresRules().get(0).getFrom(), is(List.of()));
 
         Secret newSecret = jmx.jmxSecret(null);

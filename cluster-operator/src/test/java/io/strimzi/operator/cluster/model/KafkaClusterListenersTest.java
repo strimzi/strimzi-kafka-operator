@@ -775,7 +775,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getPorts().size(), is(1));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getPort(), is(9094));
-        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
@@ -799,7 +799,7 @@ public class KafkaClusterListenersTest {
             assertThat(service.getSpec().getPorts().size(), is(1));
             assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
             assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
             assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
             assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         }
@@ -1006,7 +1006,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getPorts().size(), is(1));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getPort(), is(9094));
-        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(bootstrapServices.get(0).getSpec().getLoadBalancerIP(), is(nullValue()));
@@ -1035,7 +1035,7 @@ public class KafkaClusterListenersTest {
             assertThat(service.getSpec().getPorts().size(), is(1));
             assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
             assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
             assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
             assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
             assertThat(service.getSpec().getLoadBalancerIP(), is(nullValue()));
@@ -1162,14 +1162,14 @@ public class KafkaClusterListenersTest {
         assertThat(externalServices, hasSize(1));
         assertThat(externalServices.get(0).getSpec().getAllocateLoadBalancerNodePorts(), is(false));
         assertThat(externalServices.get(0).getSpec().getPorts(), hasSize(1));
-        assertThat(externalServices.get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+        assertThat(externalServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-lb1"));
 
         List<Service> perPodServices = kc.generatePerPodServices();
         assertThat(perPodServices, hasSize(5));
         for (Service service : perPodServices) {
             assertThat(service.getSpec().getAllocateLoadBalancerNodePorts(), is(false));
             assertThat(service.getSpec().getPorts(), hasSize(1));
-            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         }
     }
 
@@ -1426,7 +1426,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getPorts().size(), is(1));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getPort(), is(9094));
-        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
@@ -1450,7 +1450,7 @@ public class KafkaClusterListenersTest {
             assertThat(service.getSpec().getPorts().size(), is(1));
             assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
             assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
             assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
             assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         }
@@ -1612,7 +1612,7 @@ public class KafkaClusterListenersTest {
         assertThat(ext.getSpec().getPorts().size(), is(1));
         assertThat(ext.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
         assertThat(ext.getSpec().getPorts().get(0).getPort(), is(9094));
-        assertThat(ext.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+        assertThat(ext.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         assertThat(ext.getSpec().getPorts().get(0).getNodePort(), is(32001));
         assertThat(ext.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
@@ -1627,21 +1627,21 @@ public class KafkaClusterListenersTest {
                 assertThat(service.getSpec().getPorts().size(), is(1));
                 assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
                 assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
                 assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(32106));
                 assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
             } else if (service.getMetadata().getName().startsWith("foo-mixed-3")) {
                 assertThat(service.getSpec().getPorts().size(), is(1));
                 assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
                 assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
                 assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(32103));
                 assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
             } else {
                 assertThat(service.getSpec().getPorts().size(), is(1));
                 assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
                 assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
                 assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
                 assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
             }
@@ -1744,7 +1744,7 @@ public class KafkaClusterListenersTest {
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().size(), is(1));
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getPort(), is(9094));
-        assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+        assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getNodePort(), is(32189));
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
@@ -1757,21 +1757,21 @@ public class KafkaClusterListenersTest {
                 assertThat(service.getSpec().getPorts().size(), is(1));
                 assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
                 assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
                 assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(32006));
                 assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
             } else if (service.getMetadata().getName().startsWith("foo-mixed-3")) {
                 assertThat(service.getSpec().getPorts().size(), is(1));
                 assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
                 assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
                 assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(32003));
                 assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
             } else {
                 assertThat(service.getSpec().getPorts().size(), is(1));
                 assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
                 assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+                assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
                 assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
                 assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
             }
@@ -1895,7 +1895,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getPorts().size(), is(1));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getPort(), is(9094));
-        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
@@ -1919,7 +1919,7 @@ public class KafkaClusterListenersTest {
             assertThat(service.getSpec().getPorts().size(), is(1));
             assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
             assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
             assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
             assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         }
@@ -2130,7 +2130,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getPorts().size(), is(1));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getName(), is("tcp-clusterip"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getPort(), is(9094));
-        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-clusterip"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
@@ -2167,7 +2167,7 @@ public class KafkaClusterListenersTest {
             assertThat(service.getSpec().getPorts().size(), is(1));
             assertThat(service.getSpec().getPorts().get(0).getName(), is("tcp-clusterip"));
             assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
-            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-clusterip"));
             assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
             assertThat(service.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         }
