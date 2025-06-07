@@ -4,11 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceBuilder;
-import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.ServicePortBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.strimzi.api.kafka.model.common.template.HasMetadataTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
@@ -18,6 +14,7 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -224,8 +221,8 @@ public class ServiceUtils {
      *
      * @return  Created port
      */
-    public static ServicePort createServicePort(String name, int port, int targetPort, String protocol)   {
-        return createServicePort(name, port, targetPort, null, protocol);
+    public static ServicePort createServicePort(String name, int port, int targetPort, String targetPortName, String protocol)   {
+        return createServicePort(name, port, targetPort, targetPortName, protocol);
     }
 
     /**
@@ -239,12 +236,12 @@ public class ServiceUtils {
      *
      * @return  Created port
      */
-    public static ServicePort createServicePort(String name, int port, int targetPort, Integer nodePort, String protocol)   {
+    public static ServicePort createServicePort(String name, int port, int targetPort, String targetPortName, Integer nodePort, String protocol)   {
         return new ServicePortBuilder()
                 .withName(name)
                 .withProtocol(protocol)
                 .withPort(port)
-                .withNewTargetPort(targetPort)
+                .withNewTargetPort(Objects.requireNonNullElse(targetPortName, targetPort))
                 .withNodePort(nodePort)
                 .build();
     }

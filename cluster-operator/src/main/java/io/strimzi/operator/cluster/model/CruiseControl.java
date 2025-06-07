@@ -303,7 +303,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 labels,
                 ownerReference,
                 templateService,
-                List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"))
+                List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT,REST_API_PORT_NAME, "TCP"))
         );
     }
 

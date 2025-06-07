@@ -42,7 +42,7 @@ public class ServiceUtilsTest {
             .withStrimziComponentType("my-component-type")
             .withAdditionalLabels(Map.of("label-1", "value-1", "label-2", "value-2"));
     private static final String PORT_NAME = "my-port";
-    private static final ServicePort PORT = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678, "HTTP");
+    private static final ServicePort PORT = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678, PORT_NAME,"HTTP");
     private static final InternalServiceTemplate TEMPLATE = new InternalServiceTemplateBuilder()
             .withNewMetadata()
                 .withLabels(Map.of("label-3", "value-3", "label-4", "value-4"))
@@ -54,7 +54,7 @@ public class ServiceUtilsTest {
 
     @ParallelTest
     public void testCreateServicePort() {
-        ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678, "HTTP");
+        ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678,PORT_NAME, "HTTP");
 
         assertThat(port.getName(), is(PORT_NAME));
         assertThat(port.getPort(), is(1234));
@@ -65,7 +65,7 @@ public class ServiceUtilsTest {
 
     @ParallelTest
     public void testCreateServiceWithNodePort() {
-        ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678, 30000, "HTTP");
+        ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678, PORT_NAME,30000, "HTTP");
 
         assertThat(port.getName(), is(PORT_NAME));
         assertThat(port.getPort(), is(1234));
