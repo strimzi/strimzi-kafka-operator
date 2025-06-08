@@ -533,7 +533,7 @@ public class ListenersST extends AbstractST {
                         .withNewKafkaListenerAuthenticationCustomAuth()
                             .withSasl(false)
                             // Change ssl config to see if user can actually change it
-                            .addToListenerConfig("ssl.client.auth", SslClientAuth.REQUIRED)
+                            .addToListenerConfig("ssl.client.auth", SslClientAuth.REQUIRED.toString())
                             .addToListenerConfig(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, mountPath + "/" + customCaCertName + "/ca.crt")
                             .addToListenerConfig(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM")
                             .addToListenerConfig("ssl.principal.mapping.rules", "RULE:^CN=(.*?),(.*)$/CN=$1/")
