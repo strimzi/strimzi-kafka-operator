@@ -362,9 +362,9 @@ public class ClusterCa extends Ca {
     public void maybeDeleteOldCerts() {
         // the operator doesn't have to touch Secret provided by the user with his own custom CA certificate
         if (this.generateCa) {
-            this.caCertsRemoved = removeCerts(this.caCertSecret.getData(), entry -> OLD_CA_CERT_PATTERN.matcher(entry.getKey()).matches()) > 0;
-            if (this.caCertsRemoved) {
+            if (removeCerts(this.caCertData, entry -> OLD_CA_CERT_PATTERN.matcher(entry.getKey()).matches())) {
                 LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", this);
+                this.caCertsRemoved = true;
             }
         }
     }
