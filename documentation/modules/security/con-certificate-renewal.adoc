@@ -28,8 +28,8 @@ Configure the renewal period of the certificates created by the Cluster Operator
 * `Kafka.spec.clientsCa.renewalDays` for Clients CA certificates
 
 The default renewal period for both certificates is 30 days from the expiry date of the current certificate.
-Changing the `validityDays` or `renewalDays` values does not trigger immediate certificate renewal. 
-The updated values are applied the next time the certificate is renewed, either automatically or through manual renewal.
+Changing the `validityDays` does not trigger immediate certificate renewal. 
+The updated value is applied the next time the certificate is renewed, either automatically or through manual renewal.
 
 .Validity period against renewal period
 [source]
@@ -40,6 +40,7 @@ Not Before                                     Not After
                               <--- renewalDays --->|
 ----
 
+Changes to `renewalDays` may trigger renewal earlier if the new value places the certificate within the renewal window.
 To schedule the renewal period at a convenient time, use xref:con-maintenance-time-window-definition-{context}[maintenance time windows].
 
 IMPORTANT: `maintenanceTimeWindows` apply *only* to certificates generated automatically by the Cluster Operator.  

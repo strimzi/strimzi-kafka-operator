@@ -11,19 +11,19 @@ This helps minimize disruption to Kafka clients by scheduling updates at conveni
 
 Maintenance time windows apply only to automatic certificate renewals and rolling restarts managed by the Cluster Operator.
 
-They **do** apply in the following scenarios:
+They **apply** in the following scenarios:
 
-* Renewal of Strimzi-managed internal certificates, such as those used by Kafka nodes.
+* Automatic time-based renewal of Strimzi-managed internal certificates, such as those used by Kafka nodes.
 * Automatic time-based renewal of server certificates signed by a custom Certificate Authority (CA), _if_ Strimzi manages the renewal process based on certificate expiry.
 
-They **do not** apply in the following scenarios:
+They **do not apply** in the following scenarios:
 
-* User-driven changes to the `Kafka` custom resource, including configuration changes.
+* User-driven changes to the `Kafka` custom resource, including configuration updates.
 * Environment-driven changes to certificate fields, such as the Common Name (CN) or Subject Alternative Names (SANs). For example, when a new load balancer address is introduced.
 * Manual updates to Cluster CA or Clients CA certificates, even if they are Strimzi-managed, since these updates are treated as user-initiated actions.
 * Externally managed certificates, such as:
-  * Custom listener certificates you provide directly
-  * Certificates issued by an external certificate manager
+** Custom listener certificates provided directly by the user.
+** Certificates issued by an external certificate manager.
 
 In these cases, restarts may occur immediately and outside any configured maintenance time window.
 
