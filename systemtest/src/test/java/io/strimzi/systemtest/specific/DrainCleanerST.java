@@ -5,14 +5,14 @@
 package io.strimzi.systemtest.specific;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -20,6 +20,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +32,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 @Tag(REGRESSION)
 @MicroShiftNotSupported
@@ -43,31 +43,31 @@ public class DrainCleanerST extends AbstractST {
     @Tag(REGRESSION)
     @IsolatedTest
     void testDrainCleanerWithComponents() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.DRAIN_CLEANER_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext(), TestConstants.DRAIN_CLEANER_NAMESPACE);
 
         final int replicas = 3;
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), replicas).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), replicas).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getClusterName(), replicas).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getClusterName(), replicas).build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getTopicName(), testStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getTopicName(), testStorage.getClusterName()).build());
 
         drainCleaner.createDrainCleaner();
         // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled
-        NetworkPolicyResource.allowNetworkPolicySettingsForWebhook(TestConstants.DRAIN_CLEANER_NAMESPACE, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME, Map.of(TestConstants.APP_POD_LABEL, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME));
+        NetworkPolicyUtils.allowNetworkPolicySettingsForWebhook(TestConstants.DRAIN_CLEANER_NAMESPACE, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME, Map.of(TestConstants.APP_POD_LABEL, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME));
 
         final KafkaClients continuousClients = ClientUtils.getContinuousPlainClientBuilder(testStorage)
             .withNamespaceName(TestConstants.DRAIN_CLEANER_NAMESPACE)
             .build();
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             continuousClients.producerStrimzi(),
             continuousClients.consumerStrimzi());
 
-        List<String> brokerPods = kubeClient().listPodNames(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector());
+        List<String> brokerPods = PodUtils.listPodNames(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector());
 
         String kafkaPodName = brokerPods.get(0);
 
@@ -84,7 +84,7 @@ public class DrainCleanerST extends AbstractST {
         LOGGER.info("Evicting Pod: {}", podName);
 
         try {
-            kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(podName).evict();
+            KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(podName).evict();
         } catch (KubernetesClientException e)   {
             if (e.getCode() == 500 && e.getMessage().contains("The pod will be rolled by the Strimzi Cluster Operator"))    {
                 LOGGER.info("Eviction request for pod {} was denied by the Drain Cleaner", podName);
@@ -96,11 +96,14 @@ public class DrainCleanerST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
-            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withNamespaceName(TestConstants.DRAIN_CLEANER_NAMESPACE)
+                .withNamespacesToWatch(TestConstants.DRAIN_CLEANER_NAMESPACE)
+                .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_DEFAULT)
+                .build()
+            )
+            .install();
     }
 }

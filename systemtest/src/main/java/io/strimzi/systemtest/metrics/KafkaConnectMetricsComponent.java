@@ -6,7 +6,7 @@ package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.labels.LabelSelectors;
 
 /**
  * Concrete implementation of BaseMetricsComponent for Kafka Connect.
@@ -35,6 +35,6 @@ public class KafkaConnectMetricsComponent extends BaseMetricsComponent {
      */
     @Override
     public LabelSelector getLabelSelector() {
-        return KafkaConnectResource.getLabelSelector(componentName, KafkaConnectResources.componentName(componentName));
+        return LabelSelectors.connectLabelSelector(componentName, KafkaConnectResources.componentName(componentName));
     }
 }

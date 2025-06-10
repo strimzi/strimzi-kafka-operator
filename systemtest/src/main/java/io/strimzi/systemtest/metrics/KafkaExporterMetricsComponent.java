@@ -5,9 +5,8 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Concrete implementation of BaseMetricsComponent for Kafka Exporter.
@@ -37,6 +36,6 @@ public class KafkaExporterMetricsComponent extends BaseMetricsComponent {
      */
     @Override
     public LabelSelector getLabelSelector() {
-        return kubeClient().getDeploymentSelectors(namespaceName, KafkaExporterResources.componentName(componentName));
+        return KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(namespaceName).withName(KafkaExporterResources.componentName(componentName)).get().getSpec().getSelector();
     }
 }

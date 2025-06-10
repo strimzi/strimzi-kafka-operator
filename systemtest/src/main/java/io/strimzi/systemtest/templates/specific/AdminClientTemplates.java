@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
@@ -21,8 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class AdminClientTemplates {
 
@@ -219,7 +218,7 @@ public class AdminClientTemplates {
      * @return a {@link String} containing the SASL mechanism, security protocol, and the SASL JAAS configuration
      */
     private static String getAdminClientScramConfig(String namespace, String userName, SecurityProtocol securityProtocol) {
-        final String saslJaasConfigEncrypted = kubeClient().getSecret(namespace, userName).getData().get("sasl.jaas.config");
+        final String saslJaasConfigEncrypted = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespace).withName(userName).get().getData().get("sasl.jaas.config");
         final String saslJaasConfigDecrypted = Util.decodeFromBase64(saslJaasConfigEncrypted);
 
         return "sasl.mechanism=SCRAM-SHA-512\n" +

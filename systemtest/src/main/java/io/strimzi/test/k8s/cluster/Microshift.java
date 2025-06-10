@@ -4,12 +4,8 @@
  */
 package io.strimzi.test.k8s.cluster;
 
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.strimzi.test.executor.Exec;
-import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
-import io.strimzi.test.k8s.cmdClient.Oc;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import io.skodjob.testframe.clients.KubeClusterException;
+import io.skodjob.testframe.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,16 +35,6 @@ public class Microshift implements KubeCluster {
             LOGGER.debug(e);
             return false;
         }
-    }
-
-    @Override
-    public KubeCmdClient defaultCmdClient() {
-        return new Oc();
-    }
-
-    @Override
-    public KubeClient defaultClient() {
-        return new KubeClient(new KubernetesClientBuilder().withConfig(CONFIG).build(), "default");
     }
 
     public String toString() {

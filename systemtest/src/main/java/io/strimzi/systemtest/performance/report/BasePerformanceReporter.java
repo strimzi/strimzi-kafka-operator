@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.systemtest.performance.PerformanceConstants;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.storage.TestStorage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -135,7 +135,7 @@ public abstract class BasePerformanceReporter {
      * @return                  A string containing the serialized YAML representation of the Kafka configuration, or an error message if the configuration cannot be serialized.
      */
     private String serializeKafkaConfiguration(String namespace, String clusterName) {
-        Kafka kafkaResource = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get();
+        Kafka kafkaResource = CrdClients.kafkaClient().inNamespace(namespace).withName(clusterName).get();
 
         // Check if the Kafka resource has deployed
         if (kafkaResource != null && kafkaResource.getSpec() != null) {
