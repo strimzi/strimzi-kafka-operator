@@ -118,6 +118,43 @@ public class KafkaConnectResources {
     }
 
     /**
+     * Get the name of the Kafka Connect role binding given the name of the {@code cluster}.
+     *
+     * @param clusterName  The cluster name.
+     *
+     * @return The name of Kafka Connect role binding.
+     */
+    public static String connectRoleBindingName(String clusterName) {
+        return componentName(clusterName) + "-connect-role";
+    }
+
+    /**
+     * Get the name of the internal secret that contains TLS trusted certificates.
+     * The operator copies user specified secrets for trusted certificates into
+     * a single secret with this name. It is then used when configuring Connect.
+     *
+     * @param clusterName The cluster name.
+     *
+     * @return Name of the internal secret that contains TLS trusted certificates.
+     */
+    public static String internalTlsTrustedCertsSecretName(String clusterName) {
+        return componentName(clusterName) + "-tls-trusted-certs";
+    }
+
+    /**
+     * Get the name of the internal secret that contains TLS trusted certificates for OAuth server.
+     * The operator copies user specified secrets for OAuth trusted certificates into
+     * a single secret with this name. It is then used when configuring Connect.
+     *
+     * @param clusterName The cluster name.
+     *
+     * @return Name of the internal secret that contains OAuth trusted certificates.
+     */
+    public static String internalOauthTrustedCertsSecretName(String clusterName) {
+        return componentName(clusterName) + "-oauth-trusted-certs";
+    }
+
+    /**
      * Returns the name of the Kafka Connect {@code ConfigMap} for a {@code KafkaConnect} build which contains the Dockerfile.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @return The name of the corresponding Kafka Connect {@code ConfigMap}.

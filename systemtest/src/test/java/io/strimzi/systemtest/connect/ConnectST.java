@@ -552,6 +552,18 @@ class ConnectST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaUser);
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
+        final String encodedCertMock = Base64.getEncoder().encodeToString("certificates".getBytes());
+
+        Secret secondCertSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName("my-secret")
+                    .withNamespace(testStorage.getNamespaceName())
+                .endMetadata()
+                .withType("Opaque")
+                .addToData("ca2.crt", encodedCertMock)
+                .build();
+        kubeClient(testStorage.getNamespaceName()).createSecret(secondCertSecret);
+
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
@@ -559,10 +571,8 @@ class ConnectST extends AbstractST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .withNewTls()
-                    .addNewTrustedCertificate()
-                        .withSecretName(testStorage.getClusterName() + "-cluster-ca-cert")
-                        .withCertificate("ca.crt")
-                    .endTrustedCertificate()
+                    .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName(testStorage.getClusterName() + "-cluster-ca-cert").withCertificate("ca.crt").build())
+                    .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("ca2.crt").build())
                 .endTls()
                 .withBootstrapServers(testStorage.getClusterName() + "-kafka-bootstrap:9093")
                 .withNewKafkaClientAuthenticationTls()
@@ -584,6 +594,14 @@ class ConnectST extends AbstractST {
         final String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
+
+        // This is an internal secret created by the operator with copy of certificates from the trusted certificates secrets specified in the CR
+        String tlsCertSecretName = KafkaConnectResources.internalTlsTrustedCertsSecretName(testStorage.getClusterName());
+        LOGGER.info("Verifying that tls cert secret {} is created for KafkaConnect truststore", tlsCertSecretName);
+        Secret tlsCertSecret = kubeClient(testStorage.getNamespaceName()).getSecret(tlsCertSecretName);
+        // The secret should contain certificates from both secrets
+        assertThat(tlsCertSecret.getData().containsKey(testStorage.getClusterName() + "-cluster-ca-cert-ca.crt"), is(true));
+        assertThat(tlsCertSecret.getData().containsKey("my-secret-ca2.crt"), is(true));
 
         LOGGER.info("Creating FileStreamSink KafkaConnector via Pod: {}/{} with Topic: {}", testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName());
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),

@@ -285,7 +285,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift, "", true);
+        AuthenticationUtils.configurePKCS12ClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift, "", true);
 
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
 
@@ -306,7 +306,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs", "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
+        AuthenticationUtils.configurePKCS12ClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs", "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
 
