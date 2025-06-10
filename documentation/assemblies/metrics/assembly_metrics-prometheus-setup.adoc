@@ -6,7 +6,7 @@
 = Using Prometheus with Strimzi
 
 [role="_abstract"]
-You can use Prometheus to provide monitoring data for the example Grafana dashboards provided with Strimzi.
+Use Prometheus to provide monitoring data for the example Grafana dashboards provided with Strimzi.
 
 To expose metrics in Prometheus format, you add configuration to a custom resource.
 You must also make sure that the metrics are scraped by your monitoring stack.

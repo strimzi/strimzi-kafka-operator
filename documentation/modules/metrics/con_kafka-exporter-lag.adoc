@@ -4,22 +4,16 @@
 
 [id='con-metrics-kafka-exporter-lag-{context}']
 
-= Monitoring consumer lag with Kafka Exporter
+= Consumer lag monitoring
 
 [role="_abstract"]
-{kafka-exporter-project} is an open source project to enhance monitoring of Apache Kafka brokers and clients.
-You can configure the `Kafka` resource to xref:assembly-metrics-setup-{context}[deploy Kafka Exporter with your Kafka cluster].
-Kafka Exporter extracts additional metrics data from Kafka brokers related to offsets, consumer groups, consumer lag, and topics.
-The metrics data is used, for example, to help identify slow consumers.
-Lag data is exposed as Prometheus metrics, which can then be presented in Grafana for analysis.
+{kafka-exporter-project} is an open source project that enhances the monitoring of Apache Kafka brokers and clients.
+Kafka Exporter extracts additional metrics data from Kafka brokers related to consumer groups, consumer lag, topic offsets, and partitions.
+The metrics are exposed in Prometheus format and can be collected by Prometheus, then visualized in Grafana.
 
-Kafka Exporter reads from the  `__consumer_offsets` topic, which stores information on committed offsets for consumer groups. 
-For Kafka Exporter to be able to work properly, consumer groups needs to be in use. 
-
-A Grafana dashboard for Kafka Exporter is one of a number of xref:ref-metrics-dashboards-{context}[example Grafana dashboards] provided by Strimzi.
-
-IMPORTANT: Kafka Exporter provides only additional metrics related to consumer lag and consumer offsets.
-For regular Kafka metrics, you have to configure the Prometheus metrics in xref:assembly-metrics-setup-{context}[Kafka brokers].
+Kafka Exporter relies on data from the `__consumer_offsets` topic to report lag metrics.
+This topic only contains information if consumer groups are actively committing offsets.
+Consumer groups must therefore be in use for Kafka Exporter to function correctly.
 
 Consumer lag indicates the difference in the rate of production and consumption of messages.
 Specifically, consumer lag for a given consumer group indicates the delay between the last message in the partition and the message being currently picked up by that consumer.
@@ -34,16 +28,14 @@ This difference is sometimes referred to as the _delta_ between the producer off
 
 Suppose a topic streams 100 messages a second. A lag of 1000 messages between the producer offset (the topic partition head) and the last offset the consumer has read means a 10-second delay.
 
-[discrete]
-== The importance of monitoring consumer lag
+.Why monitor consumer lag?
 
 For applications that rely on the processing of (near) real-time data, it is critical to monitor consumer lag to check that it does not become too big.
 The greater the lag becomes, the further the process moves from the real-time processing objective.
 
 Consumer lag, for example, might be a result of consuming too much old data that has not been purged, or through unplanned shutdowns.
 
-[discrete]
-== Reducing consumer lag
+.Reducing consumer lag
 
 Use the Grafana charts to analyze lag and to check if actions to reduce lag are having an impact on an affected consumer group.
 If, for example, Kafka brokers are adjusted to reduce lag, the dashboard will show the  _Lag by consumer group_ chart going down and the _Messages consumed per minute_ chart going up.
