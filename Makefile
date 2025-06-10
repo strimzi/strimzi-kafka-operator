@@ -142,8 +142,8 @@ spotbugs: $(SUBDIRS)
 docu_pushtowebsite:
 	./.azure/scripts/docu-push-to-website.sh
 
-pushtonexus:
-	./.azure/scripts/push-to-nexus.sh
+pushtocentral:
+	./.azure/scripts/push-to-central.sh
 
 release_docu: docu_html docu_htmlnoheader docu_pdf
 	mkdir -p strimzi-$(RELEASE_VERSION)/docs/html
