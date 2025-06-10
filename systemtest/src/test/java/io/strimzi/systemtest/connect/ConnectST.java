@@ -562,7 +562,8 @@ class ConnectST extends AbstractST {
                 .withType("Opaque")
                 .addToData("ca2.crt", encodedCertMock)
                 .build();
-        kubeClient(testStorage.getNamespaceName()).createSecret(secondCertSecret);
+
+        KubeResourceManager.get().createResourceWithWait(secondCertSecret);
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
@@ -598,7 +599,7 @@ class ConnectST extends AbstractST {
         // This is an internal secret created by the operator with copy of certificates from the trusted certificates secrets specified in the CR
         String tlsCertSecretName = KafkaConnectResources.internalTlsTrustedCertsSecretName(testStorage.getClusterName());
         LOGGER.info("Verifying that tls cert secret {} is created for KafkaConnect truststore", tlsCertSecretName);
-        Secret tlsCertSecret = kubeClient(testStorage.getNamespaceName()).getSecret(tlsCertSecretName);
+        Secret tlsCertSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(tlsCertSecretName).get();
         // The secret should contain certificates from both secrets
         assertThat(tlsCertSecret.getData().containsKey(testStorage.getClusterName() + "-cluster-ca-cert-ca.crt"), is(true));
         assertThat(tlsCertSecret.getData().containsKey("my-secret-ca2.crt"), is(true));
