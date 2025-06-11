@@ -32,8 +32,8 @@ import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
 import java.io.PrintWriter;
@@ -44,7 +44,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -61,7 +60,6 @@ import java.util.stream.Collectors;
  * generate the configuration file, it is using the PrintWriter.
  */
 public class KafkaBrokerConfigurationBuilder {
-    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBrokerConfigurationBuilder.class.getName());
     private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-9090";
     private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
     // Names of environment variables expanded through config providers inside the Kafka node
@@ -809,32 +807,29 @@ public class KafkaBrokerConfigurationBuilder {
     }
     
     /**
-     * Get the user provided Kafka configuration provider aliases, dropping any that would overwrite the Strimzi defined configuration providers
+     * Get the user provided Kafka configuration provider aliases, throwing an InvalidConfigurationException if any are found that would that overwrite the Strimzi defined configuration providers
      * 
      * @param strimziConfigProviders    The Strimzi defined configuration providers
      * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
      * @return                          The user defined Kafka configuration provider aliases or empty string
      */
     private String getUserConfigProviderAliases(String strimziConfigProviders, KafkaConfiguration userConfig) {
+        String userConfigProviderAliases = "";
         if (userConfig != null
                 && !userConfig.getConfiguration().isEmpty()
                 && userConfig.getConfigOption("config.providers") != null) {
-            Collection<String> userAliases = Arrays.asList(userConfig.getConfigOption("config.providers").split(","));
+            userConfigProviderAliases = userConfig.getConfigOption("config.providers");
+            Collection<String> userAliases = Arrays.asList(userConfigProviderAliases.split(","));
             Collection<String> strimziAliases = Arrays.asList(strimziConfigProviders.split(","));
             
-            Set<String> validUserAliases = new HashSet<>();
             userAliases.stream().forEach(alias -> {
                 if (strimziAliases.contains(alias)) {
-                    LOGGER.warnCr(reconciliation, "config.provider " + alias + " ignored as it is not permitted. Not permitted aliases: " + strimziAliases);
-                    userConfig.removeConfigOption("config.providers." + alias + ".class");  
-                } else {
-                    validUserAliases.add(alias);
+                    throw new InvalidConfigurationException("config.provider " + alias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases); 
                 }
             });
             userConfig.removeConfigOption("config.providers");
-            return String.join(",", validUserAliases);
         }
-        return "";
+        return userConfigProviderAliases;
     }
 
     /**
