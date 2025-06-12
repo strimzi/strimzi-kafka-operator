@@ -211,7 +211,7 @@ the documentation for more details.
 | `mavenBuilder.image.digest`                 | Override Maven Builder image tag with digest                                    | `nil`                        |
 | `logConfiguration`                          | Override default `log4j.properties` content                                     | `nil`                        |
 | `logLevel`                                  | Override default logging level                                                  | `INFO`                       |
-| `dashboards.enable`                         | Generate configmaps containing the dashboards                                   | `false`                      |
+| `dashboards.enabled`                        | Generate configmaps containing the dashboards                                   | `false`                      |
 | `dashboards.label`                          | How should the dashboards be labeled for the sidecar                            | `grafana_dashboard`          |
 | `dashboards.labelValue`                     | What should the dashboards label value be for the sidecar                       | `"1"`                        |
 | `dashboards.extraLabels`                    | Any additional labels you would like on the dashboards                          | `{}`                         |
