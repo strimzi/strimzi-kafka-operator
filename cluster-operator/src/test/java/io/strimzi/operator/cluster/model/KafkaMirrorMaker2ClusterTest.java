@@ -94,6 +94,7 @@ import java.util.TreeMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -120,7 +121,6 @@ public class KafkaMirrorMaker2ClusterTest {
     private final String configurationJson = "foo: bar";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String targetClusterAlias = "target";
-    private final String kafkaHeapOpts = "-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS;
 
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
             .addPair("config.storage.topic", "mirrormaker2-cluster-configs")
@@ -159,7 +159,7 @@ public class KafkaMirrorMaker2ClusterTest {
             .endSpec()
             .build();
 
-    private ConfigMap metricsCm;
+    private final ConfigMap metricsCm;
     private final KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS, SHARED_ENV_PROVIDER);
     {
         // we were setting metricsEnabled in fromCrd, which was just checking it for non-null. With metrics in CM, we have to check
@@ -207,8 +207,8 @@ public class KafkaMirrorMaker2ClusterTest {
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
+        String kafkaHeapOpts = "-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS;
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
-        expected.add(new EnvVarBuilder().withName(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS).withValue(targetClusterAlias).build());
         return expected;
     }
 
@@ -379,19 +379,10 @@ public class KafkaMirrorMaker2ClusterTest {
                 .endSpec()
                 .build();
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
-        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-            assertThat(pod.getSpec().getVolumes().get(2).getName(), is("target-my-secret"));
-            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("target-my-another-secret"));
-
-            Container cont = pod.getSpec().getContainers().get(0);
-            assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + "target/my-secret"));
-            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + "target/my-another-secret"));
-            assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS),
-                    is("target=my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
-        });
+        ConfigMap configMap = kmm2.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
+        String mm2ConnectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
+        assertThat(mm2ConnectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/foo-connect-tls-trusted-certs:*.crt"));
+        assertThat(mm2ConnectConfigurations, containsString("ssl.truststore.type=PEM"));
     }
 
     @ParallelTest
@@ -408,16 +399,10 @@ public class KafkaMirrorMaker2ClusterTest {
                 .build();
 
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        // Check PodSet
-        StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
-        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-            Container cont = pod.getSpec().getContainers().get(0);
-            assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS),
-                    is(nullValue()));
-            assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS),
-                    is(nullValue()));
-        });
+        ConfigMap configMap = kmm2.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
+        String mm2ConnectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
+        assertThat(mm2ConnectConfigurations, not(containsString("ssl.truststore.certificates")));
+        assertThat(mm2ConnectConfigurations, not(containsString("ssl.truststore.type")));
     }
 
     @ParallelTest
@@ -442,6 +427,13 @@ public class KafkaMirrorMaker2ClusterTest {
                 .endSpec()
                 .build();
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+        ConfigMap configMap = kmm2.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
+        String mm2ConnectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
+        assertThat(mm2ConnectConfigurations, containsString("ssl.keystore.certificate.chain=${strimzisecrets:namespace/user-secret:user.crt}"));
+        assertThat(mm2ConnectConfigurations, containsString("ssl.keystore.key=${strimzisecrets:namespace/user-secret:user.key}"));
+        assertThat(mm2ConnectConfigurations, containsString("ssl.keystore.type=PEM"));
+        assertThat(mm2ConnectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/foo-connect-tls-trusted-certs:*.crt"));
+        assertThat(mm2ConnectConfigurations, containsString("ssl.truststore.type=PEM"));
     }
 
     @ParallelTest
@@ -573,7 +565,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
             Container cont = pod.getSpec().getContainers().get(0);
 
-            assertThat(cont.getVolumeMounts().size(), is(5));
+            assertThat(cont.getVolumeMounts().size(), is(4));
             assertThat(cont.getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(cont.getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(cont.getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
@@ -581,9 +573,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getVolumeMounts().get(2).getName(), is("my-secret"));
             assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaMirrorMaker2Cluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
             assertThat(cont.getVolumeMounts().get(3).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
+            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
         });
     }
 
@@ -636,7 +626,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
             Container cont = pod.getSpec().getContainers().get(0);
 
-            assertThat(cont.getVolumeMounts().size(), is(7));
+            assertThat(cont.getVolumeMounts().size(), is(5));
             assertThat(cont.getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(cont.getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(cont.getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
@@ -644,13 +634,9 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getVolumeMounts().get(2).getName(), is("my-secret"));
             assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
             assertThat(cont.getVolumeMounts().get(3).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
-            assertThat(cont.getVolumeMounts().get(5).getName(), is("source-my-secret"));
-            assertThat(cont.getVolumeMounts().get(5).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + "source/my-secret"));
-            assertThat(cont.getVolumeMounts().get(6).getName(), is("source-my-secret"));
-            assertThat(cont.getVolumeMounts().get(6).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + "source/my-secret"));
+            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
+            assertThat(cont.getVolumeMounts().get(4).getName(), is("source-my-secret"));
+            assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + "source/my-secret"));
         });
     }
 
@@ -733,7 +719,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
             Container cont = pod.getSpec().getContainers().get(0);
 
-            assertThat(cont.getVolumeMounts().size(), is(5));
+            assertThat(cont.getVolumeMounts().size(), is(4));
             assertThat(cont.getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(cont.getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(cont.getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
@@ -741,9 +727,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getVolumeMounts().get(2).getName(), is("my-secret"));
             assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaMirrorMaker2Cluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
             assertThat(cont.getVolumeMounts().get(3).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
+            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
         });
     }
 
@@ -796,7 +780,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
             Container cont = pod.getSpec().getContainers().get(0);
 
-            assertThat(cont.getVolumeMounts().size(), is(7));
+            assertThat(cont.getVolumeMounts().size(), is(5));
             assertThat(cont.getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(cont.getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(cont.getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
@@ -804,13 +788,9 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getVolumeMounts().get(2).getName(), is("my-secret"));
             assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
             assertThat(cont.getVolumeMounts().get(3).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
-            assertThat(cont.getVolumeMounts().get(5).getName(), is("source-my-secret"));
-            assertThat(cont.getVolumeMounts().get(5).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + "source/my-secret"));
-            assertThat(cont.getVolumeMounts().get(6).getName(), is("source-my-secret"));
-            assertThat(cont.getVolumeMounts().get(6).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + "source/my-secret"));
+            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
+            assertThat(cont.getVolumeMounts().get(4).getName(), is("source-my-secret"));
+            assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + "source/my-secret"));
         });
     }
 
@@ -893,7 +873,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
             Container cont = pod.getSpec().getContainers().get(0);
 
-            assertThat(cont.getVolumeMounts().size(), is(5));
+            assertThat(cont.getVolumeMounts().size(), is(4));
             assertThat(cont.getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(cont.getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(cont.getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
@@ -901,9 +881,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(cont.getVolumeMounts().get(2).getName(), is("my-secret"));
             assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaMirrorMaker2Cluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
             assertThat(cont.getVolumeMounts().get(3).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getName(), is("target-my-secret"));
-            assertThat(cont.getVolumeMounts().get(4).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
+            assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT + targetClusterAlias + "/my-secret"));
         });
     }
 
@@ -2062,19 +2040,7 @@ public class KafkaMirrorMaker2ClusterTest {
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             Container cont = pod.getSpec().getContainers().get(0);
             String oauthSecret = KafkaConnectResources.internalOauthTrustedCertsSecretName(clusterName);
-
-            // Volume mounts
             assertThat(cont.getVolumeMounts().stream().filter(mount -> oauthSecret.equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaConnectCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + oauthSecret));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "target-oauth-certs-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + "target/first-certificate"));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "target-oauth-certs-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaMirrorMaker2Cluster.MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + "target/second-certificate"));
-
-            // Volumes
-            assertThat(pod.getSpec().getVolumes().stream().filter(vol -> oauthSecret.equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-            assertThat(pod.getSpec().getVolumes().stream().filter(vol -> "target-oauth-certs-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-            assertThat(pod.getSpec().getVolumes().stream().filter(vol -> "target-oauth-certs-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-
-            // Environment variable
-            assertThat(cont.getEnv().stream().filter(e -> "KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("target=first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
         });
     }
 

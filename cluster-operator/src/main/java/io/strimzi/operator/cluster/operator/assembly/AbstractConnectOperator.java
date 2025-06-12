@@ -14,12 +14,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
-import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.connect.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
@@ -78,7 +74,6 @@ import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -275,13 +270,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        ClientTls tls = connect.getTls();
-        Set<String> secretsToCopy = new HashSet<>();
-
-        if (tls != null && tls.getTrustedCertificates() != null) {
-            secretsToCopy.addAll(tls.getTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
-        }
-
+        Set<String> secretsToCopy = connect.getTlsCertsSecrets();
         if (secretsToCopy.isEmpty()) {
             return Future.succeededFuture();
         }
@@ -305,7 +294,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 reconciliation,
                                 namespace,
                                 KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                connect.generateTlsTrustedCertsSecret(secretData, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
+                                connect.generateSecret(secretData, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
                         .mapEmpty());
     }
 
@@ -317,12 +306,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        KafkaClientAuthentication authentication = connect.getAuthentication();
-        Set<String> secretsToCopy = new HashSet<>();
-
-        if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null) {
-            secretsToCopy.addAll(oauth.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
-        }
+        Set<String> secretsToCopy = connect.getOauthTlsCertsSecrets();
 
         if (secretsToCopy.isEmpty()) {
             return Future.succeededFuture();
@@ -348,7 +332,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 reconciliation,
                                 namespace,
                                 oauthSecret,
-                                connect.generateTlsTrustedCertsSecret(Map.of(oauthSecret + ".crt", mergeAndEncodeCerts(certs)), oauthSecret))
+                                connect.generateSecret(Map.of(oauthSecret + ".crt", mergeAndEncodeCerts(certs)), oauthSecret))
                         .mapEmpty());
     }
 
@@ -659,16 +643,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                  // The connector is not failing now for some time => time to reset the auto-restart status
                                  LOGGER.infoCr(reconciliation, "Resetting the auto-restart status of connector {} ", connectorName);
                                  status.autoRestart = null;
-                                 return Future.succeededFuture(status);
                              } else {
                                  // The connector is not failing, but it is not sure yet if it is stable => keep the original status
                                  status.autoRestart = new AutoRestartStatusBuilder(previousAutoRestartStatus).build();
-                                 return Future.succeededFuture(status);
                              }
-                         } else {
-                             // No failures and no need to reset the previous auto.restart state => nothing to do
-                             return Future.succeededFuture(status);
                          }
+                         // No failures and no need to reset the previous auto.restart state => nothing to do
+                         return Future.succeededFuture(status);
                      }
                  });
         } else {

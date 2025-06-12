@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static io.strimzi.operator.cluster.model.KafkaMirrorMaker2Connectors.PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -35,6 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SuppressWarnings("deprecation") // Uses deprecated getPause() field in tests
 public class KafkaMirrorMaker2ConnectorsTest {
     private static final String PREFIX = "prefix.";
+    private static final String CLUSTER_NAME = "my-mirrormaker2";
+    private static final String NAMESPACE = "namespace";
 
     private final static KafkaMirrorMaker2 KMM2 = new KafkaMirrorMaker2Builder()
             .withNewMetadata()
@@ -609,7 +610,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .withBootstrapServers("sourceClusterAlias.sourceNamespace.svc:9092")
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX, CLUSTER_NAME, NAMESPACE);
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
@@ -626,7 +627,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .withConfig(Map.of("config.storage.replication.factor", "-1"))
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX, CLUSTER_NAME, NAMESPACE);
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
@@ -652,15 +653,15 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endTls()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX, CLUSTER_NAME, NAMESPACE);
 
         assertThat(config.containsKey("prefix.sasl.jaas.config"), is(false));
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
                                 "prefix.security.protocol", "SSL",
-                                "prefix.ssl.keystore.location", "/tmp/kafka/clusters/sourceClusterAlias.keystore.p12",
-                                "prefix.ssl.keystore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR,
-                                "prefix.ssl.keystore.type", "PKCS12",
+                                "prefix.ssl.keystore.certificate.chain", "${strimzisecrets:namespace/my-secret:my.crt}",
+                                "prefix.ssl.keystore.key", "${strimzisecrets:namespace/my-secret:my.key}",
+                                "prefix.ssl.keystore.type", "PEM",
                                 "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"))));
     }
 
@@ -679,7 +680,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                     .endKafkaClientAuthenticationPlain()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX, CLUSTER_NAME, NAMESPACE);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -710,7 +711,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endKafkaClientAuthenticationScramSha512()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX, CLUSTER_NAME, NAMESPACE);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -757,7 +758,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endKafkaClientAuthenticationOAuth()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX, CLUSTER_NAME, NAMESPACE);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -768,9 +769,8 @@ public class KafkaMirrorMaker2ConnectorsTest {
                         "oauth.refresh.token", "${strimzidir:/opt/kafka/mm2-oauth/sourceClusterAlias/refreshTokenSecretName:refreshTokenKey}",
                         "oauth.password.grant.password", "${strimzidir:/opt/kafka/mm2-oauth/sourceClusterAlias/passwordSecretSecretName:passwordSecretPassword}",
                         "oauth.client.assertion", "${strimzidir:/opt/kafka/mm2-oauth/sourceClusterAlias/clientAssertionSecretName:clientAssertionKey}",
-                        "oauth.ssl.truststore.location", "/tmp/kafka/clusters/sourceClusterAlias-oauth.truststore.p12",
-                        "oauth.ssl.truststore.type", "PKCS12",
-                        "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR)));
+                        "oauth.ssl.truststore.location", "/opt/kafka/mm2-oauth-certs/my-mirrormaker2-connect-oauth-trusted-certs/my-mirrormaker2-connect-oauth-trusted-certs.crt",
+                        "oauth.ssl.truststore.type", "PEM")));
 
         assertThat(config,
                 is(Map.of("prefix.alias", "sourceClusterAlias",
@@ -791,7 +791,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endKafkaClientAuthenticationOAuth()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX, CLUSTER_NAME, NAMESPACE);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -825,7 +825,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endTls()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX, CLUSTER_NAME, NAMESPACE);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -837,9 +837,8 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
                         "prefix.security.protocol", "SASL_SSL",
-                       "prefix.ssl.truststore.location", "/tmp/kafka/clusters/sourceClusterAlias.truststore.p12",
-                       "prefix.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR,
-                        "prefix.ssl.truststore.type", "PKCS12",
+                        "prefix.ssl.truststore.certificates", "${strimzisecrets:namespace/my-mirrormaker2-connect-tls-trusted-certs:*.crt}",
+                        "prefix.ssl.truststore.type", "PEM",
                         "prefix.sasl.mechanism", "SCRAM-SHA-512",
                         "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"))));
     }
