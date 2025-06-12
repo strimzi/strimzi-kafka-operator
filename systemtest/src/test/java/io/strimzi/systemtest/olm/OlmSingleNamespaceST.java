@@ -4,15 +4,15 @@
  */
 package io.strimzi.systemtest.olm;
 
-import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.strimzi.systemtest.docs.TestDocsLabels;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.utils.specific.OlmUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
