@@ -16,7 +16,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster using the OLM example in the designated single namespace. | Kafka cluster is deployed and becomes ready within the watched namespace. |
+| 1. | Deploy Kafka CR using the OLM example in the designated single namespace. | Kafka CR is created in Kubernetes within the watched namespace.. |
 | 2. | Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace. | The resource is operational and managed by the operator within its watched namespace. |
 
 **Labels:**
@@ -32,7 +32,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaBridge using the OLM example in the designated single namespace. | KafkaBridge is deployed and becomes ready within the watched namespace. |
+| 1. | Deploy KafkaBridge CR using the OLM example in the designated single namespace. | KafkaBridge CR is created in Kubernetes within the watched namespace.. |
 | 2. | Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace. | The resource is operational and managed by the operator within its watched namespace. |
 
 **Labels:**
@@ -48,7 +48,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaConnect cluster using the OLM example in the designated single namespace. | KafkaConnect cluster is deployed and becomes ready within the watched namespace. |
+| 1. | Deploy KafkaConnect CR using the OLM example in the designated single namespace. | KafkaConnect CR is created in Kubernetes within the watched namespace.. |
 | 2. | Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace. | The resource is operational and managed by the operator within its watched namespace. |
 
 **Labels:**
@@ -64,7 +64,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaMirrorMaker2 cluster using the OLM example in the designated single namespace. | KafkaMirrorMaker2 cluster is deployed and becomes ready within the watched namespace. |
+| 1. | Deploy KafkaMirrorMaker2 CR using the OLM example in the designated single namespace. | KafkaMirrorMaker2 CR is created in Kubernetes within the watched namespace. |
 | 2. | Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace. | The resource is operational and managed by the operator within its watched namespace. |
 
 **Labels:**
@@ -80,7 +80,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaRebalance resource using the OLM example in the designated single namespace. | KafkaRebalance resource is deployed and reaches PendingProposal state within the watched namespace. |
+| 1. | Deploy KafkaRebalance CR using the OLM example in the designated single namespace. | KafkaRebalance CR is created in Kubernetes and reaches PendingProposal state within the watched namespace. |
 | 2. | Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace. | The resource is operational and managed by the operator within its watched namespace. |
 
 **Labels:**
@@ -96,7 +96,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaTopic using the OLM example in the designated single namespace. | KafkaTopic is deployed and becomes ready within the watched namespace. |
+| 1. | Deploy KafkaTopic CR using the OLM example in the designated single namespace. | KafkaTopic CR is created in Kubernetes within the watched namespace. |
 | 2. | Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace. | The resource is operational and managed by the operator within its watched namespace. |
 
 **Labels:**
@@ -112,7 +112,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with simple authorization. | Kafka cluster with simple authz is deployed and ready. |
+| 1. | Deploy Kafka CR with simple authorization. | Kafka CR is created with simple authz. |
 | 2. | Deploy KafkaUser using the OLM example in the designated single namespace. | KafkaUser is deployed and becomes ready within the watched namespace. |
 | 3. | Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace. | The resource is operational and managed by the operator within its watched namespace. |
 

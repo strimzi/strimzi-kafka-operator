@@ -43,7 +43,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a Kafka cluster using the OLM example in a single-namespace watch configuration."),
         steps = {
-            @Step(value = "Deploy Kafka cluster using the OLM example in the designated single namespace.", expected = "Kafka cluster is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Deploy Kafka CR using the OLM example in the designated single namespace.", expected = "Kafka CR is created in Kubernetes within the watched namespace.."),
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
@@ -59,7 +59,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaUser using the OLM example in a single-namespace watch configuration."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with simple authorization.", expected = "Kafka cluster with simple authz is deployed and ready."),
+            @Step(value = "Deploy Kafka CR with simple authorization.", expected = "Kafka CR is created with simple authz."),
             @Step(value = "Deploy KafkaUser using the OLM example in the designated single namespace.", expected = "KafkaUser is deployed and becomes ready within the watched namespace."),
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
@@ -76,7 +76,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaTopic using the OLM example in a single-namespace watch configuration."),
         steps = {
-            @Step(value = "Deploy KafkaTopic using the OLM example in the designated single namespace.", expected = "KafkaTopic is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Deploy KafkaTopic CR using the OLM example in the designated single namespace.", expected = "KafkaTopic CR is created in Kubernetes within the watched namespace."),
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
@@ -93,7 +93,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaConnect cluster using the OLM example in a single-namespace watch configuration."),
         steps = {
-            @Step(value = "Deploy KafkaConnect cluster using the OLM example in the designated single namespace.", expected = "KafkaConnect cluster is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Deploy KafkaConnect CR using the OLM example in the designated single namespace.", expected = "KafkaConnect CR is created in Kubernetes within the watched namespace.."),
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
@@ -110,7 +110,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaBridge using the OLM example in a single-namespace watch configuration."),
         steps = {
-            @Step(value = "Deploy KafkaBridge using the OLM example in the designated single namespace.", expected = "KafkaBridge is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Deploy KafkaBridge CR using the OLM example in the designated single namespace.", expected = "KafkaBridge CR is created in Kubernetes within the watched namespace.."),
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
@@ -127,7 +127,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaMirrorMaker2 cluster using the OLM example in a single-namespace watch configuration."),
         steps = {
-            @Step(value = "Deploy KafkaMirrorMaker2 cluster using the OLM example in the designated single namespace.", expected = "KafkaMirrorMaker2 cluster is deployed and becomes ready within the watched namespace."),
+            @Step(value = "Deploy KafkaMirrorMaker2 CR using the OLM example in the designated single namespace.", expected = "KafkaMirrorMaker2 CR is created in Kubernetes within the watched namespace."),
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {
@@ -144,7 +144,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaRebalance resource using the OLM example in a single-namespace watch configuration."),
         steps = {
-            @Step(value = "Deploy KafkaRebalance resource using the OLM example in the designated single namespace.", expected = "KafkaRebalance resource is deployed and reaches PendingProposal state within the watched namespace."),
+            @Step(value = "Deploy KafkaRebalance CR using the OLM example in the designated single namespace.", expected = "KafkaRebalance CR is created in Kubernetes and reaches PendingProposal state within the watched namespace."),
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")
         },
         labels = {

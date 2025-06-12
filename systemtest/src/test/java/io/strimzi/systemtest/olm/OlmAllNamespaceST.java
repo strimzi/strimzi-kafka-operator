@@ -45,7 +45,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a Kafka cluster using the OLM example when the operator watches all namespaces."),
         steps = {
-            @Step(value = "Deploy Kafka cluster using the OLM example.", expected = "Kafka cluster is deployed and becomes ready."),
+            @Step(value = "Create a Kafka CR using the OLM example.", expected = "Kafka CR is created in Kubernetes."),
             @Step(value = "Wait for readiness of the Kafka cluster, meaning that the operator (watching all namespaces) manages the Kafka cluster in the designated test namespace.", expected = "Kafka cluster is operational and managed by the operator.")
         },
         labels = {
@@ -95,7 +95,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaConnect cluster using the OLM example when the operator watches all namespaces."),
         steps = {
-            @Step(value = "Deploy KafkaConnect cluster using the OLM example.", expected = "KafkaConnect cluster is deployed and becomes ready."),
+            @Step(value = "Create a KafkaConnect CR using the OLM example.", expected = "KafkaConnect CR is created in Kubernetes."),
             @Step(value = "Wait for readiness of the KafkaConnect, meaning that the operator (watching all namespaces) manages the KafkaConnect cluster in the designated test namespace.", expected = "KafkaConnect cluster is operational and managed by the operator.")
         },
         labels = {
@@ -112,7 +112,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaBridge using the OLM example when the operator watches all namespaces."),
         steps = {
-            @Step(value = "Deploy KafkaBridge using the OLM example.", expected = "KafkaBridge is deployed and becomes ready."),
+            @Step(value = "Deploy KafkaBridge CR using the OLM example.", expected = "KafkaBridge CR is created in Kubernetes."),
             @Step(value = "Wait for readiness of the KafkaBridge, meaning that the operator (watching all namespaces) manages the KafkaBridge in the designated test namespace.", expected = "KafkaBridge is operational and managed by the operator.")
         },
         labels = {
@@ -129,7 +129,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaMirrorMaker2 cluster using the OLM example when the operator watches all namespaces."),
         steps = {
-            @Step(value = "Deploy KafkaMirrorMaker2 cluster using the OLM example.", expected = "KafkaMirrorMaker2 cluster is deployed and becomes ready."),
+            @Step(value = "Deploy KafkaMirrorMaker2 CR using the OLM example.", expected = "KafkaMirrorMaker2 CR is created in Kubernetes."),
             @Step(value = "Wait for readiness of the KafkaMirrorMaker2, meaning that the operator (watching all namespaces) manages the KafkaMirrorMaker2 cluster in the designated test namespace.", expected = "KafkaMirrorMaker2 cluster is operational and managed by the operator.")
         },
         labels = {
@@ -146,7 +146,7 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     @TestDoc(
         description = @Desc("Verifies the deployment of a KafkaRebalance resource using the OLM example when the operator watches all namespaces."),
         steps = {
-            @Step(value = "Deploy KafkaRebalance resource using the OLM example.", expected = "KafkaRebalance resource is deployed and reaches PendingProposal state."),
+            @Step(value = "Deploy KafkaRebalance CR using the OLM example.", expected = "KafkaRebalance CR created in Kubernetes and reaches PendingProposal state."),
             @Step(value = "Wait for readiness of the KafkaRebalance, meaning that the operator (watching all namespaces) manages the KafkaRebalance resource in the designated test namespace.", expected = "KafkaRebalance resource is operational and managed by the operator.")
         },
         labels = {
