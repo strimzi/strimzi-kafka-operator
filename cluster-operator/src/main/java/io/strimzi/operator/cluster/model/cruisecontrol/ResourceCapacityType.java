@@ -7,9 +7,11 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverride;
+import io.strimzi.operator.cluster.model.NodeRef;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import static io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity.DEFAULT_CPU_CORE_CAPACITY;
@@ -108,7 +110,7 @@ public enum ResourceCapacityType {
         }
 
         if (this == CPU) {
-            String cpuBasedOnRequirements = CpuCapacity.getCpuBasedOnRequirements(resourceRequirements);
+            String cpuBasedOnRequirements = ResourceRequirementsUtils.getCpuBasedOnRequirements(resourceRequirements);
             if (cpuBasedOnRequirements != null) {
                 return cpuBasedOnRequirements;
             }
@@ -129,10 +131,13 @@ public enum ResourceCapacityType {
      * </ul>
      *
      * @param brokerCapacity The brokerCapacity section of the Cruise Control specification from the Kafka custom resource.
+     * @param kafkaBrokerNodes List of the broker nodes which are part of the Kafka cluster.
      * @param kafkaBrokerResources A map of broker IDs to their Kubernetes resource requirements.
      * @return {@code true} if the capacity for this resource type is considered configured, otherwise {@code false.}
      */
-    public boolean isCapacityConfigured(BrokerCapacity brokerCapacity, Map<String, ResourceRequirements> kafkaBrokerResources) {
+    public boolean isCapacityConfigured(BrokerCapacity brokerCapacity,
+                                        Set<NodeRef> kafkaBrokerNodes,
+                                        Map<String, ResourceRequirements> kafkaBrokerResources) {
         if (brokerCapacity != null) {
             if (getGeneralResourceCapacity(brokerCapacity) != null) {
                 return true;
@@ -144,7 +149,18 @@ public enum ResourceCapacityType {
             }
         }
 
-        if (this == CPU && CpuCapacity.cpuRequestsMatchLimits(kafkaBrokerResources)) {
+        /*
+         * Although some resource requirements may be configured for some brokers, the CPU capacity for the cluster is
+         * only considered to be properly configured for CPU-dependent Cruise Control goals if:
+         * (1) The resource requirements are defined for every broker in the cluster.
+         * (2) The CPU requests == limits for every broker in the cluster.
+         *
+         * This ensures that each broker's CPU capacity has been explicitly defined as a guaranteed resource,
+         * enabling more accurate rebalancing decisions based on CPU availability.
+         */
+        if (this == CPU
+            && kafkaBrokerNodes.stream().allMatch(node -> kafkaBrokerResources.containsKey(node.poolName()))
+            && ResourceRequirementsUtils.cpuRequestsMatchLimits(kafkaBrokerResources)) {
             return true;
         }
 

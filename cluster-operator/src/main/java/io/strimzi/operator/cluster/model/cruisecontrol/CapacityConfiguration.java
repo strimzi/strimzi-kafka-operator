@@ -27,8 +27,8 @@ import static io.strimzi.operator.cluster.model.cruisecontrol.ResourceCapacityTy
 import static io.strimzi.operator.cluster.model.cruisecontrol.ResourceCapacityType.OUTBOUND_NETWORK;
 
 /**
- * Uses information in a Kafka Custom Resource to generate a capacity configuration file to be used for
- * Cruise Control's Broker Capacity File Resolver.
+ * Uses information in a `Kafka` and `KafkaNodePool` custom resources to generate a capacity configuration file to
+ * be used for Cruise Control's Broker Capacity File Resolver.
  *
  *
  * For example, it takes a Kafka Custom Resource like the following:
@@ -144,11 +144,11 @@ public class CapacityConfiguration {
     /**
      * Constructor
      *
-     * @param reconciliation        Reconciliation marker
-     * @param spec                  Spec of the Kafka custom resource
-     * @param kafkaBrokerNodes      List of the broker nodes which are part of the Kafka cluster
-     * @param kafkaStorage          A map with storage configuration used by the Kafka cluster and its node pools
-     * @param kafkaBrokerResources  A map with resource configuration used by the Kafka cluster and its broker pools
+     * @param reconciliation        Reconciliation marker.
+     * @param spec                  Spec of the Kafka custom resource.
+     * @param kafkaBrokerNodes      List of the broker nodes which are part of the Kafka cluster.
+     * @param kafkaStorage          A map with storage configuration used by the Kafka cluster and its node pools.
+     * @param kafkaBrokerResources  A map with resource configuration used by the Kafka cluster and its broker pools.
      */
     public CapacityConfiguration(
             Reconciliation reconciliation,
@@ -208,9 +208,9 @@ public class CapacityConfiguration {
             CapacityEntry capacityEntry = new CapacityEntry(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), capacityEntry);
         }
-        isCpuConfigured = CPU.isCapacityConfigured(generalBrokerCapacity, kafkaBrokerResources);
-        isInboundNetworkConfigured = INBOUND_NETWORK.isCapacityConfigured(generalBrokerCapacity, kafkaBrokerResources);
-        isOutboundNetworkConfigured = OUTBOUND_NETWORK.isCapacityConfigured(generalBrokerCapacity, kafkaBrokerResources);
+        isCpuConfigured = CPU.isCapacityConfigured(generalBrokerCapacity, kafkaBrokerNodes, kafkaBrokerResources);
+        isInboundNetworkConfigured = INBOUND_NETWORK.isCapacityConfigured(generalBrokerCapacity, kafkaBrokerNodes, kafkaBrokerResources);
+        isOutboundNetworkConfigured = OUTBOUND_NETWORK.isCapacityConfigured(generalBrokerCapacity, kafkaBrokerNodes, kafkaBrokerResources);
     }
 
     /**

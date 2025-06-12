@@ -199,7 +199,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
             KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
             result.capacityConfiguration = new CapacityConfiguration(reconciliation, kafkaCr.getSpec(), kafkaBrokerNodes, kafkaStorage, kafkaBrokerResources);
-            result.updateConfigurationWithDefaults(ccSpec, result.capacityConfiguration, kafkaConfiguration);
+            result.updateConfigurationWithDefaults(ccSpec, kafkaConfiguration);
 
             CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
@@ -244,9 +244,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
     }
 
-    private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec,
-                                                 CapacityConfiguration capacityConfiguration,
-                                                 KafkaConfiguration kafkaConfiguration) {
+    private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration) {
         Map<String, String> defaultCruiseControlProperties = generateCruiseControlDefaultPropertiesMap(capacityConfiguration);
         if (kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR) != null)  {
             defaultCruiseControlProperties.put(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR));

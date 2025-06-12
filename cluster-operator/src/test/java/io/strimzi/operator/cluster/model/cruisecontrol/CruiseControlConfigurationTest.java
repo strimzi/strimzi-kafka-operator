@@ -17,8 +17,8 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverride;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverrideBuilder;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.model.cruisecontrol.ResourceRequirementsUtils.ResourceType;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlGoals;
-import io.strimzi.operator.common.model.resourcerequirements.ResourceType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
