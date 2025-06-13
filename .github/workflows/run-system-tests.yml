@@ -21,7 +21,7 @@ on:
       cluster_operator_install_type:
         description: "Install type method used for Strimzi operator"
         required: false
-        default: "bundle"
+        default: "yaml"
         type: string
       strimzi_rbac_scope:
         description: "RBAC configuration for operator access"
@@ -115,7 +115,6 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: "temurin"
-          # TODO - maybe change as a parameter?
           java-version: "17"
           cache: 'maven'
 
@@ -130,20 +129,21 @@ jobs:
         uses: ./.github/actions/install-yq
         with:
           architecture: ${{ matrix.config.arch }}
+
+#      - name: DEBUG - dns utils
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y dnsutils iproute2
+
       - name: Install Docker
         uses: ./.github/actions/install-docker
-
-      - name: DEBUG - dns utils
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y dnsutils iproute2
 
 #      - name: Install Minikube
 #        uses: ./.github/actions/setup-minikube
 #        with:
 #          architecture: ${{ matrix.config.arch }}
-#          cpu: ${{ matrix.config.cpu }}
-#          memory: ${{ matrix.config.memory }}
+##          cpu: ${{ matrix.config.cpu }}
+##          memory: ${{ matrix.config.memory }}
 
       - name: Install Kind
         uses: ./.github/actions/setup-kind
@@ -187,18 +187,7 @@ jobs:
         uses: ./.github/actions/containers-load
         with:
           architecture: ${{ matrix.config.arch }}
-          useMinikube: true
-#        run: |
-#          make java_install
-#          make docker_build
-#          make docker_tag
-#          make docker_push
-#        env:
-#          MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'
-
-#      - name: DEBUG - registry v2
-#        run: |
-#          curl -s "$DOCKER_REGISTRY/v2/_catalog"
+          registry: "kind"
 
       - name: Cache local Maven repository
         uses: actions/cache@v4
@@ -212,8 +201,6 @@ jobs:
       # Build Strimzi without images => used when running the STs against releases or release candidates where the images
       # are already built, and we need only the Java build
       - name: Build Strimzi Java code
-        # Build Strimzi without images in case that we are on the `main` branch or in case that we are running tests against tags during release
-        if: ${{ !(env.DOCKER_TAG == 'latest' && github.ref_name != 'main') }}
         run: make java_install
         env:
           MVN_ARGS: "-DskipTests -Dmaven.javadoc.skip=true  -e -V -B"
@@ -230,12 +217,15 @@ jobs:
         # TODO - set Kafka version globally?
         if: ${{ !contains(env.PROFILE, 'upgrade') }}
         run: |
-          eval $(minikube docker-env)
+          export CONNECT_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"
           export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
           BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}"
           echo "Base image: $BASE_IMAGE"
-          eval "$(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE")"
+          eval "$(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE" "$CONNECT_IMAGE")"
           echo "connect build image: $CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN"
+          
+          # Push the images
+          docker push ${CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN}
 
           # Provide "connectImage" variable for tests:
           echo "CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=${CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN}" >> $GITHUB_ENV
@@ -276,7 +266,7 @@ jobs:
         run: |
           mvn -f systemtest/pom.xml verify \
             -P"${PROFILE}" \
-            -DexcludedGroups="flaky,loadbalancer,networkpolicies,${EXCLUDED_GROUPS}" \
+            -DexcludedGroups="${EXCLUDED_GROUPS}" \
             -Dmaven.javadoc.skip=true \
             -B -V \
             -Dfailsafe.rerunFailingTestsCount=1 \

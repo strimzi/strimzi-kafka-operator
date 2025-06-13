@@ -52,8 +52,7 @@ clean:
 docker_build: .kafka-agent.tmp .kafka-agent-3.tmp .tracing-agent.tmp .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp .thirdparty-libs-cc.tmp .kafka-$(KAFKA_VERSION).tmp .kafka-$(KAFKA_VERSION)-ignorelist.tmp docker_build_default
 	# Pull dependencies first
 
-# TODO - revert this!!!
-#docker_build:
-#	../find-classpath-collision.sh $(BUILD_REGISTRY)strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) /opt/kafka/libs "tmp/$(KAFKA_VERSION).ignorelist"
+docker_build:
+	../find-classpath-collision.sh strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) /opt/kafka/libs "tmp/$(KAFKA_VERSION).ignorelist"
 
 .PHONY: build clean release

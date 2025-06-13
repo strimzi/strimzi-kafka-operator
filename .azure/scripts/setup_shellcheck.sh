@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
-set -xe
-
-ARCH=$1
-if [ -z "$ARCH" ] || [ "$ARCH" == "amd64" ]; then
-    ARCH="x86_64"
-fi
-
-if [ "$ARCH" == "arm64" ]; then
-    ARCH="aarch64"
-fi
+set -e
 
 ARCH=$1
 if [ -z "$ARCH" ] || [ "$ARCH" == "amd64" ]; then

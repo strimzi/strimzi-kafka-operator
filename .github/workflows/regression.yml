@@ -23,10 +23,6 @@ on:
     types: [created]
   pull_request:
 
-# Global config for DNS resolver
-env:
-  RES_OPTIONS: "ndots:2"
-
 jobs:
   # TODO - this cannot me used now as we do not have workflow in main branch!
   # Check if the comment contains "/ga run" at all.
@@ -51,7 +47,7 @@ jobs:
           fetch-depth: 0
       - name: Parse Comment
         id: parse
-        uses: ./.github/actions/parse-comment-config
+        uses: ./.github/actions/parse-comment
         with:
           # TODO - revert this
 #          commentBody: ${{ github.event.comment.body }}
@@ -77,15 +73,7 @@ jobs:
     strategy:
       matrix:
         architecture: [amd64, arm64]
-    # Local registry for building the images
-    # TODO - check if the image can be cached
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
-#    runs-on: oracle-4cpu-16gb-x86-64
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: oracle-vm-2cpu-8gb-x86-64
     steps:
       - uses: actions/checkout@v4
         with:
@@ -100,7 +88,6 @@ jobs:
       - parse-params
       - build-images
     if: ${{ needs.parse-params.outputs.runTests == 'true' }}
-
     uses: ./.github/workflows/run-system-tests.yml
     with:
       pipelineList: ${{ needs.parse-params.outputs.pipelineList }}

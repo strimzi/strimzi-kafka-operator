@@ -20,7 +20,7 @@ public interface TestConstants {
     long POLL_INTERVAL_FOR_RESOURCE_DELETION = Duration.ofSeconds(5).toMillis();
     long WAIT_FOR_ROLLING_UPDATE_INTERVAL = Duration.ofSeconds(5).toMillis();
 
-    long TIMEOUT_FOR_SEND_RECEIVE_MSG = Duration.ofSeconds(120).toMillis();
+    long TIMEOUT_FOR_SEND_RECEIVE_MSG = Duration.ofSeconds(60).toMillis();
     long TIMEOUT_FOR_CLUSTER_STABLE = Duration.ofMinutes(20).toMillis();
 
     long TIMEOUT_TEARDOWN = Duration.ofSeconds(10).toMillis();
