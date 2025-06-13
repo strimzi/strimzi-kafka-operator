@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// metrics/assembly_metrics-kafka.adoc
+// metrics/assembly_metrics-prometheus-setup.adoc
 
 [id='proc-metrics-reporter-kafka-deploy-options-{context}']
 = Enabling Strimzi Metrics Reporter
