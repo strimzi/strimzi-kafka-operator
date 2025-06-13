@@ -35,7 +35,7 @@ runs:
         sudo cat /etc/resolv.conf
         
         sudo cp --remove-destination /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-        sudo sed -i '/trust-ad/trust-ad ndots:2/' /etc/resolv.conf
+        sudo sed -i 's/trust-ad/trust-ad ndots:2/' /etc/resolv.conf
         
         sudo cat /etc/resolv.conf
         
