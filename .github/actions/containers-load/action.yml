@@ -31,7 +31,7 @@ runs:
       shell: bash
       if: ${{ contains(inputs.useMinikube, 'true') }}
       run: |
-        eval $(minikube docker-env)
+#        eval $(minikube docker-env)
         make docker_load docker_tag docker_push docker_delete_archive
         
         docker images -a
