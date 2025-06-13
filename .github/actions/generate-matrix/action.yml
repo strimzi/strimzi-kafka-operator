@@ -95,7 +95,7 @@ runs:
             . + (
               # capture returns the named groups we need
               (.agent
-                | capture("^[^-]+-(?<cpu>[0-9]+)cpu-(?<mem>[0-9]+)gb")
+                | capture("(?<cpu>[0-9]+)cpu-(?<mem>[0-9]+)gb")
               ) as $cap
               | {cpu: ($cap.cpu | tonumber), memory: ($cap.mem | tonumber * 1024)}
             )
