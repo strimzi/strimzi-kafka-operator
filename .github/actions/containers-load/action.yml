@@ -6,10 +6,9 @@ inputs:
     description: "Architecture"
     required: false
     default: "amd64"
-  useMinikube:
-    description: "Flag for using Minikube as images destination"
-    required: false
-    default: "true"
+  registry:
+    description: "Registry type to use for images (minikube/kind/external)"
+    required: true
 
 runs:
   using: "composite"
@@ -26,57 +25,36 @@ runs:
       shell: bash
       run: rm containers-${{ inputs.architecture }}.tar
 
-    # This is for loading images into Minikube
-    - name: Load Strimzi images into Minikube
+    # This is for loading images into minikube registry
+    - name: Load & push Strimzi images into minikube registry
       shell: bash
-      if: ${{ contains(inputs.useMinikube, 'true') }}
+      if: ${{ contains(inputs.registry, 'minikube') }}
       run: |
         eval $(minikube docker-env)
-        make docker_load docker_tag docker_delete_archive
-        
-        docker images -a
-        
-        RETRIES=3
-        COUNT=0
-        until [ $COUNT -ge $RETRIES ]
-        do
-          if make docker_e2e; then
-            echo "Push succeeded"
-            break
-          fi
-          COUNT=$((COUNT+1))
-          echo "Retry $COUNT/$RETRIES failed. Retrying in 10 seconds..."
-          sleep 10
-          echo "Pods"
-          kubectl get po -n kube-system
-          echo "Kube proxy log"
-          kubectl logs daemonset/kube-proxy -n kube-system
-          docker ps -a
-          docker images -a
-          docker logs kind-registry
-        done
+        make docker_load docker_e2e docker_delete_archive
+      env:
+        DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
 
-        if [ $COUNT -eq $RETRIES ]; then
-          echo "Push failed after $RETRIES attempts."
-          exit 1
-        fi
-        
-        echo "Pods"
-        kubectl get po -n kube-system
-        echo "Kube proxy log"
-        kubectl logs daemonset/kube-proxy -n kube-system
-        docker ps -a
-        docker logs kind-registry
-        docker images -a
-
+    # This is for loading images into kind registry
+    - name: Load & push Strimzi images into kind registry
+      shell: bash
+      if: ${{ contains(inputs.registry, 'kind') }}
+      run: |
+        make docker_load docker_e2e docker_delete_archive
       env:
         DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
 
     # This is for loading images into external registry
-    - name: Load Strimzi images external registry
+    - name: Load & push Strimzi images external registry
       shell: bash
-      if: ${{ !contains(inputs.useMinikube, 'true') }}
+      if: ${{ contains(inputs.registry, 'external') }}
       run: |
         make docker_load docker_tag docker_push docker_delete_archive
       env:
         DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
+
+    - name: List built images
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        docker images -a
