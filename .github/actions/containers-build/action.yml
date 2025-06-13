@@ -31,14 +31,14 @@ runs:
 
     - name: Build images
       shell: bash
+#
+#      sudo cp --remove-destination /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+#      sudo sed -i 's/trust-ad/trust-ad ndots:2/' /etc/resolv.conf
+#
+#      sudo cat /etc/resolv.conf
+#
       run: |
         sudo cat /etc/resolv.conf
-        
-        sudo cp --remove-destination /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-        sudo sed -i 's/trust-ad/trust-ad ndots:2/' /etc/resolv.conf
-        
-        sudo cat /etc/resolv.conf
-        
         make docker_build docker_save
       env:
         MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'
