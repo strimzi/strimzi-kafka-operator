@@ -17,7 +17,7 @@ runs:
       uses: docker/setup-buildx-action@v3
       with:
         platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
-        driver: docker-container
+        driver: docker
         install: true
         use: true
         # This option is needed to make sure that buildx is able to see localhost:5000 registry
