@@ -36,6 +36,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -599,6 +600,22 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
+    }
+    
+    @ParallelTest
+    public void testUserConfigurationWithInvalidConfigProviders()  {
+        Map<String, Object> userConfiguration = new HashMap<>();
+        userConfiguration.put("config.providers", "env,strimzienv");
+        userConfiguration.put("config.providers.env.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        userConfiguration.put("config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.UserConfigProvider");
+
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
+
+        assertThrows(InvalidConfigurationException.class, () -> {
+            new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withUserConfiguration(kafkaConfiguration, false, false, false)
+                .build();
+        }, "InvalidConfigurationException was expected");
     }
 
     @ParallelTest
