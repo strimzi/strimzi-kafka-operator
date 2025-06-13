@@ -7,11 +7,15 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
@@ -23,11 +27,13 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Supplier;
+import java.util.Set;
 
 /**
  * Kafka Mirror Maker 2 model
@@ -36,12 +42,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String COMPONENT_TYPE = "kafka-mirror-maker-2";
 
     // Kafka MirrorMaker 2 connector configuration keys (EnvVariables)
-    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS = "KAFKA_MIRRORMAKER_2_CLUSTERS";
-    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS = "KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS";
-    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CLUSTERS = "KAFKA_MIRRORMAKER_2_TLS_AUTH_CLUSTERS";
-    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CERTS_CLUSTERS = "KAFKA_MIRRORMAKER_2_TLS_AUTH_CERTS_CLUSTERS";
-    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_KEYS_CLUSTERS = "KAFKA_MIRRORMAKER_2_TLS_AUTH_KEYS_CLUSTERS";
-    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS = "KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS";
     protected static final String CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_MIRROR_MAKER2_LABELS";
 
     protected static final String MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-oauth/";
@@ -160,14 +160,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         List<Volume> volumeList = super.getVolumes(isOpenShift);
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
-            String alias = mirrorMaker2Cluster.getAlias();
-            ClientTls tls = mirrorMaker2Cluster.getTls();
-
-            if (tls != null) {
-                CertUtils.createTrustedCertificatesVolumes(volumeList, tls.getTrustedCertificates(), isOpenShift, alias);
-            }
-
-            AuthenticationUtils.configurePKCS12ClientAuthenticationVolumes(mirrorMaker2Cluster.getAuthentication(), volumeList, mirrorMaker2Cluster.getAlias() + "-oauth-certs", isOpenShift, mirrorMaker2Cluster.getAlias() + '-',  true);
+            AuthenticationUtils.configureClientAuthenticationVolumes(mirrorMaker2Cluster.getAuthentication(), volumeList, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), isOpenShift, mirrorMaker2Cluster.getAlias() + "-", true);
         }
         return volumeList;
     }
@@ -179,18 +172,41 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
             String alias = mirrorMaker2Cluster.getAlias();
             String tlsVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT, alias);
-
-            ClientTls kafkaMirrorMaker2Tls = mirrorMaker2Cluster.getTls();
-            if (kafkaMirrorMaker2Tls != null) {
-                CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, kafkaMirrorMaker2Tls.getTrustedCertificates(), tlsVolumeMountPath, alias);
-            }
             String passwordVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT, alias);
             String oauthTlsVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, alias);
             String oauthVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, alias);
-            AuthenticationUtils.configurePKCS12ClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath);
+            AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath);
         }
 
         return volumeMountList;
+    }
+    @Override
+    public Role generateRole() {
+        List<String> certSecretNames = new ArrayList<>();
+        for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
+            ClientTls mirrorTls = mirrorMaker2Cluster.getTls();
+            if (mirrorTls != null && mirrorTls.getTrustedCertificates() != null && !mirrorTls.getTrustedCertificates().isEmpty()) {
+                certSecretNames.add(KafkaConnectResources.internalTlsTrustedCertsSecretName(cluster));
+            }
+
+            KafkaClientAuthentication mirrorAuthentication = mirrorMaker2Cluster.getAuthentication();
+
+            if (mirrorAuthentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
+                certSecretNames.add(tlsAuth.getCertificateAndKey().getSecretName());
+            } else if (mirrorAuthentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null
+                    && !oauth.getTlsTrustedCertificates().isEmpty()) {
+                certSecretNames.add(KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster));
+            }
+        }
+
+        List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
+                .withApiGroups("")
+                .withResources("secrets")
+                .withVerbs("get")
+                .withResourceNames(certSecretNames)
+                .build());
+
+        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
     }
 
     private String buildClusterVolumeMountPath(final String baseVolumeMount,  final String path) {
@@ -202,85 +218,33 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = super.getEnvVars();
 
-        final StringBuilder clusterAliases = new StringBuilder();
-        final StringBuilder clustersTrustedCerts = new StringBuilder();
-        final StringBuilder clustersTlsAuthCerts = new StringBuilder();
-        final StringBuilder clustersTlsAuthKeys = new StringBuilder();
-        final StringBuilder clustersOauthTrustedCerts = new StringBuilder();
-
-        for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster : clusters) {
-            String clusterAlias = mirrorMaker2Cluster.getAlias();
-
-            if (clusterAliases.length() > 0) {
-                clusterAliases.append(";");
-            }
-            clusterAliases.append(clusterAlias);
-
-            getClusterTrustedCerts(clustersTrustedCerts, mirrorMaker2Cluster, clusterAlias);
-
-            KafkaClientAuthentication authentication = mirrorMaker2Cluster.getAuthentication();
-            if (authentication != null) {
-                if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
-                    if (tlsAuth.getCertificateAndKey() != null) {
-                        appendCluster(clustersTlsAuthCerts, clusterAlias, () -> tlsAuth.getCertificateAndKey().getSecretName() + "/" + tlsAuth.getCertificateAndKey().getCertificate());
-                        appendCluster(clustersTlsAuthKeys, clusterAlias, () -> tlsAuth.getCertificateAndKey().getSecretName() + "/" + tlsAuth.getCertificateAndKey().getKey());
-                    }
-                } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
-                    if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-                        appendClusterOAuthTrustedCerts(clustersOauthTrustedCerts, clusterAlias, oauth.getTlsTrustedCertificates());
-                    }
-                }
-            }
-        }
-
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS, clusterAliases.toString()));
-
-        if (clustersTrustedCerts.length() > 0) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS, clustersTrustedCerts.toString()));
-        }
-
-        if (clustersTlsAuthCerts.length() > 0 || clustersTlsAuthKeys.length() > 0) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CLUSTERS, "true"));
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CERTS_CLUSTERS, clustersTlsAuthCerts.toString()));
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_KEYS_CLUSTERS, clustersTlsAuthKeys.toString()));
-        }
-
-        if (clustersOauthTrustedCerts.length() > 0) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS, clustersOauthTrustedCerts.toString()));
-        }
-
         JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
         return varList;
     }
 
-    private void getClusterTrustedCerts(final StringBuilder clustersTrustedCerts, KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster, String clusterAlias) {
-        ClientTls tls = mirrorMaker2Cluster.getTls();
-        if (tls != null) {
-            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
-   
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                if (clustersTrustedCerts.length() > 0) {
-                    clustersTrustedCerts.append("\n");
-                }
-                clustersTrustedCerts.append(clusterAlias);
-                clustersTrustedCerts.append("=");
-                clustersTrustedCerts.append(CertUtils.trustedCertsEnvVar(trustedCertificates));
+    @Override
+    public Set<String> getTlsCertsSecrets() {
+        Set<String> secretsToCopy = new HashSet<>();
+        for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
+            ClientTls tls = mirrorMaker2Cluster.getTls();
+            if (tls != null && tls.getTrustedCertificates() != null) {
+                secretsToCopy.addAll(tls.getTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
             }
         }
+        return secretsToCopy;
     }
 
-    private void appendClusterOAuthTrustedCerts(final StringBuilder clusters, String clusterAlias, List<CertSecretSource> trustedCerts) {
-        appendCluster(clusters, clusterAlias, () -> CertUtils.trustedCertsEnvVar(trustedCerts));
-    }
-
-    private void appendCluster(final StringBuilder clusters, String clusterAlias, Supplier<String> function) {
-        if (clusters.length() > 0) {
-            clusters.append("\n");
-        }                   
-        clusters.append(clusterAlias);
-        clusters.append("=");
-        clusters.append(function.get());
+    @Override
+    public Set<String> getOauthTlsCertsSecrets() {
+        Set<String> secretsToCopy = new HashSet<>();
+        for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
+            KafkaClientAuthentication mm2Auth = mirrorMaker2Cluster.getAuthentication();
+            if (mm2Auth instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null) {
+                secretsToCopy.addAll(oauth.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
+            }
+        }
+        return secretsToCopy;
     }
 
     /**
@@ -290,17 +254,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      */
     protected void setClusters(List<KafkaMirrorMaker2ClusterSpec> clusters) {
         this.clusters = clusters;
-    }
-
-    /**
-     * The command for running Connect has to be passed through a method so that we can handle different run commands
-     * for Connect and Mirror Maker 2 (which inherits from this class) without duplicating the whole container creation.
-     *
-     * @return  Command for starting Kafka Mirror Maker 2 container
-     */
-    @Override
-    protected String getCommand() {
-        return "/opt/kafka/kafka_mirror_maker_2_run.sh";
     }
 
     /**
