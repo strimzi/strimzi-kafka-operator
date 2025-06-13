@@ -9,23 +9,23 @@ inputs:
   minikubeVersion:
     description: "Minikube version to install"
     required: false
-    default: "v1.35.0"
+    default: "v1.36.0"
   architecture:
     description: "Architecture"
     required: false
     default: "amd64"
-  cpu:
-    description: "CPU configuration for Minikube"
-    required: false
-    default: "2"
-  memory:
-    description: "Memory configuration for Minikube"
-    required: false
-    default: "6000"
-  retries:
-    description: "Number of retries"
-    required: false
-    default: "3"
+#  cpu:
+#    description: "CPU configuration for Minikube"
+#    required: false
+#    default: "2"
+#  memory:
+#    description: "Memory configuration for Minikube"
+#    required: false
+#    default: "6000"
+#  retries:
+#    description: "Number of retries"
+#    required: false
+#    default: "3"
   registry:
     description: "Image used for Minikube Registry"
     required: false
@@ -57,31 +57,33 @@ runs:
     - name: Setup Minikube
       shell: bash
       run: |
-        COUNT=0
-        until [ $COUNT -ge $RETRIES ]
-        do
-          if .azure/scripts/setup-kubernetes.sh "${{ inputs.architecture }}"; then
-            echo "Minikube setup succeeded."
-            break
-          fi
-          COUNT=$((COUNT+1))
-          echo "Retry $COUNT/$RETRIES failed. Deleting Minikube and retrying in 10 seconds..."
-          minikube delete
-          sleep 10
-        done
+        ./.azure/scripts/setup-kubernetes.sh "${{ inputs.architecture }}"
 
-        if [ $COUNT -eq $RETRIES ]; then
-          echo "Minikube setup failed after $RETRIES attempts."
-          exit 1
-        fi
+#        COUNT=0
+#        until [ $COUNT -ge $RETRIES ]
+#        do
+#          if .azure/scripts/setup-kubernetes.sh "${{ inputs.architecture }}"; then
+#            echo "Minikube setup succeeded."
+#            break
+#          fi
+#          COUNT=$((COUNT+1))
+#          echo "Retry $COUNT/$RETRIES failed. Deleting Minikube and retrying in 10 seconds..."
+#          minikube delete
+#          sleep 10
+#        done
+#
+#        if [ $COUNT -eq $RETRIES ]; then
+#          echo "Minikube setup failed after $RETRIES attempts."
+#          exit 1
+#        fi
 
       env:
         TEST_CLUSTER: minikube
         TEST_KUBECTL_VERSION: ${{ inputs.kubectlVersion }}
         TEST_MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
         REGISTRY_IMAGE: ${{ inputs.registry }}
-        MINIKUBE_MEMORY: ${{ inputs.memory }}
-        MINIKUBE_CPU: ${{ inputs.cpu }}
+#        MINIKUBE_MEMORY: ${{ inputs.memory }}
+#        MINIKUBE_CPU: ${{ inputs.cpu }}
         RETRIES: ${{ inputs.retries }}
 
     - name: Set DOCKER_REGISTRY
