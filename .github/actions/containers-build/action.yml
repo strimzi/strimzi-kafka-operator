@@ -15,11 +15,11 @@ runs:
     - name: Install yq
       uses: ./.github/actions/install-yq
       with:
-        architecture: arm64
+        architecture: ${{ inputs.architecture }}
     - name: Install Shellcheck
       uses: ./.github/actions/install-shellcheck
       with:
-        architecture: arm64
+        architecture: ${{ inputs.architecture }}
 
     - uses: actions/download-artifact@v4
       with:
@@ -32,18 +32,12 @@ runs:
     - name: Build images
       shell: bash
       run: |
+        sudo cat /etc/resolv.conf
         make docker_build docker_save
       env:
         MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'
         DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
-        # User docker buildx
-        DOCKER_BUILDX: buildx
-        # Add option to load image into running Docker daemon and push into local registry to make it available between buildx executions
-        DOCKER_BUILD_ARGS: "--load --push --build-arg=BUILD_REGISTRY=localhost:5000/"
-        BUILD_REGISTRY: "localhost:5000/"
-        # TODO - check if these are needed
         DOCKER_BUILDKIT: 1
-        DOCKER_CLI_EXPERIMENTAL: enabled
 
     - name: Create tarball with images
       shell: bash
@@ -55,9 +49,8 @@ runs:
         name: containers-${{ inputs.architecture }}.tar
         path: containers-${{ inputs.architecture }}.tar
 
-    - name: DEBUG - docker
+    - name: List built images
       if: ${{ always() }}
       shell: bash
       run: |
         docker images -a
-        docker buildx ls
