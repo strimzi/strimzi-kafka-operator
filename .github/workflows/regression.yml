@@ -55,7 +55,7 @@ jobs:
         with:
           # TODO - revert this
 #          commentBody: ${{ github.event.comment.body }}
-          commentBody: "/ga run pipeline=regression,upgrade"
+          commentBody: "/ga run pipeline=smoke"
 
   build-artifacts:
     name: build-artifacts
@@ -85,7 +85,7 @@ jobs:
         ports:
           - 5000:5000
 #    runs-on: oracle-4cpu-16gb-x86-64
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: oracle-vm-2cpu-8gb-x86-64
     steps:
       - uses: actions/checkout@v4
         with:

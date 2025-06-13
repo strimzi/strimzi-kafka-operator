@@ -1,6 +1,4 @@
-ARG BUILD_REGISTRY
-
-FROM ${BUILD_REGISTRY}strimzi/base:latest
+FROM strimzi/base:latest
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 
