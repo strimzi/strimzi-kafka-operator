@@ -25,7 +25,7 @@ on:
 
 # Global config for DNS resolver
 env:
-  RES_OPTIONS: "ndots:2"
+  RES_OPTIONS: "ndots:2 edns0 trust-ad"
 
 jobs:
   # TODO - this cannot me used now as we do not have workflow in main branch!
