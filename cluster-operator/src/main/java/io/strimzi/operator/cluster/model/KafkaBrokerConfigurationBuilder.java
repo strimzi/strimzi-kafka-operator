@@ -807,7 +807,7 @@ public class KafkaBrokerConfigurationBuilder {
     }
     
     /**
-     * Get the user provided Kafka configuration provider aliases, throwing an InvalidConfigurationException if any are found that would that overwrite the Strimzi defined configuration providers
+     * Get the user provided Kafka configuration provider aliases, throwing an InvalidConfigurationException if any are found that would overwrite the Strimzi defined configuration providers
      * 
      * @param strimziConfigProviders    The Strimzi defined configuration providers
      * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
