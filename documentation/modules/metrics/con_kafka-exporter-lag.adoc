@@ -11,7 +11,7 @@
 Kafka Exporter extracts additional metrics data from Kafka brokers related to consumer groups, consumer lag, topic offsets, and partitions.
 The metrics are exposed in Prometheus format and can be collected by Prometheus, then visualized in Grafana.
 
-Kafka Exporter relies on data from the `__consumer_offsets` topic to report lag metrics.
+Kafka Exporter relies on data from the `__consumer_offsets` topic to report consumer lag metrics.
 This topic only contains information if consumer groups are actively committing offsets.
 Consumer groups must therefore be in use for Kafka Exporter to function correctly.
 

@@ -18,7 +18,7 @@ For more information, see xref:assembly-metrics-setup-{context}[].
 
 * Consumer groups must be in use.
 +
-Kafka Exporter relies on data from the `__consumer_offsets` topic to report lag metrics.
+Kafka Exporter relies on data from the `__consumer_offsets` topic to report consumer lag metrics.
 This topic only contains information if consumer groups are actively committing offsets.
 
 .Procedure
