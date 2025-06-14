@@ -21,7 +21,7 @@ on:
       cluster_operator_install_type:
         description: "Install type method used for Strimzi operator"
         required: false
-        default: "bundle"
+        default: "yaml"
         type: string
       strimzi_rbac_scope:
         description: "RBAC configuration for operator access"

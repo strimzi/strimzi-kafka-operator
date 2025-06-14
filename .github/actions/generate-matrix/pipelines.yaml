@@ -24,7 +24,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-x86-64"
   arch: "amd64"
@@ -33,7 +33,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-x86-64"
   arch: "amd64"
@@ -42,7 +42,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
@@ -51,7 +51,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
@@ -60,7 +60,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
@@ -69,7 +69,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 #############
 ### Smoke ###
@@ -82,7 +82,7 @@ pipelines:
   timeout: 60
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 1
 #- agent: "oracle-4cpu-16gb-arm64"
 #  arch: "arm64"
@@ -91,7 +91,7 @@ pipelines:
 #  timeout: 60
 #  strimzi_use_feature_gates: "false"
 #  strimzi_rbac_scope: "CLUSTER"
-#  cluster_operator_install_type: "bundle"
+#  cluster_operator_install_type: "yaml"
 #  parallel: 1
 ###############
 ### Upgrade ###
@@ -103,7 +103,7 @@ pipelines:
   timeout: 180
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 1
 - agent: "oracle-4cpu-16gb-arm64"
   arch: "arm64"
@@ -112,7 +112,7 @@ pipelines:
   timeout: 180
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 1
 - agent: "oracle-4cpu-16gb-x86-64"
   arch: "amd64"
@@ -121,7 +121,7 @@ pipelines:
   timeout: 180
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 1
 - agent: "oracle-4cpu-16gb-arm64"
   arch: "arm64"
@@ -130,7 +130,7 @@ pipelines:
   timeout: 180
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 1
 ##################
 ### Acceptance ###
@@ -143,7 +143,7 @@ pipelines:
   timeout: 180
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 2
 - agent: "oracle-4cpu-16gb-arm64"
   arch: "arm64"
@@ -152,7 +152,7 @@ pipelines:
   timeout: 180
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 2
 #######################
 ### Acceptance Helm ###
@@ -185,7 +185,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "NAMESPACE"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-x86-64"
   arch: "amd64"
@@ -194,7 +194,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "NAMESPACE"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-x86-64"
   arch: "amd64"
@@ -203,7 +203,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "NAMESPACE"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
@@ -212,7 +212,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "NAMESPACE"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
@@ -221,7 +221,7 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "NAMESPACE"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
 - agent: "oracle-8cpu-32gb-arm64"
   arch: "arm64"
@@ -230,5 +230,5 @@ pipelines:
   timeout: 480
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "NAMESPACE"
-  cluster_operator_install_type: "bundle"
+  cluster_operator_install_type: "yaml"
   parallel: 4
