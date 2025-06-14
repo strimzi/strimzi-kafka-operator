@@ -6,8 +6,8 @@ inputs:
     description: "Architecture"
     required: false
     default: "amd64"
-  useMinikube:
-    description: "Flag for using Minikube as images destination"
+  localRegistry:
+    description: "Flag for using local registry as images destination"
     required: false
     default: "true"
 
@@ -29,9 +29,9 @@ runs:
     # This is for loading images into Minikube
     - name: Load Strimzi images into Minikube
       shell: bash
-      if: ${{ contains(inputs.useMinikube, 'true') }}
+      if: ${{ contains(inputs.localRegistry, 'true') }}
       run: |
-        make docker_load docker_tag docker_push docker_delete_archive
+        make docker_load docker_e2e docker_delete_archive
         docker images -a
 #
 #        RETRIES=3
@@ -73,7 +73,7 @@ runs:
     # This is for loading images into external registry
     - name: Load Strimzi images external registry
       shell: bash
-      if: ${{ !contains(inputs.useMinikube, 'true') }}
+      if: ${{ !contains(inputs.localRegistry, 'true') }}
       run: |
         make docker_load docker_tag docker_push docker_delete_archive
       env:

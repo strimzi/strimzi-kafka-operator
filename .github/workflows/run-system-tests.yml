@@ -187,7 +187,7 @@ jobs:
         uses: ./.github/actions/containers-load
         with:
           architecture: ${{ matrix.config.arch }}
-          useMinikube: true
+          localRegistry: true
 #        run: |
 #          make java_install
 #          make docker_build
@@ -230,7 +230,6 @@ jobs:
         # TODO - set Kafka version globally?
         if: ${{ !contains(env.PROFILE, 'upgrade') }}
         run: |
-          eval $(minikube docker-env)
           export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
           BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}"
           echo "Base image: $BASE_IMAGE"
