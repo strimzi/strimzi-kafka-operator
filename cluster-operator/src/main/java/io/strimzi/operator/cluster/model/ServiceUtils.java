@@ -18,6 +18,7 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -220,12 +221,13 @@ public class ServiceUtils {
      * @param name          Name of the port
      * @param port          The port on the service which can be accessed by clients
      * @param targetPort    The port on the container / Pod where the connections will be routed
+     * @param targetPortName the name of the target port on the container / Pod where the connections will be routed
      * @param protocol      Protocol used by this port
      *
      * @return  Created port
      */
-    public static ServicePort createServicePort(String name, int port, int targetPort, String protocol)   {
-        return createServicePort(name, port, targetPort, null, protocol);
+    public static ServicePort createServicePort(String name, int port, int targetPort, String targetPortName, String protocol)   {
+        return createServicePort(name, port, targetPort, targetPortName, null, protocol);
     }
 
     /**
@@ -234,17 +236,18 @@ public class ServiceUtils {
      * @param name          Name of the port
      * @param port          The port on the service which can be accessed by clients
      * @param targetPort    The port on the container / Pod where the connections will be routed
+     * @param targetPortName the name of the target port on the container / Pod where the connections will be routed
      * @param nodePort      The desired node port number
      * @param protocol      Protocol used by this port
      *
      * @return  Created port
      */
-    public static ServicePort createServicePort(String name, int port, int targetPort, Integer nodePort, String protocol)   {
+    public static ServicePort createServicePort(String name, int port, int targetPort, String targetPortName, Integer nodePort, String protocol)   {
         return new ServicePortBuilder()
                 .withName(name)
                 .withProtocol(protocol)
                 .withPort(port)
-                .withNewTargetPort(targetPort)
+                .withNewTargetPort(Objects.requireNonNullElse(targetPortName, targetPort))
                 .withNodePort(nodePort)
                 .build();
     }
