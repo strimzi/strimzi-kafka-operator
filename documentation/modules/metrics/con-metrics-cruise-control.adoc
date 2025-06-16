@@ -3,7 +3,7 @@
 // metrics/assembly-metrics.adoc
 
 [id='con-metrics-cruise-control-{context}']
-= Monitoring Cruise Control operations
+= Cruise Control operations monitoring
 
 [role="_abstract"]
 Cruise Control monitors Kafka brokers in order to track the utilization of brokers, topics, and partitions.
