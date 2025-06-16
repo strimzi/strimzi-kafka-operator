@@ -246,17 +246,10 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
-
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("my-secret"));
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("my-another-secret"));
-
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
-        assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-another-secret"));
-
-        assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS), is("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
+        ConfigMap configMap = kbc.generateBridgeConfigMap(metricsAndLogging);
+        String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
+        assertThat(bridgeConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/foo-bridge-tls-trusted-certs:*.crt}"));
+        assertThat(bridgeConfigurations, containsString("ssl.truststore.type=PEM"));
     }
 
     @ParallelTest
@@ -279,17 +272,17 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
 
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("user-secret"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user-secret"));
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "user-secret"));
+        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaBridgeCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "user-secret"));
 
         ConfigMap configMap = kbc.generateBridgeConfigMap(metricsAndLogging);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
-        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.location=/tmp/strimzi/bridge.keystore.p12"));
-        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}"));
-        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.type=PKCS12"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.certificate.chain=${strimzisecrets:namespace/user-secret:user.crt}"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.key=${strimzisecrets:namespace/user-secret:user.key}"));
+        assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.type=PEM"));
     }
 
     @ParallelTest
@@ -957,26 +950,11 @@ public class KafkaBridgeClusterTest {
         envVar1.setName(testEnvOneKey);
         envVar1.setValue(testEnvOneValue);
 
-        ContainerEnvVar envVar2 = new ContainerEnvVar();
-        String testEnvTwoKey = KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS;
-        String testEnvTwoValue = "PEM certs";
-        envVar2.setName(testEnvTwoKey);
-        envVar2.setValue(testEnvTwoValue);
-
-        List<ContainerEnvVar> testEnvs = new ArrayList<>();
-        testEnvs.add(envVar1);
-        testEnvs.add(envVar2);
         ContainerTemplate kafkaBridgeContainer = new ContainerTemplate();
-        kafkaBridgeContainer.setEnv(testEnvs);
+        kafkaBridgeContainer.setEnv(List.of(envVar1));
 
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                .withNewTls()
-                    .addNewTrustedCertificate()
-                        .withSecretName("tls-trusted-certificate")
-                        .withCertificate("pem-content")
-                    .endTrustedCertificate()
-                .endTls()
                 .withNewTemplate()
                     .withBridgeContainer(kafkaBridgeContainer)
                 .endTemplate()
@@ -988,9 +966,6 @@ public class KafkaBridgeClusterTest {
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
-        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
-                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
     }
 
     @ParallelTest
@@ -1266,12 +1241,11 @@ public class KafkaBridgeClusterTest {
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         // Volume mounts
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-certs-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaBridgeCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + "first-certificate"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-certs-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaBridgeCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + "second-certificate"));
+        String internalOauthSecretName = KafkaBridgeResources.internalOauthTrustedCertsSecretName(cluster);
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> internalOauthSecretName.equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaBridgeCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + internalOauthSecretName));
 
         // Volumes
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-certs-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-certs-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> internalOauthSecretName.equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
 
         ConfigMap configMap = kb.generateBridgeConfigMap(metricsAndLogging);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
@@ -1281,9 +1255,8 @@ public class KafkaBridgeClusterTest {
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
                 "oauth.ssl.endpoint.identification.algorithm=\"\" " +
                 "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\" " +
-                "oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" " +
-                "oauth.ssl.truststore.password=\"${strimzienv:CERTS_STORE_PASSWORD}\" " +
-                "oauth.ssl.truststore.type=\"PKCS12\";"));
+                "oauth.ssl.truststore.location=\"/opt/strimzi/oauth-certs/foo-bridge-oauth-trusted-certs/foo-bridge-oauth-trusted-certs.crt\" " +
+                "oauth.ssl.truststore.type=\"PEM\";"));
     }
 
     @ParallelTest
