@@ -6,10 +6,8 @@
 = Kafka component architecture
 
 [role="_abstract"]
-A Kafka cluster consists of broker nodes responsible for message delivery and controller nodes that manage cluster metadata and coordinate clusters.
-These roles can be configured using node pools in Strimzi.
-
-Other Kafka components interact with the Kafka cluster for specific tasks.
+A Kafka cluster consists of broker and controller nodes, which are managed using node pools.  
+Other Kafka components interact with the Kafka cluster to support specific tasks.
 
 .Kafka component interaction
 
