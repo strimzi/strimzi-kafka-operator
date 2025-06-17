@@ -24,7 +24,7 @@ The key benefits of using node pools are as follows:
 Role separation::
 In production, it is recommended to run a dedicated node pool of three or more controller nodes, separate from broker nodes.
 This separation isolates controllers from broker workloads and allows broker pools to scale independently.
-Custom broker configurations::
+Distinct node pool configurations::
 Not all brokers need to be identical.
 Node pools allow you to define different configurations within the same cluster, such as pools with fast or cost-effective storage to support different workloads.
 Simplified operations:: 
