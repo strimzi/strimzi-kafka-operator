@@ -1,0 +1,32 @@
+// This module is included in:
+//
+// overview/assembly-kafka-components.adoc
+
+[id="kafka-concepts-node-pools-{context}"]
+= Node pools
+
+[role="_abstract"]
+A Kafka cluster consists of nodes assigned KRaft roles. 
+These roles can be _brokers_, responsible for message streaming and storage, or _controllers_, which manage cluster state and metadata. 
+While a node can perform both roles, separating them in production simplifies cluster management.
+
+Strimzi manages Kafka nodes using node pools. 
+A node pool is a distinct group of Kafka nodes within a cluster. 
+You define node pools using the `KafkaNodePool` custom resource. 
+Each node pool has its own configuration, defining aspects such as the role assigned to all its nodes, replica count, and storage settings.
+Node pools are associated with a single Kafka cluster through this configuration.
+
+Cluster-wide settings, such as the Kafka version and listener configuration, are defined in the `Kafka` custom resource. 
+Any configuration not defined in node pools is inherited from the cluster configuration in the `Kafka` resource.
+
+The key benefits of using node pools are as follows:
+
+Role separation::
+In production, it is recommended to run a dedicated node pool of three or more controller nodes, separate from broker nodes.
+This separation isolates controllers from broker workloads and allows broker pools to scale independently.
+Distinct node pool configurations::
+Not all brokers need to be identical.
+Node pools allow you to define different configurations within the same cluster, such as pools with fast or cost-effective storage to support different workloads.
+Simplified operations:: 
+Node pools simplify cluster operations such as scaling and hardware migration.
+You can scale individual pools, move nodes between pools, or create new pools with updated storage configurations to replace older ones.
