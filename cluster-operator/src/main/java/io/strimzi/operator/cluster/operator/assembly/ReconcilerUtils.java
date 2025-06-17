@@ -40,6 +40,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 
@@ -456,5 +459,96 @@ public class ReconcilerUtils {
         }
 
         return true;
+    }
+
+     /**   
+     * Generates or reconciles the secret that combines secrets and certificates
+     * provided for TLS truststore.
+     *
+     * @param reconciliation                    Reconciliation
+     * @param certSecretsToCopy                 Names of the certificate secrets to copy
+     * @param internalTlsTrustedCertsSecretName Name of the internal secret to copy the secrets into
+     * @param secretOperations                  Secret operation
+     * @param secretProvider                    Secret provider for the given Secret name and data
+     *
+     * @return  Future which completes when the reconciliation is done with the hash generated from the certificates
+     */
+    public static Future<Integer> generateTlsTrustedCertsSecret(Reconciliation reconciliation, Set<String> certSecretsToCopy,
+                                                             String internalTlsTrustedCertsSecretName, SecretOperator secretOperations,
+                                                             BiFunction<Map<String, String>, String, Secret> secretProvider) {
+        List<Integer> certHashes = new ArrayList<>();
+        ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
+        return Future.join(certSecretsToCopy.stream()
+                        .map(secretName -> secretOperations.getAsync(reconciliation.namespace(), secretName)
+                                .compose(secret -> {
+                                    if (secret == null) {
+                                        return Future.failedFuture("Secret " + secretName + " not found");
+                                    } else {
+                                        secret.getData().entrySet().stream()
+                                                .filter(e -> e.getKey().contains(".crt"))
+                                                // In case secrets contain the same key, append the secret name into the key
+                                                .forEach(e -> {
+                                                    secretData.put(secretName + "-" + e.getKey(), e.getValue());
+                                                    certHashes.add(e.getValue().hashCode());
+                                                });
+                                    }
+                                    return Future.succeededFuture();
+                                }))
+                        .collect(Collectors.toList()))
+                .compose(ignore -> secretOperations.reconcile(
+                                reconciliation,
+                                reconciliation.namespace(),
+                                internalTlsTrustedCertsSecretName,
+                                secretProvider.apply(secretData, internalTlsTrustedCertsSecretName)))
+                .compose(ignore -> Future.succeededFuture(certHashes.stream().mapToInt(e -> e).sum()));
+    }
+
+    /**
+     * Generates or reconciles the secret that combines secrets and certificates
+     * provided for trusted certificates for TLS connection to the OAuth server
+     * if OAuth authorization is enabled.
+     *
+     * @param reconciliation                        Reconciliation
+     * @param oauthCertSecretsToCopy                Names of the OAuth certificate secrets to copy
+     * @param internalOauthTrustedCertsSecretName   Name of the internal secret to copy the secrets into
+     * @param secretOperations                      Secret operation
+     * @param secretProvider                        Secret provider for the given Secret name and data
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    public static Future<Void> generateOauthTrustedCertsSecret(Reconciliation reconciliation, Set<String> oauthCertSecretsToCopy,
+                                                               String internalOauthTrustedCertsSecretName, SecretOperator secretOperations,
+                                                               BiFunction<Map<String, String>, String, Secret> secretProvider) {
+        List<String> certs = new ArrayList<>();
+        return Future.join(oauthCertSecretsToCopy.stream()
+                        .map(secretName -> getSecret(secretOperations, reconciliation.namespace(), secretName)
+                                .compose(secret -> {
+                                    secret.getData().entrySet().stream()
+                                            .filter(e -> e.getKey().contains(".crt"))
+                                            // In case secrets contain the same key, append the secret name into the key
+                                            .forEach(e -> certs.add(e.getValue()));
+                                    return Future.succeededFuture();
+                                }))
+                        .collect(Collectors.toList()))
+                .compose(ignore -> secretOperations.reconcile(
+                                reconciliation,
+                                reconciliation.namespace(),
+                                internalOauthTrustedCertsSecretName,
+                                secretProvider.apply(Map.of(internalOauthTrustedCertsSecretName + ".crt", mergeAndEncodeCerts(certs)), internalOauthTrustedCertsSecretName))
+                        .mapEmpty());
+    }
+
+    private static String mergeAndEncodeCerts(List<String> certs) {
+        if (certs.size() > 1) {
+            String decodedAndMergedCerts = certs.stream()
+                    .map(Util::decodeFromBase64)
+                    .collect(Collectors.joining("\n"));
+
+            return Util.encodeToBase64(decodedAndMergedCerts);
+        } else if (certs.size() < 1) {
+            return "";
+        } else {
+            return certs.get(0);
+        }
     }
 }
