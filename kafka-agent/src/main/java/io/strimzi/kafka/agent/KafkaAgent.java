@@ -263,8 +263,9 @@ public class KafkaAgent {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setTrustStore(KafkaAgentUtils.jksTrustStore(caCertSecret));
 
-        sslContextFactory.setKeyStore(KafkaAgentUtils.jksKeyStore(nodeCertSecret));
-        sslContextFactory.setKeyStorePassword("changeit");
+        String password = KafkaAgentUtils.generateRandomPassword();
+        sslContextFactory.setKeyStore(KafkaAgentUtils.jksKeyStore(nodeCertSecret, password.toCharArray()));
+        sslContextFactory.setKeyStorePassword(password);
         sslContextFactory.setNeedClientAuth(true);
         return  sslContextFactory;
     }

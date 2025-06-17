@@ -874,7 +874,6 @@ public class KafkaReconciler {
         Set<String> secretsToCopy = new HashSet<>();
         List<Integer> certHashes = new ArrayList<>();
 
-        // opa is deprecated?
         if (kafka.getAuthorization() instanceof KafkaAuthorizationOpa opaAuthz && opaAuthz.getTlsTrustedCertificates() != null) {
             secretsToCopy.addAll(opaAuthz.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
         }
