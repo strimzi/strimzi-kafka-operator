@@ -13,6 +13,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -59,7 +60,7 @@ public class KafkaAgentUtils {
      * @throws GeneralSecurityException if something goes wrong when creating the truststore
      * @throws IOException if there is an I/O or format problem with the data used to load the truststore.
      */
-    static KeyStore jksKeyStore(Secret secret) throws GeneralSecurityException, IOException {
+    static KeyStore jksKeyStore(Secret secret, char[] password) throws GeneralSecurityException, IOException {
         String secretName = secret.getMetadata().getName();
         String strippedPrivateKey = new String(decodeBase64FieldFromSecret(secret, secretName + ".key"), StandardCharsets.US_ASCII)
                 .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -73,8 +74,14 @@ public class KafkaAgentUtils {
         X509Certificate certificateChain = x509Certificate(decodeBase64FieldFromSecret(secret, secretName + ".crt"));
         KeyStore nodeKeyStore = KeyStore.getInstance("JKS");
         nodeKeyStore.load(null);
-        nodeKeyStore.setKeyEntry(secret.getMetadata().getName(), key, "changeit".toCharArray(), new Certificate[]{certificateChain});
+        nodeKeyStore.setKeyEntry(secret.getMetadata().getName(), key, password, new Certificate[]{certificateChain});
         return nodeKeyStore;
+    }
+
+    static String generateRandomPassword() {
+        byte[] random = new byte[24];
+        new SecureRandom().nextBytes(random);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(random).substring(0, 32);
     }
 
     /**
