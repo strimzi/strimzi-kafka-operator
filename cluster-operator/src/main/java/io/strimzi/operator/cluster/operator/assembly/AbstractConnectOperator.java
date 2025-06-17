@@ -62,7 +62,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -84,7 +83,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -274,7 +272,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return  Future which completes when the reconciliation is done
      */
-    protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+    protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, KafkaConnectCluster connect) {
         ClientTls tls = connect.getTls();
         Set<String> secretsToCopy = new HashSet<>();
 
@@ -286,27 +284,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             return Future.succeededFuture();
         }
 
-        ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
-        return Future.join(secretsToCopy.stream()
-                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
-                                .compose(secret -> {
-                                    if (secret == null) {
-                                        return Future.failedFuture("Secret " + secretName + " not found");
-                                    } else {
-                                        secret.getData().entrySet().stream()
-                                                .filter(e -> e.getKey().contains(".crt"))
-                                                // In case secrets contain the same key, append the secret name into the key
-                                                .forEach(e -> secretData.put(secretName + "-" + e.getKey(), e.getValue()));
-                                    }
-                                    return Future.succeededFuture();
-                                }))
-                        .collect(Collectors.toList()))
-                .compose(ignore -> secretOperations.reconcile(
-                                reconciliation,
-                                namespace,
-                                KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                connect.generateTlsTrustedCertsSecret(secretData, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
-                        .mapEmpty());
+        return ReconcilerUtils.generateTlsTrustedCertsSecret(reconciliation, secretsToCopy, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()), secretOperations, connect::generateSecret).mapEmpty();
     }
 
     /**
@@ -316,7 +294,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return  Future which completes when the reconciliation is done
      */
-    protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+    protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, KafkaConnectCluster connect) {
         KafkaClientAuthentication authentication = connect.getAuthentication();
         Set<String> secretsToCopy = new HashSet<>();
 
@@ -328,42 +306,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             return Future.succeededFuture();
         }
 
-        List<String> certs = new ArrayList<>();
-        String oauthSecret = KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster());
-        return Future.join(secretsToCopy.stream()
-                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
-                                .compose(secret -> {
-                                    if (secret == null) {
-                                        return Future.failedFuture("Secret " + secretName + " not found");
-                                    } else {
-                                        secret.getData().entrySet().stream()
-                                                .filter(e -> e.getKey().contains(".crt"))
-                                                // In case secrets contain the same key, append the secret name into the key
-                                                .forEach(e -> certs.add(e.getValue()));
-                                    }
-                                    return Future.succeededFuture();
-                                }))
-                        .collect(Collectors.toList()))
-                .compose(ignore -> secretOperations.reconcile(
-                                reconciliation,
-                                namespace,
-                                oauthSecret,
-                                connect.generateTlsTrustedCertsSecret(Map.of(oauthSecret + ".crt", mergeAndEncodeCerts(certs)), oauthSecret))
-                        .mapEmpty());
-    }
-
-    private String mergeAndEncodeCerts(List<String> certs) {
-        if (certs.size() > 1) {
-            String decodedAndMergedCerts = certs.stream()
-                    .map(Util::decodeFromBase64)
-                    .collect(Collectors.joining("\n"));
-
-            return Util.encodeToBase64(decodedAndMergedCerts);
-        } else if (certs.size() < 1) {
-            return "";
-        } else {
-            return certs.get(0);
-        }
+        return ReconcilerUtils.generateOauthTrustedCertsSecret(reconciliation, secretsToCopy, KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()), secretOperations, connect::generateSecret);
     }
 
     /**

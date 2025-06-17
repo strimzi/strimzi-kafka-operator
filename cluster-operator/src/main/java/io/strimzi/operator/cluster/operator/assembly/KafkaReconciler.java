@@ -872,7 +872,6 @@ public class KafkaReconciler {
     @Deprecated
     protected Future<Void> authzTrustedCertsSecret() {
         Set<String> secretsToCopy = new HashSet<>();
-        List<Integer> certHashes = new ArrayList<>();
 
         if (kafka.getAuthorization() instanceof KafkaAuthorizationOpa opaAuthz && opaAuthz.getTlsTrustedCertificates() != null) {
             secretsToCopy.addAll(opaAuthz.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
@@ -886,31 +885,9 @@ public class KafkaReconciler {
             return Future.succeededFuture();
         }
 
-        ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
-        return Future.join(secretsToCopy.stream()
-                        .map(secretName -> secretOperator.getAsync(reconciliation.namespace(), secretName)
-                                .compose(secret -> {
-                                    if (secret == null) {
-                                        return Future.failedFuture("Secret " + secretName + " not found");
-                                    } else {
-                                        secret.getData().entrySet().stream()
-                                                .filter(e -> e.getKey().contains(".crt"))
-                                                // In case secrets contain the same key, append the secret name into the key
-                                                .forEach(e -> {
-                                                    secretData.put(secretName + "-" + e.getKey(), e.getValue());
-                                                    certHashes.add(e.getValue().hashCode());
-                                                });
-                                    }
-                                    return Future.succeededFuture();
-                                }))
-                        .collect(Collectors.toList()))
-                .compose(ignore -> secretOperator.reconcile(
-                                reconciliation,
-                                reconciliation.namespace(),
-                                KafkaResources.internalAuthzTrustedCertsSecretName(kafka.getCluster()),
-                                kafka.generateSecret(secretData, KafkaResources.internalAuthzTrustedCertsSecretName(kafka.getCluster()))))
-                .compose(ignore -> {
-                    authorizerServerCertificateHash = certHashes.stream().mapToInt(e -> e).sum();
+        return ReconcilerUtils.generateTlsTrustedCertsSecret(reconciliation, secretsToCopy, KafkaResources.internalAuthzTrustedCertsSecretName(kafka.getCluster()), secretOperator, kafka::generateSecret)
+                .compose(certHashes -> {
+                    authorizerServerCertificateHash = certHashes;
                     return Future.succeededFuture();
                 });
     }
@@ -936,43 +913,9 @@ public class KafkaReconciler {
             return Future.succeededFuture();
         }
 
-        List<String> certs = new ArrayList<>();
-        String oauthSecret = KafkaResources.internalOauthTrustedCertsSecretName(kafka.getCluster());
-        return Future.join(secretsToCopy.stream()
-                        .map(secretName -> secretOperator.getAsync(reconciliation.namespace(), secretName)
-                                .compose(secret -> {
-                                    if (secret == null) {
-                                        return Future.failedFuture("Secret " + secretName + " not found");
-                                    } else {
-                                        secret.getData().entrySet().stream()
-                                                .filter(e -> e.getKey().contains(".crt"))
-                                                // certificates appended under a same key so that we create a single volume mounted file
-                                                .forEach(e -> certs.add(e.getValue()));
-                                    }
-                                    return Future.succeededFuture();
-                                }))
-                        .collect(Collectors.toList()))
-                .compose(ignore -> secretOperator.reconcile(
-                                reconciliation,
-                                reconciliation.namespace(),
-                                oauthSecret,
-                                kafka.generateSecret(Map.of(oauthSecret + ".crt", mergeAndEncodeCerts(certs)), oauthSecret))
-                        .mapEmpty());
+        return ReconcilerUtils.generateOauthTrustedCertsSecret(reconciliation, secretsToCopy, KafkaResources.internalOauthTrustedCertsSecretName(kafka.getCluster()), secretOperator, kafka::generateSecret);
     }
 
-    private String mergeAndEncodeCerts(List<String> certs) {
-        if (certs.size() > 1) {
-            String decodedAndMergedCerts = certs.stream()
-                    .map(Util::decodeFromBase64)
-                    .collect(Collectors.joining("\n"));
-
-            return Util.encodeToBase64(decodedAndMergedCerts);
-        } else if (certs.size() < 1) {
-            return "";
-        } else {
-            return certs.get(0);
-        }
-    }
     /**
      * Manages the secret with JMX credentials when JMX is enabled
      *
