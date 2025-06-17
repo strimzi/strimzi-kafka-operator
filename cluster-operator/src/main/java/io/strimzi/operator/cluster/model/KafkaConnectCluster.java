@@ -957,16 +957,15 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * Creates a secret that contains the TLS certificates from one or more secrets
+     * Creates a secret with the given name and data
      * in the same namespace as the resource.
-     * This is used for loading truststore certificates from the secret directly.
-     **
+     *
      * @param secretData secret data
      * @param secretName secret name
      *
-     * @return secret for tls certificates
+     * @return secret
      */
-    public Secret generateTlsTrustedCertsSecret(Map<String, String> secretData, String secretName) {
+    public Secret generateSecret(Map<String, String> secretData, String secretName) {
         return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.of(), Map.of());
     }
 
