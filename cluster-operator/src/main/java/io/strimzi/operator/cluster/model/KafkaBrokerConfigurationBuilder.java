@@ -784,7 +784,7 @@ public class KafkaBrokerConfigurationBuilder {
         }
         
         final String userConfigProviders = getUserConfigProviderAliases(strimziConfigProviders, userConfig);
-        if ("".equals(userConfigProviders)) {
+        if (userConfigProviders.isEmpty()) {
             writer.println("# Configuration providers configured by Strimzi");
             writer.println("config.providers=" + strimziConfigProviders);
         } else {
