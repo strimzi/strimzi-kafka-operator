@@ -39,6 +39,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -76,6 +78,7 @@ public class KafkaAgent {
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
     private static final byte BROKER_UNKNOWN_STATE = 127;
+    private static final SecureRandom RANDOM = new SecureRandom();
     private Secret caCertSecret;
     private Secret nodeCertSecret;
     private MetricName brokerStateName;
@@ -263,7 +266,10 @@ public class KafkaAgent {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setTrustStore(KafkaAgentUtils.jksTrustStore(caCertSecret));
 
-        String password = KafkaAgentUtils.generateRandomPassword();
+        byte[] random = new byte[24];
+        RANDOM.nextBytes(random);
+        String password = Base64.getUrlEncoder().withoutPadding().encodeToString(random).substring(0, 32);
+
         sslContextFactory.setKeyStore(KafkaAgentUtils.jksKeyStore(nodeCertSecret, password.toCharArray()));
         sslContextFactory.setKeyStorePassword(password);
         sslContextFactory.setNeedClientAuth(true);
