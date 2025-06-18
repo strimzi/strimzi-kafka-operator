@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.46.0</version>
+    <version>0.46.1</version>
 
     <licenses>
         <license>

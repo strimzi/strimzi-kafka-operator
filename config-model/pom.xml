@@ -5,7 +5,7 @@
     <parent>
         <artifactId>strimzi</artifactId>
         <groupId>io.strimzi</groupId>
-        <version>0.46.0</version>
+        <version>0.46.1</version>
     </parent>
     <name>Kafka Configuration Model</name>
     <modelVersion>4.0.0</modelVersion>

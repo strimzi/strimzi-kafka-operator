@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.strimzi</groupId>
         <artifactId>strimzi</artifactId>
-        <version>0.46.0</version>
+        <version>0.46.1</version>
     </parent>
     <name>Strimzi API</name>
     <modelVersion>4.0.0</modelVersion>
