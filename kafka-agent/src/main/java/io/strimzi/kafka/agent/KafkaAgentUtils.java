@@ -13,7 +13,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -76,12 +75,6 @@ public class KafkaAgentUtils {
         nodeKeyStore.load(null);
         nodeKeyStore.setKeyEntry(secret.getMetadata().getName(), key, password, new Certificate[]{certificateChain});
         return nodeKeyStore;
-    }
-
-    static String generateRandomPassword() {
-        byte[] random = new byte[24];
-        new SecureRandom().nextBytes(random);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(random).substring(0, 32);
     }
 
     /**
