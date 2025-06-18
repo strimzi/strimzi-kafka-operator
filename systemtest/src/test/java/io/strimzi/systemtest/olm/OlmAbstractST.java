@@ -4,9 +4,6 @@
  */
 package io.strimzi.systemtest.olm;
 
-import io.skodjob.annotations.Desc;
-import io.skodjob.annotations.Label;
-import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
@@ -19,7 +16,6 @@ import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -33,14 +29,11 @@ import org.junit.jupiter.api.AfterAll;
 
 import java.util.Map;
 
-@SuiteDoc(
-    description = @Desc("Provides an abstract base for OLM (Operator Lifecycle Manager) system tests, " +
-                        "offering common methods for deploying and verifying Strimzi custom resources " +
-                        "within an OLM-managed environment."),
-    labels = {
-        @Label(TestDocsLabels.OLM)
-    }
-)
+/**
+ * Provides an abstract base for OLM (Operator Lifecycle Manager) system tests
+ * offering common methods for deploying and verifying Strimzi custom resources
+ * within an OLM-managed environment.
+ */
 public class OlmAbstractST extends AbstractST {
     // Examples are assigned in respective test classes -> OlmAllNamespaceST and OlmSingleNamespaceST
     Map<String, JsonObject> exampleResources;
