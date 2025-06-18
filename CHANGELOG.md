@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.46.1
+
+* Update CSV file for OLM installation to add missing permission for broker Pods to "get" nodes Kube resource.
+* Allow the injection of annotations on the deployment object in Helm charts.
+* Add support for Kafka 3.9.1
+
 ## 0.46.0
 
 * Add support for Kafka 4.0.0.

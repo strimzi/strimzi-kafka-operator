@@ -24,7 +24,7 @@
 :DefaultKafkaMetadataVersion: 4.0
 :KafkaMetadataVersionLower: 3.9-IV0
 :KafkaMetadataVersionHigher: 4.0-IV3
-:KafkaVersionLower: 3.9.0
+:KafkaVersionLower: 3.9.1
 :KafkaVersionHigher: 4.0.0
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
