@@ -16,16 +16,20 @@ You can deploy Strimzi on Kubernetes {KubernetesVersion} using one of the follow
 
 |xref:deploy-tasks_str[Deployment files (YAML files)]
 a|xref:downloads-{context}[Download the deployment files] to manually deploy Strimzi components.
-For the greatest flexibility, choose this method.
+The installation files bundle all the necessary Kubernetes resources, including the Custom Resource Definitions (CRDs) that define resources like `Kafka` and `KafkaTopic`, the RBAC roles for permissions, and the `Deployment` for the Cluster Operator itself.
+This method offers the greatest flexibility and control.
 
 |xref:deploying-strimzi-from-operator-hub-str[OperatorHub.io]
-|Deploy the Strimzi Cluster operator through the OperatorHub.io, then deploy Strimzi components using custom resources.
-This method provides a standard configuration and allows you to take advantage of automatic updates.
+|Install Strimzi using the Operator Lifecycle Manager (OLM) from OperatorHub.io. 
+Once the Cluster Operator is running, you can deploy Strimzi components using custom resources.
+This method provides a standard configuration and supports automatic updates for streamlined lifecycle management.
 
 ifdef::Section[]
 |xref:deploying-cluster-operator-helm-chart-str[Helm chart]
 |Use a Helm chart to deploy the Cluster Operator, then deploy Strimzi components using custom resources.
-Helm charts provide a convenient way to manage the installation of applications.
+Helm charts offer a convenient and repeatable way to manage installations, especially in environments already using Helm.
 endif::Section[]
 
 |===
+
+NOTE: All deployment methods assume that you have access to a running Kubernetes cluster with appropriate permissions. Some methods may also require additional setup, such as access to container registries.
