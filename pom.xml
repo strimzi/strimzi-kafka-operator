@@ -143,7 +143,7 @@
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>9.4.57.v20241219</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.15.1</strimzi-oauth.version>
         <netty.version>4.1.118.Final</netty.version>
         <micrometer.version>1.12.3</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
