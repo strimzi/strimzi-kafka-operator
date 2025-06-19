@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// metrics/assembly_metrics-kafka.adoc
+// metrics/assembly_metrics-prometheus-setup.adoc
 
 [id='proc-jmx-exporter-metrics-kafka-deploy-options-{context}']
 = Enabling Prometheus JMX Exporter
@@ -24,11 +24,6 @@ Set `enableMetrics` to `true` to expose metrics for the following:
 * OAuth 2.0
 ** Configure in the `Kafka` resource for `oauth` or `keycloak` cluster authorization, or `oauth` listener authentication.
 ** Configure in the `KafkaBridge`, `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
-
-To include xref:con-metrics-kafka-exporter-lag-str[Kafka Exporter] metrics, add `kafkaExporter` configuration to the `Kafka` resource.
-
-IMPORTANT: Kafka Exporter provides additional metrics for consumer lag and offsets only.
-You still need to configure Prometheus metrics in the `Kafka` resource to collect standard Kafka metrics.
 
 You can create your own Prometheus configuration or use the xref:assembly-metrics-config-files-{context}[example custom resource files] provided with Strimzi:
 
@@ -95,69 +90,6 @@ data:
 ----
 <1> Copy the `metricsConfig` property that references the `ConfigMap` containing metrics configuration.
 <2> Copy the whole `ConfigMap` specifying the metrics configuration.
-
-. To deploy Kafka Exporter, add `kafkaExporter` configuration.
-+
-`kafkaExporter` configuration is specified only in the `Kafka` resource.
-+
-.Example configuration for deploying Kafka Exporter
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-metadata:
-  name: my-cluster
-spec:
-  # ...
-  kafkaExporter:
-    image: my-registry.io/my-org/my-exporter-cluster:latest # <1>
-    groupRegex: ".*" # <2>
-    topicRegex: ".*" # <3>
-    groupExcludeRegex: "^excluded-.*" # <4>
-    topicExcludeRegex: "^excluded-.*" # <5>
-    showAllOffsets: false # <6>
-    resources: # <7>
-      requests:
-        cpu: 200m
-        memory: 64Mi
-      limits:
-        cpu: 500m
-        memory: 128Mi
-    logging: debug # <8>
-    enableSaramaLogging: true # <9>
-    template: # <10>
-      pod:
-        metadata:
-          labels:
-            label1: value1
-        imagePullSecrets:
-          - name: my-docker-credentials
-        securityContext:
-          runAsUser: 1000001
-          fsGroup: 0
-        terminationGracePeriodSeconds: 120
-    readinessProbe: # <11>
-      initialDelaySeconds: 15
-      timeoutSeconds: 5
-    livenessProbe: # <12>
-      initialDelaySeconds: 15
-      timeoutSeconds: 5
-# ...
-----
-<1> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
-<2> A regular expression to specify the consumer groups to include in the metrics.
-<3> A regular expression to specify the topics to include in the metrics.
-<4> A regular expression to specify the consumer groups to exclude in the metrics.
-<5> A regular expression to specify the topics to exclude in the metrics.
-<6> By default, metrics are collected for all consumers regardless of their connection status. Setting `showAllOffsets` to `false` stops collecting metrics on disconnected consumers.
-<7> CPU and memory resources to reserve.
-<8> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
-<9> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
-<10> Customization of deployment templates and pods.
-<11> Healthcheck readiness probes.
-<12> Healthcheck liveness probes.
-
-NOTE: For Kafka Exporter to be able to work properly, consumer groups need to be in use. 
 
 .Enabling metrics for Kafka Bridge 
 

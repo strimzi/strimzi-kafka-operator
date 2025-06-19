@@ -33,10 +33,6 @@ For more information on the metrics and monitoring tools, refer to the supportin
 * {GrafanaHome}
 * link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring^] describes JMX metrics exposed by Apache Kafka
 
-//what is Consumer lag?
-include::../../modules/metrics/con_kafka-exporter-lag.adoc[leveloffset=+1]
-//Understanding metrics for Cruise Control
-include::../../modules/metrics/con-metrics-cruise-control.adoc[leveloffset=+1]
 //Example metrics files
 include::assembly-metrics-config-files.adoc[leveloffset=+1]
 //How to set up Prometheus
@@ -45,3 +41,8 @@ include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
 include::../../modules/metrics/proc_metrics-grafana-dashboard.adoc[leveloffset=+1]
 //How to monitor custom resources managed by Strimzi
 include::../../modules/metrics/proc_metrics-custom-resource-monitoring.adoc[leveloffset=+1]
+//How to monitor Consumer lag
+include::../../modules/metrics/con_kafka-exporter-lag.adoc[leveloffset=+1]
+include::../../modules/metrics/proc-kafka-exporter-deploy.adoc[leveloffset=+2]
+//Understanding metrics for Cruise Control
+include::../../modules/metrics/con-metrics-cruise-control.adoc[leveloffset=+1]

@@ -29,16 +29,31 @@ import org.junit.jupiter.api.AfterAll;
 
 import java.util.Map;
 
+/**
+ * Provides an abstract base for OLM (Operator Lifecycle Manager) system tests
+ * offering common methods for deploying and verifying Strimzi custom resources
+ * within an OLM-managed environment.
+ */
 public class OlmAbstractST extends AbstractST {
     // Examples are assigned in respective test classes -> OlmAllNamespaceST and OlmSingleNamespaceST
     Map<String, JsonObject> exampleResources;
 
+    /**
+     * Deploys an example Kafka custom resource.
+     * Waits for the Kafka cluster to be ready.
+     */
     void doTestDeployExampleKafka() {
         JsonObject kafkaResource = exampleResources.get(Kafka.RESOURCE_KIND);
         KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaResource.toString());
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, kafkaResource.getJsonObject("metadata").getString("name"));
     }
 
+    /**
+     * Deploys an example KafkaUser custom resource.
+     * This method first deploys a Kafka cluster with authorization enabled,
+     * then deploys the KafkaUser referencing that cluster.
+     * Waits for the KafkaUser to be created.
+     */
     void doTestDeployExampleKafkaUser() {
         String userKafkaName = "user-kafka";
         // KafkaUser example needs Kafka with authorization
@@ -56,24 +71,41 @@ public class OlmAbstractST extends AbstractST {
         KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, kafkaUserResource.getJsonObject("metadata").getString("name"));
     }
 
+    /**
+     * Deploys an example KafkaTopic custom resource.
+     * Waits for the KafkaTopic to be created.
+     */
     void doTestDeployExampleKafkaTopic() {
         JsonObject kafkaTopicResource = exampleResources.get(KafkaTopic.RESOURCE_KIND);
         KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaTopicResource.toString());
         KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, kafkaTopicResource.getJsonObject("metadata").getString("name"));
     }
 
+    /**
+     * Deploys an example KafkaConnect custom resource.
+     * Waits for the KafkaConnect cluster to be ready.
+     */
     void doTestDeployExampleKafkaConnect() {
         JsonObject kafkaConnectResource = exampleResources.get(KafkaConnect.RESOURCE_KIND);
         KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaConnectResource.toString());
         KafkaConnectUtils.waitForConnectReady(Environment.TEST_SUITE_NAMESPACE, kafkaConnectResource.getJsonObject("metadata").getString("name"));
     }
 
+    /**
+     * Deploys an example KafkaBridge custom resource.
+     * Waits for the KafkaBridge to be ready.
+     */
     void doTestDeployExampleKafkaBridge() {
         JsonObject kafkaBridgeResource = exampleResources.get(KafkaBridge.RESOURCE_KIND);
         KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaBridgeResource.toString());
         KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, kafkaBridgeResource.getJsonObject("metadata").getString("name"));
     }
 
+    /**
+     * Deploys an example KafkaMirrorMaker2 custom resource.
+     * Modifies the bootstrap server configuration to point to the deployed Kafka cluster.
+     * Waits for the KafkaMirrorMaker2 cluster to be ready.
+     */
     void doTestDeployExampleKafkaMirrorMaker2() {
         JsonObject kafkaMirrorMaker2Resource = exampleResources.get(KafkaMirrorMaker2.RESOURCE_KIND);
         KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).applyContent(kafkaMirrorMaker2Resource.toString()
@@ -82,6 +114,12 @@ public class OlmAbstractST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(Environment.TEST_SUITE_NAMESPACE, kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
     }
 
+    /**
+     * Deploys an example KafkaRebalance custom resource.
+     * This method first deploys a Kafka cluster with Cruise Control enabled,
+     * then deploys the KafkaRebalance referencing that cluster.
+     * Waits for the KafkaRebalance to reach the 'PendingProposal' state.
+     */
     void doTestDeployExampleKafkaRebalance() {
         String cruiseControlClusterName = "cruise-control";
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(Environment.TEST_SUITE_NAMESPACE, cruiseControlClusterName, 3).build());

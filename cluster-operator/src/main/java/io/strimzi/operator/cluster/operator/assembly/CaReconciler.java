@@ -273,7 +273,7 @@ public class CaReconciler {
                             generateClientsCa,
                             clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
 
-                    List<Future<ReconcileResult<Secret>>> secretReconciliations = new ArrayList<>(2);
+                    List<Future<ReconcileResult<Secret>>> secretReconciliations = new ArrayList<>(4);
 
                     if (generateClusterCa)   {
                         clusterCa.createRenewOrReplace(Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()),
@@ -281,12 +281,12 @@ public class CaReconciler {
                                 isForceRenew(existingClusterCaCertSecret));
 
                         OwnerReference ownerReference = clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef;
-                        clusterCaCertSecret = createCaCertSecret(clusterCaCertName, clusterCaCertLabels, clusterCaCertAnnotations, ownerReference, clusterCa, existingClusterCaCertSecret);
-                        Secret clusterCaKeySecret = createCaKeySecret(clusterCaKeyName, ownerReference, clusterCa, existingClusterCaKeySecret);
 
-                        Future<ReconcileResult<Secret>> clusterSecretReconciliation = secretOperator.reconcile(reconciliation, reconciliation.namespace(), clusterCaCertName, clusterCaCertSecret)
-                                .compose(ignored -> secretOperator.reconcile(reconciliation, reconciliation.namespace(), clusterCaKeyName, clusterCaKeySecret));
-                        secretReconciliations.add(clusterSecretReconciliation);
+                        clusterCaCertSecret = createCaCertSecret(clusterCaCertName, clusterCaCertLabels, clusterCaCertAnnotations, ownerReference, clusterCa, existingClusterCaCertSecret);
+                        secretReconciliations.add(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clusterCaCertName, clusterCaCertSecret));
+
+                        Secret clusterCaKeySecret = createCaKeySecret(clusterCaKeyName, ownerReference, clusterCa, existingClusterCaKeySecret);
+                        secretReconciliations.add(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clusterCaKeyName, clusterCaKeySecret));
                     } else {
                         clusterCaCertSecret = existingClusterCaCertSecret;
                     }
@@ -297,12 +297,12 @@ public class CaReconciler {
                                 isForceRenew(existingClientsCaCertSecret));
 
                         OwnerReference ownerReference = clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef;
-                        Secret clientsCaCertSecret = createCaCertSecret(clientsCaCertName, Map.of(), Map.of(), ownerReference, clientsCa, existingClientsCaCertSecret);
-                        Secret clientsCaKeySecret = createCaKeySecret(clientsCaKeyName, ownerReference, clientsCa, existingClientsCaKeySecret);
 
-                        Future<ReconcileResult<Secret>> clientsSecretReconciliation = secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaCertName, clientsCaCertSecret)
-                                .compose(ignored -> secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaKeyName, clientsCaKeySecret));
-                        secretReconciliations.add(clientsSecretReconciliation);
+                        Secret clientsCaCertSecret = createCaCertSecret(clientsCaCertName, Map.of(), Map.of(), ownerReference, clientsCa, existingClientsCaCertSecret);
+                        secretReconciliations.add(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaCertName, clientsCaCertSecret));
+
+                        Secret clientsCaKeySecret = createCaKeySecret(clientsCaKeyName, ownerReference, clientsCa, existingClientsCaKeySecret);
+                        secretReconciliations.add(secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaKeyName, clientsCaKeySecret));
                     }
 
                     Promise<Void> caUpdatePromise = Promise.promise();

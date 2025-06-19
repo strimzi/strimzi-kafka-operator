@@ -1,0 +1,108 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly-metrics.adoc
+
+[id='proc-kafka-exporter-deploy-{context}']
+=  Deploying Kafka Exporter
+
+[role="_abstract"]
+To monitor consumer lag in your Kafka cluster, configure Kafka Exporter in the `Kafka` custom resource.
+Kafka Exporter exposes lag data as Prometheus metrics, which can be visualized in Grafana.
+A Grafana dashboard for Kafka Exporter is included in the xref:ref-metrics-dashboards-{context}[example Grafana dashboards] provided by Strimzi.
+
+IMPORTANT: Kafka Exporter provides only metrics related to consumer groups and lag.
+To collect general Kafka metrics, configure metrics on the Kafka brokers.
+For more information, see xref:assembly-metrics-setup-{context}[].
+
+.Prerequisites
+
+* Consumer groups must be in use.
++
+Kafka Exporter relies on data from the `__consumer_offsets` topic to report consumer lag metrics.
+This topic only contains information if consumer groups are actively committing offsets.
+
+.Procedure
+
+. Add `kafkaExporter` configuration to the `spec` section of the `Kafka` resource.
++
+.Example configuration for deploying Kafka Exporter
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  kafkaExporter:
+    # Collection filters (recommended)
+    groupRegex: ".*" # <1>
+    topicRegex: ".*" # <2>
+    groupExcludeRegex: "^excluded-.*" # <3>
+    topicExcludeRegex: "^excluded-.*" # <4>
+    # Resources requests and limits (recommended)
+    resources: # <6>
+      requests:
+        cpu: 200m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 128Mi
+    # Metrics for all consumers (optional)
+    showAllOffsets: false # <5>
+    # Logging configuration (optional)    
+    logging: debug # <7>
+    # Sarama logging (optional)
+    enableSaramaLogging: true # <8>
+    # Readiness probe (optional)    
+    readinessProbe: # <9>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    # Liveness probe (optional)  
+    livenessProbe: # <10>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    # Pod template (optional)
+    template: # <11>
+      pod:
+        metadata:
+          labels:
+            label1: value1
+        imagePullSecrets:
+          - name: my-docker-credentials
+        securityContext:
+          runAsUser: 1000001
+          fsGroup: 0
+        terminationGracePeriodSeconds: 120
+    # Custom image (optional)
+    image: my-registry.io/my-org/my-exporter-cluster:latest # <12>      
+# ...
+----
+<1> Regular expression to specify consumer groups to include in metrics.
+<2> Regular expression to specify topics to include in metrics.
+<3> Regular expression to specify consumer groups to exclude from metrics.
+<4> Regular expression to specify topics to exclude from metrics.
+<5> By default, metrics are collected for all consumers regardless of connection status. Setting `showAllOffsets` to `false` stops collecting metrics for disconnected consumers.
+<6> CPU and memory resources to reserve.
+<7> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
+<8> Boolean to enable Sarama logging, which provides detailed logs from the Go client library used by Kafka Exporter. Useful for debugging Kafka client interactions.
+<9> Readiness probe to check when Kafka Exporter is ready to serve metrics.
+<10> Liveness probe to detect and restart Kafka Exporter if it becomes unresponsive.
+<11> Template customization. Here a pod is scheduled with additional security attributes.
+<12> **ADVANCED OPTION:** Container image configuration, which is recommended only in special situations.
+
+. Apply the changes to the `Kafka` configuration.
++
+Resources, including a `Service` and `Pod`, are created for the Kafka Exporter with the naming convention `<kafka_cluster_name>-kafka-exporter`.
+
+. Configure Prometheus to scrape metrics from the Kafka Exporter endpoint.
++
+If you are using the example Prometheus deployment, it is already set up to discover and scrape Kafka Exporter metrics.
+The `PodMonitor` resource named `kafka-resources-metrics` matches the `strimzi.io/kind: Kafka` label used to identify the Kafka Exporter.
+For more information, see xref:proc-metrics-deploying-prometheus-{context}[].
+
+. Import the Kafka Exporter dashboard into Grafana to visualize consumer lag.
++
+For more information, see xref:proc-metrics-grafana-dashboard-{context}[].
++
+TIP: Use the _Lag by consumer group_ and _Messages consumed per second_ panels to evaluate lag and the impact of tuning actions.

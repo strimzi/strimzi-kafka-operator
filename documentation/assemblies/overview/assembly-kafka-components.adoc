@@ -20,5 +20,7 @@ Not all of these components are required, though you need Kafka as a minimum for
 Depending on your use case, you can deploy the additional components as needed. 
 These components can also be used with Kafka clusters that are not managed by Strimzi.
 
+//Overview of node pools
+include::../../modules/overview/con-kafka-concepts-node-pools.adoc[leveloffset=+1]
 //Overview of Kafka component interaction
 include::../../modules/overview/con-kafka-concepts-components.adoc[leveloffset=+1]
