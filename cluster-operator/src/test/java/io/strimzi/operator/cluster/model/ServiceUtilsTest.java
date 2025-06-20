@@ -53,12 +53,23 @@ public class ServiceUtilsTest {
             .build();
 
     @ParallelTest
-    public void testCreateServicePort() {
+    public void testCreateServicePortName() {
         ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678, PORT_NAME, "HTTP");
 
         assertThat(port.getName(), is(PORT_NAME));
         assertThat(port.getPort(), is(1234));
         assertThat(port.getTargetPort().getStrVal(), is(PORT_NAME));
+        assertThat(port.getNodePort(), is(nullValue()));
+        assertThat(port.getProtocol(), is("HTTP"));
+    }
+
+    @ParallelTest
+    public void testCreateServicePortNumber() {
+        ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678, null, "HTTP");
+
+        assertThat(port.getName(), is(PORT_NAME));
+        assertThat(port.getPort(), is(1234));
+        assertThat(port.getTargetPort().getIntVal(), is(5678));
         assertThat(port.getNodePort(), is(nullValue()));
         assertThat(port.getProtocol(), is("HTTP"));
     }
