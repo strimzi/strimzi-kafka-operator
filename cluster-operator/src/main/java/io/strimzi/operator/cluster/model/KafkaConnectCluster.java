@@ -37,6 +37,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
@@ -89,8 +90,10 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
 
@@ -125,7 +128,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED = "KAFKA_CONNECT_METRICS_ENABLED";
-    protected static final String ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS = "KAFKA_CONNECT_TRUSTED_CERTS";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_LABELS";
@@ -911,8 +913,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 .withResourceNames(certSecretNames)
                 .build());
 
-        Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
-        return role;
+        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
     }
 
     /**
@@ -933,23 +934,41 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 .withKind("Role")
                 .build();
 
-        RoleBinding rb = RbacUtils
+        return RbacUtils
                 .createRoleBinding(KafkaConnectResources.connectRoleBindingName(cluster), namespace, roleRef, List.of(subject), labels, ownerReference, null);
-
-        return rb;
     }
 
     /**
-     * Creates a secret that contains the TLS certificates from one or more secrets
-     * in the same namespace as the resource.
-     * This is used for loading truststore certificates from the secret directly.
+     * @return  Set of Secret names for TLS cert secrets
+     */
+    public Set<String> getTlsCertsSecrets() {
+        Set<String> certsSecrets = new HashSet<>();
+        if (tls != null && tls.getTrustedCertificates() != null) {
+            certsSecrets.addAll(tls.getTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
+        }
+        return certsSecrets;
+    }
+
+    /**
+     * @return  Set of Secret names for OAuth cert secrets
+     */
+    public Set<String> getOauthTlsCertsSecrets() {
+        Set<String> certsSecrets = new HashSet<>();
+        if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null) {
+            certsSecrets.addAll(oauth.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
+        }
+        return certsSecrets;
+    }
+
+    /**
+     * Generates the given secret
      **
      * @param secretData secret data
      * @param secretName secret name
      *
-     * @return secret for tls certificates
+     * @return secret
      */
-    public Secret generateTlsTrustedCertsSecret(Map<String, String> secretData, String secretName) {
+    public Secret generateSecret(Map<String, String> secretData, String secretName) {
         return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.of(), Map.of());
     }
 
