@@ -10,6 +10,3 @@ spec:
   bootstrapServers: my-cluster-kafka-bootstrap:9092
   metricsConfig:
     type: strimziMetricsReporter
-    values:
-      allowList:
-        - kafka_connect_connector_metrics.*
