@@ -35,7 +35,9 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testPlainConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, null, new Properties());
+        Properties config = new Properties();
+        config.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "my-kafka:9092");
+        config = DefaultAdminClientProvider.adminClientConfiguration(null, null, config);
 
         assertThat(config.size(), is(5));
         assertDefaultConfigs(config);
@@ -44,10 +46,11 @@ public class DefaultAdminClientProviderTest {
     @Test
     public void testCustomConfig() {
         Properties customConfig = new Properties();
+        customConfig.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "my-kafka:9092");
         customConfig.setProperty(AdminClientConfig.RETRIES_CONFIG, "5"); // Override a value we have default for
         customConfig.setProperty(AdminClientConfig.RECONNECT_BACKOFF_MS_CONFIG, "13000"); // Override a value we do not use
 
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, null, customConfig);
+        Properties config = DefaultAdminClientProvider.adminClientConfiguration(null, null, customConfig);
 
         assertThat(config.size(), is(6));
         assertThat(config.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG), is("my-kafka:9092"));
@@ -60,7 +63,9 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testTlsConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", mockPemTrustSet(), null, new Properties());
+        Properties config = new Properties();
+        config.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "my-kafka:9092");
+        config = DefaultAdminClientProvider.adminClientConfiguration(mockPemTrustSet(), null, config);
 
         assertThat(config.size(), is(8));
         assertDefaultConfigs(config);
@@ -72,7 +77,9 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testMTlsConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", mockPemTrustSet(), mockPemAuthIdentity(), new Properties());
+        Properties config = new Properties();
+        config.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "my-kafka:9092");
+        config = DefaultAdminClientProvider.adminClientConfiguration(mockPemTrustSet(), mockPemAuthIdentity(), config);
 
         assertThat(config.size(), is(11));
         assertDefaultConfigs(config);
@@ -87,7 +94,9 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testMTlsWithPublicCAConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, mockPemAuthIdentity(), new Properties());
+        Properties config = new Properties();
+        config.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "my-kafka:9092");
+        config = DefaultAdminClientProvider.adminClientConfiguration(null, mockPemAuthIdentity(), config);
 
         assertThat(config.size(), is(9));
         assertDefaultConfigs(config);
@@ -99,7 +108,7 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testNullConfig() {
-        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, mockPemAuthIdentity(), null));
+        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> DefaultAdminClientProvider.adminClientConfiguration(null, mockPemAuthIdentity(), null));
         assertThat(ex.getMessage(), is("The config parameter should not be null"));
     }
 
