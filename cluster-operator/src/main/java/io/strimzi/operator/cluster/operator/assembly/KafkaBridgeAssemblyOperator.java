@@ -15,7 +15,9 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -24,6 +26,8 @@ import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleBindingOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
@@ -36,10 +40,15 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * <p>Assembly operator for a "Kafka Bridge" assembly, which manages:</p>
@@ -51,6 +60,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBridgeAssemblyOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;
+    private final RoleOperator roleOperations;
+    private final RoleBindingOperator roleBindingOperations;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
     private final boolean isPodDisruptionBudgetGeneration;
 
@@ -68,6 +79,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                                        ClusterOperatorConfig config) {
         super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config);
         this.deploymentOperations = supplier.deploymentOperations;
+        this.roleOperations = supplier.roleOperations;
+        this.roleBindingOperations = supplier.roleBindingOperations;
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
     }
@@ -101,8 +114,12 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         LOGGER.debugCr(reconciliation, "Updating Kafka Bridge cluster");
         kafkaBridgeServiceAccount(reconciliation, namespace, bridge)
             .compose(i -> bridgeInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
+            .compose(i -> bridgeRole(reconciliation, namespace, bridge))
+            .compose(i -> bridgeRoleBinding(reconciliation, namespace, bridge))
             .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs))
             .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.serviceName(bridge.getCluster()), bridge.generateService()))
+            .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, bridge))
+            .compose(i -> oauthTrustedCertsSecret(reconciliation, namespace, bridge))
             .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, bridge.logging(), null))
             .compose(metricsAndLogging -> {
                 ConfigMap configMap = bridge.generateBridgeConfigMap(metricsAndLogging);
@@ -169,5 +186,140 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
     protected Future<ReconcileResult<ClusterRoleBinding>> bridgeInitClusterRoleBinding(Reconciliation reconciliation, String crbName, ClusterRoleBinding crb) {
         return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb);
+    }
+
+    /**
+     * Manages the Kafka Bridge Role. This Role is always created and lives in
+     * the same namespace as the Kafka Bridge resource. This is used to load
+     * certificates from secrets directly.
+     *
+     * @param reconciliation       The reconciliation
+     * @param namespace            Namespace of the Bridge cluster
+     * @param bridge              KafkaBridgeCluster object
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> bridgeRole(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+        return roleOperations
+                .reconcile(
+                        reconciliation,
+                        namespace,
+                        bridge.getComponentName(),
+                        bridge.generateRole()
+                ).mapEmpty();
+    }
+
+    /**
+     * Manages the Kafka Bridge Role Bindings.
+     * The Role Binding is in the namespace where the Kafka Bridge resource exists.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> bridgeRoleBinding(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+        return roleBindingOperations
+                .reconcile(
+                        reconciliation,
+                        namespace,
+                        KafkaBridgeResources.bridgeRoleBindingName(bridge.getCluster()),
+                        bridge.generateRoleBindingForRole())
+                .mapEmpty();
+    }
+
+    /**
+     * Generates or reconciles the secret that combines secrets and certificates
+     * provided for Kafka Bridge truststore if TLS is enabled.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+        ClientTls tls = bridge.getTls();
+        Set<String> secretsToCopy = new HashSet<>();
+
+        if (tls != null && tls.getTrustedCertificates() != null) {
+            secretsToCopy.addAll(tls.getTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
+        }
+
+        if (secretsToCopy.isEmpty()) {
+            return Future.succeededFuture();
+        }
+
+        ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
+        return Future.join(secretsToCopy.stream()
+                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
+                                .compose(secret -> {
+                                    if (secret == null) {
+                                        return Future.failedFuture("Secret " + secretName + " not found");
+                                    } else {
+                                        secret.getData().entrySet().stream()
+                                                .filter(e -> e.getKey().contains(".crt"))
+                                                // In case secrets contain the same key, append the secret name into the key
+                                                .forEach(e -> secretData.put(secretName + "-" + e.getKey(), e.getValue()));
+                                    }
+                                    return Future.succeededFuture();
+                                }))
+                        .collect(Collectors.toList()))
+                .compose(ignore -> secretOperations.reconcile(
+                                reconciliation,
+                                namespace,
+                                KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster()),
+                                bridge.generateSecret(secretData, KafkaBridgeResources.internalTlsTrustedCertsSecretName(bridge.getCluster())))
+                        .mapEmpty());
+    }
+
+    /**
+     * Generates or reconciles the secret that combines secrets and certificates
+     * provided for trusted certificates for TLS connection to the OAuth server
+     * if OAuth authorization is enabled.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+        KafkaClientAuthentication authentication = bridge.getAuthentication();
+        Set<String> secretsToCopy = new HashSet<>();
+
+        if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null) {
+            secretsToCopy.addAll(oauth.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
+        }
+
+        if (secretsToCopy.isEmpty()) {
+            return Future.succeededFuture();
+        }
+
+        List<String> certs = new ArrayList<>();
+        String oauthSecret = KafkaBridgeResources.internalOauthTrustedCertsSecretName(bridge.getCluster());
+        return Future.join(secretsToCopy.stream()
+                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
+                                .compose(secret -> {
+                                    if (secret == null) {
+                                        return Future.failedFuture("Secret " + secretName + " not found");
+                                    } else {
+                                        secret.getData().entrySet().stream()
+                                                .filter(e -> e.getKey().contains(".crt"))
+                                                // In case secrets contain the same key, append the secret name into the key
+                                                .forEach(e -> certs.add(e.getValue()));
+                                    }
+                                    return Future.succeededFuture();
+                                }))
+                        .collect(Collectors.toList()))
+                .compose(ignore -> secretOperations.reconcile(
+                                reconciliation,
+                                namespace,
+                                oauthSecret,
+                                bridge.generateSecret(Map.of(oauthSecret + ".crt", mergeAndEncodeCerts(certs)), oauthSecret))
+                        .mapEmpty());
+    }
+
+    private String mergeAndEncodeCerts(List<String> certs) {
+        if (certs.size() > 1) {
+            String decodedAndMergedCerts = certs.stream()
+                    .map(Util::decodeFromBase64)
+                    .collect(Collectors.joining("\n"));
+
+            return Util.encodeToBase64(decodedAndMergedCerts);
+        } else if (certs.size() < 1) {
+            return "";
+        } else {
+            return certs.get(0);
+        }
     }
 }

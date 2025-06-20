@@ -50,6 +50,32 @@ public class KafkaBridgeResources {
     }
 
     /**
+     * Get the name of the internal secret that contains TLS trusted certificates.
+     * The operator copies user specified secrets for trusted certificates into
+     * a single secret with this name. It is then used when configuring Bridge.
+     *
+     * @param clusterName The cluster name.
+     *
+     * @return Name of the internal secret that contains TLS trusted certificates.
+     */
+    public static String internalTlsTrustedCertsSecretName(String clusterName) {
+        return componentName(clusterName) + "-tls-trusted-certs";
+    }
+
+    /**
+     * Get the name of the internal secret that contains TLS trusted certificates for OAuth server.
+     * The operator copies user specified secrets for OAuth trusted certificates into
+     * a single secret with this name. It is then used when configuring Bridge.
+     *
+     * @param clusterName The cluster name.
+     *
+     * @return Name of the internal secret that contains OAuth trusted certificates.
+     */
+    public static String internalOauthTrustedCertsSecretName(String clusterName) {
+        return componentName(clusterName) + "-oauth-trusted-certs";
+    }
+
+    /**
      * Returns the URL of the Kafka Bridge for a {@code KafkaBridge} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaBridge} resource.
      * @param namespace The namespace where the {@code KafkaBridge} cluster is running.
@@ -71,4 +97,16 @@ public class KafkaBridgeResources {
     public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
         return "strimzi-" + namespace + "-" + componentName(clusterName) + "-init";
     }
+
+    /**
+     * Get the name of the Kafka Bridge role binding given the name of the {@code cluster}.
+     *
+     * @param clusterName  The cluster name.
+     *
+     * @return The name of Kafka Bridge role binding.
+     */
+    public static String bridgeRoleBindingName(String clusterName) {
+        return componentName(clusterName) + "-role";
+    }
+
 }
