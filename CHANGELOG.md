@@ -8,6 +8,7 @@
 * Support for Kubernetes Image Volumes to mount custom plugins
 * Adding support for [JsonTemplateLayout](https://logging.apache.org/log4j/2.x/manual/json-template-layout.html) in Operators, Cruise Control and Kafka 4.0.0 or greater.
 * Strimzi Drain Cleaner updated to 1.4.0 (included in the Strimzi installation files)
+* Added support for Strimzi Metrics Reporter to the KafkaConnect and MirrorMaker2.
 
 ### Major changes, deprecations and removals
 

@@ -9,9 +9,12 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.OrderedProperties;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
 
@@ -183,5 +186,45 @@ public abstract class AbstractConfiguration {
      */
     protected static List<String> splitPrefixesOrOptionsToList(String prefixes) {
         return asList(prefixes.split("\\s*,+\\s*"));
+    }
+
+    /**
+     * Append list configuration values or create a new list configuration if missing.
+     * A list configuration can contain a comma separated list of values.
+     * Duplicated values are removed.
+     *
+     * @param kafkaConfig Kafka configuration.
+     * @param key List configuration key.
+     * @param values List configuration values.
+     */
+    protected static void createOrAddListConfig(AbstractConfiguration kafkaConfig, String key, String values) {
+        if (kafkaConfig == null) {
+            throw new IllegalArgumentException("Configuration is required");
+        }
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("Configuration key is required");
+        }
+        if (values == null || values.isBlank()) {
+            throw new IllegalArgumentException("Configuration values are required");
+        }
+
+        String existingConfig = kafkaConfig.getConfigOption(key);
+        // using an ordered set to preserve ordering of the existing kafkaConfig value
+        Set<String> existingSet = existingConfig == null ? new LinkedHashSet<>() :
+                Arrays.stream(existingConfig.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        // we also preserve ordering for new values in case they are user-provided
+        Set<String> newValues = Arrays.stream(values.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        // add only new values
+        boolean updated = existingSet.addAll(newValues);
+        if (updated) {
+            String updatedConfig = String.join(",", existingSet);
+            kafkaConfig.setConfigOption(key, updatedConfig);
+        }
     }
 }
