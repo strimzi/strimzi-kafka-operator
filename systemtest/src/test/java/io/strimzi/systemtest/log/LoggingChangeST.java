@@ -107,6 +107,7 @@ class LoggingChangeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying that the logging in JSON format works correctly across Kafka and operators using the JsonTemplateLayout."),
         steps = {
+            @Step(value = "Assume Kafka version is 4.0.0 or greater.", expected = "Assumption holds true."),
             @Step(value = "Assume non-Helm and non-OLM installation.", expected = "Assumption holds true."),
             @Step(value = "Create ConfigMaps for Kafka and operators with JSON logging configuration.", expected = "ConfigMaps created and applied."),
             @Step(value = "Deploy Kafka cluster with the configured logging setup.", expected = "Kafka cluster deployed successfully."),
