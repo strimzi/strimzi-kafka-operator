@@ -248,6 +248,28 @@
 * [logging](labels/logging.md)
 
 
+## testJsonTemplateLayoutFormatLogging
+
+**Description:** Test verifying that the logging in JSON format works correctly across Kafka and operators using the JsonTemplateLayout.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Assume Kafka version is 4.0.0 or greater. | Assumption holds true. |
+| 2. | Assume non-Helm and non-OLM installation. | Assumption holds true. |
+| 3. | Create ConfigMaps for Kafka and operators with JSON logging configuration. | ConfigMaps created and applied. |
+| 4. | Deploy Kafka cluster with the configured logging setup. | Kafka cluster deployed successfully. |
+| 5. | Perform pod snapshot for controllers, brokers, and entity operators. | Pod snapshots successfully captured. |
+| 6. | Verify logs are in JSON format for all components. | Logs are in JSON format. |
+| 7. | Restore original logging configuration. | Original logging is restored. |
+
+**Labels:**
+
+* [kafka](labels/kafka.md)
+* [logging](labels/logging.md)
+
+
 ## testLoggingHierarchy
 
 **Description:** Test to validate the logging hierarchy in Kafka Connect and Kafka Connector.
