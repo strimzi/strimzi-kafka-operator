@@ -28,6 +28,7 @@
         <opentelemetry.instrumentation.version>1.32.0-alpha</opentelemetry.instrumentation.version>
         <grpc-netty-shaded.version>1.61.0</grpc-netty-shaded.version>
         <guava.version>32.1.3-jre</guava.version>
+        <log4j.version>2.24.3</log4j.version>
     </properties>
 
     <repositories>
@@ -47,10 +48,25 @@
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
+        <!-- Support for the new JsonTemplateLayout as appender type -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-layout-template-json</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Tracing -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
