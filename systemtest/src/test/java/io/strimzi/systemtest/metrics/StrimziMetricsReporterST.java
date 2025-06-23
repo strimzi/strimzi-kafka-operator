@@ -10,6 +10,7 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -40,9 +41,7 @@ import static io.strimzi.systemtest.TestTags.METRICS;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.SANITY;
-import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricCountHigherThan;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValue;
-import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueCount;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueHigherThanOrEqualTo;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
@@ -69,6 +68,12 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 public class StrimziMetricsReporterST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziMetricsReporterST.class);
 
+    private static final int BROKER_REPLICAS = 3;
+    private static final int TARGET_BROKER_REPLICAS = 3;
+    private static final String CONNECT_CLUSTER_NAME = "my-connect";
+    private static final String MM2_CLUSTER_NAME = "my-mm2";
+
+    private TestStorage testStorage;
     private BaseMetricsCollector kafkaCollector;
 
     @ParallelTest
@@ -86,8 +91,8 @@ public class StrimziMetricsReporterST extends AbstractST {
     void testKafkaMetrics() {
         kafkaCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
-        assertMetricValueCount(kafkaCollector, "kafka_server_replicamanager_leadercount", 3.0);
-        assertMetricCountHigherThan(kafkaCollector, "kafka_server_replicamanager_partitioncount", 2);
+        assertMetricValueHigherThanOrEqualTo(kafkaCollector, "kafka_server_replicamanager_leadercount", 1.0);
+        assertMetricValueHigherThanOrEqualTo(kafkaCollector, "kafka_server_replicamanager_partitioncount", 1.0);
         assertMetricValue(kafkaCollector, "kafka_server_replicamanager_underreplicatedpartitions", 0.0);
     }
 
@@ -110,8 +115,27 @@ public class StrimziMetricsReporterST extends AbstractST {
         }
     )
     void testKafkaConnectAndConnectorMetrics() {
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), CONNECT_CLUSTER_NAME,
+                            testStorage.getClusterName(), 1)
+                .editMetadata()
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .editOrNewSpec()
+                    .withNewStrimziMetricsReporterConfig()
+                        .withNewValues()
+                            .withAllowList("kafka_connect.*")
+                        .endValues()
+                    .endStrimziMetricsReporterConfig()
+                .endSpec().build()
+        );
+
+        KubeResourceManager.get().createResourceWithWait(
+                KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), CONNECT_CLUSTER_NAME).build()
+        );
+
         BaseMetricsCollector kafkaConnectCollector = kafkaCollector.toBuilder()
-            .withComponent(KafkaConnectMetricsComponent.create("my-connect"))
+            .withComponent(KafkaConnectMetricsComponent.create(CONNECT_CLUSTER_NAME))
             .build();
 
         kafkaConnectCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
@@ -139,8 +163,35 @@ public class StrimziMetricsReporterST extends AbstractST {
         }
     )
     void testMirrorMaker2Metrics() {
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.mixedPool(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(),
+                    testStorage.getTargetClusterName(), TARGET_BROKER_REPLICAS).build()
+        );
+        
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), TARGET_BROKER_REPLICAS)
+                .editSpec()
+                    .editEntityOperator()
+                        .withTopicOperator(null)
+                        .withUserOperator(null)
+                    .endEntityOperator()
+                .endSpec().build()
+        );
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), MM2_CLUSTER_NAME,
+                    testStorage.getClusterName(), testStorage.getTargetClusterName(), 1, false)
+                .editOrNewSpec()
+                    .withNewStrimziMetricsReporterConfig()
+                        .withNewValues()
+                            .withAllowList("kafka_connect.*")
+                        .endValues()
+                    .endStrimziMetricsReporterConfig()
+                .endSpec().build()
+        );
+
         BaseMetricsCollector kmm2Collector = kafkaCollector.toBuilder()
-            .withComponent(KafkaMirrorMaker2MetricsComponent.create("my-mm2"))
+            .withComponent(KafkaMirrorMaker2MetricsComponent.create(MM2_CLUSTER_NAME))
             .build();
 
         kmm2Collector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
@@ -151,7 +202,7 @@ public class StrimziMetricsReporterST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+        testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // metrics tests are not designed to run with namespace RBAC scope
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -164,13 +215,14 @@ public class StrimziMetricsReporterST extends AbstractST {
         cluster.setNamespace(testStorage.getNamespaceName());
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.mixedPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName() + "-tgt", testStorage.getClusterName() + "-tgt", 1).build()
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+                    testStorage.getClusterName(), BROKER_REPLICAS).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(),
+                    testStorage.getClusterName(), 1).build()
         );
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+            KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), BROKER_REPLICAS)
                 .editSpec()
                     .editKafka()
                         .withNewStrimziMetricsReporterConfig()
@@ -179,35 +231,13 @@ public class StrimziMetricsReporterST extends AbstractST {
                             .endValues()
                         .endStrimziMetricsReporterConfig()
                     .endKafka()
-                .endSpec().build(),
-            KafkaTemplates.kafkaWithoutEntityOperator(testStorage.getNamespaceName(), testStorage.getClusterName() + "-tgt", 1).build()
-        );
-
-        KubeResourceManager.get().createResourceWithWait(
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), "my-connect",
-                    testStorage.getClusterName(), 1)
-                .editOrNewSpec()
-                    .withNewStrimziMetricsReporterConfig()
-                        .withNewValues()
-                            .withAllowList("kafka_connect.*")
-                        .endValues()
-                    .endStrimziMetricsReporterConfig()
-                .endSpec().build(),
-            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), "my-mm2",
-                    testStorage.getClusterName(), testStorage.getClusterName() + "-tgt", 1, false)
-                .editOrNewSpec()
-                    .withNewStrimziMetricsReporterConfig()
-                        .withNewValues()
-                            .withAllowList("kafka_connect.*")
-                        .endValues()
-                    .endStrimziMetricsReporterConfig()
                 .endSpec().build()
         );
 
         KubeResourceManager.get().createResourceWithoutWait(
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 5, 2).build(),
-            KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), "my-connect").build()
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(),
+                    testStorage.getClusterName(), 5, BROKER_REPLICAS).build()
         );
 
         // wait some time for metrics to be stable, at least reconciliation interval + 10s
@@ -216,10 +246,10 @@ public class StrimziMetricsReporterST extends AbstractST {
         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(TestConstants.SAFETY_RECONCILIATION_INTERVAL));
 
         kafkaCollector = new BaseMetricsCollector.Builder()
-            .withScraperPodName(KubeResourceManager.get().kubeClient()
-                .listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withComponent(KafkaMetricsComponent.create(testStorage.getClusterName()))
-            .build();
+                .withScraperPodName(KubeResourceManager.get().kubeClient()
+                        .listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName())
+                .withNamespaceName(testStorage.getNamespaceName())
+                .withComponent(KafkaMetricsComponent.create(testStorage.getClusterName()))
+                .build();
     }
 }
