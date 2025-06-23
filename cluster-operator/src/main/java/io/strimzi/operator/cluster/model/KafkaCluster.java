@@ -56,6 +56,7 @@ import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -64,8 +65,10 @@ import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
@@ -100,6 +103,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -145,8 +149,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     private static final String ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED = "KAFKA_JMX_EXPORTER_ENABLED";
-    private static final String ENV_VAR_STRIMZI_OPA_AUTHZ_TRUSTED_CERTS = "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS";
-    private static final String ENV_VAR_STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS = "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS";
     private static final String ENV_VAR_KAFKA_CLUSTER_NAME = "KAFKA_CLUSTER_NAME";
 
     // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
@@ -1469,7 +1471,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     volumeMountList.add(VolumeUtils.createVolumeMount("custom-" + identifier + "-certs", "/opt/kafka/certificates/custom-" + identifier + "-certs"));
                 }
 
-                if (ListenersUtils.isListenerWithOAuth(listener))   {
+                if (ListenersUtils.isListenerWithOAuth(listener) && listener.getAuth() instanceof KafkaListenerAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null)   {
                     String oauthTrustedCertsSecret = KafkaResources.internalOauthTrustedCertsSecretName(cluster);
                     volumeMountList.add(VolumeUtils.createVolumeMount(oauthTrustedCertsSecret, TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/" + oauthTrustedCertsSecret));
                 }
@@ -1668,23 +1670,40 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      **
      * @return role for the Kafka Cluster
      */
+    @SuppressWarnings("deprecation") // OPA Authorization is deprecated
     public Role generateRole() {
-        List<String> certSecretNames = new ArrayList<>();
+        Set<String> certSecretNames = new HashSet<>();
         certSecretNames.add(KafkaResources.clusterCaCertificateSecretName(cluster));
-        certSecretNames.add(KafkaResources.clientsCaCertificateSecretName(cluster));
-        certSecretNames.add(KafkaResources.internalAuthzTrustedCertsSecretName(cluster));
-        certSecretNames.add(KafkaResources.internalOauthTrustedCertsSecretName(cluster));
         certSecretNames.addAll(nodes().stream().map(NodeRef::podName).toList());
+
+        for (GenericKafkaListener listener : listeners) {
+            if (listener.isTls()) {
+                if (listener.getConfiguration() != null) {
+                    certSecretNames.add(listener.getConfiguration().getBrokerCertChainAndKey().getSecretName());
+                }
+            }
+
+            KafkaListenerAuthentication auth = listener.getAuth();
+            if (auth instanceof KafkaListenerAuthenticationOAuth) {
+                certSecretNames.add(KafkaResources.internalOauthTrustedCertsSecretName(cluster));
+            } else if (auth instanceof KafkaListenerAuthenticationTls) {
+                certSecretNames.add(KafkaResources.clientsCaCertificateSecretName(cluster));
+            }
+        }
+
+        if ((authorization instanceof KafkaAuthorizationOpa opa && opa.getTlsTrustedCertificates() != null && !opa.getTlsTrustedCertificates().isEmpty())
+                || (authorization instanceof KafkaAuthorizationKeycloak kc && kc.getTlsTrustedCertificates() != null && !kc.getTlsTrustedCertificates().isEmpty())) {
+            certSecretNames.add(KafkaResources.internalAuthzTrustedCertsSecretName(cluster));
+        }
 
         List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("secrets")
                 .withVerbs("get")
-                .withResourceNames(certSecretNames)
+                .withResourceNames(certSecretNames.stream().toList())
                 .build());
 
-        Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
-        return role;
+        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
     }
 
     /**
@@ -1705,10 +1724,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withKind("Role")
                 .build();
 
-        RoleBinding rb = RbacUtils
+        return RbacUtils
                 .createRoleBinding(KafkaResources.kafkaRoleBindingName(cluster), namespace, roleRef, List.of(subject), labels, ownerReference, null);
-
-        return rb;
     }
 
     /**

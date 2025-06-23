@@ -883,7 +883,7 @@ public class KafkaReconciler {
             return Future.succeededFuture();
         }
 
-        return ReconcilerUtils.generateTlsTrustedCertsSecret(reconciliation, secretsToCopy, KafkaResources.internalAuthzTrustedCertsSecretName(kafka.getCluster()), secretOperator, kafka::generateSecret)
+        return ReconcilerUtils.reconcileTlsTrustedCertsSecret(reconciliation, secretsToCopy, KafkaResources.internalAuthzTrustedCertsSecretName(kafka.getCluster()), secretOperator, kafka::generateSecret)
                 .compose(certHashes -> {
                     authorizerServerCertificateHash = certHashes;
                     return Future.succeededFuture();
@@ -911,7 +911,7 @@ public class KafkaReconciler {
             return Future.succeededFuture();
         }
 
-        return ReconcilerUtils.generateOauthTrustedCertsSecret(reconciliation, secretsToCopy, KafkaResources.internalOauthTrustedCertsSecretName(kafka.getCluster()), secretOperator, kafka::generateSecret);
+        return ReconcilerUtils.reconcileOauthTrustedCertsSecret(reconciliation, secretsToCopy, KafkaResources.internalOauthTrustedCertsSecretName(kafka.getCluster()), secretOperator, kafka::generateSecret);
     }
 
     /**
