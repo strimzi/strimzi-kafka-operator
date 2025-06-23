@@ -70,7 +70,7 @@ The release process should normally look like this:
     * Update the checksums for released files in `.checksums`
 
 16. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
-17. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operator Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. You can find more details in the [Operators Catalog](#operators-catalog) section at the bottom of this documentation.
+17. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operator Hub [community operators](https://github.com/k8s-operatorhub/community-operators) repository and submit a pull request upstream. You can find more details in the [Operators Catalog](#operators-catalog) section at the bottom of this documentation.
 18. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` file for the upgrade tests
 19. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleDowngrade.yaml` file and remove the old one for the downgrade tests
 
