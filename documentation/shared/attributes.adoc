@@ -6,6 +6,7 @@
 :imagesdir: images
 :numbered:
 :sectanchors!:
+:sectlinks:
 :sectnums:
 :source-highlighter: highlightjs
 :toc: left
