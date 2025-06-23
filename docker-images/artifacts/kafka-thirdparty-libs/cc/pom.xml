@@ -17,7 +17,20 @@
 
     <properties>
         <cruise-control.version>2.5.142</cruise-control.version>
+        <log4j.version>2.17.2</log4j.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <repositories>
       <repository>
@@ -31,6 +44,12 @@
             <groupId>com.linkedin.cruisecontrol</groupId>
             <artifactId>cruise-control</artifactId>
             <version>${cruise-control.version}</version>
+        </dependency>
+        <!-- Support for the new JsonTemplateLayout as appender type -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-layout-template-json</artifactId>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 </project>
