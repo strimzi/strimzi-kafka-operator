@@ -194,7 +194,7 @@ class LoggingChangeST extends AbstractST {
                 logger.authorizer.additivity = false
                 """;
 
-        String loggersConfigOperators = """
+        final String loggersConfigOperators = """
                 appender.console.type=Console
                 appender.console.name=STDOUT
                 appender.console.layout.type=JsonTemplateLayout
