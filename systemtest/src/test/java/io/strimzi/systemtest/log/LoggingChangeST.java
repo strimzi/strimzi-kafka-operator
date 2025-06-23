@@ -132,7 +132,7 @@ class LoggingChangeST extends AbstractST {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
         // Kafka 4.0
-        String loggersConfigKafka = """
+        final String loggersConfigKafka = """
                 name = KafkaConfig
 
                 appender.console.type = Console
