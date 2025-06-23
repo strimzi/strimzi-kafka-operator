@@ -218,9 +218,9 @@ class LoggingChangeST extends AbstractST {
                 logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}
                 logger.kafka.additivity = false""";
 
-        String configMapOpName = "json-layout-operators";
-        String configMapKafkaName = "json-layout-kafka";
-        String configMapCOName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
+        final String configMapOpName = "json-layout-operators";
+        final String configMapKafkaName = "json-layout-kafka";
+        final String configMapCOName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
 
         String originalCoLoggers = KubeResourceManager.get().kubeClient().getClient().configMaps()
             .inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(configMapCOName).get().getData().get("log4j2.properties");
