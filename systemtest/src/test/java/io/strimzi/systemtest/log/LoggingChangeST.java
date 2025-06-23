@@ -204,7 +204,7 @@ class LoggingChangeST extends AbstractST {
                 rootLogger.appenderRef.console.ref=STDOUT
                 rootLogger.additivity=false""";
 
-        String loggersConfigCO = """
+        final String loggersConfigCO = """
                 name = COConfig
                 appender.console.type = Console
                 appender.console.name = STDOUT
