@@ -801,7 +801,7 @@ public class KafkaBrokerConfigurationBuilder {
     private String getConfigProviderAliases(KafkaConfiguration userConfig) {
         Collection<String> strimziAliases = new ArrayList<>();
         strimziAliases.add("strimzienv");
-        strimziAliases.add("strimzisecrets")
+        strimziAliases.add("strimzisecrets");
         if (node.broker()) {
             // File and Directory providers are used only on broker nodes
             strimziAliases.add("strimzifile");
