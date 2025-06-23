@@ -419,13 +419,13 @@ public class ReconcilerUtils {
      *
      * @return  Future which completes when the reconciliation is done with the hash generated from the certificates
      */
-    public static Future<Integer> generateTlsTrustedCertsSecret(Reconciliation reconciliation, Set<String> certSecretsToCopy,
-                                                             String internalTlsTrustedCertsSecretName, SecretOperator secretOperations,
-                                                             BiFunction<Map<String, String>, String, Secret> secretProvider) {
+    public static Future<Integer> reconcileTlsTrustedCertsSecret(Reconciliation reconciliation, Set<String> certSecretsToCopy,
+                                                                 String internalTlsTrustedCertsSecretName, SecretOperator secretOperations,
+                                                                 BiFunction<Map<String, String>, String, Secret> secretProvider) {
         List<Integer> certHashes = new ArrayList<>();
         ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
         return Future.join(certSecretsToCopy.stream()
-                        .map(secretName -> secretOperations.getAsync(reconciliation.namespace(), secretName)
+                        .map(secretName -> getSecret(secretOperations, reconciliation.namespace(), secretName)
                                 .compose(secret -> {
                                     if (secret == null) {
                                         return Future.failedFuture("Secret " + secretName + " not found");
@@ -462,9 +462,9 @@ public class ReconcilerUtils {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    public static Future<Void> generateOauthTrustedCertsSecret(Reconciliation reconciliation, Set<String> oauthCertSecretsToCopy,
-                                                               String internalOauthTrustedCertsSecretName, SecretOperator secretOperations,
-                                                               BiFunction<Map<String, String>, String, Secret> secretProvider) {
+    public static Future<Void> reconcileOauthTrustedCertsSecret(Reconciliation reconciliation, Set<String> oauthCertSecretsToCopy,
+                                                                String internalOauthTrustedCertsSecretName, SecretOperator secretOperations,
+                                                                BiFunction<Map<String, String>, String, Secret> secretProvider) {
         List<String> certs = new ArrayList<>();
         return Future.join(oauthCertSecretsToCopy.stream()
                         .map(secretName -> getSecret(secretOperations, reconciliation.namespace(), secretName)

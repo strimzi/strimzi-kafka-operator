@@ -284,7 +284,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             return Future.succeededFuture();
         }
 
-        return ReconcilerUtils.generateTlsTrustedCertsSecret(reconciliation, secretsToCopy, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()), secretOperations, connect::generateSecret).mapEmpty();
+        return ReconcilerUtils.reconcileTlsTrustedCertsSecret(reconciliation, secretsToCopy, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()), secretOperations, connect::generateSecret).mapEmpty();
     }
 
     /**
@@ -306,7 +306,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             return Future.succeededFuture();
         }
 
-        return ReconcilerUtils.generateOauthTrustedCertsSecret(reconciliation, secretsToCopy, KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()), secretOperations, connect::generateSecret);
+        return ReconcilerUtils.reconcileOauthTrustedCertsSecret(reconciliation, secretsToCopy, KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()), secretOperations, connect::generateSecret);
     }
 
     /**
