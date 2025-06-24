@@ -218,8 +218,20 @@ class LoggingChangeST extends AbstractST {
                 logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}
                 logger.kafka.additivity = false""";
 
+        final String loggersConfigCC = """
+                name=CCConfig
+                appender.console.type=Console
+                appender.console.name=STDOUT
+                appender.console.layout.type=JsonTemplateLayout
+                appender.console.layout.eventTemplate = {"instant": {  "$resolver": "timestamp",  "pattern": {    "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",    "timeZone": "UTC"  }},"someConstant": 1,"message": {  "$resolver": "message",  "stringified": true}}
+                rootLogger.level=INFO
+                rootLogger.appenderRefs=stdout
+                rootLogger.appenderRef.console.ref=STDOUT
+                rootLogger.additivity=false""";
+
         final String configMapOpName = "json-layout-operators";
         final String configMapKafkaName = "json-layout-kafka";
+        final String configMapCCName = "json-layout-cc";
         final String configMapCOName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
 
         String originalCoLoggers = KubeResourceManager.get().kubeClient().getClient().configMaps()
@@ -260,9 +272,23 @@ class LoggingChangeST extends AbstractST {
             .addToData("log4j2.properties", loggersConfigCO)
             .build();
 
+        ConfigMap configMapCC = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(configMapCCName)
+                .withNamespace(testStorage.getNamespaceName())
+                .endMetadata()
+                .addToData("log4j2.properties", loggersConfigCC)
+                .build();
+
+        ConfigMapKeySelector ccLoggingCMselector = new ConfigMapKeySelectorBuilder()
+                .withName(configMapCCName)
+                .withKey("log4j2.properties")
+                .build();
+
         KubeResourceManager.get().createResourceWithWait(
             configMapKafka,
-            configMapOperators
+            configMapOperators,
+            configMapCC
         );
         KubeResourceManager.get().updateResource(configMapCO);
 
@@ -296,12 +322,20 @@ class LoggingChangeST extends AbstractST {
                         .build())
                 .endUserOperator()
                 .endEntityOperator()
+                .editCruiseControl()
+                .withLogging(new ExternalLoggingBuilder()
+                        .withNewValueFrom()
+                        .withConfigMapKeyRef(ccLoggingCMselector)
+                        .endValueFrom()
+                        .build())
+                .endCruiseControl()
                 .endSpec()
                 .build());
 
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
+        Map<String, String> ccPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.cruiseControlDeploymentName(testStorage.getClusterName()));
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
 
         StUtils.checkLogForJSONFormat(SetupClusterOperator.getInstance().getOperatorNamespace(), operatorSnapshot, SetupClusterOperator.getInstance().getOperatorDeploymentName());
@@ -309,6 +343,7 @@ class LoggingChangeST extends AbstractST {
         StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), controllerPods, "");
         StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "topic-operator");
         StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "user-operator");
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), ccPods, "cruise-control");
 
         // set loggers of CO back to original
         configMapCO.getData().put("log4j2.properties", originalCoLoggers);
