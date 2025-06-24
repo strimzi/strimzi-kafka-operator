@@ -295,10 +295,10 @@ public class KafkaConnectConfigurationBuilder {
                                                                   boolean injectKafkaJmxReporter,
                                                                   boolean injectStrimziMetricsReporter) {
         // creating a defensive copy to avoid mutating the input config
-        if (configurations instanceof KafkaConnectConfiguration) {
-            configurations = new KafkaConnectConfiguration((KafkaConnectConfiguration) configurations);
-        } else if (configurations instanceof KafkaMirrorMaker2Configuration) {
-            configurations = new KafkaMirrorMaker2Configuration((KafkaMirrorMaker2Configuration) configurations);
+        if (configurations instanceof KafkaConnectConfiguration kcConfiguration) {
+            configurations = new KafkaConnectConfiguration(kcConfiguration);
+        } else if (configurations instanceof KafkaMirrorMaker2Configuration kmm2Configuration) {
+            configurations = new KafkaMirrorMaker2Configuration(kmm2Configuration);
         } else {
             configurations = new KafkaConnectConfiguration(reconciliation, new ArrayList<>());
         }
