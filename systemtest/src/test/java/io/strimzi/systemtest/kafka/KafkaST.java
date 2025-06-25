@@ -1393,7 +1393,7 @@ class KafkaST extends AbstractST {
     }
 
     protected void afterEachMayOverride() {
-        KubeResourceManager.get().deleteResources();
+        KubeResourceManager.get().deleteResources(false);
 
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, KubeResourceManager.get().getTestContext());
         if (CrdClients.kafkaClient().inNamespace(namespaceName).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
