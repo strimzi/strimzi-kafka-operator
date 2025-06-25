@@ -17,7 +17,7 @@ pipelines:
 ##################
 ### Regression ###
 ##################
-- agent: "oracle-vm-4cpu-16gb-x86-64"
+- agent: "oracle-vm-8cpu-32gb-x86-64"
   arch: "amd64"
   pipeline: "regression"
   profile: "brokers-and-security"
@@ -25,7 +25,7 @@ pipelines:
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "yaml"
-  parallel: 3
+  parallel: 4
 - agent: "oracle-vm-8cpu-32gb-x86-64"
   arch: "amd64"
   pipeline: "regression"
@@ -35,7 +35,7 @@ pipelines:
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "yaml"
   parallel: 4
-- agent: "oracle-vm-4cpu-16gb-x86-64"
+- agent: "oracle-vm-8cpu-32gb-x86-64"
   arch: "amd64"
   pipeline: "regression"
   profile: "operands"
@@ -43,7 +43,7 @@ pipelines:
   strimzi_use_feature_gates: "false"
   strimzi_rbac_scope: "CLUSTER"
   cluster_operator_install_type: "yaml"
-  parallel: 3
+  parallel: 4
 #- agent: "oracle-vm-8cpu-32gb-arm64"
 #  arch: "arm64"
 #  pipeline: "regression"
