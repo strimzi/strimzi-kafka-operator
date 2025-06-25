@@ -31,7 +31,7 @@ public class SetupMinio {
     public static final String ADMIN_CREDS = "minioadminLongerThan16BytesForFIPS";
     public static final String MINIO_STORAGE_ALIAS = "local";
     public static final int MINIO_PORT = 9000;
-    private static final String MINIO_IMAGE = "quay.io/minio/minio:latest";
+    private static final String MINIO_IMAGE = "quay.io/minio/minio:RELEASE.2025-06-13T11-33-47Z";
 
     /**
      * Deploy minio to a specific namespace, creates service for it and init client inside the Minio pod
@@ -116,9 +116,8 @@ public class SetupMinio {
 
         KubeResourceManager.get().kubeCmdClient().inNamespace(namespace).execInPod(minioPod,
             "mc",
-            "config",
-            "host",
-            "add",
+            "alias",
+            "set",
             MINIO_STORAGE_ALIAS,
             "http://localhost:" + MINIO_PORT,
             ADMIN_CREDS, ADMIN_CREDS);
