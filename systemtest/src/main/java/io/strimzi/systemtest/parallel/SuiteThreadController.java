@@ -75,7 +75,6 @@ public class SuiteThreadController {
     }
 
     private static String pretty(ExtensionContext ctx) {
-        return StUtils.removePackageName(ctx.getRequiredTestClass().getName()) +
-            "#" + ctx.getDisplayName();
+        return StUtils.removePackageName(ctx.getRequiredTestClass().getName()) + "#" + ctx.getDisplayName();
     }
 }
