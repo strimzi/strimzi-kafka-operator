@@ -74,7 +74,7 @@ prepare:
   - name: Install mvn
     how: shell
     script: |
-      MAVEN_VERSION=3.8.8
+      MAVEN_VERSION=3.9.10
       MAVEN_MAJOR_VERSION=3
       MAVEN_TGZ="apache-maven-${MAVEN_VERSION}-bin.tar.gz"
       MAVEN_URL="http://mirror.dkm.cz/apache/maven/maven-${MAVEN_MAJOR_VERSION}/${MAVEN_VERSION}/binaries/${MAVEN_TGZ}"

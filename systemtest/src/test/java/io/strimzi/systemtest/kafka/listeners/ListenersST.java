@@ -76,8 +76,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.EXTERNAL_CLIENTS_USED;
@@ -275,21 +273,6 @@ public class ListenersST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
-
-        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        String brokerPodLog = KubeResourceManager.get().kubeClient().getLogsFromContainer(testStorage.getNamespaceName(), brokerPodName, "kafka");
-
-        Pattern p = Pattern.compile("^.*" + Pattern.quote(testStorage.getUsername()) + ".*$", Pattern.MULTILINE);
-        Matcher m = p.matcher(brokerPodLog);
-        boolean found = false;
-        while (m.find()) {
-            found = true;
-            LOGGER.info("Broker Pod log line about user: {} -> {}", testStorage.getUsername(), m.group());
-        }
-        if (!found) {
-            LOGGER.warn("No Broker Pod log lines about user: {}/{}", testStorage.getNamespaceName(), testStorage.getUsername());
-            LOGGER.info("Broker Pod log:\n----\n{}\n----\n", brokerPodLog);
-        }
 
         final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095";
         LOGGER.info("Transmitting messages over plain transport using scram sha auth with bootstrap address: {}", boostrapAddress);
