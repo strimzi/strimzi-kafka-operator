@@ -32,64 +32,10 @@
 
     <developers>
         <developer>
-            <name>Tom Bentley</name>
-            <email>tbentley@redhat.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Paolo Patierno</name>
-            <email>ppatierno@live.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Jakub Scholz</name>
-            <email>github@scholzj.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Sam Hawker</name>
-            <email>sam.b.hawker@gmail.com</email>
-            <organization>IBM</organization>
-            <organizationUrl>https://www.ibm.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Jakub Stejskal</name>
-            <email>xstejs24@gmail.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Stanislav Knot</name>
-            <email>knot@cngroup.dk</email>
-            <organization>CN Group</organization>
-            <organizationUrl>https://www.cngroup.dk/</organizationUrl>
-        </developer>
-        <developer>
-            <name>Paul Mellor</name>
-            <email>pmellor@redhat.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Lukáš Král</name>
-            <email>l.kral@outlook.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Maroš Orsák</name>
-            <email>maros.orsak159@gmail.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Kate Stanley</name>
-            <email>kstanley@redhat.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
+            <name>Strimzi Project Maintainers</name>
+            <email>cncf-strimzi-maintainers@lists.cncf.io</email>
+            <organization>Strimzi</organization>
+            <organizationUrl>https://github.com/strimzi/governance</organizationUrl>
         </developer>
     </developers>
 
