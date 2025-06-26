@@ -64,17 +64,6 @@ public class ServiceUtilsTest {
     }
 
     @ParallelTest
-    public void testCreateServicePortNumber() {
-        ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678, null, "HTTP");
-
-        assertThat(port.getName(), is(PORT_NAME));
-        assertThat(port.getPort(), is(1234));
-        assertThat(port.getTargetPort().getIntVal(), is(5678));
-        assertThat(port.getNodePort(), is(nullValue()));
-        assertThat(port.getProtocol(), is("HTTP"));
-    }
-
-    @ParallelTest
     public void testCreateServiceWithNodePort() {
         ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, 5678, PORT_NAME, 30000, "HTTP");
 

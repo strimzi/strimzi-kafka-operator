@@ -247,7 +247,7 @@ public class ServiceUtils {
                 .withName(name)
                 .withProtocol(protocol)
                 .withPort(port)
-                .withNewTargetPort(Objects.requireNonNullElse(targetPortName, targetPort))
+                .withNewTargetPort(targetPortName)
                 .withNodePort(nodePort)
                 .build();
     }
