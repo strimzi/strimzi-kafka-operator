@@ -12,8 +12,11 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
+import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
@@ -21,6 +24,7 @@ import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatusBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddress;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
@@ -60,6 +64,8 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.NodeOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleBindingOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
@@ -102,6 +108,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_AUTHZ_CERT_HASH;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 
 /**
@@ -146,6 +153,8 @@ public class KafkaReconciler {
     private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     private final PodOperator podOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
+    private final RoleOperator roleOperator;
+    private final RoleBindingOperator roleBindingOperator;
     private final RouteOperator routeOperator;
     private final IngressOperator ingressOperator;
     private final NodeOperator nodeOperator;
@@ -163,6 +172,8 @@ public class KafkaReconciler {
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
     private final List<String> secretsToDelete = new ArrayList<>();
+
+    private int authorizerServerCertificateHash = 0;
     /* test */ TlsPemIdentity coTlsPemIdentity;
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
@@ -225,6 +236,8 @@ public class KafkaReconciler {
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
         this.podOperator = supplier.podOperations;
         this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
+        this.roleBindingOperator = supplier.roleBindingOperations;
+        this.roleOperator = supplier.roleOperations;
         this.routeOperator = supplier.routeOperations;
         this.ingressOperator = supplier.ingressOperations;
         this.nodeOperator = supplier.nodeOperator;
@@ -255,11 +268,15 @@ public class KafkaReconciler {
                 .compose(i -> pvcs(kafkaStatus))
                 .compose(i -> serviceAccount())
                 .compose(i -> initClusterRoleBinding())
+                .compose(i -> kafkaRole())
+                .compose(i -> kafkaRoleBinding())
                 .compose(i -> scaleDown())
                 .compose(i -> updateNodePoolStatuses(kafkaStatus))
                 .compose(i -> listeners())
                 .compose(i -> certificateSecrets(clock))
                 .compose(i -> brokerConfigurationConfigMaps())
+                .compose(i -> authzTrustedCertsSecret())
+                .compose(i -> oauthTrustedCertsSecret())
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
                 .compose(i -> podSet())
@@ -546,6 +563,40 @@ public class KafkaReconciler {
     }
 
     /**
+     * Manages the Kafka cluster role. When the desired Cluster Role Binding is null, and we get an RBAC error,
+     * we ignore it. This is to allow users to run the operator only inside a namespace when no features requiring
+     * Cluster Role are needed.
+     *
+     * @return  Completes when the Cluster Role was successfully created or updated
+     */
+    protected Future<Void> kafkaRole() {
+        return roleOperator
+                .reconcile(
+                        reconciliation,
+                        reconciliation.namespace(),
+                        kafka.getComponentName(),
+                        kafka.generateRole()
+                ).mapEmpty();
+    }
+
+    /**
+     * Manages the Kafka cluster role binding. When the desired Cluster Role Binding is null, and we get an RBAC error,
+     * we ignore it. This is to allow users to run the operator only inside a namespace when no features requiring
+     * Cluster Role Bindings are needed.
+     *
+     * @return  Completes when the Cluster Role Binding was successfully created or updated
+     */
+    protected Future<Void> kafkaRoleBinding() {
+        return roleBindingOperator
+                .reconcile(
+                        reconciliation,
+                        reconciliation.namespace(),
+                        KafkaResources.kafkaRoleBindingName(reconciliation.name()),
+                        kafka.generateRoleBindingForRole())
+                .mapEmpty();
+    }
+
+    /**
      * Scales down the Kafka cluster if needed. Kafka scale-down is done in one go.
      *
      * @return  Future which completes when the scale-down is finished
@@ -746,8 +797,10 @@ public class KafkaReconciler {
                     List<String> desiredCertSecretNames = desiredCertSecrets.stream().map(secret -> secret.getMetadata().getName()).toList();
                     existingSecrets.forEach(secret -> {
                         String secretName = secret.getMetadata().getName();
-                        // Don't delete desired secrets or jmx secrets
-                        if (!desiredCertSecretNames.contains(secretName) && !KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)) {
+                        // Don't delete desired secrets, jmx secrets, or oauth and authz trusted certs secrets
+                        if (!desiredCertSecretNames.contains(secretName) && !KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)
+                                && !KafkaResources.internalAuthzTrustedCertsSecretName(kafka.getCluster()).equals(secretName)
+                                && !KafkaResources.internalOauthTrustedCertsSecretName(kafka.getCluster()).equals(secretName)) {
                             secretsToDelete.add(secretName);
                         }
                     });
@@ -808,6 +861,61 @@ public class KafkaReconciler {
         return Future.join(reconcileFutures).mapEmpty();
     }
 
+
+    /**
+     * Copies secrets for trusted certificates used by AuthZ into a single internal secret.
+     * This is used when configuring truststore for the AuthZ server.
+     *
+     * @return  Future that completes when the internal Secret was successfully created or updated
+     *          or when Authz is not used or no trusted certificates specified
+     */
+    @Deprecated
+    protected Future<Void> authzTrustedCertsSecret() {
+        Set<String> secretsToCopy = new HashSet<>();
+
+        if (kafka.getAuthorization() instanceof KafkaAuthorizationOpa opaAuthz && opaAuthz.getTlsTrustedCertificates() != null) {
+            secretsToCopy.addAll(opaAuthz.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
+        }
+
+        if (kafka.getAuthorization() instanceof KafkaAuthorizationKeycloak keycloakAuthz && keycloakAuthz.getTlsTrustedCertificates() != null) {
+            secretsToCopy.addAll(keycloakAuthz.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
+        }
+
+        if (secretsToCopy.isEmpty()) {
+            return Future.succeededFuture();
+        }
+
+        return ReconcilerUtils.reconcileTlsTrustedCertsSecret(reconciliation, secretsToCopy, KafkaResources.internalAuthzTrustedCertsSecretName(kafka.getCluster()), secretOperator, kafka::generateSecret)
+                .compose(certHashes -> {
+                    authorizerServerCertificateHash = certHashes;
+                    return Future.succeededFuture();
+                });
+    }
+
+    /**
+     * Copies secrets for trusted certificates used by OAuth into a single internal secret.
+     * This is used when configuring truststore for the OAuth server.
+     *
+     * @return  Future that completes when the internal Secret was successfully created or updated
+     *          or when OAuth is not used or no trusted certificates specified
+     */
+    protected Future<Void> oauthTrustedCertsSecret() {
+        Set<String> secretsToCopy = new HashSet<>();
+        if (!kafka.getListeners().isEmpty()) {
+            for (GenericKafkaListener listener : kafka.getListeners()) {
+                if (listener.getAuth() instanceof KafkaListenerAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null) {
+                    secretsToCopy.addAll(oauth.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
+                }
+            }
+        }
+
+        if (secretsToCopy.isEmpty()) {
+            return Future.succeededFuture();
+        }
+
+        return ReconcilerUtils.reconcileOauthTrustedCertsSecret(reconciliation, secretsToCopy, KafkaResources.internalOauthTrustedCertsSecretName(kafka.getCluster()), secretOperator, kafka::generateSecret);
+    }
+
     /**
      * Manages the secret with JMX credentials when JMX is enabled
      *
@@ -855,6 +963,10 @@ public class KafkaReconciler {
 
         podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(node.nodeId())); // Annotation of broker certificate hash
 
+        if (authorizerServerCertificateHash > 0) {
+            podAnnotations.put(ANNO_STRIMZI_AUTHZ_CERT_HASH, String.valueOf(authorizerServerCertificateHash));
+        }
+
         // Annotations with custom cert thumbprints to help with rolling updates when they change
         if (node.broker() && !listenerReconciliationResults.customListenerCertificateThumbprints.isEmpty()) {
             podAnnotations.put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, listenerReconciliationResults.customListenerCertificateThumbprints.toString());
@@ -899,7 +1011,7 @@ public class KafkaReconciler {
     }
 
     /**
-     * Roles the Kafka brokers (if needed).
+     * Rolls the Kafka brokers (if needed).
      *
      * @param podSetDiffs   Map with the PodSet reconciliation results
      *
