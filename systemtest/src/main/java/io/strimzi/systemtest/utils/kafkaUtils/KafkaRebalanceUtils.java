@@ -130,7 +130,7 @@ public class KafkaRebalanceUtils {
         TestUtils.waitFor("KafkaRebalance status to be stable", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
             if (kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get().getStatus().equals(oldStatus)) {
                 stableCounter[0]++;
-                if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_TIME) {
                     LOGGER.info("KafkaRebalance status is stable for: {} poll intervals", stableCounter[0]);
                     return true;
                 }
@@ -139,7 +139,7 @@ public class KafkaRebalanceUtils {
                 stableCounter[0] = 0;
                 return false;
             }
-            LOGGER.info("KafkaRebalance status gonna be stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+            LOGGER.info("KafkaRebalance status gonna be stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_TIME - stableCounter[0]);
             return false;
         });
     }

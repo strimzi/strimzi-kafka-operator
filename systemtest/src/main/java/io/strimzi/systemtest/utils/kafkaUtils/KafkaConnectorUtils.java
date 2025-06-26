@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.TestConstants.GLOBAL_RECONCILIATION_COUNT;
+import static io.strimzi.systemtest.TestConstants.GLOBAL_STABILIZATION_TIME;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.CrdClients.kafkaConnectorClient;
@@ -159,7 +159,7 @@ public class KafkaConnectorUtils {
         TestUtils.waitFor("KafkaConnector's spec to be stable", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
             if (getConnectorSpecFromConnectAPI(namespaceName, podName, connectorName).equals(oldSpec)) {
                 stableCounter[0]++;
-                if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_TIME) {
                     LOGGER.info("Connector's spec is stable for: {} poll intervals", stableCounter[0]);
                     return true;
                 }
@@ -168,7 +168,7 @@ public class KafkaConnectorUtils {
                 stableCounter[0] = 0;
                 return false;
             }
-            LOGGER.info("Connector's spec gonna be stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+            LOGGER.info("Connector's spec gonna be stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_TIME - stableCounter[0]);
             return false;
         });
     }
@@ -195,13 +195,13 @@ public class KafkaConnectorUtils {
                     "http://" + KafkaConnectResources.serviceName(connectClusterName) + ":8083/admin/loggers/" + connectorName).out();
                 if (logger.contains(desiredLogger)) {
                     counter[0]++;
-                    LOGGER.info("Logger level is {}. Must remain stable for: {} second(s)", desiredLogger, GLOBAL_RECONCILIATION_COUNT - counter[0]);
+                    LOGGER.info("Logger level is {}. Must remain stable for: {} second(s)", desiredLogger, GLOBAL_STABILIZATION_TIME - counter[0]);
                 } else {
                     LOGGER.warn("Logger level has changed: {}. Reseting counter from {} to 0", logger, counter[0]);
                     counter[0] = 0;
                 }
 
-                if (counter[0] == GLOBAL_RECONCILIATION_COUNT) {
+                if (counter[0] == GLOBAL_STABILIZATION_TIME) {
                     LOGGER.info("Logger for connector {} is stable", connectorName);
                     return true;
                 }
