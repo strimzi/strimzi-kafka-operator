@@ -14,10 +14,19 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
+import java.util.List;
+import java.util.function.Predicate;
+
 /**
  * Operations for {@code Ingress}es.
  */
 public class IngressOperator extends AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
+    /**
+     * List of predicates that allows existing ingress annotations to be retained while reconciling the resources.
+     */
+    private static final List<Predicate<String>> INGRESS_ANNOTATION_IGNORELIST = List.of(
+            annotation -> annotation.startsWith("field.cattle.io")
+    );
 
     /**
      * Constructor
@@ -60,6 +69,7 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
     @Override
     protected Future<ReconcileResult<Ingress>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Ingress current, Ingress desired) {
         patchIngressClassName(current, desired);
+        KubernetesResourceOperatorUtils.patchAnnotations(current, desired, INGRESS_ANNOTATION_IGNORELIST);
 
         return super.internalUpdate(reconciliation, namespace, name, current, desired);
     }

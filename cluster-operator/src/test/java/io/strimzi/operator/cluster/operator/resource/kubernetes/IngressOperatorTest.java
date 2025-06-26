@@ -13,10 +13,14 @@ import io.fabric8.kubernetes.client.V1NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -99,5 +103,39 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
         op.patchIngressClassName(current, desired);
 
         assertThat(desired.getSpec().getIngressClassName(), is(current.getSpec().getIngressClassName()));
+    }
+
+    @Test
+    public void testCattleAnnotationPatching()  {
+        KubernetesClient client = mock(KubernetesClient.class);
+
+        Ingress current = new IngressBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                    .withAnnotations(Map.of("avfc", "1874", "skso", "1919", "field.cattle.io/publicEndpoints", "foo"))
+                .endMetadata()
+                .withNewSpec()
+                    .withTls(new IngressTLSBuilder().withHosts("my-host").build())
+                .endSpec()
+                .build();
+
+        Ingress desired = new IngressBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                    .withAnnotations(Map.of("avfc", "1874"))
+                .endMetadata()
+                .withNewSpec()
+                    .withTls(new IngressTLSBuilder().withHosts("my-host").build())
+                .endSpec()
+                .build();
+
+        IngressOperator op = new IngressOperator(vertx, client);
+        op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
+
+        assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io/publicEndpoints"), equalTo("foo"));
+        assertThat(desired.getMetadata().getAnnotations().get("avfc"), equalTo("1874"));
+        assertThat(desired.getMetadata().getAnnotations().containsKey("skso"), is(false));
     }
 }
