@@ -219,13 +219,12 @@ public class ServiceUtils {
      *
      * @param name          Name of the port
      * @param port          The port on the service which can be accessed by clients
-     * @param targetPort    The port on the container / Pod where the connections will be routed
      * @param targetPortName the name of the target port on the container / Pod where the connections will be routed
      * @param protocol      Protocol used by this port
      *
      * @return  Created port
      */
-    public static ServicePort createServicePort(String name, int port, int targetPort, String targetPortName, String protocol)   {
+    public static ServicePort createServicePort(String name, int port, String targetPortName, String protocol)   {
         return createServicePort(name, port, targetPortName, null, protocol);
     }
 
