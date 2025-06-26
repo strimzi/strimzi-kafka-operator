@@ -11,9 +11,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.ResourceAnnotations;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static java.lang.Boolean.parseBoolean;
@@ -83,14 +81,6 @@ public class Annotations extends ResourceAnnotations {
      * Annotation for tracking Deployment revisions
      */
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
-
-    /**
-     * List of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
-     */
-    public static final List<Predicate<String>> LOADBALANCER_ANNOTATION_IGNORELIST = List.of(
-        annotation -> annotation.startsWith("cattle.io/"),
-        annotation -> annotation.startsWith("field.cattle.io")
-    );
 
     private static Map<String, String> annotations(ObjectMeta metadata) {
         Map<String, String> annotations = metadata.getAnnotations();
