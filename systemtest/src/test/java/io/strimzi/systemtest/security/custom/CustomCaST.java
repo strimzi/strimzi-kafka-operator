@@ -188,7 +188,7 @@ public class CustomCaST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         // EO must not roll
-        DeploymentUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), eoPod);
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getEoSelector(), eoPod);
 
         // Try to produce messages
         final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantTlsClients(testStorage);

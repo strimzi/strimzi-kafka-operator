@@ -188,7 +188,7 @@ public class KafkaTopicUtils {
         TestUtils.waitFor("KafkaTopic's spec to be stable", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
             if (oldSpec.equals(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, bootstrapServer, topicName))) {
                 stableCounter[0]++;
-                if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_TIME) {
                     LOGGER.info("KafkaTopic's spec is stable for: {} poll intervals", stableCounter[0]);
                     return true;
                 }
@@ -197,7 +197,7 @@ public class KafkaTopicUtils {
                 stableCounter[0] = 0;
                 return false;
             }
-            LOGGER.info("KafkaTopic's spec gonna be stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+            LOGGER.info("KafkaTopic's spec gonna be stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_TIME - stableCounter[0]);
             return false;
         });
     }

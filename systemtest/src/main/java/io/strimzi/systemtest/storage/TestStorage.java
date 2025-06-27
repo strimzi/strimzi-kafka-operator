@@ -79,6 +79,7 @@ final public class TestStorage {
     private LabelSelector mixedPoolSelector;
     private LabelSelector controllerSelector;
     private LabelSelector mixedSelector;
+    private LabelSelector eoSelector;
     private LabelSelector kafkaConnectSelector;
     private LabelSelector mm2Selector;
     private LabelSelector bridgeSelector;
@@ -135,6 +136,7 @@ final public class TestStorage {
         this.mixedPoolSelector = LabelSelectors.nodePoolLabelSelector(clusterName, this.mixedPoolName, ProcessRoles.CONTROLLER);
         this.controllerSelector = LabelSelectors.kafkaLabelSelector(clusterName, controllerComponentName);
         this.mixedSelector = LabelSelectors.kafkaLabelSelector(clusterName, mixedComponentName);
+        this.eoSelector = LabelSelectors.entityOperatorLabelSelector(clusterName);
         this.kafkaConnectSelector = LabelSelectors.connectLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
         this.mm2Selector = LabelSelectors.mirrorMaker2LabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName));
         this.bridgeSelector = LabelSelectors.bridgeLabelSelector(clusterName, KafkaBridgeResources.componentName(clusterName));
@@ -179,6 +181,7 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIXED_POOL_SELECTOR_KEY, this.mixedPoolSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTROLLER_SELECTOR_KEY, this.controllerSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIXED_SELECTOR_KEY, this.mixedSelector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.EO_SELECTOR_KEY, this.eoSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_CONNECT_SELECTOR_KEY, this.kafkaConnectSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MM2_SELECTOR_KEY, this.mm2Selector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BRIDGE_SELECTOR_KEY, this.bridgeSelector);
@@ -345,6 +348,10 @@ final public class TestStorage {
 
     public LabelSelector getMixedSelector() {
         return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.MIXED_SELECTOR_KEY);
+    }
+
+    public LabelSelector getEoSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.EO_SELECTOR_KEY);
     }
 
     public LabelSelector getKafkaConnectSelector() {
