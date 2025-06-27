@@ -115,7 +115,7 @@ public class JmxModel {
      */
     public List<ServicePort> servicePorts()    {
         if (isEnabled)  {
-            return List.of(ServiceUtils.createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
+            return List.of(ServiceUtils.createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT_NAME, "TCP"));
         } else {
             return List.of();
         }
