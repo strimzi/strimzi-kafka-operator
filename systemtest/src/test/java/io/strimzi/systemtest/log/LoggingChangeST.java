@@ -273,12 +273,12 @@ class LoggingChangeST extends AbstractST {
             .build();
 
         ConfigMap configMapCC = new ConfigMapBuilder()
-                .withNewMetadata()
+            .withNewMetadata()
                 .withName(configMapCCName)
                 .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .addToData("log4j2.properties", loggersConfigCC)
-                .build();
+            .endMetadata()
+            .addToData("log4j2.properties", loggersConfigCC)
+            .build();
 
         ConfigMapKeySelector ccLoggingCMselector = new ConfigMapKeySelectorBuilder()
                 .withName(configMapCCName)
