@@ -339,12 +339,12 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> ccPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
 
-        StUtils.checkLogForJSONFormat(SetupClusterOperator.getInstance().getOperatorNamespace(), operatorSnapshot, SetupClusterOperator.getInstance().getOperatorDeploymentName());
-        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), brokerPods, "");
-        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), controllerPods, "");
-        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "topic-operator");
-        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "user-operator");
-        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), ccPods, "cruise-control");
+        StUtils.checkLogForJSONFormat(SetupClusterOperator.getInstance().getOperatorNamespace(), operatorSnapshot, SetupClusterOperator.getInstance().getOperatorDeploymentName(), StUtils.JSON_TEMPLATE_LAYOUT_PATTERN);
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), brokerPods, "", StUtils.JSON_TEMPLATE_LAYOUT_PATTERN);
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), controllerPods, "", StUtils.JSON_TEMPLATE_LAYOUT_PATTERN);
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "topic-operator", StUtils.JSON_TEMPLATE_LAYOUT_PATTERN);
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "user-operator", StUtils.JSON_TEMPLATE_LAYOUT_PATTERN);
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), ccPods, "cruise-control", StUtils.JSON_TEMPLATE_LAYOUT_PATTERN);
 
         // set loggers of CO back to original
         configMapCO.getData().put("log4j2.properties", originalCoLoggers);
@@ -562,11 +562,11 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
 
-        StUtils.checkLogForJSONFormat(SetupClusterOperator.getInstance().getOperatorNamespace(), operatorSnapshot, SetupClusterOperator.getInstance().getOperatorDeploymentName());
-        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), brokerPods, "");
-        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), controllerPods, "");
-        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "topic-operator");
-        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "user-operator");
+        StUtils.checkLogForJSONFormat(SetupClusterOperator.getInstance().getOperatorNamespace(), operatorSnapshot, SetupClusterOperator.getInstance().getOperatorDeploymentName(), null);
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), brokerPods, "", null);
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), controllerPods, "", null);
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "topic-operator", null);
+        StUtils.checkLogForJSONFormat(testStorage.getNamespaceName(), eoPods, "user-operator", null);
 
         // set loggers of CO back to original
         configMapCO.getData().put("log4j2.properties", originalCoLoggers);
