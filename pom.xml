@@ -32,64 +32,10 @@
 
     <developers>
         <developer>
-            <name>Tom Bentley</name>
-            <email>tbentley@redhat.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Paolo Patierno</name>
-            <email>ppatierno@live.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Jakub Scholz</name>
-            <email>github@scholzj.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Sam Hawker</name>
-            <email>sam.b.hawker@gmail.com</email>
-            <organization>IBM</organization>
-            <organizationUrl>https://www.ibm.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Jakub Stejskal</name>
-            <email>xstejs24@gmail.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Stanislav Knot</name>
-            <email>knot@cngroup.dk</email>
-            <organization>CN Group</organization>
-            <organizationUrl>https://www.cngroup.dk/</organizationUrl>
-        </developer>
-        <developer>
-            <name>Paul Mellor</name>
-            <email>pmellor@redhat.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Lukáš Král</name>
-            <email>l.kral@outlook.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Maroš Orsák</name>
-            <email>maros.orsak159@gmail.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
-        </developer>
-        <developer>
-            <name>Kate Stanley</name>
-            <email>kstanley@redhat.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
+            <name>Strimzi Project Maintainers</name>
+            <email>cncf-strimzi-maintainers@lists.cncf.io</email>
+            <organization>Strimzi</organization>
+            <organizationUrl>https://github.com/strimzi/governance</organizationUrl>
         </developer>
     </developers>
 
@@ -153,8 +99,8 @@
         <fasterxml.jackson-annotations.version>2.18.3</fasterxml.jackson-annotations.version>
         <fasterxml.jackson-datatype.version>2.18.3</fasterxml.jackson-datatype.version>
         <fasterxml.jackson-jaxrs.version>2.18.3</fasterxml.jackson-jaxrs.version>
-        <vertx.version>5.0.0</vertx.version>
-        <vertx-junit5.version>5.0.0</vertx-junit5.version>
+        <vertx.version>5.0.1</vertx.version>
+        <vertx-junit5.version>5.0.1</vertx-junit5.version>
         <kafka.version>4.0.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
@@ -176,7 +122,7 @@
         <jetty-old-kafka.version>9.4.56.v20240826</jetty-old-kafka.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.16.2</strimzi-oauth.version>
-        <netty.version>4.2.1.Final</netty.version>
+        <netty.version>4.2.2.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
         <registry.version>1.3.2.Final</registry.version>

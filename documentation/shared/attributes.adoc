@@ -6,6 +6,7 @@
 :imagesdir: images
 :numbered:
 :sectanchors!:
+:sectlinks:
 :sectnums:
 :source-highlighter: highlightjs
 :toc: left
@@ -14,7 +15,7 @@
 
 //Latest Strimzi version
 :ProductVersion: 0.47.0
-:ProductVersionPrevious: 0.46.0
+:ProductVersionPrevious: 0.46.1
 
 // Kubernetes versions
 :KubernetesVersion: 1.25 and later

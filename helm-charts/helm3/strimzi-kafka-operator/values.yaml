@@ -10,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.46.0
+defaultImageTag: 0.46.1
 
 image:
   registry: ""
@@ -41,6 +41,7 @@ affinity: {}
 annotations: {}
 labels: {}
 nodeSelector: {}
+deploymentAnnotations: {}
 priorityClassName: ""
 
 podSecurityContext: {}
