@@ -23,3 +23,6 @@ If partitions are assigned, the change is prevented.
 No replicas must be left on the node before removing the broker role.
 The best way to reassign partitions before changing roles is to apply a Cruise Control optimization proposal in `remove-brokers` mode.
 For more information, see xref:proc-generating-optimization-proposals-str[].
+
+Note that currently scaling up or scaling down the controller nodes in node pools is not supported because this feature
+in Kafka is not completed, yet. See link:https://issues.apache.org/jira/browse/KAFKA-16538[KAFKA-16538] for more information.
