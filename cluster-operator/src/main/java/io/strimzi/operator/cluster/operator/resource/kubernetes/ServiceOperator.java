@@ -12,17 +12,13 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
-import java.util.Map;
-import java.util.function.Function;
+import java.util.List;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static io.strimzi.operator.common.Annotations.LOADBALANCER_ANNOTATION_IGNORELIST;
 
 /**
  * Operations for {@code Service}s.
@@ -43,6 +39,14 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
                     "|/spec/ipFamilies" + // Immutable field
                     "|/spec/internalTrafficPolicy" + // Set by Kubernetes to Cluster as default (not configurable through Strimzi as it does nto seem to make much sense for us, so we ignore it)
                     "|/status)$");
+
+    /**
+     * List of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
+     */
+    private static final List<Predicate<String>> LOADBALANCER_ANNOTATION_IGNORELIST = List.of(
+            annotation -> annotation.startsWith("cattle.io/"),
+            annotation -> annotation.startsWith("field.cattle.io")
+    );
 
     private final EndpointOperator endpointOperations;
     /**
@@ -92,7 +96,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
                         || ("LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType())))   {
                     patchNodePorts(current, desired);
                     patchHealthCheckPorts(current, desired);
-                    patchAnnotations(current, desired);
+                    KubernetesResourceOperatorUtils.patchAnnotations(current, desired, LOADBALANCER_ANNOTATION_IGNORELIST);
                     patchLoadBalancerClass(current, desired);
                 }
 
@@ -103,31 +107,6 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
         } catch (Exception e) {
             LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
-        }
-    }
-
-    /**
-     * Finds annotations managed by the Rancher cattle agents (if any), and merge them into the desired spec.
-     *
-     * This makes sure there is no infinite loop where Rancher tries to add annotations, while Rancher keeps
-     * removing them during reconciliation.
-     *
-     * @param current   Current Service
-     * @param desired   Desired Service
-     */
-    private void patchAnnotations(Service current, Service desired) {
-        Map<String, String> currentAnnotations = current.getMetadata().getAnnotations();
-        if (currentAnnotations != null) {
-            Map<String, String> matchedAnnotations = currentAnnotations.keySet().stream()
-                    .filter(annotation -> LOADBALANCER_ANNOTATION_IGNORELIST.stream().anyMatch(ignorelist -> ignorelist.test(annotation)))
-                    .collect(Collectors.toMap(Function.identity(), currentAnnotations::get));
-
-            if (!matchedAnnotations.isEmpty()) {
-                desired.getMetadata().setAnnotations(Util.mergeLabelsOrAnnotations(
-                        desired.getMetadata().getAnnotations(),
-                        matchedAnnotations
-                ));
-            }
         }
     }
 
