@@ -55,3 +55,32 @@ Strimzi operators simplify:
 * Creating and managing users
 
 For detailed information and instructions on using operators to perform these operations, see the guide for link:{BookURLDeploying}[Deploying and Managing Strimzi^].
+
+== Why use Strimzi to run Kafka on Kubernetes?
+
+Running Kafka on Kubernetes without native support from Strimzi can be complex.
+While deploying Kafka directly with standard resources like `StatefulSet` and `Service` is possible, the process is often error-prone and time-consuming. 
+This is especially true for operations like upgrades and configuration updates.
+Strimzi dramatically reduces this complexity, providing the following advantages:
+
+Native Kubernetes integration::
+Strimzi uses operators and Custom Resource Definitions (CRDs) to extend Kubernetes with Kafka-specific capabilities. 
+This native approach lowers the barrier to adoption and reduces operational overhead, making it easier to deploy and manage Kafka with less manual effort.
+
+Declarative cluster management:: 
+Define Kafka clusters, topics, and users as custom resources in YAML. 
+Custom resources offer a stable and highly configurable way to manage Kafka.
+Strimzi operators then automate any updates to these resources.
+
+Support for upgrade, scaling, and recovery::
+Strimzi operators automate rolling upgrades and recovery of Kafka components, helping to reduce manual intervention and downtime. 
+They also support scaling of Kafka clusters through node pools, automated partition reassignment using Cruise Control to maintain balanced workloads, and safe node removal using the Strimzi Drain Cleaner.
+
+Full Kafka ecosystem support::
+When Strimzi is installed, you can deploy and manage Kafka clusters alongside supporting components such as Kafka Connect, MirrorMaker 2, and Kafka Bridge, all using Kubernetes-native custom resources. 
+
+Integrated security:: 
+Strimzi enables fine-grained access control through listener-level authentication, cluster-wide authorization, and network policies. 
+It simplifies certificate management to support TLS encryption with configurable protocols and cipher suites, and manages secure client access through `KafkaUser` resources with ACLs, quotas, and handling of credentials.
+
+
