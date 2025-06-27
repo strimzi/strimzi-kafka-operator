@@ -20,18 +20,6 @@
         <log4j.version>2.17.2</log4j.version>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-bom</artifactId>
-                <version>${log4j.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <repositories>
       <repository>
         <id>cruise-control</id>
@@ -49,6 +37,7 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-layout-template-json</artifactId>
+            <version>${log4j.version}</version>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

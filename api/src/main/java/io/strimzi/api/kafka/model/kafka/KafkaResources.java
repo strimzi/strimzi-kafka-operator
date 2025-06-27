@@ -305,20 +305,4 @@ public class KafkaResources {
     public static String autoRebalancingKafkaRebalanceResourceName(String cluster, KafkaAutoRebalanceMode kafkaAutoRebalanceMode) {
         return cluster + "-auto-rebalancing-" + kafkaAutoRebalanceMode.toValue();
     }
-
-    ////////
-    // Cruise Control methods
-    ////////
-
-    /**
-     * Returns the name of the Cruise Control {@code Deployment} for a {@code Kafka} cluster of the given name.
-     * This {@code Deployment} will only exist if {@code Kafka.spec.cruiseControl} is configured in the
-     * {@code Kafka} resource with the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Cruise Control {@code Deployment}.
-     */
-    public static String cruiseControlDeploymentName(String clusterName) {
-        return clusterName + "-cruise-control";
-    }
-
 }

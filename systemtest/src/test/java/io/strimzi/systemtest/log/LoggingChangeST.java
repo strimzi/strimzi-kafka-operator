@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -335,7 +336,7 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
-        Map<String, String> ccPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.cruiseControlDeploymentName(testStorage.getClusterName()));
+        Map<String, String> ccPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
 
         StUtils.checkLogForJSONFormat(SetupClusterOperator.getInstance().getOperatorNamespace(), operatorSnapshot, SetupClusterOperator.getInstance().getOperatorDeploymentName());
