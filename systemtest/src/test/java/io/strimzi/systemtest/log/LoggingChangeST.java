@@ -124,7 +124,7 @@ class LoggingChangeST extends AbstractST {
     void testJsonTemplateLayoutFormatLogging() {
 
         assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") >= 0,
-                "Kafka version is lower than 4.0.0, JsonTemplateLayout is not supported");
+            "Kafka version is lower than 4.0.0, JsonTemplateLayout is not supported");
 
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -133,101 +133,101 @@ class LoggingChangeST extends AbstractST {
 
         // Kafka 4.0
         final String loggersConfigKafka = """
-                name = KafkaConfig
-
-                appender.console.type = Console
-                appender.console.name = STDOUT
-                appender.console.layout.type = JsonTemplateLayout
-                appender.console.layout.eventTemplate = {"instant": {  "$resolver": "timestamp",  "pattern": {    "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",    "timeZone": "UTC"  }},"someConstant": 1,"message": {  "$resolver": "message",  "stringified": true}}
-                
-                rootLogger.level = INFO
-                rootLogger.appenderRefs = console
-                rootLogger.appenderRef.console.ref = STDOUT
-                rootLogger.additivity = false
-                
-                logger.kafka.name = kafka
-                logger.kafka.level = INFO
-                logger.kafka.appenderRefs = console
-                logger.kafka.appenderRef.console.ref = STDOUT
-                logger.kafka.additivity = false
-                
-                logger.orgapachekafka.name = org.apache.kafka
-                logger.orgapachekafka.level = INFO
-                logger.orgapachekafka.appenderRefs = console
-                logger.orgapachekafka.appenderRef.console.ref = STDOUT
-                logger.orgapachekafka.additivity = false
-                
-                logger.requestlogger.name = kafka.request.logger
-                logger.requestlogger.level = WARN
-                logger.requestlogger.appenderRefs = console
-                logger.requestlogger.appenderRef.console.ref = STDOUT
-                logger.requestlogger.additivity = false
-                
-                logger.requestchannel.name = kafka.network.RequestChannel$
-                logger.requestchannel.level = WARN
-                logger.requestchannel.appenderRefs = console
-                logger.requestchannel.appenderRef.console.ref = STDOUT
-                logger.requestchannel.additivity = false
-                
-                logger.controller.name = org.apache.kafka.controller
-                logger.controller.level = INFO
-                logger.controller.appenderRefs = console
-                logger.controller.appenderRef.console.ref = STDOUT
-                logger.controller.additivity = false
-                
-                logger.logcleaner.name = kafka.log.LogCleaner
-                logger.logcleaner.level = INFO
-                logger.logcleaner.appenderRefs = console
-                logger.logcleaner.appenderRef.console.ref = STDOUT
-                logger.logcleaner.additivity = false
-                
-                logger.statechange.name = state.change.logger
-                logger.statechange.level = INFO
-                logger.statechange.appenderRefs = console
-                logger.statechange.appenderRef.console.ref = STDOUT
-                logger.statechange.additivity = false
-                
-                logger.authorizer.name = kafka.authorizer.logger
-                logger.authorizer.level = INFO
-                logger.authorizer.appenderRefs = console
-                logger.authorizer.appenderRef.console.ref = STDOUT
-                logger.authorizer.additivity = false
-                """;
+            name = KafkaConfig
+            
+            appender.console.type = Console
+            appender.console.name = STDOUT
+            appender.console.layout.type = JsonTemplateLayout
+            appender.console.layout.eventTemplate = {"instant": {  "$resolver": "timestamp",  "pattern": {    "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",    "timeZone": "UTC"  }},"someConstant": 1,"message": {  "$resolver": "message",  "stringified": true}}
+            
+            rootLogger.level = INFO
+            rootLogger.appenderRefs = console
+            rootLogger.appenderRef.console.ref = STDOUT
+            rootLogger.additivity = false
+            
+            logger.kafka.name = kafka
+            logger.kafka.level = INFO
+            logger.kafka.appenderRefs = console
+            logger.kafka.appenderRef.console.ref = STDOUT
+            logger.kafka.additivity = false
+            
+            logger.orgapachekafka.name = org.apache.kafka
+            logger.orgapachekafka.level = INFO
+            logger.orgapachekafka.appenderRefs = console
+            logger.orgapachekafka.appenderRef.console.ref = STDOUT
+            logger.orgapachekafka.additivity = false
+            
+            logger.requestlogger.name = kafka.request.logger
+            logger.requestlogger.level = WARN
+            logger.requestlogger.appenderRefs = console
+            logger.requestlogger.appenderRef.console.ref = STDOUT
+            logger.requestlogger.additivity = false
+            
+            logger.requestchannel.name = kafka.network.RequestChannel$
+            logger.requestchannel.level = WARN
+            logger.requestchannel.appenderRefs = console
+            logger.requestchannel.appenderRef.console.ref = STDOUT
+            logger.requestchannel.additivity = false
+            
+            logger.controller.name = org.apache.kafka.controller
+            logger.controller.level = INFO
+            logger.controller.appenderRefs = console
+            logger.controller.appenderRef.console.ref = STDOUT
+            logger.controller.additivity = false
+            
+            logger.logcleaner.name = kafka.log.LogCleaner
+            logger.logcleaner.level = INFO
+            logger.logcleaner.appenderRefs = console
+            logger.logcleaner.appenderRef.console.ref = STDOUT
+            logger.logcleaner.additivity = false
+            
+            logger.statechange.name = state.change.logger
+            logger.statechange.level = INFO
+            logger.statechange.appenderRefs = console
+            logger.statechange.appenderRef.console.ref = STDOUT
+            logger.statechange.additivity = false
+            
+            logger.authorizer.name = kafka.authorizer.logger
+            logger.authorizer.level = INFO
+            logger.authorizer.appenderRefs = console
+            logger.authorizer.appenderRef.console.ref = STDOUT
+            logger.authorizer.additivity = false
+            """;
 
         final String loggersConfigOperators = """
-                appender.console.type=Console
-                appender.console.name=STDOUT
-                appender.console.layout.type=JsonTemplateLayout
-                appender.console.layout.eventTemplate={"instant": {  "$resolver": "timestamp",  "pattern": {    "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",    "timeZone": "UTC"  }},"someConstant": 1,"message": {  "$resolver": "message",  "stringified": true}}
-                rootLogger.level=INFO
-                rootLogger.appenderRefs=stdout
-                rootLogger.appenderRef.console.ref=STDOUT
-                rootLogger.additivity=false""";
+            appender.console.type=Console
+            appender.console.name=STDOUT
+            appender.console.layout.type=JsonTemplateLayout
+            appender.console.layout.eventTemplate={"instant": {  "$resolver": "timestamp",  "pattern": {    "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",    "timeZone": "UTC"  }},"someConstant": 1,"message": {  "$resolver": "message",  "stringified": true}}
+            rootLogger.level=INFO
+            rootLogger.appenderRefs=stdout
+            rootLogger.appenderRef.console.ref=STDOUT
+            rootLogger.additivity=false""";
 
         final String loggersConfigCO = """
-                name = COConfig
-                appender.console.type = Console
-                appender.console.name = STDOUT
-                appender.console.layout.type = JsonTemplateLayout
-                appender.console.layout.eventTemplate = {"instant": {  "$resolver": "timestamp",  "pattern": {    "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",    "timeZone": "UTC"  }},"someConstant": 1,"message": {  "$resolver": "message",  "stringified": true}}
-                rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}
-                rootLogger.appenderRefs = stdout
-                rootLogger.appenderRef.console.ref = STDOUT
-                rootLogger.additivity = false
-                logger.kafka.name = org.apache.kafka
-                logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}
-                logger.kafka.additivity = false""";
+            name = COConfig
+            appender.console.type = Console
+            appender.console.name = STDOUT
+            appender.console.layout.type = JsonTemplateLayout
+            appender.console.layout.eventTemplate = {"instant": {  "$resolver": "timestamp",  "pattern": {    "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",    "timeZone": "UTC"  }},"someConstant": 1,"message": {  "$resolver": "message",  "stringified": true}}
+            rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}
+            rootLogger.appenderRefs = stdout
+            rootLogger.appenderRef.console.ref = STDOUT
+            rootLogger.additivity = false
+            logger.kafka.name = org.apache.kafka
+            logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}
+            logger.kafka.additivity = false""";
 
         final String loggersConfigCC = """
-                name=CCConfig
-                appender.console.type=Console
-                appender.console.name=STDOUT
-                appender.console.layout.type=JsonTemplateLayout
-                appender.console.layout.eventTemplate = {"instant": {  "$resolver": "timestamp",  "pattern": {    "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",    "timeZone": "UTC"  }},"someConstant": 1,"message": {  "$resolver": "message",  "stringified": true}}
-                rootLogger.level=INFO
-                rootLogger.appenderRefs=stdout
-                rootLogger.appenderRef.console.ref=STDOUT
-                rootLogger.additivity=false""";
+            name=CCConfig
+            appender.console.type=Console
+            appender.console.name=STDOUT
+            appender.console.layout.type=JsonTemplateLayout
+            appender.console.layout.eventTemplate = {"instant": {  "$resolver": "timestamp",  "pattern": {    "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",    "timeZone": "UTC"  }},"someConstant": 1,"message": {  "$resolver": "message",  "stringified": true}}
+            rootLogger.level=INFO
+            rootLogger.appenderRefs=stdout
+            rootLogger.appenderRef.console.ref=STDOUT
+            rootLogger.additivity=false""";
 
         final String configMapOpName = "json-layout-operators";
         final String configMapKafkaName = "json-layout-kafka";
@@ -239,51 +239,51 @@ class LoggingChangeST extends AbstractST {
 
         ConfigMap configMapKafka = new ConfigMapBuilder()
             .withNewMetadata()
-                .withName(configMapKafkaName)
-                .withNamespace(testStorage.getNamespaceName())
+            .withName(configMapKafkaName)
+            .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .addToData("log4j.properties", loggersConfigKafka)
             .build();
 
         ConfigMapKeySelector kafkaLoggingCMselector = new ConfigMapKeySelectorBuilder()
-                .withName(configMapKafkaName)
-                .withKey("log4j.properties")
-                .build();
+            .withName(configMapKafkaName)
+            .withKey("log4j.properties")
+            .build();
 
         ConfigMap configMapOperators = new ConfigMapBuilder()
             .withNewMetadata()
-                .withName(configMapOpName)
-                .withNamespace(testStorage.getNamespaceName())
+            .withName(configMapOpName)
+            .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .addToData("log4j2.properties", loggersConfigOperators)
             .build();
 
         ConfigMapKeySelector operatorsLoggingCMselector = new ConfigMapKeySelectorBuilder()
-                .withName(configMapOpName)
-                .withKey("log4j2.properties")
-                .build();
+            .withName(configMapOpName)
+            .withKey("log4j2.properties")
+            .build();
 
         ConfigMap configMapCO = new ConfigMapBuilder()
             .withNewMetadata()
-                .withName(configMapCOName)
-                // we are using this namespace because CO is deployed @BeforeAll
-                .withNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
+            .withName(configMapCOName)
+            // we are using this namespace because CO is deployed @BeforeAll
+            .withNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
             .endMetadata()
             .addToData("log4j2.properties", loggersConfigCO)
             .build();
 
         ConfigMap configMapCC = new ConfigMapBuilder()
             .withNewMetadata()
-                .withName(configMapCCName)
-                .withNamespace(testStorage.getNamespaceName())
+            .withName(configMapCCName)
+            .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .addToData("log4j2.properties", loggersConfigCC)
             .build();
 
         ConfigMapKeySelector ccLoggingCMselector = new ConfigMapKeySelectorBuilder()
-                .withName(configMapCCName)
-                .withKey("log4j2.properties")
-                .build();
+            .withName(configMapCCName)
+            .withKey("log4j2.properties")
+            .build();
 
         KubeResourceManager.get().createResourceWithWait(
             configMapKafka,
@@ -298,39 +298,39 @@ class LoggingChangeST extends AbstractST {
         );
 
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
-                .editOrNewSpec()
-                .editKafka()
-                .withLogging(new ExternalLoggingBuilder()
-                        .withNewValueFrom()
-                        .withConfigMapKeyRef(kafkaLoggingCMselector)
-                        .endValueFrom()
-                        .build())
-                .endKafka()
-                .editEntityOperator()
-                .editTopicOperator()
-                .withLogging(new ExternalLoggingBuilder()
-                        .withNewValueFrom()
-                        .withConfigMapKeyRef(operatorsLoggingCMselector)
-                        .endValueFrom()
-                        .build())
-                .endTopicOperator()
-                .editUserOperator()
-                .withLogging(new ExternalLoggingBuilder()
-                        .withNewValueFrom()
-                        .withConfigMapKeyRef(operatorsLoggingCMselector)
-                        .endValueFrom()
-                        .build())
-                .endUserOperator()
-                .endEntityOperator()
-                .editCruiseControl()
-                .withLogging(new ExternalLoggingBuilder()
-                        .withNewValueFrom()
-                        .withConfigMapKeyRef(ccLoggingCMselector)
-                        .endValueFrom()
-                        .build())
-                .endCruiseControl()
-                .endSpec()
-                .build());
+            .editOrNewSpec()
+            .editKafka()
+            .withLogging(new ExternalLoggingBuilder()
+                .withNewValueFrom()
+                .withConfigMapKeyRef(kafkaLoggingCMselector)
+                .endValueFrom()
+                .build())
+            .endKafka()
+            .editEntityOperator()
+            .editTopicOperator()
+            .withLogging(new ExternalLoggingBuilder()
+                .withNewValueFrom()
+                .withConfigMapKeyRef(operatorsLoggingCMselector)
+                .endValueFrom()
+                .build())
+            .endTopicOperator()
+            .editUserOperator()
+            .withLogging(new ExternalLoggingBuilder()
+                .withNewValueFrom()
+                .withConfigMapKeyRef(operatorsLoggingCMselector)
+                .endValueFrom()
+                .build())
+            .endUserOperator()
+            .endEntityOperator()
+            .editCruiseControl()
+            .withLogging(new ExternalLoggingBuilder()
+                .withNewValueFrom()
+                .withConfigMapKeyRef(ccLoggingCMselector)
+                .endValueFrom()
+                .build())
+            .endCruiseControl()
+            .endSpec()
+            .build());
 
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
@@ -455,39 +455,39 @@ class LoggingChangeST extends AbstractST {
         }
 
         String loggersConfigOperators = "appender.console.type=Console\n" +
-                "appender.console.name=STDOUT\n" +
-                "appender.console.layout.type=JsonLayout\n" +
-                "rootLogger.level=INFO\n" +
-                "rootLogger.appenderRefs=stdout\n" +
-                "rootLogger.appenderRef.console.ref=STDOUT\n" +
-                "rootLogger.additivity=false";
+            "appender.console.name=STDOUT\n" +
+            "appender.console.layout.type=JsonLayout\n" +
+            "rootLogger.level=INFO\n" +
+            "rootLogger.appenderRefs=stdout\n" +
+            "rootLogger.appenderRef.console.ref=STDOUT\n" +
+            "rootLogger.additivity=false";
 
         String loggersConfigCO = "name = COConfig\n" +
-                "appender.console.type = Console\n" +
-                "appender.console.name = STDOUT\n" +
-                "appender.console.layout.type = JsonLayout\n" +
-                "rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}\n" +
-                "rootLogger.appenderRefs = stdout\n" +
-                "rootLogger.appenderRef.console.ref = STDOUT\n" +
-                "rootLogger.additivity = false\n" +
-                "logger.kafka.name = org.apache.kafka\n" +
-                "logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}\n" +
-                "logger.kafka.additivity = false";
+            "appender.console.type = Console\n" +
+            "appender.console.name = STDOUT\n" +
+            "appender.console.layout.type = JsonLayout\n" +
+            "rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}\n" +
+            "rootLogger.appenderRefs = stdout\n" +
+            "rootLogger.appenderRef.console.ref = STDOUT\n" +
+            "rootLogger.additivity = false\n" +
+            "logger.kafka.name = org.apache.kafka\n" +
+            "logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}\n" +
+            "logger.kafka.additivity = false";
 
         String configMapOpName = "json-layout-operators";
         String configMapKafkaName = "json-layout-kafka";
         String configMapCOName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
 
         String originalCoLoggers = KubeResourceManager.get().kubeClient().getClient().configMaps()
-                .inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(configMapCOName).get().getData().get("log4j2.properties");
+            .inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(configMapCOName).get().getData().get("log4j2.properties");
 
         ConfigMap configMapKafka = new ConfigMapBuilder()
-                .withNewMetadata()
+            .withNewMetadata()
                 .withName(configMapKafkaName)
                 .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .addToData("log4j.properties", loggersConfigKafka)
-                .build();
+            .endMetadata()
+            .addToData("log4j.properties", loggersConfigKafka)
+            .build();
 
         ConfigMapKeySelector kafkaLoggingCMselector = new ConfigMapKeySelectorBuilder()
                 .withName(configMapKafkaName)
@@ -495,12 +495,12 @@ class LoggingChangeST extends AbstractST {
                 .build();
 
         ConfigMap configMapOperators = new ConfigMapBuilder()
-                .withNewMetadata()
+            .withNewMetadata()
                 .withName(configMapOpName)
                 .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .addToData("log4j2.properties", loggersConfigOperators)
-                .build();
+            .endMetadata()
+            .addToData("log4j2.properties", loggersConfigOperators)
+            .build();
 
         ConfigMapKeySelector operatorsLoggimgCMselector = new ConfigMapKeySelectorBuilder()
                 .withName(configMapOpName)
@@ -508,51 +508,51 @@ class LoggingChangeST extends AbstractST {
                 .build();
 
         ConfigMap configMapCO = new ConfigMapBuilder()
-                .withNewMetadata()
+            .withNewMetadata()
                 .withName(configMapCOName)
                 // we are using this namespace because CO is deployed @BeforeAll
                 .withNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
-                .endMetadata()
-                .addToData("log4j2.properties", loggersConfigCO)
-                .build();
+            .endMetadata()
+            .addToData("log4j2.properties", loggersConfigCO)
+            .build();
 
         KubeResourceManager.get().createResourceWithWait(
-                configMapKafka,
-                configMapOperators
+            configMapKafka,
+            configMapOperators
         );
         KubeResourceManager.get().updateResource(configMapCO);
 
         KubeResourceManager.get().createResourceWithWait(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
         Kafka kafka = KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
-                .editOrNewSpec()
+            .editOrNewSpec()
                 .editKafka()
-                .withLogging(new ExternalLoggingBuilder()
-                        .withNewValueFrom()
-                        .withConfigMapKeyRef(kafkaLoggingCMselector)
-                        .endValueFrom()
-                        .build())
+                    .withLogging(new ExternalLoggingBuilder()
+                            .withNewValueFrom()
+                                .withConfigMapKeyRef(kafkaLoggingCMselector)
+                            .endValueFrom()
+                            .build())
                 .endKafka()
                 .editEntityOperator()
-                .editTopicOperator()
-                .withLogging(new ExternalLoggingBuilder()
-                        .withNewValueFrom()
-                        .withConfigMapKeyRef(operatorsLoggimgCMselector)
-                        .endValueFrom()
-                        .build())
-                .endTopicOperator()
-                .editUserOperator()
-                .withLogging(new ExternalLoggingBuilder()
-                        .withNewValueFrom()
-                        .withConfigMapKeyRef(operatorsLoggimgCMselector)
-                        .endValueFrom()
-                        .build())
-                .endUserOperator()
+                    .editTopicOperator()
+                        .withLogging(new ExternalLoggingBuilder()
+                                .withNewValueFrom()
+                                    .withConfigMapKeyRef(operatorsLoggimgCMselector)
+                                .endValueFrom()
+                                .build())
+                    .endTopicOperator()
+                    .editUserOperator()
+                        .withLogging(new ExternalLoggingBuilder()
+                                .withNewValueFrom()
+                                    .withConfigMapKeyRef(operatorsLoggimgCMselector)
+                                .endValueFrom()
+                                .build())
+                    .endUserOperator()
                 .endEntityOperator()
-                .endSpec()
-                .build();
+            .endSpec()
+            .build();
 
         KubeResourceManager.get().createResourceWithWait(kafka);
 
