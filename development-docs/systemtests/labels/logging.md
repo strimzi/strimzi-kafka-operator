@@ -26,6 +26,7 @@ and stability of Kafka deployments in production environments.
 - [testDynamicallySetUnknownKafkaLogger](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetUnknownKafkaLoggerValue](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testJSONFormatLogging](../io.strimzi.systemtest.log.LoggingChangeST.md)
+- [testJsonTemplateLayoutFormatLogging](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testKafkaLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testLoggingHierarchy](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testMM2LoggingLevelsHierarchy](../io.strimzi.systemtest.log.LoggingChangeST.md)
