@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ConnectorState;
+import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
@@ -13,6 +14,7 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpecBuilder;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Test;
@@ -842,5 +844,40 @@ public class KafkaMirrorMaker2ConnectorsTest {
                         "prefix.ssl.truststore.type", "PKCS12",
                         "prefix.sasl.mechanism", "SCRAM-SHA-512",
                         "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"))));
+    }
+
+    @Test
+    public void testConnectorConfigurationWithStrimziMetricsReporter() {
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                .withMetricsConfig(new StrimziMetricsReporterBuilder()
+                        .withNewValues()
+                            .withAllowList("kafka_connect_connector_metrics.*" + "kafka_connect_connector_task_metrics.*")
+                        .endValues()
+                        .build())
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
+        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(kmm2.getSpec().getMirrors().get(0),
+                kmm2.getSpec().getMirrors().get(0).getSourceConnector(),
+                kmm2.getSpec().getClusters().get(0),
+                kmm2.getSpec().getClusters().get(1));
+
+        Map<String, Object> expected = new TreeMap<>();
+        expected.put("source.cluster.alias", "source");
+        expected.put("source.cluster.bootstrap.servers", "source:9092");
+        expected.put("source.cluster.security.protocol", "PLAINTEXT");
+        expected.put("target.cluster.alias", "target");
+        expected.put("target.cluster.bootstrap.servers", "target:9092");
+        expected.put("target.cluster.security.protocol", "PLAINTEXT");
+        expected.put("sync.topic.acls.enabled", "false");
+        expected.put("topics", "my-topic-.*");
+        expected.put("topics.exclude", "exclude-topic-.*");
+        expected.put("groups", "my-group-.*");
+        expected.put("groups.exclude", "exclude-group-.*");
+        expected.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+        expected.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
+        assertThat(new TreeMap<>(config), is(expected));
     }
 }
