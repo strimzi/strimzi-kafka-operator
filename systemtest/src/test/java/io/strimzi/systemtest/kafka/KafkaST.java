@@ -279,7 +279,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Checking no rolling update for Kafka cluster");
         RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPods);
         RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods);
-        DeploymentUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), eoDepName, eoPods);
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getEoSelector(), eoPods);
     }
 
     @ParallelNamespaceTest

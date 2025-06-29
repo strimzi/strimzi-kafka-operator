@@ -83,24 +83,6 @@ public class DeploymentUtils {
         }
     }
 
-    public static void waitForNoRollingUpdate(String namespaceName, String deploymentName, Map<String, String> pods) {
-        // alternative to sync hassling AtomicInteger one could use an integer array instead
-        // not need to be final because reference to the array does not get another array assigned
-        int[] i = {0};
-
-        TestUtils.waitFor("Deployment to remain stable and rolling update not to be triggered", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> {
-                if (!DeploymentUtils.depHasRolled(namespaceName, deploymentName, pods)) {
-                    LOGGER.info("{}/{} Pod(s) not rolling. Must remain stable for: {} second(s)", namespaceName, pods.toString(),
-                        TestConstants.GLOBAL_RECONCILIATION_COUNT - i[0]);
-                    return i[0]++ == TestConstants.GLOBAL_RECONCILIATION_COUNT;
-                } else {
-                    throw new RuntimeException(pods.toString() + " Pod(s) are rolling!");
-                }
-            }
-        );
-    }
-
     /**
      * Returns a map of pod name to resource version for the Pods currently in the given deployment.
      * @param name The Deployment name.

@@ -185,12 +185,15 @@ public class RollingUpdateUtils {
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
+        LOGGER.debug("Waiting for Pods {}/{} to remain stable for {} second(s)", namespaceName, pods.toString(),
+            TestConstants.GLOBAL_STABILIZATION_TIME);
+
         TestUtils.waitFor("Pods to remain stable and rolling update not to be triggered", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
                 if (!componentHasRolled(namespaceName, selector, pods)) {
-                    LOGGER.info("Pods {}/{} did not roll. Must remain stable for: {} second(s)", namespaceName, pods.toString(),
-                        TestConstants.GLOBAL_RECONCILIATION_COUNT - i[0]);
-                    return i[0]++ == TestConstants.GLOBAL_RECONCILIATION_COUNT;
+                    LOGGER.debug("Pods {}/{} did not roll. Must remain stable for: {} second(s)", namespaceName, pods.toString(),
+                        TestConstants.GLOBAL_STABILIZATION_TIME - i[0]);
+                    return i[0]++ == TestConstants.GLOBAL_STABILIZATION_TIME;
                 } else {
                     throw new RuntimeException(pods.toString() + " Pods are rolling!");
                 }
@@ -213,12 +216,12 @@ public class RollingUpdateUtils {
                 boolean kafkaRolled = componentHasRolled(namespaceName, brokerSelector, brokerPods);
 
                 if (!kafkaRolled) {
-                    LOGGER.info("Kafka Pods did not roll. Must remain stable for: {} second(s)", TestConstants.GLOBAL_RECONCILIATION_COUNT - i[0]);
+                    LOGGER.info("Kafka Pods did not roll. Must remain stable for: {} second(s)", TestConstants.GLOBAL_STABILIZATION_TIME - i[0]);
                 } else {
                     throw new RuntimeException(brokerPods.toString() + " Pods are rolling!");
                 }
 
-                return i[0]++ == TestConstants.GLOBAL_RECONCILIATION_COUNT;
+                return i[0]++ == TestConstants.GLOBAL_STABILIZATION_TIME;
             }
         );
     }

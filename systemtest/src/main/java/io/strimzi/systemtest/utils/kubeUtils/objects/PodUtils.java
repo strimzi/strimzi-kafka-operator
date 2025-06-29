@@ -212,7 +212,7 @@ public class PodUtils {
             () -> {
                 if (KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, podNamePrefix).size() == expectedPods) {
                     stableCounter[0]++;
-                    if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                    if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_TIME) {
                         LOGGER.info("Pod replicas are stable for {} poll intervals", stableCounter[0]);
                         return true;
                     }
@@ -221,7 +221,7 @@ public class PodUtils {
                     stableCounter[0] = 0;
                     return false;
                 }
-                LOGGER.info("Pod replicas will be assumed stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+                LOGGER.info("Pod replicas will be assumed stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_TIME - stableCounter[0]);
                 return false;
             });
         LOGGER.info("Pod: {}/{} has {} replicas", namespaceName, podNamePrefix, expectedPods);
@@ -260,7 +260,7 @@ public class PodUtils {
 
     /**
      * Ensures every pod in a StrimziPodSet is stable in the {@code Running} phase.
-     * A pod must be in the Running phase for {@link TestConstants#GLOBAL_RECONCILIATION_COUNT} seconds for
+     * A pod must be in the Running phase for {@link TestConstants#GLOBAL_STABILIZATION_TIME} seconds for
      * it to be considered as stable. Otherwise this procedure will be repeat.
      * @param podPrefix all pods that matched the prefix will be verified
      * */
@@ -288,7 +288,7 @@ public class PodUtils {
                     if (pod.getStatus().getPhase().equals(phase)) {
                         LOGGER.info("Pod: {}/{} is in the {} state. Remaining seconds Pod to be stable {}",
                                 namespaceName, pod.getMetadata().getName(), pod.getStatus().getPhase(),
-                            TestConstants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
+                            TestConstants.GLOBAL_STABILIZATION_TIME - stabilityCounter[0]);
                     } else {
                         LOGGER.info("Pod: {}/{} is not stable in phase following phase {} reset the stability counter from {} to {}",
                                 namespaceName, pod.getMetadata().getName(), pod.getStatus().getPhase(), stabilityCounter[0], 0);
@@ -298,7 +298,7 @@ public class PodUtils {
                 }
                 stabilityCounter[0]++;
 
-                if (stabilityCounter[0] == TestConstants.GLOBAL_RECONCILIATION_COUNT) {
+                if (stabilityCounter[0] == TestConstants.GLOBAL_STABILIZATION_TIME) {
                     LOGGER.info("All Pods are stable {}", actualPods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")));
                     return true;
                 }
