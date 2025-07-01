@@ -235,7 +235,6 @@ public class TopicOperatorPerformance extends AbstractST {
 
     @AfterAll
      void tearDown() {
-        TopicOperatorPerformanceUtils.stopExecutor();
         // show tables with metrics
         TopicOperatorMetricsParser.main(new String[]{PerformanceConstants.TOPIC_OPERATOR_PARSER});
     }
