@@ -278,11 +278,7 @@ public class StUtils {
                 // 2 is just in case we will take some JSON that is not part of the JSON format logging
                 if (!jsonArray.isEmpty() && jsonArray.size() >= 2) {
 
-                    if (regexPattern != null && regexPattern.matcher(jsonArray.getString(0)).find()) {
-                        isValidJSON = true;
-                    } else if (regexPattern == null) {
-                        isValidJSON = true;
-                    }
+                    isValidJSON = regexPattern == null || regexPattern.matcher(jsonArray.getString(0)).find();
 
                     if (isValidJSON) {
                         LOGGER.info("JSON format logging successfully set for Pod: {}", podName);
