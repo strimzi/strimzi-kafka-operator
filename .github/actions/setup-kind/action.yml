@@ -18,21 +18,21 @@ runs:
       id: cache-registry
       uses: actions/cache@v4
       with:
-        path: /tmp/registry-image.tar
+        path: /tmp/registry-image-${{ inputs.architecture }}.tar
         key: registry-image
 
     - name: Load registry Docker image from cache
       if: steps.cache-registry.outputs.cache-hit == 'true'
       shell: bash
       run: |
-        docker load -i /tmp/registry-image.tar
+        docker load -i /tmp/registry-image-${{ inputs.architecture }}.tar
 
     - name: Pull and save registry Docker image if cache miss
       if: steps.cache-registry.outputs.cache-hit != 'true'
       shell: bash
       run: |
         docker pull ${{ inputs.registry }}
-        docker save ${{ inputs.registry }} -o /tmp/registry-image.tar
+        docker save ${{ inputs.registry }} -o /tmp/registry-image-${{ inputs.architecture }}.tar
 
     - name: Setup Kind
       shell: bash
