@@ -51,7 +51,7 @@ jobs:
         with:
           # TODO - revert this
 #          commentBody: ${{ github.event.comment.body }}
-          commentBody: "/ga run pipeline=regression,upgrade"
+          commentBody: "/ga run pipeline=smoke"
 
   build-artifacts:
     name: build-artifacts

@@ -270,7 +270,7 @@ jobs:
             -Dmaven.javadoc.skip=true \
             -B -V \
             -Dfailsafe.rerunFailingTestsCount=1 \
-            -Djunit.jupiter.execution.parallel.enabled="true" \
+            -Djunit.jupiter.execution.parallel.enabled="$([[ ${PARALLEL:-1} -gt 1 ]] && echo true || echo false)" \
             -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL}" \
             -Dskip.surefire.tests \
             -s ./.azure/systemtests/systemtest-settings.xml
