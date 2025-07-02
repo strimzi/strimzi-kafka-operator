@@ -58,3 +58,5 @@ runs:
       shell: bash
       run: |
         docker images -a
+        docker inspect kind-registry
+        docker logs kind-registry
