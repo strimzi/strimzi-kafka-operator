@@ -121,46 +121,6 @@ public class CruiseControlConfigurationTest {
     }
 
     @Test
-    public void shouldFilterCpuGoalsWhenDefaultCapacityIsMissing() {
-        BrokerCapacity bc = createBrokerCapacity(null, DEFAULT_NETWORK_CAPACITY, DEFAULT_NETWORK_CAPACITY);
-        Map<String, ResourceRequirements> kafkaBrokerResources = Map.of("brokers", new ResourceRequirementsBuilder().build());
-        CapacityConfiguration capacityConfiguration = new CapacityConfiguration(null, createKafkaSpec(bc), NODES, STORAGE, kafkaBrokerResources);
-
-        List<String> filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, capacityConfiguration);
-        assertGoalsAbsent(filteredGoals, CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL);
-    }
-
-    @Test
-    public void shouldNotFilterCpuGoalsWhenRequestsEqualLimits() {
-        BrokerCapacity bc = createBrokerCapacity(null, DEFAULT_NETWORK_CAPACITY, DEFAULT_NETWORK_CAPACITY);
-        Map<String, ResourceRequirements> kafkaBrokerResources = Map.of("brokers", createCpuResourceRequirement(DEFAULT_CPU_CAPACITY, DEFAULT_CPU_CAPACITY));
-        CapacityConfiguration capacityConfiguration = new CapacityConfiguration(null, createKafkaSpec(bc), NODES, STORAGE, kafkaBrokerResources);
-        List<String> filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, capacityConfiguration);
-        assertGoalsPresent(filteredGoals, CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL);
-    }
-
-    @Test
-    public void shouldFilterCpuGoalsWhenRequestsDoNotEqualLimits() {
-        BrokerCapacity bc = createBrokerCapacity(null, DEFAULT_NETWORK_CAPACITY, DEFAULT_NETWORK_CAPACITY);
-        Map<String, ResourceRequirements> kafkaBrokerResources = Map.of("brokers", createCpuResourceRequirement(DEFAULT_CPU_CAPACITY, "2000m"));
-        CapacityConfiguration capacityConfiguration = new CapacityConfiguration(null, createKafkaSpec(bc), NODES, STORAGE, kafkaBrokerResources);
-        List<String> filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, capacityConfiguration);
-        assertGoalsAbsent(filteredGoals, CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL);
-    }
-
-    @Test
-    public void shouldNotFilterCpuGoalsWhenOverridesAreDefined() {
-        BrokerCapacity bc = createBrokerCapacity(DEFAULT_CPU_CAPACITY, DEFAULT_NETWORK_CAPACITY, DEFAULT_NETWORK_CAPACITY);
-        BrokerCapacityOverride bco = createBrokerCapacityOverride(List.of(0, 1, 2), DEFAULT_CPU_CAPACITY, null, null);
-        bc.setOverrides(List.of(bco));
-        Map<String, ResourceRequirements> kafkaBrokerResources = Map.of("brokers", createCpuResourceRequirement(DEFAULT_CPU_CAPACITY, "2000m"));
-        CapacityConfiguration cc = new CapacityConfiguration(null, createKafkaSpec(bc), NODES, STORAGE, kafkaBrokerResources);
-
-        List<String> filteredGoals = filterResourceGoalsWithoutCapacityConfig(GOAL_LIST, cc);
-        assertGoalsPresent(filteredGoals, CPU_CAPACITY_GOAL, CPU_USAGE_DISTRIBUTION_GOAL);
-    }
-
-    @Test
     public void shouldFilterInboundNetworkGoalsWhenDefaultCapacityIsMissing() {
         BrokerCapacity bc = createBrokerCapacity(DEFAULT_CPU_CAPACITY, null, DEFAULT_NETWORK_CAPACITY);
         Map<String, ResourceRequirements> kafkaBrokerResources = Map.of("brokers", createCpuResourceRequirement(DEFAULT_CPU_CAPACITY, DEFAULT_CPU_CAPACITY));

@@ -149,25 +149,10 @@ public enum ResourceCapacityType {
             }
         }
 
-        /*
-         * Although some resource requirements may be configured for some brokers, the CPU capacity for the cluster is
-         * only considered to be properly configured for CPU-dependent Cruise Control goals if:
-         * (1) The resource requirements are defined for every broker in the cluster.
-         * (2) The CPU requests == limits for every broker in the cluster.
-         *
-         * Strimzi Cruise Control uses the CPU request value as the broker's capacity since it's the guaranteed CPU allocation.
-         * However, if the CPU limit is higher than the request, the broker may use more CPU than its configured capacity under load.
-         * This can lead Cruise Control to make poor balancing decisions. For example, a broker with 1000m request
-         * and 2000m limit could temporarily operate at double its defined CPU capacity. In this case, Cruise Control,
-         * thinking 1000m is 100% of the broker's CPU capacity, could shift double that CPU load to another broker -
-         * effectively transferring double the expected load and potentially overloading the target broker.
-         *
-         * Requiring request == limit ensures predictable, enforceable CPU limits across all brokers, resulting in more
-         * accurate rebalancing decisions.
-         */
         if (this == CPU
-            && kafkaBrokerNodes.stream().allMatch(node -> kafkaBrokerResources.containsKey(node.poolName()))
-            && ResourceRequirementsUtils.cpuRequestsMatchLimits(kafkaBrokerResources)) {
+                && kafkaBrokerNodes.stream()
+                .allMatch(node -> ResourceRequirementsUtils.getCpuBasedOnRequirements(
+                        kafkaBrokerResources.get(node.poolName())) != null)) {
             return true;
         }
 

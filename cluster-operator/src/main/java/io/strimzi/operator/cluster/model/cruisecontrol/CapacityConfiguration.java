@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static io.strimzi.operator.cluster.model.cruisecontrol.ResourceCapacityType.CPU;
 import static io.strimzi.operator.cluster.model.cruisecontrol.ResourceCapacityType.INBOUND_NETWORK;
 import static io.strimzi.operator.cluster.model.cruisecontrol.ResourceCapacityType.OUTBOUND_NETWORK;
 
@@ -137,7 +136,6 @@ public class CapacityConfiguration {
     private final Reconciliation reconciliation;
     private final TreeMap<Integer, CapacityEntry> capacityEntries;
 
-    private boolean isCpuConfigured;
     private boolean isInboundNetworkConfigured;
     private boolean isOutboundNetworkConfigured;
 
@@ -208,18 +206,8 @@ public class CapacityConfiguration {
             CapacityEntry capacityEntry = new CapacityEntry(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), capacityEntry);
         }
-        isCpuConfigured = CPU.isCapacityConfigured(generalBrokerCapacity, kafkaBrokerNodes, kafkaBrokerResources);
         isInboundNetworkConfigured = INBOUND_NETWORK.isCapacityConfigured(generalBrokerCapacity, kafkaBrokerNodes, kafkaBrokerResources);
         isOutboundNetworkConfigured = OUTBOUND_NETWORK.isCapacityConfigured(generalBrokerCapacity, kafkaBrokerNodes, kafkaBrokerResources);
-    }
-
-    /**
-     * Indicates whether the CPU capacity settings were explicitly configured by the user.
-     *
-     * @return {@code true} if CPU capacity is user-configured; {@code false} otherwise.
-     */
-    public boolean isCpuConfigured() {
-        return this.isCpuConfigured;
     }
 
     /**

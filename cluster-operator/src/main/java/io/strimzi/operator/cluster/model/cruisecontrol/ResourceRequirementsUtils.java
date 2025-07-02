@@ -97,26 +97,6 @@ public class ResourceRequirementsUtils {
     }
 
     /**
-     * Checks whether all Kafka broker pods have their CPU resource requests equal to their CPU limits.
-     *
-     * @param kafkaBrokerResources a map of broker pod names to their {@link ResourceRequirements}
-     * @return {@code true} if all brokers have matching CPU requests and limits; {@code false} otherwise
-     */
-    protected static boolean cpuRequestsMatchLimits(Map<String, ResourceRequirements> kafkaBrokerResources) {
-        if (kafkaBrokerResources == null) {
-            return false;
-        }
-        for (ResourceRequirements resourceRequirements : kafkaBrokerResources.values()) {
-            Quantity request = getCpuRequest(resourceRequirements);
-            Quantity limit = getCpuLimit(resourceRequirements);
-            if (request == null || limit == null || request.compareTo(limit) != 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
      * Derives the CPU capacity from the resource requirements section of Strimzi custom resource.
      *
      * @param resourceRequirements The Strimzi custom resource requirements containing CPU requests and/or limits.

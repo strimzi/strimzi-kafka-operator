@@ -153,10 +153,6 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             filteredGoalList.remove(CruiseControlGoals.NETWORK_OUTBOUND_CAPACITY_GOAL.toString());
             filteredGoalList.remove(CruiseControlGoals.POTENTIAL_NETWORK_OUTAGE_GOAL.toString());
         }
-        if (!capacityConfiguration.isCpuConfigured()) {
-            filteredGoalList.remove(CruiseControlGoals.CPU_CAPACITY_GOAL.toString());
-            filteredGoalList.remove(CruiseControlGoals.CPU_USAGE_DISTRIBUTION_GOAL.toString());
-        }
 
         return filteredGoalList;
     }
