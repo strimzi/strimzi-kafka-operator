@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.performance;
 
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.skodjob.testframe.wait.Wait;
 import io.skodjob.testframe.wait.WaitException;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
