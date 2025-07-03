@@ -110,6 +110,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
             "offsets.topic.replication.factor",
             "principal.builder.class",
             "process.roles",
+            "remote.log.storage.system.enable",
             "replica.selector.class",
             "reserved.broker.max.id",
             "sasl.enabled.mechanisms",
