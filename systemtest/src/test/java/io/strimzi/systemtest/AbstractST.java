@@ -67,7 +67,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith({TestExecutionWatcher.class})
 @DisplayNameGeneration(IndicativeSentences.class)
-@io.skodjob.testframe.annotations.ResourceManager
+@io.skodjob.testframe.annotations.ResourceManager(asyncDeletion = false)
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
@@ -158,7 +158,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void afterEachMayOverride() {
         if (!Environment.SKIP_TEARDOWN) {
-            KubeResourceManager.get().deleteResources();
+            KubeResourceManager.get().deleteResources(false);
         }
     }
 
@@ -170,7 +170,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected synchronized void afterAllMayOverride() {
         if (!Environment.SKIP_TEARDOWN) {
-            KubeResourceManager.get().deleteResources();
+            KubeResourceManager.get().deleteResources(false);
             testSuiteNamespaceManager.deleteTestSuiteNamespace();
         }
     }
