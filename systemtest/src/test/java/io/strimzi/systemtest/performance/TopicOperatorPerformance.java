@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.performance;
 
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.wait.WaitException;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -17,7 +18,6 @@ import io.strimzi.systemtest.performance.gather.collectors.TopicOperatorMetricsC
 import io.strimzi.systemtest.performance.gather.schedulers.TopicOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
-import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -26,7 +26,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -235,7 +234,6 @@ public class TopicOperatorPerformance extends AbstractST {
 
     @AfterAll
      void tearDown() {
-        TopicOperatorPerformanceUtils.stopExecutor();
         // show tables with metrics
         TopicOperatorMetricsParser.main(new String[]{PerformanceConstants.TOPIC_OPERATOR_PARSER});
     }

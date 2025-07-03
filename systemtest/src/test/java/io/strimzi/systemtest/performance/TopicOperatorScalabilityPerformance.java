@@ -116,20 +116,20 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
                 .editSpec()
                     .editKafka()
                     .withResources(new ResourceRequirementsBuilder()
-                        .addToLimits("memory", new Quantity("500Mi"))
-                        .addToLimits("cpu", new Quantity("500m"))
-                        .addToRequests("memory", new Quantity("500Mi"))
-                        .addToRequests("cpu", new Quantity("500m"))
+                        .addToLimits("memory", new Quantity("768Mi"))
+                        .addToLimits("cpu", new Quantity("750m"))
+                        .addToRequests("memory", new Quantity("768Mi"))
+                        .addToRequests("cpu", new Quantity("750m"))
                         .build())
                     .endKafka()
                         .editEntityOperator()
                             .editTopicOperator()
                                 .withReconciliationIntervalMs(10_000L)
                                 .withResources(new ResourceRequirementsBuilder()
-                                    .addToLimits("memory", new Quantity("500Mi"))
-                                    .addToLimits("cpu", new Quantity("500m"))
-                                    .addToRequests("memory", new Quantity("500Mi"))
-                                    .addToRequests("cpu", new Quantity("500m"))
+                                    .addToLimits("memory", new Quantity("768Mi"))
+                                    .addToLimits("cpu", new Quantity("750m"))
+                                    .addToRequests("memory", new Quantity("768Mi"))
+                                    .addToRequests("cpu", new Quantity("750m"))
                                     .build())
                             .endTopicOperator()
                             .editOrNewTemplate()
@@ -160,7 +160,6 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
 
     @AfterAll
     void tearDown() {
-        TopicOperatorPerformanceUtils.stopExecutor();
         // show tables with metrics
         TopicOperatorMetricsParser.main(new String[]{PerformanceConstants.TOPIC_OPERATOR_PARSER});
     }
