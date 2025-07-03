@@ -17,6 +17,7 @@
 
     <properties>
         <cruise-control.version>2.5.142</cruise-control.version>
+        <log4j.version>2.17.2</log4j.version>
     </properties>
 
     <repositories>
@@ -31,6 +32,13 @@
             <groupId>com.linkedin.cruisecontrol</groupId>
             <artifactId>cruise-control</artifactId>
             <version>${cruise-control.version}</version>
+        </dependency>
+        <!-- Support for the new JsonTemplateLayout as appender type -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-layout-template-json</artifactId>
+            <version>${log4j.version}</version>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 </project>

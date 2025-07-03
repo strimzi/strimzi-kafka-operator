@@ -72,6 +72,8 @@ public class StUtils {
         "(?::(?<tag>[a-zA-Z0-9._-]+))?$"                              // Tag of the image
     );
 
+    public static final Pattern JSON_TEMPLATE_LAYOUT_PATTERN = Pattern.compile("\\{\"instant\":\"(?<date>[a-zA-Z0-9-:.]+)\",\"someConstant\":1,\"message\":\"(?<msg>.+)\"}");
+
     private static final Pattern IMAGE_PATTERN = Pattern.compile("^(?<org>[^/]*)/(?<image>[^:]*):(?<tag>.*)$");
 
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
@@ -263,10 +265,11 @@ public class StUtils {
      * @param namespaceName Namespace name
      * @param pods snapshot of Pods to be checked
      * @param containerName name of container from which to take the log
+     * @param regexPattern Optional regex pattern to match the log entries
      */
-    public static void checkLogForJSONFormat(String namespaceName, Map<String, String> pods, String containerName) {
+    public static void checkLogForJSONFormat(String namespaceName, Map<String, String> pods, String containerName, Pattern regexPattern) {
         TestUtils.waitFor("JSON log to be present in " + pods, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
-            boolean isJSON = false;
+            boolean isValidJSON = false;
             for (String podName : pods.keySet()) {
                 String log = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec(LogLevel.DEBUG, "logs", podName, "-c", containerName, "--tail=100").out();
 
@@ -274,11 +277,15 @@ public class StUtils {
 
                 // 2 is just in case we will take some JSON that is not part of the JSON format logging
                 if (!jsonArray.isEmpty() && jsonArray.size() >= 2) {
-                    LOGGER.info("JSON format logging successfully set for Pod: {}", podName);
-                    isJSON = true;
+
+                    isValidJSON = regexPattern == null || regexPattern.matcher(jsonArray.getString(0)).find();
+
+                    if (isValidJSON) {
+                        LOGGER.info("JSON format logging successfully set for Pod: {}", podName);
+                    }
                 }
             }
-            return isJSON;
+            return isValidJSON;
         });
     }
 
