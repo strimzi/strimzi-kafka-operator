@@ -7,6 +7,7 @@
 * Fixed MirrorMaker 2 client rack init container override being ignored.
 * Support for Kubernetes Image Volumes to mount custom plugins
 * Adding support for [JsonTemplateLayout](https://logging.apache.org/log4j/2.x/manual/json-template-layout.html) in Operators, Cruise Control and Kafka 4.0.0 or greater.
+* Added support for Strimzi Metrics Reporter to the KafkaConnect and MirrorMaker2.
 
 ### Major changes, deprecations and removals
 
