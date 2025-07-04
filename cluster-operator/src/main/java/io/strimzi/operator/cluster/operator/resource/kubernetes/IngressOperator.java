@@ -25,6 +25,7 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
      * List of predicates that allows existing ingress annotations to be retained while reconciling the resources.
      */
     private static final List<Predicate<String>> INGRESS_ANNOTATION_IGNORELIST = List.of(
+            // field.cattle.io annotations are used by Rancher. For ignore them to avoid conflicts.
             annotation -> annotation.startsWith("field.cattle.io")
     );
 

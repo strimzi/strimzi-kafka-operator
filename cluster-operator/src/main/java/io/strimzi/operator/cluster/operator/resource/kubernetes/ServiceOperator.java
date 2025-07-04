@@ -44,6 +44,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
      * List of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
      */
     private static final List<Predicate<String>> LOADBALANCER_ANNOTATION_IGNORELIST = List.of(
+            // cattle.io and field.cattle.io annotations are used by Rancher. For ignore them to avoid conflicts.
             annotation -> annotation.startsWith("cattle.io/"),
             annotation -> annotation.startsWith("field.cattle.io")
     );
