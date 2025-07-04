@@ -1,0 +1,50 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='proc-tracking-cluster-rebalance-{context}']
+
+= Tracking rebalances
+
+You can track the progress of a partition rebalance using status information in the `KafkaRebalance` resource.
+Tracking an active partition rebalance supports planning of cluster operations, including worker node maintenance, scaling, and broker upgrades. 
+Understanding key details, such as duration and the remaining data to transfer, helps with scheduling maintenance windows and assessing the impact of proceeding or canceling the rebalance.
+
+When a rebalance is in progress, Strimzi stores progress information in a `ConfigMap`.
+The `ConfigMap` is referenced by the `status.progress.rebalanceProgressConfigMap` property of the `KafkaRebalance` resource .
+The `ConfigMap` includes the following fields:
+
+- `estimatedTimeToCompletionInMinutes`: The estimated time it will take in minutes until the partition rebalance is complete.
+
+- `completedByteMovementPercentage`: The percentage of data movement completed (in bytes), as a rounded down integer from 0-100.
+
+- `executorState.json`: The “non-verbose” JSON payload from the link:https://github.com/linkedin/cruise-control/wiki/REST-APIs#query-the-state-of-cruise-control[/kafkacruisecontrol/state?substates=executor] endpoint, providing details about the executor's current status, including partition movement progress, concurrency limits, and total data to move.
+
+The information is updated on each reconciliation of the `KafkaRebalance` resource.
+
+.Prerequisites
+
+* The `KafkaRebalance` custom resource is in a `Rebalancing` state.
+
+.Procedure
+
+- Accessing `estimatedTimeToCompletionInMinutes` field.:
++
+[source,shell]
+----
+kubectl get configmaps <my_rebalance_configmap_name> -o json | jq '.["data"]["estimatedTimeToCompletionInMinutes"]'
+----
+
+- Accessing `completedByteMovementPercentage` field.:
++
+[source,shell]
+----
+kubectl get configmaps <my_rebalance_configmap_name> -o json | jq '.["data"]["completedByteMovementPercentage"]'
+----
+
+- Accessing `executorState.json` field.
++
+[source,shell]
+----
+kubectl get configmaps <my_rebalance_configmap_name> -o json | jq '.["data"]["executorState.json"] | fromjson | .'
+----

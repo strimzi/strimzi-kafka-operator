@@ -31,6 +31,8 @@ include::../../modules/cruise-control/proc-generating-optimization-proposals.ado
 
 include::../../modules/cruise-control/proc-approving-optimization-proposal.adoc[leveloffset=+1]
 
+include::../../modules/cruise-control/proc-tracking-cluster-rebalance.adoc[leveloffset=+1]
+
 include::../../modules/cruise-control/proc-stopping-cluster-rebalance.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/proc-fixing-problems-with-kafkarebalance.adoc[leveloffset=+1]
