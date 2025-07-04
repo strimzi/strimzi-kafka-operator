@@ -61,20 +61,28 @@ import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeClientQuotasResult;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeFeaturesResult;
+import org.apache.kafka.clients.admin.DescribeLogDirsResult;
 import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.ElectLeadersResult;
 import org.apache.kafka.clients.admin.FeatureMetadata;
 import org.apache.kafka.clients.admin.FinalizedVersionRange;
 import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.clients.admin.QuorumInfo;
+import org.apache.kafka.clients.admin.ReplicaInfo;
 import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.clients.admin.UnregisterBrokerResult;
+import org.apache.kafka.common.ElectionType;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
 import org.apache.kafka.server.common.MetadataVersion;
@@ -94,6 +102,7 @@ import java.util.OptionalLong;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.ArgumentMatchers.any;
@@ -102,6 +111,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.endsWith;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -277,7 +287,9 @@ public class ResourceUtils {
         try {
             Constructor<DescribeConfigsResult> declaredConstructor = DescribeConfigsResult.class.getDeclaredConstructor(Map.class);
             declaredConstructor.setAccessible(true);
-            dcfr = declaredConstructor.newInstance(emptyMap());
+            Map<ConfigResource, KafkaFuture<Config>> futureMap = Map.of(new ConfigResource(ConfigResource.Type.BROKER, "my-broker"),
+                    KafkaFuture.completedFuture(new Config(emptyList())));
+            dcfr = declaredConstructor.newInstance(futureMap);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -303,6 +315,33 @@ public class ResourceUtils {
         }
         when(mock.describeFeatures()).thenReturn(dfr);
 
+        DescribeClientQuotasResult dcqr;
+        try {
+            Constructor<DescribeClientQuotasResult> declaredConstructor = DescribeClientQuotasResult.class.getDeclaredConstructor(KafkaFuture.class);
+
+            final ClientQuotaEntity defaultUserEntity = new ClientQuotaEntity(Collections.singletonMap(ClientQuotaEntity.USER, null));
+            KafkaFuture<Map<ClientQuotaEntity, Map<String, Double>>> future = KafkaFuture.completedFuture(Map.of(defaultUserEntity, Map.of()));
+
+            declaredConstructor.setAccessible(true);
+            dcqr = declaredConstructor.newInstance(future);
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+        when(mock.describeClientQuotas(any())).thenReturn(dcqr);
+
+        // Mock KRaft node unregistration
+        UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
+        when(ubr.all()).thenReturn(KafkaFuture.completedFuture(null));
+        when(mock.unregisterBroker(anyInt())).thenReturn(ubr);
+
+        // Mock responses for Admin requests that are sent by roller
+        mockAdminAPIResponses(mock);
+
+        return mock;
+    }
+
+    private static void mockAdminAPIResponses(Admin mock) {
         DescribeMetadataQuorumResult dmqr;
         try {
             Constructor<DescribeMetadataQuorumResult> declaredConstructor = DescribeMetadataQuorumResult.class.getDeclaredConstructor(KafkaFuture.class);
@@ -326,28 +365,38 @@ public class ResourceUtils {
             throw new RuntimeException(e);
         }
         when(mock.describeMetadataQuorum()).thenReturn(dmqr);
+        when(mock.describeMetadataQuorum(any())).thenReturn(dmqr);
 
-        DescribeClientQuotasResult dcqr;
+        DescribeLogDirsResult dldr;
         try {
-            Constructor<DescribeClientQuotasResult> declaredConstructor = DescribeClientQuotasResult.class.getDeclaredConstructor(KafkaFuture.class);
-
-            final ClientQuotaEntity defaultUserEntity = new ClientQuotaEntity(Collections.singletonMap(ClientQuotaEntity.USER, null));
-            KafkaFuture<Map<ClientQuotaEntity, Map<String, Double>>> future = KafkaFuture.completedFuture(Map.of(defaultUserEntity, Map.of()));
-
+            Constructor<DescribeLogDirsResult> declaredConstructor = DescribeLogDirsResult.class.getDeclaredConstructor(Map.class);
             declaredConstructor.setAccessible(true);
-            dcqr = declaredConstructor.newInstance(future);
+            Map<Integer, KafkaFuture<Map<String, LogDirDescription>>> descriptions = new HashMap<>();
+
+            ReplicaInfo replicaInfo = new ReplicaInfo(0L, 0L, false);
+            Map<TopicPartition, ReplicaInfo> partitionMap = Map.of(new TopicPartition("my-topic", 0), replicaInfo);
+            LogDirDescription logDir = new LogDirDescription(null, partitionMap, 0, 0);
+            KafkaFuture<Map<String, LogDirDescription>> future = KafkaFuture.completedFuture(Map.of("/var/lib/kafka/data", logDir));
+
+            descriptions.put(0, future);
+            descriptions.put(1, future);
+            descriptions.put(2, future);
+
+            dldr = declaredConstructor.newInstance(descriptions);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+        when(mock.describeLogDirs(any())).thenReturn(dldr);
 
-        when(mock.describeClientQuotas(any())).thenReturn(dcqr);
-
-        // Mock KRaft node unregistration
-        UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
-        when(ubr.all()).thenReturn(KafkaFuture.completedFuture(null));
-        when(mock.unregisterBroker(anyInt())).thenReturn(ubr);
-
-        return mock;
+        ElectLeadersResult elr;
+        try {
+            Constructor<ElectLeadersResult> declaredConstructor = ElectLeadersResult.class.getDeclaredConstructor(KafkaFuture.class);
+            declaredConstructor.setAccessible(true);
+            elr = declaredConstructor.newInstance(KafkaFuture.completedFuture(emptyMap()));
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+        when(mock.electLeaders(eq(ElectionType.PREFERRED), any())).thenReturn(elr);
     }
 
     public static AdminClientProvider adminClientProvider() {
@@ -363,6 +412,16 @@ public class ResourceUtils {
 
             @Override
             public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
+                return mockAdminClient;
+            }
+
+            @Override
+            public Admin createControllerAdminClient(String controllerBootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity) {
+                return createControllerAdminClient(controllerBootstrapHostnames, kafkaCaTrustSet, authIdentity, new Properties());
+            }
+
+            @Override
+            public Admin createControllerAdminClient(String controllerBootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
                 return mockAdminClient;
             }
         };
