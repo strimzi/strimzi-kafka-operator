@@ -86,21 +86,20 @@ runs:
             --argjson profiles "$PROFILES" \
             '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., timeout: $timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
         fi
-
-        # ---------------------------------------------------------------
-        # Extract CPU core‑count and Memory (GB) from the agent field
-        # ---------------------------------------------------------------
-        MATRIX=$(echo "$MATRIX" | jq '
+        
+        # Inject jobName in format 'pipeline-profile-arch' or 'pipeline-arch' when profile == pipeline
+        MATRIX=$(echo "$MATRIX" | jq --arg default_arch "$INPUT_DEFAULT_ARCH" '
           map(
-            . + (
-              # capture returns the named groups we need
-              (.agent
-                | capture("(?<cpu>[0-9]+)cpu-(?<mem>[0-9]+)gb")
-              ) as $cap
-              | {cpu: ($cap.cpu | tonumber), memory: ($cap.mem | tonumber * 1024)}
-            )
-          )
-        ')
+            .arch = (.arch // $default_arch)
+            | . + {
+              jobName:
+                (if .pipeline == .profile or (.profile == null)
+                then (.pipeline + "-" + .arch)
+                else (.pipeline + "-" + .profile + "-" + .arch)
+                end)
+            }
+          )'
+        )
 
         # Use jq -c to produce compact (one-line) JSON output.
         COMPACT_MATRIX=$(echo "$MATRIX" | jq -c '.')
