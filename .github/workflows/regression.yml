@@ -73,7 +73,7 @@ jobs:
     strategy:
       matrix:
         architecture: [amd64, arm64]
-    runs-on: oracle-vm-2cpu-8gb-x86-64
+    runs-on: oracle-vm-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v4
         with:
