@@ -95,7 +95,11 @@ spec:
               replicationThrottle:
                 type: integer
                 minimum: 0
-                description: "The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default."
+                description: "The upper bound, in bytes per second, on the bandwidth used to move replicas between brokers (i.e., inter-broker replica movements). There is no limit by default."
+              logDirThrottle:
+                type: integer
+                minimum: 0
+                description: "The upper bound, in bytes per second, on the bandwidth used to move replicas between disks (i.e., intra-broker replica movements). There is no limit by default."
               replicaMovementStrategies:
                 type: array
                 items:
