@@ -101,7 +101,7 @@ public class KafkaConnectUtils {
             () -> {
                 String propertyValueFromKafkaConnect =  (String) kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getConfig().get(propertyKey);
                 LOGGER.debug("Property key -> {}, Current property value -> {}", propertyKey, propertyValueFromKafkaConnect);
-                LOGGER.debug(propertyValueFromKafkaConnect + " == " + propertyValue);
+                LOGGER.debug("{} == {}", propertyValueFromKafkaConnect, propertyValue);
                 return propertyValueFromKafkaConnect.equals(propertyValue);
             });
         LOGGER.info("KafkaConnect property: {} -> {} changed", propertyKey, propertyValue);

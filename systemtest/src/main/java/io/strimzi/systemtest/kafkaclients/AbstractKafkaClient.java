@@ -123,7 +123,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         public AbstractKafkaClient<?> build() throws InstantiationException {
             // ensure that build() can be only invoked in sub-classes
             throw new InstantiationException();
-        };
+        }
     }
 
     protected abstract C newBuilder();

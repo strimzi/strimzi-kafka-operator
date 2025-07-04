@@ -344,10 +344,10 @@ public class CustomCaST extends AbstractST {
         final Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
         // Print out certificate dates for debug
-        LOGGER.info("Initial ClusterCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
-        LOGGER.info("Changed ClusterCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
-        LOGGER.info("Kafka Broker cert creation dates: " + initialKafkaBrokerCertStartTime + " --> " + initialKafkaBrokerCertEndTime);
-        LOGGER.info("Kafka Broker cert changed dates:  " + changedKafkaBrokerCertStartTime + " --> " + changedKafkaBrokerCertEndTime);
+        LOGGER.info("Initial ClusterCA cert dates: {} --> {}", initialCertStartTime, initialCertEndTime);
+        LOGGER.info("Changed ClusterCA cert dates: {} --> {}", changedCertStartTime, changedCertEndTime);
+        LOGGER.info("Kafka Broker cert creation dates: {} --> {}", initialKafkaBrokerCertStartTime, initialKafkaBrokerCertEndTime);
+        LOGGER.info("Kafka Broker cert changed dates:  {} --> {}", changedKafkaBrokerCertStartTime, changedKafkaBrokerCertEndTime);
 
         // Verify renewal result
         assertThat("ClusterCA cert should not have changed start date.", initialCertEndTime.compareTo(changedCertEndTime) == 0);
@@ -428,10 +428,10 @@ public class CustomCaST extends AbstractST {
         final Date changedKafkaUserCertEndTime = userCert.getNotAfter();
 
         // Print out certificate dates for debug
-        LOGGER.info("Initial ClientsCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
-        LOGGER.info("Changed ClientsCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
-        LOGGER.info("Initial userCert dates: " + initialKafkaUserCertStartTime + " --> " + initialKafkaUserCertEndTime);
-        LOGGER.info("Changed userCert dates: " + changedKafkaUserCertStartTime + " --> " + changedKafkaUserCertEndTime);
+        LOGGER.info("Initial ClientsCA cert dates: {} --> {}", initialCertStartTime, initialCertEndTime);
+        LOGGER.info("Changed ClientsCA cert dates: {} --> {}", changedCertStartTime, changedCertEndTime);
+        LOGGER.info("Initial userCert dates: {} --> {}", initialKafkaUserCertStartTime, initialKafkaUserCertEndTime);
+        LOGGER.info("Changed userCert dates: {} --> {}", changedKafkaUserCertStartTime, changedKafkaUserCertEndTime);
 
         // Verify renewal process
         assertThat("ClientsCA cert should not have changed.", initialCertEndTime.compareTo(changedCertEndTime) == 0);
@@ -457,8 +457,8 @@ public class CustomCaST extends AbstractST {
         LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", KafkaComponents.getBrokerPodSetName(testStorage.getClusterName()));
         KafkaUtils.annotateKafka(testStorage.getNamespaceName(), testStorage.getClusterName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
-        String certSecretName = "";
-        String keySecretName = "";
+        String certSecretName;
+        String keySecretName;
 
         if (oldCa.getCaCertSecretName().equals(KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()))) {
             certSecretName = KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName());
@@ -472,7 +472,7 @@ public class CustomCaST extends AbstractST {
         Secret caCertificateSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(certSecretName).get();
         Secret caKeySecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(keySecretName).get();
 
-        // Get old certifcate ca.crt key name in format of YEAR-MONTH-DAY'T'HOUR-MINUTE-SECOND'Z'
+        // Get old certificate ca.crt key name in format of YEAR-MONTH-DAY'T'HOUR-MINUTE-SECOND'Z'
         final String oldCaCertName = oldCa.retrieveOldCertificateName(caCertificateSecret, "ca.crt");
         caCertificateSecret.getData().put(oldCaCertName, caCertificateSecret.getData().get("ca.crt"));
 

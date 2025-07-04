@@ -31,7 +31,7 @@ public class Kubernetes implements KubeCluster {
         try {
             return Exec.exec(cmd).exitStatus() && !Exec.exec(CMD, "api-versions").out().contains("openshift.io");
         } catch (KubeClusterException e) {
-            LOGGER.debug("'" + String.join(" ", cmd) + "' failed. Please double check connectivity to your cluster!");
+            LOGGER.debug("'{}' failed. Please double check connectivity to your cluster!", String.join(" ", cmd));
             LOGGER.debug(e);
             return false;
         }

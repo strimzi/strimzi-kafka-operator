@@ -27,7 +27,7 @@ public class UpgradeKafkaVersion {
     public UpgradeKafkaVersion(String version) {
         String shortVersion = version;
 
-        if (version != null && !version.equals("")) {
+        if (version != null && !version.isEmpty()) {
             String[] versionSplit = version.split("\\.");
             shortVersion = String.format("%s.%s", versionSplit[0], versionSplit[1]);
         }

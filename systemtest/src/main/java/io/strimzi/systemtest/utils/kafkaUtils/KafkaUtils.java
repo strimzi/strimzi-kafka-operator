@@ -319,7 +319,7 @@ public class KafkaUtils {
      * @param kafkaVersion specific kafka version
      * @return all dynamic properties for specific kafka version
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:BooleanExpressionComplexity", "unchecked"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:BooleanExpressionComplexity"})
     public static Map<String, ConfigModel> getDynamicConfigurationProperties(String kafkaVersion)  {
 
         Map<String, ConfigModel> configs = KafkaUtils.readConfigModel(kafkaVersion);
@@ -363,7 +363,7 @@ public class KafkaUtils {
 
         LOGGER.info("Size of dynamic-configs with forbidden-exception-configs {}", dynamicConfigsWithExceptions.size());
 
-        dynamicConfigsWithExceptions.forEach((key, value) -> LOGGER.info(key + " -> "  + value.getScope() + ":" + value.getType()));
+        dynamicConfigsWithExceptions.forEach((key, value) -> LOGGER.info("{} -> {}:{}", key, value.getScope(), value.getType()));
 
         return dynamicConfigsWithExceptions;
     }
@@ -452,7 +452,7 @@ public class KafkaUtils {
             if (version == null) {
                 kafkaNode.remove("version");
                 kafkaNode.remove("metadataVersion");
-            } else if (!version.equals("")) {
+            } else if (!version.isEmpty()) {
                 kafkaNode.put("version", version);
 
                 if (metadataVersionFieldSupported) {

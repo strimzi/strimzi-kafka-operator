@@ -192,7 +192,7 @@ public abstract class BasePerformanceMetricsParser {
             try {
                 processFile(metricFile, experimentMetrics);
             } catch (IOException e) {
-                LOGGER.error("Error processing file " + metricFile.getAbsolutePath());
+                LOGGER.error("Error processing file {}", metricFile.getAbsolutePath());
                 e.printStackTrace();
             }
             // these are most metrics
@@ -210,7 +210,7 @@ public abstract class BasePerformanceMetricsParser {
                             double value = Double.parseDouble(valueString);
                             values.add(value);
                         } catch (NumberFormatException e) {
-                            LOGGER.error("Error parsing value: " + valueString);
+                            LOGGER.error("Error parsing value: {}", valueString);
                         }
                     }
                 }

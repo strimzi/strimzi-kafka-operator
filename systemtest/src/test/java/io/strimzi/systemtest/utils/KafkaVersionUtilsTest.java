@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Tag;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @Tag(REGRESSION)
 public class KafkaVersionUtilsTest {
@@ -18,6 +18,6 @@ public class KafkaVersionUtilsTest {
     @ParallelTest
     public void parsingTest() {
         List<TestKafkaVersion> versions = TestKafkaVersion.getSupportedKafkaVersions();
-        assertTrue(!versions.isEmpty());
+        assertFalse(versions.isEmpty());
     }
 }

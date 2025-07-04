@@ -21,48 +21,23 @@ public class ResourceOperation {
     }
 
     public static long getTimeoutForResourceReadiness(String kind) {
-        long timeout;
-
-        switch (kind) {
-            case Kafka.RESOURCE_KIND:
-                timeout = Duration.ofMinutes(14).toMillis();
-                break;
-            case KafkaConnect.RESOURCE_KIND:
-            case KafkaMirrorMaker2.RESOURCE_KIND:
-            case TestConstants.DEPLOYMENT_CONFIG:
-                timeout = Duration.ofMinutes(10).toMillis();
-                break;
-            case KafkaBridge.RESOURCE_KIND:
-            case TestConstants.STATEFUL_SET:
-            case StrimziPodSet.RESOURCE_KIND:
-            case TestConstants.KAFKA_CRUISE_CONTROL_DEPLOYMENT:
-            case TestConstants.KAFKA_EXPORTER_DEPLOYMENT:
-            case TestConstants.DEPLOYMENT:
-                timeout = Duration.ofMinutes(8).toMillis();
-                break;
-            case KafkaConnector.RESOURCE_KIND:
-                timeout = Duration.ofMinutes(7).toMillis();
-                break;
-            default:
-                timeout = Duration.ofMinutes(3).toMillis();
-        }
-
-        return timeout;
+        return switch (kind) {
+            case Kafka.RESOURCE_KIND -> Duration.ofMinutes(14).toMillis();
+            case KafkaConnect.RESOURCE_KIND, KafkaMirrorMaker2.RESOURCE_KIND, TestConstants.DEPLOYMENT_CONFIG ->
+                    Duration.ofMinutes(10).toMillis();
+            case KafkaBridge.RESOURCE_KIND, TestConstants.STATEFUL_SET, StrimziPodSet.RESOURCE_KIND,
+                 TestConstants.KAFKA_CRUISE_CONTROL_DEPLOYMENT, TestConstants.KAFKA_EXPORTER_DEPLOYMENT,
+                 TestConstants.DEPLOYMENT -> Duration.ofMinutes(8).toMillis();
+            case KafkaConnector.RESOURCE_KIND -> Duration.ofMinutes(7).toMillis();
+            default -> Duration.ofMinutes(3).toMillis();
+        };
     }
 
     public static long getTimeoutForKafkaRebalanceState(KafkaRebalanceState state) {
-        long timeout;
-        switch (state) {
-            case ProposalReady:
-            case Ready:
-            case Rebalancing:
-                timeout = Duration.ofMinutes(14).toMillis();
-                break;
-            default:
-                timeout = Duration.ofMinutes(6).toMillis();
-        }
-
-        return timeout;
+        return switch (state) {
+            case ProposalReady, Ready, Rebalancing -> Duration.ofMinutes(14).toMillis();
+            default -> Duration.ofMinutes(6).toMillis();
+        };
     }
 
     /**
@@ -78,21 +53,11 @@ public class ResourceOperation {
     }
 
     public static long getTimeoutForResourceDeletion(String kind) {
-        long timeout;
-
-        switch (kind) {
-            case Kafka.RESOURCE_KIND:
-            case KafkaConnect.RESOURCE_KIND:
-            case KafkaMirrorMaker2.RESOURCE_KIND:
-            case KafkaBridge.RESOURCE_KIND:
-            case TestConstants.STATEFUL_SET:
-            case TestConstants.POD:
-                timeout = Duration.ofMinutes(5).toMillis();
-                break;
-            default:
-                timeout = Duration.ofMinutes(2).toMillis();
-        }
-
-        return timeout;
+        return switch (kind) {
+            case Kafka.RESOURCE_KIND, KafkaConnect.RESOURCE_KIND, KafkaMirrorMaker2.RESOURCE_KIND,
+                 KafkaBridge.RESOURCE_KIND, TestConstants.STATEFUL_SET, TestConstants.POD ->
+                    Duration.ofMinutes(5).toMillis();
+            default -> Duration.ofMinutes(2).toMillis();
+        };
     }
 }

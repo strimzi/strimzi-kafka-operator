@@ -236,7 +236,7 @@ public class AdminClient {
     }
 
     static abstract class AdminCommonCommand<T extends AdminCommonCommand<T>> {
-        private List<String> command = new ArrayList<>(List.of(CMD, mainSubCommand()));
+        private final List<String> command = new ArrayList<>(List.of(CMD, mainSubCommand()));
 
         protected T add(String toBeAdded) {
             command.add(toBeAdded);

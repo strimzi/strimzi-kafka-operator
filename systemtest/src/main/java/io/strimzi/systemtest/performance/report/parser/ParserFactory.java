@@ -26,13 +26,9 @@ public class ParserFactory {
      *                                      parser has not been implemented yet.
      */
     public static BasePerformanceMetricsParser createParser(ParserType type) {
-        switch (type) {
-            case TOPIC_OPERATOR:
-                return new TopicOperatorMetricsParser();
-            case USER_OPERATOR:
-                return new UserOperatorMetricsParser();
-            default:
-                throw new IllegalArgumentException("Unknown parser type: " + type);
-        }
+        return switch (type) {
+            case TOPIC_OPERATOR -> new TopicOperatorMetricsParser();
+            case USER_OPERATOR -> new UserOperatorMetricsParser();
+        };
     }
 }

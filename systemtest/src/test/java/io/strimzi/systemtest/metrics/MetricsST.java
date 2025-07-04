@@ -145,13 +145,12 @@ public class MetricsST extends AbstractST {
     private final String kafkaClusterSecondName = "metrics-cluster-1";
     private final String mm2ClusterName = "mm2-cluster";
     private final String bridgeClusterName = "my-bridge";
+    private final String bridgeTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    private final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    private final String kafkaExporterTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
     private String coScraperPodName;
     private String scraperPodName;
-
-    private String bridgeTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
-    private String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-    private final String kafkaExporterTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
     private BaseMetricsCollector kafkaCollector;
     private BaseMetricsCollector kafkaExporterCollector;

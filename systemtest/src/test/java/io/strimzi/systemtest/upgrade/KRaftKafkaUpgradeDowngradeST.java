@@ -175,22 +175,22 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // ##############################
         }
 
-        LOGGER.info("Deployment of initial Kafka version (" + initialVersion.version() + ") complete");
+        LOGGER.info("Deployment of initial Kafka version ({}) complete", initialVersion.version());
 
         String controllerVersionResult = CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get().getStatus().getKafkaVersion();
-        LOGGER.info("Pre-change Kafka version: " + controllerVersionResult);
+        LOGGER.info("Pre-change Kafka version: {}", controllerVersionResult);
 
         controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerSelector);
         brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), brokerSelector);
 
-        LOGGER.info("Updating Kafka CR version field to " + newVersion.version());
+        LOGGER.info("Updating Kafka CR version field to {}", newVersion.version());
 
         // Change the version in Kafka CR
         KafkaUtils.replace(testStorage.getNamespaceName(), CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().setVersion(newVersion.version());
         });
 
-        LOGGER.info("Waiting for readiness of new Kafka version (" + newVersion.version() + ") to complete");
+        LOGGER.info("Waiting for readiness of new Kafka version ({}) to complete", newVersion.version());
 
         // Wait for the controllers' version change roll
         controllerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), controllerSelector, controllerReplicas, controllerPods);
@@ -202,7 +202,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
         String currentMetadataVersion = CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get().getSpec().getKafka().getMetadataVersion();
 
-        LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
+        LOGGER.info("Deployment of Kafka ({}) complete", newVersion.version());
 
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
 
@@ -211,14 +211,14 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
         // Extract the Kafka version number from the jars in the lib directory
         controllerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), controllerPodName);
-        LOGGER.info("Post-change Kafka version query returned: " + controllerVersionResult);
+        LOGGER.info("Post-change Kafka version query returned: {}", controllerVersionResult);
 
         assertThat("Kafka container had version " + controllerVersionResult + " where " + newVersion.version() +
             " was expected", controllerVersionResult, is(newVersion.version()));
 
         // Extract the Kafka version number from the jars in the lib directory
         String brokerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), brokerPodName);
-        LOGGER.info("Post-change Kafka version query returned: " + brokerVersionResult);
+        LOGGER.info("Post-change Kafka version query returned: {}", brokerVersionResult);
 
         assertThat("Kafka container had version " + brokerVersionResult + " where " + newVersion.version() +
             " was expected", brokerVersionResult, is(newVersion.version()));

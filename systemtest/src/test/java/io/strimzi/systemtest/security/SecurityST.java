@@ -292,7 +292,7 @@ class SecurityST extends AbstractST {
 
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        List<String> secrets = null;
+        List<String> secrets;
 
         // to make it parallel we need decision maker...
         if (KubeResourceManager.get().getTestContext().getTags().contains("ClusterCaKeys")) {
@@ -949,7 +949,7 @@ class SecurityST extends AbstractST {
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
                 List<Pod> pendingPods = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerComponentName())
-                    .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
+                    .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).toList();
                 if (pendingPods.isEmpty()) {
                     LOGGER.info("No Pods of {} are in desired state", testStorage.getBrokerComponentName());
                     return false;
@@ -1199,7 +1199,7 @@ class SecurityST extends AbstractST {
 
         caSecrets = KubeResourceManager.get().kubeClient().getClient()
             .secrets().inNamespace(testStorage.getNamespaceName()).list().getItems().stream()
-            .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(secondClusterName)) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(secondClusterName))).collect(Collectors.toList());
+            .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(secondClusterName)) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(secondClusterName))).toList();
 
         LOGGER.info("Deleting Kafka: {}", secondClusterName);
         CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(secondClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
@@ -1275,10 +1275,10 @@ class SecurityST extends AbstractST {
         Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
-        LOGGER.info("Initial ClusterCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
-        LOGGER.info("Changed ClusterCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
-        LOGGER.info("Kafka Broker cert creation dates: " + initialKafkaBrokerCertStartTime + " --> " + initialKafkaBrokerCertEndTime);
-        LOGGER.info("Kafka Broker cert changed dates:  " + changedKafkaBrokerCertStartTime + " --> " + changedKafkaBrokerCertEndTime);
+        LOGGER.info("Initial ClusterCA cert dates: {} --> {}", initialCertStartTime, initialCertEndTime);
+        LOGGER.info("Changed ClusterCA cert dates: {} --> {}", changedCertStartTime, changedCertEndTime);
+        LOGGER.info("Kafka Broker cert creation dates: {} --> {}", initialKafkaBrokerCertStartTime, initialKafkaBrokerCertEndTime);
+        LOGGER.info("Kafka Broker cert changed dates:  {} --> {}", changedKafkaBrokerCertStartTime, changedKafkaBrokerCertEndTime);
 
         String msg = "Error: original cert-end date: '" + initialCertEndTime +
                 "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'!";
@@ -1351,10 +1351,10 @@ class SecurityST extends AbstractST {
         Date changedKafkaUserCertStartTime = userCert.getNotBefore();
         Date changedKafkaUserCertEndTime = userCert.getNotAfter();
 
-        LOGGER.info("Initial ClientsCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
-        LOGGER.info("Changed ClientsCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
-        LOGGER.info("Initial userCert dates: " + initialKafkaUserCertStartTime + " --> " + initialKafkaUserCertEndTime);
-        LOGGER.info("Changed userCert dates: " + changedKafkaUserCertStartTime + " --> " + changedKafkaUserCertEndTime);
+        LOGGER.info("Initial ClientsCA cert dates: {} --> {}", initialCertStartTime, initialCertEndTime);
+        LOGGER.info("Changed ClientsCA cert dates: {} --> {}", changedCertStartTime, changedCertEndTime);
+        LOGGER.info("Initial userCert dates: {} --> {}", initialKafkaUserCertStartTime, initialKafkaUserCertEndTime);
+        LOGGER.info("Changed userCert dates: {} --> {}", changedKafkaUserCertStartTime, changedKafkaUserCertEndTime);
 
 
         String msg = "Error: original cert-end date: '" + initialCertEndTime +

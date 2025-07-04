@@ -18,7 +18,7 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import java.util.function.Consumer;
 
 public class KafkaTopicType implements ResourceType<KafkaTopic> {
-    private MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> client;
+    private final MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> client;
 
     public KafkaTopicType() {
         client = Crds.topicOperation(KubeResourceManager.get().kubeClient().getClient());

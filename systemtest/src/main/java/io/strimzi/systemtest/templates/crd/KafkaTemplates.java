@@ -39,7 +39,7 @@ public class KafkaTemplates {
     public static KafkaBuilder kafkaWithMetrics(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
         String configMapName = kafkaClusterName + METRICS_KAFKA_CONFIG_MAP_SUFFIX;
 
-        KafkaBuilder kafkaBuilder = kafka(namespaceName, kafkaClusterName, kafkaReplicas)
+        return kafka(namespaceName, kafkaClusterName, kafkaReplicas)
             .editSpec()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
@@ -51,8 +51,6 @@ public class KafkaTemplates {
                     .endJmxPrometheusExporterMetricsConfig()
                 .endKafka()
             .endSpec();
-
-        return kafkaBuilder;
     }
 
     public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String namespaceName, String kafkaClusterName, int kafkaReplicas) {

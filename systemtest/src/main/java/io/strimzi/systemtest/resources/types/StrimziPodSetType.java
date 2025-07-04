@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 
 public class StrimziPodSetType implements ResourceType<StrimziPodSet> {
 
-    private MixedOperation<StrimziPodSet, StrimziPodSetList, Resource<StrimziPodSet>> client;
+    private final MixedOperation<StrimziPodSet, StrimziPodSetList, Resource<StrimziPodSet>> client;
 
     public StrimziPodSetType() {
         client = Crds.strimziPodSetOperation(KubeResourceManager.get().kubeClient().getClient());

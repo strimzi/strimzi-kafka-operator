@@ -31,7 +31,7 @@ public class Minikube implements KubeCluster {
         try {
             return Exec.exec(cmd).out().contains("minikube.k8s.io");
         } catch (KubeClusterException e) {
-            LOGGER.debug("'" + String.join(" ", cmd) + "' failed. Please double check connectivity to your cluster!");
+            LOGGER.debug("'{}' failed. Please double check connectivity to your cluster!", String.join(" ", cmd));
             LOGGER.debug(e);
             return false;
         }

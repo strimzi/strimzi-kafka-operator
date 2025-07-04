@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 
 public class KafkaType implements ResourceType<Kafka> {
 
-    private MixedOperation<Kafka, KafkaList, Resource<Kafka>> client;
+    private final MixedOperation<Kafka, KafkaList, Resource<Kafka>> client;
     private static final Logger LOGGER = LogManager.getLogger(KafkaType.class);
     private static final Predicate<Kafka> HAS_CRUISE_CONTROL_SUPPORT = resource -> resource.getSpec().getCruiseControl() != null;
 

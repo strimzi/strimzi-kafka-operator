@@ -221,7 +221,7 @@ public class StUtils {
     }
 
     public static List<String> getLinesWithoutCommentsAndEmptyLines(String config) {
-        List<String> allLines = Arrays.asList(config.split("\\r?\\n"));
+        String[] allLines = config.split("\\r?\\n");
         List<String> validLines = new ArrayList<>();
 
         for (String line : allLines)    {
@@ -247,15 +247,15 @@ public class StUtils {
 
     /**
      * Build jsonArray with data about service discovery based on pass configuration
-     * @param plainEcryption plain listener encryption
+     * @param plainEncryption plain listener encryption
      * @param tlsEncryption tls listener encryption
      * @param plainTlsAuth plain listener authentication
      * @param tlsTlsAuth tls listener authentication
      * @return builded jsonArray
      */
-    public static JsonArray expectedServiceDiscoveryInfo(String plainEcryption, String tlsEncryption, boolean plainTlsAuth, boolean tlsTlsAuth) {
+    public static JsonArray expectedServiceDiscoveryInfo(String plainEncryption, String tlsEncryption, boolean plainTlsAuth, boolean tlsTlsAuth) {
         JsonArray jsonArray = new JsonArray();
-        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainEcryption, plainTlsAuth).getValue(0));
+        jsonArray.add(expectedServiceDiscoveryInfo(9092, "kafka", plainEncryption, plainTlsAuth).getValue(0));
         jsonArray.add(expectedServiceDiscoveryInfo(9093, "kafka", tlsEncryption, tlsTlsAuth).getValue(0));
         return jsonArray;
     }

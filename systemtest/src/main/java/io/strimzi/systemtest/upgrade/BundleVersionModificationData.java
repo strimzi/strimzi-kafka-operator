@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class BundleVersionModificationData extends CommonVersionModificationData {
     private static final Logger LOGGER = LogManager.getLogger(BundleVersionModificationData.class);
@@ -137,7 +136,7 @@ public class BundleVersionModificationData extends CommonVersionModificationData
     public String getDefaultKafkaVersionPerStrimzi() {
         try {
             List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl(getFromKafkaVersionsUrl());
-            return testKafkaVersions.stream().filter(TestKafkaVersion::isDefault).collect(Collectors.toList()).get(0).version();
+            return testKafkaVersions.stream().filter(TestKafkaVersion::isDefault).toList().get(0).version();
         } catch (Exception e) {
             LOGGER.error("Cannot parse Kafka versions from URL");
             throw new RuntimeException(e);

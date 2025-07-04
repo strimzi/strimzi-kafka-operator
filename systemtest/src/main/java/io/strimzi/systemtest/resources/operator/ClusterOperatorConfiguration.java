@@ -45,7 +45,7 @@ public class ClusterOperatorConfiguration {
     private final String olmOperatorName = Environment.OLM_OPERATOR_NAME;
     private final String olmSourceName = Environment.OLM_SOURCE_NAME;
     private final String olmSourceNamespace = Environment.OLM_SOURCE_NAMESPACE;
-    private String olmOperatorDeploymentNamePrefix = Environment.OLM_OPERATOR_DEPLOYMENT_NAME;
+    private final String olmOperatorDeploymentNamePrefix = Environment.OLM_OPERATOR_DEPLOYMENT_NAME;
     private String olmOperatorVersion;
     private OlmInstallationStrategy olmInstallationStrategy = OlmInstallationStrategy.Automatic;
     private String olmChannelName = Environment.OLM_OPERATOR_CHANNEL;

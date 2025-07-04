@@ -15,6 +15,8 @@ public class KeycloakInstance {
     public static final String KEYCLOAK_SECRET_NAME = "example-tls-secret";
     public static final String KEYCLOAK_SECRET_CERT = "tls.crt";
 
+    private final Pattern keystorePattern = Pattern.compile("<tls>\\s*<key-stores>\\s*<key-store name=\"kcKeyStore\">\\s*<credential-reference clear-text=\".*\"\\/>");
+    private final Pattern keystorePasswordPattern = Pattern.compile("\\\".*\\\"");
     private final int jwksExpireSeconds = 500;
     private final int jwksRefreshSeconds = 400;
     private final String username;
@@ -22,15 +24,12 @@ public class KeycloakInstance {
     private final String namespace;
     private final String httpsUri;
     private final String httpUri;
+    private final String userNameClaim;
 
     private String validIssuerUri;
     private String jwksEndpointUri;
     private String oauthTokenEndpointUri;
     private String introspectionEndpointUri;
-    private String userNameClaim;
-
-    private Pattern keystorePattern = Pattern.compile("<tls>\\s*<key-stores>\\s*<key-store name=\"kcKeyStore\">\\s*<credential-reference clear-text=\".*\"\\/>");
-    private Pattern keystorePasswordPattern = Pattern.compile("\\\".*\\\"");
 
     public KeycloakInstance(String namespace, String password, String username) {
 

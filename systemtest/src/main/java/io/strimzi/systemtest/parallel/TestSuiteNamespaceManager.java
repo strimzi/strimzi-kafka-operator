@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class contains static information (additional namespaces will are needed for test suite) before the execution of @BeforeAll.
- * By this we can easily prepare namespace in the AbstractST class and not in the the children.
+ * By this we can easily prepare namespace in the AbstractST class and not in the children.
  */
 public class TestSuiteNamespaceManager {
 

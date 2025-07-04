@@ -18,8 +18,8 @@ public class ExperimentMetrics {
     /**
      * A map to hold simple metrics with their keys and values as strings.
      */
-    private Map<String, String> testMetrics;
-    private Map<String, List<Double>> componentMetrics;
+    private final Map<String, String> testMetrics;
+    private final Map<String, List<Double>> componentMetrics;
 
     /**
      * The specification of the Kafka cluster used during the experiment.

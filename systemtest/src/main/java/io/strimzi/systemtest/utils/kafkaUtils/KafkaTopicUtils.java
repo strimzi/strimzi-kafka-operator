@@ -284,7 +284,7 @@ public class KafkaTopicUtils {
     public static void verifyUnchangedTopicAbsence(String namespaceName, String queryingPodName, String clusterName, String absentTopicName, long topicOperatorReconciliationMs) {
         long endTime = System.currentTimeMillis() + 2 * topicOperatorReconciliationMs;
 
-        LOGGER.info("Verifying absence of Topic: {}/{} in listed KafkaTopic(s) for next {} second(s)", namespaceName, absentTopicName, topicOperatorReconciliationMs / 1000, namespaceName);
+        LOGGER.info("Verifying absence of Topic: {}/{} in listed KafkaTopic(s) for next {} second(s)", namespaceName, absentTopicName, topicOperatorReconciliationMs / 1000);
 
         while (System.currentTimeMillis() < endTime) {
             assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, queryingPodName, KafkaResources.plainBootstrapAddress(clusterName)), not(hasItems(absentTopicName)));
@@ -412,7 +412,7 @@ public class KafkaTopicUtils {
 
                     return Objects.equals(replicasChangeState, expectedState);
                 }
-                LOGGER.debug("KafkaTopic {} replicasChange status is missing, retrying.");
+                LOGGER.debug("KafkaTopic {} replicasChange status is missing, retrying.", topicName);
 
                 return false;
             }, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);

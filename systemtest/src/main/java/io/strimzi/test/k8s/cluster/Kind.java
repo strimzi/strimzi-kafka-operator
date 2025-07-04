@@ -45,7 +45,7 @@ public class Kind implements KubeCluster {
         try {
             return Exec.exec(cmd).out().contains("kind://");
         } catch (KubeClusterException e) {
-            LOGGER.debug("'" + String.join(" ", cmd) + "' failed. Please double check connectivity to your cluster!");
+            LOGGER.debug("'{}' failed. Please double check connectivity to your cluster!", String.join(" ", cmd));
             LOGGER.debug(e);
             return false;
         }

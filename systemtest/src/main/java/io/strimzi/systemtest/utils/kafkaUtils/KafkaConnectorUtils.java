@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.GLOBAL_STABILIZATION_TIME;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
@@ -107,7 +106,7 @@ public class KafkaConnectorUtils {
     public static String getConnectorTaskState(String namespaceName, String connectorName, int taskId) {
         KafkaConnectorStatus connectorState = kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get().getStatus();
         @SuppressWarnings("unchecked")
-        Map<String, Object> connectorTask = ((ArrayList<Map<String, Object>>) connectorState.getConnectorStatus().get("tasks")).stream().filter(conn -> conn.get("id").equals(taskId)).collect(Collectors.toList()).get(0);
+        Map<String, Object> connectorTask = ((ArrayList<Map<String, Object>>) connectorState.getConnectorStatus().get("tasks")).stream().filter(conn -> conn.get("id").equals(taskId)).toList().get(0);
         return  (String) connectorTask.get("state");
     }
 
@@ -197,7 +196,7 @@ public class KafkaConnectorUtils {
                     counter[0]++;
                     LOGGER.info("Logger level is {}. Must remain stable for: {} second(s)", desiredLogger, GLOBAL_STABILIZATION_TIME - counter[0]);
                 } else {
-                    LOGGER.warn("Logger level has changed: {}. Reseting counter from {} to 0", logger, counter[0]);
+                    LOGGER.warn("Logger level has changed: {}. Resetting counter from {} to 0", logger, counter[0]);
                     counter[0] = 0;
                 }
 
