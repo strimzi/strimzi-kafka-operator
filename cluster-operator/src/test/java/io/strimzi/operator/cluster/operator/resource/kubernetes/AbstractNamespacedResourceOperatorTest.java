@@ -78,6 +78,11 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
      */
     protected abstract Class<? extends Resource> resourceType();
 
+    /**
+     * Determines if the Server Side Apply feature should be used or not.
+     *
+     * @return  boolean value determining if the Server Side Apply feature should be used or not.
+     */
     protected boolean useServerSideApply() {
         return false;
     }
