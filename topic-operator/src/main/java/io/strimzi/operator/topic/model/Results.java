@@ -32,7 +32,7 @@ public class Results {
      * 
      * @param partitionedByError Results partitioned by error.
      */
-    public void addResults(PartitionedByError<ReconcilableTopic, ? extends Object> partitionedByError) {
+    public void addResults(PartitionedByError<ReconcilableTopic, ?> partitionedByError) {
         addRightResults(partitionedByError.ok());
         addLeftResults(partitionedByError.errors());
     }
@@ -40,7 +40,7 @@ public class Results {
     /**
      * @param ok Success stream.
      */
-    public void addRightResults(Stream<? extends Pair<ReconcilableTopic, ? extends Object>> ok) {
+    public void addRightResults(Stream<? extends Pair<ReconcilableTopic, ?>> ok) {
         ok.forEach(pair -> addResult(pair.getKey(), Either.ofRight(null)));
     }
 

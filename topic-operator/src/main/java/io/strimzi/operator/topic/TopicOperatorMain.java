@@ -159,9 +159,8 @@ public class TopicOperatorMain implements Liveness, Readiness {
 
     /**
      * @param args Command line args.
-     * @throws Exception If bad things happen.
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         var config = TopicOperatorConfig.buildFromMap(System.getenv());
         var operator = new TopicOperatorMain(config);
         operator.start();
