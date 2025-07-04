@@ -24,7 +24,7 @@ public class ConfigMapOperatorTest extends AbstractNamespacedResourceOperatorTes
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ConfigMapOperator(vertx, mockClient, false);
+        return new ConfigMapOperator(vertx, mockClient, useServerSideApply());
     }
 
     @Override

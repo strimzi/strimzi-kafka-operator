@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -76,6 +77,10 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
      * The type of the resource being tested
      */
     protected abstract Class<? extends Resource> resourceType();
+
+    protected boolean useServerSideApply() {
+        return false;
+    }
 
     /**
      * @return  New resource with the default name
@@ -147,7 +152,9 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource()).onComplete(context.succeeding(rr -> context.verify(() -> {
-            verify(mockResource).get();
+            if (!useServerSideApply()) {
+                verify(mockResource).get();
+            }
             verify(mockResource).patch(any(), (T) any());
             verify(mockResource, never()).create();
             async.flag();
@@ -156,6 +163,8 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
     @Test
     public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context) {
+        // In Server Side Apply, it's always a patch and never GET and CREATE operations
+        assumeFalse(useServerSideApply());
         testCreateWhenExistsWithoutChangeIsNotAPatch(context, true);
     }
 
@@ -188,6 +197,9 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
     @Test
     public void testExistenceCheckThrows(VertxTestContext context) {
+        // Skip for Server Side Apply, as we are not using GET operation
+        assumeFalse(useServerSideApply());
+
         T resource = resource();
         RuntimeException ex = new RuntimeException();
 
@@ -218,7 +230,12 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         Resource mockResource = mock(resourceType());
 
         when(mockResource.get()).thenReturn(null);
-        when(mockResource.create()).thenReturn(resource);
+
+        if (useServerSideApply()) {
+            when(mockResource.patch(any(), eq(resource))).thenReturn(resource);
+        } else {
+            when(mockResource.create()).thenReturn(resource);
+        }
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -234,8 +251,14 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.succeeding(rr -> context.verify(() -> {
-            verify(mockResource).get();
-            verify(mockResource).create();
+            if (useServerSideApply()) {
+                verify(mockResource, never()).get();
+                verify(mockResource, never()).create();
+                verify(mockResource).patch(any(), eq(resource));
+            } else {
+                verify(mockResource).get();
+                verify(mockResource).create();
+            }
             async.flag();
         })));
     }
@@ -254,7 +277,12 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
-        when(mockResource.create()).thenThrow(ex);
+
+        if (useServerSideApply()) {
+            when(mockResource.patch(any(), eq(resource))).thenThrow(ex);
+        } else {
+            when(mockResource.create()).thenThrow(ex);
+        }
 
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
@@ -270,6 +298,9 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
     @Test
     public void testDeleteWhenResourceDoesNotExistIsANop(VertxTestContext context) {
+        // For Server Side Apply, there is no check if the resource exists and it never returns NoOp
+        assumeFalse(useServerSideApply());
+
         T resource = resource();
         Resource mockResource = mock(resourceType());
 
@@ -563,7 +594,12 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         Resource mockResource3 = mock(resourceType());
         when(mockResource3.get()).thenReturn(null);
-        when(mockResource3.create()).thenReturn(resource3);
+
+        if (useServerSideApply()) {
+            when(mockResource3.patch(any(), eq(resource3))).thenReturn(resource3);
+        } else {
+            when(mockResource3.create()).thenReturn(resource3);
+        }
 
         KubernetesResourceList mockResourceList = mock(KubernetesResourceList.class);
         when(mockResourceList.getItems()).thenReturn(List.of(resource1, resource2));
@@ -593,15 +629,24 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             verify(mockResource1, never()).create();
             verify(mockDeletable1, times(1)).delete();
 
-            verify(mockResource2, times(1)).get();
+            if (!useServerSideApply()) {
+                verify(mockResource2, times(1)).get();
+                verify(mockResource2, never()).create();
+                verify(mockResource2, never()).delete();
+            }
             verify(mockResource2, times(1)).patch(any(), eq(resource2Mod));
-            verify(mockResource2, never()).create();
-            verify(mockResource2, never()).delete();
 
-            verify(mockResource3, times(1)).get();
-            verify(mockResource3, never()).patch(any(), any());
-            verify(mockResource3, times(1)).create();
-            verify(mockResource3, never()).delete();
+            if (!useServerSideApply()) {
+                verify(mockResource3, times(1)).get();
+                verify(mockResource3, never()).patch(any(), any());
+                verify(mockResource3, times(1)).create();
+                verify(mockResource3, never()).delete();
+            } else {
+                verify(mockResource3, never()).get();
+                verify(mockResource3, times(1)).patch(any(), eq(resource3));
+                verify(mockResource3, never()).create();
+                verify(mockResource3, never()).delete();
+            }
 
             async.flag();
         })));

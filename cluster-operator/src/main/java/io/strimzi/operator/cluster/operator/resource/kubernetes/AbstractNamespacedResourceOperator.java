@@ -285,7 +285,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
 
             LOGGER.debugCr(reconciliation, "{} {}/{} has been patched", resourceKind, namespace, name);
             return Future.succeededFuture(ReconcileResult.patchedUsingServerSideApply(result));
-        } catch (KubernetesClientException e) {
+        } catch (Exception e) {
             LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }

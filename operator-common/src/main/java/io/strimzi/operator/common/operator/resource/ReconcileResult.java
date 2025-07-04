@@ -135,7 +135,7 @@ public abstract class ReconcileResult<R> {
      * @param <D> The type of resource
      */
     public static <D> Patched<D> patchedUsingServerSideApply(D resource) {
-        return new Patched<>(resource);
+        return new Patched<>(resource, true);
     }
 
     /**
