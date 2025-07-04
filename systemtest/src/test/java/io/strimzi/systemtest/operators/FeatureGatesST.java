@@ -99,7 +99,7 @@ public class FeatureGatesST extends AbstractST {
         LOGGER.info("Waiting for {} for reconciliation in order to see if the annotation will stay or not.", TestConstants.RECONCILIATION_INTERVAL);
 
         // Wait for one reconciliation interval to happen
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(30));
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(TestConstants.RECONCILIATION_INTERVAL));
 
         Map<String, String> currentAnnotations = KubeResourceManager.get().kubeClient().getClient().configMaps()
             .inNamespace(testStorage.getNamespaceName()).withName(brokerPodName).get().getMetadata().getAnnotations();
