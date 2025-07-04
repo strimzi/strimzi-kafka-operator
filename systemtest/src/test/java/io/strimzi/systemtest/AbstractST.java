@@ -249,7 +249,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     @AfterEach
-    void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
+    void tearDownTestCase(ExtensionContext extensionContext) {
         KubeResourceManager.get().setTestContext(extensionContext);
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@After Each - Clean up after test ————————————", StUtils.removePackageName(this.getClass().getName()));

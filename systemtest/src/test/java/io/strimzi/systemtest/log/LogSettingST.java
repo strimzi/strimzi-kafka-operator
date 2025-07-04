@@ -65,7 +65,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.CC_LOG_CONFIG_RELOAD;
 import static io.strimzi.systemtest.TestConstants.CO_OPERATION_TIMEOUT_MEDIUM;
@@ -550,7 +549,7 @@ class LogSettingST extends AbstractST {
     private synchronized Boolean checkEnvVarValue(Container container) {
         assertThat("Container is null!", container, is(notNullValue()));
 
-        List<EnvVar> loggingEnvVar = container.getEnv().stream().filter(envVar -> envVar.getName().contains("GC_LOG_ENABLED")).collect(Collectors.toList());
+        List<EnvVar> loggingEnvVar = container.getEnv().stream().filter(envVar -> envVar.getName().contains("GC_LOG_ENABLED")).toList();
         LOGGER.info("{}={}", loggingEnvVar.get(0).getName(), loggingEnvVar.get(0).getValue());
         return loggingEnvVar.get(0).getValue().contains("true");
     }

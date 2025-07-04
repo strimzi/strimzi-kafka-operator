@@ -47,10 +47,10 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractKafkaClientProperties.class);
 
-    private String namespaceName;
-    private String clusterName;
-    private String caSecretName;
-    private String kafkaUsername;
+    private final String namespaceName;
+    private final String clusterName;
+    private final String caSecretName;
+    private final String kafkaUsername;
     protected Properties properties;
 
     public static abstract class KafkaClientPropertiesBuilder<T extends AbstractKafkaClientProperties.KafkaClientPropertiesBuilder<T>> {
@@ -226,7 +226,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
         protected abstract AbstractKafkaClientProperties<?> build();
 
         // Subclasses must override this method to return "this" protected abstract T self();
-        // for not explicit casting..
+        // for not explicit casting.
         protected abstract T self();
     }
 
@@ -300,7 +300,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
 
             LOGGER.info("Creating keycloak.crt file");
             File keycloakCertFile = Files.createTempFile("keycloak", ".crt").toFile();
-            Files.write(keycloakCertFile.toPath(), keycloakCertificateData.getBytes(StandardCharsets.UTF_8));
+            Files.writeString(keycloakCertFile.toPath(), keycloakCertificateData);
 
             LOGGER.info("Importing keycloak certificate {} to truststore", keycloakCertFile.getAbsolutePath());
             Exec.exec("keytool", "-v", "-import", "-trustcacerts", "-file", keycloakCertFile.getAbsolutePath(),

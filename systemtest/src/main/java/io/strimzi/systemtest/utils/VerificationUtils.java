@@ -219,7 +219,7 @@ public class VerificationUtils {
         KubeResourceManager.get().kubeClient().listPods(namespaceName).stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(podNamePrefix))
             .forEach(pod -> {
-                LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
+                LOGGER.info("Verifying labels for pod: {}", pod.getMetadata().getName());
                 assertThat(pod.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(expectedLabels.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL)));
                 assertThat(pod.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(expectedLabels.getMatchLabels().get(Labels.STRIMZI_KIND_LABEL)));
                 assertThat(pod.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(expectedLabels.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL)));

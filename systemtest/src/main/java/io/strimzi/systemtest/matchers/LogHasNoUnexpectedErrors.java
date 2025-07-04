@@ -72,10 +72,10 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         CAUGHT_EXCEPTION_FOR_NETWORK_POLICY("Caught exception while patching NetworkPolicy"
                 + "(?s)(.*?)"
                 + "io.fabric8.kubernetes.client.KubernetesClientException: Failure executing: PATCH"),
-        // This happen from time to time during CO startup, it doesn't influence CO behavior
+        // This happens from time to time during CO startup, it doesn't influence CO behavior
         EXIT_ON_OUT_OF_MEMORY("ExitOnOutOfMemoryError"),
         OPERATION_TIMEOUT("Util:[0-9]+ - Reconciliation #[0-9]+.*Exceeded timeout of.*while waiting for.*"),
-        // This is ignored cause it's no real problem when this error appears, components are being created even after timeout
+        // This is ignored because it's no real problem when this error appears, components are being created even after timeout
         RECONCILIATION_TIMEOUT("ERROR Abstract.*Operator:[0-9]+ - Reconciliation.*"),
         ASSEMBLY_OPERATOR_RECONCILIATION_TIMEOUT("ERROR .*AssemblyOperator:[0-9]+ - Reconciliation.*[fF]ailed.*"),
         WATCHER_CLOSED_EXCEPTION("ERROR AbstractOperator:.+ - Watcher closed with exception in namespace .*"),

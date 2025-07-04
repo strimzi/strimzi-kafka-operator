@@ -363,7 +363,7 @@ class ConnectBuilderST extends AbstractST {
         assertThat(kafkaConnect.getSpec().getBuild().getOutput().getImage(), is(imageStreamName + ":latest"));
         assertThat(kafkaConnect.getStatus().getConditions().get(0).getType(), is(Ready.toString()));
 
-        assertTrue(!kafkaConnect.getStatus().getConnectorPlugins().isEmpty());
+        assertFalse(kafkaConnect.getStatus().getConnectorPlugins().isEmpty());
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(TestConstants.ECHO_SINK_CLASS_NAME)));
     }
 
@@ -515,7 +515,7 @@ class ConnectBuilderST extends AbstractST {
         String connectPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0).getMetadata().getName();
 
         LOGGER.info("Checking that plugin has correct file name: {}", TestConstants.ECHO_SINK_FILE_NAME);
-        assertEquals(getPluginFileNameFromConnectPod(testStorage.getNamespaceName(), connectPodName), TestConstants.ECHO_SINK_FILE_NAME);
+        assertEquals(TestConstants.ECHO_SINK_FILE_NAME, getPluginFileNameFromConnectPod(testStorage.getNamespaceName(), connectPodName));
 
         final Plugin pluginWithoutFileName = new PluginBuilder()
             .withName(PLUGIN_WITH_OTHER_TYPE_NAME)
@@ -537,7 +537,7 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Checking that plugin has different name than before");
         connectPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0).getMetadata().getName();
         String fileName = getPluginFileNameFromConnectPod(testStorage.getNamespaceName(), connectPodName);
-        assertNotEquals(fileName, TestConstants.ECHO_SINK_FILE_NAME);
+        assertNotEquals(TestConstants.ECHO_SINK_FILE_NAME, fileName);
         assertEquals(fileName, Util.hashStub(TestConstants.ECHO_SINK_JAR_URL));
     }
 

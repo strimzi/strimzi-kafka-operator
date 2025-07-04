@@ -161,9 +161,8 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
                         sent.complete(messagesSentCounter[0]);
                     } else {
                         RecordMetadata metadata = producer.send(record).get();
-                        LOGGER.debug("Message " + record.value() + " written on Topic=" + metadata.topic() +
-                            ", partition=" + metadata.partition() +
-                            ", offset=" + metadata.offset());
+                        LOGGER.debug("Message {} written on Topic={}, partition={}, offset={}",
+                                record.value(), metadata.topic(), metadata.partition(), metadata.offset());
                         messagesSentCounter[0]++;
                         this.run();
                     }

@@ -116,7 +116,7 @@ public class CruiseControlUtils {
     @SuppressWarnings("BooleanExpressionComplexity")
     public static void verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(Properties kafkaProperties) {
         String kafkaClusterName = kafkaProperties.getProperty("cluster-name");
-        TestUtils.waitFor("Verify that Kafka configuration " + kafkaProperties.toString() + " has correct CruiseControl metric reporter properties",
+        TestUtils.waitFor("Verify that Kafka configuration " + kafkaProperties + " has correct CruiseControl metric reporter properties",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () ->
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME.getValue()).equals("strimzi.cruisecontrol.metrics") &&
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue()).equals("HTTPS") &&

@@ -119,7 +119,7 @@ public abstract class BasePerformanceReporter {
      * @throws IOException      If an I/O error occurs during the writing process.
      */
     private void writePerformanceMetricsToFile(String performanceData, Path filePath) throws IOException {
-        Files.write(filePath, performanceData.getBytes(StandardCharsets.UTF_8));
+        Files.writeString(filePath, performanceData);
         LOGGER.info("Test performance data written to file: {}", filePath);
     }
 

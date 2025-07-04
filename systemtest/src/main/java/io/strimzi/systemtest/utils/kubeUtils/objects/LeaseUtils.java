@@ -25,8 +25,8 @@ import java.util.Map;
  */
 public class LeaseUtils {
     /**
-     * It takes the path to the resource (specified in {@param yamlPath} and changes the file to correspond to particular
-     * Lease name specified in `STRIMZI_LEADER_ELECTION_LEASE_NAME` (one of the environment variables in {@param envVars}.
+     * It takes the path to the resource (specified in {@param yamlPath}) and changes the file to correspond to particular
+     * Lease name specified in `STRIMZI_LEADER_ELECTION_LEASE_NAME` (one of the environment variables in {@param envVars}).
      * Based on the resource type it changes the Lease name in specific fields.
      *
      * @param yamlPath  path to resource YAML

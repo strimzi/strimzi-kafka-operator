@@ -24,29 +24,27 @@ import java.util.regex.Matcher;
 /**
  * Class for handling the Helm installation via the Helm client.
  */
-public class HelmInstallation implements InstallationMethod {
+public record HelmInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) implements InstallationMethod {
     public static final String HELM_CHART = TestUtils.USER_PATH + "/../packaging/helm-charts/helm3/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
-
-    private final ClusterOperatorConfiguration clusterOperatorConfiguration;
 
     /**
      * Constructor with specific {@link ClusterOperatorConfiguration}.
      *
-     * @param clusterOperatorConfiguration  default or customized {@link ClusterOperatorConfiguration} which should be used
-     *                                      for installation of the ClusterOperator via Helm
+     * @param clusterOperatorConfiguration default or customized {@link ClusterOperatorConfiguration} which should be used
+     *                                     for installation of the ClusterOperator via Helm
      */
-    public HelmInstallation(ClusterOperatorConfiguration clusterOperatorConfiguration) {
-        this.clusterOperatorConfiguration = clusterOperatorConfiguration;
+    public HelmInstallation {
     }
 
     /**
      * Returns the configured (and maybe updated) {@link ClusterOperatorConfiguration}.
      * This is then used in {@link SetupClusterOperator#getClusterConfiguration()} (based on the installation method).
      *
-     * @return  {@link ClusterOperatorConfiguration} configured and used during the installation
+     * @return {@link ClusterOperatorConfiguration} configured and used during the installation
      */
-    public ClusterOperatorConfiguration getClusterOperatorConfiguration() {
+    @Override
+    public ClusterOperatorConfiguration clusterOperatorConfiguration() {
         return clusterOperatorConfiguration;
     }
 
@@ -111,7 +109,7 @@ public class HelmInstallation implements InstallationMethod {
         // Set extraEnvVars into Helm Chart
         if (clusterOperatorConfiguration.getExtraEnvVars() != null) {
             int envVarIndex = 0;
-            for (EnvVar envVar: clusterOperatorConfiguration.getExtraEnvVars()) {
+            for (EnvVar envVar : clusterOperatorConfiguration.getExtraEnvVars()) {
                 installCommand.set("extraEnvs[" + envVarIndex + "].name", envVar.getName());
                 installCommand.set("extraEnvs[" + envVarIndex + "].value", envVar.getValue());
                 envVarIndex++;
@@ -139,17 +137,17 @@ public class HelmInstallation implements InstallationMethod {
     }
 
     /**
-     * Setting watch namespace is little bit tricky in case of Helm installation. We have following options:
-     *  1. Watch only specific namespace        -   @code{namespaceToWatch}="infra-namespace"
-     *  2. Watch all namespaces at once         -   @code{namespaceToWatch}="*"
-     *  3. Watch multiple namespaces at once    -   @code{namespaceToWatch}="{infra-namespace, namespace-1, namespace2}"
+     * Setting watch namespace is a little bit tricky in case of Helm installation. We have the following options:
+     * 1. Watch only specific namespace        -   @code{namespaceToWatch}="infra-namespace"
+     * 2. Watch all namespaces at once         -   @code{namespaceToWatch}="*"
+     * 3. Watch multiple namespaces at once    -   @code{namespaceToWatch}="{infra-namespace, namespace-1, namespace2}"
+     * <p>
+     * In a third option we must not include namespace (reason: avoid creation of roles and role-bindings in @code{namespaceInstallTo}
+     * namespace where Cluster Operator is installed) where the Cluster Operator is already installed. So, we are forced
+     * to extract such namespace from @code{namespaceToWatch}, because in other installation types such as Bundle or OLM
+     * we need to specify also the namespace where Cluster Operator is installed.
      *
-     *  In a third option we must not include namespace (reason: avoid creation of roles and role-bindings in @code{namespaceInstallTo}
-     *  namespace where Cluster Operator is installed) where the Cluster Operator is already installed. So, we are forced
-     *  to extract such namespace from @code{namespaceToWatch}, because in other installation types such as Bundle or OLM
-     *  we need to specify also the namespace where Cluster Operator is installed.
-     *
-     * @return namespaces, which watches Cluster Operator (without explicit Cluster Operator namespace @code{namespaceInstallTo}.
+     * @return namespaces, which watches Cluster Operator (without explicit Cluster Operator namespace {@code namespaceInstallTo}).
      */
     private String buildWatchNamespaces() {
         return "{" + this.clusterOperatorConfiguration.getNamespacesToWatch().replaceAll(",*" + clusterOperatorConfiguration.getNamespaceName() + ",*", "") + "}";

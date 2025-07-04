@@ -148,10 +148,8 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
                 new FileInputStream(versionsFilePath),
                 StandardCharsets.UTF_8);
 
-        List<TestKafkaVersion> kafkaVersions = mapper.readValue(versionsFileReader, new TypeReference<>() {
+        return mapper.readValue(versionsFileReader, new TypeReference<>() {
         });
-
-        return kafkaVersions;
     }
 
     public static List<TestKafkaVersion> getSupportedKafkaVersions() {
@@ -177,7 +175,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     }
 
     public static boolean supportedVersionsContainsVersion(String kafkaVersion) {
-        return supportedKafkaVersions.stream().map(item -> item.version()).collect(Collectors.toList()).contains(kafkaVersion);
+        return supportedKafkaVersions.stream().map(TestKafkaVersion::version).toList().contains(kafkaVersion);
     }
 
     public static TestKafkaVersion getSpecificVersion(String kafkaVersion) {
@@ -186,6 +184,6 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     }
 
     public static TestKafkaVersion getSpecificVersionFromList(List<TestKafkaVersion> versions, String kafkaVersion) {
-        return versions.stream().filter(it -> it.version.equals(kafkaVersion)).collect(Collectors.toList()).get(0);
+        return versions.stream().filter(it -> it.version.equals(kafkaVersion)).toList().get(0);
     }
 }

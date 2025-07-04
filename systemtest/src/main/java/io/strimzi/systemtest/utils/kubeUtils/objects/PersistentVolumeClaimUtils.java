@@ -17,7 +17,6 @@ import org.apache.logging.log4j.Logger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class PersistentVolumeClaimUtils {
     private static final Logger LOGGER = LogManager.getLogger(PersistentVolumeClaimUtils.class);
@@ -44,7 +43,7 @@ public class PersistentVolumeClaimUtils {
 
     public static void waitUntilPVCLabelsChange(String namespaceName, String clusterName, Map<String, String> newLabels, String labelKey) {
         LOGGER.info("Waiting for PVC labels to change {}", newLabels.toString());
-        TestUtils.waitFor("PVC labels to change -> " + newLabels.toString(), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+        TestUtils.waitFor("PVC labels to change -> " + newLabels, TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
                     listPVCsByNameSubstring(namespaceName, clusterName).stream()
@@ -52,7 +51,7 @@ public class PersistentVolumeClaimUtils {
                         .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
                         // map each value if it is changed [False, True, True] etc.
                         .map(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getLabels().get(labelKey).equals(newLabels.get(labelKey)))
-                        .collect(Collectors.toList());
+                        .toList();
 
                 LOGGER.debug("Labels changed: {}", allPvcsHasLabelsChanged.toString());
 
@@ -64,7 +63,7 @@ public class PersistentVolumeClaimUtils {
 
     public static void waitUntilPVCAnnotationChange(String namespaceName, String clusterName, Map<String, String> newAnnotation, String annotationKey) {
         LOGGER.info("Waiting for PVC annotation to change {}", newAnnotation.toString());
-        TestUtils.waitFor("PVC labels to change -> " + newAnnotation.toString(), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+        TestUtils.waitFor("PVC labels to change -> " + newAnnotation, TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
                     listPVCsByNameSubstring(namespaceName, clusterName).stream()
@@ -72,7 +71,7 @@ public class PersistentVolumeClaimUtils {
                         .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
                         // map each value if it is changed [False, True, True] etc.
                         .map(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getAnnotations().get(annotationKey).equals(newAnnotation.get(annotationKey)))
-                        .collect(Collectors.toList());
+                        .toList();
 
                 LOGGER.debug("Annotations changed: {}", allPvcsHasLabelsChanged.toString());
 
@@ -105,7 +104,7 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("Waiting for PVC(s): {}/{} to reach expected amount: {}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
         TestUtils.waitFor("PVC(s) to be created/deleted", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
             () -> listPVCsByNameSubstring(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
-                .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).collect(Collectors.toList()).size() == expectedNum
+                .filter(pvc -> pvc.getMetadata().getName().contains("data-") && pvc.getMetadata().getName().contains(testStorage.getBrokerComponentName())).toList().size() == expectedNum
         );
     }
 
@@ -120,13 +119,13 @@ public class PersistentVolumeClaimUtils {
     public static void waitForJbodStorageDeletion(String namespaceName, int volumesCount, String clusterName, List<SingleVolumeStorage> volumes) {
         int numberOfPVCWhichShouldBeDeleted = volumes.stream().filter(
             singleVolumeStorage -> ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()
-        ).collect(Collectors.toList()).size();
+        ).toList().size();
 
         TestUtils.waitFor("JBOD storage deletion", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(6).toMillis(), () -> {
             List<String> pvcs = listPVCsByNameSubstring(namespaceName, clusterName).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
                 .map(pvc -> pvc.getMetadata().getName())
-                .collect(Collectors.toList());
+                .toList();
 
             // pvcs must be deleted (1 storage -> 2 pvcs)
             return volumesCount - (numberOfPVCWhichShouldBeDeleted * 2) == pvcs.size();

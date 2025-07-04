@@ -19,13 +19,10 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 
 public class SetupMinio {
-    private static final Logger LOGGER = LogManager.getLogger(SetupMinio.class);
 
     public static final String MINIO = "minio";
     public static final String ADMIN_CREDS = "minioadminLongerThan16BytesForFIPS";

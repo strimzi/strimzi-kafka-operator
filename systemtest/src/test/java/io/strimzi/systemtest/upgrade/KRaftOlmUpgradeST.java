@@ -65,7 +65,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
             .build();
 
         LOGGER.info("====================================================================================");
-        LOGGER.info("---------------- Updating Cluster Operator version " + fromVersion + " => HEAD -----------------");
+        LOGGER.info("---------------- Updating Cluster Operator version {} => HEAD -----------------", fromVersion);
         LOGGER.info("====================================================================================");
         LOGGER.info("-------------------------- Upgrade data used in this test --------------------------");
         LOGGER.info(olmUpgradeData.toString());
@@ -89,7 +89,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
 
         // Create KafkaTopic
         final String topicUpgradeName = "topic-upgrade";
-        HashMap<String, Object> topicConfig = new HashMap<String, Object>();
+        HashMap<String, Object> topicConfig = new HashMap<>();
         topicConfig.put("min.insync.replicas", 2);
 
         KafkaTopic kafkaUpgradeTopic = new YAMLMapper().readValue(new File(dir, olmUpgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml"), KafkaTopic.class);

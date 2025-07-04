@@ -143,7 +143,7 @@ public class TopicOperatorMetricsCollectionScheduler extends BaseMetricsCollecti
 
         for (Map.Entry<String, List<Double>> entry : metrics.entrySet()) {
             if (!entry.getKey().startsWith("strimzi_")) {
-                LOGGER.debug("Metric: " + entry.getKey() + " - Values: " + entry.getValue());
+                LOGGER.debug("Metric: {} - Values: {}", entry.getKey(),  entry.getValue());
             }
         }
 

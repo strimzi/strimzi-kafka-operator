@@ -24,8 +24,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.BuildUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +33,6 @@ import java.nio.file.Paths;
 import static io.strimzi.systemtest.Environment.KANIKO_IMAGE;
 
 public class ImageBuild {
-    private static final Logger LOGGER = LogManager.getLogger(ImageBuild.class);
 
     /**
      * Build a specific image from passed Dockerfile and push it into internal registry.

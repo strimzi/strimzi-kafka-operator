@@ -28,7 +28,7 @@ public class VersionModificationDataLoader {
     public enum ModificationType {
         OLM_UPGRADE,
         BUNDLE_UPGRADE,
-        BUNDLE_DOWNGRADE;
+        BUNDLE_DOWNGRADE
     }
     private static final Logger LOGGER = LogManager.getLogger(VersionModificationDataLoader.class);
     private OlmVersionModificationData olmUpgradeData;

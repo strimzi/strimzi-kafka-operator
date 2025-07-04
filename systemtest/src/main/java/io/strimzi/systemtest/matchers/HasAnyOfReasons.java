@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class HasAnyOfReasons extends BaseMatcher<List<Event>> {
 
-    private Events[] eventReasons;
+    private final Events[] eventReasons;
 
     public HasAnyOfReasons(Events... eventReasons) {
         this.eventReasons = eventReasons;

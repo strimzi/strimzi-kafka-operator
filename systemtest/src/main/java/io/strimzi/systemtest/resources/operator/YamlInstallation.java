@@ -58,7 +58,7 @@ public class YamlInstallation implements InstallationMethod {
     public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/";
     public static final String PATH_TO_CO_CONFIG = CO_INSTALL_DIR + "060-Deployment-strimzi-cluster-operator.yaml";
 
-    private ClusterOperatorConfiguration clusterOperatorConfiguration;
+    private final ClusterOperatorConfiguration clusterOperatorConfiguration;
 
     /**
      * Constructor with specific {@link ClusterOperatorConfiguration}.
@@ -269,7 +269,7 @@ public class YamlInstallation implements InstallationMethod {
     /**
      * Applies all Roles listed in the method.
      * It also changes the ClusterRole to Role in case of Namespace-scoped installation.
-     * Finally, for the `022-ClusterRole-strimzi-cluster-operator-role.yaml"` it checks if the change of the Lease name is needed or not
+     * Finally, for the `022-ClusterRole-strimzi-cluster-operator-role.yaml` it checks if the change of the Lease name is needed or not
      * (and changes it in case of need).
      * These Roles are then applied in each Namespace that should be watched by the ClusterOperator.
      *

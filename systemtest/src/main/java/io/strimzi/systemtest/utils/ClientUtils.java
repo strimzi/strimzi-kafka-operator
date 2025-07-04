@@ -26,7 +26,7 @@ public class ClientUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ClientUtils.class);
     private static final String CONSUMER_GROUP_NAME = "my-consumer-group-";
-    private static Random rng = new Random();
+    private static final Random RNG = new Random();
 
     // ensuring that object can not be created outside of class
     private ClientUtils() {}
@@ -271,7 +271,7 @@ public class ClientUtils {
      * @return consumer group name with pattern: my-consumer-group-*-*
      */
     public static String generateRandomConsumerGroup() {
-        int salt = rng.nextInt(Integer.MAX_VALUE);
+        int salt = RNG.nextInt(Integer.MAX_VALUE);
 
         return CONSUMER_GROUP_NAME + salt;
     }

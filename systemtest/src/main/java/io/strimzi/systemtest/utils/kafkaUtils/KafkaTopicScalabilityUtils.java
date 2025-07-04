@@ -113,9 +113,9 @@ public class KafkaTopicScalabilityUtils {
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopic = topicPrefix + i;
-            topics.add(CompletableFuture.runAsync(() -> {
-                KafkaTopicUtils.waitForKafkaTopicPartitionChange(namespaceName, currentTopic, numberOfPartitions);
-            }));
+            topics.add(CompletableFuture.runAsync(() ->
+                KafkaTopicUtils.waitForKafkaTopicPartitionChange(namespaceName, currentTopic, numberOfPartitions)
+            ));
         }
 
         CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
