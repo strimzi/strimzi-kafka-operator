@@ -11,43 +11,11 @@ import java.util.Objects;
 
 /**
  * A topic to be reconciled.
+ * @param reconciliation The reconciliation.
+ * @param kt             The topic.
+ * @param topicName      The name of the topic in Kafka (spec.topicName, or metadata.name).
  */
-public class ReconcilableTopic {
-    private Reconciliation reconciliation;
-    private KafkaTopic kt;
-    private String topicName;
-
-    /**
-     * @param reconciliation The reconciliation.
-     * @param kt The topic.
-     * @param topicName The name of the topic in Kafka (spec.topicName, or metadata.name).
-     */
-    public ReconcilableTopic(Reconciliation reconciliation, KafkaTopic kt, String topicName) {
-        this.reconciliation = reconciliation;
-        this.kt = kt;
-        this.topicName = topicName;
-    }
-
-    /**
-     * @return Reconciliation.
-     */
-    public Reconciliation reconciliation() {
-        return reconciliation;
-    }
-
-    /**
-     * @return Kafka topic.
-     */
-    public KafkaTopic kt() {
-        return kt;
-    }
-
-    /**
-     * @return Topic name.
-     */
-    public String topicName() {
-        return topicName;
-    }
+public record ReconcilableTopic(Reconciliation reconciliation, KafkaTopic kt, String topicName) {
 
     @Override
     public boolean equals(Object o) {

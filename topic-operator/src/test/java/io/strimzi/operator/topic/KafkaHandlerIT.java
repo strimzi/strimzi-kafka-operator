@@ -138,7 +138,7 @@ public class KafkaHandlerIT implements TestSeparator {
 
             // desired RF = 1
             List<Pair<ReconcilableTopic, TopicState>> pairs = List.of(
-                    new Pair(TestUtil.reconcilableTopic(buildTopic(topicName, 1, 1), NAMESPACE),
+                    new Pair<>(TestUtil.reconcilableTopic(buildTopic(topicName, 1, 1), NAMESPACE),
                             new TopicState(new TopicDescription(topicName, false, List.of(topicPartition0)), null))
             );
             kafkaHandler.filterByReassignmentTargetReplicas(pairs);
@@ -165,9 +165,9 @@ public class KafkaHandlerIT implements TestSeparator {
                     kafkaAdminClientSpy);
 
             List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> pairs = List.of(
-                    new Pair(TestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE),
+                    new Pair<>(TestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE),
                             List.of(new AlterConfigOp(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, "86400000"), AlterConfigOp.OpType.SET))),
-                    new Pair(TestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE),
+                    new Pair<>(TestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE),
                             List.of(new AlterConfigOp(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, "compact"), AlterConfigOp.OpType.SET)))
             );
             var result = kafkaHandler.alterConfigs(pairs);
@@ -198,8 +198,8 @@ public class KafkaHandlerIT implements TestSeparator {
                     new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
                     kafkaAdminClientSpy);
             List<Pair<ReconcilableTopic, NewPartitions>> pairs = List.of(
-                    new Pair(TestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE), NewPartitions.increaseTo(2)),
-                    new Pair(TestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE), NewPartitions.increaseTo(2))
+                    new Pair<>(TestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE), NewPartitions.increaseTo(2)),
+                    new Pair<>(TestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE), NewPartitions.increaseTo(2))
             );
             var result = kafkaHandler.createPartitions(pairs);
 
@@ -239,11 +239,11 @@ public class KafkaHandlerIT implements TestSeparator {
 
             var t1State = result.ok()
                     .filter(pair -> Objects.equals(pair.getKey().kt().getSpec().getTopicName(), t1Name))
-                    .map(pair -> pair.getValue()).findFirst();
+                    .map(Pair::getValue).findFirst();
             assertThat(t1State.get().description().name(), is(t1Name));
             var t2State = result.ok()
                     .filter(pair -> Objects.equals(pair.getKey().kt().getSpec().getTopicName(), t2Name))
-                    .map(pair -> pair.getValue()).findFirst();
+                    .map(Pair::getValue).findFirst();
             assertThat(t2State.get().description().name(), is(t2Name));
         }
     }

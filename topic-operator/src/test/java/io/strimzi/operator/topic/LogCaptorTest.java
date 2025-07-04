@@ -38,7 +38,7 @@ class LogCaptorTest {
     }
 
     @Test
-    void shouldTimeoutIfPrediciateNotSatisfied() {
+    void shouldTimeoutIfPredicateNotSatisfied() {
         assertThrows(TimeoutException.class, () -> {
             try (var ignored = LogCaptor.logEventMatches(LOGGER, Level.INFO,
                     le -> "Hello, world".equals(le.getMessage().getFormattedMessage()),

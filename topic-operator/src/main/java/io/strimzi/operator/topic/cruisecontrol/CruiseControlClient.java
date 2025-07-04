@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Cruise Control client.
@@ -180,7 +181,7 @@ public interface CruiseControlClient {
          * @return Constant.
          */
         public static TaskState get(String value) {
-            Optional<TaskState> constant = List.of(values()).stream()
+            Optional<TaskState> constant = Stream.of(values())
                 .filter(v -> v.toString().equals(value)).findFirst();
             return constant.orElseThrow();
         }

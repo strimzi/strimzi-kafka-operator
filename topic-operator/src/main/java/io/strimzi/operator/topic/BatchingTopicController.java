@@ -68,7 +68,7 @@ public class BatchingTopicController {
     private final CruiseControlHandler cruiseControlHandler;
     
     /* test */ final Map<String, List<KubeRef>> topicRefs; // key: topic name, value: the KafkaTopics known to manage that topic
-    private Map<String, String> topicIds; // topic id cache updated on every reconciliation
+    private final Map<String, String> topicIds; // topic id cache updated on every reconciliation
     private final Set<String> alterableConfigs;
     
     BatchingTopicController(TopicOperatorConfig config,
@@ -646,7 +646,7 @@ public class BatchingTopicController {
         if (alterableConfigs != null) {
             reconcilableTopics.stream().forEach(reconcilableTopic -> {
                 var specConfig = TopicOperatorUtil.hasConfig(reconcilableTopic.kt())
-                    ? reconcilableTopic.kt().getSpec().getConfig().keySet().stream().sorted().collect(Collectors.toList())
+                    ? reconcilableTopic.kt().getSpec().getConfig().keySet().stream().sorted().toList()
                     : List.of();
                 specConfig.forEach(prop -> {
                     if (!alterableConfigs.contains(prop) && !THROTTLING_CONFIG.contains(prop)) {
