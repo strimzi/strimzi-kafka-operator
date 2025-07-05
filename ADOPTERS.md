@@ -6,10 +6,12 @@ Please let us know by adding your company name and, if you want, a description o
 
 ### Vendors
 
+* [Ænix](https://aenix.io)
+  * Use Strimzi to provide Kafka as a Service in Open Source platform [Cozystack](https://cozystack.io)
 * [Axual](https://axual.com/)
     * [Optimizing Kafka Cluster Deployments in Kubernetes](https://itnext.io/optimizing-kafka-cluster-deployments-in-kubernetes-ceda3f95c157)
 * [Cloudera](https://www.cloudera.com/products/stream-processing.html)
-* [IBM](https://www.ibm.com/cloud/event-streams)
+* [IBM](https://www.ibm.com/products/event-streams)
 * [Red Hat](https://www.redhat.com/en/)
     * [Streams for Apache Kafka](https://developers.redhat.com/products/streams-for-apache-kafka/overview)
 
@@ -33,8 +35,6 @@ Please let us know by adding your company name and, if you want, a description o
 * [Skillsoft](https://www.skillsoft.com/)
     * Utilizes Strimzi to deploy Kafka Connect on Kubernetes for Apache Kafka backup & disaster recovery.
 * [Hetzner](https://www.hetzner.com/)
-* [Ænix](https://aenix.io)
-    * Use Strimzi to provide Kafka as a Service in Open Source platform [Cozystack](https://cozystack.io)
 * [Reddit](https://www.reddit.com/r/RedditEng/)
     * Use Strimzi to run their Kafka fleet of 500 brokers, data replication with Mirror Maker and CDC pipelines with Kafka Connect.
 * [Alauda](https://www.alauda.io/)
