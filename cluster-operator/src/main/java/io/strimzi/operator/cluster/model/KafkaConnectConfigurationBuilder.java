@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
@@ -20,10 +19,12 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
@@ -305,30 +306,55 @@ public class KafkaConnectConfigurationBuilder {
 
         printConfigProviders(configurations);
 
-        maybeAddMetricReporters(configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        printMetricReporters(configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
 
         if (!configurations.getConfiguration().isEmpty()) {
-            printSectionHeader("User Provided configurations with Strimzi Injections");
+            printSectionHeader("User Provided configuration");
             writer.println(configurations.getConfiguration());
             writer.println();
         }
         return this;
     }
 
-    // the JMX reporter needs to be explicitly added when metric.reporters is not empty
-    private void maybeAddMetricReporters(AbstractConfiguration userConfig, boolean injectKafkaJmxReporter, boolean injectStrimziMetricsReporter) {
-        if (injectKafkaJmxReporter) {
-            // the JMX reporter is explicitly added when metric.reporters is not empty
-            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
-            AbstractConfiguration.createOrAddListConfig(userConfig, "admin.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
-            AbstractConfiguration.createOrAddListConfig(userConfig, "producer.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
-            AbstractConfiguration.createOrAddListConfig(userConfig, "consumer.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+    private void printMetricReporters(AbstractConfiguration userConfig,
+                                      boolean injectKafkaJmxReporter,
+                                      boolean injectStrimziMetricsReporter) {
+        OrderedProperties props = new OrderedProperties();
+        List<String> configKeys = List.of(
+                "metric.reporters",
+                "admin.metric.reporters",
+                "producer.metric.reporters",
+                "consumer.metric.reporters"
+        );
+        // the JmxReporter is explicitly added when metric.reporters is not empty
+        List<String> reporterClasses = List.of(
+                "org.apache.kafka.common.metrics.JmxReporter",
+                StrimziMetricsReporterConfig.KAFKA_CLASS
+        );
+        List<Boolean> injectFlags = List.of(injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        boolean hasUserMetricReporters = false;
+
+        for (String configKey : configKeys) {
+            for (int i = 0; i < reporterClasses.size(); i++) {
+                if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
+                        userConfig.getConfigOption(configKey) != null && injectFlags.get(i)) {
+                    hasUserMetricReporters = true;
+                    props.addPair(configKey, userConfig.getConfigOption(configKey));
+                    userConfig.removeConfigOption(configKey);
+                }
+                if (injectFlags.get(i)) {
+                    AbstractConfiguration.createOrAddListProperty(props, configKey, reporterClasses.get(i));
+                }
+            }
         }
-        if (injectStrimziMetricsReporter) {
-            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
-            AbstractConfiguration.createOrAddListConfig(userConfig, "admin.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
-            AbstractConfiguration.createOrAddListConfig(userConfig, "producer.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
-            AbstractConfiguration.createOrAddListConfig(userConfig, "consumer.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+
+        if (!props.asMap().isEmpty()) {
+            printSectionHeader("Metric reporters configuration");
+            writer.println(hasUserMetricReporters ?
+                    "# Metric reporters configured by the user and Strimzi" :
+                    "# Metric reporters configured by Strimzi");
+            writer.println(props.asPairs());
+            writer.println();
         }
     }
 
