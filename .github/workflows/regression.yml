@@ -18,21 +18,17 @@ on:
         default: ""
         type: string
   # Automated trigger for issue comment
-  # TODO - this works only if the workflow is commited in main
   issue_comment:
     types: [created]
+  # TODO - Remove this once tested and ready for merge
   pull_request:
 
 jobs:
-  # TODO - this cannot me used now as we do not have workflow in main branch!
-  # Check if the comment contains "/ga run" at all.
-  # If not, don't even bother with parse-params job.
+  # Parse and build parameters from comment or from workflow params
   parse-params:
-#    if: contains(github.event.comment.body, '/ga run')
-#    runs-on: oracle-4cpu-16gb-x86-64
+    # TODO - maybe use quick github runners?
     runs-on: oracle-2cpu-8gb-arm64
     outputs:
-      runTests: ${{ steps.parse.outputs.runTests }}
       pipelineList: ${{ steps.parse.outputs.pipelineList }}
       profileList: ${{ steps.parse.outputs.profileList }}
       agent: ${{ steps.parse.outputs.agent }}
@@ -41,6 +37,9 @@ jobs:
       strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
       cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
       parallel: ${{ steps.parse.outputs.parallel }}
+      kafkaVersion: ${{ steps.parse.outputs.kafkaVersion }}
+      releaseVersion: ${{ steps.parse.outputs.releaseVersion }}
+      shouldRun: ${{ steps.parse.outputs.shouldRun }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,14 +48,17 @@ jobs:
         id: parse
         uses: ./.github/actions/parse-comment
         with:
-          # TODO - revert this
-#          commentBody: ${{ github.event.comment.body }}
-          commentBody: "/ga run pipeline=smoke"
+          # Parameters from manual trigger via UI
+          releaseVersion: ${{ github.event.inputs.releaseVersion }}
+          kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
+          profile: ${{ github.event.inputs.profile }}
 
   build-artifacts:
     name: build-artifacts
-    needs: parse-params
-    if: ${{ needs.parse-params.outputs.runTests == 'true' }}
+    needs:
+      - parse-params
+    # Run only if properly triggered and the run is not for release (already built images)
+    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.parse-params.outputs.releaseVersion == 'latest' }}
     runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v4
@@ -68,8 +70,11 @@ jobs:
 
   build-images:
     name: build-images
-    needs: build-artifacts
-    if: ${{ needs.parse-params.outputs.runTests == 'true' }}
+    needs:
+      - parse-params
+      - build-artifacts
+    # Run only if properly triggered and the run is not for release (already built images)
+    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
     strategy:
       matrix:
         architecture: [amd64, arm64]
@@ -87,7 +92,8 @@ jobs:
     needs:
       - parse-params
       - build-images
-    if: ${{ needs.parse-params.outputs.runTests == 'true' }}
+    # Run if properly triggered and build-images job was either succeeded or skipped
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.build-images.result != 'failure' }}
     uses: ./.github/workflows/run-system-tests.yml
     with:
       pipelineList: ${{ needs.parse-params.outputs.pipelineList }}
@@ -98,3 +104,5 @@ jobs:
       strimzi_rbac_scope: ${{ needs.parse-params.outputs.strimzi_rbac_scope }}
       cluster_operator_install_type: ${{ needs.parse-params.outputs.cluster_operator_install_type }}
       parallel: ${{ needs.parse-params.outputs.parallel }}
+      releaseVersion: ${{ needs.parse-params.outputs.releaseVersion }}
+      kafkaVersion: ${{ needs.parse-params.outputs.kafkaVersion }}
