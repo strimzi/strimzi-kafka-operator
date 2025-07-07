@@ -44,7 +44,6 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
         super(configuration);
     }
 
-
     /**
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.

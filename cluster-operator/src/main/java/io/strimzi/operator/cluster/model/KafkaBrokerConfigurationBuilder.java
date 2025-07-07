@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
 import java.io.PrintWriter;
@@ -871,15 +872,12 @@ public class KafkaBrokerConfigurationBuilder {
 
         configProviders(userConfig);
 
-        // Adds the Kafka metric.reporters to the user configuration.
-        maybeAddMetricReporters(userConfig, injectCcMetricsReporter, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        printMetricReporters(userConfig, injectCcMetricsReporter, injectKafkaJmxReporter, injectStrimziMetricsReporter);
 
-        // Adds the Yammer kafka.metrics.reporters to the user configuration.
-        maybeAddYammerMetricsReporters(userConfig, injectStrimziMetricsReporter);
+        printYammerMetricsReporters(userConfig, injectStrimziMetricsReporter);
 
-        // print user config with Strimzi injections
         if (!userConfig.getConfiguration().isEmpty()) {
-            printSectionHeader("User provided configuration with Strimzi injections");
+            printSectionHeader("User provided configuration");
             writer.println(userConfig.getConfiguration());
             writer.println();
         }
@@ -887,36 +885,70 @@ public class KafkaBrokerConfigurationBuilder {
         return this;
     }
 
-    /**
-     * Adds the Kafka metric.reporters to the user configuration.
-     *
-     * @param userConfig The user configuration to which the metric reporters will be added.
-     * @param injectCcMetricsReporter Flag indicating whether to inject the Cruise Control Metrics Reporter.
-     * @param injectKafkaJmxReporter  Inject the JMX Reporter into the configuration
-     * @param injectStrimziMetricsReporter Flag indicating whether to inject the Strimzi Metrics Reporter.
-     *
-     */
-    private void maybeAddMetricReporters(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean injectKafkaJmxReporter, boolean injectStrimziMetricsReporter) {
-        if (injectCcMetricsReporter) {
-            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
+    private void printMetricReporters(AbstractConfiguration userConfig,
+                                      boolean injectCcMetricsReporter,
+                                      boolean injectKafkaJmxReporter,
+                                      boolean injectStrimziMetricsReporter) {
+        OrderedProperties props = new OrderedProperties();
+        String configKey = "metric.reporters";
+        // the JmxReporter is explicitly added when metric.reporters is not empty
+        List<String> reporterClasses = List.of(
+                CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER,
+                "org.apache.kafka.common.metrics.JmxReporter",
+                StrimziMetricsReporterConfig.KAFKA_CLASS
+        );
+        List<Boolean> injectFlags = List.of(
+                injectCcMetricsReporter,
+                injectKafkaJmxReporter,
+                injectStrimziMetricsReporter
+        );
+        boolean hasUserMetricReporters = false;
+
+        for (int i = 0; i < reporterClasses.size(); i++) {
+            if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
+                    userConfig.getConfigOption(configKey) != null && injectFlags.get(i)) {
+                hasUserMetricReporters = true;
+                props.addPair(configKey, userConfig.getConfigOption(configKey));
+                userConfig.removeConfigOption(configKey);
+            }
+            if (injectFlags.get(i)) {
+                AbstractConfiguration.createOrAddListProperty(props, configKey, reporterClasses.get(i));
+            }
         }
-        if (injectKafkaJmxReporter) {
-            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
-        }
-        if (injectStrimziMetricsReporter) {
-            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+
+        if (!props.asMap().isEmpty()) {
+            printSectionHeader("Metric reporter configuration");
+            writer.println(hasUserMetricReporters ?
+                    "# Metric reporters configured by the user and Strimzi" :
+                    "# Metric reporters configured by Strimzi");
+            writer.println(props.asPairs());
+            writer.println();
         }
     }
 
-    /**
-     * Adds the Yammer kafka.metrics.reporters to the user configuration if the Strimzi Metrics Reporter is enabled.
-     *
-     * @param userConfig The user configuration to which the Yammer metrics reporter will be added.
-     * @param injectStrimziMetricsReporter Flag indicating whether to inject the Strimzi Metrics Reporter.
-     */
-    private void maybeAddYammerMetricsReporters(KafkaConfiguration userConfig, boolean injectStrimziMetricsReporter) {
+    private void printYammerMetricsReporters(AbstractConfiguration userConfig,
+                                             boolean injectStrimziMetricsReporter) {
+        OrderedProperties props = new OrderedProperties();
+        String configKey = "kafka.metrics.reporters";
+        boolean hasUserMetricReporters = false;
+
+        if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
+                userConfig.getConfigOption(configKey) != null && injectStrimziMetricsReporter) {
+            hasUserMetricReporters = true;
+            props.addPair(configKey, userConfig.getConfigOption(configKey));
+            userConfig.removeConfigOption(configKey);
+        }
         if (injectStrimziMetricsReporter) {
-            AbstractConfiguration.createOrAddListConfig(userConfig, "kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
+            AbstractConfiguration.createOrAddListProperty(props, configKey, StrimziMetricsReporterConfig.YAMMER_CLASS);
+        }
+
+        if (!props.asMap().isEmpty()) {
+            printSectionHeader("Kafka metrics reporters configuration");
+            writer.println(hasUserMetricReporters ?
+                    "# Kafka metrics reporters configured by the user and Strimzi" :
+                    "# Kafka metrics reporters configured by Strimzi");
+            writer.println(props.asPairs());
+            writer.println();
         }
     }
 

@@ -189,16 +189,16 @@ public abstract class AbstractConfiguration {
     }
 
     /**
-     * Append list configuration values or create a new list configuration if missing.
-     * A list configuration can contain a comma separated list of values.
+     * Append list property values or create a new list property if missing.
+     * A list property can contain a comma separated list of values.
      * Duplicated values are removed.
      *
-     * @param kafkaConfig Kafka configuration.
-     * @param key List configuration key.
-     * @param values List configuration values.
+     * @param props Ordered properties.
+     * @param key List property key.
+     * @param values List property values.
      */
-    protected static void createOrAddListConfig(AbstractConfiguration kafkaConfig, String key, String values) {
-        if (kafkaConfig == null) {
+    public static void createOrAddListProperty(OrderedProperties props, String key, String values) {
+        if (props == null) {
             throw new IllegalArgumentException("Configuration is required");
         }
         if (key == null || key.isBlank()) {
@@ -208,8 +208,8 @@ public abstract class AbstractConfiguration {
             throw new IllegalArgumentException("Configuration values are required");
         }
 
-        String existingConfig = kafkaConfig.getConfigOption(key);
-        // using an ordered set to preserve ordering of the existing kafkaConfig value
+        String existingConfig = props.asMap().get(key);
+        // using an ordered set to preserve ordering of the existing props value
         Set<String> existingSet = existingConfig == null ? new LinkedHashSet<>() :
                 Arrays.stream(existingConfig.split(","))
                         .map(String::trim)
@@ -224,7 +224,7 @@ public abstract class AbstractConfiguration {
         boolean updated = existingSet.addAll(newValues);
         if (updated) {
             String updatedConfig = String.join(",", existingSet);
-            kafkaConfig.setConfigOption(key, updatedConfig);
+            props.addPair(key, updatedConfig);
         }
     }
 }
