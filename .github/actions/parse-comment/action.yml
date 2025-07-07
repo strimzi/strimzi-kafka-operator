@@ -2,47 +2,93 @@ name: "Parse Comment Config"
 description: "Parses the comment to extract run flag, pipeline list, profile list, and additional configuration fields."
 
 inputs:
-  commentBody:
-    description: "The body of the GitHub comment (or manual trigger text)"
-    required: true
+  releaseVersion:
+    description: "Release version to test (i.e. 'latest', '0.46.0')"
+    required: false
+    default: "latest"
+  kafkaVersion:
+    description: "Kafka version. e.g. '4.0.0' or 'latest'"
+    required: false
+    default: "latest"
+  profile:
+    description: "Comma-separated or single profile name(s)"
+    required: false
+    default: ""
 
 outputs:
-  runTests:
-    description: "true/false value if tests should be run"
-    value: ${{ steps.parse.outputs.runTests }}
   pipelineList:
     description: "Comma-separated list of pipeline names (if provided)"
-    value: ${{ steps.parse.outputs.pipelineList }}
+    value: ${{ steps.parse_comment.outputs.pipelineList }}
   profileList:
     description: "Comma-separated list of profile names (fallback if pipeline is not provided)"
-    value: ${{ steps.parse.outputs.profileList }}
+    value: ${{ steps.parse_comment.outputs.profileList }}
   agent:
     description: "The parsed agent value from the comment"
-    value: ${{ steps.parse.outputs.agent }}
+    value: ${{ steps.parse_comment.outputs.agent }}
   architecture:
     description: "The parsed architecture value from the comment"
-    value: ${{ steps.parse.outputs.architecture }}
+    value: ${{ steps.parse_comment.outputs.architecture }}
   strimzi_feature_gates:
     description: "The parsed strimzi_feature_gates value"
-    value: ${{ steps.parse.outputs.strimzi_feature_gates }}
+    value: ${{ steps.parse_comment.outputs.strimzi_feature_gates }}
   strimzi_rbac_scope:
     description: "The parsed strimzi_rbac_scope value"
-    value: ${{ steps.parse.outputs.strimzi_rbac_scope }}
+    value: ${{ steps.parse_comment.outputs.strimzi_rbac_scope }}
   cluster_operator_install_type:
     description: "The parsed cluster_operator_install_type value"
-    value: ${{ steps.parse.outputs.cluster_operator_install_type }}
+    value: ${{ steps.parse_comment.outputs.cluster_operator_install_type }}
+  kafkaVersion:
+    description: "Kafka version used for most of the tests"
+    value: ${{ steps.parse_comment.outputs.kafkaVersion }}
+  releaseVersion:
+    description: "Release version a.k.a docker tag of released images"
+    value: ${{ steps.parse_comment.outputs.releaseVersion }}
+  shouldRun:
+    description: "Flag if tests were triggered via comment or UI which leads to running the following jobs"
+    value: ${{ steps.should_run.outputs.shouldRun }}
 
 runs:
   using: "composite"
   steps:
+    - name: Should Run
+      id: should_run
+      shell: bash
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          SHOULD_RUN_VALUE="true"
+        elif echo "${{ github.event.comment.body }}" | grep -qiE '/gha\s+run'; then
+          SHOULD_RUN_VALUE="true"
+        else
+          # TODO - set this to false, this is set to true just for testing purposes!!!
+          SHOULD_RUN_VALUE="true"
+        fi
+        
+        echo "shouldRun=$SHOULD_RUN_VALUE" >> "$GITHUB_OUTPUT"
+        echo "Parsed shouldRun: $SHOULD_RUN_VALUE"
+
+    - name: Build Comment
+      id: build_comment
+      shell: bash
+      run: |
+        if [[ "${{ github.event.comment.body }}" == "" ]]; then
+          BUILT_COMMENT_VALUE="/gha run profile=${{ inputs.profile }} kafkaVersion=${{ inputs.kafkaVersion }}"
+        else
+          BUILT_COMMENT_VALUE="${{ github.event.comment.body }}"
+        fi
+        # TODO - remove this
+        BUILT_COMMENT_VALUE="/gha run pipeline=smoke"
+        
+        echo "builtComment=$BUILT_COMMENT_VALUE" >> "$GITHUB_OUTPUT"
+        echo "Parsed builtComment: $BUILT_COMMENT_VALUE"
+
     - name: Parse Comment
-      id: parse
+      id: parse_comment
       shell: bash
       run: |
         set -e
         
         # Read the comment body
-        COMMENT="${{ inputs.commentBody }}"
+        COMMENT="${{ steps.build_comment.outputs.builtComment }}"
         COMMENT_LOWER=$(echo "$COMMENT" | tr '[:upper:]' '[:lower:]')
         
         # Default values
@@ -52,7 +98,6 @@ runs:
         DEFAULT_RBAC_SCOPE="CLUSTER"
         DEFAULT_OPERATOR_INSTALL_TYPE="bundle"
         
-        RUN_TESTS="false"
         PIPELINE_LIST=""
         PROFILE_LIST=""
         AGENT_VALUE=""
@@ -63,8 +108,7 @@ runs:
         PARALLEL_VALUE=""
         
         # Check for trigger string
-        if echo "$COMMENT_LOWER" | grep -q "/ga run"; then
-          RUN_TESTS="true"
+        if echo "$COMMENT_LOWER" | grep -q "/gha run"; then
         
           # Check if pipeline parameter exists (pipeline=...)
           if echo "$COMMENT_LOWER" | grep -q "pipeline="; then
@@ -107,10 +151,20 @@ runs:
           if echo "$COMMENT_LOWER" | grep -q "architecture="; then
             ARCH_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*architecture=\([^ ]*\).*/\1/p')
           fi
+          if echo "$COMMENT_LOWER" | grep -q "kafkaversion="; then
+            KAFKA_VERSION_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*kafkaversion=\([^ ]*\).*/\1/p')
+          else
+            KAFKA_VERSION_VALUE="latest"
+          fi
+        fi
+        
+        # Set releaseVersion to latest if it was passed empty from event
+        RELEASE_VERSION_VALUE="${{ inputs.releaseVersion }}"
+        if [ -z "$RELEASE_VERSION_VALUE" ]; then
+          RELEASE_VERSION_VALUE="latest"
         fi
         
         # Output the collected values as simple comma-separated strings
-        echo "runTests=$RUN_TESTS" >> $GITHUB_OUTPUT
         echo "pipelineList=$PIPELINE_LIST" >> $GITHUB_OUTPUT
         echo "profileList=$PROFILE_LIST" >> $GITHUB_OUTPUT
         echo "agent=$AGENT_VALUE" >> $GITHUB_OUTPUT
@@ -119,8 +173,9 @@ runs:
         echo "strimzi_rbac_scope=$RBAC_VALUE" >> $GITHUB_OUTPUT
         echo "cluster_operator_install_type=$COI_VALUE" >> $GITHUB_OUTPUT
         echo "parallel=$PARALLEL_VALUE" >> $GITHUB_OUTPUT
+        echo "kafkaVersion=$KAFKA_VERSION_VALUE" >> $GITHUB_OUTPUT
+        echo "releaseVersion=$RELEASE_VERSION_VALUE" >> $GITHUB_OUTPUT
 
-        echo "Parsed runTests: $RUN_TESTS"
         echo "Parsed pipelineList: $PIPELINE_LIST"
         echo "Parsed profileList: $PROFILE_LIST"
         echo "Parsed agent: $AGENT_VALUE"
@@ -129,3 +184,5 @@ runs:
         echo "Parsed strimzi_rbac_scope: $RBAC_VALUE"
         echo "Parsed cluster_operator_install_type: $COI_VALUE"
         echo "Parsed parallel: $PARALLEL_VALUE"
+        echo "Parsed kafkaVersion: $KAFKA_VERSION_VALUE"
+        echo "Parsed releaseVersion: $RELEASE_VERSION_VALUE"
