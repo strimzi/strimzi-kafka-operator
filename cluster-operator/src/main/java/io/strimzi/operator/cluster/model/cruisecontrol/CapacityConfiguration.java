@@ -154,7 +154,6 @@ public class CapacityConfiguration {
     private static final String BROKER_ID_KEY = "brokerId";
     private static final String DOC_KEY = "doc";
 
-    private final Reconciliation reconciliation;
     private final TreeMap<Integer, CapacityEntry> capacityEntries;
 
     /**
@@ -173,13 +172,13 @@ public class CapacityConfiguration {
             Map<String, Storage> kafkaStorage,
             Map<String, ResourceRequirements> kafkaBrokerResources
     ) {
-        this.reconciliation = reconciliation;
-        this.capacityEntries = new TreeMap<>();
-
-        generateCapacityEntries(spec.getCruiseControl(), kafkaBrokerNodes, kafkaStorage, kafkaBrokerResources);
+        this.capacityEntries = generateCapacityEntries(reconciliation, spec.getCruiseControl(), kafkaBrokerNodes,
+                kafkaStorage, kafkaBrokerResources);
     }
 
-    private Map<Integer, BrokerCapacityOverride> processBrokerCapacityOverrides(Set<NodeRef> kafkaBrokerNodes, BrokerCapacity brokerCapacity) {
+    private static Map<Integer, BrokerCapacityOverride> processBrokerCapacityOverrides(Reconciliation reconciliation,
+                                                                                       Set<NodeRef> kafkaBrokerNodes,
+                                                                                       BrokerCapacity brokerCapacity) {
         Map<Integer, BrokerCapacityOverride> overrideMap = new HashMap<>();
         List<BrokerCapacityOverride> overrides = null;
         if (brokerCapacity != null) {
@@ -206,12 +205,15 @@ public class CapacityConfiguration {
         return overrideMap;
     }
 
-    private void generateCapacityEntries(CruiseControlSpec spec,
+    private static TreeMap<Integer, CapacityEntry> generateCapacityEntries(Reconciliation reconciliation,
+                                         CruiseControlSpec spec,
                                          Set<NodeRef> kafkaBrokerNodes,
                                          Map<String, Storage> kafkaStorage,
                                          Map<String, ResourceRequirements> kafkaBrokerResources) {
+        TreeMap<Integer, CapacityEntry> capacityEntries = new TreeMap<>();
         BrokerCapacity generalBrokerCapacity = spec.getBrokerCapacity();
-        Map<Integer, BrokerCapacityOverride> brokerCapacityOverrideMap = processBrokerCapacityOverrides(kafkaBrokerNodes, generalBrokerCapacity);
+        Map<Integer, BrokerCapacityOverride> brokerCapacityOverrideMap = processBrokerCapacityOverrides(reconciliation,
+                kafkaBrokerNodes, generalBrokerCapacity);
 
         for (NodeRef node : kafkaBrokerNodes) {
             BrokerCapacityOverride brokerCapacityOverride = brokerCapacityOverrideMap.get(node.nodeId());
@@ -221,38 +223,24 @@ public class CapacityConfiguration {
             InboundNetworkCapacity inboundNetwork = new InboundNetworkCapacity(generalBrokerCapacity, brokerCapacityOverride);
             OutboundNetworkCapacity outboundNetwork = new OutboundNetworkCapacity(generalBrokerCapacity, brokerCapacityOverride);
 
-            CapacityEntry capacityEntry = new CapacityEntry(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
+            CapacityEntry capacityEntry = new CapacityEntry(node.nodeId(), disk, cpu, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), capacityEntry);
         }
+        return capacityEntries;
     }
 
     /**
      * Represents a Cruise Control capacity entry configuration for a Kafka broker.
      *
      * @param id  The broker ID.
-     * @param capacity The capacity map for the broker capacity entry.
-     * @param doc A human-readable description of this capacity entry.
      */
-    public record CapacityEntry(
+    private record CapacityEntry(
             int id,
-            Map<String, Object> capacity,
-            String doc
-    ) {
-        private CapacityEntry(int id, CpuCapacity cpu, DiskCapacity disk, InboundNetworkCapacity inboundNetwork,
-                              OutboundNetworkCapacity outboundNetwork) {
-            this(id, buildCapacityMap(cpu, disk, inboundNetwork, outboundNetwork), "Capacity for Broker " + id);
-        }
-
-        private static Map<String, Object> buildCapacityMap(CpuCapacity cpu, DiskCapacity disk, InboundNetworkCapacity inboundNetwork,
-                                                            OutboundNetworkCapacity outboundNetwork) {
-            Map<String, Object> map = new HashMap<>();
-            map.put(DiskCapacity.KEY, disk.getJson());
-            map.put(CpuCapacity.KEY, cpu.getJson());
-            map.put(InboundNetworkCapacity.KEY, inboundNetwork.toString());
-            map.put(OutboundNetworkCapacity.KEY, outboundNetwork.toString());
-            return map;
-        }
-    }
+            DiskCapacity disk,
+            CpuCapacity cpu,
+            InboundNetworkCapacity inboundNetwork,
+            OutboundNetworkCapacity outboundNetwork
+    ) { }
 
     /**
      * Generate a capacity configuration for cluster.
@@ -263,24 +251,20 @@ public class CapacityConfiguration {
     public String toString() {
         JsonArray capacityList = new JsonArray();
         for (CapacityEntry capacityEntry : capacityEntries.values()) {
-            JsonObject capacityJson = new JsonObject();
-            capacityEntry.capacity.forEach(capacityJson::put);
+            JsonObject capacityJson = new JsonObject()
+                    .put(DiskCapacity.KEY, capacityEntry.disk.getJson())
+                    .put(CpuCapacity.KEY, capacityEntry.cpu.getJson())
+                    .put(InboundNetworkCapacity.KEY, capacityEntry.inboundNetwork.toString())
+                    .put(OutboundNetworkCapacity.KEY, capacityEntry.outboundNetwork.toString());
 
             JsonObject capacityEntryJson = new JsonObject()
                     .put(BROKER_ID_KEY, capacityEntry.id)
                     .put(CAPACITY_KEY, capacityJson)
-                    .put(DOC_KEY, capacityEntry.doc());
+                    .put(DOC_KEY, "Capacity for Broker " + capacityEntry.id);
 
             capacityList.add(capacityEntryJson);
         }
 
         return new JsonObject().put(CAPACITIES_KEY, capacityList).encodePrettily();
-    }
-
-    /**
-     * @return  Capacity entries
-     */
-    public TreeMap<Integer, CapacityEntry> getCapacityEntries() {
-        return capacityEntries;
     }
 }

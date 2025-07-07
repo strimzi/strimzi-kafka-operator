@@ -4,19 +4,23 @@
  */
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverride;
 import io.strimzi.operator.cluster.model.Quantities;
 import io.vertx.core.json.JsonObject;
 
-import static io.strimzi.operator.cluster.model.cruisecontrol.ResourceCapacityType.CPU;
+import java.util.Map;
 
 /**
  * Cruise Control CPU capacity configuration for broker.
  */
 public class CpuCapacity {
-    protected static final String DEFAULT_CPU_CORE_CAPACITY = "1.0";
+    /**
+     * Default capacity value
+     */
+    public static final String DEFAULT_CPU_CORE_CAPACITY = "1.0";
     /**
      * Key used to identify resource in broker entry in Cruise Control capacity configuration.
      */
@@ -48,7 +52,7 @@ public class CpuCapacity {
     public CpuCapacity(BrokerCapacity brokerCapacity,
                         BrokerCapacityOverride brokerCapacityOverride,
                         ResourceRequirements resourceRequirements) {
-        this(CPU.processResourceCapacity(brokerCapacity, brokerCapacityOverride, resourceRequirements));
+        this(processResourceCapacity(brokerCapacity, brokerCapacityOverride, resourceRequirements));
     }
 
     private static String milliCpuToCpu(int milliCPU) {
@@ -67,5 +71,90 @@ public class CpuCapacity {
     @Override
     public String toString() {
         return config.toString();
+    }
+
+    /**
+     * Given the configured brokerCapacity, broker-specific capacity override, and broker resource requirements,
+     * returns the capacity for the resource.
+     *
+     * <p>
+     * The broker-specific capacity override takes top precedence, then general brokerCapacity configuration,
+     * and then the Kafka resource requests, then the Kafka resource limits, then resource
+     * default.
+     *
+     * For example:
+     * <ul>
+     *   <li> (1) The brokerCapacityOverride for a specific broker.
+     *   <li> (2) The general brokerCapacity configuration.
+     *   <li> (3) Kafka resource requests
+     *   <li> (4) Kafka resource limits
+     *   <li> (5) The resource default.
+     * </ul>
+     *
+     * @param brokerCapacity         The general brokerCapacity configuration.
+     * @param brokerCapacityOverride The brokerCapacityOverride for specific broker.
+     * @param resourceRequirements   The Kafka resource requests and limits (for all brokers).
+     *
+     * @return The capacity of resource represented as a String.
+     */
+    public static String processResourceCapacity(BrokerCapacity brokerCapacity,
+                                          BrokerCapacityOverride brokerCapacityOverride,
+                                          ResourceRequirements resourceRequirements) {
+        if (brokerCapacityOverride != null && brokerCapacityOverride.getCpu() != null) {
+            return brokerCapacityOverride.getCpu();
+        }
+
+        if (brokerCapacity != null && brokerCapacity.getCpu() != null) {
+            return brokerCapacity.getCpu();
+        }
+
+
+        String cpuBasedOnRequirements = getCpuBasedOnRequirements(resourceRequirements);
+        if (cpuBasedOnRequirements != null) {
+            return cpuBasedOnRequirements;
+        }
+
+        return DEFAULT_CPU_CORE_CAPACITY;
+    }
+
+    /**
+     * Enum representing resource requirement types used in the resource requirements section of Strimzi custom resources.
+     */
+    private enum ResourceRequirementsType {
+        REQUEST,
+        LIMIT;
+    }
+
+    private static Quantity getCpuQuantity(ResourceRequirements resources,
+                                           ResourceRequirementsType requirementType) {
+        if (resources == null) {
+            return null;
+        }
+
+        Map<String, Quantity> resourceRequirement = switch (requirementType) {
+            case REQUEST -> resources.getRequests();
+            case LIMIT -> resources.getLimits();
+        };
+
+        return resourceRequirement != null ? resourceRequirement.get("cpu") : null;
+    }
+
+    /**
+     * Derives the CPU capacity from the resource requirements section of Strimzi custom resource.
+     *
+     * @param resourceRequirements The Strimzi custom resource requirements containing CPU requests and/or limits.
+     * @return The CPU capacity as a {@link String}, or {@code null} if no CPU values are defined.
+     */
+    private static String getCpuBasedOnRequirements(ResourceRequirements resourceRequirements) {
+        Quantity request = getCpuQuantity(resourceRequirements, ResourceRequirementsType.REQUEST);
+        Quantity limit =  getCpuQuantity(resourceRequirements, ResourceRequirementsType.LIMIT);
+
+        if (request != null) {
+            return request.toString();
+        } else if (limit != null) {
+            return limit.toString();
+        } else {
+            return null;
+        }
     }
 }

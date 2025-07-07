@@ -57,7 +57,7 @@ public class DiskCapacity {
      */
     private static String getSizeInMiB(String size) {
         if (size == null) {
-            return ResourceCapacityType.DISK.getDefaultResourceCapacity();
+            return DEFAULT_DISK_CAPACITY_IN_MIB;
         }
         return String.valueOf(StorageUtils.convertTo(size, "Mi"));
     }
@@ -112,7 +112,12 @@ public class DiskCapacity {
         return Map.of(SINGLE_DISK, size);
     }
 
-    protected Object getJson() {
+    /**
+     * Returns capacity value as a JsonObject.
+     *
+     * @return The capacity value as a JsonObject.
+     */
+    /* test */ Object getJson() {
         if (config.size() == 1 && config.containsKey(SINGLE_DISK)) {
             return config.get(SINGLE_DISK);
         } else {
@@ -126,6 +131,6 @@ public class DiskCapacity {
 
     @Override
     public String toString() {
-        return this.getJson().toString();
+        return getJson().toString();
     }
 }

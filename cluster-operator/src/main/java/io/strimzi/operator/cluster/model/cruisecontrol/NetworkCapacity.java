@@ -10,7 +10,10 @@ import io.strimzi.operator.cluster.model.StorageUtils;
  * Cruise Control network capacity configuration for broker.
  */
 public class NetworkCapacity {
-    protected static final String DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND = "10000KiB/s";
+    /**
+     * Default capacity value
+     */
+    public static final String DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND = "10000KiB/s";
     protected String config;
 
     protected NetworkCapacity(String config) {

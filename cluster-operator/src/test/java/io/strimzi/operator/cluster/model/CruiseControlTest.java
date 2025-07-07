@@ -62,7 +62,6 @@ import io.strimzi.operator.cluster.model.cruisecontrol.DiskCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.InboundNetworkCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.NetworkCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.OutboundNetworkCapacity;
-import io.strimzi.operator.cluster.model.cruisecontrol.ResourceRequirementsUtils.ResourceType;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -91,8 +90,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
-import static io.strimzi.operator.cluster.model.cruisecontrol.ResourceCapacityType.CPU;
-import static io.strimzi.operator.cluster.model.cruisecontrol.ResourceCapacityType.OUTBOUND_NETWORK;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY;
 import static java.lang.String.format;
@@ -180,8 +177,8 @@ public class CruiseControlTest {
         Map<String, ResourceRequirements> resources =
                 Map.of("brokers",
                         new ResourceRequirementsBuilder()
-                                .withRequests(Map.of(ResourceType.CPU.value(), new Quantity("400m")))
-                                .withLimits(Map.of(ResourceType.CPU.value(), new Quantity("0.5")))
+                                .withRequests(Map.of("cpu", new Quantity("400m")))
+                                .withLimits(Map.of("cpu", new Quantity("0.5")))
                                 .build());
         CruiseControl cc = createCruiseControl(kafka, NODES, storage, resources);
 
@@ -239,8 +236,8 @@ public class CruiseControlTest {
         Map<String, Storage> storage = Map.of("brokers", new PersistentClaimStorageBuilder().withId(0).withSize("50Gi").build());
         Map<String, ResourceRequirements> resources =
                 Map.of("brokers", new ResourceRequirementsBuilder()
-                        .withRequests(Map.of(ResourceType.CPU.value(), new Quantity("400m")))
-                        .withLimits(Map.of(ResourceType.CPU.value(), new Quantity("0.5")))
+                        .withRequests(Map.of("cpu", new Quantity("400m")))
+                        .withLimits(Map.of("cpu", new Quantity("0.5")))
                         .build());
         CruiseControl cc = createCruiseControl(kafka, NODES, storage, resources);
 
@@ -258,13 +255,13 @@ public class CruiseControlTest {
         JsonObject brokerEntry0 = brokerEntries.getJsonObject(broker0).getJsonObject(CapacityConfiguration.CAPACITY_KEY);
         assertThat(brokerEntry0.getJsonObject(CpuCapacity.KEY), is(new CpuCapacity(userDefinedCpuCapacityOverride0).getJson()));
         assertThat(brokerEntry0.getString(InboundNetworkCapacity.KEY), is(NetworkCapacity.getThroughputInKiB(inboundNetworkOverride0)));
-        assertThat(brokerEntry0.getString(OutboundNetworkCapacity.KEY), is(NetworkCapacity.getThroughputInKiB(OUTBOUND_NETWORK.getDefaultResourceCapacity())));
+        assertThat(brokerEntry0.getString(OutboundNetworkCapacity.KEY), is(NetworkCapacity.getThroughputInKiB(NetworkCapacity.DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND)));
 
         // When the same broker id is specified in brokers list of multiple overrides, use the value specified in the first override.
         JsonObject brokerEntry1 = brokerEntries.getJsonObject(broker1).getJsonObject(CapacityConfiguration.CAPACITY_KEY);
         assertThat(brokerEntry1.getJsonObject(CpuCapacity.KEY), is(new CpuCapacity(userDefinedCpuCapacityOverride0).getJson()));
         assertThat(brokerEntry1.getString(InboundNetworkCapacity.KEY), is(NetworkCapacity.getThroughputInKiB(inboundNetworkOverride0)));
-        assertThat(brokerEntry1.getString(OutboundNetworkCapacity.KEY), is(NetworkCapacity.getThroughputInKiB(OUTBOUND_NETWORK.getDefaultResourceCapacity())));
+        assertThat(brokerEntry1.getString(OutboundNetworkCapacity.KEY), is(NetworkCapacity.getThroughputInKiB(NetworkCapacity.DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND)));
 
         JsonObject brokerEntry2 = brokerEntries.getJsonObject(broker2).getJsonObject(CapacityConfiguration.CAPACITY_KEY);
         assertThat(brokerEntry2.getJsonObject(CpuCapacity.KEY), is(new CpuCapacity(userDefinedCpuCapacityOverride0).getJson()));
@@ -310,8 +307,8 @@ public class CruiseControlTest {
         Map<String, Storage> storage = Map.of("brokers", new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("50Gi").build(), new PersistentClaimStorageBuilder().withId(1).withSize("60Gi").build()).build());
         Map<String, ResourceRequirements> resources = Map.of("brokers",
                 new ResourceRequirementsBuilder()
-                        .withRequests(Map.of(ResourceType.CPU.value(), new Quantity("500m")))
-                        .withLimits(Map.of(ResourceType.CPU.value(), new Quantity("0.5")))
+                        .withRequests(Map.of("cpu", new Quantity("500m")))
+                        .withLimits(Map.of("cpu", new Quantity("0.5")))
                         .build());
         CruiseControl cc = createCruiseControl(kafka, NODES, storage, resources);
 
@@ -810,7 +807,8 @@ public class CruiseControlTest {
            the CPU capacity will be set to DEFAULT_CPU_CORE_CAPACITY */
         resources = Map.of("brokers", new ResourceRequirementsBuilder().build());
 
-        verifyBrokerCapacity(storage, resources, brokerCapacityThree, CPU.getDefaultResourceCapacity(), CPU.getDefaultResourceCapacity(), CPU.getDefaultResourceCapacity());
+        verifyBrokerCapacity(storage, resources, brokerCapacityThree, CpuCapacity.DEFAULT_CPU_CORE_CAPACITY,
+                CpuCapacity.DEFAULT_CPU_CORE_CAPACITY, CpuCapacity.DEFAULT_CPU_CORE_CAPACITY);
     }
 
     private void verifyBrokerCapacity(Map<String, Storage> storage,
