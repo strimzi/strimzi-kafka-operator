@@ -187,7 +187,7 @@ public class SetupClusterOperator {
     private ClusterOperatorConfiguration getClusterConfiguration(InstallType installType) {
         return switch (installType) {
             case Yaml -> yamlInstallation.getClusterOperatorConfiguration();
-            case Helm -> helmInstallation.clusterOperatorConfiguration();
+            case Helm -> helmInstallation.getClusterOperatorConfiguration();
             case Olm -> olmInstallation.getClusterOperatorConfiguration();
             case Unknown -> throw new RuntimeException("Unknown installation type");
         };
