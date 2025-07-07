@@ -23,11 +23,17 @@ public class ResourceOperation {
     public static long getTimeoutForResourceReadiness(String kind) {
         return switch (kind) {
             case Kafka.RESOURCE_KIND -> Duration.ofMinutes(14).toMillis();
-            case KafkaConnect.RESOURCE_KIND, KafkaMirrorMaker2.RESOURCE_KIND, TestConstants.DEPLOYMENT_CONFIG ->
-                    Duration.ofMinutes(10).toMillis();
-            case KafkaBridge.RESOURCE_KIND, TestConstants.STATEFUL_SET, StrimziPodSet.RESOURCE_KIND,
-                 TestConstants.KAFKA_CRUISE_CONTROL_DEPLOYMENT, TestConstants.KAFKA_EXPORTER_DEPLOYMENT,
-                 TestConstants.DEPLOYMENT -> Duration.ofMinutes(8).toMillis();
+            case KafkaConnect.RESOURCE_KIND,
+                 KafkaMirrorMaker2.RESOURCE_KIND,
+                 TestConstants.DEPLOYMENT_CONFIG
+                    -> Duration.ofMinutes(10).toMillis();
+            case KafkaBridge.RESOURCE_KIND,
+                 TestConstants.STATEFUL_SET,
+                 StrimziPodSet.RESOURCE_KIND,
+                 TestConstants.KAFKA_CRUISE_CONTROL_DEPLOYMENT,
+                 TestConstants.KAFKA_EXPORTER_DEPLOYMENT,
+                 TestConstants.DEPLOYMENT
+                    -> Duration.ofMinutes(8).toMillis();
             case KafkaConnector.RESOURCE_KIND -> Duration.ofMinutes(7).toMillis();
             default -> Duration.ofMinutes(3).toMillis();
         };
@@ -35,7 +41,10 @@ public class ResourceOperation {
 
     public static long getTimeoutForKafkaRebalanceState(KafkaRebalanceState state) {
         return switch (state) {
-            case ProposalReady, Ready, Rebalancing -> Duration.ofMinutes(14).toMillis();
+            case ProposalReady,
+                 Ready,
+                 Rebalancing
+                    -> Duration.ofMinutes(14).toMillis();
             default -> Duration.ofMinutes(6).toMillis();
         };
     }
@@ -54,9 +63,13 @@ public class ResourceOperation {
 
     public static long getTimeoutForResourceDeletion(String kind) {
         return switch (kind) {
-            case Kafka.RESOURCE_KIND, KafkaConnect.RESOURCE_KIND, KafkaMirrorMaker2.RESOURCE_KIND,
-                 KafkaBridge.RESOURCE_KIND, TestConstants.STATEFUL_SET, TestConstants.POD ->
-                    Duration.ofMinutes(5).toMillis();
+            case Kafka.RESOURCE_KIND,
+                 KafkaConnect.RESOURCE_KIND,
+                 KafkaMirrorMaker2.RESOURCE_KIND,
+                 KafkaBridge.RESOURCE_KIND,
+                 TestConstants.STATEFUL_SET,
+                 TestConstants.POD
+                    -> Duration.ofMinutes(5).toMillis();
             default -> Duration.ofMinutes(2).toMillis();
         };
     }

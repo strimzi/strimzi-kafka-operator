@@ -156,7 +156,9 @@ public class DynamicConfSharedST extends AbstractST {
                     break;
                 case BOOLEAN:
                     stochasticChosenValue = switch (key) {
-                        case "unclean.leader.election.enable", "log.preallocate" -> true;
+                        case "unclean.leader.election.enable",
+                             "log.preallocate"
+                                -> true;
                         case "log.message.downconversion.enable" -> false;
                         default -> ThreadLocalRandom.current().nextInt(2) == 0;
                     };
