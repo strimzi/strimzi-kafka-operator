@@ -4,17 +4,6 @@ Are you currently using Strimzi in production?
 Do you have products based on Strimzi or provide Strimzi-related services?
 Please let us know by adding your company name and, if you want, a description of your use case to this document!
 
-### Vendors
-
-* [Ænix](https://aenix.io)
-  * Use Strimzi to provide Kafka as a Service in Open Source platform [Cozystack](https://cozystack.io)
-* [Axual](https://axual.com/)
-    * [Optimizing Kafka Cluster Deployments in Kubernetes](https://itnext.io/optimizing-kafka-cluster-deployments-in-kubernetes-ceda3f95c157)
-* [Cloudera](https://www.cloudera.com/products/stream-processing.html)
-* [IBM](https://www.ibm.com/products/event-streams)
-* [Red Hat](https://www.redhat.com/en/)
-    * [Streams for Apache Kafka](https://developers.redhat.com/products/streams-for-apache-kafka/overview)
-
 ### Users
 
 * [Grupo MASMOVIL](https://www.grupomasmovil.com/)
@@ -43,3 +32,14 @@ Please let us know by adding your company name and, if you want, a description o
    * Use Strimzi to create a (streaming) telemetry platform and EDA for Network Orchestration.
 * [AppsFlyer](https://www.appsflyer.com/)
   * Running dozens of high-throughput clusters, handling tens of millions of messages per second, relying on the local ephemeral storage.
+
+### Vendors
+
+* [Ænix](https://aenix.io)
+  * Use Strimzi to provide Kafka as a Service in Open Source platform [Cozystack](https://cozystack.io)
+* [Axual](https://axual.com/)
+  * [Optimizing Kafka Cluster Deployments in Kubernetes](https://itnext.io/optimizing-kafka-cluster-deployments-in-kubernetes-ceda3f95c157)
+* [Cloudera](https://www.cloudera.com/products/stream-processing.html)
+* [IBM](https://www.ibm.com/products/event-streams)
+* [Red Hat](https://www.redhat.com/en/)
+  * [Streams for Apache Kafka](https://developers.redhat.com/products/streams-for-apache-kafka/overview)
