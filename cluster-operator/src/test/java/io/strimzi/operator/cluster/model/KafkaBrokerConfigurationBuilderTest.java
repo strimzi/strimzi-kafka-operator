@@ -62,7 +62,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
@@ -2638,92 +2637,5 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "metadata.log.dir=/my/kraft/metadata/kafka-log2"
         ));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigDoesNotExists() {
-        KafkaConfiguration config1 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        AbstractConfiguration.createOrAddListConfig(config1, "test-key", "test-value");
-        assertThat(config1.getConfigOption("test-key"), is("test-value"));
-
-        KafkaConfiguration config2 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        AbstractConfiguration.createOrAddListConfig(config2, "test-key", "test-value-1,test-value-2");
-        assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigExists() {
-        KafkaConfiguration config1 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config1.setConfigOption("test-key", "test-value-1");
-
-        AbstractConfiguration.createOrAddListConfig(config1, "test-key", "test-value-2");
-        assertThat(config1.getConfigOption("test-key"), is("test-value-1,test-value-2"));
-
-        KafkaConfiguration config2 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config2.setConfigOption("test-key", "test-value-1,test-value-2");
-        AbstractConfiguration.createOrAddListConfig(config2, "test-key", "test-value-3");
-        assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2,test-value-3"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigExistsAndContainsValue() {
-        KafkaConfiguration config1 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config1.setConfigOption("test-key", "test-value-1");
-        AbstractConfiguration.createOrAddListConfig(config1, "test-key", "test-value-1");
-        assertThat(config1.getConfigOption("test-key"), is("test-value-1"));
-
-        KafkaConfiguration config2 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config2.setConfigOption("test-key", "test-value-1,test-value-2");
-        AbstractConfiguration.createOrAddListConfig(config2, "test-key", "test-value-1");
-        assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigWithDuplicate() {
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption("test-key", "test-value-1,test-value-1,test-value-2");
-        AbstractConfiguration.createOrAddListConfig(config, "test-key", "test-value-3,test-value-3");
-        assertThat(config.getConfigOption("test-key"), is("test-value-1,test-value-2,test-value-3"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigOrdering() {
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption("test-key", "test-value-2,test-value-1");
-        AbstractConfiguration.createOrAddListConfig(config, "test-key", "test-value-3,");
-        assertThat(config.getConfigOption("test-key"), is("test-value-2,test-value-1,test-value-3"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigWithNullConfig() {
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption("test-key", "test-value-1,test-value-2");
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            AbstractConfiguration.createOrAddListConfig(null, "test-key", "test-value-3");
-        });
-
-        assertThat(exception.getMessage(), is(equalTo("Configuration is required")));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigWithInvalidKeys() {
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption("test-key", "test-value-1,test-value-2");
-
-        Stream.of(null, "", " ")
-                .map(key -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListConfig(config, key, "test-value-3")))
-                .forEach(e -> assertThat(e.getMessage(), is("Configuration key is required")
-                ));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigWithNullValue() {
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption("test-key", "test-value-1,test-value-2");
-
-        Stream.of(null, "", " ")
-                .map(value -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListConfig(config, "test-key", value)))
-                .forEach(e -> assertThat(e.getMessage(), is("Configuration values are required")
-                ));
     }
 }

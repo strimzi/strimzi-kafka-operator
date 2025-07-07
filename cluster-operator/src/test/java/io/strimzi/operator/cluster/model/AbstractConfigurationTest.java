@@ -14,11 +14,9 @@ import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
-import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -253,95 +251,83 @@ public class AbstractConfigurationTest {
 
     @ParallelTest
     public void testCreateOrAddListConfigDoesNotExists() {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        KafkaConnectConfiguration config1 = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-        AbstractConfiguration.createOrAddListConfig(config1, "test-key", "test-value");
-        assertThat(config1.getConfigOption("test-key"), is("test-value"));
+        OrderedProperties props1 = new OrderedProperties();
+        AbstractConfiguration.createOrAddListProperty(props1, "test-key", "test-value");
+        assertThat(props1.asMap().get("test-key"), is("test-value"));
 
-        KafkaConnectConfiguration config2 = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-        AbstractConfiguration.createOrAddListConfig(config2, "test-key", "test-value-1,test-value-2");
-        assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2"));
+        OrderedProperties props2 = new OrderedProperties();
+        AbstractConfiguration.createOrAddListProperty(props2, "test-key", "test-value-1,test-value-2");
+        assertThat(props2.asMap().get("test-key"), is("test-value-1,test-value-2"));
     }
 
     @ParallelTest
     public void testCreateOrAddListConfigExists() {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        KafkaConnectConfiguration config1 = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-        config1.setConfigOption("test-key", "test-value-1");
+        OrderedProperties props1 = new OrderedProperties();
+        props1.addPair("test-key", "test-value-1");
 
-        AbstractConfiguration.createOrAddListConfig(config1, "test-key", "test-value-2");
-        assertThat(config1.getConfigOption("test-key"), is("test-value-1,test-value-2"));
+        AbstractConfiguration.createOrAddListProperty(props1, "test-key", "test-value-2");
+        assertThat(props1.asMap().get("test-key"), is("test-value-1,test-value-2"));
 
-        KafkaConnectConfiguration config2 = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-        config2.setConfigOption("test-key", "test-value-1,test-value-2");
-        AbstractConfiguration.createOrAddListConfig(config2, "test-key", "test-value-3");
-        assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2,test-value-3"));
+        OrderedProperties props2 = new OrderedProperties();
+        props2.addPair("test-key", "test-value-1,test-value-2");
+        AbstractConfiguration.createOrAddListProperty(props2, "test-key", "test-value-3");
+        assertThat(props2.asMap().get("test-key"), is("test-value-1,test-value-2,test-value-3"));
     }
 
     @ParallelTest
     public void testCreateOrAddListConfigExistsAndContainsValue() {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        KafkaConnectConfiguration config1 = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-        config1.setConfigOption("test-key", "test-value-1");
-        AbstractConfiguration.createOrAddListConfig(config1, "test-key", "test-value-1");
-        assertThat(config1.getConfigOption("test-key"), is("test-value-1"));
+        OrderedProperties props1 = new OrderedProperties();
+        props1.addPair("test-key", "test-value-1");
+        AbstractConfiguration.createOrAddListProperty(props1, "test-key", "test-value-1");
+        assertThat(props1.asMap().get("test-key"), is("test-value-1"));
 
-        KafkaConnectConfiguration config2 = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-        config2.setConfigOption("test-key", "test-value-1,test-value-2");
-        AbstractConfiguration.createOrAddListConfig(config2, "test-key", "test-value-1");
-        assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2"));
+        OrderedProperties props2 = new OrderedProperties();
+        props2.addPair("test-key", "test-value-1,test-value-2");
+        AbstractConfiguration.createOrAddListProperty(props2, "test-key", "test-value-1");
+        assertThat(props2.asMap().get("test-key"), is("test-value-1,test-value-2"));
     }
 
     @ParallelTest
     public void testCreateOrAddListConfigWithDuplicates() {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        KafkaConnectConfiguration config = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-        config.setConfigOption("test-key", "test-value-1,test-value-1,test-value-2");
-        AbstractConfiguration.createOrAddListConfig(config, "test-key", "test-value-3,test-value-3");
-        assertThat(config.getConfigOption("test-key"), is("test-value-1,test-value-2,test-value-3"));
+        OrderedProperties props = new OrderedProperties();
+        props.addPair("test-key", "test-value-1,test-value-1,test-value-2");
+        AbstractConfiguration.createOrAddListProperty(props, "test-key", "test-value-3,test-value-3");
+        assertThat(props.asMap().get("test-key"), is("test-value-1,test-value-2,test-value-3"));
     }
 
     @ParallelTest
     public void testCreateOrAddListConfigOrdering() {
-        Map<String, Object> userConfiguration = new HashMap<>();
-        KafkaConnectConfiguration config = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
-        config.setConfigOption("test-key", "test-value-2,test-value-1");
-        AbstractConfiguration.createOrAddListConfig(config, "test-key", "test-value-3,");
-        assertThat(config.getConfigOption("test-key"), is("test-value-2,test-value-1,test-value-3"));
+        OrderedProperties props = new OrderedProperties();
+        props.addPair("test-key", "test-value-2,test-value-1");
+        AbstractConfiguration.createOrAddListProperty(props, "test-key", "test-value-3,");
+        assertThat(props.asMap().get("test-key"), is("test-value-2,test-value-1,test-value-3"));
     }
 
     @ParallelTest
     public void testCreateOrAddListConfigWithNullConfig() {
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption("test-key", "test-value-1,test-value-2");
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListConfig(null, "test-key", "test-value-3"));
-        assertThat(exception.getMessage(), is("Configuration is required"));
+        OrderedProperties props = new OrderedProperties();
+        props.addPair("test-key", "test-value-1,test-value-2");
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> AbstractConfiguration.createOrAddListProperty(null, "test-key", "test-value-3"));
+        assertThat(e.getMessage(), is("Configuration is required"));
     }
 
     @ParallelTest
     public void testCreateOrAddListConfigWithNullKey() {
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption("test-key", "test-value-1,test-value-2");
+        OrderedProperties props = new OrderedProperties();
+        props.addPair("test-key", "test-value-1,test-value-2");
         Stream.of(null, "", " ")
-                .map(key -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListConfig(config, key, "test-value-3")))
+                .map(key -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListProperty(props, key, "test-value-3")))
                 .forEach(e -> assertThat(e.getMessage(), is("Configuration key is required")));
     }
 
     @ParallelTest
     public void testCreateOrAddListConfigWithNullValue() {
-        KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        config.setConfigOption("test-key", "test-value-1,test-value-2");
+        OrderedProperties props = new OrderedProperties();
+        props.addPair("test-key", "test-value-1,test-value-2");
         Stream.of(null, "", " ")
-                .map(value -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListConfig(config, "test-key", value)))
+                .map(value -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListProperty(props, "test-key", value)))
                 .forEach(e -> assertThat(e.getMessage(), is("Configuration values are required")));
-    }
-
-    @ParallelTest
-    public void testSplittingOfPrefixes()   {
-        String prefixes = "prefix1.field,prefix2.field , prefix3.field, prefix4.field,, ";
-        List<String> prefixList = asList("prefix1.field", "prefix2.field", "prefix3.field", "prefix4.field");
-
-        assertThat(AbstractConfiguration.splitPrefixesOrOptionsToList(prefixes).equals(prefixList), is(true));
     }
 }
 
