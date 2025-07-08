@@ -301,7 +301,7 @@ public class CertUtils {
      * @return  The generated volume name
      */
     private static String trustedCertificateVolumeName(CertSecretSource certSecretSource, String prefix)    {
-        return prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
+        return VolumeUtils.getValidVolumeName(prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName());
     }
 
     /**
