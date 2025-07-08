@@ -774,23 +774,9 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configProviders(KafkaConfiguration userConfig)    {
         printSectionHeader("Config providers");
-
-        String strimziConfigProviders;
-        if (node.broker()) {
-            // File and Directory providers are used only on broker nodes
-            strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
-        } else {
-            strimziConfigProviders = "strimzienv";
-        }
         
-        final String userConfigProviders = getUserConfigProviderAliases(strimziConfigProviders, userConfig);
-        if (userConfigProviders.isEmpty()) {
-            writer.println("# Configuration providers configured by Strimzi");
-            writer.println("config.providers=" + strimziConfigProviders);
-        } else {
-            writer.println("# Configuration providers configured by the user and by Strimzi");
-            writer.println("config.providers=" + userConfigProviders + "," + strimziConfigProviders);
-        }
+        writer.println("# Configuration providers configured by the user and by Strimzi");
+        writer.println("config.providers=" + getConfigProviderAliases(userConfig));
 
         writer.println("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
         writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
@@ -807,21 +793,57 @@ public class KafkaBrokerConfigurationBuilder {
     }
     
     /**
+     * Get the Kafka configuration provider aliases, throwing an InvalidConfigurationException if any user provided aliases are found that would overwrite the Strimzi defined configuration providers
+     * 
+     * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
+     * @return                          The Kafka configuration provider aliases
+     */
+    private String getConfigProviderAliases(KafkaConfiguration userConfig) {
+        Collection<String> strimziAliases = new ArrayList<>();
+        strimziAliases.add("strimzienv");
+        if (node.broker()) {
+            // File and Directory providers are used only on broker nodes
+            strimziAliases.add("strimzifile");
+            strimziAliases.add("strimzidir");
+        }
+        
+        if (userConfig != null
+                && !userConfig.getConfiguration().isEmpty()
+                && userConfig.getConfigOption("config.providers") != null) {
+            String aliases = userConfig.getConfigOption("config.providers");
+            Collection<String> userAliases = Arrays.asList(aliases.split(","));
+            
+            for (final String alias: strimziAliases) {
+                if (userAliases.contains(alias)) {
+                    throw new InvalidConfigurationException("config.provider " + alias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases); 
+                } else {
+                    aliases += "," + alias;
+                }
+            }
+
+            userConfig.removeConfigOption("config.providers");
+            return aliases;
+        } else {
+            return String.join(",", strimziAliases);
+        }
+        
+    }
+    
+    /**
      * Get the user provided Kafka configuration provider aliases, throwing an InvalidConfigurationException if any are found that would overwrite the Strimzi defined configuration providers
      * 
      * @param strimziConfigProviders    The Strimzi defined configuration providers
      * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
      * @return                          The user defined Kafka configuration provider aliases or empty string
      */
-    private String getUserConfigProviderAliases(String strimziConfigProviders, KafkaConfiguration userConfig) {
+    private String getUserConfigProviderAliases(Collection<String> strimziAliases, KafkaConfiguration userConfig) {
         String userConfigProviderAliases = "";
         if (userConfig != null
                 && !userConfig.getConfiguration().isEmpty()
                 && userConfig.getConfigOption("config.providers") != null) {
             userConfigProviderAliases = userConfig.getConfigOption("config.providers");
             Collection<String> userAliases = Arrays.asList(userConfigProviderAliases.split(","));
-            Collection<String> strimziAliases = Arrays.asList(strimziConfigProviders.split(","));
-            
+                        
             userAliases.stream().forEach(alias -> {
                 if (strimziAliases.contains(alias)) {
                     throw new InvalidConfigurationException("config.provider " + alias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases); 
