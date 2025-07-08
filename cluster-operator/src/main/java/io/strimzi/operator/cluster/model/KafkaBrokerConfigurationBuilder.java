@@ -810,19 +810,16 @@ public class KafkaBrokerConfigurationBuilder {
         if (userConfig != null
                 && !userConfig.getConfiguration().isEmpty()
                 && userConfig.getConfigOption("config.providers") != null) {
-            String aliases = userConfig.getConfigOption("config.providers");
-            Collection<String> userAliases = Arrays.asList(aliases.split(","));
+            String userAliases = userConfig.getConfigOption("config.providers");
             
-            for (final String alias: strimziAliases) {
-                if (userAliases.contains(alias)) {
-                    throw new InvalidConfigurationException("config.provider " + alias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases); 
-                } else {
-                    aliases += "," + alias;
+            Arrays.asList(userAliases.split(",")).stream().forEach(userAlias -> {
+                if (strimziAliases.contains(userAlias)) {
+                    throw new InvalidConfigurationException("config.provider " + userAlias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases); 
                 }
-            }
+            });
 
             userConfig.removeConfigOption("config.providers");
-            return aliases;
+            return userAliases + "," + String.join(",", strimziAliases);
         } else {
             return String.join(",", strimziAliases);
         }
