@@ -283,6 +283,8 @@ jobs:
           RESOURCE_ALLOCATION_STRATEGY: "SHARE_MEMORY_FOR_ALL_COMPONENTS"
           TEST_LOG_DIR: "systemtest-logs"
           CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN: ${{ env.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN }}
+          # TODO - revert after debugging
+          STRIMZI_TEST_LOG_LEVEL: DEBUG
 
       - name: Archive JUnit test results
         if: ${{ always() }}
