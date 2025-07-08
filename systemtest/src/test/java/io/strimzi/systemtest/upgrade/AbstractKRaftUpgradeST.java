@@ -595,7 +595,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         if (versionModificationData.getProcedures() != null && (currentMetadataVersion != null || replaceEvenIfMissing)) {
 
             if (kafkaVersionFromProcedure != null && !kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.contains(kafkaVersionFromProcedure)) {
-                LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
+                LOGGER.info("Set Kafka version to {}", kafkaVersionFromProcedure);
                 KafkaUtils.replace(componentsNamespaceName, CLUSTER_NAME, kafka -> kafka.getSpec().getKafka().setVersion(kafkaVersionFromProcedure));
 
                 waitForKafkaControllersAndBrokersFinishRollingUpdate(componentsNamespaceName);

@@ -469,12 +469,12 @@ class HttpBridgeST extends AbstractST {
         final Map<String, String> filteredActualKafkaBridgeCustomLabels =
             kafkaBridgeService.getMetadata().getLabels().entrySet().stream()
                 .filter(item -> item.getKey().equals("app") && item.getValue().equals("bar"))
-                .collect(Collectors.toMap(item -> item.getKey(), item -> item.getValue()));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         final Map<String, String> filteredActualKafkaBridgeCustomAnnotations =
             kafkaBridgeService.getMetadata().getAnnotations().entrySet().stream()
                 .filter(item -> item.getKey().equals("bar") && item.getValue().equals("app"))
-                .collect(Collectors.toMap(item -> item.getKey(), item -> item.getValue()));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         // verify phase: that inside KafkaBridge we can find 'exceptedKafkaBridgeCustomLabels' and 'exceptedKafkaBridgeCustomAnnotations' previously defined
         assertThat(filteredActualKafkaBridgeCustomLabels.size(), is(Collections.singletonMap("app", "bar").size()));

@@ -165,9 +165,9 @@ public abstract class BaseMetricsCollectionScheduler {
     protected void printCurrentMetrics() {
         this.metricsStore.forEach((key, valueList) -> {
             if (valueList.isEmpty()) {
-                LOGGER.debug(key + " => [No data]");
+                LOGGER.debug("{} => [No data]", key);
             } else {
-                LOGGER.debug(key + " => " + valueList);
+                LOGGER.debug("{} => {}", key, valueList);
             }
         });
     }

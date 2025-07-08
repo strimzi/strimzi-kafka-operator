@@ -195,7 +195,7 @@ public class RollingUpdateUtils {
                         TestConstants.GLOBAL_STABILIZATION_TIME - i[0]);
                     return i[0]++ == TestConstants.GLOBAL_STABILIZATION_TIME;
                 } else {
-                    throw new RuntimeException(pods.toString() + " Pods are rolling!");
+                    throw new RuntimeException(pods + " Pods are rolling!");
                 }
             }
         );

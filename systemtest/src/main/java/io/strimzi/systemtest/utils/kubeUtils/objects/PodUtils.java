@@ -278,11 +278,11 @@ public class PodUtils {
         int[] stabilityCounter = {0};
 
         List<Pod> runningPods = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, podPrefix).stream()
-            .filter(pod -> pod.getStatus().getPhase().equals(phase)).collect(Collectors.toList());
+            .filter(pod -> pod.getStatus().getPhase().equals(phase)).toList();
 
         TestUtils.waitFor(String.format("Pods %s#%s stability in phase %s", namespaceName, podPrefix, phase), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> actualPods = runningPods.stream().map(p -> KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(p.getMetadata().getName()).get()).collect(Collectors.toList());
+                List<Pod> actualPods = runningPods.stream().map(p -> KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(p.getMetadata().getName()).get()).toList();
 
                 for (Pod pod : actualPods) {
                     if (pod.getStatus().getPhase().equals(phase)) {

@@ -23,7 +23,7 @@ public class JmxUtils {
     private static void createScriptForJMXTermInPod(String namespaceName, String podName, String serviceName, String userName, String password, String commands) {
         String scriptBody = "open service:jmx:rmi:///jndi/rmi://" + serviceName + ":" + TestConstants.JMX_PORT + "/jmxrmi";
 
-        if (!userName.equals("") && !password.equals("")) {
+        if (!userName.isEmpty() && !password.isEmpty()) {
             scriptBody += " -u " + userName + " -p " + password + "\n";
         } else {
             scriptBody += "\n";

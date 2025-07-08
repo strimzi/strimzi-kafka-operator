@@ -358,7 +358,7 @@ public class ListenersST extends AbstractST {
         String password = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getUsername()).get().getData().get("password");
         String decodedPassword = Util.decodeFromBase64(password);
 
-        assertEquals(decodedPassword.length(), passwordLength);
+        assertEquals(passwordLength, decodedPassword.length());
 
         Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");

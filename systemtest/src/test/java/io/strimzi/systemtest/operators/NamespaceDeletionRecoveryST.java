@@ -55,7 +55,7 @@ import static io.strimzi.systemtest.TestTags.RECOVERY;
 @Tag(RECOVERY)
 class NamespaceDeletionRecoveryST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryST.class);
-    private String storageClassName = "retain";
+    private final String storageClassName = "retain";
 
     /**
      * In case that we have all KafkaTopic resources that existed before cluster loss, including internal topics,

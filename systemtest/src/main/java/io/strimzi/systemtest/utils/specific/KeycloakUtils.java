@@ -244,7 +244,7 @@ public class KeycloakUtils {
 
                 return false;
             } catch (Exception e) {
-                LOGGER.warn("Exception occurred during doing request on Keycloak API: " + e.getMessage());
+                LOGGER.warn("Exception occurred during doing request on Keycloak API: {}", e.getMessage());
                 return false;
             }
         });

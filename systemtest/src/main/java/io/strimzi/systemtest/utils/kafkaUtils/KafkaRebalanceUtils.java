@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.resources.CrdClients.kafkaRebalanceClient;
 
@@ -51,7 +50,7 @@ public class KafkaRebalanceUtils {
                 .withName(resourceName).get().getStatus().getConditions().stream()
                 .filter(condition -> condition.getType() != null)
                 .filter(condition -> Arrays.stream(KafkaRebalanceState.values()).anyMatch(stateValue -> stateValue.toString().equals(condition.getType())))
-                .collect(Collectors.toList());
+                .toList();
 
         if (statusConditions.size() == 1) {
             return statusConditions.get(0);

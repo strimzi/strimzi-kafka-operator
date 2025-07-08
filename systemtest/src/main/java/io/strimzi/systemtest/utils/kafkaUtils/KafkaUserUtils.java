@@ -143,7 +143,7 @@ public class KafkaUserUtils {
         TestUtils.waitFor("all users to become ready", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
             List<KafkaUser> listOfUsers = kafkaUserClient().inNamespace(namespaceName).list().getItems().stream().filter(kafkaUser -> kafkaUser.getMetadata().getName().startsWith(usersPrefix)).toList();
             try {
-                listOfUsers = listOfUsers.stream().filter(kafkaUser -> !(kafkaUser.getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(Ready.toString()) && condition.getStatus().equals("True")))).toList();
+                listOfUsers = listOfUsers.stream().filter(kafkaUser -> kafkaUser.getStatus().getConditions().stream().noneMatch(condition -> condition.getType().equals(Ready.toString()) && condition.getStatus().equals("True"))).toList();
                 if (listOfUsers.size() != 0) {
                     LOGGER.warn("There are still {} users with prefix: {}, which are not in {} state", listOfUsers.size(), usersPrefix, Ready.toString());
                     return false;

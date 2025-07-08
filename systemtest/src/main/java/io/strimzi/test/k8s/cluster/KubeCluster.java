@@ -39,25 +39,15 @@ public interface KubeCluster {
         KubeCluster[] clusters = null;
         String clusterName = System.getenv(ENV_VAR_TEST_CLUSTER);
         if (clusterName != null) {
-            switch (clusterName.toLowerCase(Locale.ENGLISH)) {
-                case "oc":
-                    clusters = new KubeCluster[]{new OpenShift()};
-                    break;
-                case "minikube":
-                    clusters = new KubeCluster[]{new Minikube()};
-                    break;
-                case "kind":
-                    clusters = new KubeCluster[]{new Kind()};
-                    break;
-                case "microshift":
-                    clusters = new KubeCluster[]{new Microshift()};
-                    break;
-                case "kubernetes":
-                    clusters = new KubeCluster[]{new Kubernetes()};
-                    break;
-                default:
-                    throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER + "=" + clusterName + " is not a supported cluster type");
-            }
+            clusters = switch (clusterName.toLowerCase(Locale.ENGLISH)) {
+                case "oc" -> new KubeCluster[]{new OpenShift()};
+                case "minikube" -> new KubeCluster[]{new Minikube()};
+                case "kind" -> new KubeCluster[]{new Kind()};
+                case "microshift" -> new KubeCluster[]{new Microshift()};
+                case "kubernetes" -> new KubeCluster[]{new Kubernetes()};
+                default ->
+                        throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER + "=" + clusterName + " is not a supported cluster type");
+            };
         }
         if (clusters == null) {
             clusters = new KubeCluster[]{new Minikube(), new Kind(), new Kubernetes(), new OpenShift(), new Microshift()};

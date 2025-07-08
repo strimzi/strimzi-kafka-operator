@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
- * for use with {@code @BeforeAll} (or {@code BeforeEach}.
+ * for use with {@code @BeforeAll} (or {@code BeforeEach}).
  * For example:
  * <pre><code>
  *     public static KubeClusterResource testCluster = new KubeClusterResources();

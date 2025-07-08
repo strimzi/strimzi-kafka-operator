@@ -63,10 +63,10 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
-    private Object lock = new Object();
+    private final Object lock = new Object();
 
     // only 4 type of listeners
-    private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
+    private final Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
 
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)

@@ -758,7 +758,7 @@ class KafkaST extends AbstractST {
         PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(testStorage.getNamespaceName(), testStorage.getClusterName(), customSpecifiedLabelOrAnnotationPvc, pvcLabelOrAnnotationKey);
 
         pvcs = PersistentVolumeClaimUtils.listPVCsByNameSubstring(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
-            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
+            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).toList();
         LOGGER.info(pvcs.toString());
 
         for (PersistentVolumeClaim pvc : pvcs) {
@@ -1337,7 +1337,7 @@ class KafkaST extends AbstractST {
             .forEach(volume -> {
                 String volumeName = volume.getMetadata().getName();
                 pvcs.add(volumeName);
-                LOGGER.info("Checking labels for volume: " + volumeName);
+                LOGGER.info("Checking labels for volume: {}", volumeName);
                 assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
                 assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(Kafka.RESOURCE_KIND));
                 assertThat(volume.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(clusterName.concat("-kafka")));
@@ -1356,7 +1356,7 @@ class KafkaST extends AbstractST {
             ArrayList<String> dataSourcesOnPod = new ArrayList<>();
             ArrayList<String> pvcsOnPod = new ArrayList<>();
 
-            LOGGER.info("Getting list of mounted data sources and PVCs on Kafka Pod: " + i);
+            LOGGER.info("Getting list of mounted data sources and PVCs on Kafka Pod: {}", i);
             for (int j = 0; j < diskCountPerReplica; j++) {
                 dataSourcesOnPod.add(KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(String.join("-", podSetName, String.valueOf(i))).get()
                     .getSpec().getVolumes().get(j).getName());
@@ -1364,7 +1364,7 @@ class KafkaST extends AbstractST {
                     .getSpec().getVolumes().get(j).getPersistentVolumeClaim().getClaimName());
             }
 
-            LOGGER.info("Verifying mounted data sources and PVCs on Kafka Pod: " + i);
+            LOGGER.info("Verifying mounted data sources and PVCs on Kafka Pod: {}", i);
             for (int j = 0; j < diskCountPerReplica; j++) {
                 assertThat(dataSourcesOnPod.contains("data-" + j), is(true));
                 assertThat(pvcsOnPod.contains("data-" + j + "-" + podSetName + "-" + i), is(true));

@@ -38,7 +38,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 public class DrainCleanerST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DrainCleanerST.class);
-    private static SetupDrainCleaner drainCleaner = new SetupDrainCleaner();
+    private static final SetupDrainCleaner DRAIN_CLEANER = new SetupDrainCleaner();
 
     @Tag(REGRESSION)
     @IsolatedTest
@@ -55,7 +55,7 @@ public class DrainCleanerST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getTopicName(), testStorage.getClusterName()).build());
 
-        drainCleaner.createDrainCleaner();
+        DRAIN_CLEANER.createDrainCleaner();
         // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled
         NetworkPolicyUtils.allowNetworkPolicySettingsForWebhook(TestConstants.DRAIN_CLEANER_NAMESPACE, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME, Map.of(TestConstants.APP_POD_LABEL, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME));
 
