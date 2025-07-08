@@ -26,7 +26,10 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.executor.Exec;
+import io.skodjob.testframe.executor.ExecResult;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.wait.Wait;
 import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ConnectorState;
@@ -53,6 +56,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
+import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.CrdClients;
@@ -83,12 +87,15 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
 
@@ -207,7 +214,8 @@ class ConnectST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
-        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        // TODO - revert changes here!!!
+        KubeResourceManager.get().createResourceWithoutWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -218,6 +226,29 @@ class ConnectST extends AbstractST {
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec()
             .build());
+
+        Wait.until("KafkaConnect readiness", Duration.ofSeconds(5).toMillis(), TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
+            // print diagnostics only when the test failed
+            LOGGER.info("Running diagnostics...");
+            Diagnostics.logApiServerTail(300);
+            Diagnostics.logControlPlaneContainerStates();
+            Diagnostics.logHostUtilisation();
+
+            LOGGER.info("Getting info from Kube API about KC");
+            KafkaConnect kc = CrdClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
+
+            LOGGER.info("Current connect CR: {}", kc);
+            ExecResult er = Exec.exec("kubectl", "get", "events", "-n", testStorage.getNamespaceName());
+            LOGGER.debug("Events in KC ns STDOUT: {}", er.out());
+            LOGGER.debug("Events in KC ns STDERR: {}", er.err());
+//            LOGGER.debug("Current pods in {}: {}", testStorage.getNamespaceName(), KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName()));
+//            LOGGER.debug("Current pods in {}: {}", "kube-system", KubeResourceManager.get().kubeClient().listPods("kube-system"));
+//            er = Exec.exec("kubectl", "cluster-info", "dump");
+//            LOGGER.debug("ClusterState STDOUT: {}", er.out());
+//            LOGGER.debug("ClusterState STDERR: {}", er.err());
+
+            return kc.getStatus().getConditions().stream().anyMatch(condition -> Objects.equals(condition.getType(), Ready.name()) && Objects.equals(condition.getStatus(), ConditionStatus.True.name()));
+        });
 
         final String connectPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaConnectResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
 
@@ -1919,4 +1950,81 @@ class ConnectST extends AbstractST {
             )
             .install();
     }
+
+    // TODO - delete this
+    public final class Diagnostics {
+
+        private static final Logger LOGGER = LogManager.getLogger(Diagnostics.class);
+        private static final String KIND_PREFIX = "kind-cluster-control-plane";
+
+        private Diagnostics() { }
+
+        public static void logApiServerTail(int tailLines) {
+            List<String> nodes = listControlPlaneNodes();
+            for (String node : nodes) {
+                String cid = getApiserverContainerId(node);
+                if (cid == null || cid.isBlank()) {
+                    LOGGER.warn("No kube-apiserver container found in node {}", node);
+                    continue;
+                }
+
+                ExecResult r = Exec.exec(
+                    "bash", "-c",
+                    "docker exec " + node + " crictl logs --timestamps " + cid + " | tail -n " + tailLines
+                );
+                LOGGER.debug("\n===== {} : kube-apiserver (tail {} lines) =====\n{}",
+                    node, tailLines, r.out());
+                if (!r.err().isBlank()) {
+                    LOGGER.warn("{} : stderr while reading apiserver logs:\n{}", node, r.err());
+                }
+            }
+        }
+
+        public static void logControlPlaneContainerStates() {
+            ExecResult r = Exec.exec(
+                "bash", "-c",
+                "docker inspect --format='{{.Name}} -> Exit: {{.State.ExitCode}}  " +
+                    "OOM: {{.State.OOMKilled}}  Restarts: {{.RestartCount}}' " +
+                    "$(docker ps -aq --filter name=" + KIND_PREFIX + ")"
+            );
+            LOGGER.debug("\n===== Control-plane container states =====\n{}", r.out());
+            if (!r.err().isBlank()) {
+                LOGGER.warn("stderr while inspecting control-plane containers:\n{}", r.err());
+            }
+        }
+
+        public static void logHostUtilisation() {
+            runAndLog("free", "-h");
+            runAndLog("docker", "stats", "--no-stream",
+                "--format", "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}");
+        }
+
+        private static List<String> listControlPlaneNodes() {
+            ExecResult r = Exec.exec(
+                "docker", "ps",
+                "--filter", "name=" + KIND_PREFIX,
+                "--format", "{{.Names}}"
+            );
+            return Arrays.stream(r.out().split("\\R"))
+                .filter(s -> !s.isBlank())
+                .toList();
+        }
+
+        private static String getApiserverContainerId(String node) {
+            ExecResult r = Exec.exec(
+                "bash", "-c",
+                "docker exec " + node + " crictl ps --name kube-apiserver -q | head -n1"
+            );
+            return r.out().trim();
+        }
+
+        private static void runAndLog(String... cmd) {
+            ExecResult r = Exec.exec(cmd);
+            LOGGER.debug("\n===== $ {} =====\n{}", String.join(" ", cmd), r.out());
+            if (!r.err().isBlank()) {
+                LOGGER.warn("stderr from {}:\n{}", cmd[0], r.err());
+            }
+        }
+    }
+
 }
