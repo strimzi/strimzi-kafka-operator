@@ -699,7 +699,7 @@ class CoreFeaturesIT implements TestSeparator {
     }
 
     @Test
-    public void shouldNotCreateTopicInKafkaWhenUnmanagedTopicCreatedInKube() throws ExecutionException, InterruptedException {
+    public void shouldNotCreateTopicInKafkaWhenUnmanagedTopicCreatedInKube() throws InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
         List<KafkaTopic> topics = List.of(
                 kafkaTopic(NAMESPACE, "unmanaged-topic-a", false, "unmanaged-topic-a", 2, 1),

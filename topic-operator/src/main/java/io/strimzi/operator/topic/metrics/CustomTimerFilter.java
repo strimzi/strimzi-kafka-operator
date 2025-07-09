@@ -13,8 +13,8 @@ import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
  * by overriding the configuration of the meter with the given name.
  */
 public class CustomTimerFilter implements MeterFilter {
-    private String name;
-    private double[] sla;
+    private final String name;
+    private final double[] sla;
 
     /**
      * Construct the timer filter.

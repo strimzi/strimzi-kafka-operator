@@ -59,10 +59,9 @@ public class TopicOperatorUtil {
      * @return Topic names
      */
     public static List<String> topicNames(List<ReconcilableTopic> reconcilableTopics) {
-        List<String> result = reconcilableTopics.stream()
+        return reconcilableTopics.stream()
             .map(ReconcilableTopic::topicName)
             .collect(Collectors.toList());
-        return result;
     }
 
     /**

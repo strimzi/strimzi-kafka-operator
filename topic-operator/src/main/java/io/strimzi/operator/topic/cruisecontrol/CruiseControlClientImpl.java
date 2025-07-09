@@ -106,11 +106,10 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         Map<Integer, List<KafkaTopic>> topicsByReplicas = kafkaTopics.stream()
             .collect(groupingBy(kt -> kt.getSpec().getReplicas()));
         Map<Integer, String> requestPayload = new HashMap<>();
-        topicsByReplicas.entrySet().forEach(es -> {
-            int rf = es.getKey();
-            List<String> targetNames = topicsByReplicas.get(rf)
-                .stream().map(TopicOperatorUtil::topicName).collect(Collectors.toList());
-            requestPayload.put(rf, String.join("|", targetNames));
+        topicsByReplicas.forEach((key, value) -> {
+            List<String> targetNames = topicsByReplicas.get(key)
+                    .stream().map(TopicOperatorUtil::topicName).collect(Collectors.toList());
+            requestPayload.put(key, String.join("|", targetNames));
         });
         String jsonPayload;
         try {
