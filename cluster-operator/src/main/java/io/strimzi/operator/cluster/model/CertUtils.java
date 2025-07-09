@@ -237,11 +237,14 @@ public class CertUtils {
      * @param prefix            Prefix used to generate the volume name
      */
     private static void maybeAddTrustedCertificateVolume(List<Volume> volumeList, CertSecretSource certSecretSource, boolean isOpenShift, String prefix) {
-        String volumeName = trustedCertificateVolumeName(certSecretSource, prefix);
+        Volume secretVolume = VolumeUtils.createSecretVolume(
+            trustedCertificateVolumeName(certSecretSource, prefix),
+            certSecretSource.getSecretName(),
+            isOpenShift);
 
         // skipping if a volume with same name was already added
-        if (volumeList.stream().noneMatch(v -> v.getName().equals(volumeName))) {
-            volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
+        if (volumeList.stream().noneMatch(v -> v.getName().equals(secretVolume.getName()))) {
+            volumeList.add(secretVolume);
         }
     }
 
@@ -284,11 +287,13 @@ public class CertUtils {
      * @param prefix                Prefix used to generate the volume name
      */
     private static void maybeAddTrustedCertificateVolumeMount(List<VolumeMount> volumeMountList, CertSecretSource certSecretSource, String tlsVolumeMountPath, String prefix) {
-        String volumeName = trustedCertificateVolumeName(certSecretSource, prefix);
+        VolumeMount secretVolumeMount = VolumeUtils.createVolumeMount(
+            trustedCertificateVolumeName(certSecretSource, prefix),
+            tlsVolumeMountPath + certSecretSource.getSecretName());
 
         // skipping if a volume mount with same Secret name was already added
-        if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(volumeName))) {
-            volumeMountList.add(VolumeUtils.createVolumeMount(volumeName, tlsVolumeMountPath + certSecretSource.getSecretName()));
+        if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(secretVolumeMount.getName()))) {
+            volumeMountList.add(secretVolumeMount);
         }
     }
 
@@ -301,7 +306,7 @@ public class CertUtils {
      * @return  The generated volume name
      */
     private static String trustedCertificateVolumeName(CertSecretSource certSecretSource, String prefix)    {
-        return VolumeUtils.getValidVolumeName(prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName());
+        return prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
     }
 
     /**
