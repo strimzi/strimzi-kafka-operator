@@ -32,6 +32,7 @@ import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
@@ -40,6 +41,7 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -772,25 +774,9 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configProviders(KafkaConfiguration userConfig)    {
         printSectionHeader("Config providers");
-
-        String strimziConfigProviders;
-        if (node.broker()) {
-            // File and Directory providers are used only on broker nodes
-            strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
-        } else {
-            strimziConfigProviders = "strimzienv";
-        }
-
-        if (userConfig != null
-                && !userConfig.getConfiguration().isEmpty()
-                && userConfig.getConfigOption("config.providers") != null) {
-            writer.println("# Configuration providers configured by the user and by Strimzi");
-            writer.println("config.providers=" + userConfig.getConfigOption("config.providers") + "," + strimziConfigProviders);
-            userConfig.removeConfigOption("config.providers");
-        } else {
-            writer.println("# Configuration providers configured by Strimzi");
-            writer.println("config.providers=" + strimziConfigProviders);
-        }
+        
+        writer.println("# Configuration providers configured by the user and by Strimzi");
+        writer.println("config.providers=" + getConfigProviderAliases(userConfig));
 
         writer.println("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
         writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
@@ -804,6 +790,65 @@ public class KafkaBrokerConfigurationBuilder {
         }
 
         writer.println();
+    }
+    
+    /**
+     * Get the Kafka configuration provider aliases, throwing an InvalidConfigurationException if any user provided aliases are found that would overwrite the Strimzi defined configuration providers
+     * 
+     * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
+     * @return                          The Kafka configuration provider aliases
+     */
+    private String getConfigProviderAliases(KafkaConfiguration userConfig) {
+        Collection<String> strimziAliases = new ArrayList<>();
+        strimziAliases.add("strimzienv");
+        if (node.broker()) {
+            // File and Directory providers are used only on broker nodes
+            strimziAliases.add("strimzifile");
+            strimziAliases.add("strimzidir");
+        }
+        
+        if (userConfig != null
+                && !userConfig.getConfiguration().isEmpty()
+                && userConfig.getConfigOption("config.providers") != null) {
+            String userAliases = userConfig.getConfigOption("config.providers");
+            
+            Arrays.asList(userAliases.split(",")).stream().forEach(userAlias -> {
+                if (strimziAliases.contains(userAlias)) {
+                    throw new InvalidConfigurationException("config.provider " + userAlias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases); 
+                }
+            });
+
+            userConfig.removeConfigOption("config.providers");
+            return userAliases + "," + String.join(",", strimziAliases);
+        } else {
+            return String.join(",", strimziAliases);
+        }
+        
+    }
+    
+    /**
+     * Get the user provided Kafka configuration provider aliases, throwing an InvalidConfigurationException if any are found that would overwrite the Strimzi defined configuration providers
+     * 
+     * @param strimziConfigProviders    The Strimzi defined configuration providers
+     * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
+     * @return                          The user defined Kafka configuration provider aliases or empty string
+     */
+    private String getUserConfigProviderAliases(Collection<String> strimziAliases, KafkaConfiguration userConfig) {
+        String userConfigProviderAliases = "";
+        if (userConfig != null
+                && !userConfig.getConfiguration().isEmpty()
+                && userConfig.getConfigOption("config.providers") != null) {
+            userConfigProviderAliases = userConfig.getConfigOption("config.providers");
+            Collection<String> userAliases = Arrays.asList(userConfigProviderAliases.split(","));
+                        
+            userAliases.stream().forEach(alias -> {
+                if (strimziAliases.contains(alias)) {
+                    throw new InvalidConfigurationException("config.provider " + alias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases); 
+                }
+            });
+            userConfig.removeConfigOption("config.providers");
+        }
+        return userConfigProviderAliases;
     }
 
     /**
