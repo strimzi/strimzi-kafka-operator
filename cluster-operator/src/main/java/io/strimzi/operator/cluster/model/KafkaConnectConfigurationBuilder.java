@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
@@ -326,24 +327,25 @@ public class KafkaConnectConfigurationBuilder {
                 "producer.metric.reporters",
                 "consumer.metric.reporters"
         );
-        // the JmxReporter is explicitly added when metric.reporters is not empty
-        List<String> reporterClasses = List.of(
-                "org.apache.kafka.common.metrics.JmxReporter",
-                StrimziMetricsReporterConfig.KAFKA_CLASS
-        );
-        List<Boolean> injectFlags = List.of(injectKafkaJmxReporter, injectStrimziMetricsReporter);
         boolean hasUserMetricReporters = false;
+        // the JmxReporter is explicitly added when metric.reporters is not empty
+        List<Map.Entry<String, Boolean>> reporterConfig = List.of(
+                Map.entry("org.apache.kafka.common.metrics.JmxReporter", injectKafkaJmxReporter),
+                Map.entry(StrimziMetricsReporterConfig.KAFKA_CLASS, injectStrimziMetricsReporter)
+        );
 
         for (String configKey : configKeys) {
-            for (int i = 0; i < reporterClasses.size(); i++) {
-                if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
-                        userConfig.getConfigOption(configKey) != null && injectFlags.get(i)) {
-                    hasUserMetricReporters = true;
-                    props.addPair(configKey, userConfig.getConfigOption(configKey));
-                    userConfig.removeConfigOption(configKey);
-                }
-                if (injectFlags.get(i)) {
-                    AbstractConfiguration.createOrAddListProperty(props, configKey, reporterClasses.get(i));
+            for (Map.Entry<String, Boolean> reporter : reporterConfig) {
+                String reporterClass = reporter.getKey();
+                boolean injectFlag = reporter.getValue();
+                if (injectFlag) {
+                    if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
+                            userConfig.getConfigOption(configKey) != null) {
+                        hasUserMetricReporters = true;
+                        props.addPair(configKey, userConfig.getConfigOption(configKey));
+                        userConfig.removeConfigOption(configKey);
+                    }
+                    AbstractConfiguration.createOrAddListProperty(props, configKey, reporterClass);
                 }
             }
         }
