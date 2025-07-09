@@ -40,6 +40,8 @@ runs:
         ./.azure/scripts/setup-kind.sh "${{ inputs.architecture }}"
       env:
         REGISTRY_IMAGE: ${{ inputs.registry }}
+        CONTROL_NODES: 1
+        WORKER_NODES: 1
 
     - name: Set DOCKER_REGISTRY
       shell: bash
