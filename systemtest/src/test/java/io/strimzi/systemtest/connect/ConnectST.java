@@ -229,15 +229,15 @@ class ConnectST extends AbstractST {
 
         Wait.until("KafkaConnect readiness", Duration.ofSeconds(5).toMillis(), TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
             // print diagnostics only when the test failed
-            LOGGER.info("Running diagnostics...");
-            Diagnostics.logApiServerTail(300);
-            Diagnostics.logControlPlaneContainerStates();
+//            LOGGER.info("Running diagnostics...");
+//            Diagnostics.logApiServerTail(300);
+//            Diagnostics.logControlPlaneContainerStates();
             Diagnostics.logHostUtilisation();
 
             LOGGER.info("Getting info from Kube API about KC");
             KafkaConnect kc = CrdClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
-            LOGGER.info("Current connect CR: {}", kc);
+            LOGGER.info("Current connect CR status: {}", kc.getStatus());
             ExecResult er = Exec.exec("kubectl", "get", "events", "-n", testStorage.getNamespaceName());
             LOGGER.debug("Events in KC ns STDOUT: {}", er.out());
             LOGGER.debug("Events in KC ns STDERR: {}", er.err());
