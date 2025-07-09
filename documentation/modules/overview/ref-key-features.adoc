@@ -55,3 +55,35 @@ Strimzi operators simplify:
 * Creating and managing users
 
 For detailed information and instructions on using operators to perform these operations, see the guide for link:{BookURLDeploying}[Deploying and Managing Strimzi^].
+
+== Why use Strimzi to run Kafka on Kubernetes?
+
+Running Kafka on Kubernetes without native support from Strimzi can be complex.
+While deploying Kafka directly with standard resources like `StatefulSet` and `Service` is possible, the process is often error-prone and time-consuming. 
+This is especially true for operations like upgrades and configuration updates.
+Strimzi dramatically reduces this complexity, providing the following advantages:
+
+Native Kubernetes integration::
+Strimzi transforms Kafka into a Kubernetes-native application.
+It extends the Kubernetes API with Custom Resources (CRs) like `Kafka`, `KafkaTopic`, and `KafkaUser`. 
+Custom resources offer a stable and highly configurable way to manage Kafka.
+This allows you to define Kafka components at a high level, while the Strimzi operators automatically manage the underlying Kubernetes resources for you.
+This native approach lowers the barrier to adoption and reduces operational overhead, making it easier to deploy and manage Kafka with less manual effort.
+
+Declarative cluster management:: 
+Manage the lifecycle of your Kafka resources declaratively. 
+Declarative control allows you to manage resources like topics and users directly in YAML. 
+This supports an Infrastructure-as-Code (IaC) workflow where Kafka configuration can be version-controlled, audited, and deployed through automated pipelines for a more consistent and repeatable setup.
+
+Support for upgrade, scaling, and recovery::
+Strimzi operators automate rolling upgrades and recovery of Kafka components, helping to reduce manual intervention and downtime. 
+They also support scaling of Kafka clusters through node pools, automated partition reassignment using Cruise Control to maintain balanced workloads, and safe node removal using the Strimzi Drain Cleaner.
+
+Integrated support for data streaming pipelines::
+When Strimzi is installed, you can deploy and manage Kafka clusters alongside supporting components such as Kafka Connect, MirrorMaker 2, and Kafka Bridge, all using Kubernetes-native custom resources. 
+
+Integrated security:: 
+Strimzi enables fine-grained access control through listener-level authentication, cluster-wide authorization, and network policies. 
+It simplifies certificate management to support TLS encryption with configurable protocols and cipher suites, and manages secure client access through `KafkaUser` resources with ACLs, quotas, and handling of credentials.
+
+
