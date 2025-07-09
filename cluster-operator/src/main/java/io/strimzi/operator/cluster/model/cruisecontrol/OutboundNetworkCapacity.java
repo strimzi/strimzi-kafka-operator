@@ -12,11 +12,6 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverride;
  */
 public class OutboundNetworkCapacity extends NetworkCapacity {
     /**
-     * Key used to identify resource in broker entry in Cruise Control capacity configuration.
-     */
-    public static final String KEY = "NW_OUT";
-
-    /**
      * Constructor
      *
      * Given the configured brokerCapacity, broker-specific capacity override, returns the capacity for the resource.
@@ -24,7 +19,7 @@ public class OutboundNetworkCapacity extends NetworkCapacity {
      * @param brokerCapacity         The general brokerCapacity configuration.
      * @param brokerCapacityOverride The brokerCapacityOverride for specific broker.
      */
-    public OutboundNetworkCapacity(BrokerCapacity brokerCapacity, BrokerCapacityOverride brokerCapacityOverride) {
+    protected OutboundNetworkCapacity(BrokerCapacity brokerCapacity, BrokerCapacityOverride brokerCapacityOverride) {
         super(getThroughputInKiB(processResourceCapacity(brokerCapacity, brokerCapacityOverride)));
     }
 
@@ -52,12 +47,10 @@ public class OutboundNetworkCapacity extends NetworkCapacity {
                                                   BrokerCapacityOverride brokerCapacityOverride) {
         if (brokerCapacityOverride != null && brokerCapacityOverride.getOutboundNetwork() != null) {
             return brokerCapacityOverride.getOutboundNetwork();
-        }
-
-        if (brokerCapacity != null && brokerCapacity.getOutboundNetwork() != null) {
+        } else if (brokerCapacity != null && brokerCapacity.getOutboundNetwork() != null) {
             return brokerCapacity.getOutboundNetwork();
+        } else {
+            return DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
         }
-
-        return DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
     }
 }

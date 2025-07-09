@@ -530,7 +530,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     public ConfigMap generateConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> configMapData = new HashMap<>();
         configMapData.put(SERVER_CONFIG_FILENAME, configuration.asOrderedProperties().asPairs());
-        configMapData.put(CAPACITY_CONFIG_FILENAME, capacityConfiguration.toString());
+        configMapData.put(CAPACITY_CONFIG_FILENAME, capacityConfiguration.toJson());
         configMapData.putAll(ConfigMapUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging));
 
         return ConfigMapUtils

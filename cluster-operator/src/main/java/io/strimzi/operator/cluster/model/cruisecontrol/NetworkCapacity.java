@@ -13,7 +13,7 @@ public class NetworkCapacity {
     /**
      * Default capacity value
      */
-    public static final String DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND = "10000KiB/s";
+    protected static final String DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND = "10000KiB/s";
     protected String config;
 
     protected NetworkCapacity(String config) {
@@ -27,13 +27,17 @@ public class NetworkCapacity {
      * @param throughput The String representation of the throughput.
      * @return The equivalent number of kibibytes.
      */
-    public static String getThroughputInKiB(String throughput) {
+    protected static String getThroughputInKiB(String throughput) {
         String size = throughput.substring(0, throughput.indexOf("B"));
         return String.valueOf(StorageUtils.convertTo(size, "Ki"));
     }
 
-    @Override
-    public String toString() {
+    /**
+     * Returns capacity value as a JsonObject.
+     *
+     * @return The capacity value as a JsonObject.
+     */
+    protected String getJson() {
         return config;
     }
 }

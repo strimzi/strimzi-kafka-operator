@@ -4,14 +4,11 @@
  */
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
-import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityOverride;
 import io.strimzi.operator.cluster.model.Quantities;
 import io.vertx.core.json.JsonObject;
-
-import java.util.Map;
 
 /**
  * Cruise Control CPU capacity configuration for broker.
@@ -20,24 +17,11 @@ public class CpuCapacity {
     /**
      * Default capacity value
      */
-    public static final String DEFAULT_CPU_CORE_CAPACITY = "1.0";
-    /**
-     * Key used to identify resource in broker entry in Cruise Control capacity configuration.
-     */
-    public static final String KEY = "CPU";
+    /* test */ static final String DEFAULT_CPU_CORE_CAPACITY = "1.0";
 
     private static final String CORES_KEY = "num.cores";
 
     private final JsonObject config = new JsonObject();
-
-    /**
-     * Constructor
-     *
-     * @param cores     CPU cores configuration
-     */
-    public CpuCapacity(String cores) {
-        config.put(CORES_KEY, milliCpuToCpu(Quantities.parseCpuAsMilliCpus(cores)));
-    }
 
     /**
      * Constructor
@@ -49,10 +33,11 @@ public class CpuCapacity {
      * @param brokerCapacityOverride The brokerCapacityOverride for specific broker.
      * @param resourceRequirements   The Kafka resource requests and limits (for all brokers).
      */
-    public CpuCapacity(BrokerCapacity brokerCapacity,
-                        BrokerCapacityOverride brokerCapacityOverride,
-                        ResourceRequirements resourceRequirements) {
-        this(processResourceCapacity(brokerCapacity, brokerCapacityOverride, resourceRequirements));
+    protected CpuCapacity(BrokerCapacity brokerCapacity,
+                       BrokerCapacityOverride brokerCapacityOverride,
+                       ResourceRequirements resourceRequirements) {
+        String cores = processResourceCapacity(brokerCapacity, brokerCapacityOverride, resourceRequirements);
+        config.put(CORES_KEY,  milliCpuToCpu(Quantities.parseCpuAsMilliCpus(cores)));
     }
 
     private static String milliCpuToCpu(int milliCPU) {
@@ -64,13 +49,8 @@ public class CpuCapacity {
      *
      * @return The capacity value as a JsonObject.
      */
-    public JsonObject getJson() {
+    protected JsonObject getJson() {
         return config;
-    }
-
-    @Override
-    public String toString() {
-        return config.toString();
     }
 
     /**
@@ -98,61 +78,33 @@ public class CpuCapacity {
      * @return The capacity of resource represented as a String.
      */
     public static String processResourceCapacity(BrokerCapacity brokerCapacity,
-                                          BrokerCapacityOverride brokerCapacityOverride,
-                                          ResourceRequirements resourceRequirements) {
+                                                 BrokerCapacityOverride brokerCapacityOverride,
+                                                 ResourceRequirements resourceRequirements) {
         if (brokerCapacityOverride != null && brokerCapacityOverride.getCpu() != null) {
             return brokerCapacityOverride.getCpu();
-        }
-
-        if (brokerCapacity != null && brokerCapacity.getCpu() != null) {
+        } else if (brokerCapacity != null && brokerCapacity.getCpu() != null) {
             return brokerCapacity.getCpu();
+        } else {
+            String cpuBasedOnRequirements = getCpuBasedOnRequirements(resourceRequirements);
+            if (cpuBasedOnRequirements != null) {
+                return cpuBasedOnRequirements;
+            } else {
+                return DEFAULT_CPU_CORE_CAPACITY;
+            }
         }
-
-
-        String cpuBasedOnRequirements = getCpuBasedOnRequirements(resourceRequirements);
-        if (cpuBasedOnRequirements != null) {
-            return cpuBasedOnRequirements;
-        }
-
-        return DEFAULT_CPU_CORE_CAPACITY;
-    }
-
-    /**
-     * Enum representing resource requirement types used in the resource requirements section of Strimzi custom resources.
-     */
-    private enum ResourceRequirementsType {
-        REQUEST,
-        LIMIT;
-    }
-
-    private static Quantity getCpuQuantity(ResourceRequirements resources,
-                                           ResourceRequirementsType requirementType) {
-        if (resources == null) {
-            return null;
-        }
-
-        Map<String, Quantity> resourceRequirement = switch (requirementType) {
-            case REQUEST -> resources.getRequests();
-            case LIMIT -> resources.getLimits();
-        };
-
-        return resourceRequirement != null ? resourceRequirement.get("cpu") : null;
     }
 
     /**
      * Derives the CPU capacity from the resource requirements section of Strimzi custom resource.
      *
-     * @param resourceRequirements The Strimzi custom resource requirements containing CPU requests and/or limits.
+     * @param resources The Strimzi custom resource requirements containing CPU requests and/or limits.
      * @return The CPU capacity as a {@link String}, or {@code null} if no CPU values are defined.
      */
-    private static String getCpuBasedOnRequirements(ResourceRequirements resourceRequirements) {
-        Quantity request = getCpuQuantity(resourceRequirements, ResourceRequirementsType.REQUEST);
-        Quantity limit =  getCpuQuantity(resourceRequirements, ResourceRequirementsType.LIMIT);
-
-        if (request != null) {
-            return request.toString();
-        } else if (limit != null) {
-            return limit.toString();
+    private static String getCpuBasedOnRequirements(ResourceRequirements resources) {
+        if (resources != null && resources.getRequests() != null && resources.getRequests().get("cpu") != null) {
+            return resources.getRequests().get("cpu").toString();
+        } else if (resources != null && resources.getLimits() != null && resources.getLimits().get("cpu") != null) {
+            return resources.getLimits().get("cpu").toString();
         } else {
             return null;
         }

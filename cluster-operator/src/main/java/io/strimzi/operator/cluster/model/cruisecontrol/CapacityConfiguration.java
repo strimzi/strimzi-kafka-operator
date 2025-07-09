@@ -140,19 +140,7 @@ import java.util.TreeMap;
  * }
  */
 public class CapacityConfiguration {
-    /**
-     * Broker capacities key
-     */
-    public static final String CAPACITIES_KEY = "brokerCapacities";
-    /**
-     * Capacity key
-     */
-    public static final String CAPACITY_KEY = "capacity";
-
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CapacityConfiguration.class.getName());
-
-    private static final String BROKER_ID_KEY = "brokerId";
-    private static final String DOC_KEY = "doc";
 
     private final TreeMap<Integer, CapacityEntry> capacityEntries;
 
@@ -230,6 +218,30 @@ public class CapacityConfiguration {
     }
 
     /**
+     * Generate a capacity configuration for cluster.
+     *
+     * @return Cruise Control capacity configuration as a formatted JSON String.
+     */
+    public String toJson() {
+        JsonArray capacityList = new JsonArray();
+        for (CapacityEntry capacityEntry : capacityEntries.values()) {
+
+            JsonObject capacityEntryJson = new JsonObject()
+                    .put("brokerId", capacityEntry.id)
+                    .put("capacity", new JsonObject()
+                            .put("DISK", capacityEntry.disk.getJson())
+                            .put("CPU", capacityEntry.cpu.getJson())
+                            .put("NW_IN", capacityEntry.inboundNetwork.getJson())
+                            .put("NW_OUT", capacityEntry.outboundNetwork.getJson()))
+                    .put("doc", "Capacity for Broker " + capacityEntry.id);
+
+            capacityList.add(capacityEntryJson);
+        }
+
+        return new JsonObject().put("brokerCapacities", capacityList).encodePrettily();
+    }
+
+    /**
      * Represents a Cruise Control capacity entry configuration for a Kafka broker.
      *
      * @param id  The broker ID.
@@ -241,30 +253,4 @@ public class CapacityConfiguration {
             InboundNetworkCapacity inboundNetwork,
             OutboundNetworkCapacity outboundNetwork
     ) { }
-
-    /**
-     * Generate a capacity configuration for cluster.
-     *
-     * @return Cruise Control capacity configuration as a String.
-     */
-    @Override
-    public String toString() {
-        JsonArray capacityList = new JsonArray();
-        for (CapacityEntry capacityEntry : capacityEntries.values()) {
-            JsonObject capacityJson = new JsonObject()
-                    .put(DiskCapacity.KEY, capacityEntry.disk.getJson())
-                    .put(CpuCapacity.KEY, capacityEntry.cpu.getJson())
-                    .put(InboundNetworkCapacity.KEY, capacityEntry.inboundNetwork.toString())
-                    .put(OutboundNetworkCapacity.KEY, capacityEntry.outboundNetwork.toString());
-
-            JsonObject capacityEntryJson = new JsonObject()
-                    .put(BROKER_ID_KEY, capacityEntry.id)
-                    .put(CAPACITY_KEY, capacityJson)
-                    .put(DOC_KEY, "Capacity for Broker " + capacityEntry.id);
-
-            capacityList.add(capacityEntryJson);
-        }
-
-        return new JsonObject().put(CAPACITIES_KEY, capacityList).encodePrettily();
-    }
 }

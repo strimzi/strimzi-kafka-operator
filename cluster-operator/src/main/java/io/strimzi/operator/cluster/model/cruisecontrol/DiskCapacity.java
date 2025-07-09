@@ -20,12 +20,7 @@ import java.util.Map;
  * Cruise Control disk capacity configuration for broker.
  */
 public class DiskCapacity {
-    protected static final String DEFAULT_DISK_CAPACITY_IN_MIB = "100000";
-    /**
-     * Key used to identify resource in broker entry in Cruise Control capacity configuration.
-     */
-    public static final String KEY = "DISK";
-
+    private static final String DEFAULT_DISK_CAPACITY_IN_MIB = "100000";
     private static final String KAFKA_MOUNT_PATH = "/var/lib/kafka";
     private static final String KAFKA_LOG_DIR = "kafka-log";
     private static final String SINGLE_DISK = "";
@@ -40,7 +35,7 @@ public class DiskCapacity {
      * @param storage Storage configuration for Kafka cluster.
      * @param brokerId Id of the broker.
      */
-    public DiskCapacity(Storage storage, int brokerId) {
+    protected DiskCapacity(Storage storage, int brokerId) {
         if (storage instanceof JbodStorage) {
             config = generateJbodDiskConfig(storage, brokerId);
         } else {
@@ -117,7 +112,7 @@ public class DiskCapacity {
      *
      * @return The capacity value as a JsonObject.
      */
-    /* test */ Object getJson() {
+    protected Object getJson() {
         if (config.size() == 1 && config.containsKey(SINGLE_DISK)) {
             return config.get(SINGLE_DISK);
         } else {
@@ -127,10 +122,5 @@ public class DiskCapacity {
             }
             return disks;
         }
-    }
-
-    @Override
-    public String toString() {
-        return getJson().toString();
     }
 }
