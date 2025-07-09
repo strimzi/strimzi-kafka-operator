@@ -142,8 +142,6 @@ jobs:
 #        uses: ./.github/actions/setup-minikube
 #        with:
 #          architecture: ${{ matrix.config.arch }}
-##          cpu: ${{ matrix.config.cpu }}
-##          memory: ${{ matrix.config.memory }}
 
       - name: Install Kind
         uses: ./.github/actions/setup-kind
