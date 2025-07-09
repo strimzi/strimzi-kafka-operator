@@ -346,7 +346,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      */
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(1);
-        ports.add(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
+        ports.add(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT_NAME, "TCP"));
 
         ports.addAll(jmx.servicePorts());
 
@@ -366,7 +366,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @return The generated Service
      */
     public Service generateHeadlessService() {
-        List<ServicePort> ports = List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
+        List<ServicePort> ports = List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT_NAME, "TCP"));
 
         return ServiceUtils.createHeadlessService(
                 componentName,

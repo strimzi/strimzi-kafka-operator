@@ -73,7 +73,7 @@ public class JmxModelTest {
         assertThat(jmx.servicePorts().size(), is(1));
         assertThat(jmx.servicePorts().get(0).getName(), is("jmx"));
         assertThat(jmx.servicePorts().get(0).getPort(), is(9999));
-        assertThat(jmx.servicePorts().get(0).getTargetPort().getIntVal(), is(9999));
+        assertThat(jmx.servicePorts().get(0).getTargetPort().getStrVal(), is("jmx"));
         assertThat(jmx.servicePorts().get(0).getProtocol(), is("TCP"));
 
         assertThat(jmx.containerPorts().size(), is(1));
@@ -108,7 +108,7 @@ public class JmxModelTest {
         assertThat(jmx.servicePorts().size(), is(1));
         assertThat(jmx.servicePorts().get(0).getName(), is("jmx"));
         assertThat(jmx.servicePorts().get(0).getPort(), is(9999));
-        assertThat(jmx.servicePorts().get(0).getTargetPort().getIntVal(), is(9999));
+        assertThat(jmx.servicePorts().get(0).getTargetPort().getStrVal(), is("jmx"));
         assertThat(jmx.servicePorts().get(0).getProtocol(), is("TCP"));
 
         assertThat(jmx.containerPorts().size(), is(1));
