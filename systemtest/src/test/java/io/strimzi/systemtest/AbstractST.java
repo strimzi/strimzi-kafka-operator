@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Namespace;
+import io.skodjob.testframe.annotations.ResourceManager;
 import io.skodjob.testframe.resources.BuildConfigType;
 import io.skodjob.testframe.resources.ClusterRoleBindingType;
 import io.skodjob.testframe.resources.ClusterRoleType;
@@ -67,7 +68,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith({TestExecutionWatcher.class})
 @DisplayNameGeneration(IndicativeSentences.class)
-@io.skodjob.testframe.annotations.ResourceManager(asyncDeletion = false)
+@ResourceManager()
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
@@ -158,7 +159,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void afterEachMayOverride() {
         if (!Environment.SKIP_TEARDOWN) {
-            KubeResourceManager.get().deleteResources(false);
+            KubeResourceManager.get().deleteResources(true);
         }
     }
 
@@ -170,7 +171,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected synchronized void afterAllMayOverride() {
         if (!Environment.SKIP_TEARDOWN) {
-            KubeResourceManager.get().deleteResources(false);
+            KubeResourceManager.get().deleteResources(true);
             testSuiteNamespaceManager.deleteTestSuiteNamespace();
         }
     }
