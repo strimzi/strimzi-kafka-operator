@@ -885,34 +885,31 @@ public class KafkaBrokerConfigurationBuilder {
         return this;
     }
 
-    private void printMetricReporters(AbstractConfiguration userConfig,
+    private void printMetricReporters(KafkaConfiguration userConfig,
                                       boolean injectCcMetricsReporter,
                                       boolean injectKafkaJmxReporter,
                                       boolean injectStrimziMetricsReporter) {
         OrderedProperties props = new OrderedProperties();
         String configKey = "metric.reporters";
-        // the JmxReporter is explicitly added when metric.reporters is not empty
-        List<String> reporterClasses = List.of(
-                CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER,
-                "org.apache.kafka.common.metrics.JmxReporter",
-                StrimziMetricsReporterConfig.KAFKA_CLASS
-        );
-        List<Boolean> injectFlags = List.of(
-                injectCcMetricsReporter,
-                injectKafkaJmxReporter,
-                injectStrimziMetricsReporter
-        );
         boolean hasUserMetricReporters = false;
+        // the JmxReporter is explicitly added when metric.reporters is not empty
+        List<Map.Entry<String, Boolean>> reporterConfig = List.of(
+                Map.entry(CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER, injectCcMetricsReporter),
+                Map.entry("org.apache.kafka.common.metrics.JmxReporter", injectKafkaJmxReporter),
+                Map.entry(StrimziMetricsReporterConfig.KAFKA_CLASS, injectStrimziMetricsReporter)
+        );
 
-        for (int i = 0; i < reporterClasses.size(); i++) {
-            if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
-                    userConfig.getConfigOption(configKey) != null && injectFlags.get(i)) {
-                hasUserMetricReporters = true;
-                props.addPair(configKey, userConfig.getConfigOption(configKey));
-                userConfig.removeConfigOption(configKey);
-            }
-            if (injectFlags.get(i)) {
-                AbstractConfiguration.createOrAddListProperty(props, configKey, reporterClasses.get(i));
+        for (Map.Entry<String, Boolean> reporter : reporterConfig) {
+            String reporterClass = reporter.getKey();
+            boolean injectFlag = reporter.getValue();
+            if (injectFlag) {
+                if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
+                        userConfig.getConfigOption(configKey) != null) {
+                    hasUserMetricReporters = true;
+                    props.addPair(configKey, userConfig.getConfigOption(configKey));
+                    userConfig.removeConfigOption(configKey);
+                }
+                AbstractConfiguration.createOrAddListProperty(props, configKey, reporterClass);
             }
         }
 
@@ -926,20 +923,21 @@ public class KafkaBrokerConfigurationBuilder {
         }
     }
 
-    private void printYammerMetricsReporters(AbstractConfiguration userConfig,
+    private void printYammerMetricsReporters(KafkaConfiguration userConfig,
                                              boolean injectStrimziMetricsReporter) {
         OrderedProperties props = new OrderedProperties();
         String configKey = "kafka.metrics.reporters";
         boolean hasUserMetricReporters = false;
 
-        if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
-                userConfig.getConfigOption(configKey) != null && injectStrimziMetricsReporter) {
-            hasUserMetricReporters = true;
-            props.addPair(configKey, userConfig.getConfigOption(configKey));
-            userConfig.removeConfigOption(configKey);
-        }
         if (injectStrimziMetricsReporter) {
-            AbstractConfiguration.createOrAddListProperty(props, configKey, StrimziMetricsReporterConfig.YAMMER_CLASS);
+            if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
+                    userConfig.getConfigOption(configKey) != null) {
+                hasUserMetricReporters = true;
+                props.addPair(configKey, userConfig.getConfigOption(configKey));
+                userConfig.removeConfigOption(configKey);
+            }
+            AbstractConfiguration.createOrAddListProperty(props, configKey,
+                    StrimziMetricsReporterConfig.YAMMER_CLASS);
         }
 
         if (!props.asMap().isEmpty()) {
