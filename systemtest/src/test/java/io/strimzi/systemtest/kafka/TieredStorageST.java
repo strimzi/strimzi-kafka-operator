@@ -50,6 +50,8 @@ import org.junit.jupiter.api.Tag;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static io.strimzi.systemtest.TestConstants.GLOBAL_POLL_INTERVAL;
 import static io.strimzi.systemtest.TestConstants.GLOBAL_TIMEOUT;
@@ -361,7 +363,11 @@ public class TieredStorageST extends AbstractST {
                 LOGGER.error("Following exception has been thrown during NFS Instance Deployment: {}", e.getMessage());
                 return false;
             } finally {
-                KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> KubeResourceManager.get().kubeCmdClient().inNamespace(suiteStorage.getNamespaceName()).deleteContent(instanceYamlContent)));
+                KubeResourceManager.get().pushToStack(new ResourceItem<>(() ->  {
+                    // Add sleep before delete nfs provisioner for gracefully delete Kafka and KafkaNodePool
+                    LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(90));
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(suiteStorage.getNamespaceName()).deleteContent(instanceYamlContent);
+                }));
             }
         });
         StatefulSetUtils.waitForAllStatefulSetPodsReady(suiteStorage.getNamespaceName(), "test-nfs-server-provisioner", 1);
