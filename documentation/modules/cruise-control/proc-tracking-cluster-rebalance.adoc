@@ -11,7 +11,7 @@ Tracking an active partition rebalance supports planning of cluster operations, 
 Understanding key details, such as duration and the remaining data to transfer, helps with scheduling maintenance windows and assessing the impact of proceeding or canceling the rebalance.
 
 When a rebalance is in progress, Strimzi stores progress information in a `ConfigMap`.
-The `ConfigMap` is referenced by the `status.progress.rebalanceProgressConfigMap` property of the `KafkaRebalance` resource .
+The `ConfigMap` is referenced by the `status.progress.rebalanceProgressConfigMap` property of the `KafkaRebalance` resource and has the same name as the `KafkaRebalance` resource.
 The `ConfigMap` includes the following fields:
 
 - `estimatedTimeToCompletionInMinutes`: The estimated time it will take in minutes until the partition rebalance is complete.
@@ -32,19 +32,19 @@ The information is updated on each reconciliation of the `KafkaRebalance` resour
 +
 [source,shell]
 ----
-kubectl get configmaps <my_rebalance_configmap_name> -o jsonpath="{['data']['estimatedTimeToCompletionInMinutes']}"
+kubectl get configmaps <my_rebalance> -o jsonpath="{['data']['estimatedTimeToCompletionInMinutes']}"
 ----
 
 - Accessing `completedByteMovementPercentage` field.:
 +
 [source,shell]
 ----
-kubectl get configmaps <my_rebalance_configmap_name> -o jsonpath="{['data']['completedByteMovementPercentage']}"
+kubectl get configmaps <my_rebalance> -o jsonpath="{['data']['completedByteMovementPercentage']}"
 ----
 
 - Accessing `executorState.json` field.
 +
 [source,shell]
 ----
-kubectl get configmaps <my_rebalance_configmap_name> -o jsonpath="{['data']['executorState.json']}"
+kubectl get configmaps <my_rebalance> -o jsonpath="{['data']['executorState.json']}"
 ----
