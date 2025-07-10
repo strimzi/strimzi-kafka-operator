@@ -298,12 +298,13 @@ public class CertUtils {
     }
 
     /**
-     * Generates the volume name that is used in the Volume definition and in the Volume mounts
+     * Adds a prefix to the Secret name used in Volume and VolumeMounts definitions.
+     * The returned string may exceed the maximum resource name length.
      *
      * @param certSecretSource      Represents a certificate inside a Secret
      * @param prefix                Prefix used to generate the volume name
      *
-     * @return  The generated volume name
+     * @return  The prefixed secret name, or the secret name if the prefix is null.
      */
     private static String trustedCertificateVolumeName(CertSecretSource certSecretSource, String prefix)    {
         return prefix != null ? prefix + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
