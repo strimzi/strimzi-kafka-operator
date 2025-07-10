@@ -9,7 +9,7 @@ import io.strimzi.operator.cluster.model.StorageUtils;
 /**
  * Cruise Control network capacity configuration for broker.
  */
-public class NetworkCapacity {
+public abstract class NetworkCapacity {
     /**
      * Default capacity value
      */

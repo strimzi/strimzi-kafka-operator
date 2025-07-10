@@ -4,21 +4,18 @@
  */
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaSpec;
+import io.strimzi.api.kafka.model.kafka.KafkaSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.MetricsAndLogging;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
@@ -33,22 +30,14 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CapacityConfigurationTest {
-    private static final String NAMESPACE = "my-namespace";
-    private static final String CLUSTER_NAME = "my-cluster";
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static final Map<String, ResourceRequirements> RESOURCES_REQUIREMENTS = createResourceRequirements("400m", "0.5");
-    private static final Kafka KAFKA = new KafkaBuilder()
-            .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName(CLUSTER_NAME)
-            .endMetadata()
-            .withNewSpec()
-                .withNewKafka()
-                .endKafka()
-                .withNewCruiseControl()
-                .endCruiseControl()
-            .endSpec()
+    private static final Map<String, ResourceRequirements> RESOURCES = createResources("400m", "0.5");
+    private static final KafkaSpec KAFKA_SPEC = new KafkaSpecBuilder()
+            .withNewKafka()
+            .endKafka()
+            .withNewCruiseControl()
+            .endCruiseControl()
             .build();
     private static final Set<NodeRef> NODES = Set.of(
             new NodeRef("my-cluster-brokers-0", 0, "brokers", false, true),
@@ -58,16 +47,14 @@ public class CapacityConfigurationTest {
 
     @ParallelTest
     public void testBrokerCapacity() {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-            .editSpec()
-                .withNewCruiseControl()
-                    .withNewBrokerCapacity()
-                        .withCpu("2575m")
-                        .withInboundNetwork("50000KB/s")
-                        .withOutboundNetwork("50000KB/s")
-                        .endBrokerCapacity()
-                .endCruiseControl()
-            .endSpec()
+        KafkaSpec kafkaSpec = new KafkaSpecBuilder(KAFKA_SPEC)
+            .withNewCruiseControl()
+                .withNewBrokerCapacity()
+                    .withCpu("2575m")
+                    .withInboundNetwork("50000KB/s")
+                    .withOutboundNetwork("50000KB/s")
+                    .endBrokerCapacity()
+            .endCruiseControl()
             .build();
 
         Map<String, Storage> storage = Map.of(
@@ -86,10 +73,8 @@ public class CapacityConfigurationTest {
                 .build()
         );
 
-        CruiseControl cc = createCruiseControl(kafka, NODES, storage, RESOURCES_REQUIREMENTS);
-        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        String actualCapacityConfig = configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME);
-
+        CapacityConfiguration config = new CapacityConfiguration(Reconciliation.DUMMY_RECONCILIATION, kafkaSpec, NODES, storage, RESOURCES);
+        String actualCapacityConfig = config.toJson();
         String expectedCapacityConfig = """
                 {
                   "brokerCapacities" : [ {
@@ -142,25 +127,23 @@ public class CapacityConfigurationTest {
 
     @ParallelTest
     public void testBrokerCapacityOverrides() {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-            .editSpec()
-                .withNewCruiseControl()
-                    .withNewBrokerCapacity()
-                        .withCpu("2575m")
-                        .withInboundNetwork("50000KB/s")
-                        .addNewOverride()
-                            .withBrokers(List.of(0, 1, 2, 0))
-                            .withCpu("1.222")
-                            .withInboundNetwork("25000KB/s")
-                        .endOverride()
-                        .addNewOverride()
-                            .withBrokers(List.of(1))
-                            .withInboundNetwork("10000KiB/s")
-                            .withOutboundNetwork("15000KB/s")
-                        .endOverride()
-                    .endBrokerCapacity()
-                .endCruiseControl()
-            .endSpec()
+        KafkaSpec kafkaSpec = new KafkaSpecBuilder(KAFKA_SPEC)
+            .withNewCruiseControl()
+                .withNewBrokerCapacity()
+                    .withCpu("2575m")
+                    .withInboundNetwork("50000KB/s")
+                    .addNewOverride()
+                        .withBrokers(List.of(0, 1, 2, 0))
+                        .withCpu("1.222")
+                        .withInboundNetwork("25000KB/s")
+                    .endOverride()
+                    .addNewOverride()
+                        .withBrokers(List.of(1))
+                        .withInboundNetwork("10000KiB/s")
+                        .withOutboundNetwork("15000KB/s")
+                    .endOverride()
+                .endBrokerCapacity()
+            .endCruiseControl()
             .build();
 
         Map<String, Storage> storage = Map.of(
@@ -171,10 +154,8 @@ public class CapacityConfigurationTest {
                 .build()
         );
 
-        CruiseControl cc = createCruiseControl(kafka, NODES, storage, RESOURCES_REQUIREMENTS);
-        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        String actualCapacityConfig = configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME);
-
+        CapacityConfiguration config = new CapacityConfiguration(Reconciliation.DUMMY_RECONCILIATION, kafkaSpec, NODES, storage, RESOURCES);
+        String actualCapacityConfig = config.toJson();
         String expectedCapacityConfig = """
                 {
                   "brokerCapacities" : [ {
@@ -218,25 +199,23 @@ public class CapacityConfigurationTest {
 
     @ParallelTest
     public void testBrokerCapacityGeneratedCpu() {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-            .editSpec()
-                .withNewCruiseControl()
-                    .withNewBrokerCapacity()
-                        .withCpu("2575m")
-                        .withInboundNetwork("50000KB/s")
-                        .addNewOverride()
-                            .withBrokers(List.of(0, 1, 2, 0))
-                            .withCpu("1.222")
-                            .withInboundNetwork("25000KB/s")
-                        .endOverride()
-                        .addNewOverride()
-                            .withBrokers(List.of(1))
-                            .withInboundNetwork("10000KiB/s")
-                            .withOutboundNetwork("15000KB/s")
-                        .endOverride()
-                    .endBrokerCapacity()
-                .endCruiseControl()
-            .endSpec()
+        KafkaSpec kafkaSpec = new KafkaSpecBuilder(KAFKA_SPEC)
+            .withNewCruiseControl()
+                .withNewBrokerCapacity()
+                    .withCpu("2575m")
+                    .withInboundNetwork("50000KB/s")
+                    .addNewOverride()
+                        .withBrokers(List.of(0, 1, 2, 0))
+                        .withCpu("1.222")
+                        .withInboundNetwork("25000KB/s")
+                    .endOverride()
+                    .addNewOverride()
+                        .withBrokers(List.of(1))
+                        .withInboundNetwork("10000KiB/s")
+                        .withOutboundNetwork("15000KB/s")
+                    .endOverride()
+                .endBrokerCapacity()
+            .endCruiseControl()
             .build();
 
         Map<String, Storage> storage = Map.of(
@@ -248,10 +227,9 @@ public class CapacityConfigurationTest {
                 )
                 .build()
         );
-        CruiseControl cc = createCruiseControl(kafka, NODES, storage, RESOURCES_REQUIREMENTS);
-        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        String actualCapacityConfig = configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME);
 
+        CapacityConfiguration config = new CapacityConfiguration(Reconciliation.DUMMY_RECONCILIATION, kafkaSpec, NODES, storage, RESOURCES);
+        String actualCapacityConfig = config.toJson();
         String expectedCapacityConfig = """
                 {
                   "brokerCapacities" : [ {
@@ -321,11 +299,8 @@ public class CapacityConfigurationTest {
         resources.put("pool1", new ResourceRequirementsBuilder().withLimits(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))).build());
         resources.put("pool2", new ResourceRequirementsBuilder().withLimits(Map.of("cpu", new Quantity("5"), "memory", new Quantity("20Gi"))).build());
 
-        // Test the capacity
-        CruiseControl cc = createCruiseControl(KAFKA, nodes, storage, resources);
-        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        String actualCapacityConfig = configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME);
-
+        CapacityConfiguration config = new CapacityConfiguration(Reconciliation.DUMMY_RECONCILIATION, KAFKA_SPEC, nodes, storage, resources);
+        String actualCapacityConfig = config.toJson();
         String expectedCapacityConfig = """
                 {
                   "brokerCapacities" : [ {
@@ -433,7 +408,7 @@ public class CapacityConfigurationTest {
 
         /* In this test case, when override is set for a broker, it takes precedence over the general broker capacity setting for that
            specific broker, but the general broker capacity takes precedence over the Kafka resource request */
-        Map<String, ResourceRequirements> resources = createResourceRequirements(resourceRequestCpu, resourceLimitCpu);
+        Map<String, ResourceRequirements> resources = createResources(resourceRequestCpu, resourceLimitCpu);
 
         BrokerCapacity brokerCapacityOne = new BrokerCapacityBuilder()
                 .withCpu(brokerCpuCapacity)
@@ -482,18 +457,14 @@ public class CapacityConfigurationTest {
                                       String brokerZeroCpuValue,
                                       String brokerOneCpuValue,
                                       String brokerTwoCpuValue) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .withNewCruiseControl()
-                        .withBrokerCapacity(brokerCapacity)
-                    .endCruiseControl()
-                .endSpec()
+        KafkaSpec kafkaSpec = new KafkaSpecBuilder(KAFKA_SPEC)
+                .withNewCruiseControl()
+                    .withBrokerCapacity(brokerCapacity)
+                .endCruiseControl()
                 .build();
 
-        CruiseControl cc = createCruiseControl(kafka, NODES, storage, resources);
-        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        String actualCapacityConfig = configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME);
-
+        CapacityConfiguration config = new CapacityConfiguration(Reconciliation.DUMMY_RECONCILIATION, kafkaSpec, NODES, storage, resources);
+        String actualCapacityConfig = config.toJson();
         String expectedCapacityConfig = String.format("""
             {
               "brokerCapacities" : [ {
@@ -544,27 +515,11 @@ public class CapacityConfigurationTest {
         assertEquals(expectedCapacityConfig, actualCapacityConfig);
     }
 
-    private static Map<String, ResourceRequirements> createResourceRequirements(String cpuRequest, String cpuLimit) {
+    private static Map<String, ResourceRequirements> createResources(String cpuRequest, String cpuLimit) {
         return Map.of("brokers",
                 new ResourceRequirementsBuilder()
                         .withRequests(Map.of("cpu", new Quantity(cpuRequest)))
                         .withLimits(Map.of("cpu", new Quantity(cpuLimit)))
                         .build());
-    }
-
-    private static CruiseControl createCruiseControl(Kafka kafka,
-                                                     Set<NodeRef> nodes,
-                                                     Map<String, Storage> storageMap,
-                                                     Map<String, ResourceRequirements> resourceRequirementsMap) {
-        return CruiseControl
-                .fromCrd(
-                        Reconciliation.DUMMY_RECONCILIATION,
-                        kafka,
-                        VERSIONS,
-                        nodes,
-                        storageMap,
-                        resourceRequirementsMap,
-                        SHARED_ENV_PROVIDER
-                );
     }
 }

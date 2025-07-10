@@ -168,24 +168,16 @@ public class CapacityConfiguration {
                                                                                        Set<NodeRef> kafkaBrokerNodes,
                                                                                        BrokerCapacity brokerCapacity) {
         Map<Integer, BrokerCapacityOverride> overrideMap = new HashMap<>();
-        List<BrokerCapacityOverride> overrides = null;
-        if (brokerCapacity != null) {
-            overrides = brokerCapacity.getOverrides();
-        }
-        if (overrides != null) {
-            if (overrides.isEmpty()) {
-                LOGGER.warnCr(reconciliation, "Ignoring empty overrides list");
-            } else {
-                for (BrokerCapacityOverride override : overrides) {
-                    List<Integer> ids = override.getBrokers();
-                    for (int id : ids) {
-                        if (overrideMap.containsKey(id)) {
-                            LOGGER.warnCr(reconciliation, "Duplicate broker id {} found in overrides, using first occurrence.", id);
-                        } else if (kafkaBrokerNodes.stream().noneMatch(node -> node.nodeId() == id)) {
-                            LOGGER.warnCr(reconciliation, "Ignoring broker capacity override for unknown node ID {}", id);
-                        } else {
-                            overrideMap.put(id, override);
-                        }
+        if (brokerCapacity != null && brokerCapacity.getOverrides() != null && !brokerCapacity.getOverrides().isEmpty()) {
+            for (BrokerCapacityOverride override : brokerCapacity.getOverrides()) {
+                List<Integer> ids = override.getBrokers();
+                for (int id : ids) {
+                    if (overrideMap.containsKey(id)) {
+                        LOGGER.warnCr(reconciliation, "Duplicate broker id {} found in overrides, using first occurrence.", id);
+                    } else if (kafkaBrokerNodes.stream().noneMatch(node -> node.nodeId() == id)) {
+                        LOGGER.warnCr(reconciliation, "Ignoring broker capacity override for unknown node ID {}", id);
+                    } else {
+                        overrideMap.put(id, override);
                     }
                 }
             }
@@ -244,7 +236,11 @@ public class CapacityConfiguration {
     /**
      * Represents a Cruise Control capacity entry configuration for a Kafka broker.
      *
-     * @param id  The broker ID.
+     * @param id                 The broker ID.
+     * @param disk               The disk capacity configuration.
+     * @param cpu                The CPU capacity configuration.
+     * @param inboundNetwork     The inbound network capacity configuration.
+     * @param outboundNetwork    The outbound network capacity
      */
     private record CapacityEntry(
             int id,

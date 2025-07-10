@@ -36,8 +36,8 @@ public class DiskCapacity {
      * @param brokerId Id of the broker.
      */
     protected DiskCapacity(Storage storage, int brokerId) {
-        if (storage instanceof JbodStorage) {
-            config = generateJbodDiskConfig(storage, brokerId);
+        if (storage instanceof JbodStorage jbodStorage) {
+            config = generateJbodDiskConfig(jbodStorage, brokerId);
         } else {
             config = generateNonJbodDiskConfig(storage);
         }

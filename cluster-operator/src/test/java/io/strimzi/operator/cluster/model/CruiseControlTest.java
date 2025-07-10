@@ -96,6 +96,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({
@@ -142,6 +143,59 @@ public class CruiseControlTest {
     @AfterAll
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();
+    }
+
+    @ParallelTest
+    public void testGenerateCapacityConfig() {
+        CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
+        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
+        String actualCapacityConfig = configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME);
+        String expectedCapacityConfig = """
+                {
+                  "brokerCapacities" : [ {
+                    "brokerId" : 0,
+                    "capacity" : {
+                      "DISK" : {
+                        "/var/lib/kafka/data-0/kafka-log0" : "102400.0"
+                      },
+                      "CPU" : {
+                        "num.cores" : "1.0"
+                      },
+                      "NW_IN" : "10000.0",
+                      "NW_OUT" : "10000.0"
+                    },
+                    "doc" : "Capacity for Broker 0"
+                  }, {
+                    "brokerId" : 1,
+                    "capacity" : {
+                      "DISK" : {
+                        "/var/lib/kafka/data-0/kafka-log1" : "102400.0"
+                      },
+                      "CPU" : {
+                        "num.cores" : "1.0"
+                      },
+                      "NW_IN" : "10000.0",
+                      "NW_OUT" : "10000.0"
+                    },
+                    "doc" : "Capacity for Broker 1"
+                  }, {
+                    "brokerId" : 2,
+                    "capacity" : {
+                      "DISK" : {
+                        "/var/lib/kafka/data-0/kafka-log2" : "102400.0"
+                      },
+                      "CPU" : {
+                        "num.cores" : "1.0"
+                      },
+                      "NW_IN" : "10000.0",
+                      "NW_OUT" : "10000.0"
+                    },
+                    "doc" : "Capacity for Broker 2"
+                  } ]
+                }""";
+
+        assertThat(actualCapacityConfig, notNullValue());
+        assertEquals(expectedCapacityConfig, actualCapacityConfig);
     }
 
     @ParallelTest
