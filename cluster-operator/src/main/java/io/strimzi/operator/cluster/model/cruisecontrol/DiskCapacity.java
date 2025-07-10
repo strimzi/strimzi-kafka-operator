@@ -53,8 +53,9 @@ public class DiskCapacity {
     private static String getSizeInMiB(String size) {
         if (size == null) {
             return DEFAULT_DISK_CAPACITY_IN_MIB;
+        } else {
+            return String.valueOf(StorageUtils.convertTo(size, "Mi"));
         }
-        return String.valueOf(StorageUtils.convertTo(size, "Mi"));
     }
 
     /**
@@ -68,6 +69,7 @@ public class DiskCapacity {
     private Map<String, String> generateJbodDiskConfig(Storage storage, int brokerId) {
         String size = "";
         Map<String, String> diskConfig = new HashMap<>();
+
         for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
             String name = VolumeUtils.createVolumePrefix(volume.getId(), true);
             String path = KAFKA_MOUNT_PATH + "/" + name + "/" + KAFKA_LOG_DIR + brokerId;
@@ -77,8 +79,10 @@ public class DiskCapacity {
             } else if (volume instanceof EphemeralStorage) {
                 size = ((EphemeralStorage) volume).getSizeLimit();
             }
+
             diskConfig.put(path, String.valueOf(getSizeInMiB(size)));
         }
+
         return diskConfig;
     }
 
@@ -91,19 +95,23 @@ public class DiskCapacity {
      */
     private static Map<String, String> generateNonJbodDiskConfig(Storage storage) {
         String size;
+
         if (storage instanceof PersistentClaimStorage) {
             size = getSizeInMiB(((PersistentClaimStorage) storage).getSize());
         } else if (storage instanceof EphemeralStorage) {
+
             if (((EphemeralStorage) storage).getSizeLimit() != null) {
                 size = getSizeInMiB(((EphemeralStorage) storage).getSizeLimit());
             } else {
                 size = DEFAULT_DISK_CAPACITY_IN_MIB;
             }
+
         } else if (storage == null) {
             throw new IllegalStateException("The storage declaration is missing");
         } else {
             throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
         }
+
         return Map.of(SINGLE_DISK, size);
     }
 
@@ -117,9 +125,11 @@ public class DiskCapacity {
             return config.get(SINGLE_DISK);
         } else {
             JsonObject disks = new JsonObject();
+
             for (Map.Entry<String, String> e : config.entrySet()) {
                 disks.put(e.getKey(), e.getValue());
             }
+
             return disks;
         }
     }

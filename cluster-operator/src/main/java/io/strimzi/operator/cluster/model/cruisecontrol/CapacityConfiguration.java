@@ -168,9 +168,11 @@ public class CapacityConfiguration {
                                                                                        Set<NodeRef> kafkaBrokerNodes,
                                                                                        BrokerCapacity brokerCapacity) {
         Map<Integer, BrokerCapacityOverride> overrideMap = new HashMap<>();
+
         if (brokerCapacity != null && brokerCapacity.getOverrides() != null && !brokerCapacity.getOverrides().isEmpty()) {
             for (BrokerCapacityOverride override : brokerCapacity.getOverrides()) {
                 List<Integer> ids = override.getBrokers();
+
                 for (int id : ids) {
                     if (overrideMap.containsKey(id)) {
                         LOGGER.warnCr(reconciliation, "Duplicate broker id {} found in overrides, using first occurrence.", id);
@@ -182,6 +184,7 @@ public class CapacityConfiguration {
                 }
             }
         }
+
         return overrideMap;
     }
 
@@ -206,6 +209,7 @@ public class CapacityConfiguration {
             CapacityEntry capacityEntry = new CapacityEntry(node.nodeId(), disk, cpu, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), capacityEntry);
         }
+
         return capacityEntries;
     }
 
@@ -216,6 +220,7 @@ public class CapacityConfiguration {
      */
     public String toJson() {
         JsonArray capacityList = new JsonArray();
+
         for (CapacityEntry capacityEntry : capacityEntries.values()) {
 
             JsonObject capacityEntryJson = new JsonObject()
