@@ -32,19 +32,19 @@ The information is updated on each reconciliation of the `KafkaRebalance` resour
 +
 [source,shell]
 ----
-kubectl get configmaps <my_rebalance_configmap_name> -o json | jq '.["data"]["estimatedTimeToCompletionInMinutes"]'
+kubectl get configmaps <my_rebalance_configmap_name> -o jsonpath="{['data']['estimatedTimeToCompletionInMinutes']}"
 ----
 
 - Accessing `completedByteMovementPercentage` field.:
 +
 [source,shell]
 ----
-kubectl get configmaps <my_rebalance_configmap_name> -o json | jq '.["data"]["completedByteMovementPercentage"]'
+kubectl get configmaps <my_rebalance_configmap_name> -o jsonpath="{['data']['completedByteMovementPercentage']}"
 ----
 
 - Accessing `executorState.json` field.
 +
 [source,shell]
 ----
-kubectl get configmaps <my_rebalance_configmap_name> -o json | jq '.["data"]["executorState.json"] | fromjson | .'
+kubectl get configmaps <my_rebalance_configmap_name> -o jsonpath="{['data']['executorState.json']}"
 ----
