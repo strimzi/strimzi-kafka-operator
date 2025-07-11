@@ -76,7 +76,7 @@ runs:
           BUILT_COMMENT_VALUE="${{ github.event.comment.body }}"
         fi
         # TODO - remove this
-        BUILT_COMMENT_VALUE="/gha run pipeline=smoke"
+        BUILT_COMMENT_VALUE="/gha run pipeline=regression,upgrade"
         
         echo "builtComment=$BUILT_COMMENT_VALUE" >> "$GITHUB_OUTPUT"
         echo "Parsed builtComment: $BUILT_COMMENT_VALUE"

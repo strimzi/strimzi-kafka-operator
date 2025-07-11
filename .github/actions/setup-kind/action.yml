@@ -10,6 +10,14 @@ inputs:
     description: "Image used for Minikube Registry"
     required: false
     default: mirror.gcr.io/registry:2.8.3
+  controlNodes:
+    description: "Count of Control Plane nodes"
+    required: false
+    default: "1"
+  workerNodes:
+    description: "Count of Worker nodes"
+    required: false
+    default: "1"
 
 runs:
   using: "composite"
@@ -40,8 +48,8 @@ runs:
         ./.azure/scripts/setup-kind.sh "${{ inputs.architecture }}"
       env:
         REGISTRY_IMAGE: ${{ inputs.registry }}
-        CONTROL_NODES: 1
-        WORKER_NODES: 1
+        CONTROL_NODES: ${{ inputs.controlNodes }}
+        WORKER_NODES: ${{ inputs.workerNodes }}
 
     - name: Set DOCKER_REGISTRY
       shell: bash
