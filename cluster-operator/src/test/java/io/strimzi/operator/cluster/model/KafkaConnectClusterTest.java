@@ -40,6 +40,7 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
@@ -53,6 +54,7 @@ import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
@@ -77,6 +79,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -95,6 +98,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -199,7 +203,7 @@ public class KafkaConnectClusterTest {
 
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
-        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED).withValue(String.valueOf(true)).build());
+        expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_JMX_EXPORTER_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
         expected.add(new EnvVarBuilder().withName("NO_PROXY").withValue("127.0.0.1").build());
@@ -2088,19 +2092,28 @@ public class KafkaConnectClusterTest {
 
     @ParallelTest
     public void testStrimziMetricsReporterConfig() {
-        KafkaConnect resourceWithMetrics = new KafkaConnectBuilder(resource)
-            .editSpec()
-                .withNewStrimziMetricsReporterConfig()
-                    .withNewValues()
-                        .withAllowList(List.of("kafka_log.*", "kafka_network.*"))
-                    .endValues()
-                .endStrimziMetricsReporterConfig()
-            .endSpec()
-            .build();
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class,
-            () -> KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS, SHARED_ENV_PROVIDER));
+        MetricsConfig metrics = new StrimziMetricsReporterBuilder()
+                .withNewValues()
+                    .withAllowList("kafka_connect_connector_metrics.*" + "kafka_connect_connector_task_metrics.*")
+                .endValues().build();
 
-        assertThat(ex.getMessage(), is("The Strimzi Metrics Reporter is not supported with this component"));
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withMetricsConfig(metrics)
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS, SHARED_ENV_PROVIDER);
+
+        assertThat(kc.metrics(), is(notNullValue()));
+        assertThat(((StrimziMetricsReporterModel) kc.metrics()).getAllowList(), is("kafka_connect_connector_metrics.*" + "kafka_connect_connector_task_metrics.*"));
+
+        NetworkPolicy np = kc.generateNetworkPolicy(true, null, null);
+        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream()
+                .filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(MetricsModel.METRICS_PORT)))
+                .collect(Collectors.toList());
+
+        assertThat(rules.size(), is(1));
     }
 
     @ParallelTest
