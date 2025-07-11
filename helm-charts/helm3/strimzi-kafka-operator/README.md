@@ -105,7 +105,7 @@ the documentation for more details.
 | `watchAnyNamespace`                         | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                      |
 | `defaultImageRegistry`                      | Default image registry for all the images                                       | `quay.io`                    |
 | `defaultImageRepository`                    | Default image registry for all the images                                       | `strimzi`                    |
-| `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.46.1`                     |
+| `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.47.0`                     |
 | `deploymentAnnotations`                     | Annotations for the operator deployment                                         | `{}`                         |
 | `image.registry`                            | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                          | Override default Cluster Operator image repository                              | `nil`                        |
@@ -127,6 +127,7 @@ the documentation for more details.
 | `podDisruptionBudget.enabled`               | Whether to enable the podDisruptionBudget feature                               | `false`                      |
 | `podDisruptionBudget.minAvailable`          | Default value for how many pods must be running in a cluster                    | `1`                          |
 | `podDisruptionBudget.maxUnavailable`        | Default value for how many pods can be down                                     | `nil`                        |
+| `podDisruptionBudget.unhealthyPodEvictionPolicy` | Default value for how to respond to unheathly pods                         | `IfHealthyBudget`                |
 | `extraEnvs`                                 | Extra environment variables for the Cluster operator container                  | `[]`                         |
 | `kafka.image.registry`                      | Override default Kafka image registry                                           | `nil`                        |
 | `kafka.image.repository`                    | Override default Kafka image repository                                         | `nil`                        |
@@ -210,7 +211,7 @@ the documentation for more details.
 | `mavenBuilder.image.digest`                 | Override Maven Builder image tag with digest                                    | `nil`                        |
 | `logConfiguration`                          | Override default `log4j.properties` content                                     | `nil`                        |
 | `logLevel`                                  | Override default logging level                                                  | `INFO`                       |
-| `dashboards.enable`                         | Generate configmaps containing the dashboards                                   | `false`                      |
+| `dashboards.enabled`                        | Generate configmaps containing the dashboards                                   | `false`                      |
 | `dashboards.label`                          | How should the dashboards be labeled for the sidecar                            | `grafana_dashboard`          |
 | `dashboards.labelValue`                     | What should the dashboards label value be for the sidecar                       | `"1"`                        |
 | `dashboards.extraLabels`                    | Any additional labels you would like on the dashboards                          | `{}`                         |
