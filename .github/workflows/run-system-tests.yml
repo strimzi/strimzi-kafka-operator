@@ -147,6 +147,9 @@ jobs:
         uses: ./.github/actions/setup-kind
         with:
           architecture: ${{ matrix.config.arch }}
+          # Could be overriden per pipeline
+          controlNodes: 1
+          workerNodes: 1
 
       - name: Set default environment variables
         uses: ./.github/actions/set-defaults
