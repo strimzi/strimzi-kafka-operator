@@ -8,6 +8,7 @@
 * Support for Kubernetes Image Volumes to mount custom plugins
 * Adding support for [JsonTemplateLayout](https://logging.apache.org/log4j/2.x/manual/json-template-layout.html) in Operators, Cruise Control and Kafka 4.0.0 or greater.
 * Strimzi Drain Cleaner updated to 1.4.0 (included in the Strimzi installation files)
+* Added support for Strimzi Metrics Reporter to the Kafka brokers/controllers component.
 
 ### Major changes, deprecations and removals
 
@@ -22,7 +23,6 @@
 * Support for MirrorMaker 1 has been removed
 * Support for storage class overrides has been removed
 * Added support to configure `dnsPolicy` and `dnsConfig` using the `template` sections.
-* Added support for Strimzi Metrics Reporter to the Kafka brokers/controllers component.
 * Store Kafka node certificates in separate Secrets, one Secret per pod.
 * Allow configuring `ssl.principal.mapping.rules` and custom trusted CAs in Kafka brokers with `type: custom` authentication
 * Moved HTTP bridge configuration to the ConfigMap setup by the operator.
