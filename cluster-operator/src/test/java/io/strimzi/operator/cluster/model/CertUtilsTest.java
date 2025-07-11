@@ -142,6 +142,26 @@ public class CertUtilsTest {
     }
 
     @Test
+    public void testShortenedTrustedCertificatesVolumesWithPrefix() {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("long-secret-name-60-chars-ooooooooooooooooooooooooooooooooo")
+                .withCertificate("first.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("long-secret-name-60-chars-ooooooooooooooooooooooooooooooooo")
+                .withCertificate("second.crt")
+                .build();
+
+        List<Volume> volumes = new ArrayList<>();
+
+        // if len(prefix + secretname) > 63, then the volume name is shortened.
+        // Volume name references in both the volume and volumeMount sections should not be duplicated.
+        CertUtils.createTrustedCertificatesVolumes(volumes, List.of(cert1, cert2), false, "some-long-prefix");
+        assertThat(volumes.size(), is(1));
+    }
+
+    @Test
     public void testTrustedCertificatesVolumesWithPrefix()    {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("first-certificate")
@@ -166,6 +186,26 @@ public class CertUtilsTest {
         assertThat(volumes.get(0).getSecret().getSecretName(), is("first-certificate"));
         assertThat(volumes.get(1).getName(), is("prefixed-second-certificate"));
         assertThat(volumes.get(1).getSecret().getSecretName(), is("second-certificate"));
+    }
+
+    @Test
+    public void testShortenedTrustedCertificatesVolumeMountsWithPrefix() {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("long-secret-name-60-chars-ooooooooooooooooooooooooooooooooo")
+                .withCertificate("first.crt")
+                .build();
+
+        CertSecretSource cert2 = new CertSecretSourceBuilder()
+                .withSecretName("long-secret-name-60-chars-ooooooooooooooooooooooooooooooooo")
+                .withCertificate("second.crt")
+                .build();
+
+        List<VolumeMount> mounts = new ArrayList<>();
+
+        // if len(prefix + secretname) > 63, then the volume name is shortened.
+        // Volume name references in both the volume and volumeMount sections should not be duplicated.
+        CertUtils.createTrustedCertificatesVolumeMounts(mounts, List.of(cert1, cert2), "/my/path/", "some-long-prefix");
+        assertThat(mounts.size(), is(1));
     }
 
     @Test
