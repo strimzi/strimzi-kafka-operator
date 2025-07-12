@@ -18,6 +18,10 @@ inputs:
     description: "Count of Worker nodes"
     required: false
     default: "1"
+  cloudProviderVersion:
+    description: "Version of kind cloud-provider image"
+    required: false
+    default: 0.6.0
 
 runs:
   using: "composite"
@@ -42,6 +46,26 @@ runs:
         docker pull ${{ inputs.registry }}
         docker save ${{ inputs.registry }} -o /tmp/registry-image-${{ inputs.architecture }}.tar
 
+    - name: Cache cloud-provider-kind container image
+      id: cache-cloud-provider-kind
+      uses: actions/cache@v4
+      with:
+        path: /tmp/cloud-provider-kind-image.tar
+        key: cloud-provider-kind
+
+    - name: Load registry Docker image from cache
+      if: steps.cache-cloud-provider-kind.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        docker load -i /tmp/cloud-provider-kind-image.tar
+
+    - name: Pull and save cloud-provider-kind container image if cache miss
+      if: steps.cache-cloud-provider-kind.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        docker pull registry.k8s.io/cloud-provider-kind/cloud-controller-manager:v${{ inputs.cloudProviderVersion }}
+        docker save registry.k8s.io/cloud-provider-kind/cloud-controller-manager:v${{ inputs.cloudProviderVersion }} -o /tmp/cloud-provider-kind-image.tar
+
     - name: Setup Kind
       shell: bash
       run: |
@@ -50,6 +74,7 @@ runs:
         REGISTRY_IMAGE: ${{ inputs.registry }}
         CONTROL_NODES: ${{ inputs.controlNodes }}
         WORKER_NODES: ${{ inputs.workerNodes }}
+        KIND_CLOUD_PROVIDER_VERSION: v${{ inputs.cloudProviderVersion }}
 
     - name: Set DOCKER_REGISTRY
       shell: bash
