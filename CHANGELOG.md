@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.48.0
+
+* n/a
+
 ## 0.47.0
 
 * Adding progress tracking for Cruise Control rebalances
