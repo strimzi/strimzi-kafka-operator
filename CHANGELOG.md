@@ -4,6 +4,11 @@
 
 * n/a
 
+### Changes, deprecations and removals
+
+* **From Strimzi 0.48.0 on, we support only Kubernetes 1.27 and newer.**
+  Kubernetes 1.25 and 1.26 are not supported anymore.
+
 ## 0.47.0
 
 * Adding progress tracking for Cruise Control rebalances

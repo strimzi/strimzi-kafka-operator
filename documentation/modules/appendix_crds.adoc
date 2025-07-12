@@ -113,7 +113,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |JMX Options for Kafka brokers.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
@@ -175,7 +175,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.a
 |xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`]
 |Additional listener configuration.
 |networkPolicyPeers
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
 |List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list.
 |====
 
@@ -1046,7 +1046,7 @@ Used in: xref:type-ExternalLogging-{context}[`ExternalLogging`], xref:type-JmxPr
 |====
 |Property |Property type |Description
 |configMapKeyRef
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapkeyselector-v1-core[ConfigMapKeySelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#configmapkeyselector-v1-core[ConfigMapKeySelector]
 |Reference to the key in the ConfigMap containing the configuration.
 |====
 
@@ -1250,22 +1250,22 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |Metadata applied to the resource.
 |imagePullSecrets
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#localobjectreference-v1-core[LocalObjectReference] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#localobjectreference-v1-core[LocalObjectReference] array
 |List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored.
 |securityContext
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#podsecuritycontext-v1-core[PodSecurityContext]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#podsecuritycontext-v1-core[PodSecurityContext]
 |Configures pod-level security attributes and common container settings.
 |terminationGracePeriodSeconds
 |integer
 |The grace period is the duration in seconds after the processes running in the pod are sent a termination signal, and the time when the processes are forcibly halted with a kill signal. Set this value to longer than the expected cleanup time for your process. Value must be a non-negative integer. A zero value indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds.
 |affinity
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#affinity-v1-core[Affinity]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#affinity-v1-core[Affinity]
 |The pod's affinity rules.
 |tolerations
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#toleration-v1-core[Toleration] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core[Toleration] array
 |The pod's tolerations.
 |topologySpreadConstraints
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#topologyspreadconstraint-v1-core[TopologySpreadConstraint] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#topologyspreadconstraint-v1-core[TopologySpreadConstraint] array
 |The pod's topology spread constraints.
 |priorityClassName
 |string
@@ -1274,13 +1274,13 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 |string
 |The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
 |hostAliases
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#hostalias-v1-core[HostAlias] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#hostalias-v1-core[HostAlias] array
 |The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
 |dnsPolicy
 |string (one of [ClusterFirstWithHostNet, ClusterFirst, Default, None])
 |The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`.
 |dnsConfig
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#poddnsconfig-v1-core[PodDNSConfig]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#poddnsconfig-v1-core[PodDNSConfig]
 |The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy.
 |enableServiceLinks
 |boolean
@@ -1306,22 +1306,22 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |string
 |Name to use for the volume. Required.
 |secret
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretvolumesource-v1-core[SecretVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#secretvolumesource-v1-core[SecretVolumeSource]
 |`Secret` to use to populate the volume.
 |configMap
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
 |`ConfigMap` to use to populate the volume.
 |emptyDir
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#emptydirvolumesource-v1-core[EmptyDirVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#emptydirvolumesource-v1-core[EmptyDirVolumeSource]
 |`EmptyDir` to use to populate the volume.
 |persistentVolumeClaim
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#persistentvolumeclaimvolumesource-v1-core[PersistentVolumeClaimVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#persistentvolumeclaimvolumesource-v1-core[PersistentVolumeClaimVolumeSource]
 |`PersistentVolumeClaim` object to use to populate the volume.
 |csi
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#csivolumesource-v1-core[CSIVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#csivolumesource-v1-core[CSIVolumeSource]
 |`CSIVolumeSource` object to use to populate the volume.
 |image
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#imagevolumesource-v1-core[ImageVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#imagevolumesource-v1-core[ImageVolumeSource]
 |`ImageVolumeSource` object to use to populate the volume.
 |====
 
@@ -1403,10 +1403,10 @@ include::../api/io.strimzi.api.kafka.model.common.template.ContainerTemplate.ado
 |xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`] array
 |Environment variables which should be applied to the container.
 |securityContext
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#securitycontext-v1-core[SecurityContext]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#securitycontext-v1-core[SecurityContext]
 |Security context for the container.
 |volumeMounts
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#volumemount-v1-core[VolumeMount] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#volumemount-v1-core[VolumeMount] array
 |Additional volume mounts which should be applied to the container.
 |====
 
@@ -1440,10 +1440,10 @@ Used in: xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`]
 |====
 |Property |Property type |Description
 |secretKeyRef
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core[SecretKeySelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#secretkeyselector-v1-core[SecretKeySelector]
 |Reference to a key in a secret.
 |configMapKeyRef
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapkeyselector-v1-core[ConfigMapKeySelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#configmapkeyselector-v1-core[ConfigMapKeySelector]
 |Reference to a key in a config map.
 |====
 
@@ -1588,7 +1588,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |JMX Options for Zookeeper nodes.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
@@ -1708,7 +1708,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOpera
 |xref:type-Probe-{context}[`Probe`]
 |Pod readiness checking.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
 |topicMetadataMaxAttempts
 |integer
@@ -1762,7 +1762,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperat
 |xref:type-Probe-{context}[`Probe`]
 |Pod readiness checking.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
 |logging
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
@@ -1794,7 +1794,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar.adoc[
 |string
 |The docker image for the container.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
 |livenessProbe
 |xref:type-Probe-{context}[`Probe`]
@@ -1919,7 +1919,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |**The `tlsSidecar` property has been deprecated.** TLS sidecar configuration.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve for the Cruise Control container.
 |livenessProbe
 |xref:type-Probe-{context}[`Probe`]
@@ -2066,7 +2066,7 @@ Used in: xref:type-HashLoginServiceApiUsers-{context}[`HashLoginServiceApiUsers`
 |====
 |Property |Property type |Description
 |secretKeyRef
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core[SecretKeySelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#secretkeyselector-v1-core[SecretKeySelector]
 |Selects a key of a Secret in the resource's namespace.
 |====
 
@@ -2126,7 +2126,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-JmxTransQueryTemplate-{context}[`JmxTransQueryTemplate`] array
 |Queries to send to the Kafka brokers to define what data should be read from each broker. For more information on these properties see, xref:type-JmxTransQueryTemplate-reference[`JmxTransQueryTemplate` schema reference].
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
 |template
 |xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`]
@@ -2230,7 +2230,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |string
 |Regular expression to specify which topics to exclude.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
 |logging
 |string
@@ -2508,7 +2508,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |map
 |The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |The maximum limits for CPU and memory resources and the requested initial resources.
 |livenessProbe
 |xref:type-Probe-{context}[`Probe`]
@@ -2957,10 +2957,10 @@ Used in: xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`
 |====
 |Property |Property type |Description
 |secretKeyRef
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core[SecretKeySelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#secretkeyselector-v1-core[SecretKeySelector]
 |Reference to a key in a Secret.
 |configMapKeyRef
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapkeyselector-v1-core[ConfigMapKeySelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#configmapkeyselector-v1-core[ConfigMapKeySelector]
 |Reference to a key in a ConfigMap.
 |====
 
@@ -2980,10 +2980,10 @@ Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |string
 |Name of the volume which will be added to the Kafka Connect pods.
 |secret
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretvolumesource-v1-core[SecretVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#secretvolumesource-v1-core[SecretVolumeSource]
 |Reference to a key in a Secret. Exactly one Secret or ConfigMap has to be specified.
 |configMap
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
 |Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.
 |====
 
@@ -3010,7 +3010,7 @@ include::../api/io.strimzi.api.kafka.model.connect.build.Build.adoc[leveloffset=
 |xref:type-Plugin-{context}[`Plugin`] array
 |List of connector plugins which should be added to the Kafka Connect. Required.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve for the build.
 |====
 
@@ -3768,7 +3768,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |xref:type-KafkaBridgeProducerSpec-{context}[`KafkaBridgeProducerSpec`]
 |Kafka producer related configuration.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
 |jvmOptions
 |xref:type-JvmOptions-{context}[`JvmOptions`]
@@ -4160,7 +4160,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2MirrorSpec`] array
 |Configuration of the MirrorMaker 2 connectors.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |The maximum limits for CPU and memory resources and the requested initial resources.
 |livenessProbe
 |xref:type-Probe-{context}[`Probe`]
@@ -4501,7 +4501,7 @@ Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
 |string (one or more of [controller, broker]) array
 |The roles assigned to the node pool. Supported values are `broker` and `controller`. This property is required.
 |resources
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#resourcerequirements-v1-core[ResourceRequirements]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |CPU and memory resources to reserve.
 |jvmOptions
 |xref:type-JvmOptions-{context}[`JvmOptions`]
@@ -4610,10 +4610,10 @@ Used in: xref:type-StrimziPodSet-{context}[`StrimziPodSet`]
 |====
 |Property |Property type |Description
 |selector
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#labelselector-v1-meta[LabelSelector]
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#labelselector-v1-meta[LabelSelector]
 |Selector is a label query which matches all the pods managed by this `StrimziPodSet`. Only `matchLabels` is supported. If `matchExpressions` is set, it will be ignored.
 |pods
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#pods-v1-core[Map] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#pods-v1-core[Map] array
 |The Pods managed by this StrimziPodSet.
 |====
 
