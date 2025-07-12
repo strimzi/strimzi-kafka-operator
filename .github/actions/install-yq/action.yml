@@ -1,0 +1,16 @@
+name: "Install yq tool"
+description: "Install yq tool by our script"
+
+inputs:
+  architecture:
+    description: "Architecture"
+    required: false
+    default: "amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install yq
+      shell: bash
+      run: |
+        .azure/scripts/install_yq.sh "${{ inputs.architecture }}"

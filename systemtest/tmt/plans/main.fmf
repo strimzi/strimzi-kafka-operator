@@ -75,9 +75,7 @@ prepare:
     how: shell
     script: |
       MAVEN_VERSION=3.9.10
-      MAVEN_MAJOR_VERSION=3
-      MAVEN_TGZ="apache-maven-${MAVEN_VERSION}-bin.tar.gz"
-      MAVEN_URL="http://mirror.dkm.cz/apache/maven/maven-${MAVEN_MAJOR_VERSION}/${MAVEN_VERSION}/binaries/${MAVEN_TGZ}"
+      MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
       INSTALL_DIR="/usr/share/maven"
       INSTALL_BIN="/usr/bin/mvn"
 
