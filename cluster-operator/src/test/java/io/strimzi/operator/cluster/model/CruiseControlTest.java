@@ -49,16 +49,12 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
-import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
-import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -71,9 +67,6 @@ import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 
 import java.io.IOException;
@@ -103,6 +96,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({
@@ -146,241 +140,62 @@ public class CruiseControlTest {
     );
     private static final Map<String, Storage> STORAGE = Map.of("brokers", new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build());
 
-
     @AfterAll
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 
     @ParallelTest
-    public void testBrokerCapacity() {
-        // Test user defined capacities
-        String userDefinedCpuCapacity = "2575m";
-        JsonObject expectedCpuCapacity = new CpuCapacity(userDefinedCpuCapacity).getJson();
-
-        io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity userDefinedBrokerCapacity = new io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity();
-        userDefinedBrokerCapacity.setCpu(userDefinedCpuCapacity);
-        userDefinedBrokerCapacity.setInboundNetwork("50000KB/s");
-        userDefinedBrokerCapacity.setOutboundNetwork("50000KB/s");
-
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .withNewCruiseControl()
-                        .withBrokerCapacity(userDefinedBrokerCapacity)
-                    .endCruiseControl()
-                .endSpec()
-                .build();
-        Map<String, Storage> storage = Map.of("brokers", new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("50Gi").build(), new PersistentClaimStorageBuilder().withId(1).withSize("60Gi").build()).build());
-        Map<String, ResourceRequirements> resources = Map.of("brokers", new ResourceRequirementsBuilder().withRequests(Map.of(Capacity.RESOURCE_TYPE, new Quantity("400m"))).withLimits(Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"))).build());
-        CruiseControl cc = createCruiseControl(kafka, NODES, storage, resources);
-
+    public void testGenerateCapacityConfig() {
+        CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        JsonObject capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
-        JsonArray brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
+        String actualCapacityConfig = configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME);
+        String expectedCapacityConfig = """
+                {
+                  "brokerCapacities" : [ {
+                    "brokerId" : 0,
+                    "capacity" : {
+                      "DISK" : {
+                        "/var/lib/kafka/data-0/kafka-log0" : "102400.0"
+                      },
+                      "CPU" : {
+                        "num.cores" : "1.0"
+                      },
+                      "NW_IN" : "10000.0",
+                      "NW_OUT" : "10000.0"
+                    },
+                    "doc" : "Capacity for Broker 0"
+                  }, {
+                    "brokerId" : 1,
+                    "capacity" : {
+                      "DISK" : {
+                        "/var/lib/kafka/data-0/kafka-log1" : "102400.0"
+                      },
+                      "CPU" : {
+                        "num.cores" : "1.0"
+                      },
+                      "NW_IN" : "10000.0",
+                      "NW_OUT" : "10000.0"
+                    },
+                    "doc" : "Capacity for Broker 1"
+                  }, {
+                    "brokerId" : 2,
+                    "capacity" : {
+                      "DISK" : {
+                        "/var/lib/kafka/data-0/kafka-log2" : "102400.0"
+                      },
+                      "CPU" : {
+                        "num.cores" : "1.0"
+                      },
+                      "NW_IN" : "10000.0",
+                      "NW_OUT" : "10000.0"
+                    },
+                    "doc" : "Capacity for Broker 2"
+                  } ]
+                }""";
 
-        for (Object brokerEntry : brokerEntries) {
-            JsonObject brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY);
-            Object diskCapacity = brokerCapacity.getValue(Capacity.DISK_KEY);
-            JsonObject cpuCapacity  = brokerCapacity.getJsonObject(Capacity.CPU_KEY);
-
-            assertThat(isJBOD(diskCapacity), is(true));
-            assertThat(cpuCapacity, is(expectedCpuCapacity));
-        }
-    }
-
-    @ParallelTest
-    public void testBrokerCapacityOverrides() {
-        // Test capacity overrides
-        String userDefinedCpuCapacity = "2575m";
-        String userDefinedCpuCapacityOverride0 = "1.222";
-        String inboundNetwork = "50000KB/s";
-        String inboundNetworkOverride0 = "25000KB/s";
-        String inboundNetworkOverride1 = "10000KiB/s";
-        String outboundNetworkOverride1 = "15000KB/s";
-
-        int broker0 = 0;
-        int broker1 = 1;
-        int broker2 = 2;
-
-        List<Integer> overrideList0 = List.of(broker0, broker1, broker2, broker0);
-        List<Integer> overrideList1 = List.of(broker1);
-
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .withNewCruiseControl()
-                        .withNewBrokerCapacity()
-                            .withCpu(userDefinedCpuCapacity)
-                            .withInboundNetwork(inboundNetwork)
-                            .addNewOverride()
-                                .withBrokers(overrideList0)
-                                .withCpu(userDefinedCpuCapacityOverride0)
-                                .withInboundNetwork(inboundNetworkOverride0)
-                            .endOverride()
-                            .addNewOverride()
-                                .withBrokers(overrideList1)
-                                .withInboundNetwork(inboundNetworkOverride1)
-                                .withOutboundNetwork(outboundNetworkOverride1)
-                            .endOverride()
-                        .endBrokerCapacity()
-                    .endCruiseControl()
-                .endSpec()
-                .build();
-        Map<String, Storage> storage = Map.of("brokers", new PersistentClaimStorageBuilder().withId(0).withSize("50Gi").build());
-        Map<String, ResourceRequirements> resources = Map.of("brokers", new ResourceRequirementsBuilder().withRequests(Map.of(Capacity.RESOURCE_TYPE, new Quantity("400m"))).withLimits(Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"))).build());
-        CruiseControl cc = createCruiseControl(kafka, NODES, storage, resources);
-
-        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        JsonObject capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
-        JsonArray brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
-
-        for (Object brokerEntry : brokerEntries) {
-            JsonObject brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY);
-            Object diskCapacity = brokerCapacity.getValue(Capacity.DISK_KEY);
-
-            assertThat(isJBOD(diskCapacity), is(false));
-        }
-
-        JsonObject brokerEntry0 = brokerEntries.getJsonObject(broker0).getJsonObject(Capacity.CAPACITY_KEY);
-        assertThat(brokerEntry0.getJsonObject(Capacity.CPU_KEY), is(new CpuCapacity(userDefinedCpuCapacityOverride0).getJson()));
-        assertThat(brokerEntry0.getString(Capacity.INBOUND_NETWORK_KEY), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-        assertThat(brokerEntry0.getString(Capacity.OUTBOUND_NETWORK_KEY), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
-
-        // When the same broker id is specified in brokers list of multiple overrides, use the value specified in the first override.
-        JsonObject brokerEntry1 = brokerEntries.getJsonObject(broker1).getJsonObject(Capacity.CAPACITY_KEY);
-        assertThat(brokerEntry1.getJsonObject(Capacity.CPU_KEY), is(new CpuCapacity(userDefinedCpuCapacityOverride0).getJson()));
-        assertThat(brokerEntry1.getString(Capacity.INBOUND_NETWORK_KEY), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-        assertThat(brokerEntry1.getString(Capacity.OUTBOUND_NETWORK_KEY), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
-
-        JsonObject brokerEntry2 = brokerEntries.getJsonObject(broker2).getJsonObject(Capacity.CAPACITY_KEY);
-        assertThat(brokerEntry2.getJsonObject(Capacity.CPU_KEY), is(new CpuCapacity(userDefinedCpuCapacityOverride0).getJson()));
-        assertThat(brokerEntry2.getString(Capacity.INBOUND_NETWORK_KEY), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-    }
-
-    @ParallelTest
-    public void testBrokerCapacityGeneratedCpu() {
-        String userDefinedCpuCapacity = "2575m";
-        String userDefinedCpuCapacityOverride0 = "1.222";
-        String inboundNetwork = "50000KB/s";
-        String inboundNetworkOverride0 = "25000KB/s";
-        String inboundNetworkOverride1 = "10000KiB/s";
-        String outboundNetworkOverride1 = "15000KB/s";
-
-        int broker0 = 0;
-        int broker1 = 1;
-        int broker2 = 2;
-
-        List<Integer> overrideList0 = List.of(broker0, broker1, broker2, broker0);
-        List<Integer> overrideList1 = List.of(broker1);
-
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .withNewCruiseControl()
-                        .withNewBrokerCapacity()
-                            .withCpu(userDefinedCpuCapacity)
-                            .withInboundNetwork(inboundNetwork)
-                            .addNewOverride()
-                                .withBrokers(overrideList0)
-                                .withCpu(userDefinedCpuCapacityOverride0)
-                                .withInboundNetwork(inboundNetworkOverride0)
-                            .endOverride()
-                            .addNewOverride()
-                                .withBrokers(overrideList1)
-                                .withInboundNetwork(inboundNetworkOverride1)
-                                .withOutboundNetwork(outboundNetworkOverride1)
-                            .endOverride()
-                        .endBrokerCapacity()
-                    .endCruiseControl()
-                .endSpec()
-                .build();
-        Map<String, Storage> storage = Map.of("brokers", new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("50Gi").build(), new PersistentClaimStorageBuilder().withId(1).withSize("60Gi").build()).build());
-        Map<String, ResourceRequirements> resources = Map.of("brokers", new ResourceRequirementsBuilder().withRequests(Map.of(Capacity.RESOURCE_TYPE, new Quantity("500m"))).withLimits(Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"))).build());
-        CruiseControl cc = createCruiseControl(kafka, NODES, storage, resources);
-
-        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        JsonObject capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
-        JsonObject expectedCpuCapacity = new CpuCapacity(userDefinedCpuCapacityOverride0).getJson();
-        JsonArray brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
-        for (Object brokerEntry : brokerEntries) {
-            JsonObject brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY);
-            JsonObject cpuCapacity  = brokerCapacity.getJsonObject(Capacity.CPU_KEY);
-            assertThat(cpuCapacity, is(expectedCpuCapacity));
-        }
-    }
-
-    @ParallelTest
-    public void testBrokerCapacitiesWithPools() {
-        Set<NodeRef> nodes = Set.of(
-                new NodeRef("my-cluster-pool1-0", 0, "pool1", false, true),
-                new NodeRef("my-cluster-pool1-1", 1, "pool1", false, true),
-                new NodeRef("my-cluster-pool1-2", 2, "pool1", false, true),
-                new NodeRef("my-cluster-pool2-10", 10, "pool2", false, true),
-                new NodeRef("my-cluster-pool2-11", 11, "pool2", false, true),
-                new NodeRef("my-cluster-pool2-12", 12, "pool2", false, true)
-        );
-
-        Map<String, Storage> storage = new HashMap<>();
-        storage.put("pool1", new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build());
-        storage.put("pool2", new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(1).withSize("1Ti").build()).build());
-
-        Map<String, ResourceRequirements> resources = new HashMap<>();
-        resources.put("pool1", new ResourceRequirementsBuilder().withLimits(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))).build());
-        resources.put("pool2", new ResourceRequirementsBuilder().withLimits(Map.of("cpu", new Quantity("5"), "memory", new Quantity("20Gi"))).build());
-
-        // Test the capacity
-        CruiseControl cc = createCruiseControl(KAFKA, nodes, storage, resources);
-        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        JsonObject capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
-        JsonArray brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
-
-        assertThat(brokerEntries.size(), is(6));
-
-        // Broker 0
-        JsonObject brokerEntry = brokerEntries.getJsonObject(0);
-        assertThat(brokerEntry.getInteger("brokerId"), is(0));
-        JsonObject brokerCpuCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY);
-        assertThat(brokerCpuCapacity.getString("num.cores"), is("4.0"));
-        JsonObject brokerDiskCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.DISK_KEY);
-        assertThat(brokerDiskCapacity.getString("/var/lib/kafka/data-0/kafka-log0"), is("102400.0"));
-
-        // Broker 1
-        brokerEntry = brokerEntries.getJsonObject(1);
-        assertThat(brokerEntry.getInteger("brokerId"), is(1));
-        brokerCpuCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY);
-        assertThat(brokerCpuCapacity.getString("num.cores"), is("4.0"));
-        brokerDiskCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.DISK_KEY);
-        assertThat(brokerDiskCapacity.getString("/var/lib/kafka/data-0/kafka-log1"), is("102400.0"));
-
-        // Broker 2
-        brokerEntry = brokerEntries.getJsonObject(2);
-        assertThat(brokerEntry.getInteger("brokerId"), is(2));
-        brokerCpuCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY);
-        assertThat(brokerCpuCapacity.getString("num.cores"), is("4.0"));
-        brokerDiskCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.DISK_KEY);
-        assertThat(brokerDiskCapacity.getString("/var/lib/kafka/data-0/kafka-log2"), is("102400.0"));
-
-        // Broker 10
-        brokerEntry = brokerEntries.getJsonObject(3);
-        assertThat(brokerEntry.getInteger("brokerId"), is(10));
-        brokerCpuCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY);
-        assertThat(brokerCpuCapacity.getString("num.cores"), is("5.0"));
-        brokerDiskCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.DISK_KEY);
-        assertThat(brokerDiskCapacity.getString("/var/lib/kafka/data-1/kafka-log10"), is("1048576.0"));
-
-        // Broker 11
-        brokerEntry = brokerEntries.getJsonObject(4);
-        assertThat(brokerEntry.getInteger("brokerId"), is(11));
-        brokerCpuCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY);
-        assertThat(brokerCpuCapacity.getString("num.cores"), is("5.0"));
-        brokerDiskCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.DISK_KEY);
-        assertThat(brokerDiskCapacity.getString("/var/lib/kafka/data-1/kafka-log11"), is("1048576.0"));
-
-        // Broker 12
-        brokerEntry = brokerEntries.getJsonObject(5);
-        assertThat(brokerEntry.getInteger("brokerId"), is(12));
-        brokerCpuCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY);
-        assertThat(brokerCpuCapacity.getString("num.cores"), is("5.0"));
-        brokerDiskCapacity = brokerEntry.getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.DISK_KEY);
-        assertThat(brokerDiskCapacity.getString("/var/lib/kafka/data-1/kafka-log12"), is("1048576.0"));
+        assertThat(actualCapacityConfig, notNullValue());
+        assertEquals(expectedCapacityConfig, actualCapacityConfig);
     }
 
     @ParallelTest
@@ -742,81 +557,6 @@ public class CruiseControlTest {
         Container ccContainer = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(ccContainer.getResources().getLimits(), is(limits));
         assertThat(ccContainer.getResources().getRequests(), is(requests));
-    }
-
-    @ParallelTest
-    public void testCpuCapacityGeneration() {
-        String brokerCpuCapacity = "6.0";
-        String brokerCpuCapacityOverride = "2.0";
-        String resourceLimitCpu = "3.0";
-        String resourceRequestCpu = "4.0";
-
-        Map<String, Storage> storage = Map.of("brokers", new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build());
-
-        /* In this test case, when override is set for a broker, it takes precedence over the general broker capacity setting for that
-           specific broker, but the general broker capacity takes precedence over the Kafka resource request */
-        Map<String, ResourceRequirements> resources = Map.of("brokers", new ResourceRequirementsBuilder().addToLimits("cpu", new Quantity(resourceLimitCpu)).addToRequests("cpu", new Quantity(resourceRequestCpu)).build());
-
-        io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity brokerCapacityOne = new BrokerCapacityBuilder()
-                .withCpu(brokerCpuCapacity)
-                .withOverrides()
-                    .addNewOverride()
-                        .addToBrokers(0)
-                        .withCpu(brokerCpuCapacityOverride)
-                    .endOverride()
-                .build();
-
-        verifyBrokerCapacity(storage, resources, brokerCapacityOne, brokerCpuCapacityOverride, brokerCpuCapacity, brokerCpuCapacity);
-
-        // In this test case, when override is set for a broker, it takes precedence over the Kafka resource request
-        io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity brokerCapacityTwo = new BrokerCapacityBuilder()
-                .withOverrides()
-                    .addNewOverride()
-                        .addToBrokers(0)
-                        .withCpu(brokerCpuCapacityOverride)
-                    .endOverride()
-                .build();
-
-        verifyBrokerCapacity(storage, resources, brokerCapacityTwo, brokerCpuCapacityOverride, resourceRequestCpu, resourceRequestCpu);
-
-        /* In this test case, when neither the override nor the CPU resource request are configured but the CPU
-           resource limit for CPU is set for the Kafka brokers; therefore, resource limit will be used as the CPU capacity */
-        resources = Map.of("brokers", new ResourceRequirementsBuilder().addToLimits("cpu", new Quantity(resourceLimitCpu)).build());
-
-        io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity brokerCapacityThree = new BrokerCapacityBuilder().build();
-
-        verifyBrokerCapacity(storage, resources, brokerCapacityThree, resourceLimitCpu, resourceLimitCpu, resourceLimitCpu);
-
-        /* In this test case, when neither the override nor the Kafka resource requests or limits for CPU are configured,
-           the CPU capacity will be set to DEFAULT_CPU_CORE_CAPACITY */
-        resources = Map.of("brokers", new ResourceRequirementsBuilder().build());
-
-        verifyBrokerCapacity(storage, resources, brokerCapacityThree, BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY, BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY, BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
-    }
-
-    private void verifyBrokerCapacity(Map<String, Storage> storage,
-                                      Map<String, ResourceRequirements> resources,
-                                      io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacity brokerCapacity,
-                                      String brokerOneCpuValue,
-                                      String brokerTwoCpuValue,
-                                      String brokerThreeCpuValue) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .withNewCruiseControl()
-                        .withBrokerCapacity(brokerCapacity)
-                    .endCruiseControl()
-                .endSpec()
-                .build();
-
-        CruiseControl cc = createCruiseControl(kafka, NODES, storage, resources);
-
-        ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
-        JsonObject capacity = new JsonObject(configMap.getData().get(CruiseControl.CAPACITY_CONFIG_FILENAME));
-        JsonArray brokerEntries = capacity.getJsonArray(Capacity.CAPACITIES_KEY);
-
-        assertThat(brokerEntries.getJsonObject(0).getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY).getString("num.cores"), is(Matchers.equalTo(brokerOneCpuValue)));
-        assertThat(brokerEntries.getJsonObject(1).getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY).getString("num.cores"), is(Matchers.equalTo(brokerTwoCpuValue)));
-        assertThat(brokerEntries.getJsonObject(2).getJsonObject(Capacity.CAPACITY_KEY).getJsonObject(Capacity.CPU_KEY).getString("num.cores"), is(Matchers.equalTo(brokerThreeCpuValue)));
     }
 
     @ParallelTest
@@ -1236,7 +976,4 @@ public class CruiseControlTest {
         return expected;
     }
 
-    private static boolean isJBOD(Object diskCapacity) {
-        return diskCapacity instanceof JsonObject;
-    }
 }
