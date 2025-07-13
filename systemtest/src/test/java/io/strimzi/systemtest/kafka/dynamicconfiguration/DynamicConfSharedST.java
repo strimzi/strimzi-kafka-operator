@@ -138,7 +138,7 @@ public class DynamicConfSharedST extends AbstractST {
                 case LONG:
                     stochasticChosenValue = switch (key) {
                         case "num.recovery.threads.per.data.dir", "log.cleaner.threads", "num.network.threads",
-                             "min.insync.replicas", "num.replica.fetchers", "num.partitions" ->
+                             "num.replica.fetchers", "num.partitions" ->
                                 ThreadLocalRandom.current().nextInt(2, 3);
                         case "log.cleaner.io.buffer.load.factor", "log.retention.ms", "max.connections",
                              "max.connections.per.ip", "background.threads" ->
@@ -184,6 +184,9 @@ public class DynamicConfSharedST extends AbstractST {
 
             // skipping these configuration exceptions
             testCases.remove("ssl.cipher.suites");
+
+            // from Kafka 4.x if ELR is enabled on the cluster we can't change this config anymore, so skipping it
+            testCases.remove("min.insync.replicas");
         });
 
         return testCases;

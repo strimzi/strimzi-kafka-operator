@@ -2,6 +2,7 @@
 
 ## 0.48.0
 
+* Add support for Kafka 4.1.0.
 * KRaft mode and Kafka Node Pools are now enabled by default.
   The `strimzi.io/node-pools` and `strimzi.io/kraft` annotations are not required anymore and will be ignored if set.
 * Make properties `broker.session.timeout.ms`, `broker.heartbeat.interval.ms` and `controller.socket.timeout.ms` configurable
