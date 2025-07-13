@@ -2,7 +2,7 @@
 
 ## 0.48.0
 
-* n/a
+* Add support for Kafka 4.1.0.
 
 ### Changes, deprecations and removals
 
