@@ -85,7 +85,6 @@ import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.ROLLING_UPDATE;
 import static io.strimzi.systemtest.TestTags.SANITY;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -460,7 +459,7 @@ class SecurityST extends AbstractST {
                             .withNewKafkaListenerAuthenticationTlsAuth()
                             .endKafkaListenerAuthenticationTlsAuth()
                             .build())
-                    .withConfig(singletonMap("default.replication.factor", 3))
+                    .addToConfig("default.replication.factor", 3)
                     .withNewPersistentClaimStorage()
                         .withSize("2Gi")
                         .withDeleteClaim(true)
