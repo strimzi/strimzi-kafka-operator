@@ -44,7 +44,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -829,7 +828,7 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Get the user provided Kafka configuration provider aliases, throwing an InvalidConfigurationException if any are found that would overwrite the Strimzi defined configuration providers
      * 
-     //* @param strimziConfigProviders    The Strimzi defined configuration providers
+     * @param strimziConfigProviders    The Strimzi defined configuration providers
      * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
      * @return                          The user defined Kafka configuration provider aliases or empty string
      */
