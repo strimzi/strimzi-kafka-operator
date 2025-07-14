@@ -2,7 +2,7 @@
 
 ## 0.48.0
 
-* n/a
+* Added support for Strimzi Metrics Reporter to the KafkaConnect and MirrorMaker2.
 
 ## 0.47.0
 
