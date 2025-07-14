@@ -29,13 +29,10 @@ import io.strimzi.operator.common.model.Labels;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * ModelUtils is a utility class that holds generic static helper functions
@@ -377,45 +374,5 @@ public class ModelUtils {
             }
         }
         return errors;
-    }
-
-    /**
-     * Append list configuration values or create a new list configuration if missing.
-     * A list configuration can contain a comma separated list of values.
-     * Duplicated values are removed.
-     *
-     * @param kafkaConfig Kafka configuration.
-     * @param key List configuration key.
-     * @param values List configuration values.
-     */
-    public static void createOrAddListConfig(AbstractConfiguration kafkaConfig, String key, String values) {
-        if (kafkaConfig == null) {
-            throw new IllegalArgumentException("Configuration is required");
-        }
-        if (key == null || key.isBlank()) {
-            throw new IllegalArgumentException("Configuration key is required");
-        }
-        if (values == null || values.isBlank()) {
-            throw new IllegalArgumentException("Configuration values are required");
-        }
-
-        String existingConfig = kafkaConfig.getConfigOption(key);
-        // using an ordered set to preserve ordering of the existing kafkaConfig value
-        Set<String> existingSet = existingConfig == null ? new LinkedHashSet<>() :
-                Arrays.stream(existingConfig.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-        // we also preserve ordering for new values in case they are user-provided
-        Set<String> newValues = Arrays.stream(values.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-        // add only new values
-        boolean updated = existingSet.addAll(newValues);
-        if (updated) {
-            String updatedConfig = String.join(",", existingSet);
-            kafkaConfig.setConfigOption(key, updatedConfig);
-        }
     }
 }

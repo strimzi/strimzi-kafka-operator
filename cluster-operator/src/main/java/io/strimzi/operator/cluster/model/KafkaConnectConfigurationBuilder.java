@@ -319,16 +319,16 @@ public class KafkaConnectConfigurationBuilder {
     private void maybeAddMetricReporters(AbstractConfiguration userConfig, boolean injectKafkaJmxReporter, boolean injectStrimziMetricsReporter) {
         if (injectKafkaJmxReporter) {
             // the JMX reporter is explicitly added when metric.reporters is not empty
-            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
-            ModelUtils.createOrAddListConfig(userConfig, "admin.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
-            ModelUtils.createOrAddListConfig(userConfig, "producer.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
-            ModelUtils.createOrAddListConfig(userConfig, "consumer.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+            AbstractConfiguration.createOrAddListConfig(userConfig, "admin.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+            AbstractConfiguration.createOrAddListConfig(userConfig, "producer.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+            AbstractConfiguration.createOrAddListConfig(userConfig, "consumer.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
         }
         if (injectStrimziMetricsReporter) {
-            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
-            ModelUtils.createOrAddListConfig(userConfig, "admin.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
-            ModelUtils.createOrAddListConfig(userConfig, "producer.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
-            ModelUtils.createOrAddListConfig(userConfig, "consumer.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+            AbstractConfiguration.createOrAddListConfig(userConfig, "admin.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+            AbstractConfiguration.createOrAddListConfig(userConfig, "producer.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+            AbstractConfiguration.createOrAddListConfig(userConfig, "consumer.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
         }
     }
 
