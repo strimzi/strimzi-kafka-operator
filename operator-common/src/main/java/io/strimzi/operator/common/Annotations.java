@@ -218,7 +218,7 @@ public class Annotations extends ResourceAnnotations {
      */
     public static boolean hasAnnotation(HasMetadata resource, String annotation) {
         ObjectMeta metadata = resource.getMetadata();
-        String str = annotation(annotation, null, metadata, (String[]) null);
+        String str = annotation(annotation, null, metadata);
         return str != null;
     }
 
