@@ -2506,7 +2506,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |Authentication configuration for Kafka Connect.
 |config
 |map
-|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
+|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes, prometheus.metrics.reporter. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
 |resources
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
 |The maximum limits for CPU and memory resources and the requested initial resources.
@@ -2533,7 +2533,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |Configuration of the node label which will be used as the `client.rack` consumer configuration.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
-|Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not yet support `strimziMetricsReporter`.
+|Metrics configuration.
 |tracing
 |xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |The configuration of tracing in Kafka Connect.
@@ -4185,7 +4185,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |Configuration of the node label which will be used as the `client.rack` consumer configuration.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
-|Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not yet support `strimziMetricsReporter`.
+|Metrics configuration.
 |tracing
 |xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |The configuration of tracing in Kafka Connect.

@@ -31,6 +31,7 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
@@ -42,10 +43,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -65,8 +66,6 @@ public class KafkaBrokerConfigurationBuilder {
     // Names of environment variables expanded through config providers inside the Kafka node
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET_TEMPLATE_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:STRIMZI_%s_OAUTH_CLIENT_SECRET}";
-
-    private final static String KAFKA_JMX_REPORTER_CLASS = "org.apache.kafka.common.metrics.JmxReporter";
 
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
@@ -152,9 +151,9 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model)   {
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
-            writer.println("prometheus.metrics.reporter.listener.enable=true");
-            writer.println("prometheus.metrics.reporter.listener=http://:" + StrimziMetricsReporterModel.METRICS_PORT);
-            writer.println("prometheus.metrics.reporter.allowlist=" + reporterModel.getAllowList());
+            writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
+            writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
+            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
             writer.println();
         }
         return this;
@@ -829,7 +828,7 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Get the user provided Kafka configuration provider aliases, throwing an InvalidConfigurationException if any are found that would overwrite the Strimzi defined configuration providers
      * 
-     * @param strimziConfigProviders    The Strimzi defined configuration providers
+     //* @param strimziConfigProviders    The Strimzi defined configuration providers
      * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
      * @return                          The user defined Kafka configuration provider aliases or empty string
      */
@@ -856,8 +855,8 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
      * @param injectCcMetricsReporter   Inject the Cruise Control Metrics Reporter into the configuration
+     * @param injectKafkaJmxReporter         Flag to indicate if metrics are enabled. If they are we inject the JmxReporter into the configuration
      * @param injectStrimziMetricsReporter   Inject the Strimzi Metrics Reporter into the configuration
-     * @param injectKafkaJmxReporter          Flag to indicate if metrics are enabled. If they are we inject the JmxReporter into the configuration
      *
      * @return Returns the builder instance
      */
@@ -880,7 +879,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         // print user config with Strimzi injections
         if (!userConfig.getConfiguration().isEmpty()) {
-            printSectionHeader("User provided configuration");
+            printSectionHeader("User provided configuration with Strimzi injections");
             writer.println(userConfig.getConfiguration());
             writer.println();
         }
@@ -895,16 +894,17 @@ public class KafkaBrokerConfigurationBuilder {
      * @param injectCcMetricsReporter Flag indicating whether to inject the Cruise Control Metrics Reporter.
      * @param injectKafkaJmxReporter  Inject the JMX Reporter into the configuration
      * @param injectStrimziMetricsReporter Flag indicating whether to inject the Strimzi Metrics Reporter.
+     *
      */
     private void maybeAddMetricReporters(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean injectKafkaJmxReporter, boolean injectStrimziMetricsReporter) {
         if (injectCcMetricsReporter) {
-            createOrAddListConfig(userConfig, "metric.reporters", CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
+            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
         }
         if (injectKafkaJmxReporter) {
-            createOrAddListConfig(userConfig, "metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
         }
         if (injectStrimziMetricsReporter) {
-            createOrAddListConfig(userConfig, "metric.reporters", "io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter");
+            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
         }
     }
 
@@ -916,7 +916,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void maybeAddYammerMetricsReporters(KafkaConfiguration userConfig, boolean injectStrimziMetricsReporter) {
         if (injectStrimziMetricsReporter) {
-            createOrAddListConfig(userConfig, "kafka.metrics.reporters", "io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter");
+            ModelUtils.createOrAddListConfig(userConfig, "kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
         }
     }
 
@@ -1059,45 +1059,6 @@ public class KafkaBrokerConfigurationBuilder {
         }
 
         writer.println(String.format("client.quota.callback.static.excluded.principal.name.list=%s", String.join(";", excludedPrincipals)));
-    }
-
-    /**
-     * Append list configuration values or create a new list configuration if missing.
-     * A list configuration can contain a comma separated list of values.
-     * Duplicated values are removed.
-     *
-     * @param kafkaConfig Kafka configuration.
-     * @param key List configuration key.
-     * @param values List configuration values.
-     */
-    static void createOrAddListConfig(AbstractConfiguration kafkaConfig, String key, String values) {
-        if (kafkaConfig == null) {
-            throw new IllegalArgumentException("Configuration is required");
-        }
-        if (key == null || key.isBlank()) {
-            throw new IllegalArgumentException("Configuration key is required");
-        }
-        if (values == null || values.isBlank()) {
-            throw new IllegalArgumentException("Configuration values are required");
-        }
-
-        String existingConfig = kafkaConfig.getConfigOption(key);
-        // using an ordered set to preserve ordering of the existing kafkaConfig as values could potentially be user-provided.
-        Set<String> existingSet = existingConfig == null ? new LinkedHashSet<>() :
-                Arrays.stream(existingConfig.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .collect(Collectors.toCollection(LinkedHashSet::new));
-        Set<String> newValues = Arrays.stream(values.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        // add only new values
-        boolean updated = existingSet.addAll(newValues);
-        if (updated) {
-            String updatedConfig = String.join(",", existingSet);
-            kafkaConfig.setConfigOption(key, updatedConfig);
-        }
     }
 
     /**

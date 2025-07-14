@@ -1,0 +1,41 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mm2-cluster
+  labels:
+    app: my-mm2-cluster
+spec:
+  version: 4.0.0
+  replicas: 1
+  connectCluster: "my-cluster-target"
+  clusters:
+    - alias: "my-cluster-source"
+      bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+    - alias: "my-cluster-target"
+      bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+      config:
+        # -1 means it will use the default replication factor configured in the broker
+        config.storage.replication.factor: -1
+        offset.storage.replication.factor: -1
+        status.storage.replication.factor: -1
+  mirrors:
+    - sourceCluster: "my-cluster-source"
+      targetCluster: "my-cluster-target"
+      sourceConnector:
+        config:
+          # -1 means it will use the default replication factor configured in the broker
+          replication.factor: -1
+          offset-syncs.topic.replication.factor: -1
+          sync.topic.acls.enabled: "false"
+      heartbeatConnector:
+        config:
+          # -1 means it will use the default replication factor configured in the broker
+          heartbeats.topic.replication.factor: -1
+      checkpointConnector:
+        config:
+          # -1 means it will use the default replication factor configured in the broker
+          checkpoints.topic.replication.factor: -1
+      topicsPattern: ".*"
+      groupsPattern: ".*"
+  metricsConfig:
+    type: strimziMetricsReporter
