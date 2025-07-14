@@ -18,7 +18,7 @@ But these are some of the tasks you usually have to do.
     * The `.spec.version` field within the `KafkaConnect` and `KafkaMirrorMaker2` custom resources
     * The Docker image tag in the Kafka connect Build example
   * Update the main `pom.xml` to use the latest Kafka version in the operator
-  * Update `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` with the new version
+  * Update `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` and `systemtest/src/test/resources/upgrade/BundleDowngrade.yaml` with the new version
   * Update protocol versions in `cluster-operator/src/test/java/io/strimzi/operator/cluster/model/KafkaConfigurationTests.java` if needed
 * Make sure the `cluster-operator/src/test/java/io/strimzi/operator/cluster/KafkaVersionTestUtils.java` is up-to-date
 * If you are adding a release candidate which is not yet published to Maven central, make sure to update the `ST_FILE_PLUGIN_URL_DEFAULT` field in `systemtest/src/main/java/io/strimzi/systemtest/Environment.java` to get the system tests to pass.
@@ -27,6 +27,22 @@ But these are some of the tasks you usually have to do.
 * Add a `CHANGELOG.md` record
 * Run unit tests
 * Run system tests (typically as part of the PR on Azure Pipelines)
+
+You can also run unit and systems tests in an early stage on an Apache Kafka RC to validate it and report issues to the community before the GA.
+In order to so so, please follow the above steps but also add the Apache staging repository to the `pom.xml` file as follow:
+
+```xml
+<repository>
+    <!--
+    We use the Kafka staging repository while we use the RC releases of Kafka 4.1.0.
+    This should be removed once we move to the final release of Kafka 4.1.0.
+    -->
+    <id>apache-staging</id>
+    <url>https://repository.apache.org/content/groups/staging/</url>
+</repository>
+```
+
+Remember to remove the staging repository when the Apache Kafka release is GA.
 
 ## Removing Kafka version
 
