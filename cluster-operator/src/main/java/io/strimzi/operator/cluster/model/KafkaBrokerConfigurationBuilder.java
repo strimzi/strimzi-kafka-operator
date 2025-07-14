@@ -898,13 +898,13 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void maybeAddMetricReporters(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean injectKafkaJmxReporter, boolean injectStrimziMetricsReporter) {
         if (injectCcMetricsReporter) {
-            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
+            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
         }
         if (injectKafkaJmxReporter) {
-            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
         }
         if (injectStrimziMetricsReporter) {
-            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+            AbstractConfiguration.createOrAddListConfig(userConfig, "metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
         }
     }
 
@@ -916,7 +916,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void maybeAddYammerMetricsReporters(KafkaConfiguration userConfig, boolean injectStrimziMetricsReporter) {
         if (injectStrimziMetricsReporter) {
-            ModelUtils.createOrAddListConfig(userConfig, "kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
+            AbstractConfiguration.createOrAddListConfig(userConfig, "kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
         }
     }
 

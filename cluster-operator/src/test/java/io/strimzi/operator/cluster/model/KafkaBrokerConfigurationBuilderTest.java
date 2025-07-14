@@ -2643,11 +2643,11 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testCreateOrAddListConfigDoesNotExists() {
         KafkaConfiguration config1 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        ModelUtils.createOrAddListConfig(config1, "test-key", "test-value");
+        AbstractConfiguration.createOrAddListConfig(config1, "test-key", "test-value");
         assertThat(config1.getConfigOption("test-key"), is("test-value"));
 
         KafkaConfiguration config2 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
-        ModelUtils.createOrAddListConfig(config2, "test-key", "test-value-1,test-value-2");
+        AbstractConfiguration.createOrAddListConfig(config2, "test-key", "test-value-1,test-value-2");
         assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2"));
     }
 
@@ -2656,12 +2656,12 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaConfiguration config1 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         config1.setConfigOption("test-key", "test-value-1");
 
-        ModelUtils.createOrAddListConfig(config1, "test-key", "test-value-2");
+        AbstractConfiguration.createOrAddListConfig(config1, "test-key", "test-value-2");
         assertThat(config1.getConfigOption("test-key"), is("test-value-1,test-value-2"));
 
         KafkaConfiguration config2 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         config2.setConfigOption("test-key", "test-value-1,test-value-2");
-        ModelUtils.createOrAddListConfig(config2, "test-key", "test-value-3");
+        AbstractConfiguration.createOrAddListConfig(config2, "test-key", "test-value-3");
         assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2,test-value-3"));
     }
 
@@ -2669,12 +2669,12 @@ public class KafkaBrokerConfigurationBuilderTest {
     public void testCreateOrAddListConfigExistsAndContainsValue() {
         KafkaConfiguration config1 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         config1.setConfigOption("test-key", "test-value-1");
-        ModelUtils.createOrAddListConfig(config1, "test-key", "test-value-1");
+        AbstractConfiguration.createOrAddListConfig(config1, "test-key", "test-value-1");
         assertThat(config1.getConfigOption("test-key"), is("test-value-1"));
 
         KafkaConfiguration config2 = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         config2.setConfigOption("test-key", "test-value-1,test-value-2");
-        ModelUtils.createOrAddListConfig(config2, "test-key", "test-value-1");
+        AbstractConfiguration.createOrAddListConfig(config2, "test-key", "test-value-1");
         assertThat(config2.getConfigOption("test-key"), is("test-value-1,test-value-2"));
     }
 
@@ -2682,7 +2682,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     public void testCreateOrAddListConfigWithDuplicate() {
         KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         config.setConfigOption("test-key", "test-value-1,test-value-1,test-value-2");
-        ModelUtils.createOrAddListConfig(config, "test-key", "test-value-3,test-value-3");
+        AbstractConfiguration.createOrAddListConfig(config, "test-key", "test-value-3,test-value-3");
         assertThat(config.getConfigOption("test-key"), is("test-value-1,test-value-2,test-value-3"));
     }
 
@@ -2690,7 +2690,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     public void testCreateOrAddListConfigOrdering() {
         KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         config.setConfigOption("test-key", "test-value-2,test-value-1");
-        ModelUtils.createOrAddListConfig(config, "test-key", "test-value-3,");
+        AbstractConfiguration.createOrAddListConfig(config, "test-key", "test-value-3,");
         assertThat(config.getConfigOption("test-key"), is("test-value-2,test-value-1,test-value-3"));
     }
 
@@ -2699,7 +2699,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         config.setConfigOption("test-key", "test-value-1,test-value-2");
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            ModelUtils.createOrAddListConfig(null, "test-key", "test-value-3");
+            AbstractConfiguration.createOrAddListConfig(null, "test-key", "test-value-3");
         });
 
         assertThat(exception.getMessage(), is(equalTo("Configuration is required")));
@@ -2711,7 +2711,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         config.setConfigOption("test-key", "test-value-1,test-value-2");
 
         Stream.of(null, "", " ")
-                .map(key -> assertThrows(IllegalArgumentException.class, () -> ModelUtils.createOrAddListConfig(config, key, "test-value-3")))
+                .map(key -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListConfig(config, key, "test-value-3")))
                 .forEach(e -> assertThat(e.getMessage(), is("Configuration key is required")
                 ));
     }
@@ -2722,7 +2722,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         config.setConfigOption("test-key", "test-value-1,test-value-2");
 
         Stream.of(null, "", " ")
-                .map(value -> assertThrows(IllegalArgumentException.class, () -> ModelUtils.createOrAddListConfig(config, "test-key", value)))
+                .map(value -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListConfig(config, "test-key", value)))
                 .forEach(e -> assertThat(e.getMessage(), is("Configuration values are required")
                 ));
     }
