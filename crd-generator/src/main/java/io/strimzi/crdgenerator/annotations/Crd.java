@@ -142,7 +142,7 @@ public @interface Crd {
 
             /**
              * The scale subresource of a custom resources that this is the definition for.
-             * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#customresourcesubresourcescale-v1-apiextensions-k8s-io">Kubernetes 1.25 API documtation</a>
+             * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#customresourcesubresourcescale-v1-apiextensions-k8s-io">Kubernetes 1.27 API documtation</a>
              */
             @interface Scale {
                 /**

@@ -3,7 +3,7 @@ set -xe
 
 rm -rf ~/.kube
 
-KUBE_VERSION=${KUBE_VERSION:-1.25.0}
+KUBE_VERSION=${KUBE_VERSION:-1.27.0}
 MINIKUBE_REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
@@ -66,6 +66,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     export KUBECONFIG=$HOME/.kube/config
     # We can turn on network polices support by adding the following options --cni=calico
     # However, it seems not working properly with kube 1.25, we should revisit it once we drop it
+    # Covered by https://github.com/strimzi/strimzi-kafka-operator/issues/11639
     minikube start --driver=docker --kubernetes-version=${KUBE_VERSION} \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
       --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY} --force

@@ -46,7 +46,7 @@ body:
     attributes:
       label: Kubernetes version
       description: Kubernetes version where the bug occurred
-      placeholder: e.g. Kubernetes 1.25, OpenShift 4.11
+      placeholder: e.g. Kubernetes 1.27, OpenShift 4.11
     validations:
       required: true
   - type: input
