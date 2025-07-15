@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.resources.CrdClients.kafkaRebalanceClient;
-
 public class ConfigMapUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ConfigMapUtils.class);
