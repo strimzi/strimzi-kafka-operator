@@ -55,6 +55,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
@@ -734,8 +735,9 @@ public class CruiseControlST extends AbstractST {
         // and then afterward we again move to Idle state after all is done
         KafkaUtils.waitUntilKafkaHasAutoRebalanceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.Idle);
 
-        // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is deleted
+        // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is deleted together with the corresponding ConfigMap
         KafkaRebalanceUtils.waitForKafkaRebalanceIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.ADD_BROKERS));
+        ConfigMapUtils.waitForConfigMapIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.ADD_BROKERS));
 
         KafkaTopicUtils.waitForTopicReplicasOnBrokers(testStorage.getNamespaceName(), testStorage.getTopicName(),
             scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), Arrays.asList("3", "4"));
@@ -764,8 +766,9 @@ public class CruiseControlST extends AbstractST {
         // and then afterward we again move to Idle state after all is done
         KafkaUtils.waitUntilKafkaHasAutoRebalanceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.Idle);
 
-        // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is deleted
+        // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is deleted together with the corresponding ConfigMap
         KafkaRebalanceUtils.waitForKafkaRebalanceIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.REMOVE_BROKERS));
+        ConfigMapUtils.waitForConfigMapIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.REMOVE_BROKERS));
     }
 
     @ParallelNamespaceTest

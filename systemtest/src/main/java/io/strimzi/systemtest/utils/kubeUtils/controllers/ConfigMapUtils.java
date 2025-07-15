@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.resources.CrdClients.kafkaRebalanceClient;
+
 public class ConfigMapUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ConfigMapUtils.class);
@@ -50,6 +52,16 @@ public class ConfigMapUtils {
             TestConstants.GLOBAL_TIMEOUT,
             () -> KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(configMapName).get() != null
         );
+    }
+
+    /**
+     * Waits for ConfigMap with specified name and in specified Namespace to be deleted.
+     *
+     * @param namespaceName name of the Namespace where the ConfigMap lives
+     * @param configMapName name of the ConfigMap that should be deleted
+     */
+    public static void waitForConfigMapIsDeleted(final String namespaceName, final String configMapName) {
+        TestUtils.waitFor("ConfigMap is deleted", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(configMapName).get() == null);
     }
 
     /**
