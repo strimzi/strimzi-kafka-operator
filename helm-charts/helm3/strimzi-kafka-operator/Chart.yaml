@@ -16,12 +16,6 @@ home: https://strimzi.io/
 sources:
 - https://github.com/strimzi/strimzi-kafka-operator
 maintainers:
-- name: Frawless
-- name: ppatierno
-- name: samuel-hawker
-- name: scholzj
-- name: tombentley
-- name: sknot-rh
-- name: PaulRMellor
-- name: im-konge
-- name: see-quick
+- name: Strimzi Project Maintainers
+  email: cncf-strimzi-maintainers@lists.cncf.io
+  url: https://github.com/strimzi/governance
