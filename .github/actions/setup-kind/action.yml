@@ -50,21 +50,21 @@ runs:
       id: cache-cloud-provider-kind
       uses: actions/cache@v4
       with:
-        path: /tmp/cloud-provider-kind-image.tar
+        path: /tmp/cloud-provider-kind-image-${{ inputs.architecture }}.tar
         key: cloud-provider-kind
 
     - name: Load registry Docker image from cache
       if: steps.cache-cloud-provider-kind.outputs.cache-hit == 'true'
       shell: bash
       run: |
-        docker load -i /tmp/cloud-provider-kind-image.tar
+        docker load -i /tmp/cloud-provider-kind-image-${{ inputs.architecture }}.tar
 
     - name: Pull and save cloud-provider-kind container image if cache miss
       if: steps.cache-cloud-provider-kind.outputs.cache-hit != 'true'
       shell: bash
       run: |
         docker pull registry.k8s.io/cloud-provider-kind/cloud-controller-manager:v${{ inputs.cloudProviderVersion }}
-        docker save registry.k8s.io/cloud-provider-kind/cloud-controller-manager:v${{ inputs.cloudProviderVersion }} -o /tmp/cloud-provider-kind-image.tar
+        docker save registry.k8s.io/cloud-provider-kind/cloud-controller-manager:v${{ inputs.cloudProviderVersion }} -o /tmp/cloud-provider-kind-image-${{ inputs.architecture }}.tar
 
     - name: Setup Kind
       shell: bash

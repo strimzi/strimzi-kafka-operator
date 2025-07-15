@@ -33,6 +33,12 @@ inputs:
   default_parallel:
     description: "Number of tests executed in parallel"
     default: "1"
+  default_groups:
+    description: "Default JUnit5 test groups that will be executed"
+    default: ""
+  default_tests:
+    description: "Default JUnit5 tests that will be executed"
+    default: ""
 
 outputs:
   matrix:
@@ -62,7 +68,7 @@ runs:
         echo "INPUT_DEFAULT_AGENT: $INPUT_DEFAULT_AGENT"
         echo "INPUT_DEFAULT_ARCH: $INPUT_DEFAULT_ARCH"
         
-        # Filtering: pipelines take precedence over profiles.
+        # Filtering - pipelines take precedence over profiles.
         if [ -n "${INPUT_PIPELINES}" ]; then
           FILTER=$(echo "${INPUT_PIPELINES}" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
           MATRIX=$(echo "$DEFINED_PIPELINES" | jq --argjson filter "$FILTER" 'map(select(.pipeline as $t | $filter | index($t)))')
@@ -71,7 +77,7 @@ runs:
           MATRIX=$(echo "$DEFINED_PIPELINES" | jq --argjson filter "$FILTER" 'map(select(.profile as $t | $filter | index($t)))')
         else
           # If no pipelines or profiles provided, then build a simple matrix with one object per default profile.
-          DEFAULT_PROFILES="regression,upgrade"
+          DEFAULT_PROFILES="all"
           # Convert comma-separated default list to a JSON array string.
           PROFILES=$(echo "$DEFAULT_PROFILES" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
           MATRIX=$(jq -n \
@@ -82,9 +88,11 @@ runs:
             --arg coi "$INPUT_DEFAULT_CLUSTER_OPERATOR_INSTALL_TYPE" \
             --arg parallel "$INPUT_DEFAULT_PARALLEL" \
             --arg pipeline "custom" \
+            --arg groups "$INPUT_DEFAULT_GROUPS" \
+            --arg tests "$INPUT_DEFAULT_TESTS" \
             --arg timeout 720 \
             --argjson profiles "$PROFILES" \
-            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., timeout: $timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel})')
+            '$profiles | map({agent: $agent, arch: $arch, pipeline: $pipeline, profile: ., timeout: $timeout, strimzi_feature_gates: $fg, strimzi_rbac_scope: $rbac, cluster_operator_install_type: $coi, parallel: $parallel, groups: $groups, tests: $tests})')
         fi
         
         # Inject jobName in format 'pipeline-profile-arch' or 'pipeline-arch' when profile == pipeline
@@ -115,3 +123,5 @@ runs:
         INPUT_DEFAULT_STRIMZI_RBAC_SCOPE: "${{ inputs.default_strimzi_rbac_scope }}"
         INPUT_DEFAULT_CLUSTER_OPERATOR_INSTALL_TYPE: "${{ inputs.default_cluster_operator_install_type }}"
         INPUT_DEFAULT_PARALLEL: "${{ inputs.default_parallel }}"
+        INPUT_DEFAULT_GROUPS: "${{ inputs.default_groups }}"
+        INPUT_DEFAULT_TESTS: "${{ inputs.default_tests }}"
