@@ -56,6 +56,24 @@ on:
         description: "Which architecture is used for the job"
         required: true
         type: string
+      groups:
+        description: "JUnit5 test groups that will be executed"
+        required: false
+        # Empty string means all groups
+        default: ""
+        type: string
+      tests:
+        description: "JUnit5 tests that will be executed"
+        required: false
+        # Empty string means all tests
+        default: ""
+        type: string
+      kubeVersion:
+        description: "Used Kubernetes version for Kind/Minikube. Note that for Kind you have to use whole image with sha digest!"
+        required: false
+        # Empty string means it will use default from setup scripts
+        default: ""
+        type: string
 
 jobs:
   generate-matrix:
@@ -85,10 +103,11 @@ jobs:
       matrix:
         config: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
       fail-fast: false
-
+    # Max timeout ise set for 10h for the whole job, test execution has lower timeouts to not block the job for the whole time
+    # but have some additional time to collect logs, etc.
+    timeout-minutes: 600
     name: ${{ matrix.config.jobName }}
     runs-on: ${{ matrix.config.agent }}
-    timeout-minutes: ${{ fromJson(matrix.config.timeout) }}
     # Environment variables
     env:
       KAFKA_VERSION: ${{ inputs.kafkaVersion }}
@@ -97,11 +116,15 @@ jobs:
       ARCH: ${{ matrix.config.architecture }}
       STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
-      STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
+      STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_use_feature_gates }}
       PARALLEL: ${{ matrix.config.parallel }}
       STRIMZI_DEFAULT_LOG_LEVEL: DEBUG
       OPERATOR_IMAGE_PULL_POLICY: IfNotPresent
       COMPONENTS_IMAGE_PULL_POLICY: IfNotPresent
+      # Kube version for Kind
+      KIND_NODE_IMAGE: ${{ inputs.kubeVersion }}
+      # Kube version for Minikube
+      KUBE_VERSION: ${{ inputs.kubeVersion }}
     # Job steps
     steps:
       - uses: actions/checkout@v4
@@ -129,11 +152,6 @@ jobs:
         uses: ./.github/actions/install-yq
         with:
           architecture: ${{ matrix.config.arch }}
-
-#      - name: DEBUG - dns utils
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get install -y dnsutils iproute2
 
       - name: Install Docker
         uses: ./.github/actions/install-docker
@@ -264,10 +282,13 @@ jobs:
       # Run system tests
       ############################################################################
       - name: Run systemtests
+        timeout-minutes: ${{ fromJson(matrix.config.timeout) }}
         run: |
           mvn -f systemtest/pom.xml verify \
             -P"${PROFILE}" \
-            -DexcludedGroups="${EXCLUDED_GROUPS}" \
+            -DexcludedGroups="${{ inputs.excludedGroups }}" \
+            $GROUPS_OPT \
+            $TESTS_OPT \
             -Dmaven.javadoc.skip=true \
             -B -V \
             -Dfailsafe.rerunFailingTestsCount=1 \
@@ -275,7 +296,6 @@ jobs:
             -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL}" \
             -Dskip.surefire.tests \
             -s ./.azure/systemtests/systemtest-settings.xml
-
         env:
           DOCKER_TAG: ${{ env.DOCKER_TAG }}
           BRIDGE_IMAGE: "latest-released"
@@ -284,8 +304,10 @@ jobs:
           RESOURCE_ALLOCATION_STRATEGY: "SHARE_MEMORY_FOR_ALL_COMPONENTS"
           TEST_LOG_DIR: "systemtest-logs"
           CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN: ${{ env.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN }}
-          # TODO - revert after debugging
-          STRIMZI_TEST_LOG_LEVEL: DEBUG
+          # Build the switch only when the input is non-empty
+          GROUPS_OPT: ${{ inputs.groups != '' && format('-Dgroups="{0}"', inputs.groups) || '' }}
+          TESTS_OPT: ${{ inputs.tests  != '' && format('-Dit.test="{0}"',  inputs.tests)  || '' }}
+          STRIMZI_TEST_LOG_LEVEL: INFO
 
       - name: Archive JUnit test results
         if: ${{ always() }}

@@ -37,9 +37,12 @@ jobs:
       strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
       cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
       parallel: ${{ steps.parse.outputs.parallel }}
+      groups: ${{ steps.parse.outputs.groups }}
+      tests: ${{ steps.parse.outputs.tests }}
       kafkaVersion: ${{ steps.parse.outputs.kafkaVersion }}
       releaseVersion: ${{ steps.parse.outputs.releaseVersion }}
       shouldRun: ${{ steps.parse.outputs.shouldRun }}
+      kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -106,3 +109,4 @@ jobs:
       parallel: ${{ needs.parse-params.outputs.parallel }}
       releaseVersion: ${{ needs.parse-params.outputs.releaseVersion }}
       kafkaVersion: ${{ needs.parse-params.outputs.kafkaVersion }}
+      kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
