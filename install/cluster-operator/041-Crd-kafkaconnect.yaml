@@ -453,7 +453,8 @@ spec:
                     type: string
                     enum:
                     - jmxPrometheusExporter
-                    description: Metrics type. Only 'jmxPrometheusExporter' supported currently.
+                    - strimziMetricsReporter
+                    description: Metrics type. The supported types are `jmxPrometheusExporter` and `strimziMetricsReporter`. Type `jmxPrometheusExporter` uses the Prometheus JMX Exporter to expose Kafka JMX metrics in Prometheus format through an HTTP endpoint. Type `strimziMetricsReporter` uses the Strimzi Metrics Reporter to directly expose Kafka metrics in Prometheus format through an HTTP endpoint.
                   valueFrom:
                     type: object
                     properties:
@@ -467,11 +468,24 @@ spec:
                           optional:
                             type: boolean
                         description: Reference to the key in the ConfigMap containing the configuration.
-                    description: 'ConfigMap entry where the Prometheus JMX Exporter configuration is stored. '
+                    description: ConfigMap entry where the Prometheus JMX Exporter configuration is stored.
+                  values:
+                    type: object
+                    properties:
+                      allowList:
+                        type: array
+                        items:
+                          type: string
+                        description: A list of regex patterns to filter the metrics to collect. Should contain at least one element.
+                    description: Configuration values for the Strimzi Metrics Reporter.
                 required:
                 - type
-                - valueFrom
-                description: Metrics configuration.
+                description: "Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not yet support `strimziMetricsReporter`."
+                x-kubernetes-validations:
+                - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
+                  message: valueFrom property is required
+                - rule: self.type != 'strimziMetricsReporter'
+                  message: value type not supported
               tracing:
                 type: object
                 properties:
@@ -1094,7 +1108,7 @@ spec:
                                   type: boolean
                                 secretName:
                                   type: string
-                              description: Secret to use populate the volume.
+                              description: '`Secret` to use to populate the volume.'
                             configMap:
                               type: object
                               properties:
@@ -1115,7 +1129,7 @@ spec:
                                   type: string
                                 optional:
                                   type: boolean
-                              description: ConfigMap to use to populate the volume.
+                              description: '`ConfigMap` to use to populate the volume.'
                             emptyDir:
                               type: object
                               properties:
@@ -1128,7 +1142,7 @@ spec:
                                       type: string
                                     format:
                                       type: string
-                              description: EmptyDir to use to populate the volume.
+                              description: '`EmptyDir` to use to populate the volume.'
                             persistentVolumeClaim:
                               type: object
                               properties:
@@ -1136,7 +1150,7 @@ spec:
                                   type: string
                                 readOnly:
                                   type: boolean
-                              description: PersistentVolumeClaim object to use to populate the volume.
+                              description: '`PersistentVolumeClaim` object to use to populate the volume.'
                             csi:
                               type: object
                               properties:
@@ -1155,7 +1169,15 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                              description: CSIVolumeSource object to use to populate the volume.
+                              description: '`CSIVolumeSource` object to use to populate the volume.'
+                            image:
+                              type: object
+                              properties:
+                                pullPolicy:
+                                  type: string
+                                reference:
+                                  type: string
+                              description: '`ImageVolumeSource` object to use to populate the volume.'
                           oneOf:
                           - properties:
                               secret: {}
@@ -1163,6 +1185,7 @@ spec:
                               emptyDir: {}
                               persistentVolumeClaim: {}
                               csi: {}
+                              image: {}
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect `Pods`.
                   apiService:
@@ -2140,7 +2163,7 @@ spec:
                                   type: boolean
                                 secretName:
                                   type: string
-                              description: Secret to use populate the volume.
+                              description: '`Secret` to use to populate the volume.'
                             configMap:
                               type: object
                               properties:
@@ -2161,7 +2184,7 @@ spec:
                                   type: string
                                 optional:
                                   type: boolean
-                              description: ConfigMap to use to populate the volume.
+                              description: '`ConfigMap` to use to populate the volume.'
                             emptyDir:
                               type: object
                               properties:
@@ -2174,7 +2197,7 @@ spec:
                                       type: string
                                     format:
                                       type: string
-                              description: EmptyDir to use to populate the volume.
+                              description: '`EmptyDir` to use to populate the volume.'
                             persistentVolumeClaim:
                               type: object
                               properties:
@@ -2182,7 +2205,7 @@ spec:
                                   type: string
                                 readOnly:
                                   type: boolean
-                              description: PersistentVolumeClaim object to use to populate the volume.
+                              description: '`PersistentVolumeClaim` object to use to populate the volume.'
                             csi:
                               type: object
                               properties:
@@ -2201,7 +2224,15 @@ spec:
                                   additionalProperties:
                                     type: string
                                   type: object
-                              description: CSIVolumeSource object to use to populate the volume.
+                              description: '`CSIVolumeSource` object to use to populate the volume.'
+                            image:
+                              type: object
+                              properties:
+                                pullPolicy:
+                                  type: string
+                                reference:
+                                  type: string
+                              description: '`ImageVolumeSource` object to use to populate the volume.'
                           oneOf:
                           - properties:
                               secret: {}
@@ -2209,6 +2240,7 @@ spec:
                               emptyDir: {}
                               persistentVolumeClaim: {}
                               csi: {}
+                              image: {}
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                   buildContainer:
@@ -2638,6 +2670,48 @@ spec:
                 - output
                 - plugins
                 description: Configures how the Connect container image should be built. Optional.
+              plugins:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      pattern: "^[a-z0-9][-_a-z0-9]*[a-z0-9]$"
+                      description: "A unique name for the connector plugin. This name is used to generate the mount path for the connector artifacts. The name has to be unique within the KafkaConnect resource. The name must be unique within the `KafkaConnect` resource and match the pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required."
+                    artifacts:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          pullPolicy:
+                            type: string
+                            description: |-
+                              Policy that determines when the container image (OCI artifact) is pulled.
+
+                              Possible values are:
+
+                              * `Always`: Always pull the image. If the pull fails, container creation fails.
+                              * `Never`: Never pull the image. Use only a locally available image. Container creation fails if the image isn’t present.
+                              * `IfNotPresent`: Pull the image only if it’s not already available locally. Container creation fails if the image isn’t present and the pull fails.
+
+                              Defaults to `Always` if `:latest` tag is specified, or `IfNotPresent` otherwise.
+                          reference:
+                            type: string
+                            description: Reference to the container image (OCI artifact) containing the Kafka Connect plugin. The image is mounted as a volume and provides the plugin binary. Required.
+                          type:
+                            type: string
+                            enum:
+                            - image
+                            description: "Artifact type. Currently, the only supported artifact type is `image`."
+                        required:
+                        - reference
+                        - type
+                      description: List of artifacts associated with this connector plugin. Required.
+                  required:
+                  - name
+                  - artifacts
+                description: List of connector plugins to mount into the `KafkaConnect` pod.
             required:
             - bootstrapServers
             description: The specification of the Kafka Connect cluster.

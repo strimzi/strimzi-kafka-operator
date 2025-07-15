@@ -548,7 +548,7 @@ spec:
                   config:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object
-                    description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
+                    description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list, prometheus.metrics.reporter. (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
                   storage:
                     type: object
                     properties:
@@ -914,7 +914,8 @@ spec:
                         type: string
                         enum:
                         - jmxPrometheusExporter
-                        description: Metrics type. Only 'jmxPrometheusExporter' supported currently.
+                        - strimziMetricsReporter
+                        description: Metrics type. The supported types are `jmxPrometheusExporter` and `strimziMetricsReporter`. Type `jmxPrometheusExporter` uses the Prometheus JMX Exporter to expose Kafka JMX metrics in Prometheus format through an HTTP endpoint. Type `strimziMetricsReporter` uses the Strimzi Metrics Reporter to directly expose Kafka metrics in Prometheus format through an HTTP endpoint.
                       valueFrom:
                         type: object
                         properties:
@@ -928,11 +929,22 @@ spec:
                               optional:
                                 type: boolean
                             description: Reference to the key in the ConfigMap containing the configuration.
-                        description: 'ConfigMap entry where the Prometheus JMX Exporter configuration is stored. '
+                        description: ConfigMap entry where the Prometheus JMX Exporter configuration is stored.
+                      values:
+                        type: object
+                        properties:
+                          allowList:
+                            type: array
+                            items:
+                              type: string
+                            description: A list of regex patterns to filter the metrics to collect. Should contain at least one element.
+                        description: Configuration values for the Strimzi Metrics Reporter.
                     required:
                     - type
-                    - valueFrom
                     description: Metrics configuration.
+                    x-kubernetes-validations:
+                    - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
+                      message: valueFrom property is required
                   logging:
                     type: object
                     properties:
@@ -1556,7 +1568,7 @@ spec:
                                       type: boolean
                                     secretName:
                                       type: string
-                                  description: Secret to use populate the volume.
+                                  description: '`Secret` to use to populate the volume.'
                                 configMap:
                                   type: object
                                   properties:
@@ -1577,7 +1589,7 @@ spec:
                                       type: string
                                     optional:
                                       type: boolean
-                                  description: ConfigMap to use to populate the volume.
+                                  description: '`ConfigMap` to use to populate the volume.'
                                 emptyDir:
                                   type: object
                                   properties:
@@ -1590,7 +1602,7 @@ spec:
                                           type: string
                                         format:
                                           type: string
-                                  description: EmptyDir to use to populate the volume.
+                                  description: '`EmptyDir` to use to populate the volume.'
                                 persistentVolumeClaim:
                                   type: object
                                   properties:
@@ -1598,7 +1610,7 @@ spec:
                                       type: string
                                     readOnly:
                                       type: boolean
-                                  description: PersistentVolumeClaim object to use to populate the volume.
+                                  description: '`PersistentVolumeClaim` object to use to populate the volume.'
                                 csi:
                                   type: object
                                   properties:
@@ -1617,7 +1629,15 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
-                                  description: CSIVolumeSource object to use to populate the volume.
+                                  description: '`CSIVolumeSource` object to use to populate the volume.'
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: '`ImageVolumeSource` object to use to populate the volume.'
                               oneOf:
                               - properties:
                                   secret: {}
@@ -1625,6 +1645,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka `Pods`.
                       bootstrapService:
@@ -2485,7 +2506,8 @@ spec:
                         type: string
                         enum:
                         - jmxPrometheusExporter
-                        description: Metrics type. Only 'jmxPrometheusExporter' supported currently.
+                        - strimziMetricsReporter
+                        description: Metrics type. The supported types are `jmxPrometheusExporter` and `strimziMetricsReporter`. Type `jmxPrometheusExporter` uses the Prometheus JMX Exporter to expose Kafka JMX metrics in Prometheus format through an HTTP endpoint. Type `strimziMetricsReporter` uses the Strimzi Metrics Reporter to directly expose Kafka metrics in Prometheus format through an HTTP endpoint.
                       valueFrom:
                         type: object
                         properties:
@@ -2499,11 +2521,22 @@ spec:
                               optional:
                                 type: boolean
                             description: Reference to the key in the ConfigMap containing the configuration.
-                        description: 'ConfigMap entry where the Prometheus JMX Exporter configuration is stored. '
+                        description: ConfigMap entry where the Prometheus JMX Exporter configuration is stored.
+                      values:
+                        type: object
+                        properties:
+                          allowList:
+                            type: array
+                            items:
+                              type: string
+                            description: A list of regex patterns to filter the metrics to collect. Should contain at least one element.
+                        description: Configuration values for the Strimzi Metrics Reporter.
                     required:
                     - type
-                    - valueFrom
                     description: Metrics configuration.
+                    x-kubernetes-validations:
+                    - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
+                      message: valueFrom property is required
                   logging:
                     type: object
                     properties:
@@ -3145,7 +3178,7 @@ spec:
                                       type: boolean
                                     secretName:
                                       type: string
-                                  description: Secret to use populate the volume.
+                                  description: '`Secret` to use to populate the volume.'
                                 configMap:
                                   type: object
                                   properties:
@@ -3166,7 +3199,7 @@ spec:
                                       type: string
                                     optional:
                                       type: boolean
-                                  description: ConfigMap to use to populate the volume.
+                                  description: '`ConfigMap` to use to populate the volume.'
                                 emptyDir:
                                   type: object
                                   properties:
@@ -3179,7 +3212,7 @@ spec:
                                           type: string
                                         format:
                                           type: string
-                                  description: EmptyDir to use to populate the volume.
+                                  description: '`EmptyDir` to use to populate the volume.'
                                 persistentVolumeClaim:
                                   type: object
                                   properties:
@@ -3187,7 +3220,7 @@ spec:
                                       type: string
                                     readOnly:
                                       type: boolean
-                                  description: PersistentVolumeClaim object to use to populate the volume.
+                                  description: '`PersistentVolumeClaim` object to use to populate the volume.'
                                 csi:
                                   type: object
                                   properties:
@@ -3206,7 +3239,15 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
-                                  description: CSIVolumeSource object to use to populate the volume.
+                                  description: '`CSIVolumeSource` object to use to populate the volume.'
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: '`ImageVolumeSource` object to use to populate the volume.'
                               oneOf:
                               - properties:
                                   secret: {}
@@ -3214,6 +3255,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for ZooKeeper `Pods`.
                       clientService:
@@ -4552,7 +4594,7 @@ spec:
                                       type: boolean
                                     secretName:
                                       type: string
-                                  description: Secret to use populate the volume.
+                                  description: '`Secret` to use to populate the volume.'
                                 configMap:
                                   type: object
                                   properties:
@@ -4573,7 +4615,7 @@ spec:
                                       type: string
                                     optional:
                                       type: boolean
-                                  description: ConfigMap to use to populate the volume.
+                                  description: '`ConfigMap` to use to populate the volume.'
                                 emptyDir:
                                   type: object
                                   properties:
@@ -4586,7 +4628,7 @@ spec:
                                           type: string
                                         format:
                                           type: string
-                                  description: EmptyDir to use to populate the volume.
+                                  description: '`EmptyDir` to use to populate the volume.'
                                 persistentVolumeClaim:
                                   type: object
                                   properties:
@@ -4594,7 +4636,7 @@ spec:
                                       type: string
                                     readOnly:
                                       type: boolean
-                                  description: PersistentVolumeClaim object to use to populate the volume.
+                                  description: '`PersistentVolumeClaim` object to use to populate the volume.'
                                 csi:
                                   type: object
                                   properties:
@@ -4613,7 +4655,15 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
-                                  description: CSIVolumeSource object to use to populate the volume.
+                                  description: '`CSIVolumeSource` object to use to populate the volume.'
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: '`ImageVolumeSource` object to use to populate the volume.'
                               oneOf:
                               - properties:
                                   secret: {}
@@ -4621,6 +4671,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Entity Operator `Pods`.
                       topicOperatorContainer:
@@ -6008,7 +6059,7 @@ spec:
                                       type: boolean
                                     secretName:
                                       type: string
-                                  description: Secret to use populate the volume.
+                                  description: '`Secret` to use to populate the volume.'
                                 configMap:
                                   type: object
                                   properties:
@@ -6029,7 +6080,7 @@ spec:
                                       type: string
                                     optional:
                                       type: boolean
-                                  description: ConfigMap to use to populate the volume.
+                                  description: '`ConfigMap` to use to populate the volume.'
                                 emptyDir:
                                   type: object
                                   properties:
@@ -6042,7 +6093,7 @@ spec:
                                           type: string
                                         format:
                                           type: string
-                                  description: EmptyDir to use to populate the volume.
+                                  description: '`EmptyDir` to use to populate the volume.'
                                 persistentVolumeClaim:
                                   type: object
                                   properties:
@@ -6050,7 +6101,7 @@ spec:
                                       type: string
                                     readOnly:
                                       type: boolean
-                                  description: PersistentVolumeClaim object to use to populate the volume.
+                                  description: '`PersistentVolumeClaim` object to use to populate the volume.'
                                 csi:
                                   type: object
                                   properties:
@@ -6069,7 +6120,15 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
-                                  description: CSIVolumeSource object to use to populate the volume.
+                                  description: '`CSIVolumeSource` object to use to populate the volume.'
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: '`ImageVolumeSource` object to use to populate the volume.'
                               oneOf:
                               - properties:
                                   secret: {}
@@ -6077,6 +6136,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Cruise Control `Pods`.
                       apiService:
@@ -6500,7 +6560,8 @@ spec:
                         type: string
                         enum:
                         - jmxPrometheusExporter
-                        description: Metrics type. Only 'jmxPrometheusExporter' supported currently.
+                        - strimziMetricsReporter
+                        description: Metrics type. The supported types are `jmxPrometheusExporter` and `strimziMetricsReporter`. Type `jmxPrometheusExporter` uses the Prometheus JMX Exporter to expose Kafka JMX metrics in Prometheus format through an HTTP endpoint. Type `strimziMetricsReporter` uses the Strimzi Metrics Reporter to directly expose Kafka metrics in Prometheus format through an HTTP endpoint.
                       valueFrom:
                         type: object
                         properties:
@@ -6514,11 +6575,24 @@ spec:
                               optional:
                                 type: boolean
                             description: Reference to the key in the ConfigMap containing the configuration.
-                        description: 'ConfigMap entry where the Prometheus JMX Exporter configuration is stored. '
+                        description: ConfigMap entry where the Prometheus JMX Exporter configuration is stored.
+                      values:
+                        type: object
+                        properties:
+                          allowList:
+                            type: array
+                            items:
+                              type: string
+                            description: A list of regex patterns to filter the metrics to collect. Should contain at least one element.
+                        description: Configuration values for the Strimzi Metrics Reporter.
                     required:
                     - type
-                    - valueFrom
-                    description: Metrics configuration.
+                    description: "Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not support `strimziMetricsReporter`."
+                    x-kubernetes-validations:
+                    - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
+                      message: valueFrom property is required
+                    - rule: self.type != 'strimziMetricsReporter'
+                      message: value type not supported
                   apiUsers:
                     type: object
                     properties:
@@ -7249,7 +7323,7 @@ spec:
                                       type: boolean
                                     secretName:
                                       type: string
-                                  description: Secret to use populate the volume.
+                                  description: '`Secret` to use to populate the volume.'
                                 configMap:
                                   type: object
                                   properties:
@@ -7270,7 +7344,7 @@ spec:
                                       type: string
                                     optional:
                                       type: boolean
-                                  description: ConfigMap to use to populate the volume.
+                                  description: '`ConfigMap` to use to populate the volume.'
                                 emptyDir:
                                   type: object
                                   properties:
@@ -7283,7 +7357,7 @@ spec:
                                           type: string
                                         format:
                                           type: string
-                                  description: EmptyDir to use to populate the volume.
+                                  description: '`EmptyDir` to use to populate the volume.'
                                 persistentVolumeClaim:
                                   type: object
                                   properties:
@@ -7291,7 +7365,7 @@ spec:
                                       type: string
                                     readOnly:
                                       type: boolean
-                                  description: PersistentVolumeClaim object to use to populate the volume.
+                                  description: '`PersistentVolumeClaim` object to use to populate the volume.'
                                 csi:
                                   type: object
                                   properties:
@@ -7310,7 +7384,15 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
-                                  description: CSIVolumeSource object to use to populate the volume.
+                                  description: '`CSIVolumeSource` object to use to populate the volume.'
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: '`ImageVolumeSource` object to use to populate the volume.'
                               oneOf:
                               - properties:
                                   secret: {}
@@ -7318,6 +7400,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for JmxTrans `Pods`.
                       container:
@@ -8182,7 +8265,7 @@ spec:
                                       type: boolean
                                     secretName:
                                       type: string
-                                  description: Secret to use populate the volume.
+                                  description: '`Secret` to use to populate the volume.'
                                 configMap:
                                   type: object
                                   properties:
@@ -8203,7 +8286,7 @@ spec:
                                       type: string
                                     optional:
                                       type: boolean
-                                  description: ConfigMap to use to populate the volume.
+                                  description: '`ConfigMap` to use to populate the volume.'
                                 emptyDir:
                                   type: object
                                   properties:
@@ -8216,7 +8299,7 @@ spec:
                                           type: string
                                         format:
                                           type: string
-                                  description: EmptyDir to use to populate the volume.
+                                  description: '`EmptyDir` to use to populate the volume.'
                                 persistentVolumeClaim:
                                   type: object
                                   properties:
@@ -8224,7 +8307,7 @@ spec:
                                       type: string
                                     readOnly:
                                       type: boolean
-                                  description: PersistentVolumeClaim object to use to populate the volume.
+                                  description: '`PersistentVolumeClaim` object to use to populate the volume.'
                                 csi:
                                   type: object
                                   properties:
@@ -8243,7 +8326,15 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
-                                  description: CSIVolumeSource object to use to populate the volume.
+                                  description: '`CSIVolumeSource` object to use to populate the volume.'
+                                image:
+                                  type: object
+                                  properties:
+                                    pullPolicy:
+                                      type: string
+                                    reference:
+                                      type: string
+                                  description: '`ImageVolumeSource` object to use to populate the volume.'
                               oneOf:
                               - properties:
                                   secret: {}
@@ -8251,6 +8342,7 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka Exporter `Pods`.
                       service:
