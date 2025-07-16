@@ -2,7 +2,7 @@
 
 ## 0.48.0
 
-* Fixed operator stuck when `STRIMZI_KUBERNETES_VERSION` is set but with wrong value.
+* n/a
 
 ## 0.47.0
 
