@@ -460,7 +460,8 @@ public class KafkaAutoRebalancingReconciler {
                 .endMetadata()
                 .build();
         return kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched)
-                .compose(kr -> kafkaRebalanceOperator.deleteAsync(reconciliation, kr.getMetadata().getNamespace(), kr.getMetadata().getName(), false))
+                // cascading flag is needed in order to delete the corresponding ConfigMap storing the rebalancing progress and load
+                .compose(kr -> kafkaRebalanceOperator.deleteAsync(reconciliation, kr.getMetadata().getNamespace(), kr.getMetadata().getName(), true))
                 .mapEmpty();
     }
 
