@@ -24,8 +24,7 @@ public class ResourceOperation {
         return switch (kind) {
             case Kafka.RESOURCE_KIND -> Duration.ofMinutes(14).toMillis();
             case KafkaConnect.RESOURCE_KIND,
-                 KafkaMirrorMaker2.RESOURCE_KIND,
-                 TestConstants.DEPLOYMENT_CONFIG
+                 KafkaMirrorMaker2.RESOURCE_KIND
                     -> Duration.ofMinutes(10).toMillis();
             case KafkaBridge.RESOURCE_KIND,
                  TestConstants.STATEFUL_SET,

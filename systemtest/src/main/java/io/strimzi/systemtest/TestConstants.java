@@ -158,7 +158,6 @@ public interface TestConstants {
     String CUSTOM_RESOURCE_DEFINITION_SHORT = "Crd";
     String ROLE_BINDING = "RoleBinding";
     String ROLE = "Role";
-    String DEPLOYMENT_CONFIG = "DeploymentConfig";
     String SECRET = "Secret";
     String KAFKA_EXPORTER_DEPLOYMENT = "KafkaWithExporter";
     String KAFKA_CRUISE_CONTROL_DEPLOYMENT = "KafkaWithCruiseControl";
