@@ -15,6 +15,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   # ...
   cruiseControl:
@@ -102,6 +105,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   # ...
   cruiseControl:
@@ -134,6 +140,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   # ...
   cruiseControl:
@@ -187,6 +196,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   # ...
   cruiseControl:
@@ -236,6 +248,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   # ...
   cruiseControl:
@@ -266,6 +281,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   # ...
   cruiseControl:
