@@ -73,8 +73,9 @@ env:
     value: label1=value1,label2=value2
 ----
 
-`STRIMZI_POD_DISRUPTION_BUDGET_GENERATION`::  Optional, default `true`.
-Pod disruption budget for resources.
+`STRIMZI_POD_DISRUPTION_BUDGET_GENERATION`::  Optional. Default is `true`. 
+Controls automatic creation of `PodDisruptionBudget` resources for Kafka, Kafka Connect, MirrorMaker2, and Kafka Bridge. Each budget applies across all pods deployed for the associated component. For Kafka clusters, this includes all node pool pods.
++
 A pod disruption budget with the `maxUnavailable` value set to zero prevents Kubernetes from evicting pods automatically.
 +
 Set this environment variable to `false` to disable pod disruption budget generation. You might do this, for example, if you want to manage the pod disruption budgets yourself, or if you have a development environment where availability is not important.

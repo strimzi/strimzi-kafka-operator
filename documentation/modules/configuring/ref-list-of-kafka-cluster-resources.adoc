@@ -19,9 +19,9 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 
 `<kafka_cluster_name>-kafka`:: Name given to the following Kafka resources:
 +
-- StrimziPodSet for managing the Kafka broker pods.
+- StrimziPodSet for managing the Kafka pods.
 - Service account used by the Kafka pods.
-- PodDisruptionBudget configured for the Kafka brokers.
+- PodDisruptionBudget that applies to all Kafka cluster node pool pods.
 
 `<kafka_cluster_name>-kafka-<pod_id>`:: Name given to the following Kafka resources:
 +

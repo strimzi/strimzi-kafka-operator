@@ -69,9 +69,9 @@ spec:
 # ...
 ----
 
-You need to watch the pods that need to be drained.
-You then add a pod annotation to make the update.
+The `PodDisruptionBudget` resource created for Kafka clusters covers all associated node pool pods. 
 
+Watch the node pool pods that need to be drained and add a pod annotation to make the update.
 Here, the annotation updates a Kafka pod named `my-cluster-pool-a-1`.
 
 .Performing a manual rolling update on a Kafka pod
