@@ -95,3 +95,14 @@ For instance, when modifying node pool roles to combine controller and broker fu
 However, this approach would require reassigning more data, which may temporarily affect cluster performance.
 
 Once migration is possible, Strimzi plans to assess introducing support for dynamic quorums.
+
+== Migrating ZooKeeper-based Kafka clusters
+
+Kafka 4.0 runs exclusively in KRaft mode, with no ZooKeeper integration.  
+As a result of this change, Strimzi removed support for ZooKeeper-based Kafka clusters starting with version 0.46.
+
+To upgrade to Strimzi 0.46 or later, first migrate any ZooKeeper-based Kafka clusters to KRaft mode.
+
+**NOTE:** To perform the migration before upgrading, follow the procedure outlined in the Strimzi 0.45.x documentation.  
+For more information, see {MigratingKraft}.
+

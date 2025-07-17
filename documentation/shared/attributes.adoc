@@ -172,6 +172,7 @@
 :BookURLOverview: ./overview.html
 :BookURLBridge: https://strimzi.io/docs/bridge/latest/
 :DocArchive: https://strimzi.io/documentation/archive/
+:MigratingKraft: https://strimzi.io/docs/operators/0.45.1/deploying#proc-deploy-migrate-kraft-str[Migrating to KRaft mode^]
 
 // Link to resource on https://github.com/strimzi/strimzi-kafka-operator
 // Default `main`, specific version overriden when building the docs by `make`
