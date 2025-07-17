@@ -78,12 +78,13 @@ prepare:
       MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
       INSTALL_DIR="/usr/share/maven"
       INSTALL_BIN="/usr/bin/mvn"
-
-      mkdir -p ${INSTALL_DIR}
-      wget -q ${MAVEN_URL} -O /tmp/${MAVEN_TGZ}
-      tar -xzf /tmp/${MAVEN_TGZ} -C ${INSTALL_DIR} --strip-components=1
-      rm -f /tmp/${MAVEN_TGZ}
-      ln -sf ${INSTALL_DIR}/bin/mvn ${INSTALL_BIN}
+      
+      mkdir -p ${INSTALL_DIR} /usr/share/maven/ref
+      curl -fsSL -o /tmp/apache-maven.tar.gz ${MAVEN_URL}
+      tar -xzf /tmp/apache-maven.tar.gz -C ${INSTALL_DIR} --strip-components=1
+      rm -f /tmp/apache-maven.tar.gz
+      ln -s ${INSTALL_DIR}/bin/mvn ${INSTALL_BIN}
+      
 
   - name: Install kind
     how: shell
