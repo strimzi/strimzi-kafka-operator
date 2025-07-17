@@ -206,6 +206,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   # ..
   entityOperator:
@@ -389,6 +392,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
     # ...
@@ -477,6 +483,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
     # ...
@@ -505,6 +514,9 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
     # ...
