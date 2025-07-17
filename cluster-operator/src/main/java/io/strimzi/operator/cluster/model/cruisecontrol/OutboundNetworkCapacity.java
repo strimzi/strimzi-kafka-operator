@@ -53,4 +53,30 @@ public class OutboundNetworkCapacity extends NetworkCapacity {
             return DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
         }
     }
+
+    /**
+     * Checks whether this resource type has its capacity properly configured for Cruise Control goals that are
+     * dependent on that resource usage.
+     * <p>
+     * The configuration can come from:
+     * <ul>
+     *     <li>The default capacity defined in the {@link BrokerCapacity} section of the Cruise Control spec</li>
+     *     <li>Broker-specific overrides, where each override must define a value for this resource type</li>
+     * </ul>
+     *
+     * @param brokerCapacity The brokerCapacity section of the Cruise Control specification from the Kafka custom resource.
+     * @return {@code true} if the capacity for this resource type is considered configured, otherwise {@code false.}
+     */
+    public static boolean isCapacityConfigured(BrokerCapacity brokerCapacity) {
+        if (brokerCapacity == null) {
+            return false;
+        }
+
+        if (brokerCapacity.getOutboundNetwork() != null) {
+            return true;
+        }
+
+        return brokerCapacity.getOverrides() != null
+                && brokerCapacity.getOverrides().stream().allMatch(o -> o.getOutboundNetwork() != null);
+    }
 }

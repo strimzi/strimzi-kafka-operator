@@ -142,6 +142,8 @@ public class CapacityConfiguration {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CapacityConfiguration.class.getName());
 
     private final TreeMap<Integer, CapacityEntry> capacityEntries;
+    private boolean isInboundNetworkConfigured;
+    private boolean isOutboundNetworkConfigured;
 
     /**
      * Constructor
@@ -187,11 +189,11 @@ public class CapacityConfiguration {
         return overrideMap;
     }
 
-    private static TreeMap<Integer, CapacityEntry> generateCapacityEntries(Reconciliation reconciliation,
-                                                                           CruiseControlSpec spec,
-                                                                           Set<NodeRef> kafkaBrokerNodes,
-                                                                           Map<String, Storage> kafkaStorage,
-                                                                           Map<String, ResourceRequirements> kafkaBrokerResources) {
+    private TreeMap<Integer, CapacityEntry> generateCapacityEntries(Reconciliation reconciliation,
+                                                                    CruiseControlSpec spec,
+                                                                    Set<NodeRef> kafkaBrokerNodes,
+                                                                    Map<String, Storage> kafkaStorage,
+                                                                    Map<String, ResourceRequirements> kafkaBrokerResources) {
         TreeMap<Integer, CapacityEntry> capacityEntries = new TreeMap<>();
         BrokerCapacity commonBrokerCapacity = spec.getBrokerCapacity();
         Map<Integer, BrokerCapacityOverride> brokerCapacityOverrideMap = processBrokerCapacityOverrides(reconciliation,
@@ -208,7 +210,28 @@ public class CapacityConfiguration {
             capacityEntries.put(node.nodeId(), new CapacityEntry(node.nodeId(), disk, cpu, inboundNetwork, outboundNetwork));
         }
 
+        isInboundNetworkConfigured = InboundNetworkCapacity.isCapacityConfigured(commonBrokerCapacity);
+        isOutboundNetworkConfigured = OutboundNetworkCapacity.isCapacityConfigured(commonBrokerCapacity);
+
         return capacityEntries;
+    }
+
+    /**
+     * Indicates whether the inbound network capacity settings were explicitly configured by the user.
+     *
+     * @return {@code true} if inbound network capacity is user-configured; {@code false} otherwise.
+     */
+    public boolean isInboundNetworkConfigured() {
+        return this.isInboundNetworkConfigured;
+    }
+
+    /**
+     * Indicates whether the outbound network capacity settings were explicitly configured by the user.
+     *
+     * @return {@code true} if outbound network capacity is user-configured; {@code false} otherwise.
+     */
+    public boolean isOutboundNetworkConfigured() {
+        return this.isOutboundNetworkConfigured;
     }
 
     /**
@@ -234,6 +257,18 @@ public class CapacityConfiguration {
         }
 
         return new JsonObject().put("brokerCapacities", capacityList).encodePrettily();
+    }
+
+    /**
+     * Checks whether inbound network resource type has its capacityConfiguration homogeneously configured across all brokers.
+     * @return {@code true} if capacityConfiguration is homogeneously configured; {@code false} otherwise.
+     */
+    public boolean isInboundCapacityHomogeneouslyConfigured() {
+        return this.capacityEntries.values().stream()
+                .map(entry -> entry.inboundNetwork.getJson())
+                .distinct()
+                .limit(2)
+                .count() == 1;
     }
 
     /**

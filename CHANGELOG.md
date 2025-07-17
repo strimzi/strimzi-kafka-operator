@@ -21,6 +21,7 @@
 
 ### Major changes, deprecations and removals
 
+* Disable CC network resource goals when resource capacities are not set.
 * Strimzi 0.47.0 (and any of its patch releases) is the last Strimzi version with support for Kubernetes 1.25 and 1.26.
   From Strimzi 0.48.0 on, we will support only Kubernetes 1.27 and newer.
 
