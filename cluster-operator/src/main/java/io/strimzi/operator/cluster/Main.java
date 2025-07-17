@@ -223,7 +223,6 @@ public class Main {
                         // New leader => complete the future
                         LOGGER.info("I'm the new leader");
                         context.runOnContext(v -> leader.complete());
-
                     },
                     isShuttingDown -> {
                         // Not a leader anymore
