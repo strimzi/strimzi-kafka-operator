@@ -1,10 +1,26 @@
-A `PodDisruptionBudget` (PDB) is a Kubernetes resource that ensures high availability by specifying the minimum number of pods that must be available during planned maintenance or upgrades.
-Strimzi creates a PDB for every new `StrimziPodSet` or `Deployment`. 
-By default, the PDB allows only one pod to be unavailable at any given time.
-You can increase the number of unavailable pods allowed by changing the default value of the `maxUnavailable` property.
+A `PodDisruptionBudget` is a Kubernetes resource that helps maintain high availability during planned maintenance or upgrades.
+It defines the minimum number of pods that must remain available at all times.
 
-`StrimziPodSet` custom resources manage pods using a custom controller that cannot use the `maxUnavailable` value directly.
-Instead, the `maxUnavailable` value is automatically converted to a `minAvailable` value when creating the PDB resource, which effectively serves the same purpose, as illustrated in the following examples:
+Strimzi creates one `PodDisruptionBudget` per component: 
+
+* Kafka cluster
+* Kafka Connect
+* MirrorMaker 2
+* Kafka Bridge
+
+Each budget applies across all pods deployed for that component.
+
+A single `PodDisruptionBudget` applies to all associated node pool pods managed by the `Kafka` resource. 
+This is true regardless of how many `StrimziPodSet` resources are created for that component.
+Disruption limits are applied at the component level, not per node pool.
+
+By default, only one pod can be unavailable at a time.
+You can modify this limit using the `maxUnavailable` property.
+
+`StrimziPodSet` custom resources are managed by a controller that does not use `maxUnavailable` directly.
+Instead, the value is automatically converted to `minAvailable`, which serves the same purpose.
+
+For example:
 
 * If there are three broker pods and the `maxUnavailable` property is set to `1` in the `Kafka` resource, the `minAvailable` setting is `2`, allowing one pod to be unavailable. 
 * If there are three broker pods and the `maxUnavailable` property is set to `0` (zero), the `minAvailable` setting is `3`, requiring all three broker pods to be available and allowing zero pods to be unavailable.
@@ -25,3 +41,11 @@ template:
     maxUnavailable: 1
 # ...
 ----
+
+.Custom disruption budget behavior
+
+To define custom disruption budget behavior, disable automatic `PodDisruptionBudget` generation. 
+Set the `STRIMZI_POD_DISRUPTION_BUDGET_GENERATION` environment variable to `false` in the Cluster Operator.
+
+You can then create your own `PodDisruptionBudget` resources. 
+For example, apply separate budgets to specific node pools using label selectors with `StrimziPodSet` resources.
