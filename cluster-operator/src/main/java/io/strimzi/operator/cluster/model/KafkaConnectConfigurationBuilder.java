@@ -302,6 +302,7 @@ public class KafkaConnectConfigurationBuilder {
         } else if (configurations instanceof KafkaMirrorMaker2Configuration kmm2Configuration) {
             configurations = new KafkaMirrorMaker2Configuration(kmm2Configuration);
         } else {
+            // empty user configuration
             configurations = new KafkaConnectConfiguration(reconciliation, new ArrayList<>());
         }
 

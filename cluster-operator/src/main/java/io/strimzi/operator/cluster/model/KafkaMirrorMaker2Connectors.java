@@ -236,9 +236,10 @@ public class KafkaMirrorMaker2Connectors {
             config.put(clientRackKey, "${strimzifile:" + CONNECT_CONFIG_FILE + ":" + clientRackKey + "}");
         }
 
-        // metrics are collected into a single registry and exposed using the Kafka Connect listener,
-        // so we need to disable the listener here to avoid opening the default port (8080)
         if (strimziMetricsReporterEnabled) {
+            // MM2 connectors metrics are collected through this dedicated SMR instance
+            // into a shared Prometheus registry instance, so they can be exposed through
+            // the Kafka Connect SMR listener endpoint without enabling a new listener
             config.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
             config.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
         }
