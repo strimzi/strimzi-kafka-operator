@@ -1,0 +1,12 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  labels:
+    app: my-connect-cluster
+spec:
+  version: 4.0.0
+  replicas: 1
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
+  metricsConfig:
+    type: strimziMetricsReporter
