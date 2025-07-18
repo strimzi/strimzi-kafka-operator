@@ -65,7 +65,6 @@ import java.util.Set;
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
-import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.generateCruiseControlDefaultPropertiesMap;
 import static java.lang.String.format;
 
 /**
@@ -245,7 +244,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration) {
-        Map<String, String> defaultCruiseControlProperties = generateCruiseControlDefaultPropertiesMap(capacityConfiguration);
+        Map<String, String> defaultCruiseControlProperties = CruiseControlConfiguration.generateDefaultPropertiesMap(capacityConfiguration);
         if (kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR) != null)  {
             defaultCruiseControlProperties.put(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR));
         }

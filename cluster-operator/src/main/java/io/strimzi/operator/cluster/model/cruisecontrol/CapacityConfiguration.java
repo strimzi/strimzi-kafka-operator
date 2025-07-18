@@ -142,8 +142,6 @@ public class CapacityConfiguration {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CapacityConfiguration.class.getName());
 
     private final TreeMap<Integer, CapacityEntry> capacityEntries;
-    private boolean isInboundNetworkConfigured;
-    private boolean isOutboundNetworkConfigured;
 
     /**
      * Constructor
@@ -189,11 +187,11 @@ public class CapacityConfiguration {
         return overrideMap;
     }
 
-    private TreeMap<Integer, CapacityEntry> generateCapacityEntries(Reconciliation reconciliation,
-                                                                    CruiseControlSpec spec,
-                                                                    Set<NodeRef> kafkaBrokerNodes,
-                                                                    Map<String, Storage> kafkaStorage,
-                                                                    Map<String, ResourceRequirements> kafkaBrokerResources) {
+    private static TreeMap<Integer, CapacityEntry> generateCapacityEntries(Reconciliation reconciliation,
+                                                                           CruiseControlSpec spec,
+                                                                           Set<NodeRef> kafkaBrokerNodes,
+                                                                           Map<String, Storage> kafkaStorage,
+                                                                           Map<String, ResourceRequirements> kafkaBrokerResources) {
         TreeMap<Integer, CapacityEntry> capacityEntries = new TreeMap<>();
         BrokerCapacity commonBrokerCapacity = spec.getBrokerCapacity();
         Map<Integer, BrokerCapacityOverride> brokerCapacityOverrideMap = processBrokerCapacityOverrides(reconciliation,
@@ -210,9 +208,6 @@ public class CapacityConfiguration {
             capacityEntries.put(node.nodeId(), new CapacityEntry(node.nodeId(), disk, cpu, inboundNetwork, outboundNetwork));
         }
 
-        isInboundNetworkConfigured = InboundNetworkCapacity.isCapacityConfigured(commonBrokerCapacity);
-        isOutboundNetworkConfigured = OutboundNetworkCapacity.isCapacityConfigured(commonBrokerCapacity);
-
         return capacityEntries;
     }
 
@@ -222,7 +217,7 @@ public class CapacityConfiguration {
      * @return {@code true} if inbound network capacity is user-configured; {@code false} otherwise.
      */
     public boolean isInboundNetworkConfigured() {
-        return this.isInboundNetworkConfigured;
+        return capacityEntries.values().stream().allMatch(entry -> entry.inboundNetwork.isUserConfigured());
     }
 
     /**
@@ -231,7 +226,21 @@ public class CapacityConfiguration {
      * @return {@code true} if outbound network capacity is user-configured; {@code false} otherwise.
      */
     public boolean isOutboundNetworkConfigured() {
-        return this.isOutboundNetworkConfigured;
+        return capacityEntries.values().stream().allMatch(entry -> entry.outboundNetwork.isUserConfigured());
+    }
+
+    /**
+     * Checks whether the inbound network capacity is configured identically across all brokers entries in
+     * the capacity configuration.
+     *
+     * @return {@code true} if all broker entries have the same inbound network capacity configuration; {@code false} otherwise.
+     */
+    public boolean isInboundCapacityHomogeneouslyConfigured() {
+        return this.capacityEntries.values().stream()
+                .map(entry -> entry.inboundNetwork.getJson())
+                .distinct()
+                .limit(2)
+                .count() == 1;
     }
 
     /**
@@ -257,18 +266,6 @@ public class CapacityConfiguration {
         }
 
         return new JsonObject().put("brokerCapacities", capacityList).encodePrettily();
-    }
-
-    /**
-     * Checks whether inbound network resource type has its capacityConfiguration homogeneously configured across all brokers.
-     * @return {@code true} if capacityConfiguration is homogeneously configured; {@code false} otherwise.
-     */
-    public boolean isInboundCapacityHomogeneouslyConfigured() {
-        return this.capacityEntries.values().stream()
-                .map(entry -> entry.inboundNetwork.getJson())
-                .distinct()
-                .limit(2)
-                .count() == 1;
     }
 
     /**

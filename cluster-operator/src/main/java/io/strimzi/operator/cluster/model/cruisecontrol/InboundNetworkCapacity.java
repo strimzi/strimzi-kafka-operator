@@ -20,7 +20,7 @@ public class InboundNetworkCapacity extends NetworkCapacity {
      * @param brokerCapacityOverride The brokerCapacityOverride for specific broker.
      */
     protected InboundNetworkCapacity(BrokerCapacity brokerCapacity, BrokerCapacityOverride brokerCapacityOverride) {
-        super(getThroughputInKiB(processResourceCapacity(brokerCapacity, brokerCapacityOverride)));
+        this.config = getThroughputInKiB(processResourceCapacity(brokerCapacity, brokerCapacityOverride));
     }
 
     /**
@@ -43,40 +43,24 @@ public class InboundNetworkCapacity extends NetworkCapacity {
      *
      * @return The capacity of resource represented as a String.
      */
-    private static String processResourceCapacity(BrokerCapacity brokerCapacity,
-                                          BrokerCapacityOverride brokerCapacityOverride) {
+    private String processResourceCapacity(BrokerCapacity brokerCapacity,
+                                           BrokerCapacityOverride brokerCapacityOverride) {
+
         if (brokerCapacityOverride != null && brokerCapacityOverride.getInboundNetwork() != null) {
+
+            this.isUserConfigured = true;
             return brokerCapacityOverride.getInboundNetwork();
+
         } else if (brokerCapacity != null && brokerCapacity.getInboundNetwork() != null) {
+
+            this.isUserConfigured = true;
             return brokerCapacity.getInboundNetwork();
+
         } else {
+
+            this.isUserConfigured = false;
             return DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
-        }
-    }
 
-    /**
-     * Checks whether this resource type has its capacity properly configured for Cruise Control goals that are
-     * dependent on that resource usage.
-     * <p>
-     * The configuration can come from:
-     * <ul>
-     *     <li>The default capacity defined in the {@link BrokerCapacity} section of the Cruise Control spec</li>
-     *     <li>Broker-specific overrides, where each override must define a value for this resource type</li>
-     * </ul>
-     *
-     * @param brokerCapacity The brokerCapacity section of the Cruise Control specification from the Kafka custom resource.
-     * @return {@code true} if the capacity for this resource type is considered configured, otherwise {@code false.}
-     */
-    public static boolean isCapacityConfigured(BrokerCapacity brokerCapacity) {
-        if (brokerCapacity == null) {
-            return false;
         }
-
-        if (brokerCapacity.getInboundNetwork() != null) {
-            return true;
-        }
-
-        return brokerCapacity.getOverrides() != null
-                && brokerCapacity.getOverrides().stream().allMatch(o -> o.getInboundNetwork() != null);
     }
 }
