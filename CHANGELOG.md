@@ -8,7 +8,7 @@
 
 * **From Strimzi 0.48.0 on, we support only Kubernetes 1.27 and newer.**
   Kubernetes 1.25 and 1.26 are not supported anymore.
-* Added support for properties broker.session.timeout.ms, broker.heartbeat.interval.ms and controller.socket.timeout.ms
+* Make properties `broker.session.timeout.ms`, `broker.heartbeat.interval.ms` and `controller.socket.timeout.ms` configurable
 
 ## 0.47.0
 
