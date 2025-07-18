@@ -147,6 +147,7 @@
         <skodjob.test-frame.version>1.0.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.4.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
+        <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
         <!--
             Currently, there are no released versions in Maven repository of this module,
             using SNAPSHOT for having the `api` module available and usable in the STs.
@@ -857,6 +858,12 @@
                 <artifactId>api</artifactId>
                 <version>${access-operator.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${nimbus-jose-jwt.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
