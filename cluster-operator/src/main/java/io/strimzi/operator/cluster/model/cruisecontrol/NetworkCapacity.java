@@ -15,10 +15,7 @@ public abstract class NetworkCapacity {
      */
     protected static final String DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND = "10000KiB/s";
     protected String config;
-
-    protected NetworkCapacity(String config) {
-        this.config = config;
-    }
+    protected boolean isUserConfigured;
 
     /**
      * Parse Strimzi representation of throughput, such as {@code 10000KB/s},
@@ -39,5 +36,14 @@ public abstract class NetworkCapacity {
      */
     protected String getJson() {
         return config;
+    }
+
+    /**
+     * Returns whether the capacity was explicitly configured by the user.
+     *
+     * @return true if user provided configuration, false otherwise.
+     */
+    protected boolean isUserConfigured() {
+        return isUserConfigured;
     }
 }

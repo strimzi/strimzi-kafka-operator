@@ -244,7 +244,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration) {
-        Map<String, String> defaultCruiseControlProperties = new HashMap<>(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
+        Map<String, String> defaultCruiseControlProperties = CruiseControlConfiguration.generateDefaultPropertiesMap(capacityConfiguration);
         if (kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR) != null)  {
             defaultCruiseControlProperties.put(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue(), kafkaConfiguration.getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR));
         }
