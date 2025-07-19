@@ -22,6 +22,7 @@ import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -88,7 +89,11 @@ public class Main {
                 .onComplete(res -> {
                     if (res.failed())   {
                         LOGGER.error("Unable to start operator for 1 or more namespace", res.cause());
-                        System.exit(1);
+                        vertx.executeBlocking(() -> {
+                            System.exit(1);
+                            return true;
+                        });
+
                     }
                 });
     }
@@ -209,6 +214,7 @@ public class Main {
      */
     private static Future<Void> leaderElection(KubernetesClient client, ClusterOperatorConfig config, ShutdownHook shutdownHook)    {
         Promise<Void> leader = Promise.promise();
+        Context context = Vertx.currentContext();
 
         if (config.getLeaderElectionConfig() != null) {
             LeaderElectionManager leaderElection = new LeaderElectionManager(
@@ -216,7 +222,7 @@ public class Main {
                     () -> {
                         // New leader => complete the future
                         LOGGER.info("I'm the new leader");
-                        leader.complete();
+                        context.runOnContext(v -> leader.complete());
                     },
                     isShuttingDown -> {
                         // Not a leader anymore
