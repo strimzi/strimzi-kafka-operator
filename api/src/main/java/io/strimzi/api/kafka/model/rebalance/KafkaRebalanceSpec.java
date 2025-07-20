@@ -122,6 +122,7 @@ public class KafkaRebalanceSpec extends Spec {
 
     @Description("The upper bound of ongoing partition replica movements going into/out of each broker. Default is 5.")
     @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getConcurrentPartitionMovementsPerBroker() {
         return concurrentPartitionMovementsPerBroker;
     }
@@ -132,6 +133,7 @@ public class KafkaRebalanceSpec extends Spec {
 
     @Description("The upper bound of ongoing partition replica movements between disks within each broker. Default is 2.")
     @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getConcurrentIntraBrokerPartitionMovements() {
         return concurrentIntraBrokerPartitionMovements;
     }
@@ -142,6 +144,7 @@ public class KafkaRebalanceSpec extends Spec {
 
     @Description("The upper bound of ongoing partition leadership movements. Default is 1000.")
     @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getConcurrentLeaderMovements() {
         return concurrentLeaderMovements;
     }
@@ -152,6 +155,7 @@ public class KafkaRebalanceSpec extends Spec {
 
     @Description("The upper bound, in bytes per second, on the bandwidth used to move replicas. There is no limit by default.")
     @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public long getReplicationThrottle() {
         return replicationThrottle;
     }
