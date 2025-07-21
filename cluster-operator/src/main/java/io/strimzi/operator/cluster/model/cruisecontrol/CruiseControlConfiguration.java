@@ -98,6 +98,9 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             Map.entry(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME)
     )));
 
+    private static final List<String> FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(CruiseControlSpec.FORBIDDEN_PREFIXES);
+    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
+
     /**
      * Generates map containing default values for required configuration properties. The map needs to be sorted so that the order
      * of the entries in the Cruise Control configuration is deterministic and does not cause unnecessary rolling updates
@@ -114,21 +117,6 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         map.put(CruiseControlConfigurationParameters.HARD_GOALS_CONFIG_KEY.getValue(),
                 String.join(",", filterResourceGoalsWithoutCapacityConfig(CRUISE_CONTROL_HARD_GOALS_LIST, capacityConfiguration)));
         return map;
-    }
-
-    private static final List<String> FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(CruiseControlSpec.FORBIDDEN_PREFIXES);
-    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
-
-    /**
-     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
-     * ConfigMap / CRD.
-     *
-     * @param reconciliation  The reconciliation
-     * @param jsonOptions     Json object with configuration options as key ad value pairs.
-     * @param defaults        Default configuration values
-     */
-    public CruiseControlConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions, Map<String, String> defaults) {
-        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), defaults);
     }
 
     /**
@@ -168,6 +156,18 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         }
 
         return filteredGoalList;
+    }
+
+    /**
+     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
+     * ConfigMap / CRD.
+     *
+     * @param reconciliation  The reconciliation
+     * @param jsonOptions     Json object with configuration options as key ad value pairs.
+     * @param defaults        Default configuration values
+     */
+    public CruiseControlConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions, Map<String, String> defaults) {
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), defaults);
     }
 
     private boolean isEnabledInConfiguration(String s1, String s2) {

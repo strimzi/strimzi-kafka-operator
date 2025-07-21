@@ -45,22 +45,15 @@ public class InboundNetworkCapacity extends NetworkCapacity {
      */
     private String processResourceCapacity(BrokerCapacity brokerCapacity,
                                            BrokerCapacityOverride brokerCapacityOverride) {
-
         if (brokerCapacityOverride != null && brokerCapacityOverride.getInboundNetwork() != null) {
-
             this.isUserConfigured = true;
             return brokerCapacityOverride.getInboundNetwork();
-
         } else if (brokerCapacity != null && brokerCapacity.getInboundNetwork() != null) {
-
             this.isUserConfigured = true;
             return brokerCapacity.getInboundNetwork();
-
         } else {
-
             this.isUserConfigured = false;
             return DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
-
         }
     }
 }
