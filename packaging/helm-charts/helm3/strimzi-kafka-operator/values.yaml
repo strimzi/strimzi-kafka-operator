@@ -42,6 +42,7 @@ annotations: {}
 labels: {}
 nodeSelector: {}
 deploymentAnnotations: {}
+deploymentStrategy: {}
 priorityClassName: ""
 
 podSecurityContext: {}
