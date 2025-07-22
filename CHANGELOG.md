@@ -6,7 +6,7 @@
 
 ### Changes, deprecations and removals
 
-* Disable CC network resource goals when resource capacities are not set.
+* Disable Cruise Control network resource goals when resource capacities are not set.
 * **From Strimzi 0.48.0 on, we support only Kubernetes 1.27 and newer.**
   Kubernetes 1.25 and 1.26 are not supported anymore.
 
