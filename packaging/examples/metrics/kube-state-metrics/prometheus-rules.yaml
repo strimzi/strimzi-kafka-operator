@@ -128,3 +128,17 @@ spec:
             severity: warning
           annotations:
             message: "Strimzi KafkaMirrorMaker2 {{ $labels.name }} contains a deprecated configuration"
+        - alert: KafkaAccessNotReady
+          expr: strimzi_kafka_access_resource_info{ready!="True"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaAccess {{ $labels.name }} is not ready"
+        - alert: KafkaAccessDeprecated
+          expr: strimzi_kafka_access_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaAccess {{ $labels.name }} contains a deprecated configuration"

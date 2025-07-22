@@ -9,6 +9,10 @@
 * **From Strimzi 0.48.0 on, we support only Kubernetes 1.27 and newer.**
   Kubernetes 1.25 and 1.26 are not supported anymore.
 * Make properties `broker.session.timeout.ms`, `broker.heartbeat.interval.ms` and `controller.socket.timeout.ms` configurable
+* Add monitoring of custom resources (see [Strimzi proposal 087](https://github.com/strimzi/proposals/blob/main/087-monitoring-of-custom-resources.md)).
+  This deprecates Cluster Operator metrics (`strimzi_resource_state`) as described in the proposal.
+  The metrics will be removed in 4 patch releases (Strimzi 0.51.0).
+  Use kube-state-metrics based metrics from the [examples](https://github.com/strimzi/strimzi-kafka-operator/tree/main/examples/metrics/kube-state-metrics) instead.
 
 ## 0.47.0
 
