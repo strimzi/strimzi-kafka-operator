@@ -83,7 +83,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      * of the entries in the Cruise Control configuration is deterministic and does not cause unnecessary rolling updates
      * of Cruise Control deployment.
      */
-    private static final Map<String, String> STATIC_DEFAULT_PROPERTIES_MAP = Collections.unmodifiableSortedMap(new TreeMap<>(Map.ofEntries(
+    private static final Map<String, String> DEFAULT_PROPERTIES_MAP = Collections.unmodifiableSortedMap(new TreeMap<>(Map.ofEntries(
             Map.entry(CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getValue(), Integer.toString(300_000)),
             Map.entry(CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(), "1"),
             Map.entry(CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getValue(), Integer.toString(300_000)),
@@ -123,7 +123,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      * @return Map containing default values for required configuration properties.
      */
     public static Map<String, String> generateDefaultPropertiesMap(CapacityConfiguration capacityConfiguration) {
-        TreeMap<String, String> map =  new TreeMap<>(STATIC_DEFAULT_PROPERTIES_MAP);
+        TreeMap<String, String> map =  new TreeMap<>(DEFAULT_PROPERTIES_MAP);
         map.put(CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY.getValue(),
                 String.join(",", filterResourceGoalsWithoutCapacityConfig(CRUISE_CONTROL_GOALS_LIST, capacityConfiguration)));
         map.put(CruiseControlConfigurationParameters.HARD_GOALS_CONFIG_KEY.getValue(),
