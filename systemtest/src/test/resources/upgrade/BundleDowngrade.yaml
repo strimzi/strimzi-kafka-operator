@@ -35,7 +35,7 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    kafka: strimzi/kafka:0.47.0-kafka-4.1.0
+    kafka: strimzi/kafka:0.47.0-kafka-4.0.0
     topicOperator: strimzi/operator:0.47.0
     userOperator: strimzi/operator:0.47.0
   deployKafkaVersion: 4.1.0
