@@ -20,7 +20,7 @@ public class OutboundNetworkCapacity extends NetworkCapacity {
      * @param brokerCapacityOverride The brokerCapacityOverride for specific broker.
      */
     protected OutboundNetworkCapacity(BrokerCapacity brokerCapacity, BrokerCapacityOverride brokerCapacityOverride) {
-        super(getThroughputInKiB(processResourceCapacity(brokerCapacity, brokerCapacityOverride)));
+        this.config = getThroughputInKiB(processResourceCapacity(brokerCapacity, brokerCapacityOverride));
     }
 
     /**
@@ -43,13 +43,16 @@ public class OutboundNetworkCapacity extends NetworkCapacity {
      *
      * @return The capacity of resource represented as a String.
      */
-    private static String processResourceCapacity(BrokerCapacity brokerCapacity,
-                                                  BrokerCapacityOverride brokerCapacityOverride) {
+    private String processResourceCapacity(BrokerCapacity brokerCapacity,
+                                           BrokerCapacityOverride brokerCapacityOverride) {
         if (brokerCapacityOverride != null && brokerCapacityOverride.getOutboundNetwork() != null) {
+            this.isUserConfigured = true;
             return brokerCapacityOverride.getOutboundNetwork();
         } else if (brokerCapacity != null && brokerCapacity.getOutboundNetwork() != null) {
+            this.isUserConfigured = true;
             return brokerCapacity.getOutboundNetwork();
         } else {
+            this.isUserConfigured = false;
             return DEFAULT_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
         }
     }

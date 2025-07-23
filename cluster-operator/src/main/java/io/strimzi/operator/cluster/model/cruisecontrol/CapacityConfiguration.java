@@ -212,6 +212,38 @@ public class CapacityConfiguration {
     }
 
     /**
+     * Indicates whether the inbound network capacity settings were explicitly configured by the user.
+     *
+     * @return {@code true} if inbound network capacity is user-configured; {@code false} otherwise.
+     */
+    public boolean isInboundNetworkConfigured() {
+        return capacityEntries.values().stream().allMatch(entry -> entry.inboundNetwork.isUserConfigured());
+    }
+
+    /**
+     * Indicates whether the outbound network capacity settings were explicitly configured by the user.
+     *
+     * @return {@code true} if outbound network capacity is user-configured; {@code false} otherwise.
+     */
+    public boolean isOutboundNetworkConfigured() {
+        return capacityEntries.values().stream().allMatch(entry -> entry.outboundNetwork.isUserConfigured());
+    }
+
+    /**
+     * Checks whether the inbound network capacity is configured identically across all brokers entries in
+     * the capacity configuration.
+     *
+     * @return {@code true} if all broker entries have the same inbound network capacity configuration; {@code false} otherwise.
+     */
+    public boolean isInboundCapacityHomogeneouslyConfigured() {
+        return this.capacityEntries.values().stream()
+                .map(entry -> entry.inboundNetwork.getJson())
+                .distinct()
+                .limit(2)
+                .count() == 1;
+    }
+
+    /**
      * Generate a capacity configuration for cluster.
      *
      * @return Cruise Control capacity configuration as a formatted JSON String.
