@@ -6,6 +6,11 @@ package io.strimzi.systemtest.operators.topic;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
@@ -15,6 +20,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.labels.LabelSelectors;
@@ -57,7 +63,17 @@ import static org.hamcrest.Matchers.containsString;
  * Each test case follows a specific scenario, with steps to manipulate the KafkaTopic's replication factor and validate the system's response and state transitions.
  * These tests ensure the robustness of KafkaTopic management and the system's ability to handle configuration changes and recover from errors.
  */
-
+@SuiteDoc(
+    description = @Desc("Validates KafkaTopic replication factor change logic using the Topic Operator and Cruise Control."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Kafka cluster with Cruise Control and Topic Operator configured for rapid reconciliation.", expected = "Kafka cluster with Cruise Control is deployed and ready."),
+        @Step(value = "Deploy scraper pod for topic status validation.", expected = "Scraper pod is running and accessible."),
+        @Step(value = "Create initial KafkaTopic resources with valid and invalid replication factors.", expected = "KafkaTopics are created and visible to Topic Operator.")
+    },
+    labels = {
+        @Label(TestDocsLabels.TOPIC_OPERATOR)
+    }
+)
 public class TopicReplicasChangeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicReplicasChangeST.class);
@@ -65,23 +81,17 @@ public class TopicReplicasChangeST extends AbstractST {
     private TestStorage sharedTestStorage;
     private String scraperPodName;
 
-    /**
-     * @description Verifies the system's handling of a KafkaTopic with a replication factor higher than the number of available brokers.
-     * It tests the system's error recognition and handling capabilities, the ability to adjust to a valid replication factor,
-     * and the successful creation and operational status of the topic.
-     *
-     * @steps
-     *  1. - Create a KafkaTopic with more replicas than available brokers to induce a configuration error.
-     *     - The topic exists in Kubernetes but not in Kafka, indicating a configuration error.
-     *  2. - Check for specific error messages indicating the cause of the failure.
-     *     - Specific error messages related to the replication factor issue are present.
-     *  3. - Correct the issue by setting a valid replication factor and ensure changes are applied successfully.
-     *     - Topic's replication factor is adjusted, and the topic becomes operational.
-     *
-     * @usecase
-     *  - Replication factor management
-     *  - Error handling and recovery
-     */
+    @TestDoc(
+        description = @Desc("Verifies behavior when creating a KafkaTopic with a replication factor exceeding the number of brokers."),
+        steps = {
+            @Step(value = "Create a KafkaTopic with more replicas than available brokers.", expected = "Topic exists in Kubernetes, but not in Kafka."),
+            @Step(value = "Check KafkaTopic status for replication factor error.", expected = "Error message and status reason indicate KafkaError."),
+            @Step(value = "Adjust replication factor to valid value and wait for reconciliation.", expected = "KafkaTopic becomes Ready and replication status clears.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     @ParallelTest
     void testMoreReplicasThanAvailableBrokersWithFreshKafkaTopic() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -125,20 +135,17 @@ public class TopicReplicasChangeST extends AbstractST {
         sendAndRecvMessages(testStorage);
     }
 
-    /**
-     * @description Tests the ability to change a KafkaTopic's replication factor positively through increasing and decreasing,
-     * verifying the system applies these changes correctly and maintains the topic's operational status.
-     *
-     * @steps
-     *  1. - Increase the KafkaTopic's replication factor and verify the change is applied.
-     *     - Replication factor is increased, and the topic remains operational.
-     *  2. - Return the replication factor to its original value and ensure the topic's functionality.
-     *     - Topic's replication factor is reset, and it remains fully functional.
-     *
-     * @usecase
-     *  - Dynamic replication factor adjustments
-     *  - KafkaTopic status monitoring
-     */
+    @TestDoc(
+        description = @Desc("Tests increasing and then decreasing a KafkaTopic’s replication factor, verifying correctness and topic readiness."),
+        steps = {
+            @Step(value = "Create KafkaTopic with initial replication factor.", expected = "KafkaTopic is created and ready."),
+            @Step(value = "Increase the replication factor.", expected = "Replica change is applied and KafkaTopic remains Ready."),
+            @Step(value = "Decrease replication factor back to original value.", expected = "KafkaTopic is updated and Ready with correct replica count.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     @ParallelTest
     void testKafkaTopicReplicaChangePositiveRoundTrip() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -186,20 +193,17 @@ public class TopicReplicasChangeST extends AbstractST {
         sendAndRecvMessages(testStorage);
     }
 
-    /**
-     * @description Simulates an attempt to increase a KafkaTopic's replication factor beyond the number of available brokers,
-     * followed by a correction to a valid replication factor, to test system's error handling and recovery mechanisms.
-     *
-     * @steps
-     *  1. - Incorrectly increase the KafkaTopic's replication factor beyond available brokers.
-     *     - System identifies and reports the error due to insufficient brokers.
-     *  2. - Correct the replication factor to a valid number.
-     *     - System successfully applies the correction, and the topic becomes operational.
-     *
-     * @usecase
-     *  - Error handling for invalid replication factor increases
-     *  - Recovery from configuration errors
-     */
+    @TestDoc(
+        description = @Desc("Attempts to increase KafkaTopic replication factor beyond broker count, then corrects it."),
+        steps = {
+            @Step(value = "Create KafkaTopic with valid replication factor.", expected = "KafkaTopic is created and Ready."),
+            @Step(value = "Attempt to increase replication factor beyond available brokers.", expected = "Replica change fails with error due to insufficient brokers."),
+            @Step(value = "Restore to valid replication factor.", expected = "KafkaTopic becomes Ready and replica change status clears.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     @ParallelTest
     void testKafkaTopicReplicaChangeNegativeRoundTrip() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -248,22 +252,17 @@ public class TopicReplicasChangeST extends AbstractST {
         sendAndRecvMessages(testStorage);
     }
 
-    /**
-     * @description Tests the system's resilience and fault tolerance by simulating a replication factor change
-     * during a Cruise Control crash, verifying the change continues as expected once Cruise Control recovers.
-     *
-     * @steps
-     *  1. - Initiate a replication factor change for a KafkaTopic.
-     *     - Replication change is ongoing.
-     *  2. - Simulate a Cruise Control crash during the replication factor change.
-     *     - Cruise Control crashes but is then recovered.
-     *  3. - Verify the replication factor change completes successfully after recovery.
-     *     - The replication factor change is successful, ensuring system resilience.
-     *
-     * @usecase
-     *  - Handling component crashes
-     *  - Ensuring replication factor changes under failure conditions
-     */
+    @TestDoc(
+        description = @Desc("Verifies replication factor change recovery after Cruise Control crash."),
+        steps = {
+            @Step(value = "Initiate replication factor change.", expected = "Replica change is ongoing."),
+            @Step(value = "Crash the Cruise Control pod.", expected = "Cruise Control is terminated and recovers."),
+            @Step(value = "Wait for change to complete.", expected = "Replica change status clears and KafkaTopic is Ready.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     @IsolatedTest
     void testRecoveryOfReplicationChangeDuringCcCrash() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -311,22 +310,17 @@ public class TopicReplicasChangeST extends AbstractST {
         sendAndRecvMessages(testStorage);
     }
 
-    /**
-     * @description Evaluates the system's ability to recover from a replication factor change operation during an unexpected
-     * Entity Operator crash, ensuring that KafkaTopic changes are successfully applied and the system remains operational.
-     *
-     * @steps
-     *  1. - Initiate a replication factor change for a KafkaTopic.
-     *     - Replication change is in progress.
-     *  2. - Simulate an Entity Operator crash during the replication factor change process.
-     *     - Entity Operator crashes but is subsequently recovered.
-     *  3. - Confirm that the replication factor change is successfully completed after the recovery.
-     *     - The replication factor change is completed successfully, demonstrating system robustness.
-     *
-     * @usecase
-     *  - Robustness in handling component failures
-     *  - Successful application of KafkaTopic changes post-recovery
-     */
+    @TestDoc(
+        description = @Desc("Verifies KafkaTopic replication change proceeds after Entity Operator crash."),
+        steps = {
+            @Step(value = "Initiate replication factor change.", expected = "Replica change is ongoing."),
+            @Step(value = "Crash the Entity Operator pod.", expected = "Entity Operator is terminated and recovers."),
+            @Step(value = "Wait for change to complete.", expected = "KafkaTopic is updated and Ready with correct replication factor.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     @IsolatedTest
     void testRecoveryOfReplicationChangeDuringEoCrash() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
