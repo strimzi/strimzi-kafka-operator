@@ -1678,7 +1678,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         for (GenericKafkaListener listener : listeners) {
             if (listener.isTls()) {
-                if (listener.getConfiguration() != null) {
+                if (listener.getConfiguration() != null && listener.getConfiguration().getBrokerCertChainAndKey() != null) {
                     certSecretNames.add(listener.getConfiguration().getBrokerCertChainAndKey().getSecretName());
                 }
             }
