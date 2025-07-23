@@ -70,10 +70,6 @@ public class KafkaListenerReconcilerTest {
     private static final Kafka KAFKA = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
-                    .withAnnotations(Map.of(
-                            Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled",
-                            Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"
-                    ))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()

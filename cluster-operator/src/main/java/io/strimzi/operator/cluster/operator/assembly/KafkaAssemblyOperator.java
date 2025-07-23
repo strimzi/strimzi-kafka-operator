@@ -224,11 +224,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
-        boolean nonMigratedCluster = ReconcilerUtils.nonMigratedCluster(reconcileState.kafkaAssembly);
-        boolean kraftEnabled = ReconcilerUtils.kraftEnabled(reconcileState.kafkaAssembly);
-        boolean nodePoolsEnabled = ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly);
-
-        if (nonMigratedCluster || !kraftEnabled || !nodePoolsEnabled) {
+        if (ReconcilerUtils.nonMigratedCluster(reconcileState.kafkaAssembly)) {
             throw new InvalidConfigurationException("Strimzi " + OPERATOR_VERSION + " supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi " + OPERATOR_VERSION + ".");
         }
 
@@ -499,14 +495,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withStrimziCluster(reconciliation.name())
                     .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
 
-            Future<List<KafkaNodePool>> nodePoolFuture;
-            if (ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)) {
-                // Node Pools are enabled
-                nodePoolFuture = nodePoolOperator.listAsync(namespace, Labels.fromMap(Map.of(Labels.STRIMZI_CLUSTER_LABEL, name)));
-            } else {
-                nodePoolFuture = Future.succeededFuture(null);
-            }
-
+            Future<List<KafkaNodePool>> nodePoolFuture = nodePoolOperator.listAsync(namespace, Labels.fromMap(Map.of(Labels.STRIMZI_CLUSTER_LABEL, name)));
             Future<List<StrimziPodSet>> podSetFuture = strimziPodSetOperator.listAsync(namespace, kafkaSelectorLabels);
 
             return Future.join(podSetFuture, nodePoolFuture)
@@ -514,9 +503,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         List<StrimziPodSet> podSets = res.resultAt(0);
                         List<KafkaNodePool> nodePools = res.resultAt(1);
 
-                        if (ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)
-                                && (nodePools == null || nodePools.isEmpty())) {
-                            throw new InvalidConfigurationException("KafkaNodePools are enabled, but no KafkaNodePools found for Kafka cluster " + name);
+                        if (nodePools.isEmpty()) {
+                            throw new InvalidConfigurationException("No KafkaNodePools found for Kafka cluster " + name);
                         }
 
                         Map<String, Storage> oldStorage = new HashMap<>();
@@ -787,13 +775,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             if (kafka != null
                     && Util.matchesSelector(selector(), kafka)) {
-                if (ReconcilerUtils.nodePoolsEnabled(kafka)) {
-                    Reconciliation reconciliation = new Reconciliation("watch", kind(), kafka.getMetadata().getNamespace(), kafkaName);
-                    LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action);
-                    enqueueReconciliation(reconciliation);
-                } else {
-                    LOGGER.warnOp("{} {} in namespace {} was {}, but the Kafka cluster {} to which it belongs does not have {} support enabled", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action, kafkaName, resource.getKind());
-                }
+                Reconciliation reconciliation = new Reconciliation("watch", kind(), kafka.getMetadata().getNamespace(), kafkaName);
+                LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action);
+                enqueueReconciliation(reconciliation);
             } else if (kafka == null) {
                 LOGGER.warnOp("{} {} in namespace {} was {}, but the Kafka cluster {} to which it belongs does not exist", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action, kafkaName);
             } else {

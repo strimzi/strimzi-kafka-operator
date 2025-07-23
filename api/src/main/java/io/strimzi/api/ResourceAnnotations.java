@@ -105,6 +105,8 @@ public class ResourceAnnotations {
      * Annotation for enabling or disabling the Node Pools. This annotation is used
      * on the Kafka CR
      */
+    // This is still needed for upgrade tests. It should be remove once the upgrade tests use
+    // only Strimzi versions that do not require these annotations.
     public static final String ANNO_STRIMZI_IO_NODE_POOLS = STRIMZI_DOMAIN + "node-pools";
 
     /**
@@ -132,5 +134,7 @@ public class ResourceAnnotations {
      * This annotation is used on the Kafka CR
      * If missing or with an invalid value, the cluster is assumed to be ZooKeeper-based
      */
+    // This is still needed for upgrade tests. It should be remove once the upgrade tests use
+    // only Strimzi versions that do not require these annotations.
     public static final String ANNO_STRIMZI_IO_KRAFT = STRIMZI_DOMAIN + "kraft";
 }

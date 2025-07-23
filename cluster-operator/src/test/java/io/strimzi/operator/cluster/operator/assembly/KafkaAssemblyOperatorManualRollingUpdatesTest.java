@@ -77,10 +77,6 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
     private static final Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
                 .withName(CLUSTER_NAME)
-                .withAnnotations(Map.of(
-                        Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled",
-                        Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"
-                ))
                 .withNamespace(NAMESPACE)
             .endMetadata()
             .withNewSpec()

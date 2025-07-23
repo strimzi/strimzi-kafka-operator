@@ -14,7 +14,6 @@ Metadata operations become more efficient as they are directly integrated.
 And by removing the need to maintain a ZooKeeper cluster, there's also a reduction in the operational and security overhead.
 
 To deploy a Kafka cluster in KRaft mode, you must use `Kafka` and `KafkaNodePool` custom resources.
-The `Kafka` resource using KRaft mode must also have the annotations `strimzi.io/kraft: enabled` and `strimzi.io/node-pools: enabled`.
 For more details and examples, see xref:deploying-kafka-cluster-kraft-{context}[].
 
 Through xref:config-node-pools-{context}[node pool configuration using `KafkaNodePool` resources], nodes are assigned the role of broker, controller, or both:

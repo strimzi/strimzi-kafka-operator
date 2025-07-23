@@ -149,7 +149,6 @@ public class PartialRollingUpdateMockTest {
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
                     .withNamespace(namespace)
-                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()

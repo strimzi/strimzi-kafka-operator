@@ -2,7 +2,8 @@
 
 ## 0.48.0
 
-* n/a
+* KRaft and Kafka Node Pools are now enabled by default.
+  The `strimzi.io/node-pools` and `strimzi.io/kraft` annotations are not required anymore and will be ignored if set.
 
 ### Changes, deprecations and removals
 

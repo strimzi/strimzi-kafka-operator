@@ -28,7 +28,6 @@ import io.strimzi.operator.cluster.model.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -83,10 +82,6 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
     private static final Kafka KAFKA = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
-                    .withAnnotations(Map.of(
-                            Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled",
-                            Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"
-                    ))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()

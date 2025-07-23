@@ -331,6 +331,8 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(componentsNamespaceName, BROKER_NODE_NAME, CLUSTER_NAME, 3).build(),
                     KafkaTemplates.kafka(componentsNamespaceName, CLUSTER_NAME, 3)
                         .editMetadata()
+                            // This is still needed for upgrade tests. It should be remove once the upgrade tests use
+                            // only Strimzi versions that do not require these annotations.
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                         .endMetadata()

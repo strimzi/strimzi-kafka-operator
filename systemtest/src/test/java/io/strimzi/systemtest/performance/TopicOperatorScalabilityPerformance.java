@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -109,10 +108,6 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaTemplates.kafka(suiteTestStorage.getNamespaceName(),  suiteTestStorage.getClusterName(), 3)
-                .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
-                .endMetadata()
                 .editSpec()
                     .editKafka()
                     .withResources(new ResourceRequirementsBuilder()
