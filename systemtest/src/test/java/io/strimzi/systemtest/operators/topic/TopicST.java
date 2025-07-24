@@ -95,6 +95,9 @@ public class TopicST extends AbstractST {
             @Step(value = "Wait for NotReady status and error message.", expected = "KafkaTopic status NotReady, error message present."),
             @Step(value = "Delete topic and verify cleanup.", expected = "Topic removed from Kubernetes and Kafka."),
             @Step(value = "Create topic with correct replication factor.", expected = "Topic is created in Kafka and Kubernetes.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
         }
     )
     void testMoreReplicasThanAvailableBrokers() {
@@ -136,6 +139,9 @@ public class TopicST extends AbstractST {
         steps = {
             @Step(value = "Create KafkaTopic.", expected = "Topic appears in adminClient and CRD."),
             @Step(value = "Loop ten times: Delete topic, verify absence, recreate, verify presence.", expected = "Topics are correctly deleted and recreated in both places.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
         }
     )
     void testCreateDeleteCreate() {
@@ -178,6 +184,9 @@ public class TopicST extends AbstractST {
             @Step(value = "Ensure topic does not exist in Kafka.", expected = "Topic is absent."),
             @Step(value = "Send messages to non-existent topic.", expected = "Kafka auto-creates the topic."),
             @Step(value = "Check topic exists in Kafka.", expected = "Topic appears in adminClient.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
         }
     )
     void testSendingMessagesToNonExistingTopic() {
@@ -205,6 +214,9 @@ public class TopicST extends AbstractST {
             @Step(value = "Produce and consume messages.", expected = "Messages sent and received successfully."),
             @Step(value = "Attempt to delete KafkaTopic.", expected = "Deletion blocked, error surfaced in status."),
             @Step(value = "Enable topic deletion and delete topic.", expected = "Topic deleted from both CRD and Kafka.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
         }
     )
     void testDeleteTopicEnableFalse() {
@@ -276,6 +288,9 @@ public class TopicST extends AbstractST {
             @Step(value = "Attempt unsupported decrease of partitions/replicas.", expected = "KafkaTopic NotReady, error message in status."),
             @Step(value = "Create new valid topic after failed operation.", expected = "New topic created and Ready."),
             @Step(value = "Delete both topics.", expected = "Topics deleted from CRD and Kafka.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
         }
     )
     void testCreateTopicAfterUnsupportedOperation() {
@@ -336,6 +351,9 @@ public class TopicST extends AbstractST {
             @Step(value = "Check that metrics and status reflect partition count change is not allowed.", expected = "Metrics and status have proper values."),
             @Step(value = "Set KafkaTopic configuration to defaults.", expected = "KafkaTopic is in Ready state."),
             @Step(value = "Check that metrics include KafkaTopic in Ready state.", expected = "Metrics contain proper data.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
         }
     )
     void testKafkaTopicDifferentStatesInUTOMode() {
@@ -431,6 +449,9 @@ public class TopicST extends AbstractST {
             @Step(value = "Create KafkaTopic and ensure Ready.", expected = "Topic Ready."),
             @Step(value = "Set min.insync.replicas to invalid value.", expected = "KafkaTopic NotReady, error message in status."),
             @Step(value = "Wait for reconciliation and check error persists.", expected = "Status and error remain NotReady.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
         }
     )
     void testKafkaTopicChangingMinInSyncReplicas() {
@@ -466,6 +487,9 @@ public class TopicST extends AbstractST {
             @Step(value = "Create KafkaTopic without labels.", expected = "KafkaTopic is created but not handled."),
             @Step(value = "Verify KafkaTopic is not created and check logs.", expected = "KafkaTopic absent in Kafka, log shows ignored topic."),
             @Step(value = "Delete KafkaTopic.", expected = "KafkaTopic is deleted, topic absent in Kafka.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
         }
     )
     void testTopicWithoutLabels() {

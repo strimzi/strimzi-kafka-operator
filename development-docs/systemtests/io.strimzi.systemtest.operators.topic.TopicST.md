@@ -19,6 +19,10 @@
 | 1. | Create KafkaTopic. | Topic appears in adminClient and CRD. |
 | 2. | Loop ten times: Delete topic, verify absence, recreate, verify presence. | Topics are correctly deleted and recreated in both places. |
 
+**Labels:**
+
+* [topic-operator](labels/topic-operator.md)
+
 
 ## testCreateTopicAfterUnsupportedOperation
 
@@ -32,6 +36,10 @@
 | 2. | Attempt unsupported decrease of partitions/replicas. | KafkaTopic NotReady, error message in status. |
 | 3. | Create new valid topic after failed operation. | New topic created and Ready. |
 | 4. | Delete both topics. | Topics deleted from CRD and Kafka. |
+
+**Labels:**
+
+* [topic-operator](labels/topic-operator.md)
 
 
 ## testDeleteTopicEnableFalse
@@ -48,6 +56,10 @@
 | 4. | Attempt to delete KafkaTopic. | Deletion blocked, error surfaced in status. |
 | 5. | Enable topic deletion and delete topic. | Topic deleted from both CRD and Kafka. |
 
+**Labels:**
+
+* [topic-operator](labels/topic-operator.md)
+
 
 ## testKafkaTopicChangingMinInSyncReplicas
 
@@ -60,6 +72,10 @@
 | 1. | Create KafkaTopic and ensure Ready. | Topic Ready. |
 | 2. | Set min.insync.replicas to invalid value. | KafkaTopic NotReady, error message in status. |
 | 3. | Wait for reconciliation and check error persists. | Status and error remain NotReady. |
+
+**Labels:**
+
+* [topic-operator](labels/topic-operator.md)
 
 
 ## testKafkaTopicDifferentStatesInUTOMode
@@ -83,6 +99,10 @@
 | 11. | Set KafkaTopic configuration to defaults. | KafkaTopic is in Ready state. |
 | 12. | Check that metrics include KafkaTopic in Ready state. | Metrics contain proper data. |
 
+**Labels:**
+
+* [topic-operator](labels/topic-operator.md)
+
 
 ## testMoreReplicasThanAvailableBrokers
 
@@ -97,6 +117,10 @@
 | 3. | Delete topic and verify cleanup. | Topic removed from Kubernetes and Kafka. |
 | 4. | Create topic with correct replication factor. | Topic is created in Kafka and Kubernetes. |
 
+**Labels:**
+
+* [topic-operator](labels/topic-operator.md)
+
 
 ## testSendingMessagesToNonExistingTopic
 
@@ -109,6 +133,10 @@
 | 1. | Ensure topic does not exist in Kafka. | Topic is absent. |
 | 2. | Send messages to non-existent topic. | Kafka auto-creates the topic. |
 | 3. | Check topic exists in Kafka. | Topic appears in adminClient. |
+
+**Labels:**
+
+* [topic-operator](labels/topic-operator.md)
 
 
 ## testTopicWithoutLabels
@@ -123,4 +151,8 @@
 | 2. | Create KafkaTopic without labels. | KafkaTopic is created but not handled. |
 | 3. | Verify KafkaTopic is not created and check logs. | KafkaTopic absent in Kafka, log shows ignored topic. |
 | 4. | Delete KafkaTopic. | KafkaTopic is deleted, topic absent in Kafka. |
+
+**Labels:**
+
+* [topic-operator](labels/topic-operator.md)
 
