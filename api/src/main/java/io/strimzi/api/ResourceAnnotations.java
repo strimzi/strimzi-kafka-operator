@@ -107,6 +107,7 @@ public class ResourceAnnotations {
      */
     // This is still needed for upgrade tests. It should be remove once the upgrade tests use
     // only Strimzi versions that do not require these annotations.
+    // Tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/11690
     public static final String ANNO_STRIMZI_IO_NODE_POOLS = STRIMZI_DOMAIN + "node-pools";
 
     /**
@@ -136,5 +137,6 @@ public class ResourceAnnotations {
      */
     // This is still needed for upgrade tests. It should be remove once the upgrade tests use
     // only Strimzi versions that do not require these annotations.
+    // Tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/11690
     public static final String ANNO_STRIMZI_IO_KRAFT = STRIMZI_DOMAIN + "kraft";
 }
