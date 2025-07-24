@@ -315,7 +315,7 @@ public class KafkaUtils {
     }
 
     /**
-     * Return dynamic Kafka configs supported by the the given version of Kafka.
+     * Return dynamic Kafka configs supported by the given version of Kafka.
      * @param kafkaVersion specific kafka version
      * @return all dynamic properties for specific kafka version
      */

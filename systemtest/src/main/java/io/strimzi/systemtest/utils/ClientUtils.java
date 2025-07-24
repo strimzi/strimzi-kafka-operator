@@ -197,7 +197,7 @@ public class ClientUtils {
     public static void waitForClientTimeout(String namespaceName, String jobName, int messageCount, boolean deleteAfterSuccess) {
         LOGGER.info("Waiting for client Job: {}/{} to reach the timeout limit", namespaceName, jobName);
         try {
-            TestUtils.waitFor("client Job: " + namespaceName + "/" + jobName + "to reach the the timeout limit", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+            TestUtils.waitFor("client Job: " + namespaceName + "/" + jobName + "to reach the timeout limit", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
                 () -> JobUtils.checkFailedJobStatus(namespaceName, jobName, 1),
                 () -> JobUtils.logCurrentJobStatus(namespaceName, jobName));
 
