@@ -51,7 +51,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -64,7 +63,6 @@ public abstract class AbstractKafkaRebalanceAssemblyOperatorTest {
     protected static final Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
                 .withName(CLUSTER_NAME)
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
             .endMetadata()
             .withNewSpec()
                 .withNewKafka()

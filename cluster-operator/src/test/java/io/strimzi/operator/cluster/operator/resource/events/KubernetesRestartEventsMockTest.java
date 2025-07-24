@@ -51,7 +51,6 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AdminClientProvider;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
@@ -131,7 +130,6 @@ public class KubernetesRestartEventsMockTest {
     private final static Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
                 .withName(CLUSTER_NAME)
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
             .endMetadata()
             .withNewSpec()
                 .withNewKafka()

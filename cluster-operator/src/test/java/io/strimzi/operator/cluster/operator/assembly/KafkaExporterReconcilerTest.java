@@ -39,7 +39,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -70,7 +69,6 @@ public class KafkaExporterReconcilerTest {
             .withNewMetadata()
                 .withNamespace(NAMESPACE)
                 .withName(NAME)
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
             .endMetadata()
             .withNewSpec()
                 .withNewKafka()

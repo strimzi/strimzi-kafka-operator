@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.platform.KubernetesVersion;
@@ -105,10 +104,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .withNewMetadata()
                     .withName(NAME)
                     .withNamespace(NAMESPACE)
-                    .withAnnotations(Map.of(
-                            Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled",
-                            Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"
-                    ))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()

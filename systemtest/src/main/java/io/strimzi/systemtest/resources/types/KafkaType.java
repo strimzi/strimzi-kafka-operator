@@ -13,17 +13,14 @@ import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.platform.commons.util.Preconditions;
 
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -93,17 +90,8 @@ public class KafkaType implements ResourceType<Kafka> {
 
         // proceed only if kafka is still present as Kafka is purposefully deleted in some test cases
         if (currentKafka != null) {
-            // load current Kafka's annotations to obtain information, if KafkaNodePools are used for this Kafka
-            Map<String, String> annotations = currentKafka.getMetadata().getAnnotations();
-
             client.inNamespace(namespaceName).withName(
                 kafka.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-
-            if (annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS) == null
-                || annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS).equals("disabled")) {
-                // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
-                PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(namespaceName, clusterName);
-            }
         }
     }
 

@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Vertx;
@@ -45,10 +44,6 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
                 .withName(CLUSTER_NAME)
                 .withNamespace(NAMESPACE)
                 .withLabels(Map.of("selector", "matching"))
-                .withAnnotations(Map.of(
-                        Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled",
-                        Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"
-                ))
             .endMetadata()
             .withNewSpec()
                 .withNewKafka()
@@ -128,24 +123,6 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
         when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(null);
 
         MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(new LabelSelectorBuilder().withMatchLabels(Map.of("selector", "not-matching")).build(), supplier);
-        mockKao.nodePoolEventHandler(Watcher.Action.ADDED, POOL);
-
-        assertThat(mockKao.reconciliations.size(), is(0));
-    }
-
-    @Test
-    public void testEnqueueingResourceWithMissingAnnotation()    {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editMetadata()
-                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "not-enabled"))
-                .endMetadata()
-                .build();
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(kafka);
-
-        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(null, supplier);
         mockKao.nodePoolEventHandler(Watcher.Action.ADDED, POOL);
 
         assertThat(mockKao.reconciliations.size(), is(0));

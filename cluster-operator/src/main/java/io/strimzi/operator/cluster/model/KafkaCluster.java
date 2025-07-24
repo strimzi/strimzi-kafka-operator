@@ -193,16 +193,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final String ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS = Annotations.STRIMZI_DOMAIN + "custom-listener-cert-thumbprints";
 
     /**
-     * The annotation value which indicates that the KRaft enabled
-     */
-    public static final String ENABLED_VALUE_STRIMZI_IO_KRAFT = "enabled";
-
-    /**
-     * The annotation value which indicates that the Node Pools are enabled
-     */
-    public static final String ENABLED_VALUE_STRIMZI_IO_NODE_POOLS = "enabled";
-
-    /**
      * Key under which the broker configuration is stored in Config Map
      */
     public static final String BROKER_CONFIGURATION_FILENAME = "server.config";

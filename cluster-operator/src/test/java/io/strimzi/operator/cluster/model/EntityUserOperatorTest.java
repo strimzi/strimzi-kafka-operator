@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpecBui
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -48,7 +47,6 @@ public class EntityUserOperatorTest {
                 .withNamespace(NAMESPACE)
                 .withName(CLUSTER_NAME)
                 .withLabels(Map.of("my-user-label", "cromulent"))
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
             .endMetadata()
             .withNewSpec()
                 .withNewKafka()

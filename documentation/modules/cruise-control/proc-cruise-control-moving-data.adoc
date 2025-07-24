@@ -29,8 +29,6 @@ kind: Kafka
 metadata:
   name: my-cluster
   namespace: my-project
-  annotations:
-    strimzi.io/node-pools: enabled
 spec:
   kafka:
     # ...

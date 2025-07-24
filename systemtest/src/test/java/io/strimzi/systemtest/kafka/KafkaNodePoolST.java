@@ -98,7 +98,7 @@ public class KafkaNodePoolST extends AbstractST {
 
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(testStorage.getClusterName(), nodePoolNameInitial), 2);
 
-        LOGGER.info("Testing deployment of KafkaNodePools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NODE_POOLS);
+        LOGGER.info("Testing deployment of KafkaNodePools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS);
 
         // Deploy NodePool A with only 1 replica and next ID 4, and NodePool B with 2 replica and next ID 6
         KubeResourceManager.get().createResourceWithWait(KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), nodePoolNameA, testStorage.getClusterName(), 1)

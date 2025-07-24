@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -36,7 +35,6 @@ import io.vertx.core.Future;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -365,28 +363,6 @@ public class ReconcilerUtils {
         var currentCertHash = Annotations.stringAnnotation(pod, ANNO_STRIMZI_SERVER_CERT_HASH, null);
         var desiredCertHash = certHashCache.get(ReconcilerUtils.getPodIndexFromPodName(pod.getMetadata().getName()));
         return currentCertHash != null && desiredCertHash != null && !currentCertHash.equals(desiredCertHash);
-    }
-
-    /**
-     * Checks whether Node pools are enabled for given Kafka custom resource using the strimzi.io/node-pools annotation.
-     *
-     * @param kafka     The Kafka custom resource which might have the node-pools annotation
-     *
-     * @return      True when the node pools are enabled. False otherwise.
-     */
-    public static boolean nodePoolsEnabled(Kafka kafka) {
-        return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_NODE_POOLS.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled").toLowerCase(Locale.ENGLISH));
-    }
-
-    /**
-     * Checks whether KRaft is enabled for given Kafka custom resource using the strimzi.io/kraft annotation.
-     *
-     * @param kafka     The Kafka custom resource which might have the KRaft annotation
-     *
-     * @return      True when KRaft is enabled. False otherwise.
-     */
-    public static boolean kraftEnabled(Kafka kafka) {
-        return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_KRAFT.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled").toLowerCase(Locale.ENGLISH));
     }
 
     /**

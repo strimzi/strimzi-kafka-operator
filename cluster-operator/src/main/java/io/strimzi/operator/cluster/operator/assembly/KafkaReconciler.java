@@ -117,7 +117,6 @@ public class KafkaReconciler {
     private final long operationTimeoutMs;
     private final boolean isNetworkPolicyGeneration;
     private final boolean isPodDisruptionBudgetGeneration;
-    private final boolean isKafkaNodePoolsEnabled;
     private final List<String> maintenanceWindows;
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
@@ -206,7 +205,6 @@ public class KafkaReconciler {
         this.operatorNamespace = config.getOperatorNamespace();
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-        this.isKafkaNodePoolsEnabled = ReconcilerUtils.nodePoolsEnabled(kafkaCr);
         this.pfa = pfa;
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
@@ -1212,43 +1210,39 @@ public class KafkaReconciler {
      * @return  Future which completes when the statuses are set
      */
     protected Future<Void> updateNodePoolStatuses(KafkaStatus kafkaStatus) {
-        if (isKafkaNodePoolsEnabled) {
-            List<KafkaNodePool> updatedNodePools = new ArrayList<>();
-            List<UsedNodePoolStatus> statusesForKafka = new ArrayList<>();
-            Map<String, KafkaNodePoolStatus> statuses = kafka.nodePoolStatuses();
+        List<KafkaNodePool> updatedNodePools = new ArrayList<>();
+        List<UsedNodePoolStatus> statusesForKafka = new ArrayList<>();
+        Map<String, KafkaNodePoolStatus> statuses = kafka.nodePoolStatuses();
 
-            for (KafkaNodePool nodePool : kafkaNodePoolCrs) {
-                statusesForKafka.add(new UsedNodePoolStatusBuilder().withName(nodePool.getMetadata().getName()).build());
+        for (KafkaNodePool nodePool : kafkaNodePoolCrs) {
+            statusesForKafka.add(new UsedNodePoolStatusBuilder().withName(nodePool.getMetadata().getName()).build());
 
-                KafkaNodePool updatedNodePool = new KafkaNodePoolBuilder(nodePool)
-                        .withStatus(
-                                new KafkaNodePoolStatusBuilder(statuses.get(nodePool.getMetadata().getName()))
-                                        .withObservedGeneration(nodePool.getMetadata().getGeneration())
-                                        .build())
-                        .build();
+            KafkaNodePool updatedNodePool = new KafkaNodePoolBuilder(nodePool)
+                    .withStatus(
+                            new KafkaNodePoolStatusBuilder(statuses.get(nodePool.getMetadata().getName()))
+                                    .withObservedGeneration(nodePool.getMetadata().getGeneration())
+                                    .build())
+                    .build();
 
-                StatusDiff diff = new StatusDiff(nodePool.getStatus(), updatedNodePool.getStatus());
+            StatusDiff diff = new StatusDiff(nodePool.getStatus(), updatedNodePool.getStatus());
 
-                if (!diff.isEmpty()) {
-                    // Status changed => we will update it
-                    updatedNodePools.add(updatedNodePool);
-                }
+            if (!diff.isEmpty()) {
+                // Status changed => we will update it
+                updatedNodePools.add(updatedNodePool);
             }
-
-            // Sets the list of used Node Pools in the Kafka CR status
-            kafkaStatus.setKafkaNodePools(statusesForKafka.stream().sorted(Comparator.comparing(UsedNodePoolStatus::getName)).toList());
-
-            List<Future<KafkaNodePool>> statusUpdateFutures = new ArrayList<>();
-
-            for (KafkaNodePool updatedNodePool : updatedNodePools) {
-                statusUpdateFutures.add(kafkaNodePoolOperator.updateStatusAsync(reconciliation, updatedNodePool));
-            }
-
-            // Return future
-            return Future.join(statusUpdateFutures)
-                    .mapEmpty();
-        } else {
-            return Future.succeededFuture();
         }
+
+        // Sets the list of used Node Pools in the Kafka CR status
+        kafkaStatus.setKafkaNodePools(statusesForKafka.stream().sorted(Comparator.comparing(UsedNodePoolStatus::getName)).toList());
+
+        List<Future<KafkaNodePool>> statusUpdateFutures = new ArrayList<>();
+
+        for (KafkaNodePool updatedNodePool : updatedNodePools) {
+            statusUpdateFutures.add(kafkaNodePoolOperator.updateStatusAsync(reconciliation, updatedNodePool));
+        }
+
+        // Return future
+        return Future.join(statusUpdateFutures)
+                .mapEmpty();
     }
 }

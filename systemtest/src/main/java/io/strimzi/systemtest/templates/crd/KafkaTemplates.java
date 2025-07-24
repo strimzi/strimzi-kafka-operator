@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -166,8 +165,6 @@ public class KafkaTemplates {
             .withNewMetadata()
                 .withName(kafkaClusterName)
                 .withNamespace(namespaceName)
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
             .endMetadata()
             .editSpec()
                 .editKafka()
