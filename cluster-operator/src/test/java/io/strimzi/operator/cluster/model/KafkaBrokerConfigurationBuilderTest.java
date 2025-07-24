@@ -486,7 +486,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
@@ -503,7 +503,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
@@ -524,7 +524,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
@@ -549,7 +549,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
@@ -577,7 +577,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=env,strimzienv,strimzifile,strimzidir,strimzisecrets",
+                "config.providers=env,strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
@@ -623,7 +623,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
@@ -640,7 +640,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withUserConfiguration(null, false, false, true)
                 .build();
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
@@ -660,7 +660,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
@@ -680,7 +680,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
+                "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
@@ -705,7 +705,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaConfiguration userConfig = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
 
         String expectedConfig = "node.id=2\n"
-                + "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets\n"
+                + "config.providers=strimzienv,strimzisecrets,strimzifile,strimzidir\n"
                 + "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider\n"
                 + "config.providers.strimzienv.param.allowlist.pattern=.*\n"
                 + "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider\n"
