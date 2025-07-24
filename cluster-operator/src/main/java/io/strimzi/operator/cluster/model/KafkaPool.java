@@ -162,7 +162,7 @@ public class KafkaPool extends AbstractModel {
             if (diff.issuesDetected()) {
                 LOGGER.warnCr(reconciliation, "Only the following changes to Kafka storage are allowed: " +
                         "changing the deleteClaim flag, " +
-                        "changing the kraftMetadata flag (but only one one volume can be marked to store the KRaft metadata log at a time), " +
+                        "changing the kraftMetadata flag (but only one volume can be marked to store the KRaft metadata log at a time), " +
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
                         "each volume in Jbod storage should have an unique ID, " +
                         "changing overrides to nodes which do not exist yet, " +
