@@ -19,14 +19,14 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT;
@@ -308,7 +308,10 @@ public class KafkaConnectConfigurationBuilder {
 
         printConfigProviders(configurations);
 
-        printMetricReporters(configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        printMetricReportersForKey("metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        printMetricReportersForKey("admin.metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        printMetricReportersForKey("producer.metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        printMetricReportersForKey("consumer.metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
 
         if (!configurations.getConfiguration().isEmpty()) {
             printSectionHeader("User Provided configuration");
@@ -318,47 +321,54 @@ public class KafkaConnectConfigurationBuilder {
         return this;
     }
 
-    private void printMetricReporters(AbstractConfiguration userConfig,
-                                      boolean injectKafkaJmxReporter,
-                                      boolean injectStrimziMetricsReporter) {
-        OrderedProperties props = new OrderedProperties();
-        List<String> configKeys = List.of(
-                "metric.reporters",
-                "admin.metric.reporters",
-                "producer.metric.reporters",
-                "consumer.metric.reporters"
-        );
+    private void printMetricReportersForKey(String configKey,
+                                            AbstractConfiguration userConfig,
+                                            boolean injectKafkaJmxReporter,
+                                            boolean injectStrimziMetricsReporter) {
+        // build a list of reporters to inject based on flags
+        // since Kafka 4 the JmxReporter is explicitly added when JmxPrometheusExporter is enabled
+        List<String> reportersToInject = Stream.of(
+                injectKafkaJmxReporter ? "org.apache.kafka.common.metrics.JmxReporter" : null,
+                injectStrimziMetricsReporter ? StrimziMetricsReporterConfig.KAFKA_CLASS : null
+        ).filter(Objects::nonNull).collect(Collectors.toList());
+
+        if (reportersToInject.isEmpty()) {
+            // nothing to inject
+            return;
+        }
+
+        String configValue = "";
         boolean hasUserMetricReporters = false;
-        // the JmxReporter is explicitly added when metric.reporters is not empty
-        List<Map.Entry<String, Boolean>> reporterConfig = List.of(
-                Map.entry("org.apache.kafka.common.metrics.JmxReporter", injectKafkaJmxReporter),
-                Map.entry(StrimziMetricsReporterConfig.KAFKA_CLASS, injectStrimziMetricsReporter)
-        );
 
-        for (String configKey : configKeys) {
-            for (Map.Entry<String, Boolean> reporter : reporterConfig) {
-                String reporterClass = reporter.getKey();
-                boolean injectFlag = reporter.getValue();
-                if (injectFlag) {
-                    if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
-                            userConfig.getConfigOption(configKey) != null) {
-                        hasUserMetricReporters = true;
-                        props.addPair(configKey, userConfig.getConfigOption(configKey));
-                        userConfig.removeConfigOption(configKey);
-                    }
-                    AbstractConfiguration.createOrAddListProperty(props, configKey, reporterClass);
-                }
+        // handle user configuration if present and avoids duplicates
+        if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
+                userConfig.getConfigOption(configKey) != null) {
+            hasUserMetricReporters = true;
+            configValue = userConfig.getConfigOption(configKey);
+            reportersToInject = reportersToInject.stream()
+                    .filter(r -> !userConfig.getConfigOption(configKey).contains(r))
+                    .toList();
+            if (reportersToInject.isEmpty()) {
+                // nothing to do, injections configured by the user
+                return;
             }
+            userConfig.removeConfigOption(configKey);
         }
 
-        if (!props.asMap().isEmpty()) {
-            printSectionHeader("Metric reporters configuration");
-            writer.println(hasUserMetricReporters ?
-                    "# Metric reporters configured by the user and Strimzi" :
-                    "# Metric reporters configured by Strimzi");
-            writer.println(props.asPairs());
-            writer.println();
+        // append to the configuration value
+        String reportersToAdd = String.join(",", reportersToInject);
+        if (!configValue.isEmpty()) {
+            configValue += "," + reportersToAdd;
+        } else {
+            configValue = reportersToAdd;
         }
+
+        printSectionHeader("Metric reporters configuration");
+        writer.println(hasUserMetricReporters ?
+                "# " + configKey + " configured by the user and by Strimzi" :
+                "# " + configKey + " configured by Strimzi");
+        writer.println(configKey + "=" + configValue);
+        writer.println();
     }
 
     /**

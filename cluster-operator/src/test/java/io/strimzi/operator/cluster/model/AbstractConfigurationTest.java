@@ -14,13 +14,11 @@ import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ParallelSuite
@@ -247,87 +245,6 @@ public class AbstractConfigurationTest {
         assertThat(configuration.asOrderedProperties().asMap().get("key.converter"), is("my.package.Converter"));
         assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
         assertThat(configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"), is(""));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigDoesNotExists() {
-        OrderedProperties props1 = new OrderedProperties();
-        AbstractConfiguration.createOrAddListProperty(props1, "test-key", "test-value");
-        assertThat(props1.asMap().get("test-key"), is("test-value"));
-
-        OrderedProperties props2 = new OrderedProperties();
-        AbstractConfiguration.createOrAddListProperty(props2, "test-key", "test-value-1,test-value-2");
-        assertThat(props2.asMap().get("test-key"), is("test-value-1,test-value-2"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigExists() {
-        OrderedProperties props1 = new OrderedProperties();
-        props1.addPair("test-key", "test-value-1");
-
-        AbstractConfiguration.createOrAddListProperty(props1, "test-key", "test-value-2");
-        assertThat(props1.asMap().get("test-key"), is("test-value-1,test-value-2"));
-
-        OrderedProperties props2 = new OrderedProperties();
-        props2.addPair("test-key", "test-value-1,test-value-2");
-        AbstractConfiguration.createOrAddListProperty(props2, "test-key", "test-value-3");
-        assertThat(props2.asMap().get("test-key"), is("test-value-1,test-value-2,test-value-3"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigExistsAndContainsValue() {
-        OrderedProperties props1 = new OrderedProperties();
-        props1.addPair("test-key", "test-value-1");
-        AbstractConfiguration.createOrAddListProperty(props1, "test-key", "test-value-1");
-        assertThat(props1.asMap().get("test-key"), is("test-value-1"));
-
-        OrderedProperties props2 = new OrderedProperties();
-        props2.addPair("test-key", "test-value-1,test-value-2");
-        AbstractConfiguration.createOrAddListProperty(props2, "test-key", "test-value-1");
-        assertThat(props2.asMap().get("test-key"), is("test-value-1,test-value-2"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigWithDuplicates() {
-        OrderedProperties props = new OrderedProperties();
-        props.addPair("test-key", "test-value-1,test-value-1,test-value-2");
-        AbstractConfiguration.createOrAddListProperty(props, "test-key", "test-value-3,test-value-3");
-        assertThat(props.asMap().get("test-key"), is("test-value-1,test-value-2,test-value-3"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigOrdering() {
-        OrderedProperties props = new OrderedProperties();
-        props.addPair("test-key", "test-value-2,test-value-1");
-        AbstractConfiguration.createOrAddListProperty(props, "test-key", "test-value-3,");
-        assertThat(props.asMap().get("test-key"), is("test-value-2,test-value-1,test-value-3"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigWithNullConfig() {
-        OrderedProperties props = new OrderedProperties();
-        props.addPair("test-key", "test-value-1,test-value-2");
-        Exception e = assertThrows(IllegalArgumentException.class,
-                () -> AbstractConfiguration.createOrAddListProperty(null, "test-key", "test-value-3"));
-        assertThat(e.getMessage(), is("Configuration is required"));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigWithNullKey() {
-        OrderedProperties props = new OrderedProperties();
-        props.addPair("test-key", "test-value-1,test-value-2");
-        Stream.of(null, "", " ")
-                .map(key -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListProperty(props, key, "test-value-3")))
-                .forEach(e -> assertThat(e.getMessage(), is("Configuration key is required")));
-    }
-
-    @ParallelTest
-    public void testCreateOrAddListConfigWithNullValue() {
-        OrderedProperties props = new OrderedProperties();
-        props.addPair("test-key", "test-value-1,test-value-2");
-        Stream.of(null, "", " ")
-                .map(value -> assertThrows(IllegalArgumentException.class, () -> AbstractConfiguration.createOrAddListProperty(props, "test-key", value)))
-                .forEach(e -> assertThat(e.getMessage(), is("Configuration values are required")));
     }
 }
 

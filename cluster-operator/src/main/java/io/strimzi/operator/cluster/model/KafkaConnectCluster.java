@@ -1011,8 +1011,11 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         .withAuthentication(authentication, cluster)
                         .withRackId()
                         .withStrimziMetricsReporter(metrics)
-                        .withUserConfiguration(configuration, metrics instanceof JmxPrometheusExporterModel, metrics instanceof StrimziMetricsReporterModel)
-                        .build()
+                        .withUserConfiguration(
+                                configuration,
+                                metrics instanceof JmxPrometheusExporterModel,
+                                metrics instanceof StrimziMetricsReporterModel
+                        ).build()
         );
 
         return ConfigMapUtils

@@ -9,12 +9,9 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.OrderedProperties;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import static java.util.Arrays.asList;
 
@@ -186,45 +183,5 @@ public abstract class AbstractConfiguration {
      */
     protected static List<String> splitPrefixesOrOptionsToList(String prefixes) {
         return asList(prefixes.split("\\s*,+\\s*"));
-    }
-
-    /**
-     * Append list property values or create a new list property if missing.
-     * A list property can contain a comma separated list of values.
-     * Duplicated values are removed.
-     *
-     * @param props Ordered properties.
-     * @param key List property key.
-     * @param values List property values.
-     */
-    public static void createOrAddListProperty(OrderedProperties props, String key, String values) {
-        if (props == null) {
-            throw new IllegalArgumentException("Configuration is required");
-        }
-        if (key == null || key.isBlank()) {
-            throw new IllegalArgumentException("Configuration key is required");
-        }
-        if (values == null || values.isBlank()) {
-            throw new IllegalArgumentException("Configuration values are required");
-        }
-
-        String existingConfig = props.asMap().get(key);
-        // using an ordered set to preserve ordering of the existing props value
-        Set<String> existingSet = existingConfig == null ? new LinkedHashSet<>() :
-                Arrays.stream(existingConfig.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-        // we also preserve ordering for new values in case they are user-provided
-        Set<String> newValues = Arrays.stream(values.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-        // add only new values
-        boolean updated = existingSet.addAll(newValues);
-        if (updated) {
-            String updatedConfig = String.join(",", existingSet);
-            props.addPair(key, updatedConfig);
-        }
     }
 }

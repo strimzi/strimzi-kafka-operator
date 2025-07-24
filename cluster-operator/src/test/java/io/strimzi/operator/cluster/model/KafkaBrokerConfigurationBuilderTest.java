@@ -693,12 +693,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
     }
 
-    static Stream<Arguments> userConfigurationWithMetricsReporters() {
+    static Stream<Arguments> sourceUserConfigWithMetricsReporters() {
         Map<String, Object> configMap = new HashMap<>();
-        configMap.put("auto.create.topics.enable", "false");
-        configMap.put("offsets.topic.replication.factor", 3);
-        configMap.put("transaction.state.log.replication.factor", 3);
-        configMap.put("transaction.state.log.min.isr", 2);
         configMap.put("metric.reporters", "my.domain.CustomMetricReporter");
         configMap.put("kafka.metrics.reporters", "my.domain.CustomYammerMetricReporter");
         KafkaConfiguration userConfig = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
@@ -710,11 +706,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 + "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider\n"
                 + "config.providers.strimzifile.param.allowed.paths=/opt/kafka\n"
                 + "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider\n"
-                + "config.providers.strimzidir.param.allowed.paths=/opt/kafka\n"
-                + "auto.create.topics.enable=false\n"
-                + "offsets.topic.replication.factor=3\n"
-                + "transaction.state.log.replication.factor=3\n"
-                + "transaction.state.log.min.isr=2\n";
+                + "config.providers.strimzidir.param.allowed.paths=/opt/kafka\n";
 
         // testing 8 combinations of 3 boolean values
         return Stream.of(
@@ -793,7 +785,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("userConfigurationWithMetricsReporters")
+    @MethodSource("sourceUserConfigWithMetricsReporters")
     public void testUserConfigurationWithMetricReporters(
             KafkaConfiguration userConfig,
             boolean injectCruiseControl,
@@ -805,6 +797,29 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(actualConfig, isEquivalent(expectedConfig));
+    }
+
+    @ParallelTest
+    public void testStrimziMetricsReporterSetByUser() {
+        Map<String, Object> configMap = new HashMap<>();
+        configMap.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+        configMap.put("kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
+        KafkaConfiguration userConfig = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withUserConfiguration(userConfig, false, false, true)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "config.providers.strimzienv.param.allowlist.pattern=.*",
+                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS,
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
     }
 
     @ParallelTest

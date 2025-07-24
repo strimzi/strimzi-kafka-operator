@@ -847,13 +847,16 @@ public class KafkaMirrorMaker2ConnectorsTest {
     }
 
     @Test
-    public void testConnectorConfigurationWithStrimziMetricsReporter() {
+    public void testStrimziMetricsReporter() {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
-                .withMetricsConfig(new StrimziMetricsReporterBuilder()
-                        .withNewValues()
-                            .withAllowList("kafka_connect_connector_metrics.*" + "kafka_connect_connector_task_metrics.*")
-                        .endValues()
+                    .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withSourceCluster("source")
+                        .withTargetCluster("target")
+                        .withNewSourceConnector()
+                        .endSourceConnector()
+                        .build())
+                    .withMetricsConfig(new StrimziMetricsReporterBuilder()
                         .build())
                 .endSpec()
                 .build();
@@ -871,11 +874,74 @@ public class KafkaMirrorMaker2ConnectorsTest {
         expected.put("target.cluster.alias", "target");
         expected.put("target.cluster.bootstrap.servers", "target:9092");
         expected.put("target.cluster.security.protocol", "PLAINTEXT");
-        expected.put("sync.topic.acls.enabled", "false");
-        expected.put("topics", "my-topic-.*");
-        expected.put("topics.exclude", "exclude-topic-.*");
-        expected.put("groups", "my-group-.*");
-        expected.put("groups.exclude", "exclude-group-.*");
+        expected.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+        expected.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
+        assertThat(new TreeMap<>(config), is(expected));
+    }
+
+    @Test
+    public void testStrimziAndCustomMetricsReporters() {
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                    .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withSourceCluster("source")
+                        .withTargetCluster("target")
+                        .withNewSourceConnector()
+                            .addToConfig(Map.of("metric.reporters", "com.example.ExistingReporter"))
+                        .endSourceConnector()
+                        .build())
+                    .withMetricsConfig(new StrimziMetricsReporterBuilder()
+                        .build())
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
+        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(kmm2.getSpec().getMirrors().get(0),
+                kmm2.getSpec().getMirrors().get(0).getSourceConnector(),
+                kmm2.getSpec().getClusters().get(0),
+                kmm2.getSpec().getClusters().get(1));
+
+        Map<String, Object> expected = new TreeMap<>();
+        expected.put("source.cluster.alias", "source");
+        expected.put("source.cluster.bootstrap.servers", "source:9092");
+        expected.put("source.cluster.security.protocol", "PLAINTEXT");
+        expected.put("target.cluster.alias", "target");
+        expected.put("target.cluster.bootstrap.servers", "target:9092");
+        expected.put("target.cluster.security.protocol", "PLAINTEXT");
+        expected.put("metric.reporters", "com.example.ExistingReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS);
+        expected.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
+        assertThat(new TreeMap<>(config), is(expected));
+    }
+    
+    @Test
+    public void testStrimziMetricsReporterSetByUser() {
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                    .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withSourceCluster("source")
+                        .withTargetCluster("target")
+                        .withNewSourceConnector()
+                            .addToConfig(Map.of("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS))
+                        .endSourceConnector()
+                        .build())
+                    .withMetricsConfig(new StrimziMetricsReporterBuilder()
+                        .build())
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
+        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(kmm2.getSpec().getMirrors().get(0),
+                kmm2.getSpec().getMirrors().get(0).getSourceConnector(),
+                kmm2.getSpec().getClusters().get(0),
+                kmm2.getSpec().getClusters().get(1));
+
+        Map<String, Object> expected = new TreeMap<>();
+        expected.put("source.cluster.alias", "source");
+        expected.put("source.cluster.bootstrap.servers", "source:9092");
+        expected.put("source.cluster.security.protocol", "PLAINTEXT");
+        expected.put("target.cluster.alias", "target");
+        expected.put("target.cluster.bootstrap.servers", "target:9092");
+        expected.put("target.cluster.security.protocol", "PLAINTEXT");
         expected.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
         expected.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
         assertThat(new TreeMap<>(config), is(expected));
