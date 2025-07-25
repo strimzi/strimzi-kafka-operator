@@ -93,12 +93,12 @@ public class CommonVersionModificationData {
         return filePaths;
     }
 
-    public String getKafkaFilePathBefore() {
-        return getFilePaths().get("kafkaBefore");
+    public String getFromKafkaFilePath() {
+        return getFilePaths().get("fromKafka");
     }
 
-    public String getKafkaFilePathAfter() {
-        return getFilePaths().get("kafkaAfter");
+    public String getToKafkaFilePath() {
+        return getFilePaths().get("toKafka");
     }
 
     @Override
