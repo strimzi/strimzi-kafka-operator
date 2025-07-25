@@ -1,0 +1,176 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-common-config-{context}']
+= Common configuration options
+Common configuration is configured independently for each component, such as the following:
+
+* Resource limits and requests (Recommended)
+* Metrics configuration
+* Liveness and readiness probes
+* Logging frequency
+* JVM options for maximum and minimum memory allocation
+* Adding additional volumes and volume mounts
+* Template configuration for pods and containers
+
+Advanced or specialized options include:
+
+* Custom container images
+* Rack awareness
+* Distributed tracing
+
+You can configure common options for Strimzi custom resources in the `.spec` section of the custom resource.
+For more information on these configuration options, refer to link:{BookURLConfiguring}[Common configuration properties^].
+
+== Resource limits and requests (recommended)
+
+To ensure stability and optimal performance for your Kafka clusters, we recommend defining CPU and memory resource limits and requests for all Strimzi containers. 
+By default, the Strimzi Cluster Operator does not set these values, but fine-tuning them based on your workload requirements helps performance and improves reliability.
+
+.Example resource configuration
+[source,yaml]
+----
+# ...
+spec:
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  # ...    
+----
+
+== Metrics configuration
+
+Enable metrics collection for monitoring.
+
+.Example metrics configuration
+[source,yaml]
+----
+# ...
+spec:
+  metricsConfig:
+    type: jmxPrometheusExporter
+    valueFrom:
+      configMapKeyRef:
+        name: my-metrics-config
+        key: kafka-metrics-config.yml
+  # ...      
+----
+
+Configuration varies depending on the component and exporter used: Prometheus JMX Exporter or Strimzi Metrics Reporter. 
+For more information, see xref:assembly-metrics-str[Introducing metrics]. 
+
+== Liveness and readiness probes
+
+Configure health checks for the container.
+
+.Example liveness and readiness probes
+[source,yaml]
+----
+# ...
+spec:
+  livenessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  readinessProbe:
+    initialDelaySeconds: 10
+    timeoutSeconds: 5
+  # ...  
+----
+
+== JVM options
+
+Configure the Java Virtual Machine (JVM) for the component.
+To enable garbage collector (GC) logging, set `gcLoggingEnabled` to `true`.
+
+.Example JVM options
+[source,yaml]
+----
+# ...
+spec:
+  jvmOptions:
+    -Xms: "512m"
+    -Xmx: "1g"
+    gcLoggingEnabled: true
+  # ...  
+----
+
+== Additional volumes and mounts
+
+Add extra volumes to the container and mount them in specific locations.
+
+.Example additional volumes
+[source,yaml]
+----
+# ...
+spec:
+  kafka:
+    template:
+      pod:
+        volumes:
+          - name: example-secret
+            secret:
+              secretName: secret-name
+          - name: example-configmap
+            configMap:
+              name: config-map-name
+      kafkaContainer:
+        volumeMounts:
+          - name: example-secret
+            mountPath: /mnt/secret-volume
+          - name: example-configmap
+            mountPath: /mnt/cm-volume
+  # ...          
+----
+
+NOTE: You can use `template` configuration to add other customizations to pods and containers, such as affinity and security context. 
+For more information, see xref:assembly-scheduling-str[Configuring pod scheduling] and xref:assembly-security-providers-str[Applying security context to Strimzi pods and containers].
+
+== Custom container image
+
+Override the default container image.
+*Use only in special situations.*
+
+.Example custom image
+[source,yaml]
+----
+# ...
+spec:
+  image: my-org/custom-kafka-image:latest
+  # ...
+----
+
+== Rack awareness
+
+Enable rack-aware broker assignment to improve fault tolerance.
+*This is a specialized option intended for a deployment within the same location, not across regions.* 
+
+.Example rack awareness configuration
+[source,yaml]
+----
+# ...
+spec:
+  rack:
+    topologyKey: topology.kubernetes.io/zone
+  # ...  
+----
+
+== Tracing configuration
+
+Enable distributed tracing using OpenTelemetry to monitor Kafka component operations.
+
+.Example tracing configuration
+[source,yaml]
+----
+# ...
+spec:
+  tracing:
+    type: opentelemetry
+  # ...  
+----
+
+For more information see xref:assembly-distributed-tracing-str[Introducing distributed tracing].

@@ -3,12 +3,12 @@
 // assembly-config.adoc
 
 [id='proc-config-mirrormaker2-securing-connection-{context}']
-= Securing a Kafka MirrorMaker 2 deployment
+= Securing MirrorMaker 2 connections
 
 [role="_abstract"]
-This procedure describes in outline the configuration required to secure a MirrorMaker 2 deployment.
+This procedure describes in outline the configuration required to secure MirrorMaker 2 connections.
 
-You need separate configuration for the source Kafka cluster and the target Kafka cluster.
+You configure these settings independently for the source Kafka cluster and the target Kafka cluster.
 You also need separate user configuration to provide the credentials required for MirrorMaker to connect to the source and target Kafka clusters.
 
 For the Kafka clusters, you specify internal listeners for secure connections within a Kubernetes cluster and external listeners for connections outside the Kubernetes cluster.
@@ -349,13 +349,8 @@ spec:
       groupsPattern: "group1|group2|group3"
 ----
 <1> The TLS certificates for the source Kafka cluster. If they are in a separate namespace, copy the cluster secrets from the namespace of the Kafka cluster.
-<2> The user authentication for accessing the source Kafka cluster using the TLS mechanism.
+<2> The user authentication for accessing the source Kafka cluster using the TLS mechanism. Supported authentication methods include `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and `oauth`.
 <3> The TLS certificates for the target Kafka cluster.
 <4> The user authentication for accessing the target Kafka cluster.
 
-. Create or update the `KafkaMirrorMaker2` resource in the same namespace as the target Kafka cluster.
-+
-[source,shell,subs=+quotes]
-----
-kubectl apply -f _<mirrormaker2_configuration_file>_ -n _<namespace_of_target_cluster>_
-----
+. Apply the changes to the `KafkaMirrorMaker2` resource to the same namespace as the target Kafka cluster.

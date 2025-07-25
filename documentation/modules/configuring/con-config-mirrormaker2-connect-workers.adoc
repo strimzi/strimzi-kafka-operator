@@ -1,0 +1,36 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-mirrormaker2-connect-workers-{context}']
+= Tuning Kafka Connect worker settings
+
+[role="_abstract"]
+Adjust Kafka Connect worker behavior for MirrorMaker 2 by adding configuration to your target cluster's `config` section.
+
+.Example Kafka Connect configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  # ...
+  # Connect cluster name (required)
+  connectCluster: "my-cluster-target" # <1>
+  # Cluster configurations (required)
+  clusters:
+    - alias: "my-cluster-target"
+      bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+      # Kafka Connect configuration (optional)
+      config: # <2>
+        task.shutdown.graceful.timeout.ms: 30000
+        scheduled.rebalance.max.delay.ms: 300000
+        offset.flush.interval.ms: 10000
+        config.storage.replication.factor: 1
+        offset.storage.replication.factor: 1
+        status.storage.replication.factor: 1
+----
+<1> The Kafka Connect cluster alias (must match the target cluster). Used to store internal topics.
+<2> These properties configure the Kafka Connect workers in this cluster.
