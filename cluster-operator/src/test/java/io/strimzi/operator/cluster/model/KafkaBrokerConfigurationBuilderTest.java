@@ -224,7 +224,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testStrimziMetricsReporter()  {
+    public void testStrimziMetricsReporterEnabled()  {
         StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(
                 new KafkaClusterSpecBuilder()
                         .withMetricsConfig(new StrimziMetricsReporterBuilder()
@@ -242,6 +242,16 @@ public class KafkaBrokerConfigurationBuilderTest {
                 StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true",
                 StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT,
                 StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_log.*,kafka_network.*"));
+    }
+    
+    @ParallelTest
+    public void testStrimziMetricsReporterDisabled() {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withStrimziMetricsReporter(null)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false"));
     }
 
     @ParallelTest
@@ -800,7 +810,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testStrimziMetricsReporterSetByUser() {
+    public void testStrimziMetricsReporterViaUserAndMetricsConfigs() {
         Map<String, Object> configMap = new HashMap<>();
         configMap.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
         configMap.put("kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);

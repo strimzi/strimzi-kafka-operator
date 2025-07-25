@@ -914,7 +914,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
     }
     
     @Test
-    public void testStrimziMetricsReporterSetByUser() {
+    public void testStrimziMetricsReporterViaUserAndMetricsConfigs() {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
                     .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()

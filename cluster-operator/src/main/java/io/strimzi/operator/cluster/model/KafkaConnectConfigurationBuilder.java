@@ -402,13 +402,13 @@ public class KafkaConnectConfigurationBuilder {
     /**
      * Configures the Strimzi Metrics Reporter. It is set only if user enables Strimzi Metrics Reporter.
      *
-     * @param model     Strimzi Metrics Reporter configuration
+     * @param model Strimzi Metrics Reporter configuration
      *
      * @return Returns the builder instance
      */
-    public KafkaConnectConfigurationBuilder withStrimziMetricsReporter(MetricsModel model)   {
+    public KafkaConnectConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
+        printSectionHeader("Strimzi Metrics Reporter configuration");
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
-            printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
             writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
@@ -421,8 +421,15 @@ public class KafkaConnectConfigurationBuilder {
             writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
             writer.println("consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
-            writer.println();
+        } else {
+            // we disable the listener just in case the user manually set SMR from spec.config
+            // because this would enable the listener on port 8080
+            writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println("admin." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println("producer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
         }
+        writer.println();
         return this;
     }
 

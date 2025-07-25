@@ -145,18 +145,23 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the Strimzi Metrics Reporter. It is set only if user enables Strimzi Metrics Reporter.
      *
-     * @param model     Strimzi Metrics Reporter configuration
+     * @param model Strimzi Metrics Reporter configuration
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model)   {
+    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
+        printSectionHeader("Strimzi Metrics Reporter configuration");
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
-            printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
             writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
-            writer.println();
+        } else {
+            // we disable the listener just in case the user manually set SMR from spec.config
+            // because this would enable the listener on port 8080, causing a node crash loop
+            // due to address already in use by the Kafka Agent
+            writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
         }
+        writer.println();
         return this;
     }
 
