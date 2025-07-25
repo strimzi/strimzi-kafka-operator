@@ -7,12 +7,16 @@
 #  toUrl: String - url, from which examples are downloaded during downgrade and replace the original ones
 #  fromKafkaVersionsUrl: String - url, from which kafka-versions.yaml is downloaded
 #  additionalTopics: int - number of additional topics, which will be created
-#  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
 #  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after downgrade
 #    kafka:
 #    topicOperator: 
 #    userOperator: 
-#  deployKafkaVersion: String - version of Kafka, used in deployment
+#  deployKafkaVersion: String - version of Kafka, used in initial deployment of Kafka cluster.
+#                               It has to be the oldest supported version of Kafka in newer version of Strimzi (the one we are downgrading from).
+#                               This version specified in `deployKafkaVersion` has to be in a list of supported version of the Strimzi version we are downgrading to.
+#                               That's because we are waiting for successful downgrade of CO with rolling update of all components.
+#                               Having unsupported Kafka version specified would fail the test, as the cluster would be in the `NotReady` state (and there wouldn't be any rolling update).
+#                               In case that you want to use Kafka version unsupported in the older version of Strimzi, you will have to handle it in the test code directly.
 #  client:
 #    continuousClientsMessages: int - message count sent during upgrade
 #  environmentInfo:
@@ -20,11 +24,11 @@
 #    status: stable  String - info about stability of the testing environment
 #    flakyEnvVariable: String - name of the environmental variable which is flaky on current environment
 #    reason: String - reason why we skip / not skip the test case (information, not propagated to test itself)
-#  featureGatesBefore: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
-#  featureGatesAfter: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
+#  fromFeatureGates: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
+#  toFeatureGates: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
 #  filePaths: path to example files for particular resources
-#    kafkaBefore: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, from which we are doing the downgrade
-#    kafkaAfter: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, to which we are doing the downgrade
+#    fromKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, from which we are doing the downgrade
+#    toKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, to which we are doing the downgrade
 # --- Structure ---
 - fromVersion: HEAD
   toVersion: 0.47.0
@@ -46,8 +50,8 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
-  featureGatesBefore: ""
-  featureGatesAfter: ""
+  fromFeatureGates: ""
+  toFeatureGates: ""
   filePaths:
-    kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
-    kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+    fromKafka: "/examples/kafka/kafka-persistent.yaml"
+    toKafka: "/examples/kafka/kafka-persistent.yaml"

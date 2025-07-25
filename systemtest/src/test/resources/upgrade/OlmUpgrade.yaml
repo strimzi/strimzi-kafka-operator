@@ -5,8 +5,8 @@
 #  fromUrl: String - url, from which examples are downloaded
 #  fromKafkaVersionsUrl: String - url, from which is kafka-versions.yaml file downloaded
 #  filePaths: path to example files for particular resources
-#    kafkaBefore: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, from which we are doing the upgrade
-#    kafkaAfter: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, to which we are doing the upgrade
+#    fromKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, from which we are doing the upgrade
+#    toKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, to which we are doing the upgrade
 #  --- Structure ---
 #
 #  --- Prerequisites ---
@@ -22,5 +22,5 @@ fromExamples: strimzi-0.47.0
 fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.47.0/strimzi-0.47.0.zip
 fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.47.0/kafka-versions.yaml
 filePaths:
-  kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
-  kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
+  fromKafka: "/examples/kafka/kafka-persistent.yaml"
+  toKafka: "/examples/kafka/kafka-persistent.yaml"

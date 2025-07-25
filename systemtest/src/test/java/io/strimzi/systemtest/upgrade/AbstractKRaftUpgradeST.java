@@ -311,7 +311,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         }
 
         // Modify + apply installation files
-        modifyApplyClusterOperatorWithCRDsFromFile(true, clusterOperatorNamespaceName, componentsNamespaceName, coDir, upgradeData.getFeatureGatesBefore());
+        modifyApplyClusterOperatorWithCRDsFromFile(true, clusterOperatorNamespaceName, componentsNamespaceName, coDir, upgradeData.getFromFeatureGates());
 
         LOGGER.info("Waiting for Cluster Operator Deployment: {}", clusterOperatorConfiguration.getOperatorDeploymentName());
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperatorNamespaceName, clusterOperatorConfiguration.getOperatorDeploymentName(), 1);
@@ -345,7 +345,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                         .endSpec()
                         .build());
             } else {
-                kafkaYaml = new File(dir, upgradeData.getFromExamples() + upgradeData.getKafkaFilePathBefore());
+                kafkaYaml = new File(dir, upgradeData.getFromExamples() + upgradeData.getFromKafkaFilePath());
                 LOGGER.info("Deploying Kafka from: {}", kafkaYaml.getPath());
                 // Change kafka version of it's empty (null is for remove the version)
                 if (upgradeKafkaVersion == null) {
@@ -501,7 +501,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             coDir = new File(dir, versionModificationData.getToExamples() + "/install/cluster-operator/");
         }
 
-        modifyApplyClusterOperatorWithCRDsFromFile(false, clusterOperatorNamespaceName, componentsNamespaceName, coDir, versionModificationData.getFeatureGatesAfter());
+        modifyApplyClusterOperatorWithCRDsFromFile(false, clusterOperatorNamespaceName, componentsNamespaceName, coDir, versionModificationData.getToFeatureGates());
 
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitTillDepHasRolled(clusterOperatorNamespaceName, clusterOperatorConfiguration.getOperatorDeploymentName(), 1, coPods);
@@ -589,7 +589,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         // #################    Update CRs to latest version   ###################
         // #######################################################################
         String examplesPath = downloadExamplesAndGetPath(versionModificationData);
-        String kafkaFilePath = examplesPath + versionModificationData.getKafkaFilePathAfter();
+        String kafkaFilePath = examplesPath + versionModificationData.getToKafkaFilePath();
 
         applyCustomResourcesFromPath(componentsNamespaceName, examplesPath, kafkaFilePath, kafkaVersionFromCR, currentMetadataVersion);
 

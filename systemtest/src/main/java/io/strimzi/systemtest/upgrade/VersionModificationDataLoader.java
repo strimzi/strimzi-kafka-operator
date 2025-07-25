@@ -17,7 +17,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -100,10 +99,6 @@ public class VersionModificationDataLoader {
         return bundleVersionModificationDataList.get(index);
     }
 
-    public int getBundleUpgradeOrDowngradeDataSize() {
-        return bundleVersionModificationDataList.size();
-    }
-
     public BundleVersionModificationData buildDataForUpgradeAcrossVersionsForKRaft() {
         BundleVersionModificationData acrossUpgradeData = buildDataForUpgradeAcrossVersions();
 
@@ -124,9 +119,9 @@ public class VersionModificationDataLoader {
         acrossUpgradeData.setFromVersion(startingVersion.getFromVersion());
         acrossUpgradeData.setFromExamples(startingVersion.getFromExamples());
         acrossUpgradeData.setFromUrl(startingVersion.getFromUrl());
-        acrossUpgradeData.setStartingKafkaVersion(startingVersion.getOldestKafka());
+        acrossUpgradeData.setStartingKafkaVersion(startingVersion.getDeployKafkaVersion());
         acrossUpgradeData.setDefaultKafka(startingVersion.getDefaultKafka());
-        acrossUpgradeData.setOldestKafka(startingVersion.getOldestKafka());
+        acrossUpgradeData.setDeployKafkaVersion(startingVersion.getDeployKafkaVersion());
 
         // Generate procedures for upgrade
         UpgradeKafkaVersion procedures = new UpgradeKafkaVersion(latestKafkaSupported.version());
@@ -155,15 +150,11 @@ public class VersionModificationDataLoader {
         return updateUpgradeDataWithFeatureGates(downgradeData, featureGates);
     }
 
-    public static Stream<Arguments> loadYamlDowngradeData() {
-        return loadYamlDowngradeDataWithFeatureGates(null, false);
-    }
-
     public static Stream<Arguments> loadYamlDowngradeDataForKRaft() {
-        return loadYamlDowngradeDataWithFeatureGates(null, true);
+        return loadYamlDowngradeDataWithFeatureGates(null);
     }
 
-    public static Stream<Arguments> loadYamlDowngradeDataWithFeatureGates(String featureGates, boolean isKRaft) {
+    public static Stream<Arguments> loadYamlDowngradeDataWithFeatureGates(String featureGates) {
         VersionModificationDataLoader dataLoader = new VersionModificationDataLoader(ModificationType.BUNDLE_DOWNGRADE);
         List<Arguments> parameters = new LinkedList<>();
 
@@ -174,31 +165,21 @@ public class VersionModificationDataLoader {
         UpgradeKafkaVersion procedures = new UpgradeKafkaVersion(testKafkaVersion.version());
 
         dataLoader.getBundleUpgradeOrDowngradeDataList().forEach(downgradeData -> {
-            if (isKRaft && skipTestCaseIfWrongFeatureGatesAreUsedInKRaft(downgradeData)) {
-                // if we are running KRaft upgrade/downgrade tests and we are setting "wrong" feature gates in the upgrade/downgrade YAML
-                // we should skip this scenario
-                return;
-            }
-
             downgradeData.setProcedures(procedures);
 
             downgradeData = updateUpgradeDataWithFeatureGates(downgradeData, featureGates);
 
-            parameters.add(Arguments.of(downgradeData.getFromVersion(), downgradeData.getToVersion(), downgradeData.getFeatureGatesBefore(), downgradeData.getFeatureGatesAfter(), downgradeData));
+            parameters.add(Arguments.of(downgradeData.getFromVersion(), downgradeData.getToVersion(), downgradeData.getFromFeatureGates(), downgradeData.getToFeatureGates(), downgradeData));
         });
 
         return parameters.stream();
     }
 
-    public static Stream<Arguments> loadYamlUpgradeData() {
-        return loadYamlUpgradeDataWithFeatureGates(null, false);
-    }
-
     public static Stream<Arguments> loadYamlUpgradeDataForKRaft() {
-        return loadYamlUpgradeDataWithFeatureGates(null, true);
+        return loadYamlUpgradeDataWithFeatureGates(null);
     }
 
-    public static Stream<Arguments> loadYamlUpgradeDataWithFeatureGates(String featureGates, boolean isKRaft) {
+    public static Stream<Arguments> loadYamlUpgradeDataWithFeatureGates(String featureGates) {
         VersionModificationDataLoader upgradeDataList = new VersionModificationDataLoader(ModificationType.BUNDLE_UPGRADE);
         List<Arguments> parameters = new LinkedList<>();
 
@@ -209,19 +190,13 @@ public class VersionModificationDataLoader {
         UpgradeKafkaVersion procedures = new UpgradeKafkaVersion(testKafkaVersion.version());
 
         upgradeDataList.getBundleUpgradeOrDowngradeDataList().forEach(upgradeData -> {
-            if (isKRaft && skipTestCaseIfWrongFeatureGatesAreUsedInKRaft(upgradeData)) {
-                // if we are running KRaft upgrade/downgrade tests and we are setting "wrong" feature gates in the upgrade/downgrade YAML
-                // we should skip this scenario
-                return;
-            }
-
             upgradeData.setProcedures(procedures);
 
             upgradeData = updateUpgradeDataWithFeatureGates(upgradeData, featureGates);
 
             parameters.add(Arguments.of(
                 upgradeData.getFromVersion(), upgradeData.getToVersion(),
-                upgradeData.getFeatureGatesBefore(), upgradeData.getFeatureGatesAfter(),
+                upgradeData.getFromFeatureGates(), upgradeData.getToFeatureGates(),
                 upgradeData
             ));
         });
@@ -231,8 +206,8 @@ public class VersionModificationDataLoader {
 
     private static BundleVersionModificationData updateUpgradeDataWithFeatureGates(BundleVersionModificationData upgradeData, String featureGates) {
         if (featureGates != null && !featureGates.isEmpty()) {
-            String fgBefore = upgradeData.getFeatureGatesBefore();
-            String fgAfter = upgradeData.getFeatureGatesAfter();
+            String fgBefore = upgradeData.getFromFeatureGates();
+            String fgAfter = upgradeData.getToFeatureGates();
 
             // in case that we would like to keep some feature gates, we should replace those from the YAML and use the specified one instead
             // for example in case that we are disabling UTO in YAML, but we need it for KRaft upgrade, we should remove it from the list and
@@ -244,18 +219,12 @@ public class VersionModificationDataLoader {
                 fgAfter = fgAfter.replaceFirst("(,?)(\\+|-)" + fgNameWithoutSign, "");
             }
 
-            upgradeData.setFeatureGatesBefore(fgBefore.isEmpty() ?
+            upgradeData.setFromFeatureGates(fgBefore.isEmpty() ?
                 featureGates : String.join(",", fgBefore, featureGates));
-            upgradeData.setFeatureGatesAfter(fgAfter.isEmpty() ?
+            upgradeData.setToFeatureGates(fgAfter.isEmpty() ?
                 featureGates : String.join(",", fgAfter, featureGates));
         }
 
         return upgradeData;
-    }
-
-    private static boolean skipTestCaseIfWrongFeatureGatesAreUsedInKRaft(BundleVersionModificationData data) {
-        Predicate<String> isUtoDisabled = featureGates -> featureGates.contains("-UnidirectionalTopicOperator");
-
-        return isUtoDisabled.test(data.getFeatureGatesBefore()) || isUtoDisabled.test(data.getFeatureGatesAfter());
     }
 }
