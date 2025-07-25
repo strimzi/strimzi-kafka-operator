@@ -3,9 +3,11 @@
 // assembly-config.adoc
 
 [id="con-overview-mm2-{context}"]
-= Configuring active/active or active/passive modes 
+= About MirrorMaker 2
 
 [role="_abstract"]
+Kafka MirrorMaker 2 replicates data (topics, consumer groups, and offsets) between Kafka clusters. 
+Through configuration, you define source and target cluster connections.
 You can use MirrorMaker 2 in _active/passive_ or _active/active_ cluster configurations.
 
 active/active cluster configuration:: An active/active configuration has two active clusters replicating data bidirectionally. Applications can use either cluster. Each cluster can provide the same data. In this way,  you can make the same data available in different geographical locations. As consumer groups are active in both clusters, consumer offsets for replicated topics are not synchronized back to the source cluster. 
@@ -13,6 +15,9 @@ active/passive cluster configuration:: An active/passive configuration has an ac
 
 The expectation is that producers and consumers connect to active clusters only.
 A MirrorMaker 2 cluster is required at each target destination.
+
+NOTE: In most deployments, write operations should be made only to local topics. 
+Write operations on remote topics are not prevented, but they can cause conflicts and should be avoided.
 
 == Bidirectional replication (active/active)
 

@@ -8,7 +8,6 @@
 [role="_abstract"]
 Configure and manage a Strimzi deployment to your precise needs using Strimzi custom resources.
 Strimzi provides example custom resources with each release, allowing you to configure and create instances of supported Kafka components.
-Fine-tune your deployment by configuring custom resources to include additional features according to your specific requirements. 
 
 Use custom resources to configure and create instances of the following components:
 
@@ -23,50 +22,22 @@ New features are sometimes introduced through feature gates, which are controlle
 
 The link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^] describes the properties you can use in your configuration.
 
-.Important Kafka configuration options
-Through configuration of the `Kafka` resource, you can introduce the following:
+.Centralizing configuration
 
-* Data storage
-* Rack awareness
-* Listeners for authenticated client access to the Kafka cluster
-* Topic Operator for managing Kafka topics
-* User Operator for managing Kafka users (clients)  
-* Cruise Control for cluster rebalancing
-* Kafka Exporter for collecting lag metrics
+For key configuration areas, such as metrics, logging, and external Kafka Connect connector settings, you can centralize management as follows:
 
-Use `KafkaNodePool` resources to configure distinct groups of nodes within a Kafka cluster.
+* xref:configuration-points-config-maps-str[Using `ConfigMap` resources to incorporate configuration].
+* xref:assembly-loading-config-with-providers-str[Using configuration providers to load configuration from external sources].
 
-.Common configuration
-Common configuration is configured independently for each component, such as the following:
-
-* Bootstrap servers for host/port connection to a Kafka cluster
-* Metrics configuration
-* Healthchecks and liveness probes
-* Resource limits and requests (CPU/Memory)
-* Logging frequency
-* JVM options for maximum and minimum memory allocation
-* Adding additional volumes and volume mounts
-
-.Config maps to centralize configuration
-For specific areas of configuration, namely metrics, logging, and external configuration for Kafka Connect connectors, you can also use `ConfigMap` resources.
-By using a `ConfigMap` resource to incorporate configuration, you centralize maintenance. 
-You can also use configuration providers to load configuration from external sources, which we recommend for supplying the credentials for Kafka Connect connector configuration.
+We recommend configuration providers for securely supplying Kafka Connect connector credentials.
 
 .TLS certificate management
+
 When deploying Kafka, the Cluster Operator automatically sets up and renews TLS certificates to enable encryption and authentication within your cluster.
 If required, you can manually renew the cluster and clients CA certificates before their renewal period starts.
 You can also replace the keys used by the cluster and clients CA certificates.
+
 For more information, see xref:proc-renewing-ca-certs-manually-{context}[Renewing CA certificates manually] and xref:proc-replacing-private-keys-{context}[Replacing private keys].
-
-.Applying changes to a custom resource configuration file
-You add configuration to a custom resource using `spec` properties. 
-After adding the configuration, you can use `kubectl` to apply the changes to a custom resource configuration file:
-
-.Applying changes to a resource configuration file
-[source,shell,subs=+quotes]
-----
-kubectl apply -f <kafka_configuration_file>
-----
 
 NOTE: Labels applied to a custom resource are also applied to the Kubernetes resources making up its cluster.
 This provides a convenient mechanism for resources to be labeled as required.
@@ -135,54 +106,53 @@ include::../../modules/configuring/proc-altering-connector-offsets.adoc[leveloff
 //procedure to reset offsets
 include::../../modules/configuring/proc-resetting-connector-offsets.adoc[leveloffset=+2]
 
-//`KafkaMirrorMaker2` resource config
+//`KafkaMirrorMaker2` core resource config
 include::../../modules/configuring/con-config-mirrormaker2.adoc[leveloffset=+1]
-//configuring replication modes 
-include::../../modules/overview/con-overview-mirrormaker2.adoc[leveloffset=+2]
-//running multiple MM2 instances
-include::../../modules/configuring/con-config-mm2-multiple-instances.adoc[leveloffset=+1]
+//MirrorMaker securing connections
+include::../../modules/configuring/proc-config-mirrormaker2-securing-connection.adoc[leveloffset=+2]
+//MirrorMaker naming
+include::../../modules/configuring/con-config-mirrormaker2-topic-names.adoc[leveloffset=+2]
+//MirrorMaker sync offset config
+include::../../modules/configuring/con-config-mirrormaker2-sync.adoc[leveloffset=+2]
+//MirrorMaker sync acls config
+include::../../modules/configuring/con-config-mirrormaker2-sync-acls.adoc[leveloffset=+2]
+//MirrorMaker filters
+include::../../modules/configuring/con-config-mirrormaker2-connect-workers.adoc[leveloffset=+2]
+//Running multiple instances
+include::../../modules/configuring/con-config-mm2-multiple-instances.adoc[leveloffset=+2]
+//Disaster recovery 
+include::../../modules/configuring/con-mm2-recovery.adoc[leveloffset=+2]
+
 //configuring MM2 connectors
-include::../../modules/configuring/con-config-mirrormaker2-connectors.adoc[leveloffset=+2]
-//configuring MM2 connector producers and consumers
-include::../../modules/configuring/con-config-mirrormaker2-producers-consumers.adoc[leveloffset=+2]
+include::../../modules/configuring/con-config-mirrormaker2-connectors.adoc[leveloffset=+1]
 //increasing the number of tasks
 include::../../modules/configuring/con-config-mirrormaker2-tasks-max.adoc[leveloffset=+2]
-//handling of ACLs in replication
-include::../../modules/configuring/con-config-mirrormaker2-acls.adoc[leveloffset=+2]
-//securing connections to and from mirrormaker
-include::../../modules/configuring/proc-config-mirrormaker2-securing-connection.adoc[leveloffset=+2]
 //Procedure to manually pause or stop an MM2 connector
 include::../../modules/configuring/proc-manual-stop-pause-mirrormaker2-connector.adoc[leveloffset=+2]
 //Procedure to restart an MM2 connector
 include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector.adoc[leveloffset=+2]
 //Procedure to restart an MM2 connector task
 include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector-task.adoc[leveloffset=+2]
-//Disaster recovery 
-include::../../modules/configuring/con-mm2-recovery.adoc[leveloffset=+2]
+//configuring MM2 connector producers and consumers
+include::../../modules/configuring/con-config-mirrormaker2-producers-consumers.adoc[leveloffset=+2]
 
 //`KafkaBridge` resource config
 include::../../modules/configuring/con-config-kafka-bridge.adoc[leveloffset=+1]
 
-//configuring CPU and memory resources and limits
-include::../../modules/configuring/con-config-resources.adoc[leveloffset=+1]
+//common config examples
+include::../../modules/configuring/con-common-configuration.adoc[leveloffset=+1]
+//configuring log levels
+include::assembly-logging-configuration.adoc[leveloffset=+2]
+//scheduling separate Kafka pods 
+include::assembly-scheduling.adoc[leveloffset=+2]
+//disabling pod disruption budgets
+include::../../modules/configuring/proc-disable-pod-disruption-budget-generation.adoc[leveloffset=+2]
+//loading configuration from configmaps for certain types of data
+include::../../modules/configuring/con-configuration-points-configmaps.adoc[leveloffset=+2]
+//loading configuration from external sources for all Kafka components
+include::assembly-external-config.adoc[leveloffset=+2]
+//customizing Kubernetes resources like Deployment etc
+include::assembly-customizing-kubernetes-resources.adoc[leveloffset=+2]
 
 //Kubernetes labels
 include::../../modules/configuring/ref-kubernetes-labels.adoc[leveloffset=+1]
-
-//scheduling separate Kafka pods 
-include::assembly-scheduling.adoc[leveloffset=+1]
-
-//disabling pod disruption budgets
-include::../../modules/configuring/proc-disable-pod-disruption-budget-generation.adoc[leveloffset=+1]
-
-//configuring log levels
-include::assembly-logging-configuration.adoc[leveloffset=+1]
-
-//loading configuration from configmaps for certain types of data
-include::../../modules/configuring/con-configuration-points-configmaps.adoc[leveloffset=+1]
-
-//loading configuration from external sources for all Kafka components
-include::assembly-external-config.adoc[leveloffset=+1]
-
-//customizing Kubernetes resources like Deployment etc
-include::assembly-customizing-kubernetes-resources.adoc[leveloffset=+1]

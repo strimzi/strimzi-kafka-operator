@@ -6,13 +6,14 @@
 = Configuring MirrorMaker 2 connectors
 
 [role="_abstract"]
-Use MirrorMaker 2 connector configuration for the internal connectors that orchestrate the synchronization of data between Kafka clusters.
+MirrorMaker 2 uses internal connectors to synchronize data between Kafka clusters. 
+Configure these connectors in your `KafkaMirrorMaker2` custom resource.
 
 MirrorMaker 2 consists of the following connectors:
 
-`MirrorSourceConnector`:: The source connector replicates topics from a source cluster to a target cluster. It also replicates ACLs and is necessary for the `MirrorCheckpointConnector` to run. 
-`MirrorCheckpointConnector`:: The checkpoint connector periodically tracks offsets. If enabled, it also synchronizes consumer group offsets between the source and target cluster.
-`MirrorHeartbeatConnector`:: The heartbeat connector periodically checks connectivity between the source and target cluster.
+`MirrorSourceConnector`:: (Required) Replicates topics and ACLs from source to target cluster.
+`MirrorCheckpointConnector`:: (Optional) Synchronizes consumer group offsets for failover support. Only needed if offset tracking is required.
+`MirrorHeartbeatConnector`:: (optional) Monitors connectivity between clusters. Useful for alerts but not required for replication. 
 
 The following table describes connector properties and the connectors you configure to use them.
 
@@ -94,7 +95,7 @@ You can change the frequency by adding `refresh.topics.interval.seconds` to the 
 |
 |
 
-|sync.topic.acls.enabled:: Enables synchronization of ACLs from the source cluster. Default is `true`. For more information, see xref:con-mirrormaker-acls-{context}[].
+|sync.topic.acls.enabled:: Enables synchronization of ACLs from the source cluster. Default is `true`. For more information, see xref:con-config-mirrormaker2-{context}[].
 |✓
 |
 |
@@ -171,167 +172,14 @@ You can change the frequency by adding `refresh.topics.interval.seconds` to the 
 
 |===
 
-== Changing the location of the consumer group offsets topic
-
-MirrorMaker 2 tracks offsets for consumer groups using internal topics.
-
-`offset-syncs` topic:: The `offset-syncs` topic maps the source and target offsets for replicated topic partitions from record metadata.
-`checkpoints` topic:: The `checkpoints` topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group.
-
-As they are used internally by MirrorMaker 2, you do not interact directly with these topics. 
-
-`MirrorCheckpointConnector` emits _checkpoints_ for offset tracking.
-Offsets for the `checkpoints` topic are tracked at predetermined intervals through configuration.
-Both topics enable replication to be fully restored from the correct offset position on failover.
-
-The location of the `offset-syncs` topic is the `source` cluster by default.
-You can use the `offset-syncs.topic.location` connector configuration to change this to the `target` cluster.
-You need read/write access to the cluster that contains the topic.
-Using the target cluster as the location of the `offset-syncs` topic allows you to use MirrorMaker 2 even if you have only read access to the source cluster.
-
-== Synchronizing consumer group offsets
-
-The `__consumer_offsets` topic stores information on committed offsets for each consumer group.
-Offset synchronization periodically transfers the consumer offsets for the consumer groups of a source cluster into the consumer offsets topic of a target cluster.
-
-Offset synchronization is particularly useful in an _active/passive_ configuration.
-If the active cluster goes down, consumer applications can switch to the passive (standby) cluster and pick up from the last transferred offset position.
-
-To use topic offset synchronization, enable the synchronization by adding `sync.group.offsets.enabled` to the checkpoint connector configuration, and setting the property to `true`.
-Synchronization is disabled by default.
-
-When using the `IdentityReplicationPolicy` in the source connector, it also has to be configured in the checkpoint connector configuration.
-This ensures that the mirrored consumer offsets will be applied for the correct topics.
-
-Consumer offsets are only synchronized for consumer groups that are not active in the target cluster.
-If the consumer groups are in the target cluster, the synchronization cannot be performed and an `UNKNOWN_MEMBER_ID` error is returned. 
-
-If enabled, the synchronization of offsets from the source cluster is made periodically.
-You can change the frequency by adding `sync.group.offsets.interval.seconds` and `emit.checkpoints.interval.seconds` to the checkpoint connector configuration.
-The properties specify the frequency in seconds that the consumer group offsets are synchronized, and the frequency of checkpoints emitted for offset tracking.
-The default for both properties is 60 seconds.
-You can also change the frequency of checks for new consumer groups using the `refresh.groups.interval.seconds` property, which is performed every 10 minutes by default.
-
-Because the synchronization is time-based, any switchover by consumers to a passive cluster will likely result in some duplication of messages.
-
-NOTE: If you have an application written in Java, you can use the `RemoteClusterUtils.java` utility to synchronize offsets through the application. The utility fetches remote offsets for a consumer group from the `checkpoints` topic. 
-
-
-== Deciding when to use the heartbeat connector
-
-The heartbeat connector emits heartbeats to check connectivity between source and target Kafka clusters.
-An internal `heartbeat` topic is replicated from the source cluster, which means that the heartbeat connector must be connected to the source cluster. 
-The `heartbeat` topic is located on the target cluster, which allows it to do the following:
-
-* Identify all source clusters it is mirroring data from
-* Verify the liveness and latency of the mirroring process
-
-This helps to make sure that the process is not stuck or has stopped for any reason. 
-While the heartbeat connector can be a valuable tool for monitoring the mirroring processes between Kafka clusters, it's not always necessary to use it. 
-For example, if your deployment has low network latency or a small number of topics, you might prefer to monitor the mirroring process using log messages or other monitoring tools. 
-If you decide not to use the heartbeat connector, simply omit it from your MirrorMaker 2 configuration.
-
-== Aligning the configuration of MirrorMaker 2 connectors
-
-To ensure that MirrorMaker 2 connectors work properly, make sure to align certain configuration settings across connectors.
-Specifically, ensure that the following properties have the same value across all applicable connectors:
+[WARNING] 
+====
+The following properties must be *identically configured across all three connectors* (source, checkpoint, and heartbeat):
 
 * `replication.policy.class`
 * `replication.policy.separator`
 * `offset-syncs.topic.location`
 * `topic.filter.class`
 
-For example, the value for `replication.policy.class` must be the same for the source, checkpoint, and heartbeat connectors.
-Mismatched or missing settings cause issues with data replication or offset syncing, so it's essential to keep all relevant connectors configured with the same settings.
-
-== Listing the offsets of MirrorMaker 2 connectors
-
-To list the offset positions of the internal MirrorMaker 2 connectors, use the same configuration that's used to manage Kafka Connect connectors.
-For more information on setting up the configuration and listing offsets, see xref:proc-listing-connector-offsets-{context}[].
-
-In this example, the `sourceConnector` configuration is updated to return the connector offset position.
-The offset information is written to a specified config map.
-
-.Example configuration for MirrorMaker 2 connector
-[source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: {KafkaMirrorMaker2ApiVersion}
-kind: KafkaMirrorMaker2
-metadata:
-  name: my-mirror-maker2
-spec:
-  version: {DefaultKafkaVersion}
-  # ...
-  clusters:
-  - alias: "my-cluster-source"
-    bootstrapServers: my-cluster-source-kafka-bootstrap:9092
-  - alias: "my-cluster-target"
-    bootstrapServers: my-cluster-target-kafka-bootstrap:9092
-  mirrors:
-  - sourceCluster: "my-cluster-source"
-    targetCluster: "my-cluster-target"
-    sourceConnector:
-      listOffsets:
-        toConfigMap:
-          name: my-connector-offsets
-        # ...    
-----
-
-You must apply the following annotations to the `KafkaMirrorMaker2` resource be able to manage connector offsets:
-
-* `strimzi.io/connector-offsets`
-* `strimzi.io/mirrormaker-connector`
-
-The `strimzi.io/mirrormaker-connector` annotation must be set to the name of the connector.
-These annotations remain until the operation succeeds or they are manually removed from the resource.
-
-MirrorMaker 2 connectors are named using the aliases of the source and target clusters, followed by the connector type: `<source_alias>&#45;&#62;<target_alias>.<connector_type>`.
-
-In the following example, the annotations are applied for a connector named `my-cluster-source&#45;&#62;my-cluster-target.MirrorSourceConnector`.
-
-.Example application of annotations for connector
-[source,shell]
-----
-kubectl annotate kafkamirrormaker2 my-mirror-maker-2 strimzi.io/connector-offsets=list strimzi.io/mirrormaker-connector="my-cluster-source->my-cluster-target.MirrorSourceConnector" -n kafka
-----
-
-The offsets are listed in the specified config map.
-Strimzi puts the offset information into a `.json` property named after the connector. 
-This does not overwrite any other properties when updating an existing config map.
-
-.Example source connector offset list
-[source,yaml,subs="+attributes"]
-----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  # ...
-  ownerReferences: # <1>
-  - apiVersion: {KafkaMirrorMaker2ApiVersion}
-    blockOwnerDeletion: false
-    controller: false
-    kind: KafkaMirrorMaker2
-    name: my-mirror-maker2
-    uid: 637e3be7-bd96-43ab-abde-c55b4c4550e0
-data: 
-  my-cluster-source--my-cluster-target.MirrorSourceConnector.json: |- # <2>
-    {
-      "offsets": [
-        {
-          "partition": {
-            "cluster": "east-kafka",
-            "partition": 0,
-            "topic": "mirrormaker2-cluster-configs"
-          },
-          "offset": {
-            "offset": 0
-          }
-        }
-      ]
-    }
-----
-<1> The owner reference pointing to the `KafkaMirrorMaker2` resource. 
-To provide a custom owner reference, create the config map in advance and set the owner reference.
-<2> The `.json` property uses the connector name. Since `&#45;&#62;` characters are not allowed in config map keys, `&#45;&#62;` is changed to `--` in the connector name.
-
-NOTE: It is possible to use configuration to xref:proc-altering-connector-offsets-{context}[alter] or xref:proc-resetting-connector-offsets-{context}[reset] connector offsets, though this is rarely necessary.
+Mismatches cause replication failures or offset sync issues.
+====
