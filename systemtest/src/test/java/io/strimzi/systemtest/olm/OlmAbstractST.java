@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -131,12 +132,19 @@ public class OlmAbstractST extends AbstractST {
 
     @AfterAll
     void teardown() {
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).deleteContent(exampleResources.get(KafkaRebalance.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).deleteContent(exampleResources.get(KafkaMirrorMaker2.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).deleteContent(exampleResources.get(KafkaBridge.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).deleteContent(exampleResources.get(KafkaConnect.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).deleteContent(exampleResources.get(KafkaTopic.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).deleteContent(exampleResources.get(KafkaUser.RESOURCE_KIND).toString());
-        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).deleteContent(exampleResources.get(Kafka.RESOURCE_KIND).toString());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaRebalance.RESOURCE_KIND).toString());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaMirrorMaker2.RESOURCE_KIND).toString());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaBridge.RESOURCE_KIND).toString());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaConnect.RESOURCE_KIND).toString());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaTopic.RESOURCE_KIND).toString());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(KafkaUser.RESOURCE_KIND).toString());
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withTimeout(TestConstants.GLOBAL_TIMEOUT_SHORT).deleteContent(exampleResources.get(Kafka.RESOURCE_KIND).toString());
     }
 }
