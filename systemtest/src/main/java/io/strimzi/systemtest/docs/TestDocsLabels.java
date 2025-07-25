@@ -20,4 +20,5 @@ public interface TestDocsLabels {
     String METRICS = "metrics";
     String KAFKA_ACCESS = "kafka-access";
     String OLM = "olm";
+    String TOPIC_OPERATOR = "topic-operator";
 }
