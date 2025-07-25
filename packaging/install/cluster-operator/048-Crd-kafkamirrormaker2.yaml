@@ -697,12 +697,10 @@ spec:
                     description: Configuration values for the Strimzi Metrics Reporter.
                 required:
                 - type
-                description: "Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not yet support `strimziMetricsReporter`."
+                description: Metrics configuration.
                 x-kubernetes-validations:
                 - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
                   message: valueFrom property is required
-                - rule: self.type != 'strimziMetricsReporter'
-                  message: value type not supported
               tracing:
                 type: object
                 properties:

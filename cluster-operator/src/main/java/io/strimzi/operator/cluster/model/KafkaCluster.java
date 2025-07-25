@@ -1838,9 +1838,12 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withTieredStorage(cluster, tieredStorage)
                 .withQuotas(cluster, quotas)
                 .withStrimziMetricsReporter(metrics)
-                .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null,
-                         metrics instanceof JmxPrometheusExporterModel, metrics instanceof StrimziMetricsReporterModel)
-                .build().trim();
+                .withUserConfiguration(
+                        configuration,
+                        node.broker() && ccMetricsReporter != null,
+                        metrics instanceof JmxPrometheusExporterModel,
+                        metrics instanceof StrimziMetricsReporterModel
+                ).build().trim();
     }
 
     /**
