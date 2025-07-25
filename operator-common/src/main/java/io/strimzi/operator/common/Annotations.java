@@ -43,6 +43,11 @@ public class Annotations extends ResourceAnnotations {
     public static final String ANNO_STRIMZI_AUTH_HASH = STRIMZI_DOMAIN + "auth-hash";
 
     /**
+     * Annotation for tracking Authorization server's certificate changes
+     */
+    public static final String ANNO_STRIMZI_AUTHZ_CERT_HASH = STRIMZI_DOMAIN + "authz-cert-hash";
+
+    /**
      * Annotation used to store the revision of the Kafka Connect build (hash of the Dockerfile)
      */
     public static final String STRIMZI_IO_CONNECT_BUILD_REVISION = STRIMZI_DOMAIN + "connect-build-revision";
