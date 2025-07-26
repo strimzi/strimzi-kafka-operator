@@ -15,9 +15,11 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
@@ -83,6 +85,7 @@ public class KafkaExporter extends AbstractModel {
 
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
+    private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS);
@@ -148,6 +151,7 @@ public class KafkaExporter extends AbstractModel {
                 result.templatePod = template.getPod();
                 result.templateServiceAccount = template.getServiceAccount();
                 result.templateContainer = template.getContainer();
+                result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             }
 
             result.version = versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version();
@@ -311,6 +315,21 @@ public class KafkaExporter extends AbstractModel {
                 labels,
                 ownerReference,
                 rules
+        );
+    }
+    /**
+     * Generates the PodDisruptionBudget for Kafka Exporter
+     *
+     * @return The PodDisruptionBudget.
+     */
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templatePodDisruptionBudget,
+                1
         );
     }
 }
