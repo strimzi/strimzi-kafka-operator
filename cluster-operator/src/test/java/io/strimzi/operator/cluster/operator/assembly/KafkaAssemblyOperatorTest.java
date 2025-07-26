@@ -663,8 +663,24 @@ public class KafkaAssemblyOperatorTest {
                 }
 
                 // Check PDBs
-                assertThat(pdbCaptor.getAllValues(), hasSize(1));
-                assertThat(pdbCaptor.getValue().getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER_NAME)));
+                assertThat(pdbCaptor.getAllValues(), hasSize(3));
+                Set<String> expectedPdbNames = new HashSet<>();
+                expectedPdbNames.add(KafkaResources.kafkaComponentName(CLUSTER_NAME));
+                String entityOperatorName = KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME);
+                String exporterName = KafkaExporterResources.componentName(CLUSTER_NAME);
+                if (kafka.getSpec().getEntityOperator() != null) {
+                    expectedPdbNames.add(entityOperatorName);
+                }
+                if (kafka.getSpec().getKafkaExporter()!= null) {
+                    expectedPdbNames.add(exporterName);
+                }
+                assertThat(
+                    pdbCaptor.getAllValues().stream()
+                        .map(pdb -> pdb != null && pdb.getMetadata() != null ? pdb.getMetadata().getName() : null)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet()),
+                    is(expectedPdbNames)
+                );
 
                 // Check PVCs
                 assertThat(pvcCaptor.getAllValues(), hasSize(expectedPvcs.size()));

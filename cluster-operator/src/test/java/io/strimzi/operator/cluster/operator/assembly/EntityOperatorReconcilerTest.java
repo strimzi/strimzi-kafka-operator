@@ -5,29 +5,26 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
+import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleBindingOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.*;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
@@ -94,6 +91,8 @@ public class EntityOperatorReconcilerTest {
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
+
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -125,6 +124,9 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -178,6 +180,10 @@ public class EntityOperatorReconcilerTest {
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd4d715cdd"));
 
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
+                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+
                     async.flag();
                 })));
     }
@@ -195,6 +201,7 @@ public class EntityOperatorReconcilerTest {
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -232,6 +239,9 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -294,6 +304,10 @@ public class EntityOperatorReconcilerTest {
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(notNullValue()));
 
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
+                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+
                     async.flag();
                 })));
     }
@@ -309,6 +323,7 @@ public class EntityOperatorReconcilerTest {
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -342,6 +357,9 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -403,6 +421,10 @@ public class EntityOperatorReconcilerTest {
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
 
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
+                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+
                     async.flag();
                 })));
     }
@@ -417,6 +439,7 @@ public class EntityOperatorReconcilerTest {
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -447,6 +470,9 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -498,6 +524,10 @@ public class EntityOperatorReconcilerTest {
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
 
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
+                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+
                     async.flag();
                 })));
     }
@@ -512,6 +542,7 @@ public class EntityOperatorReconcilerTest {
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -541,6 +572,9 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -587,6 +621,9 @@ public class EntityOperatorReconcilerTest {
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(nullValue()));
 
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+
                     async.flag();
                 })));
     }
@@ -601,6 +638,7 @@ public class EntityOperatorReconcilerTest {
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -630,6 +668,9 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -668,6 +709,9 @@ public class EntityOperatorReconcilerTest {
 
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(nullValue()));
+
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(nullValue()));
 
                     async.flag();
                 })));
