@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -29,7 +30,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount", "entityOperatorRole", "topicOperatorRoleBinding", "userOperatorRoleBinding"})
+@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount", "podDisruptionBudget", "entityOperatorRole", "topicOperatorRoleBinding", "userOperatorRoleBinding"})
 @EqualsAndHashCode
 @ToString
 public class EntityOperatorTemplate implements UnknownPropertyPreserving {
@@ -42,6 +43,7 @@ public class EntityOperatorTemplate implements UnknownPropertyPreserving {
     private ContainerTemplate userOperatorContainer;
     private ContainerTemplate tlsSidecarContainer;
     private ResourceTemplate serviceAccount;
+    private PodDisruptionBudgetTemplate podDisruptionBudget;
     private Map<String, Object> additionalProperties;
 
     @Description("Template for Entity Operator `Deployment`.")
@@ -134,6 +136,15 @@ public class EntityOperatorTemplate implements UnknownPropertyPreserving {
 
     public void setServiceAccount(ResourceTemplate serviceAccount) {
         this.serviceAccount = serviceAccount;
+    }
+
+    @Description("Template for the Entity Operator Pod Disruption Budget.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
+        return podDisruptionBudget;
+    }
+    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
+        this.podDisruptionBudget = podDisruptionBudget;
     }
 
     @Override

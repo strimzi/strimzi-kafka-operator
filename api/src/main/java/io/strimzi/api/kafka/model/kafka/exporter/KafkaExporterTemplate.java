@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -30,7 +31,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "pod", "service", "container", "serviceAccount"})
+@JsonPropertyOrder({"deployment", "pod", "service", "container", "serviceAccount", "podDisruptionBudget"})
 @EqualsAndHashCode
 @ToString
 public class KafkaExporterTemplate implements UnknownPropertyPreserving {
@@ -39,6 +40,7 @@ public class KafkaExporterTemplate implements UnknownPropertyPreserving {
     private ResourceTemplate service;
     private ContainerTemplate container;
     private ResourceTemplate serviceAccount;
+    private PodDisruptionBudgetTemplate podDisruptionBudget;
     private Map<String, Object> additionalProperties;
 
     @Description("Template for Kafka Exporter `Deployment`.")
@@ -94,6 +96,15 @@ public class KafkaExporterTemplate implements UnknownPropertyPreserving {
         this.serviceAccount = serviceAccount;
     }
 
+    @Description("Template for the Pod Disruption Budget for Kafka Exporter pods.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
+        return podDisruptionBudget;
+    }
+    public void setPodDisruptionBudget(PodDisruptionBudgetTemplate podDisruptionBudget) {
+        this.podDisruptionBudget = podDisruptionBudget;
+    }
+
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : Map.of();
@@ -106,4 +117,5 @@ public class KafkaExporterTemplate implements UnknownPropertyPreserving {
         }
         this.additionalProperties.put(name, value);
     }
+
 }

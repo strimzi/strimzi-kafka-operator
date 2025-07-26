@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
@@ -93,6 +94,8 @@ public class KafkaExporterTest {
                         .withNewPod()
                             .withTmpDirSizeLimit("100Mi")
                         .endPod()
+                        .withNewPodDisruptionBudget()
+                        .endPodDisruptionBudget()
                     .endTemplate()
                 .endKafkaExporter()
             .endSpec()
@@ -391,6 +394,12 @@ public class KafkaExporterTest {
                                     .withAnnotations(saAnots)
                                 .endMetadata()
                             .endServiceAccount()
+                            .withNewPodDisruptionBudget()
+                                .withNewMetadata()
+                                    .withLabels(Map.of("pdb-label", "pdb-value"))
+                                    .withAnnotations(Map.of("pdb-annotation", "pdb-annotation-value"))
+                                .endMetadata()
+                            .endPodDisruptionBudget()
                         .endTemplate()
                     .endKafkaExporter()
                 .endSpec()
@@ -418,6 +427,12 @@ public class KafkaExporterTest {
         ServiceAccount sa = ke.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
+
+        // Check Pod Disruption Budget
+        PodDisruptionBudget pdb = ke.generatePodDisruptionBudget();
+        assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(Map.of("pdb-label", "pdb-value").entrySet()), is(true));
+        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(Map.of("pdb-annotation", "pdb-annotation-value").entrySet()), is(true));
+        assertThat(pdb.getSpec().getMinAvailable(), is(new IntOrString(0)));
     }
 
     @ParallelTest
