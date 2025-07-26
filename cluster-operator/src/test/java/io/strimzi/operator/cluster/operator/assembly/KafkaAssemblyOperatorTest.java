@@ -671,7 +671,7 @@ public class KafkaAssemblyOperatorTest {
                 if (kafka.getSpec().getEntityOperator() != null) {
                     expectedPdbNames.add(entityOperatorName);
                 }
-                if (kafka.getSpec().getKafkaExporter()!= null) {
+                if (kafka.getSpec().getKafkaExporter() != null) {
                     expectedPdbNames.add(exporterName);
                 }
                 assertThat(
