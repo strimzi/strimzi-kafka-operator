@@ -178,7 +178,7 @@ public class KafkaExporterReconciler {
                         reconciliation,
                         reconciliation.namespace(),
                         KafkaExporterResources.componentName(reconciliation.name()),
-                        kafkaExporter.generatePodDisruptionBudget()
+                        kafkaExporter != null ? kafkaExporter.generatePodDisruptionBudget() : null
                 ).mapEmpty();
     }
     /**
