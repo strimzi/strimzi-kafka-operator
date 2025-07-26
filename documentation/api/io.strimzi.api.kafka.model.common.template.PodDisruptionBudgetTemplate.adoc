@@ -7,6 +7,8 @@ Strimzi creates one `PodDisruptionBudget` per component:
 * Kafka Connect
 * MirrorMaker 2
 * Kafka Bridge
+* Entity Operator
+* Kafka Exporter
 
 Each budget applies across all pods deployed for that component.
 
