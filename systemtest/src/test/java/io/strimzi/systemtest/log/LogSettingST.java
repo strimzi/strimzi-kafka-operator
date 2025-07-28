@@ -113,41 +113,57 @@ class LogSettingST extends AbstractST {
 
     private static final Map<String, String> KAFKA_LOGGERS = new HashMap<>() {
         {
-            put("kafka.root.logger.level", INFO);
-            put("test.kafka.logger.level", INFO);
-            put("log4j.logger.kafka", TRACE);
-            put("log4j.logger.org.apache.kafka", DEBUG);
-            put("log4j.logger.kafka.request.logger", FATAL);
-            put("log4j.logger.kafka.network.Processor", OFF);
+            put("rootLogger.level", INFO);
+            put("logger.test.name", "test.kafka");
+            put("logger.test.level", INFO);
+            put("logger.kafka.name", "kafka");
+            put("logger.kafka.level", TRACE);
+            put("logger.orgapachekafka.name", "org.apache.kafka");
+            put("logger.orgapachekafka.level", DEBUG);
+            put("logger.request.name", "kafka.request.logger");
+            put("logger.request.level", FATAL);
+            put("logger.network.name", "network.Processor");
+            put("logger.network.level", OFF);
+                        
+            put("logger.server.name", "kafka.server.KafkaApis");
+            put("logger.server.level", INFO);
+            put("logger.network.name", "kafka.network.RequestChannel$");
+            put("logger.network.level", ERROR); 
+            put("logger.controller.name", "kafka.controller");
+            put("logger.controller.level", WARN);           
+            put("logger.log.name", "kafka.log.LogCleaner");
+            put("logger.log.level", TRACE);
+            put("logger.state.name", "state.change");
+            put("logger.state.level", DEBUG);
+            put("logger.authorizer.name", "kafka.authorizer");
+            put("logger.authorizer.level", FATAL);            
 
-            put("log4j.logger.kafka.server.KafkaApis", INFO);
-            put("log4j.logger.kafka.network.RequestChannel$", ERROR);
-            put("log4j.logger.kafka.controller", WARN);
-            put("log4j.logger.kafka.log.LogCleaner", TRACE);
-            put("log4j.logger.state.change.logger", DEBUG);
-            put("log4j.logger.kafka.authorizer.logger", FATAL);
         }
     };
 
     private static final Map<String, String> CONNECT_LOGGERS = new HashMap<>() {
         {
-            put("connect.root.logger.level", INFO);
-            put("test.connect.logger.level", DEBUG);
-            put("log4j.logger.org.reflections", WARN);
+            put("rootLogger.level", INFO);
+            put("logger.test.name", "test.connect");
+            put("logger.test.level", DEBUG);
+            put("logger.reflections.name", "org.reflections");
+            put("logger.reflections.level", WARN);
         }
     };
 
     private static final Map<String, String> OPERATORS_LOGGERS = new HashMap<>() {
         {
             put("rootLogger.level", DEBUG);
-            put("test.operator.logger.level", DEBUG);
+            put("logger.operator.name", "io.strimzi.operator");
+            put("logger.operator.level", DEBUG);
         }
     };
 
     private static final Map<String, String> MIRROR_MAKER_2_LOGGERS = new HashMap<>() {
         {
-            put("mirrormaker.root.logger", TRACE);
-            put("test.mirrormaker.logger.level", TRACE);
+            put("rootLogger.level", TRACE);
+            put("logger.test.name", "test.mirrormaker");
+            put("logger.test.level", TRACE);
         }
     };
 
