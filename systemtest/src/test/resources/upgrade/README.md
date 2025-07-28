@@ -48,7 +48,7 @@ Technically, you can just replace the previous version of Strimzi to the new one
 
 If you are just adding new Kafka version that is the latest one, you will need to change version of Kafka in `BundleUpgrade.yaml` - inside the `imagesAfterOperations.kafka`.
 If it's just a patch release of an already supported minor Kafka version, no changes are needed.
-Only once a new version of Strimzi supporting this new version of Kafka, you should change it in the `deployKafkaVersion` field in `BundleDowngrade.yaml`.
+Once a new version of Strimzi supports the new Kafka version, update the `deployKafkaVersion` field in `BundleDowngrade.yaml`.
 
 ## Removal of Kafka version
 
