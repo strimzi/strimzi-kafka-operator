@@ -86,7 +86,7 @@ runs:
         fi
         # TODO - remove this
         BUILT_COMMENT_VALUE="/gha run pipeline=regression,upgrade"
-        BUILT_COMMENT_VALUE="/gha run profile=operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
+        BUILT_COMMENT_VALUE="/gha run pipeline=regression,upgrade,regression-fg,regression-rbac,acceptance,acceptance-helm"
         
         echo "builtComment=$BUILT_COMMENT_VALUE" >> "$GITHUB_OUTPUT"
         echo "Parsed builtComment: $BUILT_COMMENT_VALUE"
@@ -102,7 +102,7 @@ runs:
         COMMENT_LOWER=$(echo "$COMMENT" | tr '[:upper:]' '[:lower:]')
         
         # Default values
-        DEFAULT_PIPELINES="regression,upgrade,performance"
+        DEFAULT_PIPELINES="regression,upgrade"
         DEFAULT_PROFILES="operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
         DEFAULT_FEATURE_GATES="false"
         DEFAULT_RBAC_SCOPE="CLUSTER"
