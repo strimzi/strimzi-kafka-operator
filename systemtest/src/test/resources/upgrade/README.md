@@ -1,6 +1,6 @@
 # Upgrade & downgrade tests
 
-This short README describes how the upgrade and downgrade tests are configured and what needs to be updated in order to make the tests work.
+This short README describes how the upgrade and downgrade tests are configured and what needs to be updated to make the tests work.
 
 We have Strimzi upgrade & downgrade tests (for both YAML and OLM installation types) focused mainly on upgrade/downgrade of Strimzi, 
 if the components will be rolled correctly and if there will not be some issue with the Kafka cluster (and KafkaConnect) after Strimzi CO upgrade.
@@ -47,7 +47,7 @@ Technically, you can just replace the previous version of Strimzi to the new one
 ## New Kafka version
 
 If you are just adding new Kafka version that is the latest one, you will need to change version of Kafka in `BundleUpgrade.yaml` - inside the `imagesAfterOperations.kafka`.
-If it's just patch release of the older minor version of Kafka supported by Strimzi, you don't need to do anything.
+If it's just a patch release of an already supported minor Kafka version, no changes are needed.
 Only once a new version of Strimzi supporting this new version of Kafka, you should change it in the `deployKafkaVersion` field in `BundleDowngrade.yaml`.
 
 ## Removal of Kafka version
