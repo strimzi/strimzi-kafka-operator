@@ -81,7 +81,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
 
         // In this test we intend to setup Kafka once at the beginning and then upgrade it with CO
         File dir = FileUtils.downloadAndUnzip(olmUpgradeData.getFromUrl());
-        File kafkaYaml = new File(dir, olmUpgradeData.getFromExamples() + olmUpgradeData.getKafkaFilePathBefore());
+        File kafkaYaml = new File(dir, olmUpgradeData.getFromExamples() + olmUpgradeData.getFromKafkaFilePath());
 
         LOGGER.info("Deploying Kafka in Namespace: {} from file: {}", CO_NAMESPACE, kafkaYaml.getPath());
         KubeResourceManager.get().kubeCmdClient().inNamespace(CO_NAMESPACE).create(kafkaYaml);

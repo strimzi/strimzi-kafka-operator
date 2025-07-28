@@ -15,22 +15,17 @@ public class BundleVersionModificationData extends CommonVersionModificationData
     private static final Logger LOGGER = LogManager.getLogger(BundleVersionModificationData.class);
     // Bundle specific
     private int additionalTopics;
-    private String oldestKafka;
     private String defaultKafka;
     private String deployKafkaVersion;
     private String startingKafkaVersion;
-    private String featureGatesBefore;
-    private String featureGatesAfter;
+    private String fromFeatureGates;
+    private String toFeatureGates;
     private Map<String, String> imagesAfterOperations;
     private Map<String, Object> client;
     private Map<String, String> environmentInfo;
 
     public Integer getAdditionalTopics() {
         return additionalTopics;
-    }
-
-    public String getOldestKafka() {
-        return oldestKafka;
     }
 
     public String getDefaultKafka() {
@@ -45,12 +40,12 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         return startingKafkaVersion;
     }
 
-    public String getFeatureGatesBefore() {
-        return featureGatesBefore;
+    public String getFromFeatureGates() {
+        return fromFeatureGates;
     }
 
-    public String getFeatureGatesAfter() {
-        return featureGatesAfter;
+    public String getToFeatureGates() {
+        return toFeatureGates;
     }
 
     public Map<String, String> getImagesAfterOperations() {
@@ -101,10 +96,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         this.additionalTopics = additionalTopics;
     }
 
-    public void setOldestKafka(String oldestKafka) {
-        this.oldestKafka = oldestKafka;
-    }
-
     public void setDefaultKafka(String defaultKafka) {
         this.defaultKafka = defaultKafka;
     }
@@ -117,12 +108,12 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         this.startingKafkaVersion = startingKafkaVersion;
     }
 
-    public void setFeatureGatesBefore(String featureGatesBefore) {
-        this.featureGatesBefore = featureGatesBefore;
+    public void setFromFeatureGates(String fromFeatureGates) {
+        this.fromFeatureGates = fromFeatureGates;
     }
 
-    public void setFeatureGatesAfter(String featureGatesAfter) {
-        this.featureGatesAfter = featureGatesAfter;
+    public void setToFeatureGates(String toFeatureGates) {
+        this.toFeatureGates = toFeatureGates;
     }
 
     public void setClient(Map<String, Object> client) {
@@ -149,12 +140,11 @@ public class BundleVersionModificationData extends CommonVersionModificationData
             "BundleVersionModificationData{" +
             super.toString() +
             ", additionalTopics=" + additionalTopics +
-            ", oldestKafka='" + oldestKafka + '\'' +
             ", defaultKafka='" + defaultKafka + '\'' +
             ", deployKafkaVersion='" + deployKafkaVersion + '\'' +
             ", startingKafkaVersion='" + startingKafkaVersion + '\'' +
-            ", featureGatesBefore='" + featureGatesBefore + '\'' +
-            ", featureGatesAfter='" + featureGatesAfter + '\'' +
+            ", fromFeatureGates='" + fromFeatureGates + '\'' +
+            ", toFeatureGates='" + toFeatureGates + '\'' +
             ", imagesAfterOperations=" + imagesAfterOperations +
             ", client=" + client +
             ", environmentInfo=" + environmentInfo +

@@ -50,7 +50,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
     @MethodSource("io.strimzi.systemtest.upgrade.VersionModificationDataLoader#loadYamlUpgradeDataForKRaft")
     void testUpgradeOfKafkaKafkaConnectAndKafkaConnector(String fromVersion, String toVersion, String fgBefore, String fgAfter, BundleVersionModificationData upgradeData) throws IOException {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(upgradeData.getOldestKafka());
+        UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(upgradeData.getDeployKafkaVersion());
         // setting metadata version to null, similarly to the examples, which are not configuring metadataVersion
         upgradeKafkaVersion.setMetadataVersion(null);
 
