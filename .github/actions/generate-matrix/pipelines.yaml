@@ -17,6 +17,7 @@ pipelines:
   ##################
   ### Regression ###
   ##################
+  # x86-64
   - agent: "oracle-vm-8cpu-32gb-x86-64"
     arch: "amd64"
     pipeline: "regression"
@@ -44,6 +45,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 4
+  # arm64
   - agent: "oracle-vm-8cpu-32gb-arm64"
     arch: "arm64"
     pipeline: "regression"
@@ -75,6 +77,7 @@ pipelines:
   ### Smoke ###
   #############
   # Smoke pipelines can use smaller agents as the tests are not running in parallel even if configured
+  # x86-64
   - agent: "oracle-vm-2cpu-8gb-x86-64"
     arch: "amd64"
     pipeline: "smoke"
@@ -84,6 +87,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 1
+  # arm64
   - agent: "oracle-vm-2cpu-8gb-arm64"
     arch: "arm64"
     pipeline: "smoke"
@@ -96,17 +100,9 @@ pipelines:
   ###############
   ### Upgrade ###
   ###############
+  # x86-64
   - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
-    pipeline: "upgrade"
-    profile: "azp_kraft_upgrade"
-    timeout: 180
-    strimzi_feature_gates: "false"
-    strimzi_rbac_scope: "CLUSTER"
-    cluster_operator_install_type: "yaml"
-    parallel: 1
-  - agent: "oracle-vm-4cpu-16gb-arm64"
-    arch: "arm64"
     pipeline: "upgrade"
     profile: "azp_kraft_upgrade"
     timeout: 180
@@ -118,6 +114,16 @@ pipelines:
     arch: "amd64"
     pipeline: "upgrade"
     profile: "azp_kafka_upgrade"
+    timeout: 180
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  # arm64
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "upgrade"
+    profile: "azp_kraft_upgrade"
     timeout: 180
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "CLUSTER"
@@ -136,6 +142,7 @@ pipelines:
   ### Acceptance ###
   ##################
   # Acceptance pipelines can use smaller agents as the tests are not running in parallel even if configured
+  # x86-64
   - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
     pipeline: "acceptance"
@@ -145,6 +152,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 2
+  # arm64
   - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
     pipeline: "acceptance"
@@ -157,6 +165,7 @@ pipelines:
   #######################
   ### Acceptance Helm ###
   #######################
+  # x86-64
   - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
     pipeline: "acceptance-helm"
@@ -166,6 +175,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "helm"
     parallel: 2
+  # arm64
   - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
     pipeline: "acceptance-helm"
@@ -178,63 +188,141 @@ pipelines:
   #######################
   ### Regression RBAC ###
   #######################
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+  # RBAC pipelines cannot be executed in parallel so there is a different schema for them
+  # Each of the pipeline use a specific profile as we use also on Azure
+  # In case we will need to adjust the profiles, we should update or create one in systemtest-settings.xml in .azure folder
+  # x86-64
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
     pipeline: "regression-rbac"
-    profile: "brokers-and-security"
-    timeout: 480
+    profile: "azp_kafka_oauth"
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
-    parallel: 3
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
     pipeline: "regression-rbac"
-    profile: "operators"
-    timeout: 480
+    profile: "azp_security"
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
-    parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
     pipeline: "regression-rbac"
-    profile: "operands"
-    timeout: 480
+    profile: "azp_dynconfig_listeners_tracing_watcher"
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
-    parallel: 3
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_operators"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_rolling_update_bridge"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_connect_mirrormaker"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_rbac_remaining"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  # arm64
+  - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
     pipeline: "regression-rbac"
-    profile: "brokers-and-security"
-    timeout: 480
+    profile: "azp_kafka_oauth"
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
-    parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
     pipeline: "regression-rbac"
-    profile: "operators"
-    timeout: 480
+    profile: "azp_security"
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
-    parallel: 4
-  - agent: "oracle-vm-8cpu-32gb-arm64"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
     pipeline: "regression-rbac"
-    profile: "operands"
-    timeout: 480
+    profile: "azp_dynconfig_listeners_tracing_watcher"
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
-    parallel: 4
-    ################################
-    ### Regression Feature Gates ###
-    ################################
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_operators"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_rolling_update_bridge"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_connect_mirrormaker"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_rbac_remaining"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  ################################
+  ### Regression Feature Gates ###
+  ################################
+  # x86-64
   - agent: "oracle-vm-8cpu-32gb-x86-64"
     arch: "amd64"
     pipeline: "regression-fg"
@@ -262,6 +350,7 @@ pipelines:
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
     parallel: 3
+  # arm64
   - agent: "oracle-vm-8cpu-32gb-arm64"
     arch: "arm64"
     pipeline: "regression-fg"

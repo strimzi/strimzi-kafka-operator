@@ -131,6 +131,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set check & commit status
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: pending
+          checkName: ${{ matrix.config.jobName }}
+          checkDescription: "Test run for ${{ matrix.config.jobName }}"
+
       - name: Set up Maven
         uses: stCarolas/setup-maven@v5
         with:
@@ -282,6 +289,7 @@ jobs:
       # Run system tests
       ############################################################################
       - name: Run systemtests
+        id: run_tests
         timeout-minutes: ${{ fromJson(matrix.config.timeout) }}
         run: |
           mvn -f systemtest/pom.xml verify \
@@ -322,3 +330,11 @@ jobs:
         with:
           name: systemtest-logs-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest-logs
+
+      - name: Set check & commit status
+        if: ${{ always() }}
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: ${{ steps.run_tests.conclusion }}
+          checkName: ${{ matrix.config.jobName }}
+          checkDescription: "Test run for ${{ matrix.config.jobName }}"

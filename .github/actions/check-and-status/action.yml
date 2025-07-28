@@ -1,0 +1,162 @@
+name: Add check & status
+description: "Sets a commit/issue status on the given (or auto-detected) SHA."
+
+inputs:
+  checkState:
+    description: "Check state: error, failure, pending, or success"
+    default: success
+  checkName:
+    description: "Status-line “context” label (appears in the PR UI)"
+    default: custom/check
+  checkDescription:
+    description: "Short description that shows next to the status"
+    default: ''
+  sha:
+    description: "Commit SHA to attach the status to (auto-detected if empty)"
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Add issue/commit check
+      id: comment-and-check
+      # Run only if action wasn't triggered by comment or manually
+      if: github.event_name == 'workflow_dispatch' || github.event_name == 'issue_comment'
+      uses: actions/github-script@v7
+      env:
+        CHECK_STATE: ${{ inputs.checkState }}
+        CHECK_NAME: ${{ inputs.checkName }}
+        CHECK_DESCRIPTION: ${{ inputs.checkDescription }}
+        SHA: ${{ inputs.sha }}
+      with:
+        script: |
+          const {owner, repo} = context.repo;
+
+          const checkState  = process.env.CHECK_STATE
+          const checkName   = process.env.CHECK_NAME
+          const desc      = process.env.CHECK_DESCRIPTION
+          let   sha       = process.env.SHA
+          let   prNumber  = undefined;
+          let   isPr  = undefined;
+
+          //------------------------------------------------------------------
+          // 1) Work out PR number & HEAD SHA
+          //------------------------------------------------------------------
+          if (context.payload.pull_request) {
+            isPr = true;
+            prNumber = context.payload.pull_request.number;
+            sha    ||= context.payload.pull_request.head.sha;
+          } else if (context.payload.issue?.pull_request) {
+            isPr = true;
+            prNumber = context.payload.issue.number;
+            if (!sha) {
+              const pr = await github.request(
+                context.payload.issue.pull_request.url);
+              sha = pr.data.head.sha;
+            }
+          } else {
+            isPr = false;
+            sha ||= context.sha;
+          }
+
+          core.info(`Going to work with the following sha: “${sha}”.`); 
+
+          if (sha) {
+            //------------------------------------------------------------------
+            // 2) Map state → conclusion
+            //------------------------------------------------------------------
+            const conclusionToState = { 
+              success: 'success', 
+              failure: 'failure',
+              pending: 'in_progress', 
+              error: 'neutral',
+              skipped: 'failure'
+            };
+            const conclusion = conclusionToState[checkState] ?? 'neutral';
+  
+            //------------------------------------------------------------------
+            // 3) Create NEW run if none is currently in progress
+            //------------------------------------------------------------------
+            const list = await github.rest.checks.listForRef({ owner, repo, ref: sha });
+  
+            let run = list.data.check_runs
+                           .find(cr => cr.name === checkName && cr.status !== 'completed');
+    
+            if (!run) {
+              core.info(`Creating a new check-run ”${checkName}”`);
+              run = (await github.rest.checks.create({
+                owner, repo,
+                name: checkName,
+                head_sha: sha,
+                status: 'in_progress',
+                output: {
+                  title: checkName,
+                  summary: [
+                    desc,
+                    '',
+                    `[See the full workflow run](${process.env.GITHUB_SERVER_URL}/` +
+                    `${process.env.GITHUB_REPOSITORY}/actions/runs/` +
+                    `${process.env.GITHUB_RUN_ID})`
+                  ].join('\n')
+                },
+                details_url:
+                  `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}` +
+                  `/actions/runs/${process.env.GITHUB_RUN_ID}`
+              })).data;
+              core.info(`Created new run: ${run.id} (status=${run.status})`)
+            } else {
+              core.info(`Re-using existing run #${run.id} (status=${run.status})`);
+            }
+  
+            //------------------------------------------------------------------
+            // 4) Finish the run when we have a final state
+            //------------------------------------------------------------------
+            core.info(`Conclusion for ”${checkName}” is ”${conclusion} (state=${checkState})”`);
+          
+            if (conclusion !== 'in_progress') {          
+              await github.rest.checks.update({
+                owner, repo, check_run_id: run.id,
+                status: 'completed',
+                name: checkName,
+                conclusion,
+                output: {
+                  title: checkName,
+                  summary: [
+                    desc,
+                    '',
+                    `[See the full workflow run](${process.env.GITHUB_SERVER_URL}/` +
+                    `${process.env.GITHUB_REPOSITORY}/actions/runs/` +
+                    `${process.env.GITHUB_RUN_ID})`
+                  ].join('\n')
+                },
+                details_url:
+                  `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}` +
+                  `/actions/runs/${process.env.GITHUB_RUN_ID}`
+              });
+            }
+          
+            //------------------------------------------------------------------
+            // 5) Set commit status as well
+            //------------------------------------------------------------------
+            if (!isPr) {
+              const stateForStatusApi =
+                checkState === 'pending' ? 'pending' :
+                checkState === 'failure' ? 'failure' :
+                checkState === 'error'   ? 'error'   : 'success';
+            
+              core.info(`Updating commit status “${checkName}”=“${stateForStatusApi}” for sha: “${sha}”.`);
+            
+              await github.rest.repos.createCommitStatus({
+                owner, repo,
+                sha,
+                state: stateForStatusApi,
+                context: checkName,
+                description: desc,
+                target_url:
+                  `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}` +
+                  `/actions/runs/${process.env.GITHUB_RUN_ID}`
+              });
+            } else {
+              core.info(`Not going to create commit status for sha: “${sha}”.`);
+            }
+          }
