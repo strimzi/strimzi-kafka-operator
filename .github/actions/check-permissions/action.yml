@@ -1,0 +1,79 @@
+name: Verify users rights
+description: "Fails the workflow run if the triggering user lacks write permission or is not in the given organisation team."
+
+inputs:
+  message:
+    description: "Message that will be shown as comment in case of access denial"
+    default: "⚠️ You don’t have permission to run this workflow. Please ask a maintainer to trigger it for you."
+  team:
+    description: "Name of the team that contains trusted contributors"
+    default: "contributors"
+
+runs:
+  using: composite
+  steps:
+    - name: Check repository permission / team membership
+      uses: actions/github-script@v7
+      env:
+        TEAM: ${{ inputs.team }}
+        MESSAGE: ${{ inputs.message }}
+      with:
+        script: |
+          const {owner, repo} = context.repo;
+          const actor = process.env.GITHUB_ACTOR;
+          const team  = process.env.TEAM
+          const denialMessage = process.env.MESSAGE
+          
+          //------------------------------------------------------------------
+          // 1) Check collaborator permission (works for user *and* org repos)
+          //------------------------------------------------------------------
+          const perm = (await github.rest.repos.getCollaboratorPermissionLevel({
+            owner, repo, username: actor
+          })).data.permission;                // admin | maintain | write | triage | read | none
+
+          if (['admin', 'maintain', 'write'].includes(perm)) {
+            core.info(`${actor} has ${perm} permission → authorised ✅`);
+            return;
+          }
+          
+          //------------------------------------------------------------------
+          // 2) Repo is under an organisation?  Then allow specific team members
+          //------------------------------------------------------------------
+          if (context.payload.repository.owner.type === 'Organization') {
+            try {
+              await github.rest.teams.getMembershipForUserInOrg({
+                org: owner,
+                team_slug: team,
+                username: actor
+              });
+              core.info(`${actor} is in org team “${team}” → authorised ✅`);
+              return;
+            } catch (_) {
+              core.info(`${actor} is not in team “${team}”.`);
+            }
+          }
+          
+          let orgMember = true;
+          try {
+            await github.rest.orgs.getMembershipForUser({org: owner, username: actor});
+            core.info(`${actor} is in org” → authorised ✅`);
+            return;
+          } catch (_) { 
+            core.info(`${actor} is not in org “${owner}”.`); 
+          }
+
+          //------------------------------------------------------------------
+          // 3) Post PR comment if applicable, then fail
+          //------------------------------------------------------------------
+          if (context.payload.pull_request || context.payload.issue?.pull_request) {
+            const issueNumber = (context.payload.pull_request?.number)
+                              ?? (context.payload.issue.number);
+            await github.rest.issues.createComment({
+              owner, repo,
+              issue_number: issueNumber,
+              body: denialMessage
+            });
+            core.info(`Refusal comment posted to PR #${issueNumber}`);
+          }
+
+          core.setFailed(`${actor} is not authorised ❌`);

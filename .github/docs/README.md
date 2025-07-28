@@ -74,6 +74,11 @@ System tests execution actions:
 - [log-variables](../actions/log-variables)
 - [parse-comment](../actions/parse-comment)
 
+Utils actions:
+- [check-permissions](../actions/check-permissions)
+- [add-comment](../actions/add-comment)
+- [check-and-status](../actions/check-and-status)
+
 To make the build 1:1 to Azure we miss few actions that do the missing steps:
 - Run unit/integration tests
 - Build docs
@@ -96,20 +101,20 @@ Comment for triggering the workflow has to contain string `/gha run` and then ad
 The whole script that parse the trigger even is part of [parse-comment](../actions/parse-comment) action.
 Currently, we have these parameters that can be passed through the comment:
 
-| Name                          | Info                                                                                                      | Default                                                                 |
-|-------------------------------|-----------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
-| pipeline                      | Name of the pipeline from [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) that wil be executed | regression,upgrade,performance                                          |
-| profile                       | Testing profile from pom that will be executed                                                            | regression,upgrade,performance                                          |
-| agent                         | Agent that will be used for a specific pipeline (see list of runners in Strimzi org config for more info) | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| strimzi_feature_gates         | Which Strimzi Feature Gates will be used                                                                  | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| strimzi_rbac_scope            | RBAC scope for Strimzi                                                                                    | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| cluster_operator_install_type | How Strimzi will be installed during the tests                                                            | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| parallel                      | Number of tests that will be executed in parallel                                                         | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| architecture                  | Which architecture will be used (should match with agent arch)                                            | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| groups                        | Which Junit5 groups will be executed                                                                      | all                                                                     |
-| tests                         | Which Junit5 tests will be executed                                                                       | all                                                                     |
-| kubeVersion                   | Used Kubernetes version as part of Kind/Minikube setup                                                    | The one set as default in setup scripts                                 |
-| kafkaVersion                  | Which Kafka version will be used in the tests                                                             | Default one from STs config                                             |
+| Name                          | Info                                                                                                       | Default                                                                  |
+|-------------------------------|------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| pipeline                      | Name of the pipeline from [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) that wil be executed | regression,upgrade,performance                                           |
+| profile                       | Testing profile from pom that will be executed                                                             | regression,upgrade,performance                                           |
+| agent                         | Agent that will be used for a specific pipeline (see list of runners in Strimzi org config for more info)  | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
+| strimzi_feature_gates         | Which Strimzi Feature Gates will be used                                                                   | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
+| strimzi_rbac_scope            | RBAC scope for Strimzi                                                                                     | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
+| cluster_operator_install_type | How Strimzi will be installed during the tests                                                             | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
+| parallel                      | Number of tests that will be executed in parallel                                                          | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
+| architecture                  | Which architecture will be used (should match with agent arch)                                             | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
+| groups                        | Which Junit5 groups will be executed                                                                       | all                                                                      |
+| tests                         | Which Junit5 tests will be executed                                                                        | all                                                                      |
+| kubeVersion                   | Used Kubernetes version as part of Kind/Minikube setup                                                     | The one set as default in setup scripts                                  |
+| kafkaVersion                  | Which Kafka version will be used in the tests                                                              | Default one from STs config                                              |
 
 Note that parameters are passed only to a `custom` pipeline except `kafkaVersion` and `kubeVersion` that are used for all jobs.
 
@@ -123,5 +128,17 @@ After that job matrix will be generated [run-system-tests](../workflows/run-syst
 
 Matrix is generated by action [generate-matrix](../actions/generate-matrix) either for custom pipeline mentioned above or for pipelines defined in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml).
 
-### Workflow
+### Workflow depiction
 ![sts-workflow.png](sts-workflow.png)
+
+## Security
+To achieve a better security we agreed to not allow everyone to trigger the system tests pipelines in the similar way as we do in Azure.
+The main part in access restriction is [check-permissions](../actions/check-permissions) action that basically check access rights of the user who triggered the pipeline.
+If the user has at least write access or is part of Strimzi org, then it will allow the execution. 
+The action is used only from main branch which removes the possibility that a random user will simply change the actions/workflow and the use the resources on his own.
+Also keep in mind that workflow for system tests will be used from a specific branch (main/release-X) for `workflow_dispatch` and `issue_comment` events.
+
+Each first-time contributor has to be approved by one of the maintainers which should avoid us to hit some unexpected changes to the workflow to me merged into main.
+
+Regarding secrets, the forks are not allowed to use secrets by default. 
+Every generated `GITHUB_TOKEN` has only read access to the repo/org without access to the secrets. 

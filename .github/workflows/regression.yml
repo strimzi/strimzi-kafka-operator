@@ -24,10 +24,29 @@ on:
   pull_request:
 
 jobs:
+  check-rights:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+    steps:
+      # TODO - switch with check-permissions
+      - uses: actions/checkout@v4
+      # TODO - reference this action from main (right before merge)
+      - uses: ./.github/actions/check-permissions
+
   # Parse and build parameters from comment or from workflow params
   parse-params:
+    needs:
+      - check-rights
     # TODO - maybe use quick github runners?
     runs-on: oracle-2cpu-8gb-arm64
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+      statuses: write
     outputs:
       pipelineList: ${{ steps.parse.outputs.pipelineList }}
       profileList: ${{ steps.parse.outputs.profileList }}
@@ -55,6 +74,16 @@ jobs:
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
           kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
           profile: ${{ github.event.inputs.profile }}
+      - name: Add comment
+        uses: ./.github/actions/add-comment
+        with:
+          commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+      - name: Set check & commit status
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: pending
+          checkName: "System tests verification"
+          checkDescription: "Check for overall system test verification"
 
   build-artifacts:
     name: build-artifacts
@@ -91,12 +120,13 @@ jobs:
           architecture: ${{ matrix.architecture }}
 
   run-tests:
-    name: run
+    name: run-tests
     needs:
       - parse-params
+      - build-artifacts
       - build-images
     # Run if properly triggered and build-images job was either succeeded or skipped
-    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.build-images.result != 'failure' }}
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.build-images.result != 'failure' &&  needs.build-artifacts.result != 'failure' }}
     uses: ./.github/workflows/run-system-tests.yml
     with:
       pipelineList: ${{ needs.parse-params.outputs.pipelineList }}
@@ -110,3 +140,28 @@ jobs:
       releaseVersion: ${{ needs.parse-params.outputs.releaseVersion }}
       kafkaVersion: ${{ needs.parse-params.outputs.kafkaVersion }}
       kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
+
+  report:
+    needs:
+      - run-tests
+    if: ${{ always() }}
+    runs-on: oracle-vm-2cpu-8gb-arm64
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Add comment
+        uses: ./.github/actions/add-comment
+        with:
+          commentMessage: ":tada: Systemtest verification finished: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})!"
+      - name: Set check & commit status
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: ${{ needs.run-tests.result }}
+          checkName: "System tests verification"
+          checkDescription: "Check for overall system test verification"
