@@ -52,4 +52,4 @@ Only once a new version of Strimzi supporting this new version of Kafka, you sho
 
 ## Removal of Kafka version
 
-If there is Kafka version being removed from the support matrix of Strimzi, you has to change the `deployKafkaVersion` field in `BundleUpgrade.yaml`.
+If there is Kafka version being removed from the support matrix of Strimzi, you have to change the `deployKafkaVersion` field in `BundleUpgrade.yaml`.
