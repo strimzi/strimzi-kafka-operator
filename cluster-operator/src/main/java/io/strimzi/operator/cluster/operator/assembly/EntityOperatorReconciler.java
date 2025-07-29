@@ -51,6 +51,7 @@ public class EntityOperatorReconciler {
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
     private final boolean isNetworkPolicyGeneration;
+    private final boolean isPodDisruptionBudgetGeneration;
     private final RoleOperator roleOperator;
     private final RoleBindingOperator roleBindingOperator;
     private final ConfigMapOperator configMapOperator;
@@ -85,6 +86,7 @@ public class EntityOperatorReconciler {
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.isCruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
         
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
@@ -422,13 +424,17 @@ public class EntityOperatorReconciler {
     }
 
     protected Future<Void> podDistruptionBudget() {
-        return podDistruptionBudgetOperator
-                .reconcile(
-                        reconciliation,
-                        reconciliation.namespace(),
-                        KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
-                        entityOperator != null ? entityOperator.generatePodDisruptionBudget() : null
-                ).mapEmpty();
+        if (isPodDisruptionBudgetGeneration) {
+            return podDistruptionBudgetOperator
+                    .reconcile(
+                            reconciliation,
+                            reconciliation.namespace(),
+                            KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
+                            entityOperator != null ? entityOperator.generatePodDisruptionBudget() : null
+                    ).mapEmpty();
+        } else {
+            return Future.succeededFuture();
+        }
     }
     /**
      * Manages the Entity Operator Deployment.

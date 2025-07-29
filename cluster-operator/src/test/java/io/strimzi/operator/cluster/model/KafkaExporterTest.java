@@ -312,6 +312,9 @@ public class KafkaExporterTest {
         Map<String, String> saLabels = Map.of("l5", "v5", "l6", "v6");
         Map<String, String> saAnots = Map.of("a5", "v5", "a6", "v6");
 
+        Map<String, String> pdbLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> pdbAnots = Map.of("a7", "v7", "a8", "v8");
+
         Affinity affinity = new AffinityBuilder()
                 .withNewNodeAffinity()
                     .withNewRequiredDuringSchedulingIgnoredDuringExecution()
@@ -396,8 +399,8 @@ public class KafkaExporterTest {
                             .endServiceAccount()
                             .withNewPodDisruptionBudget()
                                 .withNewMetadata()
-                                    .withLabels(Map.of("pdb-label", "pdb-value"))
-                                    .withAnnotations(Map.of("pdb-annotation", "pdb-annotation-value"))
+                                    .withLabels(pdbLabels)
+                                    .withAnnotations(pdbAnots)
                                 .endMetadata()
                             .endPodDisruptionBudget()
                         .endTemplate()
@@ -430,8 +433,8 @@ public class KafkaExporterTest {
 
         // Check Pod Disruption Budget
         PodDisruptionBudget pdb = ke.generatePodDisruptionBudget();
-        assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(Map.of("pdb-label", "pdb-value").entrySet()), is(true));
-        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(Map.of("pdb-annotation", "pdb-annotation-value").entrySet()), is(true));
+        assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
         assertThat(pdb.getSpec().getMinAvailable(), is(new IntOrString(0)));
     }
 

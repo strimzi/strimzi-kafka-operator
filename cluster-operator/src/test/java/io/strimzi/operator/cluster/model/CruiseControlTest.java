@@ -128,6 +128,10 @@ public class CruiseControlTest {
                     .withConfig(Map.of(CruiseControl.MIN_INSYNC_REPLICAS, MIN_INSYNC_REPLICAS, KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, REPLICATION_FACTOR))
                 .endKafka()
                 .withNewCruiseControl()
+                    .withNewTemplate()
+                        .withNewPodDisruptionBudget()
+                        .endPodDisruptionBudget()
+                    .endTemplate()
                 .endCruiseControl()
             .endSpec()
             .build();
