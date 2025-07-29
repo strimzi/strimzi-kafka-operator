@@ -13,7 +13,7 @@ MirrorMaker 2 consists of the following connectors:
 
 `MirrorSourceConnector`:: (Required) Replicates topics and ACLs from source to target cluster.
 `MirrorCheckpointConnector`:: (Optional) Synchronizes consumer group offsets for failover support. Only needed if offset tracking is required.
-`MirrorHeartbeatConnector`:: (optional) Monitors connectivity between clusters. Useful for alerts but not required for replication. 
+`MirrorHeartbeatConnector`:: (Optional) Monitors connectivity between clusters. Useful for alerts but not required for replication. 
 
 The following table describes connector properties and the connectors you configure to use them.
 
