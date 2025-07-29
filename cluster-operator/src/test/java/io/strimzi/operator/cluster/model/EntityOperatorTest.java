@@ -27,6 +27,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -222,6 +223,10 @@ public class EntityOperatorTest {
         Map<String, String> rLabels = Map.of("l7", "v7", "l8", "v8");
         Map<String, String> rAnnotations = Map.of("a7", "v7", "a8", "v8");
 
+
+        Map<String, String> pdbLabels = Map.of("l9", "v9", "l10", "v10");
+        Map<String, String> pdbAnnotations = Map.of("a9", "a9", "a10", "10");
+
         Toleration toleration = new TolerationBuilder()
                 .withEffect("NoSchedule")
                 .withValue("")
@@ -298,8 +303,8 @@ public class EntityOperatorTest {
                             .endServiceAccount()
                             .withNewPodDisruptionBudget()
                                 .withNewMetadata()
-                                    .withLabels(Map.of("pdb-label", "pdb-value"))
-                                    .withAnnotations(Map.of("pdb-annotation", "pdb-value"))
+                                    .withLabels(pdbLabels)
+                                    .withAnnotations(pdbAnnotations)
                                 .endMetadata()
                             .endPodDisruptionBudget()
                         .endTemplate()
@@ -335,6 +340,12 @@ public class EntityOperatorTest {
         ServiceAccount sa = entityOperator.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnnotations.entrySet()), is(true));
+
+        // Check Pod Disruption Budget
+        PodDisruptionBudget pdb = entityOperator.generatePodDisruptionBudget();
+        assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
+        assertThat(pdb.getSpec().getMinAvailable(), is(new IntOrString(0)));
     }
 
     @ParallelTest

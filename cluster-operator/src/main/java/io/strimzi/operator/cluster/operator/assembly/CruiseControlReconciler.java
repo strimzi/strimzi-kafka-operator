@@ -24,6 +24,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
@@ -63,6 +64,9 @@ public class CruiseControlReconciler {
     private final NetworkPolicyOperator networkPolicyOperator;
     private final ConfigMapOperator configMapOperator;
     private final PasswordGenerator passwordGenerator;
+    private final boolean isPodDisruptionBudgetGeneration;
+    private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+
 
     private String certificateHash = "";
     private String serverConfigurationHash = "";
@@ -114,6 +118,8 @@ public class CruiseControlReconciler {
         this.serviceOperator = supplier.serviceOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.configMapOperator = supplier.configMapOperations;
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
+        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
     }
 
     /**
@@ -136,6 +142,7 @@ public class CruiseControlReconciler {
                 .compose(i -> apiSecret())
                 .compose(i -> service())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
+                .compose(i -> podDisruptionBudget())
                 .compose(i -> waitForDeploymentReadiness());
     }
 
@@ -173,7 +180,24 @@ public class CruiseControlReconciler {
                         cruiseControl != null ? cruiseControl.generateServiceAccount() : null
                 ).mapEmpty();
     }
-
+    /**
+     * Manages the Kafka Exporter Pod Disruption Budget
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> podDisruptionBudget() {
+        if (isPodDisruptionBudgetGeneration) {
+            return podDisruptionBudgetOperator
+                    .reconcile(
+                            reconciliation,
+                            reconciliation.namespace(),
+                            CruiseControlResources.componentName(reconciliation.name()),
+                            cruiseControl != null ? cruiseControl.generatePodDisruptionBudget() : null
+                    ).mapEmpty();
+        } else {
+            return Future.succeededFuture();
+        }
+    }
     /**
      * Manages the Cruise Control ConfigMap which contains the following:
      * (1) Cruise Control server configuration
