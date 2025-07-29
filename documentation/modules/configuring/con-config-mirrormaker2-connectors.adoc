@@ -32,13 +32,13 @@ The following table describes connector properties and the connectors you config
 |✓
 |✓
 
-|replication.policy.class:: Policy to define the remote topic naming convention. Default is `org.apache.kafka.connect.mirror.DefaultReplicationPolicy`. 
+|replication.policy.class:: Policy to define the target topic naming convention. Default is `org.apache.kafka.connect.mirror.DefaultReplicationPolicy`. 
 |✓
 |✓
 |✓
 
 |replication.policy.separator:: The separator used for topic naming in the target cluster. By default, the separator is set to a dot (.). 
-Separator configuration is only applicable to the `DefaultReplicationPolicy` replication policy class, which defines remote topic names.
+Separator configuration is only applicable to the `DefaultReplicationPolicy` replication policy class, which defines target topic names.
 The `IdentityReplicationPolicy` class does not use the property as topics retain their original names.
 |✓
 |✓

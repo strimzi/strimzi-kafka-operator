@@ -19,7 +19,7 @@ Extend it with optional settings to support the following:
 * xref:con-common-config-{context}[common configuration] +
 Common configuration includes setting resource limits and requests (recommended), JVM tuning, and metrics.
 
-Certain settings, though optional, are recommended for production deployments, such as security and resource allocation
+Certain settings, though optional, are recommended for production deployments, such as security and resource allocation.
 
 For details of all configuration options, see the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^]. 
 

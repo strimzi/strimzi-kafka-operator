@@ -23,17 +23,20 @@ Write operations on remote topics are not prevented, but they can cause conflict
 
 The MirrorMaker 2 architecture supports bidirectional replication in an _active/active_ cluster configuration.
 
-Each cluster replicates the data of the other cluster using the concept of _source_ and _remote_ topics.
-As the same topics are stored in each cluster, remote topics are automatically renamed by MirrorMaker 2 to represent the source cluster.
-The name of the originating cluster is prepended to the name of the topic.
+Each cluster replicates the other's data using the concept of _source_ and _remote_ topics.
+In this context, _remote_ refers to the target cluster receiving replicated data from the perspective of the source MirrorMaker instance.
+Each cluster simultaneously acts as both source and remote, depending on the direction of the replication flow.
+
+As the same topics are stored in each cluster, remote topics are automatically renamed by MirrorMaker 2 to indicate their origin.
+The name of the source cluster is prepended to the topic name.
 
 .Topic renaming
 image::mirrormaker-renaming.png[MirrorMaker 2 bidirectional architecture]
 
-By flagging the originating cluster, topics are not replicated back to that cluster.
+This renaming prevents topics from being replicated back to their originating cluster.
 
-The concept of replication through _remote_ topics is useful when configuring an architecture that requires data aggregation.
-Consumers can subscribe to source and remote topics within the same cluster, without the need for a separate aggregation cluster.
+This replication structure also supports data aggregation in active/active setups: 
+Consumers can subscribe to both source and remote topics within the same cluster, eliminating the need for a separate aggregation cluster.
 
 [id=unidirectional_replication_activepassive]
 == Unidirectional replication (active/passive)

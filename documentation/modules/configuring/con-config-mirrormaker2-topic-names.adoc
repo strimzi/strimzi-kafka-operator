@@ -8,8 +8,10 @@
 [role="_abstract"]
 By default, MirrorMaker 2 renames replicated topics by prepending the source cluster's alias.
 For example, a topic named `topic1` from a cluster called `my-cluster-source` is replicated as `my-cluster-source.topic1`.
+This allows MirrorMaker 2 to detect mirroring cycles and is especially useful when deploying complex topologies or performing bidirectional replication.
 
 You can change this behavior using the `replication.policy.class` property in the connector configuration.
+There are two built-in policies available:
 
 * `org.apache.kafka.connect.mirror.IdentityReplicationPolicy` keeps original topic names. +
 This approach is suitable for unidirectional replication, migration, or failover scenarios.

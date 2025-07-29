@@ -8,12 +8,12 @@
 [role="_abstract"]
 Configure MirrorMaker 2 to synchronize consumer group offsets from the source cluster to the target cluster.
 
-Two internal topics help manage the process:
+The `MirrorSourceConnector` and `MirrorCheckpointConnector` work together using internal topics to coordinate offset tracking between clusters.
 
-** `checkpoints` stores last committed offsets for each consumer group
-** `offset-syncs` Maps offsets between clusters
+`offset-syncs` topic:: Populated by the `MirrorSourceConnector`, this topic stores offset mappings between source and target clusters. By default, it's created in the source cluster.
+`checkpoints` topic:: Populated by the `MirrorCheckpointConnector` in the target cluster, this topic captures the last committed offsets for each consumer group.
 
-`MirrorCheckpointConnector` emits periodic offset checkpoints, enabling:
+Configuring the `MirrorCheckpointConnector` to emit periodic offset checkpoints enables:
 
 * Active/passive offset synchronization
 * Failover recovery as consumers switch to the target cluster at the correct position
@@ -37,29 +37,24 @@ metadata:
         config:
           offset-syncs.topic.replication.factor: 3 # <1>
           refresh.topics.interval.seconds: 60 # <2>
-      heartbeatConnector:
-        config:
-          emit.heartbeats.enabled: true # <3>
-          heartbeats.topic.replication.factor: 1 # <4>
       checkpointConnector:
         config:
-          sync.group.offsets.enabled: true # <5>
-          sync.group.offsets.interval.seconds: 60 # <6>
-          emit.checkpoints.interval.seconds: 60 # <7>
-          refresh.groups.interval.seconds: 600 # <8>
-          checkpoints.topic.replication.factor: 1 # <9> 
+          sync.group.offsets.enabled: true # <3>
+          sync.group.offsets.interval.seconds: 60 # <4>
+          emit.checkpoints.interval.seconds: 60 # <5>
+          refresh.groups.interval.seconds: 600 # <6>
+          checkpoints.topic.replication.factor: 1 # <7> 
 ----
 <1> Replication factor for the `offset-syncs` internal topic that maps the offsets of the source and target clusters.
 <2> Optional setting to change the frequency of checks for new topics.
-<3> Enables connectivity checks on the target cluster. 
-<4> Replication factor for the internal `heartbeats` topic.
-<5> Enables consumer group offset synchronization.
-<6> The frequency of the synchronization.
-<7> Adjusts the frequency of checks for offset tracking. If you change the frequency of offset synchronization, you might also need to adjust the frequency of these checks.  
-<8> The frequency of checks for new consumer groups.
-<9> Replication factor for the internal `checkpoints` topic.
+<3> Enables consumer group offset synchronization.
+<4> The frequency of the synchronization.
+<5> Adjusts the frequency of checks for offset tracking. If you change the frequency of offset synchronization, you might also need to adjust the frequency of these checks.  
+<6> The frequency of checks for new consumer groups.
+<7> Replication factor for the internal `checkpoints` topic.
 
-TIP: If you have an application written in Java, you can use the `RemoteClusterUtils.java` utility to synchronize offsets through the application. The utility fetches remote offsets for a consumer group from the `checkpoints` topic.
+TIP: If you have an application written in Java, you can use the `RemoteClusterUtils.java` utility to fetch offsets through the application. 
+The utility fetches remote offsets for a consumer group from the `checkpoints` topic.
 
 == Changing the location of the consumer group offsets topic
 

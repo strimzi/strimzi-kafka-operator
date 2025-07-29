@@ -10,6 +10,7 @@ Use `tasksMax` to control how many tasks are assigned to connectors.
 Increasing the number of tasks helps improve performance when replicating many partitions or synchronizing the offsets of a large number of consumer groups.
 
 MirrorMaker 2 connectors create distributed tasks that move data between clusters. 
+These tasks follow a set of operational behaviors and allocation rules.
 
 Task behavior:
 
@@ -21,9 +22,9 @@ Task behavior:
 Task allocation rules:
 
 * By default, connectors run with 1 task, unless `tasksMax` is set.
-* The heartbeat connector always uses 1 task.
-* For the source connector, the maximum possible tasks = number of partitions.
-* For the checkpoint connector, the maximum possible tasks = number of consumer groups.
+* The `MirrorHeartbeatConnector` always uses 1 task.
+* For the `MirrorSourceConnector`, the maximum possible tasks = number of partitions.
+* For the `MirrorCheckpointConnector`, the maximum possible tasks = number of consumer groups.
 * Actual tasks started is the lower value of `tasksMax` and the maximum possible tasks.
 
 If the infrastructure can support it, increasing the number of tasks improves throughput and reduces latency during high-volume replication.
@@ -84,6 +85,3 @@ The example MirrorMaker 2 Grafana dashboard provided with Strimzi shows the foll
 * The number of tasks
 * Replication latency
 * Offset synchronization latency
-
-
-
