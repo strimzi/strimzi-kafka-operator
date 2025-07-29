@@ -49,11 +49,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This class is used to generate the broker configuration template. The template is later passed using a config map to
@@ -150,18 +148,13 @@ public class KafkaBrokerConfigurationBuilder {
      * @return Returns the builder instance
      */
     public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
-        printSectionHeader("Strimzi Metrics Reporter configuration");
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
+            printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
             writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
-        } else {
-            // we disable the listener just in case the user manually set SMR from spec.config
-            // because this would enable the listener on port 8080, causing a node crash loop
-            // due to address already in use by the Kafka Agent
-            writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println();
         }
-        writer.println();
         return this;
     }
 
@@ -893,92 +886,67 @@ public class KafkaBrokerConfigurationBuilder {
                                       boolean injectCcMetricsReporter,
                                       boolean injectKafkaJmxReporter,
                                       boolean injectStrimziMetricsReporter) {
-        String configKey = "metric.reporters";
+        // Build a list of reporters to inject based on flags
+        List<String> reportersToInject = new ArrayList<>();
+        if (injectCcMetricsReporter) reportersToInject.add(CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
+        // Since Kafka 4 the JmxReporter is explicitly added when JmxPrometheusExporter is enabled
+        if (injectKafkaJmxReporter) reportersToInject.add("org.apache.kafka.common.metrics.JmxReporter");
+        if (injectStrimziMetricsReporter) reportersToInject.add(StrimziMetricsReporterConfig.KAFKA_CLASS);
 
-        // build a list of reporters to inject based on flags
-        // since Kafka 4 the JmxReporter is explicitly added when JmxPrometheusExporter is enabled
-        List<String> reportersToInject = Stream.of(
-                injectCcMetricsReporter ? CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER : null,
-                injectKafkaJmxReporter ? "org.apache.kafka.common.metrics.JmxReporter" : null,
-                injectStrimziMetricsReporter ? StrimziMetricsReporterConfig.KAFKA_CLASS : null
-        ).filter(Objects::nonNull).toList();
+        if (!reportersToInject.isEmpty()) {
+            String configKey = "metric.reporters";
 
-        if (reportersToInject.isEmpty()) {
-            // nothing to inject
-            return;
-        }
+            if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
+                    userConfig.getConfigOption(configKey) != null) {
+                // handle user configuration if present and avoids duplicates
+                String configValue = userConfig.getConfigOption(configKey);
 
-        boolean hasUserMetricReporters = false;
-        String configValue = "";
+                reportersToInject = reportersToInject.stream()
+                        .filter(r -> !userConfig.getConfigOption(configKey).contains(r))
+                        .toList();
 
-        // handle user configuration if present and avoids duplicates
-        if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
-                userConfig.getConfigOption(configKey) != null) {
-            hasUserMetricReporters = true;
-            configValue = userConfig.getConfigOption(configKey);
-            reportersToInject = reportersToInject.stream()
-                    .filter(r -> !userConfig.getConfigOption(configKey).contains(r))
-                    .toList();
-            if (reportersToInject.isEmpty()) {
-                // nothing to do, injections configured by the user
-                return;
+                if (!reportersToInject.isEmpty()) {
+                    userConfig.removeConfigOption(configKey);
+
+                    printSectionHeader(configKey + " configuration");
+                    writer.println("# " + configKey + " configured by the user and by Strimzi");
+                    writer.println(configKey + "=" + configValue + "," + String.join(",", reportersToInject));
+                    writer.println();
+                }
+            } else {
+                printSectionHeader(configKey + " configuration");
+                writer.println("# " + configKey + " configured by Strimzi");
+                writer.println(configKey + "=" + String.join(",", reportersToInject));
+                writer.println();
             }
-            userConfig.removeConfigOption(configKey);
         }
-
-        // append to the configuration value
-        String reportersToAdd = String.join(",", reportersToInject);
-        if (!configValue.isEmpty()) {
-            configValue += "," + reportersToAdd;
-        } else {
-            configValue = reportersToAdd;
-        }
-
-        printSectionHeader(configKey + " configuration");
-        writer.println(hasUserMetricReporters ?
-                "# " + configKey + " configured by the user and by Strimzi" :
-                "# " + configKey + " configured by Strimzi");
-        writer.println(configKey + "=" + configValue);
-        writer.println();
     }
 
     private void printYammerReporters(KafkaConfiguration userConfig,
                                       boolean injectStrimziMetricsReporter) {
-        String configKey = "kafka.metrics.reporters";
+        if (injectStrimziMetricsReporter) {
+            String configKey = "kafka.metrics.reporters";
 
-        if (!injectStrimziMetricsReporter) {
-            // nothing to inject
-            return;
-        }
+            if (userConfig != null
+                    && !userConfig.getConfiguration().isEmpty()
+                    && userConfig.getConfigOption(configKey) != null) {
+                // handle user configuration if present and avoids duplicates
+                String configValue = userConfig.getConfigOption(configKey);
 
-        boolean hasUserMetricReporters = false;
-        String configValue = "";
-
-        // handle user configuration if present and avoids duplicates
-        if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
-                userConfig.getConfigOption(configKey) != null) {
-            hasUserMetricReporters = true;
-            configValue = userConfig.getConfigOption(configKey);
-            if (configValue.contains(StrimziMetricsReporterConfig.YAMMER_CLASS)) {
-                // nothing to do, injection configured by the user
-                return;
+                if (!configValue.contains(StrimziMetricsReporterConfig.YAMMER_CLASS)) {
+                    userConfig.removeConfigOption(configKey);
+                    printSectionHeader(configKey + " configuration");
+                    writer.println("# " + configKey + " configured by the user and by Strimzi");
+                    writer.println(configKey + "=" + configValue + "," + StrimziMetricsReporterConfig.YAMMER_CLASS);
+                    writer.println();
+                }
+            } else {
+                printSectionHeader(configKey + " configuration");
+                writer.println("# " + configKey + " configured by Strimzi");
+                writer.println(configKey + "=" + StrimziMetricsReporterConfig.YAMMER_CLASS);
+                writer.println();
             }
-            userConfig.removeConfigOption(configKey);
         }
-
-        // append to the configuration value
-        if (!configValue.isEmpty()) {
-            configValue += "," + StrimziMetricsReporterConfig.YAMMER_CLASS;
-        } else {
-            configValue = StrimziMetricsReporterConfig.YAMMER_CLASS;
-        }
-
-        printSectionHeader(configKey + " configuration");
-        writer.println(hasUserMetricReporters ?
-                "# " + configKey + " configured by the user and by Strimzi" :
-                "# " + configKey + " configured by Strimzi");
-        writer.println(configKey + "=" + configValue);
-        writer.println();
     }
 
     /**

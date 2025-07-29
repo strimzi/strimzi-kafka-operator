@@ -566,24 +566,6 @@ class KafkaConnectConfigurationBuilderTest {
                 "consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*"
         ));
     }
-    
-    @ParallelTest
-    public void testStrimziMetricsReporterDisabled() {
-        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withStrimziMetricsReporter(null)
-                .build();
-
-        assertThat(configuration, isEquivalent(
-                "admin.security.protocol=PLAINTEXT",
-                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
-                "security.protocol=PLAINTEXT",
-                "producer.security.protocol=PLAINTEXT",
-                "consumer.security.protocol=PLAINTEXT",
-                StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false",
-                "admin." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false",
-                "producer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false",
-                "consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false"));
-    }
 
     static Stream<Arguments> sourceUserConfigWithMetricsReporters() {
         Map<String, Object> configMap = new HashMap<>();
@@ -611,52 +593,27 @@ class KafkaConnectConfigurationBuilderTest {
 
         // testing 4 combinations of 2 boolean values
         return Stream.of(
-                Arguments.of(userConfig, false, false,
-                        expectedConfig
-                                + "metric.reporters="
-                                + "my.domain.CustomMetricReporter"
-                ),
-                Arguments.of(userConfig, true, false,
-                        expectedConfig
-                                + "metric.reporters="
-                                + "my.domain.CustomMetricReporter,"
-                                + "org.apache.kafka.common.metrics.JmxReporter\n"
-                                + "admin.metric.reporters="
-                                + "org.apache.kafka.common.metrics.JmxReporter\n"
-                                + "producer.metric.reporters="
-                                + "org.apache.kafka.common.metrics.JmxReporter\n"
-                                + "consumer.metric.reporters="
-                                + "org.apache.kafka.common.metrics.JmxReporter"
-                ),
-                Arguments.of(userConfig, false, true,
-                        expectedConfig
-                                + "metric.reporters="
-                                + "my.domain.CustomMetricReporter,"
-                                + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                                + "admin.metric.reporters="
-                                + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                                + "producer.metric.reporters="
-                                + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                                + "consumer.metric.reporters="
-                                + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                ),
+                Arguments.of(userConfig, false, false, expectedConfig
+                        + "metric.reporters=my.domain.CustomMetricReporter"),
 
-                Arguments.of(userConfig, true, true,
-                        expectedConfig
-                                + "metric.reporters="
-                                + "my.domain.CustomMetricReporter,"
-                                + "org.apache.kafka.common.metrics.JmxReporter,"
-                                + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                                + "admin.metric.reporters="
-                                + "org.apache.kafka.common.metrics.JmxReporter,"
-                                + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                                + "producer.metric.reporters="
-                                + "org.apache.kafka.common.metrics.JmxReporter,"
-                                + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                                + "consumer.metric.reporters="
-                                + "org.apache.kafka.common.metrics.JmxReporter,"
-                                + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                ));
+                Arguments.of(userConfig, true, false, expectedConfig
+                        + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter\n"
+                        + "admin.metric.reporters=org.apache.kafka.common.metrics.JmxReporter\n"
+                        + "producer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter\n"
+                        + "consumer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter"),
+
+                Arguments.of(userConfig, false, true, expectedConfig
+                        + "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "admin.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "producer.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "consumer.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"),
+
+                Arguments.of(userConfig, true, true, expectedConfig
+                        + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "admin.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "producer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "consumer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n")
+        );
     }
 
     @ParameterizedTest

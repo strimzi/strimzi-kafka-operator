@@ -243,16 +243,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT,
                 StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_log.*,kafka_network.*"));
     }
-    
-    @ParallelTest
-    public void testStrimziMetricsReporterDisabled() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withStrimziMetricsReporter(null)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false"));
-    }
 
     @ParallelTest
     public void testNoRackAwareness()  {
@@ -720,78 +710,39 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         // testing 8 combinations of 3 boolean values
         return Stream.of(
-               Arguments.of(userConfig, false, false, false,
-                       expectedConfig
-                               + "metric.reporters="
-                               + "my.domain.CustomMetricReporter\n"
-                               + "kafka.metrics.reporters="
-                               + "my.domain.CustomYammerMetricReporter"
+               Arguments.of(userConfig, false, false, false, expectedConfig
+                       + "metric.reporters=my.domain.CustomMetricReporter\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter"
                ),
 
-               Arguments.of(userConfig, true, false, false,
-                       expectedConfig
-                               + "metric.reporters="
-                               + "my.domain.CustomMetricReporter,"
-                               + "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter\n"
-                               + "kafka.metrics.reporters="
-                               + "my.domain.CustomYammerMetricReporter"),
+               Arguments.of(userConfig, true, false, false, expectedConfig
+                       + "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter"),
 
-               Arguments.of(userConfig, false, true, false,
-                       expectedConfig
-                               + "metric.reporters="
-                               + "my.domain.CustomMetricReporter,"
-                               + "org.apache.kafka.common.metrics.JmxReporter\n"
-                               + "kafka.metrics.reporters="
-                               + "my.domain.CustomYammerMetricReporter"
-               ),
-               Arguments.of(userConfig, false, false, true,
-                       expectedConfig
-                               + "metric.reporters="
-                               + "my.domain.CustomMetricReporter,"
-                               + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                               + "kafka.metrics.reporters="
-                               + "my.domain.CustomYammerMetricReporter,"
-                               + StrimziMetricsReporterConfig.YAMMER_CLASS
-               ),
-               Arguments.of(userConfig, true, true, false,
-                       expectedConfig
-                               + "metric.reporters="
-                               + "my.domain.CustomMetricReporter,"
-                               + "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter,"
-                               + "org.apache.kafka.common.metrics.JmxReporter\n"
-                               + "kafka.metrics.reporters="
-                               + "my.domain.CustomYammerMetricReporter"
-               ),
-               Arguments.of(userConfig, true, false, true,
-                       expectedConfig
-                               + "metric.reporters="
-                               + "my.domain.CustomMetricReporter,"
-                               + "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter,"
-                               +  StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                               + "kafka.metrics.reporters="
-                               + "my.domain.CustomYammerMetricReporter,"
-                               + StrimziMetricsReporterConfig.YAMMER_CLASS
-               ),
-               Arguments.of(userConfig, false, true, true,
-                       expectedConfig
-                               + "metric.reporters="
-                               + "my.domain.CustomMetricReporter,"
-                               + "org.apache.kafka.common.metrics.JmxReporter,"
-                               +  StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                               + "kafka.metrics.reporters="
-                               + "my.domain.CustomYammerMetricReporter,"
-                               + StrimziMetricsReporterConfig.YAMMER_CLASS
-               ),
-               Arguments.of(userConfig, true, true, true,
-                       expectedConfig
-                               + "metric.reporters="
-                               + "my.domain.CustomMetricReporter,"
-                               + "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter,"
-                               + "org.apache.kafka.common.metrics.JmxReporter,"
-                               + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                               + "kafka.metrics.reporters="
-                               + "my.domain.CustomYammerMetricReporter,"
-                               + StrimziMetricsReporterConfig.YAMMER_CLASS));
+               Arguments.of(userConfig, false, true, false, expectedConfig
+                       + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter"),
+
+               Arguments.of(userConfig, false, false, true, expectedConfig
+                       + "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.YAMMER_CLASS),
+
+               Arguments.of(userConfig, true, true, false, expectedConfig
+                       + "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter,org.apache.kafka.common.metrics.JmxReporter\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter"),
+
+               Arguments.of(userConfig, true, false, true, expectedConfig
+                       + "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.YAMMER_CLASS),
+
+               Arguments.of(userConfig, false, true, true, expectedConfig
+                       + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter," +  StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.YAMMER_CLASS),
+
+               Arguments.of(userConfig, true, true, true, expectedConfig
+                       + "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter,org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.YAMMER_CLASS)
+        );
     }
 
     @ParameterizedTest

@@ -27,10 +27,6 @@ spec:
           replication.factor: -1
           offset-syncs.topic.replication.factor: -1
           sync.topic.acls.enabled: "false"
-      heartbeatConnector:
-        config:
-          # -1 means it will use the default replication factor configured in the broker
-          heartbeats.topic.replication.factor: -1
       checkpointConnector:
         config:
           # -1 means it will use the default replication factor configured in the broker
