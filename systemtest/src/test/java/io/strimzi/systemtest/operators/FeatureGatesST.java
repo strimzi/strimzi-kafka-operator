@@ -37,11 +37,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 public class FeatureGatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesST.class);
-    private static final String USE_SERVER_SIDE_APPLY = "+ServerSideApplyPhase1";
+    private static final String SERVER_SIDE_APPLY_PHASE_1_ENABLED = "+ServerSideApplyPhase1";
+    private static final String SERVER_SIDE_APPLY_PHASE_1_DISABLED = "-ServerSideApplyPhase1";
 
     @IsolatedTest("Creates ClusterOperator with Server Side Apply FG enabled")
     void testServerSideApply() {
         TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        LOGGER.info("Deploying CO with SSA Phase 1 disabled");
 
         // Firstly deploy CO without SSA enabled to check that changes to the resources will be re-written
         setupClusterOperatorWithFeatureGate("");
@@ -54,28 +57,19 @@ public class FeatureGatesST extends AbstractST {
 
         annotateResourcesAndCheckIfPresent(testStorage, false);
 
-        LOGGER.info("Change STRIMZI_FEATURE_GATES to enable SSA");
-        final Map<String, String> coPod = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
-
-        KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
-            .withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).edit(dep -> new DeploymentBuilder(dep)
-                .editSpec()
-                    .editTemplate()
-                        .editSpec()
-                            .editFirstContainer()
-                                .addToEnv(new EnvVar("STRIMZI_FEATURE_GATES", USE_SERVER_SIDE_APPLY, null))
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build());
-
-        DeploymentUtils.waitTillDepHasRolled(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName(), 1, coPod);
+        LOGGER.info("Enabling Server Side Apply Phase 1");
+        changeFeatureGatesAndWaitForCoRollingUpdate(SERVER_SIDE_APPLY_PHASE_1_ENABLED);
 
         annotateResourcesAndCheckIfPresent(testStorage, true);
+
+        LOGGER.info("Finally, changing back to SSA disabled");
+
+        changeFeatureGatesAndWaitForCoRollingUpdate(SERVER_SIDE_APPLY_PHASE_1_DISABLED);
+
+        annotateResourcesAndCheckIfPresent(testStorage, false);
     }
 
-    private void annotateResourcesAndCheckIfPresent(TestStorage testStorage, boolean shouldBePresent) {
+    private static void annotateResourcesAndCheckIfPresent(TestStorage testStorage, boolean shouldBePresent) {
         final String annotationKey = "my-annotation";
         final String annotationValue = "my-value";
         final String annotationFull = String.format("%s=%s", annotationKey, annotationValue);
@@ -116,6 +110,32 @@ public class FeatureGatesST extends AbstractST {
         currentAnnotations = KubeResourceManager.get().kubeClient().getClient().serviceAccounts()
             .inNamespace(testStorage.getNamespaceName()).withName(kafkaServiceAccount).get().getMetadata().getAnnotations();
         assertThat(currentAnnotations.containsKey(annotationKey), is(shouldBePresent));
+    }
+
+    /**
+     * Changes the feature gate value in `STRIMZI_FEATURE_GATES` env variable to {@param featureGatesValue}.
+     *
+     * @param featureGatesValue     value of FG that should be set in CO's `STRIMZI_FEATURE_GATES` env variable
+     */
+    private void changeFeatureGatesAndWaitForCoRollingUpdate(String featureGatesValue) {
+        LOGGER.info("Changing STRIMZI_FEATURE_GATES to {}", featureGatesValue);
+
+        Map<String, String> coPod = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
+
+        KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace())
+            .withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).edit(dep -> new DeploymentBuilder(dep)
+                .editSpec()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .addToEnv(new EnvVar("STRIMZI_FEATURE_GATES", featureGatesValue, null))
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .build());
+
+        DeploymentUtils.waitTillDepHasRolled(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName(), 1, coPod);
     }
 
     /**

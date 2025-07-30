@@ -85,7 +85,7 @@ public class Main {
         startHealthServer(vertx, metricsProvider)
                 .compose(i -> leaderElection(client, config, shutdownHook))
                 .compose(i -> createPlatformFeaturesAvailability(vertx, client))
-                .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config, shutdownHook, config.featureGates().serverSideApplyEnabled()))
+                .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config, shutdownHook))
                 .onComplete(res -> {
                     if (res.failed())   {
                         LOGGER.error("Unable to start operator for 1 or more namespace", res.cause());
@@ -137,14 +137,14 @@ public class Main {
      * @return  Future which completes when all Cluster Operator verticles are started and running
      */
     static CompositeFuture deployClusterOperatorVerticles(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider,
-                                                          PlatformFeaturesAvailability pfa, ClusterOperatorConfig config, ShutdownHook shutdownHook, boolean useServerSideApply) {
+                                                          PlatformFeaturesAvailability pfa, ClusterOperatorConfig config, ShutdownHook shutdownHook) {
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(
                 vertx,
                 client,
                 metricsProvider,
                 pfa,
                 config.getOperatorName(),
-                useServerSideApply
+                config.featureGates().serverSideApplyEnabled()
         );
 
         // Initialize the PodSecurityProvider factory to provide the user configured provider

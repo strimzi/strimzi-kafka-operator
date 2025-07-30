@@ -21,11 +21,10 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
+public class PvcOperatorTest extends AbstractNamespacedResourceOperatorServerSideApplyTest<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -64,16 +63,12 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
     }
 
     @Override
-    protected PvcOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PvcOperator(vertx, mockClient, useServerSideApply());
+    protected PvcOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
+        return new PvcOperator(vertx, mockClient, useServerSideApply);
     }
 
     @Test
     public void testRevertingImmutableFields() {
-        // Skip for Server Side Apply, as the internalUpdate is not used, only internalPatch for which this
-        // test doesn't apply
-        assumeFalse(useServerSideApply());
-
         PersistentVolumeClaim desired = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                     .withName("my-pvc")
@@ -102,7 +97,7 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
                 .endSpec()
                 .build();
 
-        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class));
+        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class), false);
         op.revertImmutableChanges(current, desired);
 
         assertThat(current.getSpec().getStorageClassName(), is(desired.getSpec().getStorageClassName()));
@@ -113,10 +108,6 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
 
     @Test
     public void testIgnoredAnnotationsInDiff()   {
-        // Skip for Server Side Apply, as the internalUpdate is not used, only internalPatch for which this
-        // test doesn't apply
-        assumeFalse(useServerSideApply());
-
         PersistentVolumeClaim pvcWithDefaultAnnos = new PersistentVolumeClaimBuilder(resource("my-pvc"))
                 .editMetadata()
                     .withAnnotations(Map.of("strimzi.io/delete-claim", "false"))
@@ -138,7 +129,7 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
                 .endMetadata()
                 .build();
 
-        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class));
+        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class), false);
 
         assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithDefaultAnnos).isEmpty(), is(true));
         assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithIgnoredAnnos).isEmpty(), is(true));
@@ -147,10 +138,6 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
 
     @Test
     public void testNormalizedVolumeSize() {
-        // Skip for Server Side Apply, as the internalUpdate is not used, only internalPatch for which this
-        // test doesn't apply
-        assumeFalse(useServerSideApply());
-
         PersistentVolumeClaim pvcWithDefaultStorageSize = new PersistentVolumeClaimBuilder(resource("my-pvc"))
             .withNewSpec()
                 .withNewResources()
@@ -175,7 +162,7 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
             .endSpec()
             .build();
 
-        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class));
+        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class), false);
 
         op.configureNormalizedStorageSizeIfEqual(pvcWithDefaultStorageSize, pvcWithSameSizeInMi);
         assertThat(pvcWithSameSizeInMi.getSpec().getResources().getRequests().get("storage").toString().equals("1Gi"), is(true));

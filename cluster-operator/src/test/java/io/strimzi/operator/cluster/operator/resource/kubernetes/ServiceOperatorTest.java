@@ -22,11 +22,10 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
+public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorServerSideApplyTest<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -66,16 +65,12 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
     }
 
     @Override
-    protected ServiceOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceOperator(vertx, mockClient, useServerSideApply());
+    protected ServiceOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
+        return new ServiceOperator(vertx, mockClient, useServerSideApply);
     }
 
     @Test
-    public void testNodePortPatching()  {
-        // For Server Side Apply we are not using the patchNodePorts from the current to desired,
-        // we are just patching the resource
-        assumeFalse(useServerSideApply());
-
+    public void testNodePortPatching() {
         KubernetesClient client = mock(KubernetesClient.class);
 
         Service current = new ServiceBuilder()
@@ -124,7 +119,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, useServerSideApply());
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.patchNodePorts(current, desired);
 
         assertThat(current.getSpec().getPorts().get(0).getNodePort(), is(desired.getSpec().getPorts().get(1).getNodePort()));
@@ -133,10 +128,6 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
 
     @Test
     void testCattleAnnotationPatching() {
-        // For Server Side Apply we are not using the internalUpdate,
-        // we are just patching the resource, which is checked by other tests and this test is not needed
-        assumeFalse(useServerSideApply());
-
         KubernetesClient client = mock(KubernetesClient.class);
 
         Map<String, String> currentAnnotations = Map.of(
@@ -166,7 +157,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, useServerSideApply());
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io~1publicEndpoints"), equalTo("foo"));
@@ -176,10 +167,6 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
 
     @Test
     public void testHealthCheckPortPatching()  {
-        // For Server Side Apply we are not using the patchHealthCheckPorts from the current to desired,
-        // we are just patching the resource
-        assumeFalse(useServerSideApply());
-
         KubernetesClient client = mock(KubernetesClient.class);
 
         Service current = new ServiceBuilder()
@@ -203,7 +190,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, useServerSideApply());
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.patchHealthCheckPorts(current, desired);
 
         assertThat(current.getSpec().getHealthCheckNodePort(), is(desired.getSpec().getHealthCheckNodePort()));
@@ -211,10 +198,6 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
 
     @Test
     public void testDualStackNetworkingPatching()  {
-        // For Server Side Apply we are not using the patchDualStackNetworking from the current to desired,
-        // we are just patching the resource
-        assumeFalse(useServerSideApply());
-
         KubernetesClient client = mock(KubernetesClient.class);
 
         Service current = new ServiceBuilder()
@@ -311,7 +294,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, useServerSideApply());
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
 
         op.patchDualStackNetworking(current, desired);
         assertThat(current.getSpec().getIpFamilyPolicy(), is(desired.getSpec().getIpFamilyPolicy()));
@@ -332,10 +315,6 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
 
     @Test
     public void testLoadBalancerClassPatching()  {
-        // For Server Side Apply we are not using the patchLoadBalancerClass from the current to desired,
-        // we are just patching the resource
-        assumeFalse(useServerSideApply());
-
         KubernetesClient client = mock(KubernetesClient.class);
 
         Service current = new ServiceBuilder()
@@ -369,7 +348,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client, useServerSideApply());
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.patchLoadBalancerClass(current, desired);
 
         assertThat(current.getSpec().getLoadBalancerClass(), is(desired.getSpec().getLoadBalancerClass()));

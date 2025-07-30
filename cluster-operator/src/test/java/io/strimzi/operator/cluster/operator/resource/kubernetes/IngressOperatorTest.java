@@ -15,7 +15,8 @@ import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Map;
 
@@ -26,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
+public class IngressOperatorTest extends AbstractNamespacedResourceOperatorServerSideApplyTest<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
     @Override
     protected Class<KubernetesClient> clientType() {
         return KubernetesClient.class;
@@ -69,12 +70,13 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new IngressOperator(vertx, mockClient, useServerSideApply());
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
+        return new IngressOperator(vertx, mockClient, useServerSideApply);
     }
 
-    @Test
-    public void testIngressClassPatching()  {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testIngressClassPatching(boolean useServerSideApply)  {
         KubernetesClient client = mock(KubernetesClient.class);
 
         Ingress current = new IngressBuilder()
@@ -99,14 +101,15 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        IngressOperator op = new IngressOperator(vertx, client, useServerSideApply());
+        IngressOperator op = new IngressOperator(vertx, client, useServerSideApply);
         op.patchIngressClassName(current, desired);
 
         assertThat(desired.getSpec().getIngressClassName(), is(current.getSpec().getIngressClassName()));
     }
 
-    @Test
-    public void testCattleAnnotationPatching()  {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testCattleAnnotationPatching(boolean useServerSideApply)  {
         KubernetesClient client = mock(KubernetesClient.class);
 
         Ingress current = new IngressBuilder()
@@ -131,7 +134,7 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        IngressOperator op = new IngressOperator(vertx, client, useServerSideApply());
+        IngressOperator op = new IngressOperator(vertx, client, useServerSideApply);
         op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io/publicEndpoints"), equalTo("foo"));

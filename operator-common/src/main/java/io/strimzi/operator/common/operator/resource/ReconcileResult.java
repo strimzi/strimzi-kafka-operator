@@ -32,6 +32,11 @@ public abstract class ReconcileResult<R> {
         PATCHED,
 
         /**
+         * The resource was patched using Server Side Apply
+         */
+        PATCHED_WITH_SERVER_SIDE_APPLY,
+
+        /**
          * The resource was deleted
          */
         DELETED
@@ -91,30 +96,41 @@ public abstract class ReconcileResult<R> {
      * @param <R>   Resource type for which the result is being indicated
      */
     public static class Patched<R> extends ReconcileResult<R> {
-        private final boolean useServerSideApply;
-
         private Patched(R resource) {
             super(Optional.of(resource));
-            this.useServerSideApply = false;
-        }
-
-        private Patched(R resource, boolean serverSideApplyUsed) {
-            super(Optional.of(resource));
-            this.useServerSideApply = serverSideApplyUsed;
-        }
-
-        /**
-         * Returns if Server Side Apply was used for patching.
-         *
-         * @return  if Server Side Apply was used for patching.
-         */
-        public boolean usedServerSideApply() {
-            return useServerSideApply;
         }
 
         @Override
         public Type getType() {
             return Type.PATCHED;
+        }
+    }
+
+    /**
+     * the resource was modified during the reconciliation using Server Side Apply
+     *
+     * @param <R>   Resource type for which the result is being indicated
+     */
+    public static class PatchedWithServerSideApply<R> extends ReconcileResult<R> {
+        private final boolean usedForce;
+
+        private PatchedWithServerSideApply(R resource, boolean usedForce) {
+            super(Optional.of(resource));
+            this.usedForce = usedForce;
+        }
+
+        @Override
+        public Type getType() {
+            return Type.PATCHED_WITH_SERVER_SIDE_APPLY;
+        }
+
+        /**
+         * Returns boolean value determining if force was used or not.
+         *
+         * @return boolean value determining if force was used or not.
+         */
+        public boolean usedForce() {
+            return usedForce;
         }
     }
 
@@ -130,12 +146,13 @@ public abstract class ReconcileResult<R> {
 
     /**
      * Return a reconciliation result that indicates the resource was patched using Server Side Apply.
-     * @param resource The patched resource.
+     * @param resource  The patched resource.
+     * @param usedForce Determines if force was used.
      * @return a reconciliation result that indicates the resource was patched using Server Side Apply.
      * @param <D> The type of resource
      */
-    public static <D> Patched<D> patchedUsingServerSideApply(D resource) {
-        return new Patched<>(resource, true);
+    public static <D> PatchedWithServerSideApply<D> patchedWithServerSideApply(D resource, boolean usedForce) {
+        return new PatchedWithServerSideApply<>(resource, usedForce);
     }
 
     /**

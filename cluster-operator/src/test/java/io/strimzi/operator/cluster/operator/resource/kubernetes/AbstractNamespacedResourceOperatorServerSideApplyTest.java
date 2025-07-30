@@ -25,13 +25,16 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,7 +52,7 @@ import static org.mockito.Mockito.when;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(VertxExtension.class)
-public abstract class AbstractNamespacedResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
+public abstract class AbstractNamespacedResourceOperatorServerSideApplyTest<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList<T>, R extends Resource<T>> {
 
     public static final String RESOURCE_NAME = "my-resource";
@@ -117,19 +120,23 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     protected abstract void mocker(C mockClient, MixedOperation op);
 
     /** Create the subclass of ResourceOperation to be tested */
-    protected abstract AbstractNamespacedResourceOperator<C, T, L, R> createResourceOperations(Vertx vertx, C mockClient);
+    protected abstract AbstractNamespacedResourceOperator<C, T, L, R> createResourceOperations(Vertx vertx, C mockClient, boolean useServerSideApply);
 
     /** Create the subclass of ResourceOperation to be tested with mocked readiness checks*/
-    protected AbstractNamespacedResourceOperator<C, T, L, R> createResourceOperationsWithMockedReadiness(Vertx vertx, C mockClient)    {
-        return createResourceOperations(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<C, T, L, R> createResourceOperationsWithMockedReadiness(Vertx vertx, C mockClient, boolean useServerSideApply)    {
+        return createResourceOperations(vertx, mockClient, useServerSideApply);
     }
 
-    @Test
-    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
-        testCreateWhenExistsWithChangeIsAPatch(context, true);
+    protected Stream<Arguments> data() {
+        return Stream.of(
+            Arguments.of(false),
+            Arguments.of(true)
+        );
     }
 
-    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context, boolean cascade) {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testCreateWhenExistsWithChangeIsAPatch(boolean useServerSideApply, VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -145,78 +152,32 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient, useServerSideApply);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource()).onComplete(context.succeeding(rr -> context.verify(() -> {
-            verify(mockResource).get();
+            if (!useServerSideApply) {
+                verify(mockResource).get();
+            }
             verify(mockResource).patch(any(), (T) any());
             verify(mockResource, never()).create();
             async.flag();
         })));
     }
 
-    @Test
-    public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context, boolean cascade) {
-        T resource = resource();
-        Resource mockResource = mock(resourceType());
-        when(mockResource.get()).thenReturn(resource);
-        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
-        when(mockResource.patch(any(), any())).thenReturn(resource);
-
-        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
-        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
-
-        MixedOperation mockCms = mock(MixedOperation.class);
-        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
-
-        C mockClient = mock(clientType());
-        mocker(mockClient, mockCms);
-
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
-
-        Checkpoint async = context.checkpoint();
-        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource()).onComplete(context.succeeding(rr -> context.verify(() -> {
-            verify(mockResource).get();
-            verify(mockResource, never()).patch(any(), any());
-            verify(mockResource, never()).create();
-            async.flag();
-        })));
-    }
-
-    @Test
-    public void testExistenceCheckThrows(VertxTestContext context) {
-        T resource = resource();
-        RuntimeException ex = new RuntimeException();
-
-        Resource mockResource = mock(resourceType());
-        when(mockResource.get()).thenThrow(ex);
-
-        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
-        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
-
-        MixedOperation mockCms = mock(MixedOperation.class);
-        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
-
-        C mockClient = mock(clientType());
-        mocker(mockClient, mockCms);
-
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
-
-        Checkpoint async = context.checkpoint();
-        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> context.verify(() -> {
-            assertThat(e, is(ex));
-            async.flag();
-        })));
-    }
-
-    @Test
-    public void testSuccessfulCreation(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testSuccessfulCreation(boolean useServerSideApply, VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
 
         when(mockResource.get()).thenReturn(null);
-        when(mockResource.create()).thenReturn(resource);
+
+        if (useServerSideApply) {
+            when(mockResource.patch(any(), eq(resource))).thenReturn(resource);
+        } else {
+            when(mockResource.create()).thenReturn(resource);
+        }
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -228,18 +189,24 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient, useServerSideApply);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.succeeding(rr -> context.verify(() -> {
-            verify(mockResource).get();
-            verify(mockResource).create();
+            if (useServerSideApply) {
+                verify(mockResource, never()).create();
+                verify(mockResource).patch(any(), eq(resource));
+            } else {
+                verify(mockResource).get();
+                verify(mockResource).create();
+            }
             async.flag();
         })));
     }
 
-    @Test
-    public void testCreateOrUpdateThrowsWhenCreateThrows(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testCreateOrUpdateThrowsWhenCreateThrows(boolean useServerSideApply, VertxTestContext context) {
         T resource = resource();
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
 
@@ -253,12 +220,16 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
 
-        when(mockResource.create()).thenThrow(ex);
+        if (useServerSideApply) {
+            when(mockResource.patch(any(), eq(resource))).thenThrow(ex);
+        } else {
+            when(mockResource.create()).thenThrow(ex);
+        }
 
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient, useServerSideApply);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> {
@@ -267,33 +238,9 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         }));
     }
 
-    @Test
-    public void testDeleteWhenResourceDoesNotExistIsANop(VertxTestContext context) {
-        T resource = resource();
-        Resource mockResource = mock(resourceType());
-
-        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
-        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
-
-        MixedOperation mockCms = mock(MixedOperation.class);
-        when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
-
-        C mockClient = mock(clientType());
-        mocker(mockClient, mockCms);
-
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
-
-        Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-            .onComplete(context.succeeding(rr -> context.verify(() -> {
-                verify(mockResource).get();
-                verify(mockResource, never()).delete();
-                async.flag();
-            })));
-    }
-
-    @Test
-    public void testReconcileDeleteWhenResourceExistsStillDeletes(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testReconcileDeleteWhenResourceExistsStillDeletes(boolean useServerSideApply, VertxTestContext context) {
         Deletable mockDeletable = mock(Deletable.class);
         AtomicBoolean resourceDeleted = new AtomicBoolean(false);
         when(mockDeletable.delete()).thenAnswer(args -> {
@@ -326,7 +273,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient, useServerSideApply);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
@@ -336,8 +283,9 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             })));
     }
 
-    @Test
-    public void testReconcileDeletionSuccessfullyDeletes(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testReconcileDeletionSuccessfullyDeletes(boolean useServerSideApply, VertxTestContext context) {
         Deletable mockDeletable = mock(Deletable.class);
         AtomicBoolean resourceDeleted = new AtomicBoolean(false);
         when(mockDeletable.delete()).thenAnswer(args -> {
@@ -370,7 +318,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient, useServerSideApply);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
@@ -380,8 +328,9 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             })));
     }
 
-    @Test
-    public void testReconcileDeleteThrowsWhenDeletionThrows(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testReconcileDeleteThrowsWhenDeletionThrows(boolean useServerSideApply, VertxTestContext context) {
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
         Deletable mockDeletable = mock(Deletable.class);
         GracePeriodConfigurable mockDeletableGrace = mock(GracePeriodConfigurable.class);
@@ -410,7 +359,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient, useServerSideApply);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
@@ -420,9 +369,10 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             })));
     }
 
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
     @SuppressWarnings("unchecked")
-    public void testReconcileDeleteDoesNotThrowWhenDeletionReturnsFalse(VertxTestContext context) {
+    public void testReconcileDeleteDoesNotThrowWhenDeletionReturnsFalse(boolean useServerSideApply, VertxTestContext context) {
         Deletable mockDeletable = mock(Deletable.class);
         AtomicBoolean resourceDeleted = new AtomicBoolean(false);
         when(mockDeletable.delete()).thenAnswer(args -> {
@@ -455,7 +405,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient, useServerSideApply);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
@@ -467,9 +417,10 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
     // This tests the pre-check which should stop the self-closing-watch in case the resource is deleted before the
     // watch is opened.
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
     @SuppressWarnings("unchecked")
-    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(VertxTestContext context) {
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(boolean useServerSideApply, VertxTestContext context) {
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenReturn(List.of());
         GracePeriodConfigurable mockDeletableGrace = mock(GracePeriodConfigurable.class);
@@ -508,7 +459,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient, useServerSideApply);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
@@ -518,8 +469,9 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
                 })));
     }
 
-    @Test
-    public void testBatchReconciliation(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testBatchReconciliation(boolean useServerSideApply, VertxTestContext context) {
         Map<String, String> selector = Map.of("labelA", "a", "labelB", "b");
 
         T resource1 = resource("resource-1");
@@ -562,7 +514,12 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         Resource mockResource3 = mock(resourceType());
         when(mockResource3.get()).thenReturn(null);
-        when(mockResource3.create()).thenReturn(resource3);
+
+        if (useServerSideApply) {
+            when(mockResource3.patch(any(), eq(resource3))).thenReturn(resource3);
+        } else {
+            when(mockResource3.create()).thenReturn(resource3);
+        }
 
         KubernetesResourceList mockResourceList = mock(KubernetesResourceList.class);
         when(mockResourceList.getItems()).thenReturn(List.of(resource1, resource2));
@@ -583,7 +540,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient, useServerSideApply);
 
         Checkpoint async = context.checkpoint();
         op.batchReconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, List.of(resource2Mod, resource3), Labels.fromMap(selector)).onComplete(context.succeeding(i -> context.verify(() -> {
@@ -591,13 +548,24 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             verify(mockResource1, never()).patch(any(), any());
             verify(mockResource1, never()).create();
             verify(mockDeletable1, times(1)).delete();
-            verify(mockResource2, times(1)).get();
-            verify(mockResource2, never()).create();
-            verify(mockResource2, never()).delete();
-            verify(mockResource3, times(1)).get();
-            verify(mockResource3, never()).patch(any(), any());
-            verify(mockResource3, times(1)).create();
-            verify(mockResource3, never()).delete();
+
+            if (!useServerSideApply) {
+                verify(mockResource2, times(1)).get();
+                verify(mockResource2, never()).create();
+                verify(mockResource2, never()).delete();
+            }
+            verify(mockResource2, times(1)).patch(any(), eq(resource2Mod));
+
+            if (!useServerSideApply) {
+                verify(mockResource3, times(1)).get();
+                verify(mockResource3, never()).patch(any(), any());
+                verify(mockResource3, times(1)).create();
+                verify(mockResource3, never()).delete();
+            } else {
+                verify(mockResource3, times(1)).patch(any(), eq(resource3));
+                verify(mockResource3, never()).create();
+                verify(mockResource3, never()).delete();
+            }
 
             async.flag();
         })));

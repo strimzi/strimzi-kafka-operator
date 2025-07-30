@@ -42,6 +42,7 @@ public class ServiceAccountOperatorServerSideApplyIT extends AbstractNamespacedR
                 .withName(resourceName)
                 .withNamespace(namespace)
                 .withLabels(singletonMap("foo2", "bar2"))
+                .withAnnotations(singletonMap("my-annotation", "my-value"))
             .endMetadata()
             .build();
     }
