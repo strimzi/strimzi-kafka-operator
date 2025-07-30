@@ -31,10 +31,11 @@ jobs:
       pull-requests: write
       checks: write
     steps:
-      # TODO - switch with check-permissions
+      # TODO - switch with check-permissions aka remove checkout
       - uses: actions/checkout@v4
       # TODO - reference this action from main (right before merge)
       - uses: ./.github/actions/check-permissions
+      #- uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
 
   # Parse and build parameters from comment or from workflow params
   parse-params:
@@ -62,6 +63,11 @@ jobs:
       releaseVersion: ${{ steps.parse.outputs.releaseVersion }}
       shouldRun: ${{ steps.parse.outputs.shouldRun }}
       kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
+      # Checkout ref data
+      repo_owner: ${{ steps.parse.outputs.repo_owner }}
+      repo_name: ${{ steps.parse.outputs.repo_name }}
+      ref: ${{ steps.parse.outputs.ref }}
+      sha: ${{ steps.parse.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -96,6 +102,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
+          ref: ${{ needs.parse-params.outputs.sha }}
       - uses: ./.github/actions/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
@@ -115,6 +123,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
+          ref: ${{ needs.parse-params.outputs.sha }}
       - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}
@@ -140,6 +150,9 @@ jobs:
       releaseVersion: ${{ needs.parse-params.outputs.releaseVersion }}
       kafkaVersion: ${{ needs.parse-params.outputs.kafkaVersion }}
       kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
+      # Checkout ref params
+      repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
+      ref: ${{ needs.parse-params.outputs.sha }}
 
   report:
     needs:
