@@ -583,58 +583,56 @@ public abstract class Ca {
      * @param forceReplace Flag indicating whether to do a force replace
      * @param forceRenew Flag indicating whether to do a force renew
      */
-    public void createRenewOrReplace(boolean maintenanceWindowSatisfied, boolean forceReplace, boolean forceRenew) {
-        if (generateCa) {
-            X509Certificate currentCert = currentCaCertX509();
-            Map<String, String> certData;
-            Map<String, String> keyData;
-            this.renewalType = shouldCreateOrRenew(currentCert, maintenanceWindowSatisfied, forceReplace, forceRenew);
-            LOGGER.debugCr(reconciliation, "{} renewalType {}", this, renewalType);
+    public void createOrUpdateStrimziManagedCa(boolean maintenanceWindowSatisfied, boolean forceReplace, boolean forceRenew) {
+        X509Certificate currentCert = currentCaCertX509();
+        Map<String, String> certData;
+        Map<String, String> keyData;
+        this.renewalType = shouldCreateOrRenewStrimziManagedCa(currentCert, maintenanceWindowSatisfied, forceReplace, forceRenew);
+        LOGGER.debugCr(reconciliation, "{} renewalType {}", this, renewalType);
 
-            switch (renewalType) {
-                case CREATE -> {
-                    keyData = new HashMap<>(1);
-                    certData = new HashMap<>(3);
-                    generateCaKeyAndCert(nextCaSubject(caKeyGeneration), keyData, certData);
+        switch (renewalType) {
+            case CREATE -> {
+                keyData = new HashMap<>(1);
+                certData = new HashMap<>(3);
+                generateCaKeyAndCert(nextCaSubject(caKeyGeneration), keyData, certData);
+            }
+            case REPLACE_KEY -> {
+                keyData = new HashMap<>(1);
+                certData = new HashMap<>(caCertData);
+                if (certData.containsKey(CA_CRT)) {
+                    String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
+                    addCertCaToTrustStore("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData);
+                    certData.put("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData.remove(CA_CRT));
                 }
-                case REPLACE_KEY -> {
-                    keyData = new HashMap<>(1);
-                    certData = new HashMap<>(caCertData);
-                    if (certData.containsKey(CA_CRT)) {
-                        String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-                        addCertCaToTrustStore("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData);
-                        certData.put("ca-" + notAfterDate + SecretEntry.CRT.suffix, certData.remove(CA_CRT));
-                    }
-                    ++caCertGeneration;
-                    generateCaKeyAndCert(nextCaSubject(++caKeyGeneration), keyData, certData);
-                }
-                case RENEW_CERT -> {
-                    keyData = new HashMap<>(caKeyData);
-                    certData = new HashMap<>(3);
-                    ++caCertGeneration;
-                    renewCaCert(nextCaSubject(caKeyGeneration), certData);
-                }
-                default -> {
-                    keyData = new HashMap<>(caKeyData);
-                    certData = new HashMap<>(caCertData);
-                    // coming from an older version, the secret could not have the CA truststore
-                    if (!certData.containsKey(CA_STORE)) {
-                        addCertCaToTrustStore(CA_CRT, certData);
-                    }
+                ++caCertGeneration;
+                generateCaKeyAndCert(nextCaSubject(++caKeyGeneration), keyData, certData);
+            }
+            case RENEW_CERT -> {
+                keyData = new HashMap<>(caKeyData);
+                certData = new HashMap<>(3);
+                ++caCertGeneration;
+                renewCaCert(nextCaSubject(caKeyGeneration), certData);
+            }
+            default -> {
+                keyData = new HashMap<>(caKeyData);
+                certData = new HashMap<>(caCertData);
+                // coming from an older version, the secret could not have the CA truststore
+                if (!certData.containsKey(CA_STORE)) {
+                    addCertCaToTrustStore(CA_CRT, certData);
                 }
             }
-
-            if (removeCerts(certData, this::removeExpiredCert)) {
-                LOGGER.infoCr(reconciliation, "{}: Expired CA certificates removed", this);
-                this.caCertsRemoved = true;
-            }
-
-            if (renewalType != RenewalType.NOOP && renewalType != RenewalType.POSTPONED) {
-                LOGGER.debugCr(reconciliation, "{}: {}", this, renewalType.postDescription(caKeySecretName, caCertSecretName));
-            }
-            caCertData = certData;
-            caKeyData = keyData;
         }
+
+        if (removeCerts(certData, this::removeExpiredCert)) {
+            LOGGER.infoCr(reconciliation, "{}: Expired CA certificates removed", this);
+            this.caCertsRemoved = true;
+        }
+
+        if (renewalType != RenewalType.NOOP && renewalType != RenewalType.POSTPONED) {
+            LOGGER.debugCr(reconciliation, "{}: {}", this, renewalType.postDescription(caKeySecretName, caCertSecretName));
+        }
+        caCertData = certData;
+        caKeyData = keyData;
     }
 
     private Subject nextCaSubject(int version) {
@@ -645,7 +643,7 @@ public abstract class Ca {
             .withOrganizationName(IO_STRIMZI).build();
     }
 
-    private RenewalType shouldCreateOrRenew(X509Certificate currentCert, boolean maintenanceWindowSatisfied, boolean forceReplace, boolean forceRenew) {
+    private RenewalType shouldCreateOrRenewStrimziManagedCa(X509Certificate currentCert, boolean maintenanceWindowSatisfied, boolean forceReplace, boolean forceRenew) {
         String reason = null;
         RenewalType renewalType = RenewalType.NOOP;
         if (caKeyData.get(CA_KEY) == null) {
@@ -701,7 +699,7 @@ public abstract class Ca {
      * @param existingCaCertHash    Existing CA cert hash to determine if the cert has changed.
      * @param endEntityCertificate  End entity certificate to use for cert path validation.
      */
-    public void maybeUpdateCertAndGenerations(String newCaCertData, String existingCaCertHash, X509Certificate endEntityCertificate) {
+    public void createOrUpdateCertManagerCa(String newCaCertData, String existingCaCertHash, X509Certificate endEntityCertificate) {
         LOGGER.infoCr(reconciliation, "maybeUpdateCertAndGenerations: caCertData size = " + this.caCertData.size() + " new data is null? " + (newCaCertData == null));
         if (this.caCertData.isEmpty()) {
             // No data, so we add it
@@ -795,7 +793,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(boolean, boolean, boolean)}
+     * True if the last call to {@link #createOrUpdateStrimziManagedCa(boolean, boolean, boolean)}
      * resulted in expired certificates being removed from the CA {@code Secret}.
      * @return Whether any expired certificates were removed.
      */
@@ -804,7 +802,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(boolean, boolean, boolean)}
+     * True if the last call to {@link #createOrUpdateStrimziManagedCa(boolean, boolean, boolean)}
      * resulted in a renewed CA certificate.
      * @return Whether the certificate was renewed.
      */
@@ -813,7 +811,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(boolean, boolean, boolean)}
+     * True if the last call to {@link #createOrUpdateStrimziManagedCa(boolean, boolean, boolean)}
      * resulted in a replaced CA key.
      * @return Whether the key was replaced.
      */

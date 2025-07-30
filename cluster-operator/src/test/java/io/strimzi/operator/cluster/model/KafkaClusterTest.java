@@ -263,9 +263,9 @@ public class KafkaClusterTest {
 
     private List<Secret> generateBrokerSecrets(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER, null, null);
-        clusterCa.createRenewOrReplace(true, false, false);
+        clusterCa.createOrUpdateStrimziManagedCa(true, false, false);
         ClientsCa clientsCa = new ClientsCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), null, null, null, null, 365, 30, true, CertificateManagerType.STRIMZI_IO, CertificateExpirationPolicy.RENEW_CERTIFICATE);
-        clientsCa.createRenewOrReplace(true, false, false);
+        clientsCa.createOrUpdateStrimziManagedCa(true, false, false);
 
         return KC.generateCertificatesSecrets(clusterCa, clientsCa, List.of(), externalBootstrapAddress, externalAddresses, true);
     }

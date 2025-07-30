@@ -73,7 +73,7 @@ class CaTest {
     @Test
     @DisplayName("Should return certificate expiration date as epoch when certificate is present")
     void shouldReturnCertificateExpirationDateEpoch() {
-        ca.createRenewOrReplace(true, false, false);
+        ca.createOrUpdateStrimziManagedCa(true, false, false);
 
         Instant inOneYear = Clock.offset(now, oneYear).instant();
         long expectedEpoch = inOneYear.truncatedTo(ChronoUnit.SECONDS).toEpochMilli();
