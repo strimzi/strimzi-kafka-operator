@@ -249,7 +249,7 @@ public class NetworkPoliciesST extends AbstractST {
 
     @IsolatedTest("Specific Cluster Operator for test case")
     void testNPWhenOperatorIsInDifferentNamespaceThanOperand() {
-        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
+        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall() && !Environment.isNamespaceRbacScope());
 
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String secondNamespace = "second-" + Environment.TEST_SUITE_NAMESPACE;

@@ -74,6 +74,15 @@ on:
         # Empty string means it will use default from setup scripts
         default: ""
         type: string
+      # Checkout ref params
+      repository:
+        description: "Repository that will be checkout"
+        required: true
+        type: string
+      ref:
+        description: "Repository ref that will be checkout"
+        required: true
+        type: string
 
 jobs:
   generate-matrix:
@@ -84,6 +93,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
       - name: Generate Matrix
         id: gen
         uses: ./.github/actions/generate-matrix
@@ -130,6 +141,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
 
       - name: Set check & commit status
         uses: ./.github/actions/check-and-status
@@ -240,7 +253,6 @@ jobs:
       ############################################################################
       - name: Build KafkaConnect image
         # we want to let Connect image build for different versions of Kafka inside the upgrade/downgrade STs
-        # TODO - set Kafka version globally?
         if: ${{ !contains(env.PROFILE, 'upgrade') }}
         run: |
           export CONNECT_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"

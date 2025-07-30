@@ -9,7 +9,6 @@ docker_push:
 docker_amend_manifest:
 	# Do nothing
 
-# TODO - revisit
 docker_e2e:
 	# Do nothing
 

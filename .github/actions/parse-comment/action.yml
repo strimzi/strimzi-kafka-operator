@@ -55,6 +55,19 @@ outputs:
   kubeVersion:
     description: "Version of Kubernetes used for tests"
     value: ${{ steps.should_run.outputs.kubeVersion }}
+  # Checkout ref outputs
+  repo_owner:
+    description: "Owner of the repository a.k.a org name"
+    value: ${{ steps.checkout_ref.outputs.repo_owner }}
+  repo_name:
+    description: "Repository name"
+    value: ${{ steps.checkout_ref.outputs.repo_name }}
+  ref:
+    description: "Branch name"
+    value: ${{ steps.checkout_ref.outputs.ref }}
+  sha:
+    description: "Branch commit sha reference"
+    value: ${{ steps.checkout_ref.outputs.sha }}
 
 runs:
   using: "composite"
@@ -68,12 +81,37 @@ runs:
         elif echo "${{ github.event.comment.body }}" | grep -qiE '/gha\s+run'; then
           SHOULD_RUN_VALUE="true"
         else
-          # TODO - set this to false, this is set to true just for testing purposes!!!
+          # TODO - set this to false, this is set to true just for testing purposes!!! - remove before merge
           SHOULD_RUN_VALUE="true"
         fi
         
         echo "shouldRun=$SHOULD_RUN_VALUE" >> "$GITHUB_OUTPUT"
         echo "Parsed shouldRun: $SHOULD_RUN_VALUE"
+
+    - name: Determine checkout ref
+      id: checkout_ref
+      shell: bash
+      run: |
+        echo "event_name=${{ github.event_name }}" >> "$GITHUB_OUTPUT"
+        
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "repo_owner=${{ github.event.pull_request.head.repo.owner.login }}" >> "$GITHUB_OUTPUT"
+          echo "repo_name=${{ github.event.pull_request.head.repo.name }}" >> "$GITHUB_OUTPUT"
+          echo "ref=${{ github.event.pull_request.head.ref }}" >> "$GITHUB_OUTPUT"
+          echo "sha=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+        elif [[ "${{ github.event_name }}" == "issue_comment" ]]; then
+          # Assume comment was made on PR
+          echo "repo_owner=${{ github.event.issue.pull_request.head.repo.owner.login }}" >> "$GITHUB_OUTPUT"
+          echo "repo_name=${{ github.event.issue.pull_request.head.repo.name }}" >> "$GITHUB_OUTPUT"
+          echo "ref=${{ github.event.issue.pull_request.head.ref }}" >> "$GITHUB_OUTPUT"
+          echo "sha=${{ github.event.issue.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+        else
+          # Assume this will be for the rest of events including workflow dispatch
+          echo "repo_owner=${{ github.repository_owner }}" >> "$GITHUB_OUTPUT"
+          echo "repo_name=$(basename "${{ github.repository }}")" >> "$GITHUB_OUTPUT"
+          echo "ref=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+        fi
 
     - name: Build Comment
       id: build_comment
@@ -84,7 +122,7 @@ runs:
         else
           BUILT_COMMENT_VALUE="${{ github.event.comment.body }}"
         fi
-        # TODO - remove this
+        # TODO - remove this before merge
         BUILT_COMMENT_VALUE="/gha run pipeline=regression,upgrade"
         BUILT_COMMENT_VALUE="/gha run pipeline=regression,upgrade,regression-fg,regression-rbac,acceptance,acceptance-helm"
         
