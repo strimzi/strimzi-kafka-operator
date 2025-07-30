@@ -78,6 +78,7 @@ import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
 import io.strimzi.operator.common.model.StatusDiff;
+import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -249,7 +250,7 @@ public class KafkaReconciler {
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
                 .compose(i -> updateKafkaAutoRebalanceStatus(kafkaStatus))
-                .compose(i -> manualRollingUpdate())
+                .compose(i -> manualRollingUpdate(kafkaStatus))
                 .compose(i -> pvcs(kafkaStatus))
                 .compose(i -> serviceAccount())
                 .compose(i -> initClusterRoleBinding())
@@ -261,7 +262,7 @@ public class KafkaReconciler {
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
                 .compose(i -> podSet())
-                .compose(podSetDiffs -> rollingUpdate(podSetDiffs)) // We pass the PodSet reconciliation result this way to avoid storing it in the instance
+                .compose(podSetDiffs -> rollingUpdate(podSetDiffs, kafkaStatus)) // We pass the PodSet reconciliation result this way to avoid storing it in the instance
                 .compose(i -> podsReady())
                 .compose(i -> serviceEndpointsReady())
                 .compose(i -> headlessServiceEndpointsReady())
@@ -354,9 +355,11 @@ public class KafkaReconciler {
      * the selected pods. If the annotation is present on both StrimziPodSet and one or more pods, only one rolling
      * update of all pods occurs.
      *
+     * @param kafkaStatus   The Kafka Status where a warning condition will be added
+     *
      * @return  Future with the result of the rolling update
      */
-    protected Future<Void> manualRollingUpdate() {
+    protected Future<Void> manualRollingUpdate(KafkaStatus kafkaStatus) {
         Future<List<NodeRef>> podsToRollThroughPodSetAnno = podsForManualRollingUpdateDiscoveredThroughPodSetAnnotation();
         Future<List<NodeRef>> podsToRollThroughPodAnno = podsForManualRollingUpdateDiscoveredThroughPodAnnotations();
 
@@ -383,7 +386,8 @@ public class KafkaReconciler {
                                 // Pass empty advertised hostnames and ports for the nodes
                                 nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
                                 nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
-                                false
+                                false,
+                                kafkaStatus
                         ).recover(error -> {
                             LOGGER.warnCr(reconciliation, "Manual rolling update failed (reconciliation will be continued)", error);
                             return Future.succeededFuture();
@@ -452,6 +456,7 @@ public class KafkaReconciler {
      * @param kafkaAdvertisedHostnames  Map with advertised hostnames required to generate the per-broker configuration
      * @param kafkaAdvertisedPorts      Map with advertised ports required to generate the per-broker configuration
      * @param allowReconfiguration      Defines whether the rolling update should also attempt to do dynamic reconfiguration or not
+     * @param kafkaStatus               The Kafka Status where a warning condition will be added
      *
      * @return  Future which completes when the rolling is complete
      */
@@ -460,7 +465,8 @@ public class KafkaReconciler {
             Function<Pod, RestartReasons> podNeedsRestart,
             Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
             Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
-            boolean allowReconfiguration
+            boolean allowReconfiguration,
+            KafkaStatus kafkaStatus
     ) {
         return new KafkaRoller(
                     reconciliation,
@@ -478,7 +484,15 @@ public class KafkaReconciler {
                     kafka.getKafkaVersion(),
                     allowReconfiguration,
                     eventsPublisher
-            ).rollingRestart(podNeedsRestart);
+            ).rollingRestart(podNeedsRestart)
+                .compose(v -> Future.succeededFuture(), throwable -> {
+                    // an invalid configuration warning for the user, but it doesn't fail the reconciliation
+                    if (throwable instanceof KafkaRoller.InvalidConfiguration) {
+                        kafkaStatus.addCondition(StatusUtils.buildWarningCondition("InvalidConfiguration", throwable.getMessage()));
+                        return Future.succeededFuture();
+                    }
+                    return Future.failedFuture(throwable);
+                });
     }
 
     /**
@@ -900,10 +914,11 @@ public class KafkaReconciler {
      * Roles the Kafka brokers (if needed).
      *
      * @param podSetDiffs   Map with the PodSet reconciliation results
+     * @param kafkaStatus   The Kafka Status where a warning condition will be added
      *
      * @return  Future which completes when any of the Kafka pods which need rolling is rolled
      */
-    protected Future<Void> rollingUpdate(Map<String, ReconcileResult<StrimziPodSet>> podSetDiffs) {
+    protected Future<Void> rollingUpdate(Map<String, ReconcileResult<StrimziPodSet>> podSetDiffs, KafkaStatus kafkaStatus) {
         return maybeRollKafka(
                 kafka.nodes(),
                 pod -> ReconcilerUtils.reasonsToRestartPod(
@@ -917,7 +932,8 @@ public class KafkaReconciler {
                 ),
                 listenerReconciliationResults.advertisedHostnames,
                 listenerReconciliationResults.advertisedPorts,
-                true
+                true,
+                kafkaStatus
         );
     }
 
