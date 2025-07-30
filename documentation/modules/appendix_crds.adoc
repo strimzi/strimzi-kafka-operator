@@ -2307,7 +2307,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |List of the KafkaNodePools used by this Kafka cluster.
 |registeredNodeIds
 |integer array
-|Registered node IDs used by this Kafka cluster. This field is used for internal purposes only and will be removed in the future.
+|**The `registeredNodeIds` property has been deprecated.** The `registeredNodeIds` property is deprecated and it is not used anymore. It will be removed in the future. Registered node IDs used by this Kafka cluster. This field is used for internal purposes only and will be removed in the future.
 |clusterId
 |string
 |Kafka cluster Id.
