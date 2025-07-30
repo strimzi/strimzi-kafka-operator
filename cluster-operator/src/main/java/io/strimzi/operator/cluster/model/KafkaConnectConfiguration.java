@@ -34,6 +34,17 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Copy constructor which creates new instance of the Kafka Connect configuration from existing configuration.
+     * It is useful when you need to modify an instance of the configuration without permanently changing the original.
+     *
+     * @param configuration User provided Kafka Connect configuration
+     *
+     */
+    public KafkaConnectConfiguration(KafkaConnectConfiguration configuration) {
+        super(configuration);
+    }
+
+    /**
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *

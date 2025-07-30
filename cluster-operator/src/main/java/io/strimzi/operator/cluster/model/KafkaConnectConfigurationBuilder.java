@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
@@ -16,10 +15,15 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
@@ -283,18 +287,73 @@ public class KafkaConnectConfigurationBuilder {
      * Adds user provided Kafka Connect configurations.
      *
      * @param configurations   User provided Kafka Connect configurations
-     *
+     * @param injectKafkaJmxReporter         Flag to indicate if metrics are enabled. If they are we inject the JmxReporter into the configuration
+     * @param injectStrimziMetricsReporter   Inject the Strimzi Metrics Reporter into the configuration
      * @return Returns the builder instance
      */
-    public KafkaConnectConfigurationBuilder withUserConfigurations(AbstractConfiguration configurations) {
+    public KafkaConnectConfigurationBuilder withUserConfiguration(AbstractConfiguration configurations,
+                                                                  boolean injectKafkaJmxReporter,
+                                                                  boolean injectStrimziMetricsReporter) {
+        // creating a defensive copy to avoid mutating the input config
+        if (configurations instanceof KafkaConnectConfiguration kcConfiguration) {
+            configurations = new KafkaConnectConfiguration(kcConfiguration);
+        } else if (configurations instanceof KafkaMirrorMaker2Configuration kmm2Configuration) {
+            configurations = new KafkaMirrorMaker2Configuration(kmm2Configuration);
+        } else {
+            // empty user configuration
+            configurations = new KafkaConnectConfiguration(reconciliation, new ArrayList<>());
+        }
+
         printConfigProviders(configurations);
 
-        if (configurations != null && !configurations.getConfiguration().isEmpty()) {
-            printSectionHeader("Provided configurations");
+        printMetricReportersForKey("metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        printMetricReportersForKey("admin.metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        printMetricReportersForKey("producer.metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+        printMetricReportersForKey("consumer.metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+
+        if (!configurations.getConfiguration().isEmpty()) {
+            printSectionHeader("User provided configuration");
             writer.println(configurations.getConfiguration());
             writer.println();
         }
         return this;
+    }
+
+    private void printMetricReportersForKey(String configKey,
+                                            AbstractConfiguration userConfig,
+                                            boolean injectKafkaJmxReporter,
+                                            boolean injectStrimziMetricsReporter) {
+        // Build a list of reporters to inject based on flags
+        List<String> reportersToInject = new ArrayList<>();
+        // JmxPrometheusExporter depends on JmxReporter, which needs to be explicitly added when having custom metrics reporters
+        if (injectKafkaJmxReporter) reportersToInject.add("org.apache.kafka.common.metrics.JmxReporter");
+        if (injectStrimziMetricsReporter) reportersToInject.add(StrimziMetricsReporterConfig.KAFKA_CLASS);
+
+        if (!reportersToInject.isEmpty()) {
+            if (userConfig != null && !userConfig.getConfiguration().isEmpty() &&
+                    userConfig.getConfigOption(configKey) != null) {
+                // handle user configuration if present and avoids duplicates
+                String configValue = userConfig.getConfigOption(configKey);
+
+                reportersToInject = reportersToInject.stream()
+                        .filter(r -> !userConfig.getConfigOption(configKey).contains(r))
+                        .toList();
+
+                if (!reportersToInject.isEmpty()) {
+                    userConfig.removeConfigOption(configKey);
+
+                    printSectionHeader(configKey + " configuration");
+                    writer.println("# " + configKey + " configured by the user and by Strimzi");
+                    writer.println(configKey + "=" + configValue + "," + String.join(",", reportersToInject));
+                    writer.println();
+                }
+            } else {
+                printSectionHeader(configKey + " configuration");
+                writer.println("# " + configKey + " configured by Strimzi");
+                writer.println(configKey + "=" + String.join(",", reportersToInject));
+                writer.println();
+            }
+        }
     }
 
     /**
@@ -325,6 +384,32 @@ public class KafkaConnectConfigurationBuilder {
         return  this;
     }
 
+    /**
+     * Configures the Strimzi Metrics Reporter. It is set only if user enables Strimzi Metrics Reporter.
+     *
+     * @param model Strimzi Metrics Reporter configuration
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaConnectConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
+        if (model instanceof StrimziMetricsReporterModel reporterModel) {
+            printSectionHeader("Strimzi Metrics Reporter configuration");
+            writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
+            writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
+            writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println("admin." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
+            writer.println("admin." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
+            writer.println("admin." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println("producer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
+            writer.println("producer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
+            writer.println("producer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
+            writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
+            writer.println("consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
+            writer.println();
+        }
+        return this;
+    }
 
     /**
      * Prints the section header into the configuration file. This makes it more human-readable

@@ -16,12 +16,22 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
+import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static io.strimzi.operator.cluster.TestUtils.IsEquivalent.isEquivalent;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -395,7 +405,7 @@ class KafkaConnectConfigurationBuilderTest {
     @ParallelTest
     public void testWithConfigProviders() {
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withUserConfigurations(null)
+                .withUserConfiguration(null, false, false)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -410,8 +420,14 @@ class KafkaConnectConfigurationBuilderTest {
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
-        ));
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
+                "group.id=connect-cluster",
+                "offset.storage.topic=connect-cluster-offsets",
+                "config.storage.topic=connect-cluster-configs",
+                "status.storage.topic=connect-cluster-status",
+                "key.converter=org.apache.kafka.connect.json.JsonConverter",
+                "value.converter=org.apache.kafka.connect.json.JsonConverter")
+        );
     }
 
     @ParallelTest
@@ -422,7 +438,7 @@ class KafkaConnectConfigurationBuilderTest {
         KafkaConnectConfiguration configurations = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withUserConfigurations(configurations)
+                .withUserConfiguration(configurations, false, false)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -457,7 +473,7 @@ class KafkaConnectConfigurationBuilderTest {
         KafkaConnectConfiguration configurations = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withUserConfigurations(configurations)
+                .withUserConfiguration(configurations, false, false)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -513,5 +529,160 @@ class KafkaConnectConfigurationBuilderTest {
                 "admin.security.protocol=PLAINTEXT",
                 "plugin.path=/opt/kafka/plugins"
         ));
+    }
+
+    @ParallelTest
+    public void testStrimziMetricsReporterEnabled() {
+        StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(
+                new KafkaConnectSpecBuilder()
+                .withMetricsConfig(new StrimziMetricsReporterBuilder()
+                    .withNewValues()
+                        .withAllowList("kafka_connect_connector_metrics.*", "kafka_connect_connector_task_metrics.*")
+                    .endValues()
+                    .build())
+                .build(), List.of(".*"));
+
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
+                .withStrimziMetricsReporter(model)
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "admin.security.protocol=PLAINTEXT",
+                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "security.protocol=PLAINTEXT",
+                "producer.security.protocol=PLAINTEXT",
+                "consumer.security.protocol=PLAINTEXT",
+                StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true",
+                StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT,
+                StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*",
+                "admin." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true",
+                "admin." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT,
+                "admin." + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*",
+                "producer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true",
+                "producer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT,
+                "producer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*",
+                "consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true",
+                "consumer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT,
+                "consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*"
+        ));
+    }
+
+    static Stream<Arguments> sourceUserConfigWithMetricsReporters() {
+        Map<String, Object> configMap = new HashMap<>();
+        configMap.put("metric.reporters", "my.domain.CustomMetricReporter");
+
+        KafkaConnectConfiguration userConfig = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
+        String expectedConfig = "admin.security.protocol=PLAINTEXT\n"
+                + "bootstrap.servers=my-cluster-kafka-bootstrap:9092\n"
+                + "consumer.security.protocol=PLAINTEXT\n"
+                + "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider\n"
+                + "config.providers.strimzidir.param.allowed.paths=/opt/kafka\n"
+                + "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider\n"
+                + "config.providers.strimzienv.param.allowlist.pattern=.*\n"
+                + "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider\n"
+                + "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets\n"
+                + "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider\n"
+                + "config.storage.topic=connect-cluster-configs\n"
+                + "key.converter=org.apache.kafka.connect.json.JsonConverter\n"
+                + "offset.storage.topic=connect-cluster-offsets\n"
+                + "producer.security.protocol=PLAINTEXT\n"
+                + "security.protocol=PLAINTEXT\n"
+                + "status.storage.topic=connect-cluster-status\n"
+                + "group.id=connect-cluster\n"
+                + "value.converter=org.apache.kafka.connect.json.JsonConverter\n";
+
+        // testing 4 combinations of 2 boolean values
+        return Stream.of(
+                Arguments.of(userConfig, false, false, expectedConfig
+                        + "metric.reporters=my.domain.CustomMetricReporter"),
+
+                Arguments.of(userConfig, true, false, expectedConfig
+                        + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter\n"
+                        + "admin.metric.reporters=org.apache.kafka.common.metrics.JmxReporter\n"
+                        + "producer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter\n"
+                        + "consumer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter"),
+
+                Arguments.of(userConfig, false, true, expectedConfig
+                        + "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "admin.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "producer.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "consumer.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"),
+
+                Arguments.of(userConfig, true, true, expectedConfig
+                        + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "admin.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "producer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
+                        + "consumer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("sourceUserConfigWithMetricsReporters")
+    public void testUserConfigurationWithMetricReporters(
+            KafkaConnectConfiguration userConfig,
+            boolean injectJmx,
+            boolean injectStrimzi,
+            String expectedConfig) {
+        String actualConfig = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
+                .withUserConfiguration(userConfig, injectJmx, injectStrimzi)
+                .build();
+        assertThat(actualConfig, isEquivalent(expectedConfig));
+    }
+
+    @ParallelTest
+    public void testStrimziMetricsReporterViaUserAndMetricsConfigs() {
+        Map<String, Object> configMap = new HashMap<>();
+        configMap.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+        configMap.put("kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
+        KafkaConfiguration userConfig = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
+        
+        StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(
+                new KafkaConnectSpecBuilder()
+                .withMetricsConfig(new StrimziMetricsReporterBuilder()
+                    .withNewValues()
+                        .withAllowList("kafka_connect_connector_metrics.*", "kafka_connect_connector_task_metrics.*")
+                    .endValues()
+                    .build())
+                .build(), List.of(".*"));
+
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
+                .withUserConfiguration(userConfig, false, true)
+                .withStrimziMetricsReporter(model)
+                .build();
+
+        assertThat(configuration, isEquivalent("bootstrap.servers=my-cluster-kafka-bootstrap:9092\n"
+                + "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets\n"
+                + "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider\n"
+                + "config.providers.strimzienv.param.allowlist.pattern=.*\n"
+                + "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider\n"
+                + "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider\n"
+                + "config.providers.strimzidir.param.allowed.paths=/opt/kafka\n"
+                + "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider\n"
+                + "admin.metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter\n"
+                + "producer.metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter\n"
+                + "consumer.metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter\n"
+                + "offset.storage.topic=connect-cluster-offsets\n"
+                + "value.converter=org.apache.kafka.connect.json.JsonConverter\n"
+                + "config.storage.topic=connect-cluster-configs\n"
+                + "key.converter=org.apache.kafka.connect.json.JsonConverter\n"
+                + "group.id=connect-cluster\n"
+                + "status.storage.topic=connect-cluster-status\n"
+                + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true\n"
+                + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT + "\n"
+                + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*\n"
+                + "admin." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true\n"
+                + "admin." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT + "\n"
+                + "admin." + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*\n"
+                + "producer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true\n"
+                + "producer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT + "\n"
+                + "producer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*\n"
+                + "consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true\n"
+                + "consumer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT + "\n"
+                + "consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*\n"
+                + "security.protocol=PLAINTEXT\n"
+                + "producer.security.protocol=PLAINTEXT\n"
+                + "consumer.security.protocol=PLAINTEXT\n"
+                + "admin.security.protocol=PLAINTEXT\n"
+                + "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS));
     }
 }

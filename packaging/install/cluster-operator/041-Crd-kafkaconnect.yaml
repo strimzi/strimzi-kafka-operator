@@ -277,7 +277,7 @@ spec:
               config:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
-                description: "The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
+                description: "The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes, prometheus.metrics.reporter. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
               resources:
                 type: object
                 properties:
@@ -480,12 +480,10 @@ spec:
                     description: Configuration values for the Strimzi Metrics Reporter.
                 required:
                 - type
-                description: "Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not yet support `strimziMetricsReporter`."
+                description: Metrics configuration.
                 x-kubernetes-validations:
                 - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
                   message: valueFrom property is required
-                - rule: self.type != 'strimziMetricsReporter'
-                  message: value type not supported
               tracing:
                 type: object
                 properties:

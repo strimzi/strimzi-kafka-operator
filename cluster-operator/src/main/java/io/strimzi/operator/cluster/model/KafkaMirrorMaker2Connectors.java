@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
@@ -18,6 +19,7 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ConnectorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -70,6 +72,7 @@ public class KafkaMirrorMaker2Connectors {
     private final List<KafkaMirrorMaker2MirrorSpec> mirrors;
     private final Tracing tracing;
     private final boolean rackAwarenessEnabled;
+    private final boolean strimziMetricsReporterEnabled;
 
     /**
      * Constructor
@@ -83,6 +86,7 @@ public class KafkaMirrorMaker2Connectors {
         this.mirrors = kafkaMirrorMaker2.getSpec().getMirrors();
         this.tracing = kafkaMirrorMaker2.getSpec().getTracing();
         this.rackAwarenessEnabled = kafkaMirrorMaker2.getSpec().getRack() != null;
+        this.strimziMetricsReporterEnabled = kafkaMirrorMaker2.getSpec().getMetricsConfig() instanceof StrimziMetricsReporter;
     }
 
     /**
@@ -171,6 +175,7 @@ public class KafkaMirrorMaker2Connectors {
         return connectors;
     }
 
+    @SuppressWarnings("NPathComplexity")
     /* test */ Map<String, Object> prepareMirrorMaker2ConnectorConfig(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ConnectorSpec connector, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster) {
         Map<String, Object> config = new HashMap<>(connector.getConfig());
 
@@ -229,6 +234,18 @@ public class KafkaMirrorMaker2Connectors {
         if (rackAwarenessEnabled) {
             String clientRackKey = "consumer.client.rack";
             config.put(clientRackKey, "${strimzifile:" + CONNECT_CONFIG_FILE + ":" + clientRackKey + "}");
+        }
+
+        if (strimziMetricsReporterEnabled) {
+            // MM2 connectors metrics are collected through this dedicated SMR instance
+            // into a shared Prometheus registry instance, so they can be exposed through
+            // the Kafka Connect SMR listener endpoint without enabling a new listener
+            Object existingValue = config.get("metric.reporters");
+            String newValue = StrimziMetricsReporterConfig.KAFKA_CLASS;
+            config.put("metric.reporters", existingValue != null
+                    && !existingValue.toString().contains(StrimziMetricsReporterConfig.KAFKA_CLASS)
+                        ? existingValue + "," + newValue : newValue);
+            config.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
         }
 
         return config;
