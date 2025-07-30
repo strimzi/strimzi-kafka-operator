@@ -123,7 +123,6 @@ public class KafkaReconciler {
     private final PlatformFeaturesAvailability pfa;
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
-    private final List<Integer> previousNodeIds;
 
     // Objects used during the reconciliation
     /* test */ final Reconciliation reconciliation;
@@ -208,7 +207,6 @@ public class KafkaReconciler {
         this.pfa = pfa;
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
-        this.previousNodeIds = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getRegisteredNodeIds() : null;
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
         this.kafkaAutoRebalanceStatus = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getAutoRebalance() : null;
 
@@ -1004,44 +1002,68 @@ public class KafkaReconciler {
      */
     protected Future<Void> nodeUnregistration(KafkaStatus kafkaStatus) {
         List<Integer> currentNodeIds = kafka.nodes().stream().map(NodeRef::nodeId).sorted().toList();
+        List<Integer> controllerOnlyIds = kafka.nodes().stream()
+                .filter(nodeRef -> nodeRef.controller() && !nodeRef.broker())
+                .map(NodeRef::nodeId).sorted().toList();
+        Promise<Void> unregistrationPromise = Promise.promise();
 
-        if (previousNodeIds != null
-                && !new HashSet<>(currentNodeIds).containsAll(previousNodeIds)) {
-            // We are in KRaft mode and there are some nodes that were removed => we should unregister them
-            List<Integer> nodeIdsToUnregister = new ArrayList<>(previousNodeIds);
-            nodeIdsToUnregister.removeAll(currentNodeIds);
+        KafkaNodeUnregistration.listRegisteredNodes(reconciliation, vertx, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), true)
+                .onSuccess(registeredNodes -> {
 
-            LOGGER.infoCr(reconciliation, "Kafka nodes {} were removed from the Kafka cluster and will be unregistered", nodeIdsToUnregister);
+                    if (registeredNodes != null && !registeredNodes.isEmpty()) {
+                        // all current registered nodes (fenced or not)
+                        List<Integer> previousNodeIds = registeredNodes.stream()
+                                .map(org.apache.kafka.common.Node::id)
+                                .toList();
+                        // only fenced nodes
+                        List<Integer> fencedNodeIds = registeredNodes.stream()
+                                .filter(org.apache.kafka.common.Node::isFenced)
+                                .map(org.apache.kafka.common.Node::id)
+                                .toList();
+                        // if controller only nodes are fenced -> they were mixed node with broker role removed, so fenced now
+                        List<Integer> fencedControllerOnlyNodeIds = fencedNodeIds.stream()
+                                .filter(controllerOnlyIds::contains)
+                                .toList();
 
-            Promise<Void> unregistrationPromise = Promise.promise();
-            KafkaNodeUnregistration.unregisterNodes(reconciliation, vertx, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), nodeIdsToUnregister)
-                    .onComplete(res -> {
-                        if (res.succeeded()) {
-                            LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", nodeIdsToUnregister);
-                            kafkaStatus.setRegisteredNodeIds(currentNodeIds);
+                        LOGGER.infoCr(reconciliation, "Nodes unregistration: previousNodeIds = {}, fencedNodeIds = {}, fencedControllerOnlyNodeIds = {}",
+                                previousNodeIds, fencedNodeIds, fencedControllerOnlyNodeIds);
+
+                        Set<Integer> nodeIdsToUnregister = new HashSet<>(previousNodeIds);
+                        nodeIdsToUnregister.removeAll(currentNodeIds);
+                        nodeIdsToUnregister.addAll(fencedControllerOnlyNodeIds);
+
+                        if (!nodeIdsToUnregister.isEmpty()) {
+                            LOGGER.infoCr(reconciliation, "Kafka nodes {} were removed from the Kafka cluster and will be unregistered", nodeIdsToUnregister);
+
+                            KafkaNodeUnregistration.unregisterNodes(reconciliation, vertx, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), nodeIdsToUnregister)
+                                    .onComplete(res -> {
+                                        if (res.succeeded()) {
+                                            LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", nodeIdsToUnregister);
+                                        } else {
+                                            // unregistration failed, we will retry on next reconciliation
+                                            LOGGER.warnCr(reconciliation, "Failed to unregister Kafka nodes {} from the Kafka cluster", nodeIdsToUnregister);
+                                        }
+
+                                        // We complete the promise with success even if the unregistration failed as we do not want to
+                                        // fail the reconciliation.
+                                        unregistrationPromise.complete();
+                                    });
                         } else {
-                            LOGGER.warnCr(reconciliation, "Failed to unregister Kafka nodes {} from the Kafka cluster", nodeIdsToUnregister);
-
-                            // When the unregistration failed, we will keep the original registered node IDs to retry
-                            // the unregistration for them. But we will merge it with any existing node IDs to make
-                            // sure we do not lose track of them.
-                            Set<Integer> updatedNodeIds = new HashSet<>(currentNodeIds);
-                            updatedNodeIds.addAll(previousNodeIds);
-                            kafkaStatus.setRegisteredNodeIds(updatedNodeIds.stream().sorted().toList());
+                            unregistrationPromise.complete();
                         }
-
-                        // We complete the promise with success even if the unregistration failed as we do not want to
-                        // fail the reconciliation.
+                    } else {
+                        // listing nodes returned an empty list, we will retry on next reconciliation
+                        LOGGER.warnCr(reconciliation, "Empty Kafka nodes list from the Kafka cluster");
                         unregistrationPromise.complete();
-                    });
+                    }
+                })
+                .onFailure(throwable -> {
+                    // listing nodes failed, we will retry on next reconciliation
+                    LOGGER.warnCr(reconciliation, "Failed to list Kafka nodes from the Kafka cluster", throwable);
+                    unregistrationPromise.complete();
+                });
 
-            return unregistrationPromise.future();
-        } else {
-            // We are either not in KRaft mode, or at a cluster without any information about previous nodes, or without
-            // any change to the nodes => we just update the status field
-            kafkaStatus.setRegisteredNodeIds(currentNodeIds);
-            return Future.succeededFuture();
-        }
+        return unregistrationPromise.future();
     }
 
     /**
