@@ -294,7 +294,7 @@ jobs:
         run: |
           mvn -f systemtest/pom.xml verify \
             -P"${PROFILE}" \
-            -DexcludedGroups="${{ inputs.excludedGroups }}" \
+            -DexcludedGroups="${EXCLUDED_GROUPS}" \
             $GROUPS_OPT \
             $TESTS_OPT \
             -Dmaven.javadoc.skip=true \
@@ -315,6 +315,7 @@ jobs:
           # Build the switch only when the input is non-empty
           GROUPS_OPT: ${{ inputs.groups != '' && format('-Dgroups="{0}"', inputs.groups) || '' }}
           TESTS_OPT: ${{ inputs.tests  != '' && format('-Dit.test="{0}"',  inputs.tests)  || '' }}
+          EXCLUDED_GROUPS: ${{ matrix.config.excluded_groups || '' }}
           STRIMZI_TEST_LOG_LEVEL: INFO
 
       - name: Archive JUnit test results

@@ -200,6 +200,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
@@ -209,6 +210,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
@@ -218,6 +220,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
@@ -227,6 +230,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
@@ -236,6 +240,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
@@ -245,6 +250,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-x86-64"
     arch: "amd64"
@@ -254,6 +260,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   # arm64
   - agent: "oracle-vm-4cpu-16gb-arm64"
@@ -264,6 +271,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
@@ -273,6 +281,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
@@ -282,6 +291,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
@@ -291,6 +301,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
@@ -300,6 +311,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
@@ -309,6 +321,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   - agent: "oracle-vm-4cpu-16gb-arm64"
     arch: "arm64"
@@ -318,6 +331,7 @@ pipelines:
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "NAMESPACE"
     cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
     parallel: 1
   ################################
   ### Regression Feature Gates ###
