@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -42,6 +43,8 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
         R extends Resource<T>> extends AbstractNamespacedResourceOperatorIT<C, T, L, R> {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractNamespacedResourceOperatorServerSideApplyIT.class);
 
+    abstract T getModifiedAnno();
+
     @Test
     public void testCreateModifyDelete(VertxTestContext context)    {
         Checkpoint async = context.checkpoint();
@@ -51,7 +54,7 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
         T modResource = getModified();
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put("my-annotation", "my-value");
+        annotations.put("my-annotation2", "my-value2");
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
             .onComplete(context.succeeding(rrCreated -> {
@@ -72,6 +75,7 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
             })
             .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
             .onComplete(context.succeeding(rrModified -> {
+                annotations.put("my-annotation", "my-value2");
                 T modified = op.get(namespace, resourceName);
 
                 assertThat(rrModified.getType(), is(ReconcileResult.Type.PATCHED_WITH_SERVER_SIDE_APPLY));
@@ -104,7 +108,7 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
         T modResource = getModified();
 
         Map<String, String> annotations = new HashMap<>();
-        annotations.put("my-annotation", "my-value");
+        annotations.put("my-annotation", "my-value2");
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
             .onComplete(context.succeeding(rrCreated -> {
@@ -114,25 +118,17 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
                 assertResources(context, newResource, created);
             }))
             .andThen(rr -> {
-                Map<String, String> anotherOperatorAnnos = new HashMap<>();
-                anotherOperatorAnnos.put("my-annotation", "my-value2");
-
-                newResource.getMetadata().setAnnotations(anotherOperatorAnnos);
-                // we need to set this to null otherwise SSA will keep the older label as it is and it will not be actually deleted
-                // the next check using assertResources would then fail
-                newResource.getMetadata().setLabels(null);
-
                 PatchContext patchContext = new PatchContext.Builder()
                     .withFieldManager("another-operator")
                     .withForce(false)
                     .withPatchType(PatchType.SERVER_SIDE_APPLY)
                     .build();
 
-                op.operation().inNamespace(namespace).withName(resourceName).patch(patchContext, newResource);
+                op.operation().inNamespace(namespace).withName(resourceName).patch(patchContext, getModifiedAnno());
 
                 T currentResource = op.get(namespace, resourceName);
 
-                assertThat(currentResource.getMetadata().getAnnotations(), is(anotherOperatorAnnos));
+                assertThat(currentResource.getMetadata().getAnnotations(), is(singletonMap("my-annotation", "my-value")));
             })
             .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
             .onComplete(context.succeeding(rrModified -> {

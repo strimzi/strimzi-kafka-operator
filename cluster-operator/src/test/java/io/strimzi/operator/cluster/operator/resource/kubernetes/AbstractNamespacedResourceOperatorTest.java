@@ -26,7 +26,6 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
@@ -47,7 +46,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(VertxExtension.class)
 public abstract class AbstractNamespacedResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList<T>, R extends Resource<T>> {
@@ -157,6 +155,10 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     }
 
     @Test
+    public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context) {
+        testCreateWhenExistsWithoutChangeIsNotAPatch(context, true);
+    }
+
     public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context, boolean cascade) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
@@ -252,7 +254,6 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
-
         when(mockResource.create()).thenThrow(ex);
 
         C mockClient = mock(clientType());
@@ -591,9 +592,12 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             verify(mockResource1, never()).patch(any(), any());
             verify(mockResource1, never()).create();
             verify(mockDeletable1, times(1)).delete();
+
             verify(mockResource2, times(1)).get();
+            verify(mockResource2, times(1)).patch(any(), eq(resource2Mod));
             verify(mockResource2, never()).create();
             verify(mockResource2, never()).delete();
+
             verify(mockResource3, times(1)).get();
             verify(mockResource3, never()).patch(any(), any());
             verify(mockResource3, times(1)).create();

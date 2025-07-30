@@ -65,12 +65,24 @@ public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResource
                 .withName(resourceName)
                 .withNamespace(namespace)
                 .withLabels(singletonMap("state", "modified"))
+                .withAnnotations(singletonMap("my-annotation", "my-value2"))
             .endMetadata()
             .withNewSpec()
                 .withType("ClusterIP")
                 .withSelector(singletonMap("app", "kafka"))
                 .withPorts(servicePort)
             .endSpec()
+            .build();
+    }
+
+    @Override
+    protected Service getModifiedAnno() {
+        return new ServiceBuilder()
+            .withNewMetadata()
+                .withName(resourceName)
+                .withNamespace(namespace)
+                .withAnnotations(singletonMap("my-annotation", "my-value"))
+            .endMetadata()
             .build();
     }
 

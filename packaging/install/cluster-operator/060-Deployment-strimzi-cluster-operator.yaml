@@ -27,7 +27,7 @@ spec:
             name: strimzi-cluster-operator
       containers:
         - name: strimzi-cluster-operator
-          image: quay.io/lkral/operator:server-side-apply-arm64
+          image: quay.io/strimzi/operator:latest
           ports:
             - containerPort: 8080
               name: http
@@ -67,11 +67,11 @@ spec:
                 3.9.1=quay.io/strimzi/kafka:latest-kafka-3.9.1
                 4.0.0=quay.io/strimzi/kafka:latest-kafka-4.0.0
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-              value: quay.io/lkral/operator:server-side-apply-arm64
+              value: quay.io/strimzi/operator:latest
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-              value: quay.io/lkral/operator:server-side-apply-arm64
+              value: quay.io/strimzi/operator:latest
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-              value: quay.io/lkral/operator:server-side-apply-arm64
+              value: quay.io/strimzi/operator:latest
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
               value: quay.io/strimzi/kafka-bridge:0.32.0
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE

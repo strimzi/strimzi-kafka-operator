@@ -42,6 +42,17 @@ public class ServiceAccountOperatorServerSideApplyIT extends AbstractNamespacedR
                 .withName(resourceName)
                 .withNamespace(namespace)
                 .withLabels(singletonMap("foo2", "bar2"))
+                .withAnnotations(singletonMap("my-annotation", "my-value2"))
+            .endMetadata()
+            .build();
+    }
+
+    @Override
+    protected ServiceAccount getModifiedAnno() {
+        return new ServiceAccountBuilder()
+            .withNewMetadata()
+                .withName(resourceName)
+                .withNamespace(namespace)
                 .withAnnotations(singletonMap("my-annotation", "my-value"))
             .endMetadata()
             .build();
