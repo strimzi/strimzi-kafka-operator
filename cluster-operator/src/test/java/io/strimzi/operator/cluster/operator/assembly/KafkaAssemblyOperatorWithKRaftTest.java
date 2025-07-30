@@ -1849,14 +1849,14 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         @Override
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return manualPodCleaning()
-                    .compose(i -> manualRollingUpdate())
+                    .compose(i -> manualRollingUpdate(kafkaStatus))
                     .compose(i -> pvcs(kafkaStatus))
                     .compose(i -> scaleDown())
                     .compose(i -> updateNodePoolStatuses(kafkaStatus))
                     .compose(i -> listeners())
                     .compose(i -> brokerConfigurationConfigMaps())
                     .compose(i -> podSet())
-                    .compose(this::rollingUpdate)
+                    .compose(podSetDiffs -> rollingUpdate(podSetDiffs, kafkaStatus))
                     .compose(i -> nodeUnregistration(kafkaStatus))
                     .compose(i -> sharedKafkaConfigurationCleanup());
         }
@@ -1867,7 +1867,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 Function<Pod, RestartReasons> podNeedsRestart,
                 Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
                 Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
-                boolean allowReconfiguration
+                boolean allowReconfiguration,
+                KafkaStatus kafkaStatus
         ) {
             maybeRollKafkaInvocations++;
             kafkaPodNeedsRestart = podNeedsRestart;

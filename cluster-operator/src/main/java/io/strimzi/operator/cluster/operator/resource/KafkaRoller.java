@@ -38,6 +38,7 @@ import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.InvalidConfigurationException;
 import org.apache.kafka.common.errors.SslAuthenticationException;
 
 import java.time.Duration;
@@ -350,7 +351,7 @@ public class KafkaRoller {
             } catch (InterruptedException e) {
                 // Let the executor deal with interruption.
                 Thread.currentThread().interrupt();
-            } catch (FatalProblem e) {
+            } catch (FatalProblem | InvalidConfiguration e) {
                 LOGGER.infoCr(reconciliation, "Could not reconcile {}, giving up without retrying because we encountered a fatal error",
                         nodeRef, e);
                 ctx.promise.fail(e);
@@ -530,7 +531,7 @@ public class KafkaRoller {
      * Dynamically update the broker config if the plan says we can.
      * Return true if the broker was successfully updated dynamically.
      */
-    private boolean maybeDynamicUpdateBrokerConfig(NodeRef nodeRef, RestartContext restartContext) throws InterruptedException {
+    private boolean maybeDynamicUpdateBrokerConfig(NodeRef nodeRef, RestartContext restartContext) throws Exception {
         boolean updatedDynamically;
 
         if (restartContext.needsReconfig) {
@@ -699,7 +700,7 @@ public class KafkaRoller {
     }
 
     /* test */ void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
-            throws ForceableProblem, InterruptedException {
+            throws Exception {
         boolean isLog4j2 = KafkaVersion.compareDottedVersions(kafkaVersion.version(), "4.0.0") >= 0;
         Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig = new HashMap<>(2);
         var podId = nodeRef.nodeId();
@@ -725,7 +726,12 @@ public class KafkaRoller {
         await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
                 LOGGER.errorCr(reconciliation, "Error updating broker configuration for pod {}", nodeRef, error);
-                return new ForceableProblem("Error updating broker configuration for pod " + nodeRef, error);
+                // it's due to an invalid configuration provided by the user, i.e. changing min.insync.replicas when ELR is enabled
+                if (error instanceof InvalidConfigurationException || error instanceof ConfigException) {
+                    return new InvalidConfiguration(error.getMessage(), error);
+                } else {
+                    return new ForceableProblem("Error updating broker configuration for pod " + nodeRef, error);
+                }
             });
         await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
@@ -788,6 +794,19 @@ public class KafkaRoller {
         }
 
         FatalProblem(String msg, Throwable cause) {
+            super(msg, cause);
+        }
+    }
+
+    /**
+     * Invalid configuration provided
+     */
+    public static final class InvalidConfiguration extends Exception {
+        InvalidConfiguration(String message) {
+            super(message);
+        }
+
+        InvalidConfiguration(String msg, Throwable cause) {
             super(msg, cause);
         }
     }
