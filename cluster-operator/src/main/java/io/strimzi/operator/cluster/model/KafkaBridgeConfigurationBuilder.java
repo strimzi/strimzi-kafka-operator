@@ -19,12 +19,17 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
+import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER;
+import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
 
 /**
@@ -343,6 +348,47 @@ public class KafkaBridgeConfigurationBuilder {
             writer.println("http.producer.enabled=true");
         }
 
+        return this;
+    }
+
+    /**
+     * Configures the Strimzi Metrics Reporter. It is set only if user enables Strimzi Metrics Reporter.
+     *
+     * @param model     Strimzi Metrics Reporter configuration
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaBridgeConfigurationBuilder withStrimziMetricsReporter(StrimziMetricsReporterModel model)   {
+        if (model != null) {
+            printSectionHeader("Strimzi Metrics Reporter configuration");
+            writer.println("bridge.metrics=" + TYPE_STRIMZI_METRICS_REPORTER);
+            writer.println("kafka.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS);
+            writer.println("kafka." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println("kafka." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + model.getAllowList());
+            writer.println();
+        }
+        return this;
+    }
+
+    /**
+     * Configures the JMX Prometheus Metrics Exporter.
+     *
+     * @param model     JMX Prometheus Metrics Exporter configuration
+     * @param isMetricsEnabled  Flag which indicates whether the metrics are enabled or not.
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaBridgeConfigurationBuilder withJmxPrometheusExporter(JmxPrometheusExporterModel model, boolean isMetricsEnabled)  {
+        if (model != null || isMetricsEnabled) {
+            printSectionHeader("Prometheus Jmx Exporter configuration");
+            writer.println("bridge.metrics=jmxPrometheusExporter");
+           // if isMetricsEnabled is not used, we pass the path of the config file. If it is used, the bridge will use the fallback config
+            if (!isMetricsEnabled) {
+                String configFilePath = KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT + JmxPrometheusExporterModel.CONFIG_MAP_KEY;
+                writer.println("bridge.metrics.exporter.config.path=" + configFilePath);
+            }
+            writer.println();
+        }
         return this;
     }
 

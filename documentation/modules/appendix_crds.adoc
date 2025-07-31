@@ -1020,7 +1020,7 @@ It must have the value `password` for the type `KafkaJmxAuthenticationPassword`.
 [id='type-JmxPrometheusExporterMetrics-{context}']
 = `JmxPrometheusExporterMetrics` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `JmxPrometheusExporterMetrics` type from xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`].
@@ -1053,7 +1053,7 @@ Used in: xref:type-ExternalLogging-{context}[`ExternalLogging`], xref:type-JmxPr
 [id='type-StrimziMetricsReporter-{context}']
 = `StrimziMetricsReporter` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `StrimziMetricsReporter` type from xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`].
@@ -3784,10 +3784,13 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |Configuration of the node label which will be used as the client.rack consumer configuration.
 |enableMetrics
 |boolean
-|Enable the metrics for the Kafka Bridge. Default is false.
+|Enable the metrics for the Kafka Bridge. Default is false. Deprecated, use `spec.metricsConfig`.
 |livenessProbe
 |xref:type-Probe-{context}[`Probe`]
 |Pod liveness checking.
+|metricsConfig
+|xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
+|Metrics configuration.
 |readinessProbe
 |xref:type-Probe-{context}[`Probe`]
 |Pod readiness checking.

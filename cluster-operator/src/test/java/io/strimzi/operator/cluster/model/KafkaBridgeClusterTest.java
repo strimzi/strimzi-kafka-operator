@@ -7,6 +7,8 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
@@ -58,6 +60,7 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -77,6 +80,7 @@ import java.util.TreeMap;
 
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.BRIDGE_CONFIGURATION_FILENAME;
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY;
+import static io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel.CONFIG_MAP_KEY;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -142,7 +146,6 @@ public class KafkaBridgeClusterTest {
 
     protected List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
-        expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(String.valueOf(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         return expected;
     }
@@ -158,7 +161,6 @@ public class KafkaBridgeClusterTest {
     @ParallelTest
     public void testDefaultValues() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaBridge(namespace, cluster), SHARED_ENV_PROVIDER);
-
         assertThat(kbc.image, is("quay.io/strimzi/kafka-bridge:latest"));
         assertThat(kbc.getReplicas(), is(1));
         assertThat(kbc.readinessProbeOptions.getInitialDelaySeconds(), is(15));
@@ -952,20 +954,13 @@ public class KafkaBridgeClusterTest {
     @ParallelTest
     public void testKafkaBridgeContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
-        String testEnvOneKey = KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED;
-        String testEnvOneValue = "false";
-        envVar1.setName(testEnvOneKey);
-        envVar1.setValue(testEnvOneValue);
-
-        ContainerEnvVar envVar2 = new ContainerEnvVar();
-        String testEnvTwoKey = KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS;
-        String testEnvTwoValue = "PEM certs";
-        envVar2.setName(testEnvTwoKey);
-        envVar2.setValue(testEnvTwoValue);
+        String testEnvKey = KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS;
+        String testEnvValue = "PEM certs";
+        envVar1.setName(testEnvKey);
+        envVar1.setValue(testEnvValue);
 
         List<ContainerEnvVar> testEnvs = new ArrayList<>();
         testEnvs.add(envVar1);
-        testEnvs.add(envVar2);
         ContainerTemplate kafkaBridgeContainer = new ContainerTemplate();
         kafkaBridgeContainer.setEnv(testEnvs);
 
@@ -985,12 +980,9 @@ public class KafkaBridgeClusterTest {
 
         List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER).getEnvVars();
 
-        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
-                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
-        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
-                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
+        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvKey,
+                kafkaEnvVars.stream().filter(env -> testEnvKey.equals(env.getName()))
+                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvValue), is(false));
     }
 
     @ParallelTest
@@ -1479,10 +1471,73 @@ public class KafkaBridgeClusterTest {
     public void testConfigurationConfigMap() {
         KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, SHARED_ENV_PROVIDER);
         ConfigMap configMap = kb.generateBridgeConfigMap(metricsAndLogging);
-
         assertThat(configMap, is(notNullValue()));
         assertThat(configMap.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
-        assertThat(configMap.getData().get(JmxPrometheusExporterModel.CONFIG_MAP_KEY), is(nullValue()));
+        assertThat(configMap.getData().get(CONFIG_MAP_KEY), is(nullValue()));
         assertThat(configMap.getData().get(KafkaBridgeCluster.BRIDGE_CONFIGURATION_FILENAME), is(notNullValue()));
     }
+
+    @ParallelTest
+    public void testMetricsParsingFromConfigMap() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withNewJmxPrometheusExporterMetricsConfig()
+                        .withNewValueFrom()
+                            .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-configuration").withKey("config.yaml").build())
+                        .endValueFrom()
+                    .endJmxPrometheusExporterMetricsConfig()
+                .endSpec()
+                .build();
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
+
+        assertThat(kbc.metrics(), is(notNullValue()));
+        assertThat(((JmxPrometheusExporterModel) kbc.metrics()).getConfigMapName(), is("my-metrics-configuration"));
+        assertThat(((JmxPrometheusExporterModel) kbc.metrics()).getConfigMapKey(), is("config.yaml"));
+    }
+
+    @ParallelTest
+    public void testMetricsParsingNoMetrics() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .build();
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
+        assertThat((JmxPrometheusExporterModel) (kbc.metrics()), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testStrimziMetricsReporterConfig() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withNewStrimziMetricsReporterConfig()
+                        .withNewValues()
+                            .withAllowList("kafka_producer_producer_metrics.*,kafka_producer_kafka_metrics_count_count")
+                        .endValues()
+                    .endStrimziMetricsReporterConfig()
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
+
+        assertThat(kbc.metrics(), is(notNullValue()));
+        assertThat(((StrimziMetricsReporterModel) kbc.metrics()).getAllowList(), is("kafka_producer_producer_metrics.*,kafka_producer_kafka_metrics_count_count"));
+    }
+
+    @ParallelTest
+    public void testJmxPrometheusExporterConfig() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withNewJmxPrometheusExporterMetricsConfig()
+                        .withNewValueFrom()
+                            .withConfigMapKeyRef(new ConfigMapKeySelector("bridge-metrics", "my-bridge-bridge-config", false))
+                        .endValueFrom()
+                    .endJmxPrometheusExporterMetricsConfig()
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
+
+        assertThat(kbc.metrics(), is(notNullValue()));
+        assertThat(((JmxPrometheusExporterModel) kbc.metrics()).getConfigMapKey(), is("bridge-metrics"));
+        assertThat(((JmxPrometheusExporterModel) kbc.metrics()).getConfigMapName(), is("my-bridge-bridge-config"));
+    }
+
 }

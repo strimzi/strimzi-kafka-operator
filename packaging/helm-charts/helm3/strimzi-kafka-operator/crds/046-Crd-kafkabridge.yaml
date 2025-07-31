@@ -443,7 +443,7 @@ spec:
                   description: Configuration of the node label which will be used as the client.rack consumer configuration.
                 enableMetrics:
                   type: boolean
-                  description: Enable the metrics for the Kafka Bridge. Default is false.
+                  description: "Enable the metrics for the Kafka Bridge. Default is false. Deprecated, use `spec.metricsConfig`."
                 livenessProbe:
                   type: object
                   properties:
@@ -468,6 +468,44 @@ spec:
                       minimum: 1
                       description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                   description: Pod liveness checking.
+                metricsConfig:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - jmxPrometheusExporter
+                        - strimziMetricsReporter
+                      description: Metrics type. The supported types are `jmxPrometheusExporter` and `strimziMetricsReporter`. Type `jmxPrometheusExporter` uses the Prometheus JMX Exporter to expose Kafka JMX metrics in Prometheus format through an HTTP endpoint. Type `strimziMetricsReporter` uses the Strimzi Metrics Reporter to directly expose Kafka metrics in Prometheus format through an HTTP endpoint.
+                    valueFrom:
+                      type: object
+                      properties:
+                        configMapKeyRef:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to the key in the ConfigMap containing the configuration.
+                      description: ConfigMap entry where the Prometheus JMX Exporter configuration is stored.
+                    values:
+                      type: object
+                      properties:
+                        allowList:
+                          type: array
+                          items:
+                            type: string
+                          description: A list of regex patterns to filter the metrics to collect. Should contain at least one element.
+                      description: Configuration values for the Strimzi Metrics Reporter.
+                  required:
+                    - type
+                  description: Metrics configuration.
+                  x-kubernetes-validations:
+                    - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
+                      message: valueFrom property is required
                 readinessProbe:
                   type: object
                   properties:
