@@ -103,6 +103,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
@@ -137,10 +139,12 @@ public class CaReconcilerTest {
 
     private final List<Secret> secrets = new ArrayList<>();
     private WorkerExecutor sharedWorkerExecutor;
+    private ResourceOperatorSupplier supplier;
 
     @BeforeEach
     public void setup(Vertx vertx) {
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
+        supplier = ResourceUtils.supplierWithMocks(false);
     }
 
     @AfterEach
@@ -148,7 +152,7 @@ public class CaReconcilerTest {
         sharedWorkerExecutor.close();
     }
 
-    private Future<ArgumentCaptor<Secret>> reconcileCa(Vertx vertx, CertificateAuthority clusterCa, CertificateAuthority clientsCa) {
+    private Future<Void> reconcileCa(Vertx vertx, CertificateAuthority clusterCa, CertificateAuthority clientsCa) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withClusterCa(clusterCa)
@@ -159,8 +163,7 @@ public class CaReconcilerTest {
         return reconcileCa(vertx, kafka, Clock.systemUTC());
     }
 
-    private Future<ArgumentCaptor<Secret>> reconcileCa(Vertx vertx, Kafka kafka, Clock clock) {
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+    private Future<Void> reconcileCa(Vertx vertx, Kafka kafka, Clock clock) {
         SecretOperator secretOps = supplier.secretOperations;
         DeploymentOperator deploymentOps = supplier.deploymentOperations;
         StrimziPodSetOperator spsOps = supplier.strimziPodSetOperator;
@@ -177,34 +180,22 @@ public class CaReconcilerTest {
 
             return Future.succeededFuture(listedSecrets);
         });
-        ArgumentCaptor<Secret> c = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)))).thenAnswer(i -> Future.succeededFuture());
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
 
+        when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(deploymentOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
-
-        when(spsOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
         when(spsOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture());
-
         when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Promise<ArgumentCaptor<Secret>> reconcileCasComplete = Promise.promise();
+        Promise<Void> reconcileCasComplete = Promise.promise();
 
         new CaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
                 supplier, vertx, CERT_MANAGER, PASSWORD_GENERATOR)
                 .reconcile(clock)
                 .onComplete(ar -> {
-                    // If succeeded return the argument captor object instead of the Reconciliation state
-                    // This is for the purposes of testing
-                    // If failed then return the throwable of the reconcileCas
                     if (ar.succeeded()) {
-                        reconcileCasComplete.complete(c);
+                        reconcileCasComplete.complete();
                     } else {
                         reconcileCasComplete.fail(ar.cause());
                     }
@@ -289,6 +280,26 @@ public class CaReconcilerTest {
         return (X509Certificate) trustStore.getCertificate(alias);
     }
 
+    private void assertCaptorSecretsNotNull(CaptorSecrets secrets) {
+        assertThat(secrets.clusterCaCert(), is(notNullValue()));
+        assertThat(secrets.clusterCaKey(), is(notNullValue()));
+        assertThat(secrets.clientsCaCert(), is(notNullValue()));
+        assertThat(secrets.clientsCaKey(), is(notNullValue()));
+    }
+
+    private CaptorSecrets verifyCaSecretReconcileCalls(SecretOperator secretOps) {
+        ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
+        ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
+        ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
+        ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
+        verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture());
+        verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture());
+        verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture());
+        verify(secretOps).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture());
+
+        return new CaptorSecrets(clusterCaCert.getValue(), clusterCaKey.getValue(), clientsCaCert.getValue(), clientsCaKey.getValue());
+    }
+
     private void assertCertDataNotNull(Map<String, String> certData) {
         assertThat(certData.keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
         assertThat(certData.get(CA_CRT), is(notNullValue()));
@@ -314,18 +325,19 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, certificateAuthority, certificateAuthority)
-            .onComplete(context.succeeding(c -> context.verify(() -> {
-                assertThat(c.getAllValues(), hasSize(4));
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                assertThat(c.getAllValues().get(0).getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-                assertThat(isCertInTrustStore(CA_CRT, c.getAllValues().get(0).getData()), is(true));
+                assertThat(captorSecrets.clusterCaCert().getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
+                assertThat(isCertInTrustStore(CA_CRT, captorSecrets.clusterCaCert.getData()), is(true));
 
-                assertThat(c.getAllValues().get(1).getData().keySet(), is(singleton(CA_KEY)));
+                assertThat(captorSecrets.clusterCaKey().getData().keySet(), is(singleton(CA_KEY)));
 
-                assertThat(c.getAllValues().get(2).getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-                assertThat(isCertInTrustStore(CA_CRT, c.getAllValues().get(2).getData()), is(true));
+                assertThat(captorSecrets.clientsCaCert().getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
+                assertThat(isCertInTrustStore(CA_CRT, captorSecrets.clientsCaCert().getData()), is(true));
 
-                assertThat(c.getAllValues().get(3).getData().keySet(), is(singleton(CA_KEY)));
+                assertThat(captorSecrets.clientsCaKey().getData().keySet(), is(singleton(CA_KEY)));
 
                 async.flag();
             })));
@@ -381,21 +393,23 @@ public class CaReconcilerTest {
         Checkpoint async = context.checkpoint();
 
         reconcileCa(vertx, certificateAuthority, certificateAuthority)
-            .onComplete(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                assertThat(c.getAllValues().get(0).getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-                assertThat(c.getAllValues().get(0).getData().get(CA_CRT), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertThat(x509Certificate(initialClusterCaCertSecret.getData().get(CA_CRT)), is(getCertificateFromTrustStore(CA_CRT, c.getAllValues().get(0).getData())));
+                assertThat(captorSecrets.clusterCaCert().getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
+                assertThat(captorSecrets.clusterCaCert().getData().get(CA_CRT), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
+                assertThat(x509Certificate(initialClusterCaCertSecret.getData().get(CA_CRT)), is(getCertificateFromTrustStore(CA_CRT, captorSecrets.clusterCaCert().getData())));
 
-                assertThat(c.getAllValues().get(1).getData().keySet(), is(Set.of(CA_KEY)));
-                assertThat(c.getAllValues().get(1).getData().get(CA_KEY), is(initialClusterCaKeySecret.getData().get(CA_KEY)));
+                assertThat(captorSecrets.clusterCaKey().getData().keySet(), is(Set.of(CA_KEY)));
+                assertThat(captorSecrets.clusterCaKey().getData().get(CA_KEY), is(initialClusterCaKeySecret.getData().get(CA_KEY)));
 
-                assertThat(c.getAllValues().get(2).getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
-                assertThat(c.getAllValues().get(2).getData().get(CA_CRT), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
-                assertThat(x509Certificate(initialClientsCaCertSecret.getData().get(CA_CRT)), is(getCertificateFromTrustStore(CA_CRT, c.getAllValues().get(2).getData())));
+                assertThat(captorSecrets.clientsCaCert().getData().keySet(), is(Set.of(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
+                assertThat(captorSecrets.clientsCaCert().getData().get(CA_CRT), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
+                assertThat(x509Certificate(initialClientsCaCertSecret.getData().get(CA_CRT)), is(getCertificateFromTrustStore(CA_CRT, captorSecrets.clientsCaCert().getData())));
 
-                assertThat(c.getAllValues().get(3).getData().keySet(), is(Set.of(CA_KEY)));
-                assertThat(c.getAllValues().get(3).getData().get(CA_KEY), is(initialClientsCaKeySecret.getData().get(CA_KEY)));
+                assertThat(captorSecrets.clientsCaKey().getData().keySet(), is(Set.of(CA_KEY)));
+                assertThat(captorSecrets.clientsCaKey().getData().get(CA_KEY), is(initialClientsCaKeySecret.getData().get(CA_KEY)));
                 async.flag();
             })));
     }
@@ -430,28 +444,26 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, certificateAuthority, certificateAuthority)
-            .onComplete(context.succeeding(c -> context.verify(() -> {
-                assertThat(c.getAllValues(), hasSize(4));
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-                assertCertDataNotNull(clusterCaCertData);
-
-                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
+                String newClusterCaCert = captorSecrets.clusterCaCert().getData().get(CA_CRT);
                 assertThat(newClusterCaCert, is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, captorSecrets.clusterCaCert().getData()), is(x509Certificate(newClusterCaCert)));
 
-                Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
+                Map<String, String> clusterCaKeyData = captorSecrets.clusterCaKey().getData();
                 assertThat(clusterCaKeyData, aMapWithSize(1));
                 assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
 
-                Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
+                Map<String, String> clientsCaCertData = captorSecrets.clientsCaCert().getData();
                 assertCertDataNotNull(clientsCaCertData);
 
                 String newClientsCaCert = clientsCaCertData.get(CA_CRT);
                 assertThat(newClientsCaCert, is(initialClientsCaCertSecret.getData().get(CA_CRT)));
                 assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
 
-                Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
+                Map<String, String> clientsCaKeyData = captorSecrets.clientsCaKey().getData();
                 assertThat(clientsCaKeyData, aMapWithSize(1));
                 assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
 
@@ -490,22 +502,20 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, certificateAuthority, certificateAuthority)
-            .onComplete(context.succeeding(c -> context.verify(() -> {
-                assertThat(c.getAllValues(), hasSize(4));
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-                assertCertDataNotNull(clusterCaCertData);
-
-                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
+                String newClusterCaCert = captorSecrets.clusterCaCert().getData().get(CA_CRT);
                 assertThat(newClusterCaCert, is(not(initialClusterCaCertSecret.getData().get(CA_CRT))));
-                assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(not(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD))));
-                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
+                assertThat(captorSecrets.clusterCaCert().getData().get(CA_STORE_PASSWORD), is(not(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD))));
+                assertThat(getCertificateFromTrustStore(CA_CRT, captorSecrets.clusterCaCert().getData()), is(x509Certificate(newClusterCaCert)));
 
-                Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
+                Map<String, String> clusterCaKeyData = captorSecrets.clusterCaKey().getData();
                 assertThat(clusterCaKeyData, aMapWithSize(1));
                 assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
 
-                Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
+                Map<String, String> clientsCaCertData = captorSecrets.clientsCaCert().getData();
                 assertCertDataNotNull(clientsCaCertData);
 
                 String newClientsCaCert = clientsCaCertData.get(CA_CRT);
@@ -513,7 +523,7 @@ public class CaReconcilerTest {
                 assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(not(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD))));
                 assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
 
-                Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
+                Map<String, String> clientsCaKeyData = captorSecrets.clientsCaKey().getData();
                 assertThat(clientsCaKeyData, aMapWithSize(1));
                 assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
 
@@ -561,37 +571,35 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()))
-            .onComplete(context.succeeding(c -> context.verify(() -> {
-                assertThat(c.getAllValues(), hasSize(4));
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-                assertCertDataNotNull(clusterCaCertData);
-
-                String newClusterCaCert = clusterCaCertData.get(CA_CRT);
-                assertThat(c.getAllValues().get(0).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
+                String newClusterCaCert = captorSecrets.clusterCaCert().getData().get(CA_CRT);
+                assertThat(captorSecrets.clusterCaCert().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
                 assertThat(newClusterCaCert, is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
-                assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
+                assertThat(captorSecrets.clusterCaCert().getData().get(CA_STORE_PASSWORD), is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                assertThat(getCertificateFromTrustStore(CA_CRT, captorSecrets.clusterCaCert().getData()), is(x509Certificate(newClusterCaCert)));
 
-                Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
+                Map<String, String> clusterCaKeyData = captorSecrets.clusterCaKey().getData();
                 assertThat(clusterCaKeyData, aMapWithSize(1));
                 assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
-                assertThat(c.getAllValues().get(1).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION), is("0"));
+                assertThat(captorSecrets.clusterCaKey().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION), is("0"));
 
 
-                Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
+                Map<String, String> clientsCaCertData = captorSecrets.clientsCaCert().getData();
                 assertCertDataNotNull(clientsCaCertData);
 
                 String newClientsCaCert = clientsCaCertData.get(CA_CRT);
-                assertThat(c.getAllValues().get(2).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
+                assertThat(captorSecrets.clientsCaCert().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
                 assertThat(newClientsCaCert, is(initialClientsCaCertSecret.getData().get(CA_CRT)));
                 assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
                 assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
 
-                Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
+                Map<String, String> clientsCaKeyData = captorSecrets.clientsCaKey().getData();
                 assertThat(clientsCaKeyData, aMapWithSize(1));
                 assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
-                assertThat(c.getAllValues().get(3).getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION), is("0"));
+                assertThat(captorSecrets.clientsCaKey().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION), is("0"));
 
                 async.flag();
             })));
@@ -637,36 +645,37 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T10:12:00Z"), Clock.systemUTC().getZone()))
-            .onComplete(context.succeeding(c -> context.verify(() -> {
-                assertThat(c.getAllValues().size(), is(4));
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
+                Map<String, String> clusterCaCertData = captorSecrets.clusterCaCert().getData();
                 assertCertDataNotNull(clusterCaCertData);
 
                 String newClusterCaCert = clusterCaCertData.get(CA_CRT);
-                assertThat(c.getAllValues().get(0).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
+                assertThat(captorSecrets.clusterCaCert().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
                 assertThat(newClusterCaCert, is(not(initialClusterCaCertSecret.getData().get(CA_CRT))));
                 assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(not(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD))));
                 assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
 
-                Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
+                Map<String, String> clusterCaKeyData = captorSecrets.clusterCaKey().getData();
                 assertThat(clusterCaKeyData, aMapWithSize(1));
                 assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
-                assertThat(c.getAllValues().get(1).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
+                assertThat(captorSecrets.clusterCaKey().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
 
-                Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
+                Map<String, String> clientsCaCertData = captorSecrets.clientsCaCert().getData();
                 assertCertDataNotNull(clientsCaCertData);
 
                 String newClientsCaCert = clientsCaCertData.get(CA_CRT);
-                assertThat(c.getAllValues().get(2).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
+                assertThat(captorSecrets.clientsCaCert().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
                 assertThat(newClientsCaCert, is(not(initialClientsCaCertSecret.getData().get(CA_CRT))));
                 assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(not(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD))));
                 assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
 
-                Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
+                Map<String, String> clientsCaKeyData = captorSecrets.clientsCaKey().getData();
                 assertThat(clientsCaKeyData, aMapWithSize(1));
                 assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
-                assertThat(c.getAllValues().get(3).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
+                assertThat(captorSecrets.clientsCaKey().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
 
                 async.flag();
             })));
@@ -705,10 +714,11 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, certificateAuthority, certificateAuthority)
-            .onComplete(context.succeeding(c -> context.verify(() -> {
-                assertThat(c.getAllValues(), hasSize(4));
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
+                Map<String, String> clusterCaCertData = captorSecrets.clusterCaCert().getData();
                 assertThat(clusterCaCertData, aMapWithSize(4));
 
                 String newClusterCaCert = clusterCaCertData.get(CA_CRT);
@@ -727,13 +737,12 @@ public class CaReconcilerTest {
                 assertThat(getCertificateFromTrustStore(oldClusterCaCertKey, clusterCaCertData), is(x509Certificate(oldClusterCaCert)));
                 assertThat(x509Certificate(newClusterCaCert).getSubjectX500Principal().getName(), is("CN=cluster-ca v1,O=io.strimzi"));
 
-                Secret clusterCaKeySecret = c.getAllValues().get(1);
-                assertThat(clusterCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
-                Map<String, String> clusterCaKeyData = clusterCaKeySecret.getData();
+                assertThat(captorSecrets.clusterCaKey().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
+                Map<String, String> clusterCaKeyData = captorSecrets.clusterCaKey().getData();
                 assertKeyDataNotNull(clusterCaKeyData);
                 assertThat(clusterCaKeyData.get(CA_KEY), is(not(initialClusterCaKeySecret.getData().get(CA_KEY))));
 
-                Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
+                Map<String, String> clientsCaCertData = captorSecrets.clientsCaCert().getData();
                 assertThat(clientsCaCertData, aMapWithSize(4));
 
                 String newClientsCaCert = clientsCaCertData.get(CA_CRT);
@@ -752,9 +761,8 @@ public class CaReconcilerTest {
                 assertThat(getCertificateFromTrustStore(oldClientsCaCertKey, clientsCaCertData), is(x509Certificate(oldClientsCaCert)));
                 assertThat(x509Certificate(newClientsCaCert).getSubjectX500Principal().getName(), is("CN=clients-ca v1,O=io.strimzi"));
 
-                Secret clientsCaKeySecret = c.getAllValues().get(3);
-                assertThat(clientsCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
-                Map<String, String> clientsCaKeyData = clientsCaKeySecret.getData();
+                assertThat(captorSecrets.clientsCaKey().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
+                Map<String, String> clientsCaKeyData = captorSecrets.clientsCaKey().getData();
                 assertKeyDataNotNull(clientsCaKeyData);
                 assertThat(clientsCaKeyData.get(CA_KEY), is(not(initialClientsCaKeySecret.getData().get(CA_KEY))));
 
@@ -803,11 +811,12 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()))
-            .onComplete(context.succeeding(c -> context.verify(() -> {
-                assertThat(c.getAllValues(), hasSize(4));
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-                assertThat(c.getAllValues().get(0).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0"));
+                Map<String, String> clusterCaCertData = captorSecrets.clusterCaCert().getData();
+                assertThat(captorSecrets.clusterCaCert().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0"));
                 assertThat(clusterCaCertData, aMapWithSize(3));
 
                 String newClusterCaCert = clusterCaCertData.get(CA_CRT);
@@ -816,14 +825,13 @@ public class CaReconcilerTest {
                 assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(newClusterCaCert)));
                 assertThat(x509Certificate(newClusterCaCert).getSubjectX500Principal().getName(), is("CN=cluster-ca,O=io.strimzi"));
 
-                Secret clusterCaKeySecret = c.getAllValues().get(1);
-                assertThat(clusterCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
-                Map<String, String> clusterCaKeyData = clusterCaKeySecret.getData();
+                assertThat(captorSecrets.clusterCaKey().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
+                Map<String, String> clusterCaKeyData = captorSecrets.clusterCaKey().getData();
                 assertThat(clusterCaKeyData, aMapWithSize(1));
                 assertThat(clusterCaKeyData, hasEntry(CA_KEY, initialClusterCaKeySecret.getData().get(CA_KEY)));
 
-                Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
-                assertThat(c.getAllValues().get(2).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0"));
+                Map<String, String> clientsCaCertData = captorSecrets.clientsCaCert().getData();
+                assertThat(captorSecrets.clientsCaCert().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0"));
                 assertThat(clientsCaCertData, aMapWithSize(3));
 
                 String newClientsCaCert = clientsCaCertData.get(CA_CRT);
@@ -832,9 +840,8 @@ public class CaReconcilerTest {
                 assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(newClientsCaCert)));
                 assertThat(x509Certificate(newClientsCaCert).getSubjectX500Principal().getName(), is("CN=clients-ca,O=io.strimzi"));
 
-                Secret clientsCaKeySecret = c.getAllValues().get(3);
-                assertThat(clientsCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
-                Map<String, String> clientsCaKeyData = clientsCaKeySecret.getData();
+                assertThat(captorSecrets.clientsCaKey().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0"));
+                Map<String, String> clientsCaKeyData = captorSecrets.clientsCaKey().getData();
                 assertThat(clientsCaKeyData, aMapWithSize(1));
                 assertThat(clientsCaKeyData, hasEntry(CA_KEY, initialClientsCaKeySecret.getData().get(CA_KEY)));
 
@@ -883,12 +890,12 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T09:12:00Z"), Clock.systemUTC().getZone()))
-            .onComplete(context.succeeding(c -> context.verify(() -> {
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                assertThat(c.getAllValues(), hasSize(4));
-
-                Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
-                assertThat(c.getAllValues().get(0).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
+                Map<String, String> clusterCaCertData = captorSecrets.clusterCaCert().getData();
+                assertThat(captorSecrets.clusterCaCert().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
                 assertThat(clusterCaCertData, aMapWithSize(4));
 
                 String newClusterCaCert = clusterCaCertData.get(CA_CRT);
@@ -907,14 +914,13 @@ public class CaReconcilerTest {
                 assertThat(getCertificateFromTrustStore(oldClusterCaCertKey, clusterCaCertData), is(x509Certificate(oldClusterCaCert)));
                 assertThat(x509Certificate(newClusterCaCert).getSubjectX500Principal().getName(), is("CN=cluster-ca v1,O=io.strimzi"));
 
-                Secret clusterCaKeySecret = c.getAllValues().get(1);
-                assertThat(clusterCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
-                Map<String, String> clusterCaKeyData = clusterCaKeySecret.getData();
+                assertThat(captorSecrets.clusterCaKey().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
+                Map<String, String> clusterCaKeyData = captorSecrets.clusterCaKey().getData();
                 assertKeyDataNotNull(clusterCaKeyData);
                 assertThat(clusterCaKeyData.get(CA_KEY), is(not(initialClusterCaKeySecret.getData().get(CA_KEY))));
 
-                Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
-                assertThat(c.getAllValues().get(2).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
+                Map<String, String> clientsCaCertData = captorSecrets.clientsCaCert().getData();
+                assertThat(captorSecrets.clientsCaCert().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
                 assertThat(clientsCaCertData, aMapWithSize(4));
 
                 String newClientsCaCert = clientsCaCertData.get(CA_CRT);
@@ -933,9 +939,8 @@ public class CaReconcilerTest {
                 assertThat(getCertificateFromTrustStore(oldClientsCaCertKey, clientsCaCertData), is(x509Certificate(oldClientsCaCert)));
                 assertThat(x509Certificate(newClientsCaCert).getSubjectX500Principal().getName(), is("CN=clients-ca v1,O=io.strimzi"));
 
-                Secret clientsCaKeySecret = c.getAllValues().get(3);
-                assertThat(clientsCaKeySecret.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
-                Map<String, String> clientsCaKeyData = clientsCaKeySecret.getData();
+                assertThat(captorSecrets.clientsCaKey().getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
+                Map<String, String> clientsCaKeyData = captorSecrets.clientsCaKey().getData();
                 assertKeyDataNotNull(clientsCaKeyData);
                 assertThat(clientsCaKeyData.get(CA_KEY), is(not(initialClientsCaKeySecret.getData().get(CA_KEY))));
 
@@ -1019,25 +1024,24 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, certificateAuthority, certificateAuthority)
-            .onComplete(context.succeeding(c -> context.verify(() -> {
-                assertThat(c.getAllValues(), hasSize(4));
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(supplier.secretOperations);
+                assertCaptorSecretsNotNull(captorSecrets);
 
-                Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
+                Map<String, String> clusterCaCertData = captorSecrets.clusterCaCert().getData();
                 assertThat(clusterCaCertData, aMapWithSize(3));
                 assertThat(clusterCaCertData.get(CA_CRT), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
                 assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
                 assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(clusterCaCertData.get(CA_CRT))));
-                Map<String, String> clusterCaKeyData = c.getAllValues().get(1).getData();
-                assertThat(clusterCaKeyData.get(CA_KEY), is(initialClusterCaKeySecret.getData().get(CA_KEY)));
+                assertThat(captorSecrets.clusterCaKey().getData().get(CA_KEY), is(initialClusterCaKeySecret.getData().get(CA_KEY)));
                 assertThat(isCertInTrustStore("ca-2018-07-01T09-00-00.crt", clusterCaCertData), is(false));
 
-                Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
+                Map<String, String> clientsCaCertData = captorSecrets.clientsCaCert().getData();
                 assertThat(clientsCaCertData, aMapWithSize(3));
                 assertThat(clientsCaCertData.get(CA_CRT), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
                 assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
                 assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(clientsCaCertData.get(CA_CRT))));
-                Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
-                assertThat(clientsCaKeyData.get(CA_KEY), is(initialClientsCaKeySecret.getData().get(CA_KEY)));
+                assertThat(captorSecrets.clientsCaKey().getData().get(CA_KEY), is(initialClientsCaKeySecret.getData().get(CA_KEY)));
                 assertThat(isCertInTrustStore("ca-2018-07-01T09-00-00.crt", clientsCaCertData), is(false));
                 async.flag();
             })));
@@ -1075,8 +1079,11 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, certificateAuthority, certificateAuthority)
-            .onComplete(context.succeeding(c -> context.verify(() -> {
-                assertThat(c.getAllValues(), hasSize(0));
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), any(Secret.class));
+                verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any(Secret.class));
+                verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), any(Secret.class));
+                verify(supplier.secretOperations, times(0)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), any(Secret.class));
                 async.flag();
             })));
     }
@@ -1110,15 +1117,7 @@ public class CaReconcilerTest {
         SecretOperator secretOps = supplier.secretOperations;
         PodOperator podOps = supplier.podOperations;
 
-        ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
-        ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
-        ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
-        ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
@@ -1131,15 +1130,13 @@ public class CaReconcilerTest {
                 supplier, vertx, CERT_MANAGER, PASSWORD_GENERATOR)
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat(clusterCaCert.getAllValues(), hasSize(1));
-                    assertThat(clusterCaKey.getAllValues(), hasSize(1));
-                    assertThat(clientsCaCert.getAllValues(), hasSize(1));
-                    assertThat(clientsCaKey.getAllValues(), hasSize(1));
+                    CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(secretOps);
+                    assertCaptorSecretsNotNull(captorSecrets);
 
-                    Secret clusterCaCertSecret = clusterCaCert.getValue();
-                    Secret clusterCaKeySecret = clusterCaKey.getValue();
-                    Secret clientsCaCertSecret = clientsCaCert.getValue();
-                    Secret clientsCaKeySecret = clientsCaKey.getValue();
+                    Secret clusterCaCertSecret = captorSecrets.clusterCaCert();
+                    Secret clusterCaKeySecret = captorSecrets.clusterCaKey();
+                    Secret clientsCaCertSecret = captorSecrets.clientsCaCert();
+                    Secret clientsCaKeySecret = captorSecrets.clientsCaKey();
 
                     for (Map.Entry<String, String> entry : annos.entrySet()) {
                         assertThat(clusterCaCertSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));
@@ -1174,15 +1171,7 @@ public class CaReconcilerTest {
         SecretOperator secretOps = supplier.secretOperations;
         PodOperator podOps = supplier.podOperations;
 
-        ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
-        ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
-        ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
-        ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
@@ -1195,15 +1184,13 @@ public class CaReconcilerTest {
                 supplier, vertx, CERT_MANAGER, PASSWORD_GENERATOR)
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat(clusterCaCert.getAllValues(), hasSize(1));
-                    assertThat(clusterCaKey.getAllValues(), hasSize(1));
-                    assertThat(clientsCaCert.getAllValues(), hasSize(1));
-                    assertThat(clientsCaKey.getAllValues(), hasSize(1));
+                    CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(secretOps);
+                    assertCaptorSecretsNotNull(captorSecrets);
 
-                    Secret clusterCaCertSecret = clusterCaCert.getValue();
-                    Secret clusterCaKeySecret = clusterCaKey.getValue();
-                    Secret clientsCaCertSecret = clientsCaCert.getValue();
-                    Secret clientsCaKeySecret = clientsCaKey.getValue();
+                    Secret clusterCaCertSecret = captorSecrets.clusterCaCert();
+                    Secret clusterCaKeySecret = captorSecrets.clusterCaKey();
+                    Secret clientsCaCertSecret = captorSecrets.clientsCaCert();
+                    Secret clientsCaKeySecret = captorSecrets.clientsCaKey();
 
                     assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences(), hasSize(0));
                     assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences(), hasSize(0));
@@ -1232,15 +1219,7 @@ public class CaReconcilerTest {
         SecretOperator secretOps = supplier.secretOperations;
         PodOperator podOps = supplier.podOperations;
 
-        ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
-        ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
-        ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
-        ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), any(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
@@ -1253,23 +1232,15 @@ public class CaReconcilerTest {
                 supplier, vertx, CERT_MANAGER, PASSWORD_GENERATOR)
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat(clusterCaCert.getAllValues(), hasSize(1));
-                    assertThat(clusterCaKey.getAllValues(), hasSize(1));
-                    assertThat(clientsCaCert.getAllValues(), hasSize(1));
-                    assertThat(clientsCaKey.getAllValues(), hasSize(1));
+                    CaptorSecrets captorSecrets = verifyCaSecretReconcileCalls(secretOps);
 
-                    Secret clusterCaCertSecret = clusterCaCert.getValue();
-                    Secret clusterCaKeySecret = clusterCaKey.getValue();
-                    Secret clientsCaCertSecret = clientsCaCert.getValue();
-                    Secret clientsCaKeySecret = clientsCaKey.getValue();
+                    assertThat(captorSecrets.clusterCaCert().getMetadata().getOwnerReferences(), hasSize(1));
+                    assertThat(captorSecrets.clusterCaKey().getMetadata().getOwnerReferences(), hasSize(1));
+                    assertThat(captorSecrets.clientsCaCert().getMetadata().getOwnerReferences(), hasSize(0));
+                    assertThat(captorSecrets.clientsCaKey().getMetadata().getOwnerReferences(), hasSize(0));
 
-                    assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences(), hasSize(1));
-                    assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences(), hasSize(1));
-                    assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(0));
-                    assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences(), hasSize(0));
-
-                    TestUtils.checkOwnerReference(clusterCaCertSecret, kafka);
-                    TestUtils.checkOwnerReference(clusterCaKeySecret, kafka);
+                    TestUtils.checkOwnerReference(captorSecrets.clusterCaCert(), kafka);
+                    TestUtils.checkOwnerReference(captorSecrets.clusterCaKey(), kafka);
 
                     async.flag();
                 })));
@@ -2033,4 +2004,11 @@ public class CaReconcilerTest {
                 .withGenerateCertificateAuthority(true)
                 .build();
     }
+
+    private record CaptorSecrets(
+            Secret clusterCaCert,
+            Secret clusterCaKey,
+            Secret clientsCaCert,
+            Secret clientsCaKey
+    ) { }
 }
