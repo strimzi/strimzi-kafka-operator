@@ -123,7 +123,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     private boolean isMetricsEnabled = false;
     private LoggingModel logging;
     private MetricsModel metrics;
-    private boolean enableMetrics;
 
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
