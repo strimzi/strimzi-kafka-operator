@@ -1039,9 +1039,17 @@ public class KafkaReconciler {
                                     .onComplete(res -> {
                                         if (res.succeeded()) {
                                             LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", nodeIdsToUnregister);
+                                            kafkaStatus.setRegisteredNodeIds(currentNodeIds);
                                         } else {
                                             // unregistration failed, we will retry on next reconciliation
                                             LOGGER.warnCr(reconciliation, "Failed to unregister Kafka nodes {} from the Kafka cluster", nodeIdsToUnregister);
+
+                                            // When the unregistration failed, we will keep the original registered node IDs to retry
+                                            // the unregistration for them. But we will merge it with any existing node IDs to make
+                                            // sure we do not lose track of them.
+                                            Set<Integer> updatedNodeIds = new HashSet<>(currentNodeIds);
+                                            updatedNodeIds.addAll(previousNodeIds);
+                                            kafkaStatus.setRegisteredNodeIds(updatedNodeIds.stream().sorted().toList());
                                         }
 
                                         // We complete the promise with success even if the unregistration failed as we do not want to
@@ -1049,11 +1057,15 @@ public class KafkaReconciler {
                                         unregistrationPromise.complete();
                                     });
                         } else {
+                            // there are no nodes to unregister => we just update the status field
+                            kafkaStatus.setRegisteredNodeIds(currentNodeIds);
                             unregistrationPromise.complete();
                         }
                     } else {
                         // listing nodes returned an empty list, we will retry on next reconciliation
                         LOGGER.warnCr(reconciliation, "Empty Kafka nodes list from the Kafka cluster");
+                        // we got empty list of registered nodes => we just update the status field
+                        kafkaStatus.setRegisteredNodeIds(currentNodeIds);
                         unregistrationPromise.complete();
                     }
                 })
