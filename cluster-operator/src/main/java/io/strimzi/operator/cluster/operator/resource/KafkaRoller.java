@@ -352,7 +352,7 @@ public class KafkaRoller {
                 // Let the executor deal with interruption.
                 Thread.currentThread().interrupt();
             } catch (FatalProblem | InvalidConfiguration e) {
-                LOGGER.infoCr(reconciliation, "Could not reconcile {}, giving up without retrying because we encountered a fatal error",
+                LOGGER.infoCr(reconciliation, "Could not reconcile {}, giving up without retrying because we encountered a fatal error or invalid configuration",
                         nodeRef, e);
                 ctx.promise.fail(e);
                 singleExecutor.shutdownNow();
@@ -726,7 +726,7 @@ public class KafkaRoller {
         await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
                 LOGGER.errorCr(reconciliation, "Error updating broker configuration for pod {}", nodeRef, error);
-                // it's due to an invalid configuration provided by the user, i.e. changing min.insync.replicas when ELR is enabled
+                // it's due to an invalid configuration provided by the user, ex: changing min.insync.replicas when ELR is enabled
                 if (error instanceof InvalidConfigurationException || error instanceof ConfigException) {
                     return new InvalidConfiguration(error.getMessage(), error);
                 } else {
