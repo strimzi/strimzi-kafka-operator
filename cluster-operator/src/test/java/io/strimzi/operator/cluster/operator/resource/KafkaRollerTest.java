@@ -768,6 +768,23 @@ public class KafkaRollerTest {
                 asList(7, 4, 3, 5, 6, 8, 1, 0, 2)); //Rolls in order: unready controllers, ready controllers, unready brokers, ready brokers
     }
 
+    @Test
+    public void testRollHandlesErrorWhenInvalidConfig(VertxTestContext testContext) {
+        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+                noException(), null,
+                noException(), podId -> new KafkaRoller.InvalidConfiguration("could not get alter exception"), noException(),
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+
+        Checkpoint async = testContext.checkpoint();
+        kafkaRoller.rollingRestart(pod -> RestartReasons.empty())
+                .onComplete(testContext.failing(e -> testContext.verify(() -> {
+                    assertThat(e, instanceOf(KafkaRoller.InvalidConfiguration.class));
+                    async.flag();
+                })));
+    }
+
+
     private TestingKafkaRoller rollerWithActiveController(PodOperator podOps, Set<NodeRef> nodes, int activeController) {
         return new TestingKafkaRoller(nodes, podOps,
                 noException(), null, noException(), noException(), noException(),
@@ -897,7 +914,7 @@ public class KafkaRollerTest {
         private final Throwable acCloseException;
         private final Function<Integer, Future<Boolean>> canRollFn;
         private final Function<Integer, Throwable> controllerException;
-        private final Function<Integer, ForceableProblem> alterConfigsException;
+        private final Function<Integer, Exception> alterConfigsException;
         private final Function<Integer, ForceableProblem> getConfigsException;
         private final boolean delegateAdminClientCall;
         private final int activeController;
@@ -909,7 +926,7 @@ public class KafkaRollerTest {
                                    Function<Set<NodeRef>, RuntimeException> acOpenException,
                                    Throwable acCloseException,
                                    Function<Integer, Throwable> controllerException,
-                                   Function<Integer, ForceableProblem> alterConfigsException,
+                                   Function<Integer, Exception> alterConfigsException,
                                    Function<Integer, ForceableProblem> getConfigsException,
                                    Function<Integer, Future<Boolean>> canRollFn,
                                    AdminClientProvider adminClientProvider,
@@ -1046,8 +1063,8 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem {
-            ForceableProblem problem = alterConfigsException.apply(nodeRef.nodeId());
+        protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws Exception {
+            Exception problem = alterConfigsException.apply(nodeRef.nodeId());
             if (problem != null) {
                 throw problem;
             }
