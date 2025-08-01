@@ -107,7 +107,7 @@ public abstract class ReconcileResult<R> {
     }
 
     /**
-     * the resource was modified during the reconciliation using Server Side Apply
+     * The resource was modified during the reconciliation using Server Side Apply
      *
      * @param <R>   Resource type for which the result is being indicated
      */
@@ -146,6 +146,7 @@ public abstract class ReconcileResult<R> {
 
     /**
      * Return a reconciliation result that indicates the resource was patched using Server Side Apply.
+     *
      * @param resource  The patched resource.
      * @param usedForce Determines if force was used.
      * @return a reconciliation result that indicates the resource was patched using Server Side Apply.

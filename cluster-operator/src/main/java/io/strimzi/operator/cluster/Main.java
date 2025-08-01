@@ -144,7 +144,7 @@ public class Main {
                 metricsProvider,
                 pfa,
                 config.getOperatorName(),
-                config.featureGates().serverSideApplyEnabled()
+                config.featureGates()
         );
 
         // Initialize the PodSecurityProvider factory to provide the user configured provider

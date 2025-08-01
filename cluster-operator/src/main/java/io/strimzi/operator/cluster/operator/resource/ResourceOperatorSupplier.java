@@ -49,6 +49,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOpe
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.vertx.core.Vertx;
 
 /**
@@ -230,9 +231,9 @@ public class ResourceOperatorSupplier {
      * @param metricsProvider       Metrics provider
      * @param pfa                   Platform Availability Features
      * @param operatorName          Name of this operator instance
-     * @param useServerSideApply    Determines if Server Side Apply should be used
+     * @param featureGates          Feature Gates configuration of operator
      */
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, String operatorName, boolean useServerSideApply) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, String operatorName, FeatureGates featureGates) {
         this(vertx,
             client,
             new DefaultAdminClientProvider(),
@@ -240,7 +241,7 @@ public class ResourceOperatorSupplier {
             metricsProvider,
             pfa,
             new KubernetesRestartEventPublisher(client, operatorName),
-            useServerSideApply
+            featureGates
         );
     }
 
@@ -284,7 +285,7 @@ public class ResourceOperatorSupplier {
             metricsProvider,
             pfa,
             restartEventPublisher,
-            false
+            new FeatureGates("")
         );
     }
 
@@ -295,22 +296,22 @@ public class ResourceOperatorSupplier {
                                      MetricsProvider metricsProvider,
                                      PlatformFeaturesAvailability pfa,
                                      KubernetesRestartEventPublisher restartEventPublisher,
-                                     boolean useServerSideApply) {
-        this(new ServiceOperator(vertx, client, useServerSideApply),
+                                     FeatureGates featureGates) {
+        this(new ServiceOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new ConfigMapOperator(vertx, client, useServerSideApply),
+                new ConfigMapOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 new SecretOperator(vertx, client),
-                new PvcOperator(vertx, client, useServerSideApply),
+                new PvcOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 new DeploymentOperator(vertx, client),
-                new ServiceAccountOperator(vertx, client, useServerSideApply),
+                new ServiceAccountOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 new RoleBindingOperator(vertx, client),
                 new RoleOperator(vertx, client),
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
                 new PodOperator(vertx, client),
-                new IngressOperator(vertx, client, useServerSideApply),
+                new IngressOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),

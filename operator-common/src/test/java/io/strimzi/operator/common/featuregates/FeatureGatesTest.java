@@ -53,9 +53,9 @@ public class FeatureGatesTest {
 
     @ParallelTest
     public void testFeatureGatesParsing() {
-        assertThat(new FeatureGates("+ServerSideApplyPhase1").serverSideApplyEnabled(), is(true));
-        assertThat(new FeatureGates("-ServerSideApplyPhase1").serverSideApplyEnabled(), is(false));
-        assertThat(new FeatureGates("   -ServerSideApplyPhase1   ").serverSideApplyEnabled(), is(false));
+        assertThat(new FeatureGates("+ServerSideApplyPhase1").serverSideApplyPhase1Enabled(), is(true));
+        assertThat(new FeatureGates("-ServerSideApplyPhase1").serverSideApplyPhase1Enabled(), is(false));
+        assertThat(new FeatureGates("   -ServerSideApplyPhase1   ").serverSideApplyPhase1Enabled(), is(false));
         // TODO: Add more tests with various feature gate combinations once we have multiple feature gates again.
         //       The commented out code below shows the tests we used to have with multiple feature gates.
         //assertThat(new FeatureGates("-UseKRaft,-DummyFeatureGate").useKRaftEnabled(), is(false));
