@@ -6,6 +6,7 @@
   The `strimzi.io/node-pools` and `strimzi.io/kraft` annotations are not required anymore and will be ignored if set.
 * Make properties `broker.session.timeout.ms`, `broker.heartbeat.interval.ms` and `controller.socket.timeout.ms` configurable
 * Add monitoring of custom resources using [kubernetes-state-metrics (KSM)](https://github.com/kubernetes/kube-state-metrics) (see [Strimzi proposal 087](https://github.com/strimzi/proposals/blob/main/087-monitoring-of-custom-resources.md))
+* Added support for Strimzi Metrics Reporter to the Kafka Bridge
 
 ### Major changes, deprecations and removals
 

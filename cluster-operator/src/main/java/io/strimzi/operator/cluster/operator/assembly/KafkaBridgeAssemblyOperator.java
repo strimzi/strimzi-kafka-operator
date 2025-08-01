@@ -103,7 +103,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> bridgeInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
             .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs))
             .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.serviceName(bridge.getCluster()), bridge.generateService()))
-            .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, bridge.logging(), null))
+            .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, bridge.logging(), bridge.metrics()))
             .compose(metricsAndLogging -> {
                 ConfigMap configMap = bridge.generateBridgeConfigMap(metricsAndLogging);
                 podAnnotations.put(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(configMap.getData().get(KafkaBridgeCluster.BRIDGE_CONFIGURATION_FILENAME)));
