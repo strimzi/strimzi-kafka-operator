@@ -329,11 +329,8 @@ public class KafkaConnectConfigurationBuilder {
                                             boolean injectStrimziMetricsReporter) {
         // Build a list of reporters to inject based on flags
         List<String> reportersToInject = new ArrayList<>();
-<<<<<<< HEAD
+
         // JmxPrometheusExporter depends on JmxReporter, which needs to be explicitly added when having custom metrics reporters
-=======
-        // Since Kafka 4 the JmxReporter is explicitly added when JmxPrometheusExporter is enabled
->>>>>>> 93a12c758 (Address comments)
         if (injectKafkaJmxReporter) reportersToInject.add("org.apache.kafka.common.metrics.JmxReporter");
         if (injectStrimziMetricsReporter) reportersToInject.add(StrimziMetricsReporterConfig.KAFKA_CLASS);
 
