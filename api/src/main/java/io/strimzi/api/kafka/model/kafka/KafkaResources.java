@@ -49,6 +49,46 @@ public class KafkaResources {
         return clusterName + "-clients-ca";
     }
 
+    /**
+     * Get the name of the Kafka role binding given the name of the {@code cluster}.
+     *
+     * @param clusterName  The cluster name.
+     *
+     * @return The name of Kafka role binding.
+     */
+    public static String kafkaRoleBindingName(String clusterName) {
+        return kafkaComponentName(clusterName) + "-role";
+    }
+
+    /**
+     * Get the name of the internal secret that contains TLS trusted certificates
+     * for connecting to Authorization server.
+     * The operator copies user specified secrets for Authorization server
+     * trusted certificates into a single secret with this name.
+     * It is then used when configuring Authorization server for Kafka cluster.
+     *
+     * @param clusterName The cluster name.
+     *
+     * @return Name of the internal secret that contains trusted certificates for Authz.
+     */
+    public static String internalAuthzTrustedCertsSecretName(String clusterName) {
+        return kafkaComponentName(clusterName) + "-authz-trusted-certs";
+    }
+
+    /**
+     * Get the name of the internal secret that contains TLS trusted certificates for OAuth server.
+     * The operator copies user specified secrets for OAuth trusted certificates into
+     * a single secret with this name.
+     * It is then used when configuring Kafka listeners with OAuth server.
+     *
+     * @param clusterName The cluster name.
+     *
+     * @return Name of the internal secret that contains OAuth trusted certificates.
+     */
+    public static String internalOauthTrustedCertsSecretName(String clusterName) {
+        return kafkaComponentName(clusterName) + "-oauth-trusted-certs";
+    }
+
     ////////
     // Kafka methods
     ////////
