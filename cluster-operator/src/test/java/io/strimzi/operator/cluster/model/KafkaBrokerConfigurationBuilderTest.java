@@ -243,16 +243,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT,
                 StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_log.*,kafka_network.*"));
     }
-    
-    @ParallelTest
-    public void testStrimziMetricsReporterDisabled() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
-                .withStrimziMetricsReporter(null)
-                .build();
-
-        assertThat(configuration, isEquivalent("node.id=2",
-                StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false"));
-    }
 
     @ParallelTest
     public void testNoRackAwareness()  {

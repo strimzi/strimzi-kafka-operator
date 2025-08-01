@@ -49,11 +49,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This class is used to generate the broker configuration template. The template is later passed using a config map to
@@ -151,16 +149,12 @@ public class KafkaBrokerConfigurationBuilder {
      */
     public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
+            printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
             writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
-        } else {
-            // we disable the listener just in case the user manually set SMR from spec.config
-            // because this would enable the listener on port 8080, causing a node crash loop
-            // due to address already in use by the Kafka Agent
-            writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println();
         }
-        writer.println();
         return this;
     }
 

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
+import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -245,6 +246,14 @@ public class AbstractConfigurationTest {
         assertThat(configuration.asOrderedProperties().asMap().get("key.converter"), is("my.package.Converter"));
         assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
         assertThat(configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"), is(""));
+    }
+
+    @ParallelTest
+    public void testSplittingOfPrefixes()   {
+        String prefixes = "prefix1.field,prefix2.field , prefix3.field, prefix4.field,, ";
+        List<String> prefixList = asList("prefix1.field", "prefix2.field", "prefix3.field", "prefix4.field");
+
+        assertThat(AbstractConfiguration.splitPrefixesOrOptionsToList(prefixes).equals(prefixList), is(true));
     }
 }
 

@@ -24,9 +24,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT;
@@ -331,7 +329,11 @@ public class KafkaConnectConfigurationBuilder {
                                             boolean injectStrimziMetricsReporter) {
         // Build a list of reporters to inject based on flags
         List<String> reportersToInject = new ArrayList<>();
+<<<<<<< HEAD
         // JmxPrometheusExporter depends on JmxReporter, which needs to be explicitly added when having custom metrics reporters
+=======
+        // Since Kafka 4 the JmxReporter is explicitly added when JmxPrometheusExporter is enabled
+>>>>>>> 93a12c758 (Address comments)
         if (injectKafkaJmxReporter) reportersToInject.add("org.apache.kafka.common.metrics.JmxReporter");
         if (injectStrimziMetricsReporter) reportersToInject.add(StrimziMetricsReporterConfig.KAFKA_CLASS);
 
@@ -359,7 +361,6 @@ public class KafkaConnectConfigurationBuilder {
                 writer.println(configKey + "=" + String.join(",", reportersToInject));
                 writer.println();
             }
-            userConfig.removeConfigOption(configKey);
         }
     }
 
@@ -400,6 +401,7 @@ public class KafkaConnectConfigurationBuilder {
      */
     public KafkaConnectConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
+            printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
             writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
@@ -412,15 +414,8 @@ public class KafkaConnectConfigurationBuilder {
             writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
             writer.println("consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
-        } else {
-            // we disable the listener just in case the user manually set SMR from spec.config
-            // because this would enable the listener on port 8080
-            writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
-            writer.println("admin." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
-            writer.println("producer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
-            writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println();
         }
-        writer.println();
         return this;
     }
 
