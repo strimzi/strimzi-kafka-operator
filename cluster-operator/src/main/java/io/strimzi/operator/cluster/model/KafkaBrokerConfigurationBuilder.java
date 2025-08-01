@@ -43,6 +43,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -874,7 +875,7 @@ public class KafkaBrokerConfigurationBuilder {
         printYammerReporters(userConfig, injectStrimziMetricsReporter);
 
         if (!userConfig.getConfiguration().isEmpty()) {
-            printSectionHeader("User provided configuration");
+            printSectionHeader("User provided configuration with Strimzi injections");
             writer.println(userConfig.getConfiguration());
             writer.println();
         }

@@ -1,0 +1,137 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  replicas: 1
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
+  http:
+    port: 8080
+  metricsConfig:
+    type: jmxPrometheusExporter
+    valueFrom:
+      configMapKeyRef:
+        name: bridge-metrics
+        key: metrics-config.yml
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: bridge-metrics
+  labels:
+    app: strimzi
+data:
+  metrics-config.yml: |
+    # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
+    lowercaseOutputName: true
+    rules:
+      # more specific rules to consumer and producer with topic related information
+      - pattern: kafka.producer<type=(.+), client-id=(.+), topic=(.+)><>([a-z-]+)-total
+        name: strimzi_bridge_kafka_producer_$4_total
+        type: COUNTER
+        labels:
+          type: "$1"
+          clientId: "$2"
+          topic: "$3"
+      - pattern: kafka.producer<type=(.+), client-id=(.+), topic=(.+)><>([a-z-]+)
+        name: strimzi_bridge_kafka_producer_$4
+        type: GAUGE
+        labels:
+          type: "$1"
+          clientId: "$2"
+          topic: "$3"
+      - pattern: kafka.consumer<type=(.+), client-id=(.+), topic=(.+)><>([a-z-]+)-total
+        name: strimzi_bridge_kafka_consumer_$4_total
+        type: COUNTER
+        labels:
+          type: "$1"
+          clientId: "$2"
+          topic: "$3"
+      - pattern: kafka.consumer<type=(.+), client-id=(.+), topic=(.+)><>([a-z-]+)
+        name: strimzi_bridge_kafka_consumer_$4
+        type: GAUGE
+        labels:
+          type: "$1"
+          clientId: "$2"
+          topic: "$3"
+      # more general metrics
+      - pattern: kafka.(\w+)<type=(.+), client-id=(.+)><>([a-z-]+-total-[a-z-]+) # handles the metrics with total in the middle of the metric name
+        name: strimzi_bridge_kafka_$1_$4
+        type: GAUGE
+        labels:
+          type: "$2"
+          clientId: "$3"
+      - pattern: kafka.(\w+)<type=(.+), client-id=(.+)><>([a-z-]+)-total
+        name: strimzi_bridge_kafka_$1_$4_total
+        type: COUNTER
+        labels:
+          type: "$2"
+          clientId: "$3"
+      - pattern: kafka.(\w+)<type=(.+), client-id=(.+)><>([a-z-]+)
+        name: strimzi_bridge_kafka_$1_$4
+        type: GAUGE
+        labels:
+          type: "$2"
+          clientId: "$3"
+      # OAuth Metrics
+      # WARNING: Make sure that the ordering of the attributes is the same as in MBean names
+      - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+), (.+)=(.+)><>(count|totalTimeMs):"
+        name: "strimzi_oauth_$1_$12"
+        type: COUNTER
+        labels:
+          context: "$2"
+          kind: "$3"
+          host: "$4"
+          path: "$5"
+          "$6": "$7"
+          "$8": "$9"
+          "$10": "$11"
+      - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+)><>(count|totalTimeMs):"
+        name: "strimzi_oauth_$1_$10"
+        type: COUNTER
+        labels:
+          context: "$2"
+          kind: "$3"
+          host: "$4"
+          path: "$5"
+          "$6": "$7"
+          "$8": "$9"
+      - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+)><>(count|totalTimeMs):"
+        name: "strimzi_oauth_$1_$8"
+        type: COUNTER
+        labels:
+          context: "$2"
+          kind: "$3"
+          host: "$4"
+          path: "$5"
+          "$6": "$7"
+      - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+), (.+)=(.+)><>(.+):"
+        name: "strimzi_oauth_$1_$12"
+        type: GAUGE
+        labels:
+          context: "$2"
+          kind: "$3"
+          host: "$4"
+          path: "$5"
+          "$6": "$7"
+          "$8": "$9"
+          "$10": "$11"
+      - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+)><>(.+):"
+        name: "strimzi_oauth_$1_$10"
+        type: GAUGE
+        labels:
+          context: "$2"
+          kind: "$3"
+          host: "$4"
+          path: "$5"
+          "$6": "$7"
+          "$8": "$9"
+      - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+)><>(.+):"
+        name: "strimzi_oauth_$1_$8"
+        type: GAUGE
+        labels:
+          context: "$2"
+          kind: "$3"
+          host: "$4"
+          path: "$5"
+          "$6": "$7"

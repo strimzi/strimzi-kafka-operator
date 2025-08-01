@@ -23,7 +23,10 @@ import io.strimzi.operator.common.Reconciliation;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+<<<<<<< HEAD
 import java.util.List;
+=======
+>>>>>>> 9a08f2a47 (Add Strimzi Metrics Reporter integration with KC and MM2)
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
@@ -295,17 +298,26 @@ public class KafkaConnectConfigurationBuilder {
                                                                   boolean injectKafkaJmxReporter,
                                                                   boolean injectStrimziMetricsReporter) {
         // creating a defensive copy to avoid mutating the input config
+<<<<<<< HEAD
         if (configurations instanceof KafkaConnectConfiguration kcConfiguration) {
             configurations = new KafkaConnectConfiguration(kcConfiguration);
         } else if (configurations instanceof KafkaMirrorMaker2Configuration kmm2Configuration) {
             configurations = new KafkaMirrorMaker2Configuration(kmm2Configuration);
         } else {
             // empty user configuration
+=======
+        if (configurations instanceof KafkaConnectConfiguration) {
+            configurations = new KafkaConnectConfiguration((KafkaConnectConfiguration) configurations);
+        } else if (configurations instanceof KafkaMirrorMaker2Configuration) {
+            configurations = new KafkaMirrorMaker2Configuration((KafkaMirrorMaker2Configuration) configurations);
+        } else {
+>>>>>>> 9a08f2a47 (Add Strimzi Metrics Reporter integration with KC and MM2)
             configurations = new KafkaConnectConfiguration(reconciliation, new ArrayList<>());
         }
 
         printConfigProviders(configurations);
 
+<<<<<<< HEAD
         printMetricReportersForKey("metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
         printMetricReportersForKey("admin.metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
         printMetricReportersForKey("producer.metric.reporters", configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
@@ -313,12 +325,19 @@ public class KafkaConnectConfigurationBuilder {
 
         if (!configurations.getConfiguration().isEmpty()) {
             printSectionHeader("User provided configuration");
+=======
+        maybeAddMetricReporters(configurations, injectKafkaJmxReporter, injectStrimziMetricsReporter);
+
+        if (!configurations.getConfiguration().isEmpty()) {
+            printSectionHeader("User Provided configurations with Strimzi Injections");
+>>>>>>> 9a08f2a47 (Add Strimzi Metrics Reporter integration with KC and MM2)
             writer.println(configurations.getConfiguration());
             writer.println();
         }
         return this;
     }
 
+<<<<<<< HEAD
     private void printMetricReportersForKey(String configKey,
                                             AbstractConfiguration userConfig,
                                             boolean injectKafkaJmxReporter,
@@ -353,6 +372,22 @@ public class KafkaConnectConfigurationBuilder {
                 writer.println(configKey + "=" + String.join(",", reportersToInject));
                 writer.println();
             }
+=======
+    // the JMX reporter needs to be explicitly added when metric.reporters is not empty
+    private void maybeAddMetricReporters(AbstractConfiguration userConfig, boolean injectKafkaJmxReporter, boolean injectStrimziMetricsReporter) {
+        if (injectKafkaJmxReporter) {
+            // the JMX reporter is explicitly added when metric.reporters is not empty
+            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+            ModelUtils.createOrAddListConfig(userConfig, "admin.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+            ModelUtils.createOrAddListConfig(userConfig, "producer.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+            ModelUtils.createOrAddListConfig(userConfig, "consumer.metric.reporters", "org.apache.kafka.common.metrics.JmxReporter");
+        }
+        if (injectStrimziMetricsReporter) {
+            ModelUtils.createOrAddListConfig(userConfig, "metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+            ModelUtils.createOrAddListConfig(userConfig, "admin.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+            ModelUtils.createOrAddListConfig(userConfig, "producer.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+            ModelUtils.createOrAddListConfig(userConfig, "consumer.metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+>>>>>>> 9a08f2a47 (Add Strimzi Metrics Reporter integration with KC and MM2)
         }
     }
 
@@ -387,11 +422,19 @@ public class KafkaConnectConfigurationBuilder {
     /**
      * Configures the Strimzi Metrics Reporter. It is set only if user enables Strimzi Metrics Reporter.
      *
+<<<<<<< HEAD
      * @param model Strimzi Metrics Reporter configuration
      *
      * @return Returns the builder instance
      */
     public KafkaConnectConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
+=======
+     * @param model     Strimzi Metrics Reporter configuration
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaConnectConfigurationBuilder withStrimziMetricsReporter(MetricsModel model)   {
+>>>>>>> 9a08f2a47 (Add Strimzi Metrics Reporter integration with KC and MM2)
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
