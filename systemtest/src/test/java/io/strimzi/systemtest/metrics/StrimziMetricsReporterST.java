@@ -231,7 +231,8 @@ public class StrimziMetricsReporterST extends AbstractST {
                             .endValues()
                         .endStrimziMetricsReporterConfig()
                     .endKafka()
-                .endSpec().build()
+                .endSpec().build(),
+            KafkaTemplates.kafkaWithoutEntityOperator(testStorage.getNamespaceName(), testStorage.getClusterName() + "-tgt", 1).build()
         );
 
         KubeResourceManager.get().createResourceWithoutWait(
