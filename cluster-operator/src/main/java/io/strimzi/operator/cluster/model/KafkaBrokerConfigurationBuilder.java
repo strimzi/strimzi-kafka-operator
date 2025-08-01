@@ -35,7 +35,6 @@ import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
 import java.io.PrintWriter;
@@ -50,9 +49,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class is used to generate the broker configuration template. The template is later passed using a config map to
@@ -921,6 +922,13 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println();
             }
         }
+
+        printSectionHeader(configKey + " configuration");
+        writer.println(hasUserMetricReporters ?
+                "# " + configKey + " configured by the user and by Strimzi" :
+                "# " + configKey + " configured by Strimzi");
+        writer.println(configKey + "=" + configValue);
+        writer.println();
     }
 
     private void printYammerReporters(KafkaConfiguration userConfig,
@@ -948,6 +956,13 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println();
             }
         }
+
+        printSectionHeader(configKey + " configuration");
+        writer.println(hasUserMetricReporters ?
+                "# " + configKey + " configured by the user and by Strimzi" :
+                "# " + configKey + " configured by Strimzi");
+        writer.println(configKey + "=" + configValue);
+        writer.println();
     }
 
     /**
