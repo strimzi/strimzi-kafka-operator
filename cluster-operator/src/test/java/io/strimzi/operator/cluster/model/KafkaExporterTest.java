@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
@@ -93,6 +94,8 @@ public class KafkaExporterTest {
                         .withNewPod()
                             .withTmpDirSizeLimit("100Mi")
                         .endPod()
+                        .withNewPodDisruptionBudget()
+                        .endPodDisruptionBudget()
                     .endTemplate()
                 .endKafkaExporter()
             .endSpec()
@@ -309,6 +312,9 @@ public class KafkaExporterTest {
         Map<String, String> saLabels = Map.of("l5", "v5", "l6", "v6");
         Map<String, String> saAnots = Map.of("a5", "v5", "a6", "v6");
 
+        Map<String, String> pdbLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> pdbAnots = Map.of("a7", "v7", "a8", "v8");
+
         Affinity affinity = new AffinityBuilder()
                 .withNewNodeAffinity()
                     .withNewRequiredDuringSchedulingIgnoredDuringExecution()
@@ -391,6 +397,12 @@ public class KafkaExporterTest {
                                     .withAnnotations(saAnots)
                                 .endMetadata()
                             .endServiceAccount()
+                            .withNewPodDisruptionBudget()
+                                .withNewMetadata()
+                                    .withLabels(pdbLabels)
+                                    .withAnnotations(pdbAnots)
+                                .endMetadata()
+                            .endPodDisruptionBudget()
                         .endTemplate()
                     .endKafkaExporter()
                 .endSpec()
@@ -418,6 +430,12 @@ public class KafkaExporterTest {
         ServiceAccount sa = ke.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
+
+        // Check Pod Disruption Budget
+        PodDisruptionBudget pdb = ke.generatePodDisruptionBudget();
+        assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+        assertThat(pdb.getSpec().getMinAvailable(), is(new IntOrString(0)));
     }
 
     @ParallelTest

@@ -20,11 +20,13 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
+import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
@@ -140,6 +142,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
     private InternalServiceTemplate templateService;
+    private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -235,6 +238,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 result.templateService = template.getApiService();
                 result.templateServiceAccount = template.getServiceAccount();
                 result.templateContainer = template.getCruiseControlContainer();
+                result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             }
 
             return result;
@@ -541,5 +545,20 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                         ownerReference,
                         configMapData
                 );
+    }
+    /**
+     * Generates the PodDisruptionBudget for the Entity Operator
+     *
+     * @return The PodDisruptionBudget for the Entity Operator
+     */
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templatePodDisruptionBudget,
+                1
+        );
     }
 }

@@ -4,10 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
@@ -22,6 +24,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.common.Annotations;
@@ -115,6 +118,10 @@ public class KafkaExporterReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewKafkaExporter()
@@ -153,6 +160,10 @@ public class KafkaExporterReconcilerTest {
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
 
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
+                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+
                     async.flag();
                 })));
     }
@@ -185,6 +196,10 @@ public class KafkaExporterReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewKafkaExporter()
@@ -216,6 +231,10 @@ public class KafkaExporterReconcilerTest {
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(notNullValue()));
 
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(notNullValue()));
+                    assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
+
                     async.flag();
                 })));
     }
@@ -246,6 +265,10 @@ public class KafkaExporterReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
         KafkaExporterReconciler reconciler = new KafkaExporterReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 ResourceUtils.dummyClusterOperatorConfig(),
@@ -269,6 +292,9 @@ public class KafkaExporterReconcilerTest {
 
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(nullValue()));
+
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(nullValue()));
 
                     async.flag();
                 })));
@@ -300,6 +326,10 @@ public class KafkaExporterReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
+        PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
         KafkaExporterReconciler reconciler = new KafkaExporterReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
@@ -323,6 +353,9 @@ public class KafkaExporterReconcilerTest {
 
                     assertThat(depCaptor.getAllValues().size(), is(1));
                     assertThat(depCaptor.getValue(), is(nullValue()));
+
+                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    assertThat(pdbCaptor.getValue(), is(nullValue()));
 
                     async.flag();
                 })));

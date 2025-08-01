@@ -1,16 +1,19 @@
 A `PodDisruptionBudget` is a Kubernetes resource that helps maintain high availability during planned maintenance or upgrades.
 It defines the minimum number of pods that must remain available at all times.
 
-Strimzi creates one `PodDisruptionBudget` per component: 
+Strimzi creates one `PodDisruptionBudget` per component:
 
 * Kafka cluster
 * Kafka Connect
 * MirrorMaker 2
 * Kafka Bridge
+* Entity Operator
+* Kafka Exporter
+* Cruise Control
 
 Each budget applies across all pods deployed for that component.
 
-A single `PodDisruptionBudget` applies to all associated node pool pods managed by the `Kafka` resource. 
+A single `PodDisruptionBudget` applies to all associated node pool pods managed by the `Kafka` resource.
 This is true regardless of how many `StrimziPodSet` resources are created for that component.
 Disruption limits are applied at the component level, not per node pool.
 
@@ -22,8 +25,10 @@ Instead, the value is automatically converted to `minAvailable`, which serves th
 
 For example:
 
-* If there are three broker pods and the `maxUnavailable` property is set to `1` in the `Kafka` resource, the `minAvailable` setting is `2`, allowing one pod to be unavailable. 
+* If there are three broker pods and the `maxUnavailable` property is set to `1` in the `Kafka` resource, the `minAvailable` setting is `2`, allowing one pod to be unavailable.
 * If there are three broker pods and the `maxUnavailable` property is set to `0` (zero), the `minAvailable` setting is `3`, requiring all three broker pods to be available and allowing zero pods to be unavailable.
+
+The above examples also applies for the `EntityOperator`, `Cruise Control`, `KafkaExporter` deployments.
 
 .Example `PodDisruptionBudget` template configuration
 [source,yaml,subs=attributes+]
@@ -44,8 +49,8 @@ template:
 
 .Custom disruption budget behavior
 
-To define custom disruption budget behavior, disable automatic `PodDisruptionBudget` generation. 
+To define custom disruption budget behavior, disable automatic `PodDisruptionBudget` generation.
 Set the `STRIMZI_POD_DISRUPTION_BUDGET_GENERATION` environment variable to `false` in the Cluster Operator.
 
-You can then create your own `PodDisruptionBudget` resources. 
+You can then create your own `PodDisruptionBudget` resources.
 For example, apply separate budgets to specific node pools using label selectors with `StrimziPodSet` resources.

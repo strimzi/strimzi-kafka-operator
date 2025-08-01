@@ -13,11 +13,13 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -81,6 +83,7 @@ public class EntityOperator extends AbstractModel {
     private ResourceTemplate templateRole;
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
+    private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -135,6 +138,7 @@ public class EntityOperator extends AbstractModel {
                 result.templateDeployment = template.getDeployment();
                 result.templatePod = template.getPod();
                 result.templateServiceAccount = template.getServiceAccount();
+                result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
 
                 if (topicOperator != null) {
                     topicOperator.templateContainer = template.getTopicOperatorContainer();
@@ -303,6 +307,21 @@ public class EntityOperator extends AbstractModel {
                 labels,
                 ownerReference,
                 rules
+        );
+    }
+    /**
+     * Generates the PodDisruptionBudget for the Entity Operator
+     *
+     * @return The PodDisruptionBudget for the Entity Operator
+     */
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templatePodDisruptionBudget,
+                1
         );
     }
 }
