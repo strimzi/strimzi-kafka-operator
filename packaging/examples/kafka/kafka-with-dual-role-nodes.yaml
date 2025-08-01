@@ -8,6 +8,7 @@ spec:
   replicas: 3
   roles:
     - controller
+    - broker
   storage:
     type: jbod
     volumes:
@@ -44,4 +45,3 @@ spec:
   entityOperator:
     topicOperator: {}
     userOperator: {}
-  cruiseControl: {}
