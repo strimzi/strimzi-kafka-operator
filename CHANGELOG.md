@@ -306,7 +306,7 @@
     config.providers.env.class: org.apache.kafka.common.config.provider.EnvVarConfigProvider
     # ...
   ```
- 
+  
 ## 0.37.0
 
 * The `StableConnectIdentites` feature gate moves to beta stage.
@@ -358,7 +358,7 @@
       * (3) Kafka resource requests
       * (4) Kafka resource limits
     * When none of Cruise Control CPU capacity configurations mentioned above are configured, CPU capacity will be set to `1`.
-      	as any _override_ value configured in the `.spec.cruiseControl` section of the `Kafka` custom resource.
+ as any _override_ value configured in the `.spec.cruiseControl` section of the `Kafka` custom resource.
 
 ## 0.36.1
 
@@ -509,13 +509,13 @@
 * The `ClusterRole` from file `020-ClusterRole-strimzi-cluster-operator-role.yaml` was split into two separate roles:
   * The original `strimzi-cluster-operator-namespaced` `ClusterRole` in the file `020-ClusterRole-strimzi-cluster-operator-role.yaml` contains the rights related to the resources created based on some Strimzi custom resources.
   * The new `strimzi-cluster-operator-watched` `ClusterRole` in the file `023-ClusterRole-strimzi-cluster-operator-role.yaml` contains the rights required to watch and manage the Strimzi custom resources.
- 
+  
   When deploying the Strimzi Cluster Operator as cluster-wide, the `strimzi-cluster-operator-watched` `ClusterRole` needs to be always granted at the cluster level.
   But the `strimzi-cluster-operator-namespaced` `ClusterRole` might be granted only for the namespaces where any custom resources are created.
 * The `ControlPlaneListener` feature gate moves to GA. 
   Direct upgrade from Strimzi 0.22 or earlier is not possible anymore.
   You have to upgrade first to one of the Strimzi versions between 0.22 and 0.32 before upgrading to Strimzi 0.32 or newer.
-  Please follow the docs for more details. 
+  Please follow the docs for more details.  
 * The `spec.authorization.acls[*].operation` field in the `KafkaUser` resource has been deprecated in favour of the field
   `spec.authorization.acls[*].operations` which allows to set multiple operations per ACLRule.
 
@@ -734,10 +734,10 @@
 
 * Strimzi API versions `v1alpha1` and `v1beta1` were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser` (use `v1beta2` versions instead)
 * The following annotations have been removed and cannot be used anymore:
-    * `cluster.operator.strimzi.io/delete-claim` (used internally only - replaced by `strimzi.io/delete-claim`)
-    * `operator.strimzi.io/generation` (used internally only - replaced by `strimzi.io/generation`)
-    * `operator.strimzi.io/delete-pod-and-pvc` (use `strimzi.io/delete-pod-and-pvc` instead)
-    * `operator.strimzi.io/manual-rolling-update` (use `strimzi.io/manual-rolling-update` instead)
+  * `cluster.operator.strimzi.io/delete-claim` (used internally only - replaced by `strimzi.io/delete-claim`)
+  * `operator.strimzi.io/generation` (used internally only - replaced by `strimzi.io/generation`)
+  * `operator.strimzi.io/delete-pod-and-pvc` (use `strimzi.io/delete-pod-and-pvc` instead)
+  * `operator.strimzi.io/manual-rolling-update` (use `strimzi.io/manual-rolling-update` instead)
 * When the `class` field is configured in the `configuration` section of an Ingress-type listener, Strimzi will not automatically set the deprecated `kubernetes.io/ingress.class` annotation anymore. In case you still need this annotation, you can set it manually in the listener configuration using the [`annotations` field](https://strimzi.io/docs/operators/latest/full/using.html#property-listener-config-annotations-reference) or in the [`.spec.kafka.template` section](https://strimzi.io/docs/operators/latest/full/using.html#type-KafkaClusterTemplate-reference).
 * The `.spec.kafkaExporter.template.service` section in the `Kafka` custom resource has been deprecated and will be removed in the next API version (the service itself was removed several releases ago).
 
@@ -826,7 +826,7 @@
 * Cruise Control metrics integration:
   * Enable metrics JMX exporter configuration in the `cruiseControl` property of the Kafka custom resource
   * New Grafana dashboard for the Cruise Control metrics
-* Configure Cluster Operator logging using ConfigMap instead of environment variable and support dynamic changes 
+* Configure Cluster Operator logging using ConfigMap instead of environment variable and support dynamic changes  
 * Switch to use the `AclAuthorizer` class for the `simple` Kafka authorization type. `AclAuthorizer` contains new features such as the ability to control the amount of authorization logs in the broker logs.
 * Support dynamically changeable logging configuration of Kafka Connect and Kafka Connect S2I
 * Support dynamically changeable logging configuration of Kafka brokers
@@ -1032,8 +1032,8 @@ Because of the new Cluster Operator dynamic logging configuration via [PR#3328](
 * Add support for `externalTrafficPolicy` and `loadBalancerSourceRanges` properties on loadbalancer and nodeport type services
 * Add support for user quotas
 * Add support for Istio protocol selection in service port names  
-  Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka services and headless services.  
-  (e.g clientstls -> tcp-clientstls)
+Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka services and headless services.  
+(e.g clientstls -> tcp-clientstls)
 * Add service discovery labels and annotations
 * Add possibility to specify custom server certificates to TLS based listeners
 
@@ -1076,8 +1076,8 @@ Because of the new Cluster Operator dynamic logging configuration via [PR#3328](
 ## 0.12.0
 
 * **Drop support for Kubernetes 1.9 and 1.10 and OpenShift 3.9 and 3.10.**
-  **Versions supported since Strimzi 0.12.0 are Kubernetes 1.11 and higher and OpenShift 3.11 and higher.** 
-  **This was required because the CRD versioning and CRD subresources support.** 
+**Versions supported since Strimzi 0.12.0 are Kubernetes 1.11 and higher and OpenShift 3.11 and higher.** 
+**This was required because the CRD versioning and CRD subresources support.** 
 * Added support for Kafka 2.2.0 and 2.1.1, dropped support for Kafka 2.0.0 and 2.0.1
 * Persistent storage improvements
   * Add resizing of persistent volumes
@@ -1112,10 +1112,10 @@ Because of the new Cluster Operator dynamic logging configuration via [PR#3328](
 * Add healthchecks to TLS sidecars
 * Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
 * Rename annotations to use the `strimzi.io` domain consistently (The old annotations are deprecated, but still functional):
-  * `cluster.operator.strimzi.io/delete-claim` → `strimzi.io/delete-claim`
-  * `operator.strimzi.io/manual-rolling-update` → `strimzi.io/manual-rolling-update`
-  * `operator.strimzi.io/delete-pod-and-pvc` → `strimzi.io/delete-pod-and-pvc`
-  * `operator.strimzi.io/generation` → `strimzi.io/generation`
+    * `cluster.operator.strimzi.io/delete-claim` → `strimzi.io/delete-claim` 
+    * `operator.strimzi.io/manual-rolling-update` → `strimzi.io/manual-rolling-update` 
+    * `operator.strimzi.io/delete-pod-and-pvc` → `strimzi.io/delete-pod-and-pvc`
+    * `operator.strimzi.io/generation` → `strimzi.io/generation`
 * Add support for mounting Secrets and Config Maps into Kafka Connect and Kafka Connect S2I
 * Add support for NetworkPolicy peers in listener configurations
 * Make sure the TLS sidecar pods shutdown only after the main container
@@ -1126,8 +1126,8 @@ Because of the new Cluster Operator dynamic logging configuration via [PR#3328](
 * Add possibility to label and annotate different resources (#1039)
 * Add support for TransactionalID in KafkaUser resource
 * Update to Kafka 2.0.1
-* Add maintenance time windows support for allowing CA certificates renewal rolling update started only in specific times (#1117) 
-* Add support for upgrading between Kafka versions (#1103). This removes support for `STRIMZI_DEFAULT_KAFKA_IMAGE` environment variable in the Cluster Operator, replacing it with `STRIMZI_KAFKA_IMAGES`. 
+* Add maintenance time windows support for allowing CA certificates renewal rolling update started only in specific times (#1117)  
+* Add support for upgrading between Kafka versions (#1103). This removes support for `STRIMZI_DEFAULT_KAFKA_IMAGE` environment variable in the Cluster Operator, replacing it with `STRIMZI_KAFKA_IMAGES`.  
 
 
 ## 0.8.2
