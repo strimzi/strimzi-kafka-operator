@@ -1500,7 +1500,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        assertThat((kbc.metrics()), is(nullValue()));
+        assertThat(kbc.metrics(), is(nullValue()));
     }
 
     @ParallelTest
