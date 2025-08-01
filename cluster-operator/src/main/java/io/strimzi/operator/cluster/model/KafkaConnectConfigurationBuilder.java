@@ -400,7 +400,6 @@ public class KafkaConnectConfigurationBuilder {
      */
     public KafkaConnectConfigurationBuilder withStrimziMetricsReporter(MetricsModel model) {
         if (model instanceof StrimziMetricsReporterModel reporterModel) {
-            printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
             writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
@@ -413,8 +412,15 @@ public class KafkaConnectConfigurationBuilder {
             writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT);
             writer.println("consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + reporterModel.getAllowList());
-            writer.println();
+        } else {
+            // we disable the listener just in case the user manually set SMR from spec.config
+            // because this would enable the listener on port 8080
+            writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println("admin." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println("producer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
+            writer.println("consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
         }
+        writer.println();
         return this;
     }
 

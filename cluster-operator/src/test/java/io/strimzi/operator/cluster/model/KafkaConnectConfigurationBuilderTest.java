@@ -566,6 +566,24 @@ class KafkaConnectConfigurationBuilderTest {
                 "consumer." + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*"
         ));
     }
+    
+    @ParallelTest
+    public void testStrimziMetricsReporterDisabled() {
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
+                .withStrimziMetricsReporter(null)
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "admin.security.protocol=PLAINTEXT",
+                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "security.protocol=PLAINTEXT",
+                "producer.security.protocol=PLAINTEXT",
+                "consumer.security.protocol=PLAINTEXT",
+                StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false",
+                "admin." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false",
+                "producer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false",
+                "consumer." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false"));
+    }
 
     static Stream<Arguments> sourceUserConfigWithMetricsReporters() {
         Map<String, Object> configMap = new HashMap<>();
