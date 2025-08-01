@@ -9,6 +9,7 @@ Strimzi creates one `PodDisruptionBudget` per component:
 * Kafka Bridge
 * Entity Operator
 * Kafka Exporter
+* Cruise Control
 
 Each budget applies across all pods deployed for that component.
 
@@ -27,7 +28,7 @@ For example:
 * If there are three broker pods and the `maxUnavailable` property is set to `1` in the `Kafka` resource, the `minAvailable` setting is `2`, allowing one pod to be unavailable.
 * If there are three broker pods and the `maxUnavailable` property is set to `0` (zero), the `minAvailable` setting is `3`, requiring all three broker pods to be available and allowing zero pods to be unavailable.
 
-The above examples also applies for the `EntityOperator` and `KafkaExporter` deployment.
+The above examples also applies for the `EntityOperator`, `Cruise Control`, `KafkaExporter` deployments.
 
 .Example `PodDisruptionBudget` template configuration
 [source,yaml,subs=attributes+]
