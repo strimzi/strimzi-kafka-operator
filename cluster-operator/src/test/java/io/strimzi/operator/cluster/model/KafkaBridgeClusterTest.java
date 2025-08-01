@@ -1500,7 +1500,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        assertThat((JmxPrometheusExporterModel) (kbc.metrics()), is(nullValue()));
+        assertThat((kbc.metrics()), is(nullValue()));
     }
 
     @ParallelTest
@@ -1527,7 +1527,7 @@ public class KafkaBridgeClusterTest {
                 .editSpec()
                     .withNewJmxPrometheusExporterMetricsConfig()
                         .withNewValueFrom()
-                            .withConfigMapKeyRef(new ConfigMapKeySelector("bridge-metrics", "my-bridge-bridge-config", false))
+                            .withConfigMapKeyRef(new ConfigMapKeySelector("bridge-metrics", "metrics-config.yml", false))
                         .endValueFrom()
                     .endJmxPrometheusExporterMetricsConfig()
                 .endSpec()

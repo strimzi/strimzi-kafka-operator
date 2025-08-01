@@ -25,9 +25,8 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
-import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
-import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporterBuilder;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
@@ -605,11 +604,11 @@ public class KafkaBridgeConfigurationBuilderTest {
     public void testWithStrimziMetricsReporter() {
         StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(
                 new KafkaBridgeSpecBuilder()
-                        .withMetricsConfig(new StrimziMetricsReporterBuilder()
+                        .withNewStrimziMetricsReporterConfig()
                                 .withNewValues()
                                     .withAllowList("kafka_producer_producer_metrics.*,kafka_producer_kafka_metrics_count_count")
                                 .endValues()
-                                .build())
+                        .endStrimziMetricsReporterConfig()
                         .build(), List.of(".*"));
 
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
@@ -628,16 +627,17 @@ public class KafkaBridgeConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testWithJmxPrometheusExporterNotIsMetricsEnabled() {
+    public void testWithPrometheusJmxExporter() {
         JmxPrometheusExporterModel model = new JmxPrometheusExporterModel(
                 new KafkaBridgeSpecBuilder()
-                        .withMetricsConfig(new JmxPrometheusExporterMetricsBuilder()
-                                .withNewValueFrom()
+                        .withNewJmxPrometheusExporterMetricsConfig()
+                            .withNewValueFrom()
                                 //configmap reference
-                                    .withNewConfigMapKeyRef("bridge-metrics", "metrics.json", false)
-                                .endValueFrom()
-                                .build())
+                                .withNewConfigMapKeyRef("bridge-metrics", "metrics.json", false)
+                            .endValueFrom()
+                        .endJmxPrometheusExporterMetricsConfig()
                         .build());
+
 
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withJmxPrometheusExporter(model, false)
@@ -645,33 +645,9 @@ public class KafkaBridgeConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent(
                 "bridge.id=my-bridge",
-                "bridge.metrics=jmxPrometheusExporter",
+                "bridge.metrics=" + JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER,
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
-                "bridge.metrics.exporter.config.path=/opt/strimzi/custom-config/metrics-config.json",
-                "kafka.security.protocol=PLAINTEXT"
-        ));
-    }
-
-    @ParallelTest
-    public void testWithJmxPrometheusExporterIsMetricsEnabled() {
-        JmxPrometheusExporterModel model = new JmxPrometheusExporterModel(
-                new KafkaBridgeSpecBuilder()
-                        .withMetricsConfig(new JmxPrometheusExporterMetricsBuilder()
-                                .withNewValueFrom()
-                                //configmap reference
-                                    .withNewConfigMapKeyRef("bridge-metrics", "metrics.json", false)                                .endValueFrom()
-                                .build())
-                        .build());
-
-        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withJmxPrometheusExporter(model, true)
-                .build();
-        System.out.println(model.getConfigMapName());
-
-        assertThat(configuration, isEquivalent(
-                "bridge.id=my-bridge",
-                "bridge.metrics=jmxPrometheusExporter",
-                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "bridge.metrics.exporter.config.path=" + KafkaBridgeCluster.KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT + JmxPrometheusExporterModel.CONFIG_MAP_KEY,
                 "kafka.security.protocol=PLAINTEXT"
         ));
     }

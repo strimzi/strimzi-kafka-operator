@@ -39,7 +39,7 @@ import lombok.ToString;
 @JsonPropertyOrder({
     "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "adminClient", "consumer",
     "producer", "resources", "jvmOptions", "logging", "clientRackInitImage", "rack",
-    "enableMetrics", "livenessProbe", "metricsConfig", "readinessProbe", "template", "tracing"})
+    "enableMetrics", "metricsConfig", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, HasConfigurableMetrics, HasLivenessProbe, HasReadinessProbe {

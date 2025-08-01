@@ -3785,12 +3785,12 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |enableMetrics
 |boolean
 |Enable the metrics for the Kafka Bridge. Default is false. Deprecated, use `spec.metricsConfig`.
-|livenessProbe
-|xref:type-Probe-{context}[`Probe`]
-|Pod liveness checking.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Metrics configuration.
+|livenessProbe
+|xref:type-Probe-{context}[`Probe`]
+|Pod liveness checking.
 |readinessProbe
 |xref:type-Probe-{context}[`Probe`]
 |Pod readiness checking.

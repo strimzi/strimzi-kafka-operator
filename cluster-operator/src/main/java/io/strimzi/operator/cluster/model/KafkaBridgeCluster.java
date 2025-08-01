@@ -593,8 +593,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         String metricsType = (metrics instanceof JmxPrometheusExporterModel) || isMetricsEnabled
                 ? JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER
                 : metrics instanceof StrimziMetricsReporterModel
-                ? StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER
-                : "disabled";
+                    ? StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER
+                    : "disabled";
 
         if (metricsType.equals(JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER)) {
             builder.withJmxPrometheusExporter((JmxPrometheusExporterModel) metrics, isMetricsEnabled);
