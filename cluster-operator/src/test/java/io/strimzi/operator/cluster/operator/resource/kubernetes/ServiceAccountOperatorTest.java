@@ -23,6 +23,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
@@ -41,8 +43,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> {
-
+public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperatorServerSideApplyTest<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -82,23 +83,28 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceAccountOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
+        return new ServiceAccountOperator(vertx, mockClient, useServerSideApply);
     }
 
-    @Override
-    @Test
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("data")
+    public void testCreateWhenExistsWithChangeIsAPatch(boolean useServerSideApply, VertxTestContext context) {
+        // in case that we use ServerSideApply, use the original test method from the AbstractNamespacedResourceOperatorTest
+        if (useServerSideApply) {
+            super.testCreateWhenExistsWithChangeIsAPatch(useServerSideApply, context);
+        } else {
+            // otherwise use overridden method that checks that there are no patches
+            testCreateWhenExistsWithChangeIsAPatch(context);
+        }
+    }
+
     public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
-        testCreateWhenExistsWithChangeIsAPatch(context, true);
-    }
-
-    @Override
-    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context, boolean cascade) {
         // This is overridden because SA patch is coded as a no op to avoid needless token creation.
         ServiceAccount resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
+        when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockResource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -109,7 +115,7 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, false);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
@@ -169,7 +175,7 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, false);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)
@@ -190,7 +196,7 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
     }
 
     @Test
-    public void testSecretsPatchingNoChange(VertxTestContext context)   {
+    public void testSecretsPatchingNoChange(VertxTestContext context) {
         List<ObjectReference> secrets = List.of(
                 new ObjectReferenceBuilder().withName("secretName1").build(),
                 new ObjectReferenceBuilder().withName("secretName2").build()
@@ -232,7 +238,7 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, false);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)

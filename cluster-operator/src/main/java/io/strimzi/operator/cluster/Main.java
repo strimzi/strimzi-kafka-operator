@@ -136,13 +136,15 @@ public class Main {
      *
      * @return  Future which completes when all Cluster Operator verticles are started and running
      */
-    static CompositeFuture deployClusterOperatorVerticles(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config, ShutdownHook shutdownHook) {
+    static CompositeFuture deployClusterOperatorVerticles(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider,
+                                                          PlatformFeaturesAvailability pfa, ClusterOperatorConfig config, ShutdownHook shutdownHook) {
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(
                 vertx,
                 client,
                 metricsProvider,
                 pfa,
-                config.getOperatorName()
+                config.getOperatorName(),
+                config.featureGates()
         );
 
         // Initialize the PodSecurityProvider factory to provide the user configured provider

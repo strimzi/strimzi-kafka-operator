@@ -18,12 +18,16 @@ import static java.util.Arrays.asList;
 public class FeatureGates {
     /* test */ static final FeatureGates NONE = new FeatureGates("");
 
-    // As we currently don't have any real feature gate, this dummy feature gate is used to make it clear how to add a
-    // real feature gates in the future and allows us to test the feature gates.
-    private static final String DUMMY_FEATURE_GATE = "DummyFeatureGate";
+    // The `DummyFeatureGate` is kept as a template on how new feature gate should be added
+    // Once we don't have any other feature gate supported, code for `DummyFeatureGate` should be un-commented
+    // private static final String DUMMY_FEATURE_GATE = "DummyFeatureGate";
+
+    // Enables the usage of Server Side Apply
+    private static final String SERVER_SIDE_APPLY_PHASE_1 = "ServerSideApplyPhase1";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
-    private final FeatureGate dummyFeatureGate = new FeatureGate(DUMMY_FEATURE_GATE, false);
+    private final FeatureGate serverSideApplyPhase1 = new FeatureGate(SERVER_SIDE_APPLY_PHASE_1, false);
+    // private final FeatureGate dummyFeatureGate = new FeatureGate(DUMMY_FEATURE_GATE, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -45,9 +49,13 @@ public class FeatureGates {
                 featureGate = featureGate.substring(1);
 
                 switch (featureGate) {
-                    case DUMMY_FEATURE_GATE:
-                        setValueOnlyOnce(dummyFeatureGate, value);
+    //                case DUMMY_FEATURE_GATE:
+    //                    setValueOnlyOnce(dummyFeatureGate, value);
+    //                    break;
+                    case SERVER_SIDE_APPLY_PHASE_1:
+                        setValueOnlyOnce(serverSideApplyPhase1, value);
                         break;
+
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
                 }
@@ -81,11 +89,15 @@ public class FeatureGates {
         gate.setValue(value);
     }
 
+    // public boolean dummyFeatureGateEnabled() {
+    //    return dummyFeatureGate.isEnabled();
+    // }
+
     /**
-     * @return  Returns true when the DummyFeatureGate feature gate is enabled
+     * @return  Returns true when the ServerSideApplyPhase1 feature gate is enabled
      */
-    public boolean dummyFeatureGateEnabled() {
-        return dummyFeatureGate.isEnabled();
+    public boolean serverSideApplyPhase1Enabled() {
+        return serverSideApplyPhase1.isEnabled();
     }
 
     /**
@@ -94,13 +106,17 @@ public class FeatureGates {
      * @return  List of all Feature Gates
      */
     /*test*/ List<FeatureGate> allFeatureGates()  {
-        return List.of(dummyFeatureGate);
+        return List.of(
+        //  dummyFeatureGate
+            serverSideApplyPhase1
+        );
     }
 
     @Override
     public String toString() {
         return "FeatureGates(" +
-            "DummyFeatureGate=" + dummyFeatureGate.isEnabled() +
+    //      "DummyFeatureGate=" + dummyFeatureGate.isEnabled() +
+            "ServerSideApplyPhase1=" + serverSideApplyPhase1.isEnabled() +
             ")";
     }
 
@@ -132,13 +148,15 @@ public class FeatureGates {
             return false;
         } else {
             FeatureGates other = (FeatureGates) o;
-            return Objects.equals(dummyFeatureGate, other.dummyFeatureGate);
+            // return Objects.equals(dummyFeatureGate, other.dummyFeatureGate);
+            return Objects.equals(serverSideApplyPhase1, other.serverSideApplyPhase1);
         }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(dummyFeatureGate);
+        // return Objects.hashCode(dummyFeatureGate);
+        return Objects.hashCode(serverSideApplyPhase1);
     }
 
     /**
