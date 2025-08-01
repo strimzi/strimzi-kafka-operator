@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
 import java.io.PrintWriter;
@@ -875,7 +876,7 @@ public class KafkaBrokerConfigurationBuilder {
         printYammerReporters(userConfig, injectStrimziMetricsReporter);
 
         if (!userConfig.getConfiguration().isEmpty()) {
-            printSectionHeader("User provided configuration with Strimzi injections");
+            printSectionHeader("User provided configuration");
             writer.println(userConfig.getConfiguration());
             writer.println();
         }

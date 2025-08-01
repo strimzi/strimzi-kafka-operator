@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

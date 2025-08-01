@@ -44,10 +44,6 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
         super(configuration);
     }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 9a08f2a47 (Add Strimzi Metrics Reporter integration with KC and MM2)
     /**
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
