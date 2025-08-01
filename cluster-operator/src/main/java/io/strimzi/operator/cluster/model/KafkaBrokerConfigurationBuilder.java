@@ -920,13 +920,6 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println();
             }
         }
-
-        printSectionHeader(configKey + " configuration");
-        writer.println(hasUserMetricReporters ?
-                "# " + configKey + " configured by the user and by Strimzi" :
-                "# " + configKey + " configured by Strimzi");
-        writer.println(configKey + "=" + configValue);
-        writer.println();
     }
 
     private void printYammerReporters(KafkaConfiguration userConfig,
@@ -954,13 +947,6 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println();
             }
         }
-
-        printSectionHeader(configKey + " configuration");
-        writer.println(hasUserMetricReporters ?
-                "# " + configKey + " configured by the user and by Strimzi" :
-                "# " + configKey + " configured by Strimzi");
-        writer.println(configKey + "=" + configValue);
-        writer.println();
     }
 
     /**

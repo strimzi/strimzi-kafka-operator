@@ -301,10 +301,6 @@ public class KafkaConnectConfigurationBuilder {
             configurations = new KafkaMirrorMaker2Configuration(kmm2Configuration);
         } else {
             // empty user configuration
-        if (configurations instanceof KafkaConnectConfiguration) {
-            configurations = new KafkaConnectConfiguration((KafkaConnectConfiguration) configurations);
-        } else if (configurations instanceof KafkaMirrorMaker2Configuration) {
-            configurations = new KafkaMirrorMaker2Configuration((KafkaMirrorMaker2Configuration) configurations);
             configurations = new KafkaConnectConfiguration(reconciliation, new ArrayList<>());
         }
 
@@ -329,7 +325,6 @@ public class KafkaConnectConfigurationBuilder {
                                             boolean injectStrimziMetricsReporter) {
         // Build a list of reporters to inject based on flags
         List<String> reportersToInject = new ArrayList<>();
-
         // JmxPrometheusExporter depends on JmxReporter, which needs to be explicitly added when having custom metrics reporters
         if (injectKafkaJmxReporter) reportersToInject.add("org.apache.kafka.common.metrics.JmxReporter");
         if (injectStrimziMetricsReporter) reportersToInject.add(StrimziMetricsReporterConfig.KAFKA_CLASS);
