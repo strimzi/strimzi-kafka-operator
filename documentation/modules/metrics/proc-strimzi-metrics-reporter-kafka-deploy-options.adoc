@@ -11,6 +11,8 @@ To enable and expose metrics in Strimzi for Prometheus, configure the appropriat
 Use `metricsConfig` configuration to expose metrics for these components:
 
 * Kafka
+* Kafka Connect
+* Kafka MirrorMaker 2
 
 This enables the {StrimziMetricsReporter}, which exposes metrics on port 9404 through an HTTP endpoint.
 Prometheus scrapes this endpoint to collect Kafka metrics.
@@ -18,8 +20,10 @@ Prometheus scrapes this endpoint to collect Kafka metrics.
 You can create your own Prometheus configuration or use the xref:assembly-metrics-config-files-{context}[example custom resource file] provided with Strimzi:
 
 * `kafka-metrics.yaml`
+* `kafka-connect-metrics.yaml`
+* `kafka-mirror-maker-2-metrics.yaml`
 
-This file contains the necessary configuration, and is a good starting point for trying Prometheus with Strimzi.
+These files contain the necessary configuration, and are a good starting point for trying Prometheus with Strimzi.
 
 This procedure shows how to deploy example Prometheus metrics configuration to the `Kafka` resource.
 

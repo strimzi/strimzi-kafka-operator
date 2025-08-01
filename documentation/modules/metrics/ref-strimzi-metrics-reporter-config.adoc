@@ -19,4 +19,12 @@
 |`Kafka`
 |`kafka-metrics.yaml`
 
+|Kafka Connect
+|`KafkaConnect`
+|`kafka-connect-metrics.yaml`
+
+|Kafka MirrorMaker2
+|`KafkaMirrorMaker2`
+|`kafka-mirror-maker-2metrics.yaml`
+
 |===
