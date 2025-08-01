@@ -178,18 +178,6 @@ public class KafkaTemplates {
 
         return kb;
     }
-    
-    public static KafkaBuilder kafkaWithoutEntityOperator(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
-        KafkaBuilder kb = kafka(namespaceName, kafkaClusterName, kafkaReplicas)
-            .editSpec()
-                .editEntityOperator()
-                    .withTopicOperator(null)
-                    .withUserOperator(null)
-                .endEntityOperator()
-            .endSpec();
-
-        return kb;
-    }
 
     // -------------------------------------------------------------------------------------------
     // Application of defaults to the builders
