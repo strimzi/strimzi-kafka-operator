@@ -1,0 +1,53 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-user-operator.adoc
+
+[id='con-ignoring-some-users-in-user-operator-{context}']
+= Ignoring some users
+
+In some scenarios, it might be useful to have the User Operator ignore the ACLs, Quotas or SCRAM-SHA credentials for specific users.
+This might include _special_ built-in users such as `ANONYMOUS` or `*`.
+Or some internal users whose ACLs, Quotas or SCRAM-SHA credentials are managed through different mechanisms.
+
+The environment variable `STRIMZI_IGNORED_USERS_PATTERN` in your User Operator deployment can be used specify a regular expression pattern that defines which users would be ignored.
+For example, to set it to ignore the `ANONYMOUS` or `\*` users, set it to `^\*|ANONYMOUS$`.
+You can set the environment variable in your `Kafka` custom resource (`.spec.teplate.entityOperator.userOperatorContainer.env`) or in the `Deployment` resource of your standalone User Operator.
+For example:
+
+.Example configuration of the `STRIMZI_IGNORED_USERS_PATTERN` environment variable in the `Kafka` custom resource
+[source,yaml,subs=+attributes]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  # ...
+spec:
+  #...
+  entityOperator:
+    template:
+      userOperatorContainer:
+        env:
+          - name: STRIMZI_IGNORED_USERS_PATTERN
+            value: "^\\*|ANONYMOUS$" # Double \ needed for escaping
+  #...
+----
+
+.Example configuration of the `STRIMZI_IGNORED_USERS_PATTERN` environment variable in the standalone User Operator deployment
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # ...
+spec:
+  # ...
+  template:
+    spec:
+      containers:
+        - name: strimzi-user-operator
+          # ...
+          env:
+            # ...
+            - name: STRIMZI_IGNORED_USERS_PATTERN
+              value: "^\\*|ANONYMOUS$" # Double \ needed for escaping
+----

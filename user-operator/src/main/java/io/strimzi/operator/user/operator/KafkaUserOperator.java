@@ -32,7 +32,6 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import java.time.Clock;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -48,7 +47,7 @@ public class KafkaUserOperator {
 
     private final CertManager certManager;
     private final AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator;
-    private final AdminApiOperator<String, List<String>> scramCredentialsOperator;
+    private final AdminApiOperator<String, Set<String>> scramCredentialsOperator;
     private final AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator;
     private final UserOperatorConfig config;
     private final PasswordGenerator passwordGenerator;
@@ -72,7 +71,7 @@ public class KafkaUserOperator {
             CertManager certManager,
             SecretOperator secretOperator,
             CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> kafkaUserCrdOperator,
-            AdminApiOperator<String, List<String>> scramCredentialsOperator,
+            AdminApiOperator<String, Set<String>> scramCredentialsOperator,
             AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator,
             AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator
     ) {
@@ -131,7 +130,7 @@ public class KafkaUserOperator {
         }
 
         // Get the SCRAM-SHA users
-        CompletableFuture<List<String>> scramUsers = scramCredentialsOperator.getAllUsers().toCompletableFuture();
+        CompletableFuture<Set<String>> scramUsers = scramCredentialsOperator.getAllUsers().toCompletableFuture();
 
         return CompletableFuture.allOf(kafkaUsers, quotaUsers, aclUsers, scramUsers)
                 .thenApply(i -> {
@@ -141,7 +140,7 @@ public class KafkaUserOperator {
                     usernames.addAll(kafkaUsers.getNow(Set.of()));
                     usernames.addAll(quotaUsers.getNow(Set.of()));
                     usernames.addAll(aclUsers.getNow(Set.of()));
-                    usernames.addAll(scramUsers.getNow(List.of()));
+                    usernames.addAll(scramUsers.getNow(Set.of()));
 
                     return toResourceRef(namespace, usernames);
                 });

@@ -6,6 +6,7 @@
   The `strimzi.io/node-pools` and `strimzi.io/kraft` annotations are not required anymore and will be ignored if set.
 * Make properties `broker.session.timeout.ms`, `broker.heartbeat.interval.ms` and `controller.socket.timeout.ms` configurable
 * Add monitoring of custom resources using [kubernetes-state-metrics (KSM)](https://github.com/kubernetes/kube-state-metrics) (see [Strimzi proposal 087](https://github.com/strimzi/proposals/blob/main/087-monitoring-of-custom-resources.md))
+* Ignore users (their ACLs, Quotas and SCRAM-SHA-512 credentials) managed by some other tools based on a configurable pattern in User Operator
 * Added support for Strimzi Metrics Reporter to Kafka Connect, Mirror Maker 2 and Kafka Bridge.
 
 ### Major changes, deprecations and removals
@@ -16,6 +17,24 @@
 * The `strimzi_resource_state` metric in the Cluster Operator is deprecated and is planned to be removed in Strimzi 0.51.
   Use kube-state-metrics based metrics from the [examples](https://github.com/strimzi/strimzi-kafka-operator/tree/main/examples/metrics/kube-state-metrics) as a replacement.
 * The field `.spec.enableMetrics` in KafkaBridge is now deprecated and replaced by `.spec.metricsConfig`.
+* The User Operator does not ignore the ACL rules for the `*` and `ANONYMOUS` users by default anymore.
+  If you need to re-enable this feature, you can do it by configuring the `STRIMZI_IGNORED_USERS_PATTERN` environment variable to the following regular expression: `^\*|ANONYMOUS$`.
+  In case you deployed the User Operator through a `Kafka` custom resource, you can set it using the following YAML directly in the `Kafka` CR:
+  ```yaml
+  apiVersion: kafka.strimzi.io/v1beta2
+  kind: Kafka
+  spec:
+    #...
+    entityOperator:
+      template:
+        userOperatorContainer:
+          env:
+            - name: STRIMZI_IGNORED_USERS_PATTERN
+              value: "^\\*|ANONYMOUS$" # Double \ needed for escaping
+      #...
+  ```
+  In case you use the standalone User Operator, you can set the environment variable in its `Deployment`.
+  Please keep in mind that the ignored users will apply not only to ACLs, but also to Quotas and SCRAM-SHA credentials.
 
 ## 0.47.0
 

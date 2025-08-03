@@ -14,12 +14,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static io.strimzi.operator.common.config.ConfigParameterParser.BOOLEAN;
 import static io.strimzi.operator.common.config.ConfigParameterParser.INTEGER;
 import static io.strimzi.operator.common.config.ConfigParameterParser.LABEL_PREDICATE;
 import static io.strimzi.operator.common.config.ConfigParameterParser.LONG;
 import static io.strimzi.operator.common.config.ConfigParameterParser.NON_EMPTY_STRING;
+import static io.strimzi.operator.common.config.ConfigParameterParser.PATTERN;
 import static io.strimzi.operator.common.config.ConfigParameterParser.PROPERTIES;
 import static io.strimzi.operator.common.config.ConfigParameterParser.SEMICOLON_SEPARATED_LIST;
 import static io.strimzi.operator.common.config.ConfigParameterParser.STRING;
@@ -141,6 +143,10 @@ public class UserOperatorConfig {
      * Configuration string with feature gates settings
      */
     public static final ConfigParameter<FeatureGates> FEATURE_GATES = new ConfigParameter<>("STRIMZI_FEATURE_GATES", parseFeatureGates(), "", CONFIG_VALUES);
+    /**
+     * Configuration string with feature gates settings
+     */
+    public static final ConfigParameter<Pattern> IGNORED_USERS_PATTERN = new ConfigParameter<>("STRIMZI_IGNORED_USERS_PATTERN", PATTERN, null, CONFIG_VALUES);
 
     private final Map<String, Object> map;
 
@@ -189,20 +195,37 @@ public class UserOperatorConfig {
     /**
      * User Operator Configuration Builder class
      */
-    protected static class UserOperatorConfigBuilder {
-
+    public static class UserOperatorConfigBuilder {
         private final Map<String, Object> map;
 
-        protected  UserOperatorConfigBuilder(UserOperatorConfig config) {
+        /**
+         * Constructs the UserOperatorConfigBuilder
+         *
+         * @param config    Existing UserOperatorConfig object
+         */
+        public UserOperatorConfigBuilder(UserOperatorConfig config) {
             this.map = config.map;
         }
 
-        protected UserOperatorConfigBuilder with(String key, String value) {
+        /**
+         * Adds/updates the configuration parameter to the existing UserOperatorConfig object
+         *
+         * @param key     Configuration name
+         * @param value   Configuration value
+         *
+         * @return  UserOperatorConfigBuilder instance
+         */
+        public UserOperatorConfigBuilder with(String key, String value) {
             this.map.put(key, CONFIG_VALUES.get(key).type().parse(value));
             return this;
         }
 
-        protected UserOperatorConfig build() {
+        /**
+         * Builds UserOperatorConfig object
+         *
+         * @return UserOperatorConfig object
+         */
+        public UserOperatorConfig build() {
             return new UserOperatorConfig(this.map);
         }
     }
@@ -401,6 +424,13 @@ public class UserOperatorConfig {
         return get(FEATURE_GATES);
     }
 
+    /**
+     * @return  Pattern for matching ignored users
+     */
+    public Pattern ignoredUsersPattern()  {
+        return get(IGNORED_USERS_PATTERN);
+    }
+
     @Override
     public String toString() {
         return "UserOperatorBuilderConfig{" +
@@ -431,6 +461,7 @@ public class UserOperatorConfig {
                 "\n\tbatchMaxBlockTime=" + getBatchMaxBlockTime() +
                 "\n\tuserOperationsThreadPoolSize=" + getUserOperationsThreadPoolSize() +
                 "\n\tfeatureGates='" + featureGates() + "'" +
+                "\n\tignoredUsersPattern='" + ignoredUsersPattern().pattern() + "'" +
                 '}';
     }
 }
