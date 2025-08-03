@@ -20,17 +20,19 @@ import org.apache.kafka.clients.admin.UserScramCredentialUpsertion;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.List;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.regex.Pattern;
 
 /**
  * ScramCredentialsOperator is responsible for managing the SCRAM-SHA credentials in Apache Kafka.
  */
-public class ScramCredentialsOperator implements AdminApiOperator<String, List<String>> {
+public class ScramCredentialsOperator implements AdminApiOperator<String, Set<String>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ScramCredentialsOperator.class.getName());
     private final static int ITERATIONS = 4096;
     private final static ScramMechanism SCRAM_MECHANISM = ScramMechanism.SCRAM_SHA_512;
@@ -38,6 +40,7 @@ public class ScramCredentialsOperator implements AdminApiOperator<String, List<S
     // This salt uses the same algorithm as Kafka
     private final static byte[] SALT =  (new BigInteger(130, new SecureRandom())).toString(36).getBytes(StandardCharsets.UTF_8);
 
+    private final Pattern ignoredUsersPattern;
     private final ScramShaCredentialsBatchReconciler patchReconciler;
     private final ScramShaCredentialsCache cache;
     private final ExecutorService executor;
@@ -50,6 +53,7 @@ public class ScramCredentialsOperator implements AdminApiOperator<String, List<S
      * @param executor      Shared executor for executing async operations
      */
     public ScramCredentialsOperator(Admin adminClient, UserOperatorConfig config, ExecutorService executor) {
+        this.ignoredUsersPattern = config.ignoredUsersPattern();
         this.executor = executor;
 
         // Create cache for querying the SCRAM-SHA Credentials locally
@@ -165,8 +169,29 @@ public class ScramCredentialsOperator implements AdminApiOperator<String, List<S
      * @return List with all usernames which have some scram credentials set
      */
     @Override
-    public CompletionStage<List<String>> getAllUsers() {
+    public CompletionStage<Set<String>> getAllUsers() {
         LOGGER.debugOp("Listing all users with SCRAM credentials");
-        return CompletableFuture.completedFuture(Collections.list(cache.keys()));
+
+        Set<String> users = new HashSet<>();
+        Enumeration<String> keys = cache.keys();
+
+        while (keys.hasMoreElements())  {
+            // SCRAM-SHA usernames are just usernames. So there is nothing to decode.
+            String username = keys.nextElement();
+
+            if (ignoredUsersPattern != null && ignoredUsersPattern.matcher(username).matches()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debugOp("Existing SCRAM credentials for user '{}' will be ignored.", username);
+                }
+            } else {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debugOp("Adding user {} to set of users with SCRAM credentials", username);
+                }
+
+                users.add(username);
+            }
+        }
+
+        return CompletableFuture.completedFuture(users);
     }
 }

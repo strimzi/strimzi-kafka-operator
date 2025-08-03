@@ -152,7 +152,7 @@ public class KafkaUserOperatorMockTest {
                 return CompletableFuture.completedStage(ReconcileResult.patched(desired));
             }
         });
-        when(scramOps.getAllUsers()).thenReturn(CompletableFuture.completedStage(List.of("scram-user-1", "scram-user-2")));
+        when(scramOps.getAllUsers()).thenReturn(CompletableFuture.completedStage(Set.of("scram-user-1", "scram-user-2")));
 
         quotasOps = mock(QuotasOperator.class);
         quotasNameCaptor = ArgumentCaptor.forClass(String.class);
