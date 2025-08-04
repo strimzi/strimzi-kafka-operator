@@ -93,6 +93,7 @@ pipeline {
                         builder.REGISTRIES.each { reg ->
                             sh """
                                 export DOCKER_REGISTRY=${reg.url}
+                                export DOCKER_ORG=dev/ralfs/strimzi-test # REMOVE THIS
                                 export DOCKER_TAG=${version}
                                 make docker_push
                             """
