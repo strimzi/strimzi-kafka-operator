@@ -590,11 +590,16 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                         .withHttp(http, kafkaBridgeProducer, kafkaBridgeConsumer);
 
         // mapping the old deprecated enableMetrics to JMX Exporter type
-        String metricsType = (metrics instanceof JmxPrometheusExporterModel) || isMetricsEnabled
-                ? JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER
-                : metrics instanceof StrimziMetricsReporterModel
-                    ? StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER
-                    : "disabled";
+        String metricsType;
+        if ((metrics instanceof JmxPrometheusExporterModel) || isMetricsEnabled) {
+            metricsType = JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER;
+        } else {
+            if (metrics instanceof StrimziMetricsReporterModel) {
+                metricsType = StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER;
+            } else {
+                metricsType = "disabled";
+            }
+        }
 
         if (metricsType.equals(JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER)) {
             builder.withJmxPrometheusExporter((JmxPrometheusExporterModel) metrics, isMetricsEnabled);

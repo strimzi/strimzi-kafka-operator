@@ -386,8 +386,8 @@ public class KafkaBridgeConfigurationBuilder {
             writer.println("bridge.metrics=" + JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER);
            // if isMetricsEnabled is not used, we pass the path of the config file. If it is used, the bridge will use the fallback config
             if (!isMetricsEnabled) {
-                String configFilePath = KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT + JmxPrometheusExporterModel.CONFIG_MAP_KEY;
-                writer.println("bridge.metrics.exporter.config.path=" + configFilePath);
+                writer.println("bridge.metrics.exporter.config.path="
+                        + KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT + JmxPrometheusExporterModel.CONFIG_MAP_KEY);
             }
             writer.println();
         }
