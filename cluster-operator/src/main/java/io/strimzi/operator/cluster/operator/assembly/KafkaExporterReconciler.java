@@ -18,6 +18,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.common.Annotations;
@@ -42,10 +43,12 @@ public class KafkaExporterReconciler {
     private final ClusterCa clusterCa;
     private final List<String> maintenanceWindows;
     private final boolean isNetworkPolicyGeneration;
+    private final boolean isPodDisruptionBudgetGeneration;
     private final DeploymentOperator deploymentOperator;
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
+    private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
 
     private String certificateHash = "";
 
@@ -73,11 +76,13 @@ public class KafkaExporterReconciler {
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
+        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
     }
 
     /**
@@ -96,6 +101,7 @@ public class KafkaExporterReconciler {
         return serviceAccount()
                 .compose(i -> certificatesSecret(clock))
                 .compose(i -> networkPolicy())
+                .compose(i -> podDisruptionBudget())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
     }
@@ -163,6 +169,24 @@ public class KafkaExporterReconciler {
         }
     }
 
+    /**
+     * Manages the Kafka Exporter Pod Disruption Budget
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> podDisruptionBudget() {
+        if (isPodDisruptionBudgetGeneration) {
+            return podDisruptionBudgetOperator
+                    .reconcile(
+                            reconciliation,
+                            reconciliation.namespace(),
+                            KafkaExporterResources.componentName(reconciliation.name()),
+                            kafkaExporter != null ? kafkaExporter.generatePodDisruptionBudget() : null
+                    ).mapEmpty();
+        } else {
+            return Future.succeededFuture();
+        }
+    }
     /**
      * Manages the Kafka Exporter deployment.
      *

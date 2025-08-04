@@ -1362,7 +1362,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 [id='type-PodDisruptionBudgetTemplate-{context}']
 = `PodDisruptionBudgetTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 xref:type-PodDisruptionBudgetTemplate-schema-{context}[Full list of `PodDisruptionBudgetTemplate` schema properties]
 
@@ -1834,6 +1834,9 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |serviceAccount
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for the Entity Operator service account.
+|podDisruptionBudget
+|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|Template for the Entity Operator Pod Disruption Budget.
 |entityOperatorRole
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for the Entity Operator Role.
@@ -2276,6 +2279,9 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |serviceAccount
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |Template for the Kafka Exporter service account.
+|podDisruptionBudget
+|xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
+|Template for the Pod Disruption Budget for Kafka Exporter pods.
 |====
 
 [id='type-KafkaStatus-{context}']
