@@ -1537,7 +1537,6 @@ public class KafkaBridgeClusterTest {
 
         assertThat(kbc.metrics(), is(notNullValue()));
         assertThat(((JmxPrometheusExporterModel) kbc.metrics()).getConfigMapKey(), is("bridge-metrics"));
-        assertThat(((JmxPrometheusExporterModel) kbc.metrics()).getConfigMapName(), is("my-bridge-bridge-config"));
+        assertThat(((JmxPrometheusExporterModel) kbc.metrics()).getConfigMapName(), is("metrics-config.yml"));
     }
-
 }
