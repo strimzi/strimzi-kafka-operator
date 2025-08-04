@@ -25,6 +25,26 @@
 
 <hr style="border:1px solid">
 
+## testKafkaBridgeMetrics
+
+**Description:** This test case checks several metrics exposed by KafkaBridge.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Deploy KafkaBridge into {@namespace}. | KafkaBridge is deployed and Ready |
+| 2. | Attach producer and consumer clients to KafkaBridge | Clients are up and running, continuously producing and pooling messages |
+| 3. | Collect metrics from KafkaBridge pod | Metrics are collected |
+| 4. | Check that specific metric is available in collected metrics from KafkaBridge pods | Metric is available with expected value |
+
+**Labels:**
+
+* [kafka](labels/kafka.md)
+* [metrics](labels/metrics.md)
+* [bridge](labels/bridge.md)
+
+
 ## testKafkaConnectAndConnectorMetrics
 
 **Description:** This test case checks several random metrics exposed by Kafka Connect.

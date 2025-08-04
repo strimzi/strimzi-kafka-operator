@@ -10,15 +10,20 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
@@ -26,6 +31,7 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
+import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestTags.METRICS;
@@ -43,6 +50,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.SANITY;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValue;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueHigherThanOrEqualTo;
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(SANITY)
@@ -72,6 +80,7 @@ public class StrimziMetricsReporterST extends AbstractST {
     private static final int TARGET_BROKER_REPLICAS = 3;
     private static final String CONNECT_CLUSTER_NAME = "my-connect";
     private static final String MM2_CLUSTER_NAME = "my-mm2";
+    private static final String BRIDGE_NAME = "my-bridge";
 
     private TestStorage testStorage;
     private BaseMetricsCollector kafkaCollector;
@@ -198,6 +207,68 @@ public class StrimziMetricsReporterST extends AbstractST {
 
         assertMetricValue(kmm2Collector, "kafka_connect_connect_worker_metrics_connector_count", 2.0);
         assertMetricValueHigherThanOrEqualTo(kmm2Collector, "kafka_connect_connect_worker_metrics_task_count", 0.0);
+    }
+
+    @ParallelTest
+    @Tag(BRIDGE)
+    @Tag(ACCEPTANCE)
+    @TestDoc(
+        description = @Desc("This test case checks several metrics exposed by KafkaBridge."),
+        steps = {
+            @Step(value = "Deploy KafkaBridge into {@namespace}.", expected = "KafkaBridge is deployed and Ready"),
+            @Step(value = "Attach producer and consumer clients to KafkaBridge", expected = "Clients are up and running, continuously producing and pooling messages"),
+            @Step(value = "Collect metrics from KafkaBridge pod", expected = "Metrics are collected"),
+            @Step(value = "Check that specific metric is available in collected metrics from KafkaBridge pods", expected = "Metric is available with expected value")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.METRICS),
+            @Label(value = TestDocsLabels.BRIDGE)
+        }
+    )
+    void testKafkaBridgeMetrics() {
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaBridgeTemplates.kafkaBridge(testStorage.getNamespaceName(), BRIDGE_NAME,
+                    KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1)
+                .editSpec()
+                    .withNewStrimziMetricsReporterConfig()
+                        .withNewValues()
+                            .withAllowList("kafka.*,strimzi_bridge.*")
+                        .endValues()
+                    .endStrimziMetricsReporterConfig()
+                .endSpec().build()
+        );
+
+        // allow connections from scraper to Bridge pods when NetworkPolicies are set to denied by default
+        NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeScraper(testStorage.getNamespaceName(),
+            testStorage.getScraperName(), KafkaBridgeResources.componentName(BRIDGE_NAME));
+
+        BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(BRIDGE_NAME))
+            .withComponentName(KafkaBridgeResources.componentName(BRIDGE_NAME))
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
+            .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
+            .withDelayMs(200)
+            .withPollInterval(200)
+            .build();
+
+        KubeResourceManager.get().createResourceWithoutWait(
+                kafkaBridgeClientJob.producerStrimziBridge(),
+                kafkaBridgeClientJob.consumerStrimziBridge()
+        );
+
+        BaseMetricsCollector bridgeCollector = kafkaCollector.toBuilder()
+            .withComponent(KafkaBridgeMetricsComponent.create(testStorage.getNamespaceName(), BRIDGE_NAME))
+            .build();
+
+        bridgeCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
+
+        assertMetricValueNotNull(bridgeCollector, "kafka_producer_kafka_metrics_count_count\\{.*}");
+        assertMetricValueNotNull(bridgeCollector, "kafka_consumer_consumer_metrics_connection_count\\{.*}");
     }
 
     @BeforeAll
