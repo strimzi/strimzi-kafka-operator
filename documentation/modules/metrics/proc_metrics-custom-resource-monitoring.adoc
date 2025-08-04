@@ -51,4 +51,4 @@ Metrics are scraped from the `strimzi-kube-state-metrics` service using the `Ser
 +
 For alerting on these metrics, check the provided `PrometheusRule` resources:
 +
-* `examples/metrics/kube-state-metrics/prometheus-rules.yaml`
+* `examples/metrics/kube-state-metrics/prometheus-rules/*.yaml`
