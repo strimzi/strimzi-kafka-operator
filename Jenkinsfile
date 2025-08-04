@@ -1,3 +1,7 @@
+@Library("jenkins-library@main")
+
+import com.logicalclocks.jenkins.k8s.ImageBuilder
+
 pipeline {
   agent { label 'local' }
 
@@ -83,13 +87,16 @@ pipeline {
                             make docker_build
                         '''
 
-                        // Push the Docker image (TODO: which DOCKER_REGISTRY to use?)
-                        sh """
-                            export DOCKER_REGISTRY=n59k7749.c1.de1.container-registry.ovh.net
-                            export DOCKER_ORG=dev/ralfs/strimzi-test # REMOVE THIS
-                            export DOCKER_TAG=${version}
-                            make docker_push
-                        """
+                        def builder = new ImageBuilder(this)
+
+                        // Push the Docker image
+                        builder.REGISTRIES.each { reg ->
+                            sh """
+                                export DOCKER_REGISTRY=${reg.url}
+                                export DOCKER_TAG=${version}
+                                make docker_push
+                            """
+                        }
                     }
                 }
             }
