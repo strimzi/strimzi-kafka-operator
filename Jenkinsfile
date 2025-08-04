@@ -76,7 +76,7 @@ pipeline {
                     script {
                         unstash 'docker-images'
 
-                        version = readFile "release.version"
+                        def version = readFile("release.version").trim()
 
                         // Build the Docker image
                         sh '''
@@ -84,12 +84,12 @@ pipeline {
                         '''
 
                         // Push the Docker image (TODO: which DOCKER_REGISTRY to use?)
-                        sh '''
+                        sh """
                             export DOCKER_REGISTRY=n59k7749.c1.de1.container-registry.ovh.net
                             export DOCKER_ORG=dev/ralfs/strimzi-test # REMOVE THIS
-                            export DOCKER_TAG=${version.trim()}
+                            export DOCKER_TAG=${version}
                             make docker_push
-                        '''
+                        """
                     }
                 }
             }
