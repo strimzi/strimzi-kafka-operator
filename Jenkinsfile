@@ -101,6 +101,7 @@ pipeline {
                             // Push the image
                             sh """
                                 export DOCKER_REGISTRY=${registryUrl}
+                                export DOCKER_ORG=strimzi
                                 export DOCKER_TAG=${version}
                                 make docker_push
                             """
