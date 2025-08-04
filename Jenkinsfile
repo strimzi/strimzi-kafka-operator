@@ -63,8 +63,6 @@ pipeline {
 
                 // Java build
                 sh '''
-                    mvn clean
-                    make clean
                     make MVN_ARGS='-DskipTests' java_install
                 '''
 
