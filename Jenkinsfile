@@ -7,33 +7,6 @@ pipeline {
                 checkout scm
             }
         }
-        stage("Java install hops-kafka-authorizer") {
-            agent {
-                docker {
-                    image 'maven:3.8.5-openjdk-17-slim'
-                    args '--user=root -v $HOME/.m2:/root/.m2'
-                }
-            }
-            steps {
-                // Install dependencies
-                sh '''
-                    apt-get update && apt-get install -y git
-                '''
-
-                // Get the authorizer (TODO: use existing jar when authorizer pr is merged)
-                sh '''
-                    rm -rf hops-kafka-authorizer
-                    git clone --branch HWORKS-2215 --single-branch https://github.com/bubriks/hops-kafka-authorizer.git
-                '''
-
-                dir('hops-kafka-authorizer') {
-                    sh 'mvn clean install'
-                }
-
-                // get kafka authorizer
-                // sh "curl -L -o /tmp/hops-kafka-authorizer.jar https://repo.hops.works/master/hops-kafka-authorizer/4.0.0-SNAPSHOT/hops-kafka-authorizer-4.0.0-SNAPSHOT.jar"
-            }
-        }
         stage("Java install strimzi") {
             agent {
                 docker {
@@ -75,8 +48,22 @@ pipeline {
                     chmod +x /usr/local/bin/helm
                 '''
 
+                // Get the authorizer (TODO: use existing jar when authorizer pr is merged)
+                sh '''
+                    rm -rf hops-kafka-authorizer
+                    git clone --branch HWORKS-2215 --single-branch https://github.com/bubriks/hops-kafka-authorizer.git
+                '''
+
+                dir('hops-kafka-authorizer') {
+                    sh 'mvn clean install'
+                }
+
+                // get kafka authorizer
+                // sh "curl -L -o /tmp/hops-kafka-authorizer.jar https://repo.hops.works/master/hops-kafka-authorizer/4.0.0-SNAPSHOT/hops-kafka-authorizer-4.0.0-SNAPSHOT.jar"
+
                 // Java build
                 sh '''
+                    make clean
                     make MVN_ARGS='-DskipTests' java_install
                 '''
 
@@ -94,7 +81,7 @@ pipeline {
                             make docker_build
                         '''
 
-                        // Push the Docker image
+                        // Push the Docker image (TODO: which DOCKER_REGISTRY to use?)
                         sh '''
                             export DOCKER_REGISTRY=n59k7749.c1.de1.container-registry.ovh.net
                             export DOCKER_ORG=dev/ralfs/strimzi-test # REMOVE THIS
