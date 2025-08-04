@@ -76,6 +76,8 @@ pipeline {
                     script {
                         unstash 'docker-images'
 
+                        version = readFile "release.version"
+
                         // Build the Docker image
                         sh '''
                             make docker_build
@@ -85,7 +87,7 @@ pipeline {
                         sh '''
                             export DOCKER_REGISTRY=n59k7749.c1.de1.container-registry.ovh.net
                             export DOCKER_ORG=dev/ralfs/strimzi-test # REMOVE THIS
-                            export DOCKER_TAG=0.45.0
+                            export DOCKER_TAG=${version.trim()}
                             make docker_push
                         '''
                     }
