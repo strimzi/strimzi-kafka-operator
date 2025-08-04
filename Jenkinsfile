@@ -78,6 +78,7 @@ pipeline {
 
                         // Build the Docker image
                         sh '''
+                            make clean
                             make docker_build
                         '''
 
