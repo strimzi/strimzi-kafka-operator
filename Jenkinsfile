@@ -91,8 +91,16 @@ pipeline {
 
                         // Push the Docker image
                         builder.REGISTRIES.each { reg ->
+                            // Authenticate to the registry
+                            reg.auth()
+
+                            // Get registryUrl
+                            def fullImage = reg.buildImageName("dummy", "latest")
+                            def registryUrl = fullImage.split('/')[0]
+
+                            // Push the image
                             sh """
-                                export DOCKER_REGISTRY=${reg.url}
+                                export DOCKER_REGISTRY=${registryUrl}
                                 export DOCKER_ORG=dev/ralfs/strimzi-test # REMOVE THIS
                                 export DOCKER_TAG=${version}
                                 make docker_push
