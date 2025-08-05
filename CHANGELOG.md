@@ -6,6 +6,7 @@
   The `strimzi.io/node-pools` and `strimzi.io/kraft` annotations are not required anymore and will be ignored if set.
 * Make properties `broker.session.timeout.ms`, `broker.heartbeat.interval.ms` and `controller.socket.timeout.ms` configurable
 * Add monitoring of custom resources using [kubernetes-state-metrics (KSM)](https://github.com/kubernetes/kube-state-metrics) (see [Strimzi proposal 087](https://github.com/strimzi/proposals/blob/main/087-monitoring-of-custom-resources.md))
+* Added support for Strimzi Metrics Reporter to Kafka Connect, Mirror Maker 2 and Kafka Bridge.
 
 ### Major changes, deprecations and removals
 
@@ -14,6 +15,7 @@
 * Disable Cruise Control network resource goals when resource capacities are not set.
 * The `strimzi_resource_state` metric in the Cluster Operator is deprecated and is planned to be removed in Strimzi 0.51.
   Use kube-state-metrics based metrics from the [examples](https://github.com/strimzi/strimzi-kafka-operator/tree/main/examples/metrics/kube-state-metrics) as a replacement.
+* The field `.spec.enableMetrics` in KafkaBridge is now deprecated and replaced by `.spec.metricsConfig`.
 
 ## 0.47.0
 

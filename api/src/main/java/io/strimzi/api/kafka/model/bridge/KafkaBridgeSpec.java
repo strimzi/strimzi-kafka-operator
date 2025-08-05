@@ -8,9 +8,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
+import io.strimzi.api.kafka.model.common.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.common.HasLivenessProbe;
 import io.strimzi.api.kafka.model.common.HasReadinessProbe;
 import io.strimzi.api.kafka.model.common.JvmOptions;
@@ -19,11 +21,13 @@ import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -37,10 +41,10 @@ import lombok.ToString;
 @JsonPropertyOrder({
     "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "adminClient", "consumer",
     "producer", "resources", "jvmOptions", "logging", "clientRackInitImage", "rack",
-    "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
+    "enableMetrics", "metricsConfig", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe {
+public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, HasConfigurableMetrics, HasLivenessProbe, HasReadinessProbe {
     private static final int DEFAULT_REPLICAS = 1;
 
     private int replicas = DEFAULT_REPLICAS;
@@ -57,6 +61,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     private JvmOptions jvmOptions;
     private Logging logging;
     private boolean enableMetrics;
+    private MetricsConfig metricsConfig;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private KafkaBridgeTemplate template;
@@ -76,6 +81,10 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
         this.replicas = replicas;
     }
 
+    @Deprecated
+    @DeprecatedProperty(movedToPath = ".spec.metricsConfig",
+            description = "The `enableMetrics` configuration is deprecated and will be removed in the future.")
+    @PresentInVersions("v1alpha1-v1beta2")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("Enable the metrics for the Kafka Bridge. Default is false.")
     public boolean getEnableMetrics() {
@@ -84,6 +93,18 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
 
     public void setEnableMetrics(boolean enableMetrics) {
         this.enableMetrics = enableMetrics;
+    }
+
+    @Description("Metrics configuration.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Override
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    @Override
+    public void setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
     }
 
     @Description("Logging configuration for Kafka Bridge.")
