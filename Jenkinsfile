@@ -52,18 +52,14 @@ pipeline {
                     chmod +x /usr/local/bin/helm
                 '''
 
-                // Get the authorizer (TODO: use existing jar when authorizer pr is merged)
-                sh '''
-                    rm -rf hops-kafka-authorizer
-                    git clone --branch HWORKS-2215 --single-branch https://github.com/bubriks/hops-kafka-authorizer.git
-                '''
-
-                dir('hops-kafka-authorizer') {
-                    sh 'mvn clean install'
-                }
-
-                // get kafka authorizer
-                // sh "curl -L -o /tmp/hops-kafka-authorizer.jar https://repo.hops.works/master/hops-kafka-authorizer/4.0.0-SNAPSHOT/hops-kafka-authorizer-4.0.0-SNAPSHOT.jar"
+                // Get and install kafka authorizer
+                sh "curl -L -o /tmp/hops-kafka-authorizer.jar https://repo.hops.works/master/hops-kafka-authorizer/4.6.0-SNAPSHOT/hops-kafka-authorizer-4.6.0-SNAPSHOT.jar"
+                sh "mvn install:install-file \
+                    -Dfile=/tmp/hops-kafka-authorizer.jar \
+                    -DgroupId=hops.io.kafka \
+                    -DartifactId=hops-kafka-authorizer \
+                    -Dversion=4.6.0-SNAPSHOT \
+                    -Dpackaging=jar"
 
                 // Java build
                 sh '''
