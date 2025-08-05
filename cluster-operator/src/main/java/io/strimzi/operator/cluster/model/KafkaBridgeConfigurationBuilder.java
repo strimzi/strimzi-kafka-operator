@@ -376,7 +376,7 @@ public class KafkaBridgeConfigurationBuilder {
      * Configures the JMX Prometheus Metrics Exporter.
      *
      * @param model JMX Prometheus Metrics Exporter configuration
-     * @param isLegacyMetricsConfigEnabled Flag which indicates whether the metrics are enabled or not.
+     * @param isLegacyMetricsConfigEnabled Flag which indicates whether the metrics are enabled or not in legacy mode.
      *
      * @return Returns the builder instance
      */
