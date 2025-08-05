@@ -15,8 +15,10 @@ import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -65,12 +67,25 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
     }
 
     @Override
-    protected ServiceOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new ServiceOperator(vertx, mockClient, false);
+    }
+
+    @Override
+    protected ServiceOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
+        return new ServiceOperator(vertx, mockClient, useServerSideApply);
+    }
+
+    @Override
+    protected Stream<Arguments> useServerSideApplyCombinations() {
+        return Stream.of(
+            Arguments.of(false),
+            Arguments.of(true)
+        );
     }
 
     @Test
-    public void testNodePortPatching()  {
+    public void testNodePortPatching() {
         KubernetesClient client = mock(KubernetesClient.class);
 
         Service current = new ServiceBuilder()
@@ -119,7 +134,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.patchNodePorts(current, desired);
 
         assertThat(current.getSpec().getPorts().get(0).getNodePort(), is(desired.getSpec().getPorts().get(1).getNodePort()));
@@ -157,7 +172,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io~1publicEndpoints"), equalTo("foo"));
@@ -190,7 +205,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.patchHealthCheckPorts(current, desired);
 
         assertThat(current.getSpec().getHealthCheckNodePort(), is(desired.getSpec().getHealthCheckNodePort()));
@@ -294,7 +309,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
 
         op.patchDualStackNetworking(current, desired);
         assertThat(current.getSpec().getIpFamilyPolicy(), is(desired.getSpec().getIpFamilyPolicy()));
@@ -348,7 +363,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        ServiceOperator op = new ServiceOperator(vertx, client);
+        ServiceOperator op = new ServiceOperator(vertx, client, false);
         op.patchLoadBalancerClass(current, desired);
 
         assertThat(current.getSpec().getLoadBalancerClass(), is(desired.getSpec().getLoadBalancerClass()));

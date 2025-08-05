@@ -25,7 +25,7 @@ public class ServiceOperatorIT extends AbstractNamespacedResourceOperatorIT<Kube
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList,
                 ServiceResource<Service>> operator() {
-        return new ServiceOperator(vertx, client);
+        return new ServiceOperator(vertx, client, false);
     }
 
     @Override

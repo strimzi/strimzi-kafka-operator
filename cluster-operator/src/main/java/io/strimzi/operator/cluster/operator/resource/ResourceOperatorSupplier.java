@@ -49,6 +49,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOpe
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.vertx.core.Vertx;
 
 /**
@@ -230,15 +231,17 @@ public class ResourceOperatorSupplier {
      * @param metricsProvider       Metrics provider
      * @param pfa                   Platform Availability Features
      * @param operatorName          Name of this operator instance
+     * @param featureGates          Feature Gates configuration of operator
      */
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, String operatorName) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, String operatorName, FeatureGates featureGates) {
         this(vertx,
-                client,
-                new DefaultAdminClientProvider(),
-                new DefaultKafkaAgentClientProvider(),
-                metricsProvider,
-                pfa,
-                new KubernetesRestartEventPublisher(client, operatorName)
+            client,
+            new DefaultAdminClientProvider(),
+            new DefaultKafkaAgentClientProvider(),
+            metricsProvider,
+            pfa,
+            new KubernetesRestartEventPublisher(client, operatorName),
+            featureGates
         );
     }
 
@@ -275,21 +278,40 @@ public class ResourceOperatorSupplier {
                                      MetricsProvider metricsProvider,
                                      PlatformFeaturesAvailability pfa,
                                      KubernetesRestartEventPublisher restartEventPublisher) {
-        this(new ServiceOperator(vertx, client),
+        this(vertx,
+            client,
+            adminClientProvider,
+            kafkaAgentClientProvider,
+            metricsProvider,
+            pfa,
+            restartEventPublisher,
+            new FeatureGates("")
+        );
+    }
+
+    private ResourceOperatorSupplier(Vertx vertx,
+                                     KubernetesClient client,
+                                     AdminClientProvider adminClientProvider,
+                                     KafkaAgentClientProvider kafkaAgentClientProvider,
+                                     MetricsProvider metricsProvider,
+                                     PlatformFeaturesAvailability pfa,
+                                     KubernetesRestartEventPublisher restartEventPublisher,
+                                     FeatureGates featureGates) {
+        this(new ServiceOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new ConfigMapOperator(vertx, client),
+                new ConfigMapOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 new SecretOperator(vertx, client),
-                new PvcOperator(vertx, client),
+                new PvcOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 new DeploymentOperator(vertx, client),
-                new ServiceAccountOperator(vertx, client),
+                new ServiceAccountOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 new RoleBindingOperator(vertx, client),
                 new RoleOperator(vertx, client),
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
                 new PodOperator(vertx, client),
-                new IngressOperator(vertx, client),
+                new IngressOperator(vertx, client, featureGates.serverSideApplyPhase1Enabled()),
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),

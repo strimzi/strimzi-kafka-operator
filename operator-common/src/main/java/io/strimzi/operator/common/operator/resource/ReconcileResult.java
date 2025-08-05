@@ -32,6 +32,11 @@ public abstract class ReconcileResult<R> {
         PATCHED,
 
         /**
+         * The resource was patched using Server Side Apply
+         */
+        PATCHED_WITH_SERVER_SIDE_APPLY,
+
+        /**
          * The resource was deleted
          */
         DELETED
@@ -102,6 +107,22 @@ public abstract class ReconcileResult<R> {
     }
 
     /**
+     * The resource was modified during the reconciliation using Server Side Apply
+     *
+     * @param <R>   Resource type for which the result is being indicated
+     */
+    public static class PatchedWithServerSideApply<R> extends ReconcileResult<R> {
+        private PatchedWithServerSideApply(R resource) {
+            super(Optional.of(resource));
+        }
+
+        @Override
+        public Type getType() {
+            return Type.PATCHED_WITH_SERVER_SIDE_APPLY;
+        }
+    }
+
+    /**
      * Return a reconciliation result that indicates the resource was patched.
      * @return a reconciliation result that indicates the resource was patched.
      * @param resource The patched resource.
@@ -109,6 +130,17 @@ public abstract class ReconcileResult<R> {
      */
     public static <D> Patched<D> patched(D resource) {
         return new Patched<>(resource);
+    }
+
+    /**
+     * Return a reconciliation result that indicates the resource was patched using Server Side Apply.
+     *
+     * @param resource  The patched resource.
+     * @return a reconciliation result that indicates the resource was patched using Server Side Apply.
+     * @param <D> The type of resource
+     */
+    public static <D> PatchedWithServerSideApply<D> patchedWithServerSideApply(D resource) {
+        return new PatchedWithServerSideApply<>(resource);
     }
 
     /**
