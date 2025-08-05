@@ -15,16 +15,18 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class PvcOperatorTest extends AbstractNamespacedResourceOperatorServerSideApplyTest<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
+public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -63,8 +65,21 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorServerSid
     }
 
     @Override
+    protected AbstractNamespacedResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new PvcOperator(vertx, mockClient, false);
+    }
+
+    @Override
     protected PvcOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
         return new PvcOperator(vertx, mockClient, useServerSideApply);
+    }
+
+    @Override
+    protected Stream<Arguments> useServerSideApplyCombinations() {
+        return Stream.of(
+            Arguments.of(false),
+            Arguments.of(true)
+        );
     }
 
     @Test

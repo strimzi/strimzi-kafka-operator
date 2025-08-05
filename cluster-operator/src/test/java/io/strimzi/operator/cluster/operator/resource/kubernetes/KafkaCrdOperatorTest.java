@@ -19,6 +19,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -111,8 +113,9 @@ public class KafkaCrdOperatorTest extends AbstractNamespacedResourceOperatorTest
     }
 
     @Override
-    @Test
-    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(boolean useServerSideApply, VertxTestContext context) {
         assumeTrue(false, "CrdOperator does not use self-closing watch so this test should be skipped");
     }
 }

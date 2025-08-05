@@ -13,6 +13,8 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Map;
+
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,20 +43,21 @@ public class ServiceAccountOperatorServerSideApplyIT extends AbstractNamespacedR
             .withNewMetadata()
                 .withName(resourceName)
                 .withNamespace(namespace)
-                .withLabels(singletonMap("foo2", "bar2"))
-                .withAnnotations(singletonMap("my-annotation", "my-value2"))
+                .withLabels(Map.of("foo", "bar", "foo2", "bar2"))
             .endMetadata()
+            .withAutomountServiceAccountToken()
             .build();
     }
 
     @Override
-    protected ServiceAccount getModifiedAnno() {
+    protected ServiceAccount getConflicting() {
         return new ServiceAccountBuilder()
             .withNewMetadata()
                 .withName(resourceName)
                 .withNamespace(namespace)
-                .withAnnotations(singletonMap("my-annotation", "my-value"))
+                .withLabels(singletonMap("foo", "bar"))
             .endMetadata()
+            .withAutomountServiceAccountToken(false)
             .build();
     }
 
@@ -63,5 +66,6 @@ public class ServiceAccountOperatorServerSideApplyIT extends AbstractNamespacedR
         context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
         context.verify(() -> assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace())));
         context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
+        context.verify(() -> assertThat(actual.getAutomountServiceAccountToken(), is(expected.getAutomountServiceAccountToken())));
     }
 }

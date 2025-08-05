@@ -24,7 +24,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -43,7 +42,7 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
         R extends Resource<T>> extends AbstractNamespacedResourceOperatorIT<C, T, L, R> {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractNamespacedResourceOperatorServerSideApplyIT.class);
 
-    abstract T getModifiedAnno();
+    abstract T getConflicting();
 
     @Test
     public void testCreateModifyDelete(VertxTestContext context)    {
@@ -75,12 +74,9 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
             })
             .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
             .onComplete(context.succeeding(rrModified -> {
-                annotations.put("my-annotation", "my-value2");
                 T modified = op.get(namespace, resourceName);
 
                 assertThat(rrModified.getType(), is(ReconcileResult.Type.PATCHED_WITH_SERVER_SIDE_APPLY));
-                ReconcileResult.PatchedWithServerSideApply<T> patchedWithServerSideApply = (ReconcileResult.PatchedWithServerSideApply<T>) rrModified;
-                assertThat(patchedWithServerSideApply.usedForce(), is(false));
                 context.verify(() -> assertThat(modified, is(notNullValue())));
                 assertThat(modified.getMetadata().getAnnotations(), is(annotations));
                 assertResources(context, modResource, modified);
@@ -106,9 +102,7 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
 
         T newResource = getOriginal();
         T modResource = getModified();
-
-        Map<String, String> annotations = new HashMap<>();
-        annotations.put("my-annotation", "my-value2");
+        T confResource = getConflicting();
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
             .onComplete(context.succeeding(rrCreated -> {
@@ -124,23 +118,18 @@ public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C exte
                     .withPatchType(PatchType.SERVER_SIDE_APPLY)
                     .build();
 
-                op.operation().inNamespace(namespace).withName(resourceName).patch(patchContext, getModifiedAnno());
+                op.operation().inNamespace(namespace).withName(resourceName).patch(patchContext, confResource);
 
-                T currentResource = op.get(namespace, resourceName);
+                T modified = op.get(namespace, resourceName);
 
-                assertThat(currentResource.getMetadata().getAnnotations(), is(singletonMap("my-annotation", "my-value")));
+                assertResources(context, confResource, modified);
             })
             .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
             .onComplete(context.succeeding(rrModified -> {
                 T modified = op.get(namespace, resourceName);
 
                 assertThat(rrModified.getType(), is(ReconcileResult.Type.PATCHED_WITH_SERVER_SIDE_APPLY));
-
-                ReconcileResult.PatchedWithServerSideApply<T> patchedWithServerSideApply = (ReconcileResult.PatchedWithServerSideApply<T>) rrModified;
-                assertThat(patchedWithServerSideApply.usedForce(), is(true));
-
                 context.verify(() -> assertThat(modified, is(notNullValue())));
-                assertThat(modified.getMetadata().getAnnotations(), is(annotations));
                 assertResources(context, modResource, modified);
             }))
             .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))

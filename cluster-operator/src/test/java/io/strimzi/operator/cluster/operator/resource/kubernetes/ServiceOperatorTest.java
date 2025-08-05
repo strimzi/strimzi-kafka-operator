@@ -15,8 +15,10 @@ import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -25,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorServerSideApplyTest<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
+public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -65,8 +67,21 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorServe
     }
 
     @Override
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new ServiceOperator(vertx, mockClient, false);
+    }
+
+    @Override
     protected ServiceOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
         return new ServiceOperator(vertx, mockClient, useServerSideApply);
+    }
+
+    @Override
+    protected Stream<Arguments> useServerSideApplyCombinations() {
+        return Stream.of(
+            Arguments.of(false),
+            Arguments.of(true)
+        );
     }
 
     @Test

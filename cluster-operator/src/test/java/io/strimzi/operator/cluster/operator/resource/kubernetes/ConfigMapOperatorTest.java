@@ -11,15 +11,23 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
+import org.junit.jupiter.params.provider.Arguments;
+
+import java.util.stream.Stream;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
 
-public class ConfigMapOperatorTest extends AbstractNamespacedResourceOperatorServerSideApplyTest<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> {
+public class ConfigMapOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> {
 
     @Override
     protected void  mocker(KubernetesClient mockClient, MixedOperation mockCms) {
         when(mockClient.configMaps()).thenReturn(mockCms);
+    }
+
+    @Override
+    protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new ConfigMapOperator(vertx, mockClient, false);
     }
 
     @Override
@@ -54,5 +62,13 @@ public class ConfigMapOperatorTest extends AbstractNamespacedResourceOperatorSer
         return new ConfigMapBuilder(resource(name))
                 .withData(singletonMap("FOO", "BAR2"))
                 .build();
+    }
+
+    @Override
+    protected Stream<Arguments> useServerSideApplyCombinations() {
+        return Stream.of(
+            Arguments.of(false),
+            Arguments.of(true)
+        );
     }
 }

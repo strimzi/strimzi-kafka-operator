@@ -14,7 +14,8 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.when;
@@ -64,14 +65,16 @@ public class BuildConfigOperatorTest extends AbstractNamespacedResourceOperatorT
     }
 
     @Override
-    @Test
-    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
-        testCreateWhenExistsWithChangeIsAPatch(context, false);
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
+    public void testCreateWhenExistsWithChangeIsAPatch(boolean useServerSideApply, VertxTestContext context) {
+        testCreateWhenExistsWithChangeIsAPatch(context, false, useServerSideApply);
     }
 
     @Override
-    @Test
-    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
+    @MethodSource("useServerSideApplyCombinations")
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(boolean useServerSideApply, VertxTestContext context) {
         assumeTrue(false, "BuildConfigOperator does not use self-closing watch so this test should be skipped");
     }
 }

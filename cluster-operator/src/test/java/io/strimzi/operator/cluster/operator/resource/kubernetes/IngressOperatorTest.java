@@ -16,9 +16,11 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -27,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class IngressOperatorTest extends AbstractNamespacedResourceOperatorServerSideApplyTest<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
+public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
     @Override
     protected Class<KubernetesClient> clientType() {
         return KubernetesClient.class;
@@ -70,12 +72,25 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorServe
     }
 
     @Override
+    protected Stream<Arguments> useServerSideApplyCombinations() {
+        return Stream.of(
+            Arguments.of(false),
+            Arguments.of(true)
+        );
+    }
+
+    @Override
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new IngressOperator(vertx, mockClient, false);
+    }
+
+    @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
         return new IngressOperator(vertx, mockClient, useServerSideApply);
     }
 
     @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
-    @MethodSource("data")
+    @MethodSource("useServerSideApplyCombinations")
     public void testIngressClassPatching(boolean useServerSideApply)  {
         KubernetesClient client = mock(KubernetesClient.class);
 
@@ -108,7 +123,7 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorServe
     }
 
     @ParameterizedTest(name = "{displayName} with SSA enabled: {0}")
-    @MethodSource("data")
+    @MethodSource("useServerSideApplyCombinations")
     public void testCattleAnnotationPatching(boolean useServerSideApply)  {
         KubernetesClient client = mock(KubernetesClient.class);
 

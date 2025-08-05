@@ -54,6 +54,13 @@ public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResource
     @Override
     protected Service getModified()  {
         ServicePort servicePort = new ServicePortBuilder()
+            .withName("http")
+            .withProtocol("TCP")
+            .withPort(80)
+            .withNewTargetPort(80)
+            .build();
+
+        ServicePort servicePortConflicting = new ServicePortBuilder()
             .withName("https")
             .withProtocol("TCP")
             .withPort(443)
@@ -65,24 +72,42 @@ public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResource
                 .withName(resourceName)
                 .withNamespace(namespace)
                 .withLabels(singletonMap("state", "modified"))
-                .withAnnotations(singletonMap("my-annotation", "my-value2"))
             .endMetadata()
             .withNewSpec()
                 .withType("ClusterIP")
                 .withSelector(singletonMap("app", "kafka"))
-                .withPorts(servicePort)
+                .withPorts(servicePort, servicePortConflicting)
             .endSpec()
             .build();
     }
 
     @Override
-    protected Service getModifiedAnno() {
+    protected Service getConflicting() {
+        ServicePort servicePort = new ServicePortBuilder()
+            .withName("http")
+            .withProtocol("TCP")
+            .withPort(80)
+            .withNewTargetPort(80)
+            .build();
+
+        ServicePort servicePortConflicting = new ServicePortBuilder()
+            .withName("https")
+            .withProtocol("TCP")
+            .withPort(443)
+            .withNewTargetPort(444)
+            .build();
+
         return new ServiceBuilder()
             .withNewMetadata()
                 .withName(resourceName)
                 .withNamespace(namespace)
-                .withAnnotations(singletonMap("my-annotation", "my-value"))
+                .withLabels(singletonMap("state", "new"))
             .endMetadata()
+            .withNewSpec()
+                .withType("ClusterIP")
+                .withSelector(singletonMap("app", "kafka"))
+                .withPorts(servicePort, servicePortConflicting)
+            .endSpec()
             .build();
     }
 
@@ -91,6 +116,12 @@ public class ServiceOperatorServerSideApplyIT extends AbstractNamespacedResource
         context.verify(() -> assertThat(actual.getMetadata().getName(), is(expected.getMetadata().getName())));
         context.verify(() -> assertThat(actual.getMetadata().getNamespace(), is(expected.getMetadata().getNamespace())));
         context.verify(() -> assertThat(actual.getMetadata().getLabels(), is(expected.getMetadata().getLabels())));
-        context.verify(() -> assertThat(actual.getSpec().getPorts().get(0).getPort(), is(expected.getSpec().getPorts().get(0).getPort())));
+        context.verify(() -> assertThat(actual.getSpec().getPorts().size(), is(expected.getSpec().getPorts().size())));
+        actual.getSpec().getPorts().forEach(actualPort -> {
+                context.verify(() -> assertThat(expected.getSpec().getPorts().stream().anyMatch(servicePort -> servicePort.getPort().equals(actualPort.getPort())), is(true)));
+                context.verify(() -> assertThat(expected.getSpec().getPorts().stream().anyMatch(servicePort -> servicePort.getTargetPort().equals(actualPort.getTargetPort())), is(true)));
+            }
+        );
+        context.verify(() -> assertThat(actual.getSpec().getType(), is(expected.getSpec().getType())));
     }
 }

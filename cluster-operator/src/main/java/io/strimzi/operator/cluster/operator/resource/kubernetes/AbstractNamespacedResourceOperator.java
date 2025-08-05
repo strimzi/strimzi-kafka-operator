@@ -124,14 +124,12 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                         if (useServerSideApply) {
                             LOGGER.debugCr(reconciliation, "{} {}/{} is desired, patching it", resourceKind, namespace, name);
                             return internalServerSideApply(reconciliation, namespace, name, desired);
+                        } else if (current == null) {
+                            LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
+                            return internalCreate(reconciliation, namespace, name, desired);
                         } else {
-                            if (current == null) {
-                                LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                                return internalCreate(reconciliation, namespace, name, desired);
-                            } else {
-                                LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
-                                return internalUpdate(reconciliation, namespace, name, current, desired);
-                            }
+                            LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
+                            return internalUpdate(reconciliation, namespace, name, current, desired);
                         }
                     }
                 });
@@ -270,7 +268,6 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
 
         try {
             T result;
-            boolean usedForce = false;
 
             try {
                 LOGGER.debugCr(reconciliation, "{} {}/{} is being patched using Server Side Apply", resourceKind, namespace, name);
@@ -280,7 +277,6 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                 // so we will use force
                 if (e.getCode() == 409) {
                     LOGGER.warnCr(reconciliation, "{} {}/{} failed to patch because of conflict: {}, applying force", resourceKind, namespace, name, e.getMessage());
-                    usedForce = true;
                     result = resourceOp.patch(serverSideApplyPatchContext(true), desired);
                 } else {
                     // otherwise throw the exception
@@ -289,7 +285,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             }
 
             LOGGER.debugCr(reconciliation, "{} {}/{} has been patched", resourceKind, namespace, name);
-            return Future.succeededFuture(ReconcileResult.patchedWithServerSideApply(result, usedForce));
+            return Future.succeededFuture(ReconcileResult.patchedWithServerSideApply(result));
         } catch (Exception e) {
             LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
