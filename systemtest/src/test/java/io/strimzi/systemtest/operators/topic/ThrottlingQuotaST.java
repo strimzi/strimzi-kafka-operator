@@ -4,6 +4,11 @@
  */
 package io.strimzi.systemtest.operators.topic;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -13,6 +18,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -33,10 +39,17 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * Test checks for throttling quotas set for user
- * on creation & deletion of topics and create partition operations.
- */
+@SuiteDoc(
+    description = @Desc("Tests user throttling quotas during topic operations."),
+    beforeTestSteps = {
+        @Step(value = "Deploy a Kafka cluster with both SCRAM-SHA-512 and TLS authentication listeners.", expected = "Kafka cluster is deployed and ready."),
+        @Step(value = "Create two Admin clients: one with throttling quotas applied, and one without.", expected = "Both clients are successfully initialized for use in tests.")
+    },
+    labels = {
+        @Label(TestDocsLabels.TOPIC_OPERATOR)
+    }
+
+)
 @Tag(REGRESSION)
 public class ThrottlingQuotaST extends AbstractST {
 
@@ -52,6 +65,19 @@ public class ThrottlingQuotaST extends AbstractST {
     private AdminClient unlimitedAdminClient;
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Verifies throttling quotas on create, alter and delete topic operations."),
+        steps = {
+            @Step(value = "Use the limited admin client to create a large number of topics.", expected = "Quota is exceeded and topic creation fails with a throttling error."),
+            @Step(value = "Use the unlimited admin client to delete all previously created topics.", expected = "Topics are successfully removed."),
+            @Step(value = "Create and alter a small number of topics within quota limits using the limited client.", expected = "All operations complete successfully."),
+            @Step(value = "Attempt to delete remaining topics exceeding the quota.", expected = "Deletion partially fails due to throttling."),
+            @Step(value = "Clean up all remaining topics using the unlimited client.", expected = "All topics are deleted successfully.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     void testThrottlingQuotasDuringAllTopicOperations() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
