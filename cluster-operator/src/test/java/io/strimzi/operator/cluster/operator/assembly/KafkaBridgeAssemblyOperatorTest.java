@@ -169,7 +169,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 assertThat(dc.getMetadata().getName(), is(bridge.getComponentName()));
                 assertThat(dc, is(bridge.generateDeployment(Map.of(
                         Annotations.ANNO_STRIMZI_AUTH_HASH, "0",
-                        Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "d09be71a"
+                        Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "eeacc2f1"
                         ), true, null, null)));
 
                 // Verify PodDisruptionBudget
@@ -340,7 +340,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 assertThat(dc.getMetadata().getName(), is(compareTo.getComponentName()));
                 assertThat(dc, is(compareTo.generateDeployment(Map.of(
                         Annotations.ANNO_STRIMZI_AUTH_HASH, "0",
-                        Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "d09be71a"
+                        Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "eeacc2f1"
                 ), true, null, null)));
 
                 // Verify PodDisruptionBudget
