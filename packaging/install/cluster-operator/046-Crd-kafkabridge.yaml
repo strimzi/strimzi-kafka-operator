@@ -442,7 +442,7 @@ spec:
                 description: Configuration of the node label which will be used as the client.rack consumer configuration.
               enableMetrics:
                 type: boolean
-                description: "Enable the metrics for the Kafka Bridge. Default is false. Deprecated, use `spec.metricsConfig`."
+                description: Enable the metrics for the Kafka Bridge. Default is false.
               metricsConfig:
                 type: object
                 properties:

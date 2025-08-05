@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
@@ -26,6 +27,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -79,13 +81,16 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
         this.replicas = replicas;
     }
 
+    @Deprecated
+    @DeprecatedProperty(movedToPath = ".spec.metricsConfig",
+            description = "The `enableMetrics` configuration is deprecated and will be removed in the future.")
+    @PresentInVersions("v1alpha1-v1beta2")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Enable the metrics for the Kafka Bridge. Default is false. Deprecated, use `spec.metricsConfig`.")
+    @Description("Enable the metrics for the Kafka Bridge. Default is false.")
     public boolean getEnableMetrics() {
         return enableMetrics;
     }
 
-    @Deprecated
     public void setEnableMetrics(boolean enableMetrics) {
         this.enableMetrics = enableMetrics;
     }

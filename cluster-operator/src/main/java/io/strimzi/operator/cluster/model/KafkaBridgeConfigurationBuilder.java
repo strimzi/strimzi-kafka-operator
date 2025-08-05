@@ -375,22 +375,27 @@ public class KafkaBridgeConfigurationBuilder {
     /**
      * Configures the JMX Prometheus Metrics Exporter.
      *
-     * @param model     JMX Prometheus Metrics Exporter configuration
-     * @param isMetricsEnabled  Flag which indicates whether the metrics are enabled or not.
+     * @param model JMX Prometheus Metrics Exporter configuration
+     * @param isLegacyMetricsConfigEnabled Flag which indicates whether the metrics are enabled or not.
      *
      * @return Returns the builder instance
      */
-    public KafkaBridgeConfigurationBuilder withJmxPrometheusExporter(JmxPrometheusExporterModel model, boolean isMetricsEnabled)  {
-        if (model != null || isMetricsEnabled) {
-            printSectionHeader("Prometheus Jmx Exporter configuration");
+    public KafkaBridgeConfigurationBuilder withJmxPrometheusExporter(
+            JmxPrometheusExporterModel model, boolean isLegacyMetricsConfigEnabled) {
+        if (model != null || isLegacyMetricsConfigEnabled) {
+            printSectionHeader("Prometheus JMX Exporter configuration");
             writer.println("bridge.metrics=" + JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER);
-           // if isMetricsEnabled is not used, we pass the path of the config file. If it is used, the bridge will use the fallback config
-            if (!isMetricsEnabled) {
+
+            // if isLegacyMetricsConfigEnabled is not used, we pass the path of the config file.
+            // If it is used, the Bridge will use the fallback config.
+            if (!isLegacyMetricsConfigEnabled) {
                 writer.println("bridge.metrics.exporter.config.path="
                         + KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT + JmxPrometheusExporterModel.CONFIG_MAP_KEY);
             }
+
             writer.println();
         }
+
         return this;
     }
 

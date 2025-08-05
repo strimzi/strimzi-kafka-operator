@@ -3784,7 +3784,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |Configuration of the node label which will be used as the client.rack consumer configuration.
 |enableMetrics
 |boolean
-|Enable the metrics for the Kafka Bridge. Default is false. Deprecated, use `spec.metricsConfig`.
+|**The `enableMetrics` property has been deprecated, and should now be configured using `.spec.metricsConfig`.** The `enableMetrics` configuration is deprecated and will be removed in the future. Enable the metrics for the Kafka Bridge. Default is false.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Metrics configuration.

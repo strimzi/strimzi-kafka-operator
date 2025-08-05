@@ -120,7 +120,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     private KafkaBridgeAdminClientSpec kafkaBridgeAdminClient;
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
     private KafkaBridgeProducerSpec kafkaBridgeProducer;
-    private boolean isMetricsEnabled = false;
+    private boolean isLegacyMetricsConfigEnabled = false;
     private LoggingModel logging;
     private MetricsModel metrics;
 
@@ -162,11 +162,11 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * Create the KafkaBridge model instance from the KafkaBridge custom resource
      *
      * @param reconciliation Reconciliation marker
-     * @param kafkaBridge KafkaBridge custom resource
+     * @param kafkaBridge    KafkaBridge custom resource
      * @param sharedEnvironmentProvider Shared environment provider
      * @return KafkaBridgeCluster instance
      */
-    @SuppressWarnings({"checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:NPathComplexity", "deprecation"})
     public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation,
                                              KafkaBridge kafkaBridge,
                                              SharedEnvironmentProvider sharedEnvironmentProvider) {
@@ -203,7 +203,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
             result.metrics = new StrimziMetricsReporterModel(spec, DEFAULT_METRICS_ALLOW_LIST);
         } else {
-            result.isMetricsEnabled = spec.getEnableMetrics();
+            result.isLegacyMetricsConfigEnabled = spec.getEnableMetrics();
         }
 
         result.setTls(spec.getTls() != null ? spec.getTls() : null);
@@ -242,7 +242,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     /**
-     * @return Generates and returns the Kubernetes service for the Kafka Bridge
+     * @return  Generates and returns the Kubernetes service for the Kafka Bridge
      */
     public Service generateService() {
         int port = DEFAULT_REST_API_PORT;
@@ -266,7 +266,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     /**
      * Generates a JSON String with the discovery annotation for the bridge service
      *
-     * @return JSON with discovery annotation
+     * @return  JSON with discovery annotation
      */
     /*test*/ Map<String, String> getDiscoveryAnnotation(int port) {
         JsonObject discovery = new JsonObject();
@@ -347,11 +347,12 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     /**
      * Generates the Bridge Kubernetes Deployment
      *
-     * @param annotations      Map with annotations
-     * @param isOpenShift      Flag indicating if we are on OpenShift or not
-     * @param imagePullPolicy  Image pull policy configuration
-     * @param imagePullSecrets List of image pull secrets
-     * @return Generated Kubernetes Deployment resource
+     * @param annotations       Map with annotations
+     * @param isOpenShift       Flag indicating if we are on OpenShift or not
+     * @param imagePullPolicy   Image pull policy configuration
+     * @param imagePullSecrets  List of image pull secrets
+     *
+     * @return  Generated Kubernetes Deployment resource
      */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return WorkloadUtils.createDeployment(
@@ -437,7 +438,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     /**
      * Set the HTTP configuration
-     *
      * @param kafkaBridgeHttpConfig HTTP configuration
      */
     protected void setKafkaBridgeHttpConfig(KafkaBridgeHttpConfig kafkaBridgeHttpConfig) {
@@ -473,7 +473,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     /**
      * Set Kafka AdminClient's configuration
-     *
      * @param kafkaBridgeAdminClient configuration
      */
     protected void setKafkaAdminClientConfiguration(KafkaBridgeAdminClientSpec kafkaBridgeAdminClient) {
@@ -482,7 +481,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     /**
      * Set Kafka consumer's configuration
-     *
      * @param kafkaBridgeConsumer configuration
      */
     protected void setKafkaConsumerConfiguration(KafkaBridgeConsumerSpec kafkaBridgeConsumer) {
@@ -491,7 +489,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     /**
      * Set Kafka producer's configuration
-     *
      * @param kafkaBridgeProducer configuration
      */
     protected void setKafkaProducerConfiguration(KafkaBridgeProducerSpec kafkaBridgeProducer) {
@@ -500,7 +497,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     /**
      * Set Bootstrap servers for connection to cluster
-     *
      * @param bootstrapServers bootstrap servers
      */
     protected void setBootstrapServers(String bootstrapServers) {
@@ -508,7 +504,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     /**
-     * @return The HTTP configuration of the Bridge
+     * @return  The HTTP configuration of the Bridge
      */
     public KafkaBridgeHttpConfig getHttp() {
         return this.http;
@@ -572,7 +568,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * It also generates the metrics and logging configuration. If this operand doesn't support logging
      * or metrics, they will not be set.
      *
-     * @param metricsAndLogging The external CMs with logging and metrics configuration
+     * @param metricsAndLogging     The external CMs with logging and metrics configuration
+     *
      * @return The generated ConfigMap
      */
     public ConfigMap generateBridgeConfigMap(MetricsAndLogging metricsAndLogging) {
@@ -591,7 +588,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
         // mapping the old deprecated enableMetrics to JMX Exporter type
         String metricsType;
-        if ((metrics instanceof JmxPrometheusExporterModel) || isMetricsEnabled) {
+        if ((metrics instanceof JmxPrometheusExporterModel) || isLegacyMetricsConfigEnabled) {
             metricsType = JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER;
         } else {
             if (metrics instanceof StrimziMetricsReporterModel) {
@@ -602,7 +599,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         }
 
         if (metricsType.equals(JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER)) {
-            builder.withJmxPrometheusExporter((JmxPrometheusExporterModel) metrics, isMetricsEnabled);
+            builder.withJmxPrometheusExporter((JmxPrometheusExporterModel) metrics, isLegacyMetricsConfigEnabled);
         } else if (metricsType.equals(StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER)) {
             builder.withStrimziMetricsReporter((StrimziMetricsReporterModel) metrics);
         }
@@ -627,9 +624,9 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     /**
-     * @return Logging Model instance for configuring logging
+     * @return  Logging Model instance for configuring logging
      */
-    public LoggingModel logging() {
+    public LoggingModel logging()   {
         return logging;
     }
 
