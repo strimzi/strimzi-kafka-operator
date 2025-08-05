@@ -261,8 +261,8 @@
   default: false
 - version: 4.1.0
   metadata: 4.1
-  url: https://dist.apache.org/repos/dist/dev/kafka/4.1.0-rc1/kafka_2.13-4.1.0.tgz
-  checksum: 4700EB93E40A78EAED3345D05BE4F5CD2AD212E7B188D51A672D5095419E9D7ADD1AD3969021D7C2642B243BA23FEE85230EA33C71EB15338A1B5B41007F8209
+  url: https://dist.apache.org/repos/dist/dev/kafka/4.1.0-rc2/kafka_2.13-4.1.0.tgz
+  checksum: EF46BC2A0BAE7EAE4BCD5011020F68DC00A9934ED07226CE04A9BEA50A8720F930F63ABCFC69619C00B0217151B285881C30A014390A4677FFE448101B18F460
   third-party-libs: 4.1.x
   supported: true
   default: true
