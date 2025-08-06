@@ -19,8 +19,6 @@ Usage example can be like this:
     runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: ./.github/actions/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
@@ -40,8 +38,6 @@ This actions has to be called separately for each architecture with matrix strat
     runs-on: oracle-vm-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}

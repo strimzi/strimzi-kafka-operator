@@ -92,7 +92,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
       - name: Generate Matrix
@@ -140,7 +139,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
 
