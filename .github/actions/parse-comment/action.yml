@@ -142,9 +142,9 @@ runs:
         # Default values
         DEFAULT_PIPELINES="regression,upgrade"
         DEFAULT_PROFILES="operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
-        DEFAULT_FEATURE_GATES="false"
+        DEFAULT_FEATURE_GATES="+DummyFeatureGate"
         DEFAULT_RBAC_SCOPE="CLUSTER"
-        DEFAULT_OPERATOR_INSTALL_TYPE="bundle"
+        DEFAULT_OPERATOR_INSTALL_TYPE="yaml"
         
         PIPELINE_LIST=""
         PROFILE_LIST=""
@@ -188,11 +188,11 @@ runs:
           if echo "$COMMENT_LOWER" | grep -q "agent="; then
             AGENT_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*agent=\([^ ]*\).*/\1/p')
           fi
-          if echo "$COMMENT_LOWER" | grep -q "strimzi_feature_gates="; then
-            FG_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*strimzi_feature_gates=\([^ ]*\).*/\1/p')
+          if echo "$COMMENT" | grep -q "strimzi_feature_gates="; then
+            FG_VALUE=$(echo "$COMMENT" | sed -n 's/.*strimzi_feature_gates=\([^ ]*\).*/\1/p')
           fi
-          if echo "$COMMENT_LOWER" | grep -q "strimzi_rbac_scope="; then
-            RBAC_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*strimzi_rbac_scope=\([^ ]*\).*/\1/p')
+          if echo "$COMMENT" | grep -q "strimzi_rbac_scope="; then
+            RBAC_VALUE=$(echo "$COMMENT" | sed -n 's/.*strimzi_rbac_scope=\([^ ]*\).*/\1/p')
           fi
           if echo "$COMMENT_LOWER" | grep -q "cluster_operator_install_type="; then
             COI_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*cluster_operator_install_type=\([^ ]*\).*/\1/p')

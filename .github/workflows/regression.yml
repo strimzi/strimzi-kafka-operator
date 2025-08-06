@@ -41,8 +41,7 @@ jobs:
   parse-params:
     needs:
       - check-rights
-    # TODO - maybe use quick github runners?
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
@@ -70,8 +69,6 @@ jobs:
       sha: ${{ steps.parse.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Parse Comment
         id: parse
         uses: ./.github/actions/parse-comment
@@ -101,7 +98,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
           ref: ${{ needs.parse-params.outputs.sha }}
       - uses: ./.github/actions/build-strimzi-binaries
@@ -122,7 +118,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
           ref: ${{ needs.parse-params.outputs.sha }}
       - uses: ./.github/actions/containers-build
@@ -158,7 +153,7 @@ jobs:
     needs:
       - run-tests
     if: ${{ always() }}
-    runs-on: oracle-vm-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
@@ -166,8 +161,6 @@ jobs:
       statuses: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Add comment
         uses: ./.github/actions/add-comment
         with:
