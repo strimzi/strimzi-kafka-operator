@@ -130,6 +130,16 @@ public enum CruiseControlConfigurationParameters {
     METRICS_REPORTER_SSL_KEYSTORE_PASSWORD("cruise.control.metrics.reporter.ssl.keystore.password"),
 
     /**
+     * Metrics reporter keystore certificate chain
+     */
+    METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN("cruise.control.metrics.reporter.ssl.keystore.certificate.chain"),
+
+    /**
+     * Metrics reporter keystore key
+     */
+    METRICS_REPORTER_SSL_KEYSTORE_KEY("cruise.control.metrics.reporter.ssl.keystore.key"),
+
+    /**
      * Metrics reporter truststore type
      */
     METRICS_REPORTER_SSL_TRUSTSTORE_TYPE("cruise.control.metrics.reporter.ssl.truststore.type"),
@@ -143,6 +153,11 @@ public enum CruiseControlConfigurationParameters {
      * Metrics reporter truststore password
      */
     METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD("cruise.control.metrics.reporter.ssl.truststore.password"),
+
+    /**
+     * Metrics reporter truststore certificates
+     */
+    METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES("cruise.control.metrics.reporter.ssl.truststore.certificates"),
 
     // Metrics topic configurations
     /**
