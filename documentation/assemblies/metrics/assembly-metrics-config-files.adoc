@@ -82,8 +82,8 @@ metrics
 <10> Grafana dashboards for components using the Strimzi Metrics Reporter.
 <11> `KafkaBridge` resource for deploying Kafka Bridge with Strimzi Metrics Reporter.
 <12> `KafkaConnect` resource for deploying Kafka Connect with Strimzi Metrics Reporter.
-<13> `KafkaMirrorMaker2` resource for deploying MirrorMaker 2 with Strimzi Metrics Reporter.
-<14> `Kafka` resource for deploying Kafka with Strimzi Metrics Reporter.
+<13> `Kafka` resource for deploying Kafka with Strimzi Metrics Reporter.
+<14> `KafkaMirrorMaker2` resource for deploying MirrorMaker 2 with Strimzi Metrics Reporter.
 <15> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Bridge.
 <16> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
 <17> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control.

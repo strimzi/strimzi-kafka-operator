@@ -23,6 +23,7 @@ You can create your own Prometheus configuration or use the xref:assembly-metric
 * `kafka-metrics.yaml`
 * `kafka-connect-metrics.yaml`
 * `kafka-mirror-maker-2-metrics.yaml`
+* `kafka-bridge-metrics.yaml`
 
 These files contain the necessary configuration, and are a good starting point for trying Prometheus with Strimzi.
 
