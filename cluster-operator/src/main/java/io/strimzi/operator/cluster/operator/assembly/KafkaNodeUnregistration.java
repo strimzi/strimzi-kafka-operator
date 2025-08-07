@@ -32,7 +32,7 @@ public class KafkaNodeUnregistration {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaNodeUnregistration.class.getName());
 
     /**
-     * Unregisters Kafka nodes from a KRaft-based Kafka cluster
+     * Unregisters Kafka broker nodes from a KRaft-based Kafka cluster
      *
      * @param reconciliation        Reconciliation marker
      * @param vertx                 Vert.x instance
@@ -41,9 +41,9 @@ public class KafkaNodeUnregistration {
      * @param pemAuthIdentity       Key set  for the admin client to connect to the Kafka cluster
      * @param nodeIdsToUnregister   List of node IDs that should be unregistered
      *
-     * @return  Future that completes when all nodes are unregistered
+     * @return  Future that completes when all broker nodes are unregistered
      */
-    public static Future<Void> unregisterNodes(
+    public static Future<Void> unregisterBrokerNodes(
             Reconciliation reconciliation,
             Vertx vertx,
             AdminClientProvider adminClientProvider,
@@ -57,7 +57,7 @@ public class KafkaNodeUnregistration {
 
             List<Future<Void>> futures = new ArrayList<>();
             for (Integer nodeId : nodeIdsToUnregister) {
-                futures.add(unregisterNode(reconciliation, vertx, adminClient, nodeId));
+                futures.add(unregisterBrokerNode(reconciliation, vertx, adminClient, nodeId));
             }
 
             return Future.all(futures)
@@ -73,7 +73,7 @@ public class KafkaNodeUnregistration {
     }
 
     /**
-     * List Kafka nodes within a KRaft-based cluster
+     * List registered Kafka broker nodes within a KRaft-based cluster
      *
      * @param reconciliation        Reconciliation marker
      * @param vertx                 Vert.x instance
@@ -82,9 +82,9 @@ public class KafkaNodeUnregistration {
      * @param pemAuthIdentity       Key set  for the admin client to connect to the Kafka cluster
      * @param includeFencedBrokers  If listing should include fenced brokers
      *
-     * @return  Future that completes when all nodes are listed
+     * @return  Future that completes when all registered broker nodes are listed
      */
-    public static Future<Collection<Node>> listRegisteredNodes(
+    public static Future<Collection<Node>> listRegisteredBrokerNodes(
             Reconciliation reconciliation,
             Vertx vertx,
             AdminClientProvider adminClientProvider,
@@ -100,7 +100,7 @@ public class KafkaNodeUnregistration {
             return VertxUtil
                     .kafkaFutureToVertxFuture(reconciliation, vertx, adminClient.describeCluster(option).nodes())
                     .compose(nodes -> {
-                        LOGGER.debugCr(reconciliation, "Describe cluster: nodes (fanced included) = {}", nodes);
+                        LOGGER.debugCr(reconciliation, "Describe cluster: nodes (fenced included) = {}", nodes);
                         return Future.succeededFuture(nodes);
                     });
         } catch (KafkaException e) {
@@ -110,17 +110,17 @@ public class KafkaNodeUnregistration {
     }
 
     /**
-     * Unregisters a single Kafka node using the Kafka Admin API. In case the failure is caused by the node not being
+     * Unregisters a single Kafka broker node using the Kafka Admin API. In case the failure is caused by the node not being
      * registered, the error will be ignored.
      *
      * @param reconciliation        Reconciliation marker
      * @param vertx                 Vert.x instance
      * @param adminClient           Kafka Admin API client instance
-     * @param nodeIdToUnregister    ID of the node that should be unregistered
+     * @param nodeIdToUnregister    ID of the broker node that should be unregistered
      *
      * @return  Future that completes when the node is unregistered
      */
-    private static Future<Void> unregisterNode(Reconciliation reconciliation, Vertx vertx, Admin adminClient, Integer nodeIdToUnregister) {
+    private static Future<Void> unregisterBrokerNode(Reconciliation reconciliation, Vertx vertx, Admin adminClient, Integer nodeIdToUnregister) {
         LOGGER.debugCr(reconciliation, "Unregistering node {} from the Kafka cluster", nodeIdToUnregister);
 
         return VertxUtil
