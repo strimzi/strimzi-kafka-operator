@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.user.acl.AclRuleType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.user.ResourceUtils;
+import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
@@ -33,7 +34,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -61,39 +61,47 @@ public class SimpleAclOperatorTest {
     private final static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     @Test
-    public void testGetAllUsers() throws ExecutionException, InterruptedException {
-        Admin mockAdminClient = mock(AdminClient.class);
-
-        ResourcePattern res1 = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
-        ResourcePattern res2 = new ResourcePattern(ResourceType.GROUP, "my-group", PatternType.LITERAL);
-
-        KafkaPrincipal foo = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "CN=foo");
-        AclBinding fooAclBinding = new AclBinding(res1, new AccessControlEntry(foo.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
-        KafkaPrincipal bar = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "CN=bar");
-        AclBinding barAclBinding = new AclBinding(res1, new AccessControlEntry(bar.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
-        KafkaPrincipal baz = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "baz");
-        AclBinding bazAclBinding = new AclBinding(res2, new AccessControlEntry(baz.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
-        KafkaPrincipal all = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "*");
-        AclBinding allAclBinding = new AclBinding(res1, new AccessControlEntry(all.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
-        KafkaPrincipal anonymous = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "ANONYMOUS");
-        AclBinding anonymousAclBinding = new AclBinding(res2, new AccessControlEntry(anonymous.toString(), "*",
-                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
-
-        Collection<AclBinding> aclBindings =
-                asList(fooAclBinding, barAclBinding, bazAclBinding, allAclBinding, anonymousAclBinding);
-
-        assertDoesNotThrow(() -> mockDescribeAcls(mockAdminClient, AclBindingFilter.ANY, aclBindings));
-
-        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig(), EXECUTOR);
+    public void testGetAllUsers() throws ExecutionException, InterruptedException, TimeoutException {
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAclsForVariousUsers(), ResourceUtils.createUserOperatorConfig(), EXECUTOR);
         aclOp.start();
 
         try {
             Set<String> users = aclOp.getAllUsers().toCompletableFuture().get();
-            assertThat(users, is(new HashSet<>(asList("foo", "bar", "baz"))));
+            assertThat(users, is(Set.of("foo", "bar", "baz", "ANONYMOUS", "*")));
+        } finally {
+            aclOp.stop();
+        }
+    }
+
+    @Test
+    public void testGetAllUsersBackwardsCompatible() throws ExecutionException, InterruptedException, TimeoutException {
+        UserOperatorConfig config = new UserOperatorConfig.UserOperatorConfigBuilder(ResourceUtils.createUserOperatorConfig())
+                .with(UserOperatorConfig.IGNORED_USERS_PATTERN.key(), "^\\*|ANONYMOUS$")
+                .build();
+
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAclsForVariousUsers(), config, EXECUTOR);
+        aclOp.start();
+
+        try {
+            Set<String> users = aclOp.getAllUsers().toCompletableFuture().get();
+            assertThat(users, is(Set.of("foo", "bar", "baz")));
+        } finally {
+            aclOp.stop();
+        }
+    }
+
+    @Test
+    public void testGetAllUsersCustom() throws ExecutionException, InterruptedException, TimeoutException {
+        UserOperatorConfig config = new UserOperatorConfig.UserOperatorConfigBuilder(ResourceUtils.createUserOperatorConfig())
+                .with(UserOperatorConfig.IGNORED_USERS_PATTERN.key(), "^CN=foo|bar")
+                .build();
+
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAclsForVariousUsers(), config, EXECUTOR);
+        aclOp.start();
+
+        try {
+            Set<String> users = aclOp.getAllUsers().toCompletableFuture().get();
+            assertThat(users, is(Set.of("bar", "baz", "ANONYMOUS", "*")));
         } finally {
             aclOp.stop();
         }
@@ -120,6 +128,7 @@ public class SimpleAclOperatorTest {
         SimpleAclRule resource2ReadRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource2, "*", AclOperation.READ);
         SimpleAclRule resource2WriteRule = new SimpleAclRule(AclRuleType.ALLOW, ruleResource2, "*", AclOperation.WRITE);
 
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<Collection<AclBinding>> aclBindingsCaptor = ArgumentCaptor.forClass(Collection.class);
         assertDoesNotThrow(() -> {
             mockDescribeAcls(mockAdminClient, null, emptyList());
@@ -162,7 +171,9 @@ public class SimpleAclOperatorTest {
         SimpleAclRuleResource resource = new SimpleAclRuleResource("my-topic2", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL);
         SimpleAclRule rule1 = new SimpleAclRule(AclRuleType.ALLOW, resource, "*", AclOperation.WRITE);
 
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<Collection<AclBinding>> aclBindingsCaptor = ArgumentCaptor.forClass(Collection.class);
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<Collection<AclBindingFilter>> aclBindingFiltersCaptor = ArgumentCaptor.forClass(Collection.class);
         assertDoesNotThrow(() -> {
             mockDescribeAcls(mockAdminClient, null, Collections.singleton(readAclBinding));
@@ -210,6 +221,7 @@ public class SimpleAclOperatorTest {
         KafkaPrincipal foo = new KafkaPrincipal("User", "CN=foo");
         AclBinding readAclBinding = new AclBinding(resource, new AccessControlEntry(foo.toString(), "*", org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
 
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<Collection<AclBindingFilter>> aclBindingFiltersCaptor = ArgumentCaptor.forClass(Collection.class);
         assertDoesNotThrow(() -> {
             mockDescribeAcls(mockAdminClient, null, Collections.singleton(readAclBinding));
@@ -238,27 +250,60 @@ public class SimpleAclOperatorTest {
         }
     }
 
-    private void mockDescribeAcls(Admin mockAdminClient, AclBindingFilter aclBindingFilter, Collection<AclBinding> aclBindings) throws ExecutionException, InterruptedException, TimeoutException {
+    private static void mockDescribeAcls(Admin mockAdminClient, AclBindingFilter aclBindingFilter, Collection<AclBinding> aclBindings) throws ExecutionException, InterruptedException, TimeoutException {
         DescribeAclsResult result = mock(DescribeAclsResult.class);
+        @SuppressWarnings("unchecked")
         KafkaFuture<Collection<AclBinding>> future = mock(KafkaFuture.class);
         when(future.get(anyLong(), any())).thenReturn(aclBindings);
         when(result.values()).thenReturn(future);
         when(mockAdminClient.describeAcls(aclBindingFilter != null ? aclBindingFilter : any())).thenReturn(result);
     }
 
-    private void mockCreateAcls(Admin mockAdminClient, ArgumentCaptor<Collection<AclBinding>> aclBindingsCaptor) {
+    private static void mockCreateAcls(Admin mockAdminClient, ArgumentCaptor<Collection<AclBinding>> aclBindingsCaptor) {
         CreateAclsResult result = mock(CreateAclsResult.class);
+        @SuppressWarnings("unchecked")
         KafkaFuture<Void> future = mock(KafkaFuture.class);
         when(future.toCompletionStage()).thenReturn(CompletableFuture.completedStage(null));
         when(result.all()).thenReturn(future);
         when(mockAdminClient.createAcls(aclBindingsCaptor.capture())).thenReturn(result);
     }
 
-    private void mockDeleteAcls(Admin mockAdminClient, Collection<AclBinding> aclBindings, ArgumentCaptor<Collection<AclBindingFilter>> aclBindingFiltersCaptor) {
+    private static void mockDeleteAcls(Admin mockAdminClient, Collection<AclBinding> aclBindings, ArgumentCaptor<Collection<AclBindingFilter>> aclBindingFiltersCaptor) {
         DeleteAclsResult result = mock(DeleteAclsResult.class);
+        @SuppressWarnings("unchecked")
         KafkaFuture<Collection<AclBinding>> future = mock(KafkaFuture.class);
         when(future.toCompletionStage()).thenReturn(CompletableFuture.completedStage(aclBindings));
         when(result.all()).thenReturn(future);
         when(mockAdminClient.deleteAcls(aclBindingFiltersCaptor.capture())).thenReturn(result);
+    }
+
+    private static Admin mockAclsForVariousUsers() throws ExecutionException, InterruptedException, TimeoutException  {
+        Admin mockAdminClient = mock(AdminClient.class);
+
+        ResourcePattern res1 = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
+        ResourcePattern res2 = new ResourcePattern(ResourceType.GROUP, "my-group", PatternType.LITERAL);
+
+        KafkaPrincipal foo = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "CN=foo");
+        AclBinding fooAclBinding = new AclBinding(res1, new AccessControlEntry(foo.toString(), "*",
+                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+        KafkaPrincipal bar = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "CN=bar");
+        AclBinding barAclBinding = new AclBinding(res1, new AccessControlEntry(bar.toString(), "*",
+                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+        KafkaPrincipal baz = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "baz");
+        AclBinding bazAclBinding = new AclBinding(res2, new AccessControlEntry(baz.toString(), "*",
+                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+        KafkaPrincipal all = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "*");
+        AclBinding allAclBinding = new AclBinding(res1, new AccessControlEntry(all.toString(), "*",
+                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+        KafkaPrincipal anonymous = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "ANONYMOUS");
+        AclBinding anonymousAclBinding = new AclBinding(res2, new AccessControlEntry(anonymous.toString(), "*",
+                org.apache.kafka.common.acl.AclOperation.READ, AclPermissionType.ALLOW));
+
+        Collection<AclBinding> aclBindings =
+                asList(fooAclBinding, barAclBinding, bazAclBinding, allAclBinding, anonymousAclBinding);
+
+        mockDescribeAcls(mockAdminClient, AclBindingFilter.ANY, aclBindings);
+
+        return mockAdminClient;
     }
 }

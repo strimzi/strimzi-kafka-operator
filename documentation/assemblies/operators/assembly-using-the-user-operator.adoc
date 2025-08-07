@@ -12,3 +12,5 @@ the User Operator ensures that these changes are reflected in the Kafka cluster.
 For more information on the `KafkaUser` resource, see the link:{BookURLConfiguring}#type-KafkaUser-reference[`KafkaUser` schema reference^].
 
 include::../../modules/operators/proc-configuring-kafka-user.adoc[leveloffset=+1]
+
+include::../../modules/operators/con-ignoring-some-users-in-user-operator.adoc[leveloffset=+1]

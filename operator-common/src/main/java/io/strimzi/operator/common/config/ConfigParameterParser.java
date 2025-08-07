@@ -19,6 +19,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -190,6 +192,21 @@ public interface ConfigParameterParser<T> {
         }
 
         return namespaces;
+    };
+
+    /**
+     * Returns compiled regular expression pattern. If no option is provided, returns null
+     */
+    ConfigParameterParser<Pattern> PATTERN = configValue -> {
+        if (configValue == null || configValue.isEmpty()) {
+            return null;
+        } else {
+            try {
+                return Pattern.compile(configValue);
+            } catch (PatternSyntaxException e)   {
+                throw new InvalidConfigurationException("Failed to parse the configuration string " + configValue);
+            }
+        }
     };
 
     /**

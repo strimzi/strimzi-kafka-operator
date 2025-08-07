@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.regex.Pattern;
 
 /**
  * KafkaUserQuotasOperator is responsible for managing quotas in Apache Kafka
@@ -32,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<String>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(QuotasOperator.class.getName());
 
+    private final Pattern ignoredUsersPattern;
     private final QuotasBatchReconciler patchReconciler;
     private final QuotasCache cache;
     private final ExecutorService executor;
@@ -44,6 +46,7 @@ public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<Str
      * @param executor      Shared executor for executing async operations
      */
     public QuotasOperator(Admin adminClient, UserOperatorConfig config, ExecutorService executor) {
+        this.ignoredUsersPattern = config.ignoredUsersPattern();
         this.executor = executor;
 
         // Create cache for querying the Quotas locally
@@ -212,7 +215,24 @@ public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<Str
         Enumeration<String> keys = cache.keys();
 
         while (keys.hasMoreElements())  {
-            users.add(KafkaUserModel.decodeUsername(keys.nextElement()));
+            // The ignored users are compared against the exact username as we get it from Kafka
+            // So we do not decode the username here.
+            String username = keys.nextElement();
+
+            if (ignoredUsersPattern != null && ignoredUsersPattern.matcher(username).matches()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debugOp("Existing Quotas for user '{}' will be ignored.", username);
+                }
+            } else {
+                // The User Operator operates on the "Kubernetes Resource Names".
+                // So we have to decode the username (remove the CN=) prefix if needed
+                String decodedUsername = KafkaUserModel.decodeUsername(username);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debugOp("Adding user {} to set of users with Quotas", decodedUsername);
+                }
+
+                users.add(decodedUsername);
+            }
         }
 
         return CompletableFuture.completedFuture(users);
