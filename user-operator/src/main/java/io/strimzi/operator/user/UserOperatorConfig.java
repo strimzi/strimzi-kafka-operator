@@ -144,7 +144,7 @@ public class UserOperatorConfig {
      */
     public static final ConfigParameter<FeatureGates> FEATURE_GATES = new ConfigParameter<>("STRIMZI_FEATURE_GATES", parseFeatureGates(), "", CONFIG_VALUES);
     /**
-     * Configuration string with feature gates settings
+     * Configuration string with ignored users pattern
      */
     public static final ConfigParameter<Pattern> IGNORED_USERS_PATTERN = new ConfigParameter<>("STRIMZI_IGNORED_USERS_PATTERN", PATTERN, null, CONFIG_VALUES);
 
