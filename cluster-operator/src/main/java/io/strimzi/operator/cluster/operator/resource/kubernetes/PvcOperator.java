@@ -100,6 +100,7 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
     protected void revertImmutableChanges(PersistentVolumeClaim current, PersistentVolumeClaim desired)   {
         desired.getSpec().setVolumeName(current.getSpec().getVolumeName());
         desired.getSpec().setStorageClassName(current.getSpec().getStorageClassName());
+        desired.getSpec().setVolumeAttributesClassName(current.getSpec().getVolumeAttributesClassName());
         desired.getSpec().setAccessModes(current.getSpec().getAccessModes());
         desired.getSpec().setSelector(current.getSpec().getSelector());
         desired.getSpec().setDataSource(current.getSpec().getDataSource());
