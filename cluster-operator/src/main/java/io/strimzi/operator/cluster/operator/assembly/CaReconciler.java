@@ -543,6 +543,7 @@ public class CaReconciler {
             clusterCa.maybeDeleteOldCerts();
 
             if (clusterCa.certsRemoved()) {
+                clusterCaCertSecret.setData(clusterCa.caCertData());
                 return secretOperator.reconcile(reconciliation, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(reconciliation.name()), clusterCaCertSecret)
                         .mapEmpty();
             } else {
