@@ -19,6 +19,10 @@
 |`Kafka`
 |`kafka-metrics.yaml`
 
+|Kafka Bridge
+|`KafkaBridge`
+|`kafka-bridge-metrics.yaml`
+
 |Kafka Connect
 |`KafkaConnect`
 |`kafka-connect-metrics.yaml`
