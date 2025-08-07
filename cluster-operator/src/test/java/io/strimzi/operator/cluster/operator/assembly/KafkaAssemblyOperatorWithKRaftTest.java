@@ -1862,7 +1862,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     .compose(i -> brokerConfigurationConfigMaps())
                     .compose(i -> podSet())
                     .compose(this::rollingUpdate)
-                    .compose(i -> nodeUnregistration(kafkaStatus))
+                    .compose(i -> nodeUnregistration())
                     .compose(i -> sharedKafkaConfigurationCleanup());
         }
 

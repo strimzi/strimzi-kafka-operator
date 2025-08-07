@@ -57,7 +57,7 @@ public class KafkaNodeUnregistrationTest {
         AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
 
         Checkpoint async = context.checkpoint();
-        KafkaNodeUnregistration.unregisterNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, Set.of(1874, 1919))
+        KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, Set.of(1874, 1919))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
                     assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
@@ -88,7 +88,7 @@ public class KafkaNodeUnregistrationTest {
         AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
 
         Checkpoint async = context.checkpoint();
-        KafkaNodeUnregistration.unregisterNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, Set.of(1874, 1919))
+        KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, Set.of(1874, 1919))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
                     assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
@@ -119,7 +119,7 @@ public class KafkaNodeUnregistrationTest {
         AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
 
         Checkpoint async = context.checkpoint();
-        KafkaNodeUnregistration.unregisterNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, Set.of(1874, 1919))
+        KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, Set.of(1874, 1919))
                 .onComplete(context.failing(v -> context.verify(() -> {
                     assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
                     assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
