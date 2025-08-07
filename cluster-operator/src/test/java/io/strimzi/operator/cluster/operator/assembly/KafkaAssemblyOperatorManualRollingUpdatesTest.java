@@ -478,7 +478,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         @Override
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
-            return manualRollingUpdate();
+            return manualRollingUpdate(kafkaStatus);
         }
 
         @Override
@@ -487,7 +487,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 Function<Pod, RestartReasons> podNeedsRestart,
                 Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
                 Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
-                boolean allowReconfiguration
+                boolean allowReconfiguration,
+                KafkaStatus kafkaStatus
         ) {
             maybeRollKafkaInvocations++;
             kafkaRestartReasons = podNeedsRestart;
