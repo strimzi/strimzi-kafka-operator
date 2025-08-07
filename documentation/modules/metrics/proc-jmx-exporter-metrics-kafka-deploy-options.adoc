@@ -10,9 +10,10 @@ To enable and expose metrics in Strimzi for Prometheus, configure the appropriat
 
 Use `metricsConfig` to expose metrics for these components:
 
-* Kafka 
+* Kafka
 * Kafka Connect
 * MirrorMaker
+* Kafka Bridge
 * Cruise Control
 
 This enables the {JMXExporter}, which exposes metrics on port 9404 through an HTTP endpoint. 
@@ -20,10 +21,9 @@ Prometheus scrapes this endpoint to collect Kafka metrics.
 
 Set `enableMetrics` to `true` to expose metrics for the following: 
 
-* Kafka Bridge
 * OAuth 2.0
 ** Configure in the `Kafka` resource for `oauth` or `keycloak` cluster authorization, or `oauth` listener authentication.
-** Configure in the `KafkaBridge`, `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
+** Configure in the `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
 
 You can create your own Prometheus configuration or use the xref:assembly-metrics-config-files-{context}[example custom resource files] provided with Strimzi:
 
@@ -91,11 +91,23 @@ data:
 <1> Copy the `metricsConfig` property that references the `ConfigMap` containing metrics configuration.
 <2> Copy the whole `ConfigMap` specifying the metrics configuration.
 
-.Enabling metrics for Kafka Bridge 
+.Deploying the example configuration for Kafka Bridge
+[source,shell,subs="+attributes"]
+----
+kubectl apply -f kafka-bridge-metrics.yaml
+----
 
-To expose metrics for Kafka Bridge, set the `enableMetrics` property to `true` in the `KafkaBridge` resource.
+Alternatively, copy the example configuration in `kafka-bridge-metrics.yaml` to your own `KafkaBridge` resource.
 
-.Example metrics configuration for Kafka Bridge
+.Copying the example configuration
+[source,shell]
+----
+kubectl edit kafkaBridge <kafka_configuration_file>
+----
+
+Copy the `metricsConfig` property and the `ConfigMap` it references to your `KafkaBridge` resource.
+
+.Example metrics configuration for KafkaBridge
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -103,12 +115,24 @@ kind: KafkaBridge
 metadata:
   name: my-bridge
 spec:
-  # ...
-  bootstrapServers: my-cluster-kafka:9092
-  http:
+  kafkaBridge:
     # ...
-  enableMetrics: true
-  # ...
+    metricsConfig:
+        type: jmxPrometheusExporter
+        valueFrom:
+            configMapKeyRef:
+                name: bridge-metrics
+                key: metrics-config.yml
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: bridge-metrics
+  labels:
+    app: strimzi
+data:
+  metrics-config.yml: |
+  # _metrics configuration..._
 ----
 
 .Enabling metrics for OAuth 2.0 
