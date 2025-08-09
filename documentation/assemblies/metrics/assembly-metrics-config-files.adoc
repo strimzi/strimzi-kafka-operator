@@ -36,9 +36,21 @@ metrics
 │   └── alert-manager-config.yaml <5>
 ├── prometheus-install
 │    ├── alert-manager.yaml <6>
-│    ├── prometheus-rules.yaml <7>
-│    ├── prometheus.yaml <8>
-│    └── strimzi-pod-monitor.yaml <9>
+│    ├── pod-monitors <7>
+│    │  ├── bridge-metrics.yaml
+│    │  ├── cluster-operator-metrics.yaml
+│    │  ├── entity-operator-metrics.yaml
+│    │  └── kafka-resources-metrics.yaml
+│    ├── prometheus-rules <8>
+│    │  ├── prometheus-kafka-bridge-rules.yaml
+│    │  ├── prometheus-kafka-certificate-rules.yaml
+│    │  ├── prometheus-kafka-connect-rules.yaml
+│    │  ├── prometheus-kafka-rules.yaml
+│    │  ├── prometheus-kafka-exporter-topic-rules.yaml
+│    │  ├── prometheus-mirrormaker2-rules.yaml
+│    │  ├── prometheus-strimzi-cluster-operator-rules.yaml
+│    │  └── prometheus-strimzi-entity-operator-rules.yaml
+│    └── prometheus.yaml <9>
 ├── strimzi-metrics-reporter
 |    ├── grafana-dashboards <10>
 |    |  ├── strimzi-kafka.json
@@ -62,9 +74,9 @@ metrics
 <4> Additional configuration to scrape metrics for CPU, memory and disk volume usage, which comes directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
 <5> Hook definitions for sending notifications through Alertmanager.
 <6> Resources for deploying and configuring Alertmanager.
-<7> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus).
-<8> Installation resource file for the Prometheus image.
-<9> PodMonitor definitions translated by the Prometheus Operator into jobs for the Prometheus server to be able to scrape metrics data directly from pods.
+<7> PodMonitor definitions translated by the Prometheus Operator into jobs for the Prometheus server to be able to scrape metrics data directly from pods.
+<8> Alerting rules examples for use with Prometheus Alertmanager (deployed with Prometheus).
+<9> Installation resource file for the Prometheus image.
 <10> Grafana dashboards for components using the Strimzi Metrics Reporter.
 <11> `KafkaConnect` resource for deploying Kafka Connect with Strimzi Metrics Reporter.
 <12> `KafkaMirrorMaker2` resource for deploying MirrorMaker 2 with Strimzi Metrics Reporter.

@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+    app: strimzi
+  name: kafka-connect
+spec:
+  groups:
+  - name: kafka-connect
+    rules:
+    - alert: ConnectContainersDown
+      expr: absent(container_last_seen{container=~".+-connect",pod=~".+-connect-.+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'All Kafka Connect containers down or in CrashLookBackOff status'
+        description: 'All Kafka Connect containers have been down or in CrashLookBackOff status for 3 minutes'
+    - alert: ConnectFailedConnector
+      expr: sum(kafka_connect_connector_status{status="failed"}) > 0
+      for: 5m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Kafka Connect Connector Failure'
+        description: 'One or more connectors have been in failed state for 5 minutes,'
+    - alert: ConnectFailedTask
+      expr: sum(kafka_connect_worker_connector_failed_task_count) > 0
+      for: 5m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Kafka Connect Task Failure'
+        description: 'One or more tasks have been in failed state for 5 minutes.'

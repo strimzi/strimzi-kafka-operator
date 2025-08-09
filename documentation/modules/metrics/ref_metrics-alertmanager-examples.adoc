@@ -8,15 +8,15 @@
 
 [role="_abstract"]
 Example Prometheus rules for alert notifications are provided with the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
-The rules are specified in the example `prometheus-rules.yaml` file for use in a xref:proc-metrics-deploying-prometheus-{context}[Prometheus deployment].
+The rules are specified in the example `prometheus-rules` directory for use in a xref:proc-metrics-deploying-prometheus-{context}[Prometheus deployment].
 
-The `prometheus-rules.yaml` file contains example rules for the following components:
+The `prometheus-rules` directory contains example rules for the following components:
 
 * Kafka
 * Entity Operator
 * Kafka Connect
 * Kafka Bridge
-* MirrorMaker
+* MirrorMaker2
 * Kafka Exporter
 
 A description of each of the example rules is provided in the file.

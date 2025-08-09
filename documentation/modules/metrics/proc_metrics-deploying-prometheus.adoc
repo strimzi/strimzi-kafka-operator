@@ -13,8 +13,8 @@ You can use your own Prometheus deployment or deploy Prometheus using the xref:a
 The example files include a configuration file for a Prometheus deployment and files for Prometheus-related resources:
 
 * `examples/metrics/prometheus-install/prometheus.yaml`
-* `examples/metrics/prometheus-install/prometheus-rules.yaml`
-* `examples/metrics/prometheus-install/strimzi-pod-monitor.yaml`
+* `examples/metrics/prometheus-install/prometheus-rules/*.yaml`
+* `examples/metrics/prometheus-install/pod-monitors/*.yaml`
 * `examples/metrics/prometheus-additional-properties/prometheus-additional.yaml`
 
 
@@ -40,7 +40,7 @@ On MacOS, use:
 [source,shell,subs="+quotes,attributes"]
 sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
 
-. Edit the `PodMonitor` resource in `strimzi-pod-monitor.yaml` to define Prometheus jobs that will scrape the metrics data from pods.
+. Edit the `PodMonitor` resource in the `pod-monitors` directory to define Prometheus jobs that will scrape the metrics data from pods.
 +
 Update the `namespaceSelector.matchNames` property with the namespace where the pods to scrape the metrics from are running.
 +
@@ -62,6 +62,6 @@ kubectl apply -f prometheus-additional.yaml
 . Deploy the Prometheus resources:
 +
 [source,shell,subs="+quotes,attributes"]
-kubectl apply -f strimzi-pod-monitor.yaml
-kubectl apply -f prometheus-rules.yaml
+kubectl apply -f pod-monitors/*.yaml
+kubectl apply -f prometheus-rules/*.yaml
 kubectl apply -f prometheus.yaml

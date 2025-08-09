@@ -12,11 +12,11 @@ A Prometheus YAML file is provided for deployment:
 
 * `prometheus.yaml`
 
-Additional Prometheus-related configuration is also provided in the following files:
+Additional Prometheus-related configuration is also provided in the following files and directories:
 
+* `pod-monitors/*.yaml`
 * `prometheus-additional.yaml`
-* `prometheus-rules.yaml`
-* `strimzi-pod-monitor.yaml`
+* `prometheus-rules/*.yaml`
 
 For Prometheus to obtain monitoring data:
 
@@ -28,4 +28,4 @@ Then use the configuration files to:
 
 .Alerting rules
 
-The `prometheus-rules.yaml` file provides xref:ref-metrics-alertmanager-examples-{context}[example alerting rule examples for use with Alertmanager].
+The `prometheus-rules` directory provides xref:ref-metrics-alertmanager-examples-{context}[example alerting rules examples for use with Alertmanager].
