@@ -3,32 +3,31 @@
 // assembly-config.adoc
 
 [id='con-mirrormaker-tasks-max-{context}']
-= Specifying a maximum number of data replication tasks
+= Setting a maximum number of data replication tasks
 
 [role="_abstract"]
-Connectors create the tasks that are responsible for moving data in and out of Kafka.
-Each connector comprises one or more tasks that are distributed across a group of worker pods that run the tasks.
-Increasing the number of tasks can help with performance issues when replicating a large number of partitions or synchronizing the offsets of a large number of consumer groups.   
+Use `tasksMax` to control how many tasks are assigned to connectors. 
+Increasing the number of tasks helps improve performance when replicating many partitions or synchronizing the offsets of a large number of consumer groups.
 
-Tasks run in parallel.
-Workers are assigned one or more tasks.
-A single task is handled by one worker pod, so you don't need more worker pods than tasks.
-If there are more tasks than workers, workers handle multiple tasks.
+MirrorMaker 2 connectors create distributed tasks that move data between clusters. 
+These tasks follow a set of operational behaviors and allocation rules.
 
-You can specify the maximum number of connector tasks in your MirrorMaker configuration using the `tasksMax` property.
-Without specifying a maximum number of tasks, the default setting is a single task.
+Task behavior:
 
-The heartbeat connector always uses a single task.
+* Each task runs on a single worker pod.
+* Tasks run in parallel.
+* A worker pod can run multiple tasks, but each task runs in isolation.
+* You don’t need more pods than tasks. If there are fewer pods, tasks are distributed across available workers.
 
-The number of tasks that are started for the source and checkpoint connectors is the lower value between the maximum number of possible tasks and the value for `tasksMax`.
-For the source connector, the maximum number of tasks possible is one for each partition being replicated from the source cluster.
-For the checkpoint connector, the maximum number of tasks possible is one for each consumer group being replicated from the source cluster.
-When setting a maximum number of tasks, consider the number of partitions and the hardware resources that support the process.
+Task allocation rules:
 
-If the infrastructure supports the processing overhead, increasing the number of tasks can improve throughput and latency.
-For example, adding more tasks reduces the time taken to poll the source cluster when there is a high number of partitions or consumer groups.  
+* By default, connectors run with 1 task, unless `tasksMax` is set.
+* The `MirrorHeartbeatConnector` always uses 1 task.
+* For the `MirrorSourceConnector`, the maximum possible tasks = number of partitions.
+* For the `MirrorCheckpointConnector`, the maximum possible tasks = number of consumer groups.
+* Actual tasks started is the lower value of `tasksMax` and the maximum possible tasks.
 
-Increasing the number of tasks for the source connector is useful when you have a large number of partitions.
+If the infrastructure can support it, increasing the number of tasks improves throughput and reduces latency during high-volume replication.
 
 .Increasing the number of tasks for the source connector
 [source,yaml,subs="+quotes,attributes"]
@@ -44,8 +43,13 @@ spec:
     targetCluster: "my-cluster-target"
     sourceConnector:
       tasksMax: 10
+      autoRestart:
+          enabled: true
   # ...
 ----
+
+Enable automatic restarts of failed connectors and tasks using `autoRestart`. 
+By default, the number of restarts is indefinite, but you can set a maximum on the number of automatic restarts using the `maxRestarts` property.
 
 Increasing the number of tasks for the checkpoint connector is useful when you have a large number of consumer groups.
 
@@ -63,6 +67,8 @@ spec:
     targetCluster: "my-cluster-target"
     checkpointConnector:
       tasksMax: 10
+      autoRestart:
+          enabled: true
   # ...
 ----
 
