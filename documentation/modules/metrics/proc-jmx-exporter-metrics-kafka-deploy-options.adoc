@@ -23,7 +23,7 @@ Set `enableMetrics` to `true` to expose metrics for the following:
 
 * OAuth 2.0
 ** Configure in the `Kafka` resource for `oauth` or `keycloak` cluster authorization, or `oauth` listener authentication.
-** Configure in the `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
+** Configure in the `KafkaBridge`, KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
 
 You can create your own Prometheus configuration or use the xref:assembly-metrics-config-files-{context}[example custom resource files] provided with Strimzi:
 
@@ -91,6 +91,8 @@ data:
 <1> Copy the `metricsConfig` property that references the `ConfigMap` containing metrics configuration.
 <2> Copy the whole `ConfigMap` specifying the metrics configuration.
 
+For each KafkaBridge resource you can apply the kafka-bridge-metrics.yaml file.
+
 .Deploying the example configuration for Kafka Bridge
 [source,shell,subs="+attributes"]
 ----
@@ -117,14 +119,14 @@ metadata:
 spec:
   kafkaBridge:
     # ...
-    metricsConfig:
+    metricsConfig: <1>
         type: jmxPrometheusExporter
         valueFrom:
             configMapKeyRef:
                 name: bridge-metrics
                 key: metrics-config.yml
 ---
-kind: ConfigMap
+kind: ConfigMap <2>
 apiVersion: v1
 metadata:
   name: bridge-metrics
@@ -134,6 +136,8 @@ data:
   metrics-config.yml: |
   # _metrics configuration..._
 ----
+<1> Copy the `metricsConfig` property that references the `ConfigMap` containing metrics configuration.
+<2> Copy the whole `ConfigMap` specifying the metrics configuration.
 
 .Enabling metrics for OAuth 2.0 
 

@@ -111,8 +111,11 @@ spec:
     type: opentelemetry # <16>
   # Metrics configuration (optional)
   metricsConfig:
-    type: strimziMetricsReporter # <17>
-
+    type: jmxPrometheusExporter # <17>
+    valueFrom:
+      configMapKeyRef:
+        name: kafka-metrics
+        key: kafka-metrics-config.yml
 ----
 <1> The number of replica nodes.
 <2> Bootstrap address for connection to the target Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
