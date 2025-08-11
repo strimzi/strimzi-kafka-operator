@@ -137,7 +137,7 @@ The default is `true`.
 <18> (Optional) Semi-colon separated list of Cron Expressions defining the maintenance time windows during which the expiring user certificates will be renewed.
 <19> (Optional) Configuration options for configuring the Kafka Admin client used by the User Operator in the properties format.
 <20> (Optional) Regular expression to configure users for which any existing ACLs, Quotas and SCRAM-SHa credentials will be ignored.
-This option is useful when you want to configure the User Operator to ignore users that are managed through some other mechanism.
+This option is useful when you want to configure the User Operator to ignore users that are managed through another mechanism.
 
 . If you are using mTLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
 Otherwise, go to the next step.
