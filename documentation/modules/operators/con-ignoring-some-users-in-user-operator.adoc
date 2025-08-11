@@ -3,18 +3,25 @@
 // assembly-using-the-user-operator.adoc
 
 [id='con-ignoring-some-users-in-user-operator-{context}']
-= Ignoring some users
+= Ignoring specific users
 
-In some scenarios, it might be useful to have the User Operator ignore the ACLs, Quotas or SCRAM-SHA credentials for specific users.
-This might include _special_ built-in users such as `ANONYMOUS` or `*`.
-Or some internal users whose ACLs, Quotas or SCRAM-SHA credentials are managed through different mechanisms.
+In some scenarios, you might want to exclude certain users from being managed by the User Operator.
+This is useful for the following types of users:
 
-The environment variable `STRIMZI_IGNORED_USERS_PATTERN` in your User Operator deployment can be used specify a regular expression pattern that defines which users would be ignored.
-For example, to set it to ignore the `ANONYMOUS` or `\*` users, set it to `^\*|ANONYMOUS$`.
+* Special built-in users (for example, `ANONYMOUS` or `*`)
+* Internal users managed by other mechanisms
+
+When you exclude users from being managed, the User Operator ignores their:
+
+* ACLs
+* Quotas
+* SCRAM-SHA credentials
+
+To define which users should be ignored, set the `STRIMZI_IGNORED_USERS_PATTERN` environment variable with a regular expression.
+For example, to ignore `ANONYMOUS` or `\*` users, set it to `^\*|ANONYMOUS$`.
 You can set the environment variable in your `Kafka` custom resource (`.spec.teplate.entityOperator.userOperatorContainer.env`) or in the `Deployment` resource of your standalone User Operator.
-For example:
 
-.Example configuration of the `STRIMZI_IGNORED_USERS_PATTERN` environment variable in the `Kafka` custom resource
+.Example `Kafka` configuration excluding users
 [source,yaml,subs=+attributes]
 ----
 apiVersion: {KafkaApiVersion}
@@ -32,7 +39,7 @@ spec:
   #...
 ----
 
-.Example configuration of the `STRIMZI_IGNORED_USERS_PATTERN` environment variable in the standalone User Operator deployment
+.Example standalone `Deployment` configuration excluding users
 [source,yaml]
 ----
 apiVersion: apps/v1
