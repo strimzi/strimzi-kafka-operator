@@ -303,7 +303,6 @@ public class KafkaRoller {
         final Promise<Void> promise;
         final BackOff backOff;
         RestartReasons restartReasons;
-        private long connectionErrorStart = 0L;
 
         boolean needsRestart;
         boolean needsReconfig;
@@ -317,20 +316,6 @@ public class KafkaRoller {
             promise = Promise.promise();
             backOff = backOffSupplier.get();
             backOff.delayMs();
-        }
-
-        public void clearConnectionError() {
-            connectionErrorStart = 0L;
-        }
-
-        long connectionError() {
-            return connectionErrorStart;
-        }
-
-        void noteConnectionError() {
-            if (connectionErrorStart == 0L) {
-                connectionErrorStart = System.currentTimeMillis();
-            }
         }
 
         @Override
