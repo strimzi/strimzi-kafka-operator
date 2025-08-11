@@ -10,14 +10,13 @@ import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
-public class ScramCredentialsOperatorIT extends AdminApiOperatorIT<String, List<String>> {
-    protected boolean createPatches = true;
-
+public class ScramCredentialsOperatorIT extends AdminApiOperatorIT<String, Set<String>> {
     @Override
-    AdminApiOperator<String, List<String>> operator() {
+    AdminApiOperator<String, Set<String>> operator() {
         return new ScramCredentialsOperator(adminClient, ResourceUtils.createUserOperatorConfig(), Executors.newSingleThreadExecutor());
     }
 

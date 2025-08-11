@@ -19,7 +19,6 @@ import org.apache.kafka.common.acl.AclBindingFilter;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -29,14 +28,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.regex.Pattern;
 
 /**
  * SimpleAclOperator is responsible for managing the authorization rules in Apache Kafka.
  */
 public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, Set<String>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(SimpleAclOperator.class.getName());
-    private static final List<String> IGNORED_USERS = Arrays.asList("*", "ANONYMOUS");
 
+    private final Pattern ignoredUsersPattern;
     private final AddAclsBatchReconciler addReconciler;
     private final DeleteAclsBatchReconciler deleteReconciler;
     private final AclCache cache;
@@ -50,6 +50,7 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
      * @param executor      Shared executor for executing async operations
      */
     public SimpleAclOperator(Admin adminClient, UserOperatorConfig config, ExecutorService executor) {
+        this.ignoredUsersPattern = config.ignoredUsersPattern();
         this.executor = executor;
 
         // Create cache for querying the ACLs locally
@@ -312,24 +313,26 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
         LOGGER.debugOp("Searching for Users with any ACL rules");
 
         Set<String> users = new HashSet<>();
-        Set<String> ignored = new HashSet<>(IGNORED_USERS.size());
         Enumeration<String> keys = cache.keys();
 
         while (keys.hasMoreElements())  {
-            String username = KafkaUserModel.decodeUsername(keys.nextElement());
+            // The ignored users are compared against the exact username as we get it from Kafka
+            // So we do not decode the username here.
+            String username = keys.nextElement();
 
-            if (IGNORED_USERS.contains(username)) {
-                if (!ignored.contains(username)) {
-                    // This info message is logged only once per reconciliation even if there are multiple rules
-                    LOGGER.infoOp("Existing ACLs for user '{}' will be ignored.", username);
-                    ignored.add(username);
+            if (ignoredUsersPattern != null && ignoredUsersPattern.matcher(username).matches()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debugOp("Existing ACLs for user '{}' will be ignored.", username);
                 }
             } else {
+                // The User Operator operates on the "Kubernetes Resource Names".
+                // So we have to decode the username (remove the CN=) prefix if needed
+                String decodedUsername = KafkaUserModel.decodeUsername(username);
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debugOp("Adding user {} to Set of users with ACLs", username);
+                    LOGGER.debugOp("Adding user {} to set of users with ACLs", decodedUsername);
                 }
 
-                users.add(username);
+                users.add(decodedUsername);
             }
         }
 
