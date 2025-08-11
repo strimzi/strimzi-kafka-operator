@@ -10,7 +10,7 @@ Before you can use OAuth 2.0 token-based access, you must configure an authoriza
 The steps are dependent on the chosen authorization server.
 Consult the product documentation for the authorization server for information on how to set up OAuth 2.0 access.
 
-Prepare the authorization server to work with Strimzi by defining _OAUth 2.0 clients_ for Kafka and each Kafka client component of your application.
+Prepare the authorization server to work with Strimzi by defining _OAuth 2.0 clients_ for Kafka and each Kafka client component of your application.
 In relation to the authorization server, the Kafka cluster and Kafka clients are both regarded as OAuth 2.0 clients.
 
 In general, configure OAuth 2.0 clients in the authorization server with the following client credentials enabled:
