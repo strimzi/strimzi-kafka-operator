@@ -18,7 +18,6 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
-import org.apache.kafka.common.errors.BrokerIdNotRegisteredException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -125,18 +124,8 @@ public class KafkaNodeUnregistration {
 
         return VertxUtil
                 .kafkaFutureToVertxFuture(reconciliation, vertx, adminClient.unregisterBroker(nodeIdToUnregister).all())
-                .recover(t -> {
-                    if (t instanceof BrokerIdNotRegisteredException)    {
-                        // The broker is not registered anymore, so it does not need to be unregistered anymore and we
-                        // report success. Situation like this might happen when the operator fails before updating the
-                        // status, when the Kafka API call fails (e.g. due to network connection) but the unregistration
-                        // was done on the Kafka cluster and similar.
-                        LOGGER.warnCr(reconciliation, "Node {} is not registered and cannot be unregistered from the Kafka cluster", nodeIdToUnregister, t);
-                        return Future.succeededFuture();
-                    } else {
-                        LOGGER.warnCr(reconciliation, "Failed to unregister node {} from the Kafka cluster", nodeIdToUnregister, t);
-                        return Future.failedFuture(t);
-                    }
+                .onFailure(t -> {
+                    LOGGER.warnCr(reconciliation, "Failed to unregister node {} from the Kafka cluster", nodeIdToUnregister, t);
                 });
     }
 }

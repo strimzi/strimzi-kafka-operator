@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.kafka;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
@@ -58,6 +59,8 @@ public class KafkaStatus extends Status {
         this.kafkaNodePools = kafkaNodePools;
     }
 
+    @Deprecated
+    @DeprecatedProperty(description = "The `registeredNodeIds` property is deprecated and it is not used anymore. It will be removed in the future.")
     @Description("Registered node IDs used by this Kafka cluster. " +
             "This field is used for internal purposes only and will be removed in the future.")
     public List<Integer> getRegisteredNodeIds() {
