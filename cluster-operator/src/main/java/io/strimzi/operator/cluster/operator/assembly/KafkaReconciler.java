@@ -999,59 +999,40 @@ public class KafkaReconciler {
      * @return  Future which completes when the nodes removed from the Kafka cluster are unregistered
      */
     protected Future<Void> nodeUnregistration() {
-        List<Integer> currentNodeIds = kafka.nodes().stream().map(NodeRef::nodeId).sorted().toList();
-        List<Integer> controllerOnlyIds = kafka.nodes().stream()
-                .filter(nodeRef -> nodeRef.controller() && !nodeRef.broker())
-                .map(NodeRef::nodeId).sorted().toList();
+        List<Integer> currentBrokerIds = kafka.brokerNodes().stream().map(NodeRef::nodeId).sorted().toList();
         Promise<Void> unregistrationPromise = Promise.promise();
 
         KafkaNodeUnregistration.listRegisteredBrokerNodes(reconciliation, vertx, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), true)
                 .onSuccess(registeredBrokerNodes -> {
 
-                    if (registeredBrokerNodes != null && !registeredBrokerNodes.isEmpty()) {
-                        // all current registered broker nodes (fenced or not)
-                        List<Integer> previousBrokersIds = registeredBrokerNodes.stream()
-                                .map(org.apache.kafka.common.Node::id)
-                                .toList();
-                        // only fenced broker nodes
-                        List<Integer> fencedBrokerNodeIds = registeredBrokerNodes.stream()
-                                .filter(org.apache.kafka.common.Node::isFenced)
-                                .map(org.apache.kafka.common.Node::id)
-                                .toList();
-                        // if there are listed fenced broker nodes, now controller only -> they were mixed node with broker role removed, so fenced now
-                        List<Integer> fencedControllerOnlyNodeIds = fencedBrokerNodeIds.stream()
-                                .filter(controllerOnlyIds::contains)
-                                .toList();
+                    // all current registered broker nodes (fenced or not)
+                    List<Integer> registeredBrokersIds = registeredBrokerNodes.stream()
+                            .map(org.apache.kafka.common.Node::id)
+                            .toList();
 
-                        LOGGER.infoCr(reconciliation, "Nodes unregistration: previousBrokersIds = {}, fencedBrokerNodeIds = {}, fencedControllerOnlyNodeIds = {}",
-                                previousBrokersIds, fencedBrokerNodeIds, fencedControllerOnlyNodeIds);
+                    LOGGER.infoCr(reconciliation, "Nodes unregistration: currentBrokerIds = {}, registeredBrokersIds = {}",
+                            currentBrokerIds, registeredBrokersIds);
 
-                        Set<Integer> brokersIdsToUnregister = new HashSet<>(previousBrokersIds);
-                        brokersIdsToUnregister.removeAll(currentNodeIds);
-                        brokersIdsToUnregister.addAll(fencedControllerOnlyNodeIds);
+                    Set<Integer> brokersIdsToUnregister = new HashSet<>(registeredBrokersIds);
+                    brokersIdsToUnregister.removeAll(currentBrokerIds);
 
-                        if (!brokersIdsToUnregister.isEmpty()) {
-                            LOGGER.infoCr(reconciliation, "Kafka nodes {} were removed from the Kafka cluster and will be unregistered", brokersIdsToUnregister);
+                    if (!brokersIdsToUnregister.isEmpty()) {
+                        LOGGER.infoCr(reconciliation, "Kafka nodes {} were removed from the Kafka cluster and will be unregistered", brokersIdsToUnregister);
 
-                            KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, vertx, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), brokersIdsToUnregister)
-                                    .onComplete(res -> {
-                                        if (res.succeeded()) {
-                                            LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", brokersIdsToUnregister);
-                                        } else {
-                                            // unregistration failed, we will retry on next reconciliation
-                                            LOGGER.warnCr(reconciliation, "Failed to unregister Kafka nodes {} from the Kafka cluster", brokersIdsToUnregister);
-                                        }
+                        KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, vertx, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), brokersIdsToUnregister)
+                                .onComplete(res -> {
+                                    if (res.succeeded()) {
+                                        LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", brokersIdsToUnregister);
+                                    } else {
+                                        // unregistration failed, we will retry on next reconciliation
+                                        LOGGER.warnCr(reconciliation, "Failed to unregister Kafka nodes {} from the Kafka cluster", brokersIdsToUnregister);
+                                    }
 
-                                        // We complete the promise with success even if the unregistration failed as we do not want to
-                                        // fail the reconciliation.
-                                        unregistrationPromise.complete();
-                                    });
-                        } else {
-                            unregistrationPromise.complete();
-                        }
+                                    // We complete the promise with success even if the unregistration failed as we do not want to
+                                    // fail the reconciliation.
+                                    unregistrationPromise.complete();
+                                });
                     } else {
-                        // listing broker nodes returned an empty list, we will retry on next reconciliation
-                        LOGGER.warnCr(reconciliation, "Empty Kafka nodes list from the Kafka cluster");
                         unregistrationPromise.complete();
                     }
                 })
