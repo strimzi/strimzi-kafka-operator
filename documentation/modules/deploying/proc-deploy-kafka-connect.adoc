@@ -17,6 +17,9 @@ In this procedure, we use the following example file:
 
 * `examples/connect/kafka-connect.yaml`
 
+WARNING: When deploying multiple Kafka Connect clusters managed by the Cluster Operator, deploy each cluster into a separate namespace.
+Deploying multiple clusters in the same namespace can lead to naming conflicts and resource collisions.
+
 .Prerequisites
 
 * Cluster Operator is deployed.

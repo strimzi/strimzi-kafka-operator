@@ -14,6 +14,9 @@ You can also specify a namespace using `watchedNamespace` in the User Operator `
 A single User Operator can watch a single namespace. 
 One namespace should be watched by only one User Operator.
 
+WARNING: Do not deploy more than one Kafka cluster into the same namespace. 
+This can cause the User Operator deployed with each cluster to compete for the same `KafkaUser` resources, leading to name collisions and unpredictable behavior.
+
 If you want to use the User Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-user-operator-standalone-{context}[deploy the User Operator as a standalone component].
 

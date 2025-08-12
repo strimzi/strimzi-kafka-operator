@@ -4,33 +4,46 @@
 
 [id='con-operators-namespaces-{context}']
 
-= Watching Strimzi resources in Kubernetes namespaces
+= Operator-watched Kafka resources
 
 [role="_abstract"]
-Operators watch and manage Strimzi resources in Kubernetes namespaces.
-The Cluster Operator can watch a single namespace, multiple namespaces, or all namespaces in a Kubernetes cluster.
-The Topic Operator and User Operator can watch a single namespace.
+Operators watch and manage Kafka resources within defined Kubernetes namespaces.
+The namespace scope of where each operator can watch these resources differs.
+
+You can choose the namespace scope for the Cluster Operator.
+The Topic Operator and the User Operator can only watch a single Kafka cluster in a namespace. 
+And they can only be connected to a single Kafka cluster.
+
+WARNING:  While the operator can be configured to watch multiple namespaces, each watched namespace should contain only one instance of a specific component type, such as one Kafka cluster, to avoid conflicts.
+
+.Operator resource and scope
+[cols="3,4m,3",options="header"]
+|===
+| Operator | Watched resources | Namespace scope
+
+| **Cluster Operator**
+|
+Kafka +
+KafkaNodePool +
+KafkaConnect +
+KafkaConnector +
+KafkaMirrorMaker2 +
+KafkaBridge +
+KafkaRebalance +
+| Single, multiple, or all
+
+| **Topic Operator**
+| KafkaTopic
+| Single namespace (one Kafka cluster only)
+
+| **User Operator**
+| KafkaUser
+| Single namespace (one Kafka cluster only)
 ifdef::Section[]
-The Access Operator can watch a single namespace or all namespaces in a Kubernetes cluster.
+| **Access Operator**
+| KafkaAccess
+| Single or all
 endif::Section[]
+|===
 
-* The Cluster Operator watches for `Kafka` resources
-* The Topic Operator watches for `KafkaTopic` resources
-* The User Operator watches for `KafkaUser` resources 
-ifdef::Section[]
-* The Access Operator watches for `KafkaAccess` resources.
-endif::Section[]
-
-The Topic Operator and the User Operator can only watch a single Kafka cluster in a namespace.
-And they can only be connected to a single Kafka cluster.  
-
-If multiple Topic Operators watch the same namespace, name collisions and topic deletion can occur. 
-This is because each Kafka cluster uses Kafka topics that have the same name (such as `__consumer_offsets`). 
-Make sure that only one Topic Operator watches a given namespace.
-
-When using multiple User Operators with a single namespace, a user with a given username can exist in more than one Kafka cluster.    
-
-If you deploy the Topic Operator and User Operator using the Cluster Operator, they watch the Kafka cluster deployed by the Cluster Operator by default.
-You can also specify a namespace using `watchedNamespace` in the operator configuration.
-
-For a standalone deployment of each operator, you specify a namespace and connection to the Kafka cluster to watch in the configuration.
+NOTE: For a standalone deployment of the Topic Operator or User Operator, you specify a namespace and connection to the Kafka cluster to watch in the configuration.

@@ -20,6 +20,9 @@ One namespace should be watched by only one Topic Operator.
 If you want to use more than one Topic Operator, configure each of them to watch different namespaces.
 In this way, you can use Topic Operators with multiple Kafka clusters.  
 
+WARNING: Do not deploy more than one Kafka cluster into the same namespace. 
+This causes the Topic Operator connected to each cluster to compete for the same internal topics, such as `__consumer_offsets`, leading to name collisions and unpredictable behavior.
+
 .Prerequisites
 
 * The standalone Topic Operator deployment files, which are included in the Strimzi xref:downloads-{context}[deployment files].

@@ -16,6 +16,8 @@ To install Strimzi, locate _Strimzi_ from {OperatorHub}, and follow the instruct
 After you have deployed the Cluster Operator, you can deploy Strimzi components using custom resources.
 For example, you can deploy the `Kafka` custom resource, and the installed Cluster Operator will create a Kafka cluster.
 
+WARNING:  While the Cluster Operator can be configured to watch multiple namespaces, each watched namespace should contain only one instance of a specific component type, such as one Kafka cluster, to avoid conflicts.
+
 Upgrades between versions might include manual steps.
 Always read the release notes before upgrading.
 
