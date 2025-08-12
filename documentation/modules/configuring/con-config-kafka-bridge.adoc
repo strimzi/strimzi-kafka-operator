@@ -111,8 +111,11 @@ spec:
     type: opentelemetry # <16>
   # Metrics configuration (optional)
   metricsConfig:
-    type: strimziMetricsReporter # <17>
-
+    type: jmxPrometheusExporter # <17>
+    valueFrom:
+      configMapKeyRef:
+        name: kafka-metrics
+        key: kafka-metrics-config.yml
 ----
 <1> The number of replica nodes.
 <2> Bootstrap address for connection to the target Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
@@ -132,4 +135,4 @@ For details on configuring authentication, see the link:{BookURLConfiguring}#typ
 <14> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <15> Environment variables are set for distributed tracing.
 <16> Distributed tracing is enabled by using OpenTelemetry.
-<17> Metrics Configuration type.
+<17> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
