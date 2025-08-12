@@ -2,7 +2,7 @@
 = Enabling OAuth 2.0 token-based access
 
 [role="_abstract"]
-Strimzi supports OAuth 2.0 for securing Kafka clusters by integrating with an OAUth 2.0 authorization server. 
+Strimzi supports OAuth 2.0 for securing Kafka clusters by integrating with an OAuth 2.0 authorization server.
 Kafka brokers and clients both need to be configured to use OAuth 2.0.
 
 OAuth 2.0 enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
@@ -12,7 +12,7 @@ Scopes correspond to different levels of access to Kafka topics or operations wi
 OAuth 2.0 also supports single sign-on and integration with identity providers. 
 
 ifdef::Section[]
-For more information on using OAUth 2.0, see the link:https://github.com/strimzi/strimzi-kafka-oauth[Strimzi OAuth 2.0 for Apache Kafka project^].
+For more information on using OAuth 2.0, see the link:https://github.com/strimzi/strimzi-kafka-oauth[Strimzi OAuth 2.0 for Apache Kafka project^].
 endif::Section[]
 
 //setting up oauth server

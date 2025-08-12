@@ -6,7 +6,7 @@
 = Configuring OAuth 2.0 authentication on listeners
 
 [role="_abstract"]
-To secure Kafka brokers with OAuth 2.0 authentication, configure a listener in the `Kafka` resource to use OAUth 2.0 authentication and a client authentication mechanism, and add further configuration depending on the authentication mechanism and type of token validation used in the authentication.
+To secure Kafka brokers with OAuth 2.0 authentication, configure a listener in the `Kafka` resource to use OAuth 2.0 authentication and a client authentication mechanism, and add further configuration depending on the authentication mechanism and type of token validation used in the authentication.
 
 .Configuring listeners to use `oauth` authentication
 
@@ -264,7 +264,7 @@ For HTTP Bearer authentication, set the following property:
 Specify additional settings depending on the authentication requirements and the authorization server you are using.
 Some of these properties apply only to certain authentication mechanisms or when used in combination with other properties.
 
-For example, when using OAUth over `PLAIN`, access tokens are passed as `password` property values with or without an `$accessToken:` prefix.
+For example, when using OAuth over `PLAIN`, access tokens are passed as `password` property values with or without an `$accessToken:` prefix.
 
 * If you configure a token endpoint (`tokenEndpointUri`) in the listener configuration, you need the prefix.
 * If you don't configure a token endpoint in the listener configuration, you don't need the prefix.

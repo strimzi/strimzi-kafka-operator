@@ -6,7 +6,7 @@
 = Example: Enabling OAuth 2.0 authentication
 
 [role="_abstract"]
-This example shows how to configure client access to a Kafka cluster using OAUth 2.0 authentication.
+This example shows how to configure client access to a Kafka cluster using OAuth 2.0 authentication.
 The procedures describe the configuration required to set up OAuth 2.0 authentication on Kafka listeners, Kafka Java clients, and Kafka components.
 
 include::../../modules/oauth/proc-oauth-authentication-broker-config.adoc[leveloffset=+1]
