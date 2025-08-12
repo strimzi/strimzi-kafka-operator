@@ -239,4 +239,28 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     public boolean isEmpty() {
         return brokerConfigDiff.isEmpty();
     }
+
+    /**
+     * @param entry tested ConfigEntry
+     * @param scope scope to test
+     * @return true if the entry matches the scope
+     */
+    private boolean isScope(ConfigEntry entry, Scope scope) {
+        return configModel.get(entry.name()).getScope().equals(scope);
+    }
+
+    /**
+     * Returns configuration difference only for parameters in the specified scope
+     * @return Collection of AlterConfigOp containing difference between current and desired configuration for the specified scope
+     */
+    protected Collection<AlterConfigOp> getConfigDiff(Scope scope) {
+        Collection<AlterConfigOp> clusterWideConfigDiff = new ArrayList<>();
+        for (AlterConfigOp entry : brokerConfigDiff) {
+            if (isScope(entry.configEntry(), scope)) {
+                LOGGER.debugCr(reconciliation, "Configuration parameter {} is {}", entry, scope);
+                clusterWideConfigDiff.add(entry);
+            }
+        }
+        return clusterWideConfigDiff;
+    }
 }

@@ -270,6 +270,15 @@ public class Util {
     }
 
     /**
+     * Created config resource instance for cluster-wide dynamic changes
+     *
+     * @return  Config resource
+     */
+    public static ConfigResource getClusterWideConfig() {
+        return Util.getBrokersConfig("");
+    }
+
+    /**
      * Created config resource instance
      *
      * @param podId Pod ID
