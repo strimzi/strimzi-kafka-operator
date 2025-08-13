@@ -68,7 +68,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @param vertx                 The vertx instance.
      * @param client                The kubernetes client.
      * @param resourceKind          The kind of Kubernetes resource (used for logging).
-     * @param useServerSideApply    Determines if Server Side Apply should be used
+     * @param useServerSideApply    Determines if Server Side Apply should be used.
      */
     public AbstractNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, boolean useServerSideApply) {
         super(vertx, client, resourceKind);

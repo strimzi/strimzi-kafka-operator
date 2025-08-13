@@ -27,10 +27,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
- * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
- * Real Kubernetes cluster has often some quirks such as some fields being immutable, some fields in the spec section
- * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
- * test them against real clusters.
+ * The primary purpose of the integration tests for the operators is to validate their behavior on a live Kubernetes cluster.
+ * Live clusters often exhibit specific behaviors, such as immutable fields or API-generated spec fields, that are difficult to simulate with mocks.
+ * These integration tests enable reliable validation of operator functionality in a production-like environment.
  */
 @ExtendWith(VertxExtension.class)
 public abstract class AbstractNamespacedResourceOperatorServerSideApplyIT<C extends KubernetesClient,
