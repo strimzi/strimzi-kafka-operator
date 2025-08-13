@@ -257,7 +257,6 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         Collection<AlterConfigOp> clusterWideConfigDiff = new ArrayList<>();
         for (AlterConfigOp entry : brokerConfigDiff) {
             if (isScope(entry.configEntry(), scope)) {
-                LOGGER.debugCr(reconciliation, "Configuration parameter {} is {}", entry, scope);
                 clusterWideConfigDiff.add(entry);
             }
         }

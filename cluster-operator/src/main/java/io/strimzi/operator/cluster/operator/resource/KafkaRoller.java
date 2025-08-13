@@ -702,24 +702,24 @@ public class KafkaRoller {
     /* test */ void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
             throws ForceableProblem, InterruptedException {
         boolean isLog4j2 = KafkaVersion.compareDottedVersions(kafkaVersion.version(), "4.0.0") >= 0;
-        Map<ConfigResource, Collection<AlterConfigOp>> brokerUpdatedConfig = new HashMap<>(2);
-        Map<ConfigResource, Collection<AlterConfigOp>> clusterWideUpdatedConfig = new HashMap<>(2);
+        Map<ConfigResource, Collection<AlterConfigOp>> updatedPerBrokerConfig = new HashMap<>(2);
+        Map<ConfigResource, Collection<AlterConfigOp>> updatedClusterWideConfig = new HashMap<>(2);
         var podId = nodeRef.nodeId();
-        brokerUpdatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff(Scope.PER_BROKER));
-        clusterWideUpdatedConfig.put(Util.getClusterWideConfig(), configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE));
+        updatedPerBrokerConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff(Scope.PER_BROKER));
+        updatedClusterWideConfig.put(Util.getClusterWideConfig(), configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE));
 
         if (!isLog4j2) {
-            brokerUpdatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
+            updatedPerBrokerConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
         }
 
-        LOGGER.debugCr(reconciliation, "Updating cluster wide configuration with {}", clusterWideUpdatedConfig);
+        LOGGER.traceCr(reconciliation, "Updating cluster wide configuration with {}", updatedClusterWideConfig);
         LOGGER.debugCr(reconciliation, "Updating broker configuration {}", nodeRef);
-        LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", nodeRef, brokerUpdatedConfig);
+        LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", nodeRef, updatedPerBrokerConfig);
 
-        AlterConfigsResult alterClusterConfigResult = ac.incrementalAlterConfigs(clusterWideUpdatedConfig);
+        AlterConfigsResult alterClusterConfigResult = ac.incrementalAlterConfigs(updatedClusterWideConfig);
         KafkaFuture<Void> clusterConfigFuture = alterClusterConfigResult.values().get(Util.getClusterWideConfig());
 
-        AlterConfigsResult alterBrokerConfigResult = ac.incrementalAlterConfigs(brokerUpdatedConfig);
+        AlterConfigsResult alterBrokerConfigResult = ac.incrementalAlterConfigs(updatedPerBrokerConfig);
         KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(Util.getBrokersConfig(podId));
 
         KafkaFuture<Void> brokerLoggingConfigFuture;
