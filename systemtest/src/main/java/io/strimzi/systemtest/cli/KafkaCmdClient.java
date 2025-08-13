@@ -42,4 +42,18 @@ public class KafkaCmdClient {
         return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server "
                     + bootstrapServer + " --entity-type " + entityType + " --entity-name " + entityName + " --describe").out();
     }
+
+    public static String describeKafkaBrokerDefaultsUsingPodCli(String namespaceName, String podName, String bootstrapServer) {
+        return describeKafkaEntityDefaultsUsingPodCli(namespaceName, podName, bootstrapServer, "brokers");
+    }
+
+    public static String describeKafkaEntityDefaultsUsingPodCli(String namespaceName, String podName, String bootstrapServer, String entityType) {
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server "
+                + bootstrapServer + " --entity-type " + entityType + " --entity-default --describe").out();
+    }
+
+    public static String updateFeatureUsingPodCli(String namespaceName, String podName, String bootstrapServer, String featureName, String featureValue) {
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c", "bin/kafka-features.sh --bootstrap-server "
+                + bootstrapServer + " upgrade --feature " + featureName + "=" + featureValue).out();
+    }
 }
