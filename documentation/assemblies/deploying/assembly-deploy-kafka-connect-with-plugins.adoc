@@ -22,6 +22,7 @@ Add connector plugins to Kafka Connect in one of the following ways:
 After plugins have been added to the container image, you can start, stop, and manage connector instances in the following ways:
 
 * xref:proc-deploying-kafkaconnector-{context}[Using Strimzi’s `KafkaConnector` custom resource]
+* xref:using-image-volumes-to-add-connector-plugins-{context}[Mount connector plugins as Kubernetes Image volumes]
 * xref:con-exposing-kafka-connect-api-{context}[Using the Kafka Connect API] 
 
 You can also create new connector instances using these options.
