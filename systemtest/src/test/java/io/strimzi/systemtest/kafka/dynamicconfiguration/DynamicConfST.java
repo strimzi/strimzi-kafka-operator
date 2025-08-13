@@ -446,18 +446,18 @@ public class DynamicConfST extends AbstractST {
     @TestDoc(
             description = @Desc("Test for verifying dynamic configuration changes in a Kafka cluster with multiple clusters in one namespace."),
             steps = {
-                    @Step(value = "Deep copy shared Kafka configuration.", expected = "Configuration map is duplicated with deep copy."),
-                    @Step(value = "Create resources with wait.", expected = "Resources are created and ready."),
-                    @Step(value = "Create scraper pod.", expected = "Scraper pod is created."),
-                    @Step(value = "Retrieve and verify Kafka configurations from ConfigMaps.", expected = "Configurations meet expected values."),
-                    @Step(value = "Retrieve Kafka broker configuration via CLI.", expected = "Dynamic configurations are retrieved."),
-                    @Step(value = "Upgrade eligible.leader.replicas.version feature to 1.", expected = "Feature is upgraded."),
-                    @Step(value = "Update Kafka configuration for min.insync.replicas.", expected = "Configuration is updated and verified for dynamic property."),
-                    @Step(value = "Verify updated Kafka configurations.", expected = "Updated configurations are persistent and correct.")
+                @Step(value = "Deep copy shared Kafka configuration.", expected = "Configuration map is duplicated with deep copy."),
+                @Step(value = "Create resources with wait.", expected = "Resources are created and ready."),
+                @Step(value = "Create scraper pod.", expected = "Scraper pod is created."),
+                @Step(value = "Retrieve and verify Kafka configurations from ConfigMaps.", expected = "Configurations meet expected values."),
+                @Step(value = "Retrieve Kafka broker configuration via CLI.", expected = "Dynamic configurations are retrieved."),
+                @Step(value = "Upgrade eligible.leader.replicas.version feature to 1.", expected = "Feature is upgraded."),
+                @Step(value = "Update Kafka configuration for min.insync.replicas.", expected = "Configuration is updated and verified for dynamic property."),
+                @Step(value = "Verify updated Kafka configurations.", expected = "Updated configurations are persistent and correct.")
             },
             labels = {
-                    @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION),
-                    @Label(value = TestDocsLabels.KAFKA)
+                @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION),
+                @Label(value = TestDocsLabels.KAFKA)
             }
     )
     void testClusterWideDynamicConfiguration() {
