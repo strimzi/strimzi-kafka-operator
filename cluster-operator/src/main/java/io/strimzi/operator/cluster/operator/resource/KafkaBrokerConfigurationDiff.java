@@ -86,21 +86,13 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     protected boolean canBeUpdatedDynamically() {
         boolean result = true;
         for (AlterConfigOp entry : brokerConfigDiff) {
-            if (isEntryReadOnly(entry.configEntry())) {
+            if (isScope(entry.configEntry(), Scope.READ_ONLY)) {
                 result = false;
                 LOGGER.infoCr(reconciliation, "Configuration can't be updated dynamically due to: {}", entry);
                 break;
             }
         }
         return result;
-    }
-
-    /**
-     * @param entry tested ConfigEntry
-     * @return true if the entry is READ_ONLY
-     */
-    private boolean isEntryReadOnly(ConfigEntry entry) {
-        return configModel.get(entry.name()).getScope().equals(Scope.READ_ONLY);
     }
 
     /**
@@ -254,12 +246,12 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
      * @return Collection of AlterConfigOp containing difference between current and desired configuration for the specified scope
      */
     protected Collection<AlterConfigOp> getConfigDiff(Scope scope) {
-        Collection<AlterConfigOp> clusterWideConfigDiff = new ArrayList<>();
+        Collection<AlterConfigOp> configDiff = new ArrayList<>();
         for (AlterConfigOp entry : brokerConfigDiff) {
             if (isScope(entry.configEntry(), scope)) {
-                clusterWideConfigDiff.add(entry);
+                configDiff.add(entry);
             }
         }
-        return clusterWideConfigDiff;
+        return configDiff;
     }
 }
