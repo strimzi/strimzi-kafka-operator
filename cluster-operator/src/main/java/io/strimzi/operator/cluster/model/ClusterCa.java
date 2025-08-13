@@ -22,20 +22,11 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertPath;
-import java.security.cert.CertPathValidator;
-import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -384,13 +375,18 @@ public class ClusterCa extends Ca {
 
     @Override
     public void updateCertAndGenerations(String caCert, X509Certificate endEntityCertificate) {
+        if (endEntityCertificate == null) {
+            // Cluster operator certificate is missing, so no cert path validation to perform
+            LOGGER.warnCr(reconciliation, "Strimzi CA cert Secret containing custom cert has been created, but operator Secret is missing");
+            return;
+        }
         X509Certificate x509CaCert;
         try {
             x509CaCert = x509Certificate(Util.decodeBytesFromBase64(caCert));
         } catch (CertificateException e) {
             throw new RuntimeException(e);
         }
-        if (certPathIsValid(endEntityCertificate, x509CaCert)) {
+        if (CertUtils.certIsTrusted(reconciliation, endEntityCertificate, x509CaCert)) {
             // No key replacement
             Map<String, String> newCaCertData = new HashMap<>();
             newCaCertData.put(CA_CRT, caCert);
@@ -399,7 +395,6 @@ public class ClusterCa extends Ca {
             this.caCertGeneration++;
         } else {
             // key replacement
-            //TODO handle cert chain with intermediate certs
             X509Certificate currentCert = currentCaCertX509();
             String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
             Map<String, String> newCaCertData = new HashMap<>();
@@ -409,32 +404,6 @@ public class ClusterCa extends Ca {
             renewalType = RenewalType.REPLACE_KEY;
             this.caCertGeneration++;
             this.caKeyGeneration++;
-        }
-    }
-
-    private boolean certPathIsValid(X509Certificate certToValidate, X509Certificate caCert) {
-        CertPathValidator certPathValidator;
-        CertPath eeCertPath;
-        PKIXParameters pkixParams;
-        try {
-            certPathValidator = CertPathValidator.getInstance("PKIX");
-            CertificateFactory factory = CertificateFactory.getInstance("X.509");
-            TrustAnchor trustAnchor = new TrustAnchor(caCert, null);
-            pkixParams = new PKIXParameters(Collections.singleton(trustAnchor));
-            pkixParams.setRevocationEnabled(false);
-            eeCertPath = factory.generateCertPath(List.of(certToValidate));
-        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            certPathValidator.validate(eeCertPath, pkixParams);
-            System.out.println("Certificate valid");
-            return true;
-        } catch (CertPathValidatorException e) {
-            System.out.println("Validation failed: " + e);
-            return false;
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
         }
     }
 }

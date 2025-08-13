@@ -707,9 +707,6 @@ public abstract class Ca {
             caCertData.put(CA_CRT, newCaCertData);
             this.caCertData = caCertData;
             renewalType = RenewalType.CREATE;
-        } else if (endEntityCertificate == null) {
-            // Cluster operator certificate is missing, so no cert path validation to perform
-            LOGGER.warnCr(reconciliation, "Strimzi CA cert Secret containing custom cert has been created, but operator Secret is missing");
         } else {
             String newCaCertHash;
             try {
@@ -731,6 +728,13 @@ public abstract class Ca {
      * @param endEntityCertificate  End entity certificate to use for cert path validation.
      */
     public abstract void updateCertAndGenerations(String newCaCertData, X509Certificate endEntityCertificate);
+
+    /**
+     * @return the CertificateManagerType of this Ca.
+     */
+    public CertificateManagerType getType() {
+        return certificateManagerType;
+    }
 
     /**
      * Gets the CA certificate data, which contains both the current CA cert and also previous, still valid certs.

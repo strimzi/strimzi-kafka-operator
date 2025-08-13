@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBuilder;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
@@ -52,8 +53,10 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.Ca;
@@ -87,6 +90,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -135,6 +140,33 @@ public class ResourceUtils {
                 .addToData("ca.crt", caCert)
                 .addToData("ca.p12", caStore)
                 .addToData("ca.password", caStorePassword)
+                .build();
+    }
+
+    public static Secret createInitialCertManagerCaCertSecret(String clusterNamespace, String clusterName, String secretName, String caCert, boolean addKeyGeneration) {
+        X509Certificate x509Certificate;
+        String certificateHash;
+        try {
+            x509Certificate = Ca.x509Certificate(Util.decodeBytesFromBase64(caCert));
+            certificateHash = CertUtils.getCertificateThumbprint(x509Certificate);
+        } catch (CertificateException e) {
+            throw new RuntimeException("Failed to compute hash of certificate in Secret "  + secretName, e);
+        }
+        Map<String, String> annotations = new HashMap<>();
+        annotations.put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0");
+        annotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, certificateHash);
+        if (addKeyGeneration) {
+            annotations.put(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0");
+        }
+
+        return new SecretBuilder()
+                .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(clusterNamespace)
+                    .withAnnotations(annotations)
+                    .withLabels(Labels.forStrimziCluster(clusterName).withStrimziKind(Kafka.RESOURCE_KIND).toMap())
+                .endMetadata()
+                .addToData("ca.crt", caCert)
                 .build();
     }
 
