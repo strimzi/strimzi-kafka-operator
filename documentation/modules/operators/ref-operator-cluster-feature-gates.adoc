@@ -133,6 +133,7 @@ env:
 The `ServerSideApplyPhase1` feature gate has a default state of _disabled_.
 
 When enabled, the Cluster Operator uses Server-Side Apply (SSA) for creating and updating certain resources.
+SSA is a Kubernetes feature that provides better tracking of field ownership and more controlled resource updates.
 In Phase 1, Server-Side Apply is used for the following resources:
 
 - `PersistentVolumeClaim`
@@ -143,10 +144,12 @@ In Phase 1, Server-Side Apply is used for the following resources:
 
 All other resources continue to be reconciled using the existing mechanism.
 
-With Server-Side Apply, the Cluster Operator modifies only the fields it manages, keeping the user changes to the other fields - in case that they do not conflict with the fields managed by Cluster Operator.
-On the first patch attempt, the operator sets `force = false`.
-If a conflict occurs in a managed field, the patch is retried with `force = true`.
+With SSA, the Cluster Operator modifies only the fields it manages.
+User changes to the other fields are preserved as long as they don't conflict.
+On the first update attempt, the Cluster Operator sets `force = false` when applying changes, respecting user changes.
+If a conflict occurs in a managed field, the update is retried with `force = true`.
 The conflict and the switch to forced apply are logged by the Cluster Operator.
 
+Ownership of individual fields is tracked through the `.metadata.managedFields` property of the resource being updated.
 .Enabling the `ServerSideApplyPhase1` feature gate
 To enable the `ServerSideApplyPhase1` feature gate, specify `+ServerSideApplyPhase1` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
