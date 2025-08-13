@@ -19,8 +19,9 @@ Use `metricsConfig` to expose metrics for these components:
 This enables the {JMXExporter}, which exposes metrics on port 9404 through an HTTP endpoint. 
 Prometheus scrapes this endpoint to collect Kafka metrics.
 
-Set `enableMetrics` to `true` to expose metrics for the following: 
+Set `enableMetrics` to `true` to expose metrics for the following:
 
+* Kafka Bridge
 * OAuth 2.0
 ** Configure in the `Kafka` resource for `oauth` or `keycloak` cluster authorization, or `oauth` listener authentication.
 ** Configure in the `KafkaBridge`, `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
