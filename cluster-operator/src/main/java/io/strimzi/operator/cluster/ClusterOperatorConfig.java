@@ -104,6 +104,11 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE = "STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE";
 
     /**
+     * Configures the Buildah container image
+     */
+    public static final String STRIMZI_DEFAULT_BUILDAH_IMAGE = "STRIMZI_DEFAULT_BUILDAH_IMAGE";
+
+    /**
      * Configures the Maven container image
      */
     public static final String STRIMZI_DEFAULT_MAVEN_BUILDER = "STRIMZI_DEFAULT_MAVEN_BUILDER";

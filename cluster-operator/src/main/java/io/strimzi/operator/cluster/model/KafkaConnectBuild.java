@@ -52,6 +52,7 @@ public class KafkaConnectBuild extends AbstractModel {
     protected static final String COMPONENT_TYPE = "kafka-connect-build";
 
     private static final String DEFAULT_KANIKO_EXECUTOR_IMAGE = "gcr.io/kaniko-project/executor:latest";
+    private static final String DEFAULT_BUILDAH_IMAGE = "quay.io/containers/buildah:v1.40.1";
 
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_BUILD_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_BUILD_LABELS";
 
@@ -61,6 +62,9 @@ public class KafkaConnectBuild extends AbstractModel {
     private PodTemplate templatePod;
     /*test*/ String baseImage;
     private List<String> additionalKanikoOptions;
+    private List<String> additionalBuildahBuildOptions;
+    private List<String> additionalBuildahPushOptions;
+
     private String pullSecret;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
@@ -78,10 +82,14 @@ public class KafkaConnectBuild extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      * @param sharedEnvironmentProvider sharedEnvironmentProvider provider
      */
-    protected KafkaConnectBuild(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+    protected KafkaConnectBuild(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider, boolean useConnectBuildWithBuildah) {
         super(reconciliation, resource, KafkaConnectResources.buildPodName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
-        this.image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE, DEFAULT_KANIKO_EXECUTOR_IMAGE);
+        if (useConnectBuildWithBuildah) {
+            this.image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_BUILDAH_IMAGE, DEFAULT_BUILDAH_IMAGE);
+        } else {
+            this.image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE, DEFAULT_KANIKO_EXECUTOR_IMAGE);
+        }
     }
 
     /**
@@ -98,7 +106,32 @@ public class KafkaConnectBuild extends AbstractModel {
                                             KafkaConnect kafkaConnect,
                                             KafkaVersion.Lookup versions,
                                             SharedEnvironmentProvider sharedEnvironmentProvider) {
-        KafkaConnectBuild result = new KafkaConnectBuild(reconciliation, kafkaConnect, sharedEnvironmentProvider);
+        return fromCrd(
+            reconciliation,
+            kafkaConnect,
+            versions,
+            sharedEnvironmentProvider,
+            false
+        );
+    }
+
+    /**
+     * Creates the KafkaConnectBuild instance from the Kafka Connect Custom Resource.
+     *
+     * @param reconciliation                The reconciliation
+     * @param kafkaConnect                  Kafka Connect CR with the build configuration
+     * @param versions                      Kafka versions configuration
+     * @param sharedEnvironmentProvider     Shared environment provider
+     * @param useConnectBuildWithBuildah    determines if Buildah should be used for the Connect Build
+     * @return              Instance of KafkaConnectBuild class
+     */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
+    public static KafkaConnectBuild fromCrd(Reconciliation reconciliation,
+                                            KafkaConnect kafkaConnect,
+                                            KafkaVersion.Lookup versions,
+                                            SharedEnvironmentProvider sharedEnvironmentProvider,
+                                            boolean useConnectBuildWithBuildah) {
+        KafkaConnectBuild result = new KafkaConnectBuild(reconciliation, kafkaConnect, sharedEnvironmentProvider, useConnectBuildWithBuildah);
         KafkaConnectSpec spec = kafkaConnect.getSpec();
 
         if (spec == null) {
@@ -116,7 +149,18 @@ public class KafkaConnectBuild extends AbstractModel {
                 if (dockerOutput.getImage() != null && spec.getImage() != null && dockerOutput.getImage().equals(spec.getImage())) {
                     throw new InvalidResourceException("KafkaConnect .spec.image cannot be the same as .spec.build.output.image");
                 }
-                if (dockerOutput.getAdditionalKanikoOptions() != null
+                if (useConnectBuildWithBuildah) {
+                    if (dockerOutput.getAdditionalBuildahBuildOptions() != null
+                        && !dockerOutput.getAdditionalBuildahBuildOptions().isEmpty()) {
+                        validateAdditionalBuildahOptions(DockerOutput.ALLOWED_BUILDAH_BUILD_OPTIONS, dockerOutput.getAdditionalBuildahBuildOptions());
+                        result.additionalBuildahBuildOptions = dockerOutput.getAdditionalBuildahBuildOptions();
+                    }
+                    if (dockerOutput.getAdditionalBuildahPushOptions() != null
+                        && !dockerOutput.getAdditionalBuildahPushOptions().isEmpty()) {
+                        validateAdditionalBuildahOptions(DockerOutput.ALLOWED_BUILDAH_PUSH_OPTIONS, dockerOutput.getAdditionalBuildahPushOptions());
+                        result.additionalBuildahPushOptions = dockerOutput.getAdditionalBuildahPushOptions();
+                    }
+                } else if (dockerOutput.getAdditionalKanikoOptions() != null
                         && !dockerOutput.getAdditionalKanikoOptions().isEmpty()) {
                     validateAdditionalKanikoOptions(dockerOutput.getAdditionalKanikoOptions());
                     result.additionalKanikoOptions = dockerOutput.getAdditionalKanikoOptions();
@@ -197,6 +241,25 @@ public class KafkaConnectBuild extends AbstractModel {
     }
 
     /**
+     * Validates the additional Buildah options configured by the user against the list of allowed options.
+     * If there is a not allowed option found, it raises and InvalidResourceException exception.
+     *
+     * @param allowedBuildahOptions placeholder
+     * @param desiredOptions placeholder
+     */
+    private static void validateAdditionalBuildahOptions(String allowedBuildahOptions, List<String> desiredOptions)    {
+        List<String> allowedOptions = Arrays.asList(allowedBuildahOptions.split("\\s*,+\\s*"));
+        List<String> forbiddenOptions = desiredOptions.stream()
+            .map(option -> option.contains("=") ? option.substring(0, option.indexOf("=")) : option)
+            .filter(option -> allowedOptions.stream().noneMatch(option::equals))
+            .toList();
+
+        if (!forbiddenOptions.isEmpty())    {
+            throw new InvalidResourceException(".spec.build.additionalBuildahBuildOptions contains forbidden options: " + forbiddenOptions);
+        }
+    }
+
+    /**
      * Returns the build configuration of the KafkaConnect CR
      *
      * @return  Kafka Connect build configuration
@@ -232,7 +295,9 @@ public class KafkaConnectBuild extends AbstractModel {
     }
 
     /**
-     * Generates builder Pod for building a new KafkaConnect container image with additional connector plugins
+     * Generates builder Pod for building a new KafkaConnect container image with additional connector plugins.
+     * This method encapsulates the {@link #generateBuilderPod(boolean, boolean, ImagePullPolicy, List, String)},
+     * setting the `isBuildahBuild` to `false` by default.
      *
      * @param isOpenShift       Flag defining whether we are running on OpenShift
      * @param imagePullPolicy   Image pull policy
@@ -242,6 +307,21 @@ public class KafkaConnectBuild extends AbstractModel {
      * @return  Pod which will build the new container image
      */
     public Pod generateBuilderPod(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, String newBuildRevision) {
+        return generateBuilderPod(isOpenShift, false, imagePullPolicy, imagePullSecrets, newBuildRevision);
+    }
+
+    /**
+     * Generates builder Pod for building a new KafkaConnect container image with additional connector plugins
+     *
+     * @param isOpenShift       Flag defining whether we are running on OpenShift
+     * @param isBuildahBuild       Flag defining whether we are running on OpenShift
+     * @param imagePullPolicy   Image pull policy
+     * @param imagePullSecrets  Image pull secrets
+     * @param newBuildRevision  Revision of the build which will be build used for annotation
+     *
+     * @return  Pod which will build the new container image
+     */
+    public Pod generateBuilderPod(boolean isOpenShift, boolean isBuildahBuild, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, String newBuildRevision) {
         return WorkloadUtils.createPod(
                 componentName,
                 namespace,
@@ -252,7 +332,7 @@ public class KafkaConnectBuild extends AbstractModel {
                 Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, newBuildRevision),
                 templatePod != null ? templatePod.getAffinity() : null,
                 null,
-                List.of(createContainer(imagePullPolicy)),
+                List.of(isBuildahBuild ? createBuildahContainer(imagePullPolicy) : createContainer(imagePullPolicy)),
                 getVolumes(isOpenShift),
                 imagePullSecrets,
                 securityProvider.kafkaConnectBuildPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
@@ -352,6 +432,41 @@ public class KafkaConnectBuild extends AbstractModel {
                 null,
                 null,
                 imagePullPolicy
+        );
+    }
+
+    /**
+     * placeholder
+     * @param imagePullPolicy  placeholder
+     * @return placeholder
+     */
+    Container createBuildahContainer(ImagePullPolicy imagePullPolicy) {
+        List<String> args = new ArrayList<>(3);
+        args.add("/bin/bash");
+        args.add("-c");
+        // --storage-driver=vfs is needed for rootless build
+        args.add(
+            """
+            buildah build --file=/dockerfile/Dockerfile --tag=__IMAGE__ --storage-driver=vfs __ADDITIONAL_BUILD_OPTS__
+            buildah push --storage-driver=vfs --digestfile=/tmp/digest __ADDITIONAL_PUSH_OPTS__ __IMAGE__
+            buildah images --digests --filter=digest=sha256:$(cat /tmp/digest) --format='{{.Name}}@{{.Digest}}' > /dev/termination-log
+            """.replaceAll("__IMAGE__", build.getOutput().getImage())
+                .replace("__ADDITIONAL_BUILD_OPTS__", additionalBuildahBuildOptions != null ? String.join(" ", additionalBuildahBuildOptions) : "")
+                .replace("__ADDITIONAL_PUSH_OPTS__", additionalBuildahPushOptions != null ? String.join(" ", additionalBuildahPushOptions) : "")
+        );
+
+        return ContainerUtils.createContainer(
+            componentName,
+            image,
+            args,
+            securityProvider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
+            resources,
+            getBuildContainerEnvVars(),
+            null,
+            getVolumeMounts(),
+            null,
+            null,
+            imagePullPolicy
         );
     }
 

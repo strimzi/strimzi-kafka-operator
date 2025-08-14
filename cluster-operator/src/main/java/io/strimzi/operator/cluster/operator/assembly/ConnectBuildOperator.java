@@ -51,6 +51,7 @@ public class ConnectBuildOperator {
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
     private final long connectBuildTimeoutMs;
+    private final boolean useConnectBuildWithBuildah;
     private final PlatformFeaturesAvailability pfa;
 
     /**
@@ -71,6 +72,7 @@ public class ConnectBuildOperator {
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.connectBuildTimeoutMs = config.getConnectBuildTimeoutMs();
+        this.useConnectBuildWithBuildah = config.featureGates().useConnectBuildWithBuildahEnabled();
         this.pfa = pfa;
     }
 
@@ -96,7 +98,6 @@ public class ConnectBuildOperator {
         } else {
             // Build exists => let's build
             return build(reconciliation, namespace, connectBuild, controllerResource);
-
         }
     }
 
@@ -137,7 +138,7 @@ public class ConnectBuildOperator {
                     .compose(image -> Future.succeededFuture(new BuildInfo(image, newBuildRevision)));
         } else {
             // Revisions differ, and no S2I support => we are on Kubernetes and should do a build
-            return kubernetesBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerFileConfigMap, newBuildRevision)
+            return kubernetesOrBuildahBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerFileConfigMap, newBuildRevision)
                     .compose(image -> Future.succeededFuture(new BuildInfo(image, newBuildRevision)));
         }
     }
@@ -155,13 +156,13 @@ public class ConnectBuildOperator {
      *
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
-    private Future<String> kubernetesBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
+    private Future<String> kubernetesOrBuildahBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
         final AtomicReference<String> buildImage = new AtomicReference<>();
         String buildPodName = KafkaConnectResources.buildPodName(connectBuild.getCluster());
 
         return podOperator.getAsync(namespace, buildPodName)
                 .compose(pod -> {
-                    if (pod != null)    {
+                    if (pod != null) {
                         String existingBuildRevision = Annotations.stringAnnotation(pod, Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
                         if (newBuildRevision.equals(existingBuildRevision)
                                 && !KafkaConnectBuildUtils.buildPodFailed(pod, KafkaConnectBuildUtils.getBuildContainerName(connectBuild.getCluster(), pfa.isOpenshift()))
@@ -174,11 +175,11 @@ public class ConnectBuildOperator {
                             // Pod exists, but it either failed or is for different Dockerfile => start new build
                             LOGGER.infoCr(reconciliation, "Previous build exists, but uses different Dockerfile or failed. New build will be started.");
                             return podOperator.reconcile(reconciliation, namespace, buildPodName, null)
-                                    .compose(ignore -> kubernetesBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision));
+                                    .compose(ignore -> kubernetesOrBuildahBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision));
                         }
                     } else {
                         // Pod does not exist => Start new build
-                        return kubernetesBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision);
+                        return kubernetesOrBuildahBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision);
                     }
                 })
                 .compose(ignore -> kubernetesBuildWaitForFinish(reconciliation, namespace, connectBuild))
@@ -202,10 +203,10 @@ public class ConnectBuildOperator {
      *
      * @return                      Future which completes when the build is finished (or fails if it fails)
      */
-    private Future<Void> kubernetesBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
+    private Future<Void> kubernetesOrBuildahBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
         return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap)
                 .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), connectBuild.generateServiceAccount()))
-                .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, newBuildRevision)))
+                .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), useConnectBuildWithBuildah, imagePullPolicy, imagePullSecrets, newBuildRevision)))
                 .mapEmpty();
     }
 

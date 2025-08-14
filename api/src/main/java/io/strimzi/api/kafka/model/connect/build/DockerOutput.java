@@ -23,7 +23,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "image", "pushSecret", "additionalKanikoOptions", "type" })
+@JsonPropertyOrder({ "image", "pushSecret", "additionalKanikoOptions", "additionalBuildahBuildOptions", "additionalBuildahPushOptions", "type" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class DockerOutput extends Output {
@@ -33,8 +33,15 @@ public class DockerOutput extends Output {
             "--skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, " +
             "--use-new-run, --registry-certificate, --registry-client-cert, --ignore-path";
 
+    public static final String ALLOWED_BUILDAH_BUILD_OPTIONS = "--annotation, --authfile, --cert-dir, --creds, --decryption-key, " +
+        "--env, --label, --logfile, --manifest, --retry-delay, --secret, --security-opt, --timestamp, --tls-verify";
+    public static final String ALLOWED_BUILDAH_PUSH_OPTIONS = "--authfile, --cert-dir, --creds, --format, --quiet, --remove-signatures, " +
+        "--retry, --retry-delay, --sign-by, --tls-verify";
+
     private String pushSecret;
     private List<String> additionalKanikoOptions;
+    private List<String> additionalBuildahBuildOptions;
+    private List<String> additionalBuildahPushOptions;
 
     @Description("Must be `" + TYPE_DOCKER + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -77,5 +84,37 @@ public class DockerOutput extends Output {
 
     public void setAdditionalKanikoOptions(List<String> additionalKanikoOptions) {
         this.additionalKanikoOptions = additionalKanikoOptions;
+    }
+
+    @Description("Configures additional options which will be passed to the Buildah `build` when building the new Connect image. " +
+        "Allowed options are: " + ALLOWED_BUILDAH_BUILD_OPTIONS + ". " +
+        "Those will be used only on Kubernetes, where is Buildah used. " +
+        "They will be ignored on OpenShift. " +
+        "The options are described in the link:https://github.com/containers/buildah/blob/main/docs/buildah-build.1.md[Buildah build document^]. " +
+        "Changing this field does not trigger new build of the Kafka Connect image."
+    )
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<String> getAdditionalBuildahBuildOptions() {
+        return additionalBuildahBuildOptions;
+    }
+
+    public void setAdditionalBuildahBuildOptions(List<String> additionalBuildahBuildOptions) {
+        this.additionalBuildahBuildOptions = additionalBuildahBuildOptions;
+    }
+
+    @Description("Configures additional options which will be passed to the Buildah `push` when pushing the new Connect image. " +
+        "Allowed options are: " + ALLOWED_BUILDAH_PUSH_OPTIONS + ". " +
+        "Those will be used only on Kubernetes, where is Buildah used. " +
+        "They will be ignored on OpenShift. " +
+        "The options are described in the link:https://github.com/containers/buildah/blob/main/docs/buildah-push.1.md[Buildah push document^]. " +
+        "Changing this field does not trigger new build of the Kafka Connect image."
+    )
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<String> getAdditionalBuildahPushOptions() {
+        return additionalBuildahPushOptions;
+    }
+
+    public void setAdditionalBuildahPushOptions(List<String> additionalBuildahPushOptions) {
+        this.additionalBuildahPushOptions = additionalBuildahPushOptions;
     }
 }
