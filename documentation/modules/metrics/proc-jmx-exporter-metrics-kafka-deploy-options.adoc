@@ -21,7 +21,6 @@ Prometheus scrapes this endpoint to collect Kafka metrics.
 
 Set `enableMetrics` to `true` to expose metrics for the following:
 
-* Kafka Bridge
 * OAuth 2.0
 ** Configure in the `Kafka` resource for `oauth` or `keycloak` cluster authorization, or `oauth` listener authentication.
 ** Configure in the `KafkaBridge`, `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
@@ -91,14 +90,6 @@ data:
 ----
 <1> Copy the `metricsConfig` property that references the `ConfigMap` containing metrics configuration.
 <2> Copy the whole `ConfigMap` specifying the metrics configuration.
-
-For each KafkaBridge resource you can apply the `kafka-bridge-metrics.yaml` file.
-
-.Deploying the example configuration for Kafka Bridge
-[source,shell,subs="+attributes"]
-----
-kubectl apply -f kafka-bridge-metrics.yaml
-----
 
 .Enabling metrics for OAuth 2.0 
 

@@ -135,4 +135,4 @@ For details on configuring authentication, see the link:{BookURLConfiguring}#typ
 <14> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <15> Environment variables are set for distributed tracing.
 <16> Distributed tracing is enabled by using OpenTelemetry.
-<17> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
+<17> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter.
