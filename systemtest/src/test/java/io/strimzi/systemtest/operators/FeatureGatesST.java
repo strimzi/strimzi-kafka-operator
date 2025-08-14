@@ -7,27 +7,42 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.connect.build.MavenArtifactBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Feature Gates should give us additional options on
@@ -39,6 +54,8 @@ public class FeatureGatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesST.class);
     private static final String SERVER_SIDE_APPLY_PHASE_1_ENABLED = "+ServerSideApplyPhase1";
     private static final String SERVER_SIDE_APPLY_PHASE_1_DISABLED = "-ServerSideApplyPhase1";
+    private static final String USE_CONNECT_BUILD_WITH_BUILDAH_ENABLED = "+UseConnectBuildWithBuildah";
+    private static final String USE_CONNECT_BUILD_WITH_BUILDAH_DISABLED = "-UseConnectBuildWithBuildah";
 
     @IsolatedTest("Creates ClusterOperator with Server Side Apply FG enabled")
     void testServerSideApply() {
@@ -67,6 +84,96 @@ public class FeatureGatesST extends AbstractST {
         changeFeatureGatesAndWaitForCoRollingUpdate(SERVER_SIDE_APPLY_PHASE_1_DISABLED);
 
         annotateResourcesAndCheckIfPresent(testStorage, false);
+    }
+
+    @IsolatedTest("Enables and disables UseConnectBuildWithBuildah feature gate in CO")
+    void testUseConnectBuildWithBuildah() {
+        // Buildah is used only on Kubernetes, so running this test on OCP doesn't add much value
+        assumeFalse(KubeClusterResource.getInstance().isOpenShiftLikeCluster());
+
+        TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+        final String camelConnectorGroupId = "org.apache.camel.kafkaconnector";
+        final String camelConnectorArtifactId = "camel-timer-kafka-connector";
+        final String camelConnectorVersion = "0.9.0";
+        int randomNum = new Random().nextInt(Integer.MAX_VALUE);
+        final String imageName = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), testStorage.getNamespaceName(), String.valueOf(randomNum));
+
+        LOGGER.info("Deploying CO with UseConnectBuildWithBuildah disabled");
+
+        setupClusterOperatorWithFeatureGate("");
+
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build(),
+            KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), 1)
+                .editMetadata()
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .editOrNewSpec()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .withNewBuild()
+                        .addNewPlugin()
+                            .withName("camel-connector")
+                            .withArtifacts(
+                                new MavenArtifactBuilder()
+                                    .withVersion(camelConnectorVersion)
+                                    .withArtifact(camelConnectorArtifactId)
+                                    .withGroup(camelConnectorGroupId)
+                                    .build()
+                            )
+                        .endPlugin()
+                        .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
+                    .endBuild()
+                .endSpec()
+                .build());
+
+        Map<String, Object> connectorConfig = new HashMap<>();
+        connectorConfig.put("topics", testStorage.getTopicName());
+        connectorConfig.put("camel.source.path.timerName", "timer");
+
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName())
+            .editOrNewSpec()
+                .withClassName("org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector")
+                .withConfig(connectorConfig)
+            .endSpec()
+            .build());
+
+        KafkaClients kafkaClient = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaClient.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        Map<String, String> connectPod = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
+
+        changeFeatureGatesAndWaitForCoRollingUpdate(USE_CONNECT_BUILD_WITH_BUILDAH_ENABLED);
+
+        // change the name of the plugin to trigger rolling update and new build (now with Buildah)
+        KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            connect -> connect.getSpec().getBuild().getPlugins().get(0).setName("different")
+        );
+        connectPod = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectPod);
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        KubeResourceManager.get().createResourceWithWait(kafkaClient.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        changeFeatureGatesAndWaitForCoRollingUpdate(USE_CONNECT_BUILD_WITH_BUILDAH_DISABLED);
+
+        // change the name of the plugin to trigger rolling update and new build (now with Buildah)
+        KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            connect -> connect.getSpec().getBuild().getPlugins().get(0).setName("final")
+        );
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectPod);
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        KubeResourceManager.get().createResourceWithWait(kafkaClient.consumerStrimzi());
+        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
     private static void annotateResourcesAndCheckIfPresent(TestStorage testStorage, boolean shouldBePresent) {

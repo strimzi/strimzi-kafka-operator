@@ -51,6 +51,7 @@ public class ConnectBuildOperator {
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
     private final long connectBuildTimeoutMs;
+    private final boolean useConnectBuildWithBuildah;
     private final PlatformFeaturesAvailability pfa;
 
     /**
@@ -71,6 +72,7 @@ public class ConnectBuildOperator {
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.connectBuildTimeoutMs = config.getConnectBuildTimeoutMs();
+        this.useConnectBuildWithBuildah = config.featureGates().useConnectBuildWithBuildahEnabled();
         this.pfa = pfa;
     }
 
@@ -96,7 +98,6 @@ public class ConnectBuildOperator {
         } else {
             // Build exists => let's build
             return build(reconciliation, namespace, connectBuild, controllerResource);
-
         }
     }
 
@@ -202,10 +203,10 @@ public class ConnectBuildOperator {
      *
      * @return                      Future which completes when the build is finished (or fails if it fails)
      */
-    private Future<Void> kubernetesBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
+    private Future<Void> kubernetesBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision) {
         return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap)
                 .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), connectBuild.generateServiceAccount()))
-                .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, newBuildRevision)))
+                .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), useConnectBuildWithBuildah, imagePullPolicy, imagePullSecrets, newBuildRevision)))
                 .mapEmpty();
     }
 
