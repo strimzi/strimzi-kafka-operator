@@ -18,13 +18,23 @@ import static org.mockito.Mockito.when;
 public class ConfigMapOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> {
 
     @Override
+    protected boolean supportsServerSideApply() {
+        return true;
+    }
+
+    @Override
     protected void  mocker(KubernetesClient mockClient, MixedOperation mockCms) {
         when(mockClient.configMaps()).thenReturn(mockCms);
     }
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ConfigMapOperator(vertx, mockClient);
+        return new ConfigMapOperator(vertx, mockClient, false);
+    }
+
+    @Override
+    protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient, boolean useServerSideApply) {
+        return new ConfigMapOperator(vertx, mockClient, useServerSideApply);
     }
 
     @Override

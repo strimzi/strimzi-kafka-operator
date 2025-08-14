@@ -88,6 +88,11 @@ The following table shows the maturity of the feature gates introduced across St
 ¦0.44
 ¦0.46
 
+¦`ServerSideApplyPhase1`
+¦0.48
+¦0.51 (planned)
+¦0.54 (planned)
+
 |===
 
 
@@ -106,6 +111,34 @@ Currently, there are no beta level feature gates.
 Early access feature gates have not yet reached the beta stage, and are disabled by default. 
 An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
 Currently, there are no alpha level feature gates.
+
+[id='ref-operator-server-side-apply-phase-1-feature-gate-{context}']
+=== `ServerSideApplyPhase1` feature gate
+
+The `ServerSideApplyPhase1` feature gate has a default state of _disabled_.
+
+When enabled, the Cluster Operator uses Server-Side Apply (SSA) for creating and updating certain resources.
+SSA is a Kubernetes feature that provides better tracking of field ownership and more controlled resource updates.
+In Phase 1, Server-Side Apply is used for the following resources:
+
+- `PersistentVolumeClaim`
+- `ConfigMap`
+- `Ingress`
+- `ServiceAccount`
+- `Service`
+
+All other resources continue to be reconciled using the existing mechanism - client-side apply.
+If users change the fields of operator-managed resources, the operator reverts these changes.
+
+With SSA, the Cluster Operator modifies only the fields it manages.
+User changes to the other fields are preserved as long as they don't conflict.
+On the first update attempt, the Cluster Operator sets `force = false` when applying changes, respecting user changes.
+If a conflict occurs in a managed field, the update is retried with `force = true`.
+The conflict and the switch to forced apply are logged by the Cluster Operator.
+
+Ownership of individual fields is tracked through the `.metadata.managedFields` property of the resource being updated.
+.Enabling the `ServerSideApplyPhase1` feature gate
+To enable the `ServerSideApplyPhase1` feature gate, specify `+ServerSideApplyPhase1` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 == Enabling feature gates
 

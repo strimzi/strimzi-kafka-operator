@@ -33,9 +33,10 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
+     * @param useServerSideApply    Determines if Server Side Apply should be used
      */
-    public IngressOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Ingress");
+    public IngressOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "Ingress", useServerSideApply);
     }
 
     @Override
