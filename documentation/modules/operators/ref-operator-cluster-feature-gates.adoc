@@ -128,6 +128,7 @@ In Phase 1, Server-Side Apply is used for the following resources:
 - `Service`
 
 All other resources continue to be reconciled using the existing mechanism - client-side apply.
+If users change the fields of operator-managed resources, the operator reverts these changes.
 
 With SSA, the Cluster Operator modifies only the fields it manages.
 User changes to the other fields are preserved as long as they don't conflict.
