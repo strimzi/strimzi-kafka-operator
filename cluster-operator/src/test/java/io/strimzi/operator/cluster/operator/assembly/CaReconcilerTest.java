@@ -1048,6 +1048,99 @@ public class CaReconcilerTest {
     }
 
     @Test
+    public void testOldClusterCaCertsGetsRemovedAuto(Vertx vertx, VertxTestContext context)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+        CertificateAuthority certificateAuthority = getCertificateAuthority();
+
+        List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
+        Secret initialClusterCaKeySecret = clusterCaSecrets.get(0);
+        Secret initialClusterCaCertSecret = clusterCaSecrets.get(1);
+
+        // add an "old" certificate to the secret with format ca-YYYY-MM-DDTHH-MM-SSZ
+        // for ease re-use existing ca.crt file contents
+        String oldCertAlias = "ca-2025-08-06T09-00-00Z.crt";
+        initialClusterCaCertSecret.getData().put(oldCertAlias, initialClusterCaCertSecret.getData().get(CA_CRT));
+
+        // ... and to the related truststore
+        Path certFile = Files.createTempFile("tls", "-cert");
+        certFile.toFile().deleteOnExit();
+        Path trustStoreFile = Files.createTempFile("tls", "-truststore");
+        trustStoreFile.toFile().deleteOnExit();
+        Files.write(certFile, Util.decodeBytesFromBase64(initialClusterCaCertSecret.getData().get(oldCertAlias)));
+        Files.write(trustStoreFile, Util.decodeBytesFromBase64(initialClusterCaCertSecret.getData().get(CA_STORE)));
+        String trustStorePassword = Util.decodeFromBase64(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD));
+        CERT_MANAGER.addCertToTrustStore(certFile.toFile(), oldCertAlias, trustStoreFile.toFile(), trustStorePassword);
+        initialClusterCaCertSecret.getData().put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile)));
+        assertThat(isCertInTrustStore(oldCertAlias, initialClusterCaCertSecret.getData()), is(true));
+
+        List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
+        Secret initialClientsCaKeySecret = clientsCaSecrets.get(0);
+        Secret initialClientsCaCertSecret = clientsCaSecrets.get(1);
+
+        // add an "old" certificate to the secret with format ca-YYYY-MM-DDTHH-MM-SSZ
+        // for ease re-use existing ca.crt file contents
+        initialClientsCaCertSecret.getData().put(oldCertAlias, initialClientsCaCertSecret.getData().get(CA_CRT));
+
+        // ... and to the related truststore
+        certFile = Files.createTempFile("tls", "-cert");
+        certFile.toFile().deleteOnExit();
+        Files.write(certFile, Util.decodeBytesFromBase64(initialClientsCaCertSecret.getData().get(oldCertAlias)));
+        trustStoreFile = Files.createTempFile("tls", "-truststore");
+        trustStoreFile.toFile().deleteOnExit();
+        Files.write(trustStoreFile, Util.decodeBytesFromBase64(initialClientsCaCertSecret.getData().get(CA_STORE)));
+        trustStorePassword = Util.decodeFromBase64(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD));
+        CERT_MANAGER.addCertToTrustStore(certFile.toFile(), oldCertAlias, trustStoreFile.toFile(), trustStorePassword);
+        initialClientsCaCertSecret.getData().put(CA_STORE, Base64.getEncoder().encodeToString(Files.readAllBytes(trustStoreFile)));
+        assertThat(isCertInTrustStore(oldCertAlias, initialClientsCaCertSecret.getData()), is(true));
+
+        Map<String, String> generationAnnotations =
+                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
+                        Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0",
+                        Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0");
+
+        Pod controllerPod = podWithNameAndAnnotations("my-cluster-controllers-1", false, true, generationAnnotations);
+        Pod brokerPod = podWithNameAndAnnotations("my-cluster-brokers-0", true, false, generationAnnotations);
+        initTrustRolloutTestMocks(supplier,
+                List.of(initialClusterCaCertSecret, initialClusterCaKeySecret,
+                        initialClientsCaCertSecret, initialClientsCaKeySecret),
+                List.of(controllerPod),
+                List.of(brokerPod));
+
+        Checkpoint async = context.checkpoint();
+        NewMockCaReconciler mockCaReconciler = new NewMockCaReconciler(reconciliation, KAFKA, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
+                supplier, vertx, CERT_MANAGER, PASSWORD_GENERATOR);
+        mockCaReconciler
+                .reconcile(Clock.systemUTC())
+                .onComplete(context.succeeding(c -> context.verify(() -> {
+                    ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
+                    ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
+
+                    // Cluster CA should be reconciled twice, once initially, then when removing the old cert. Clients CA is only reconciled once
+                    verify(supplier.secretOperations, times(2)).reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture());
+                    verify(supplier.secretOperations, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture());
+
+                    //getValue() returns the latest captured value
+                    Map<String, String> clusterCaCertData = clusterCaCert.getValue().getData();
+                    assertThat(clusterCaCertData, aMapWithSize(3));
+                    assertThat(clusterCaCertData.get(CA_CRT), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
+                    assertThat(clusterCaCertData.get(CA_STORE_PASSWORD), is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                    assertThat(getCertificateFromTrustStore(CA_CRT, clusterCaCertData), is(x509Certificate(clusterCaCertData.get(CA_CRT))));
+                    assertThat(isCertInTrustStore(oldCertAlias, clusterCaCertData), is(false));
+
+                    // Clients CA cert doesn't have old CA certs removed automatically
+                    Map<String, String> clientsCaCertData = clientsCaCert.getValue().getData();
+                    assertThat(clientsCaCertData, aMapWithSize(4));
+                    assertThat(clientsCaCertData.get(CA_CRT), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
+                    assertThat(clientsCaCertData.get(CA_STORE_PASSWORD), is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
+                    assertThat(clientsCaCertData.get(oldCertAlias), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
+                    assertThat(getCertificateFromTrustStore(CA_CRT, clientsCaCertData), is(x509Certificate(clientsCaCertData.get(CA_CRT))));
+                    assertThat(isCertInTrustStore(oldCertAlias, clientsCaCertData), is(true));
+                    async.flag();
+                })));
+    }
+
+    @Test
     public void testCustomCertsNotReconciled(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
