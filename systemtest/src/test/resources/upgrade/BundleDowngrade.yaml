@@ -75,7 +75,7 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
-  fromFeatureGates: "+ServerSideApplyPhase1"
+  fromFeatureGates: "+ServerSideApplyPhase1,+UseConnectBuildWithBuildah"
   toFeatureGates: ""
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
