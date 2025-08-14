@@ -3,7 +3,7 @@
 // assembly-config.adoc
 
 [id='con-config-mm2-multiple-instances-{context}']
-== Configuring MirrorMaker 2 for multiple instances
+= Configuring MirrorMaker 2 using a shared `connectCluster`
 
 [role="_abstract"]
 By default, Strimzi configures the group ID and names of the internal topics used by the Kafka Connect framework that MirrorMaker 2 runs on. 

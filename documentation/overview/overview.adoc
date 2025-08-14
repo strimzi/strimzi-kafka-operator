@@ -18,6 +18,8 @@ include::assemblies/overview/assembly-kafka-components.adoc[leveloffset=+1]
 include::assemblies/overview/assembly-kafka-concepts.adoc[leveloffset=+1]
 //Kafka Connect components
 include::assemblies/overview/assembly-kafka-connect-components.adoc[leveloffset=+1]
+//MirrorMaker replication modes
+include::modules/overview/con-overview-mirrormaker2.adoc[leveloffset=+1]
 //description of kafka bridge
 include::modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
 include::modules/overview/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+2]
