@@ -703,7 +703,7 @@ public class KafkaRoller {
             throws ForceableProblem, InterruptedException {
         boolean isLog4j2 = KafkaVersion.compareDottedVersions(kafkaVersion.version(), "4.0.0") >= 0;
         Map<ConfigResource, Collection<AlterConfigOp>> updatedPerBrokerConfig = new HashMap<>(2);
-        Map<ConfigResource, Collection<AlterConfigOp>> updatedClusterWideConfig = new HashMap<>(2);
+        Map<ConfigResource, Collection<AlterConfigOp>> updatedClusterWideConfig = new HashMap<>(1);
         var podId = nodeRef.nodeId();
         updatedPerBrokerConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff(Scope.PER_BROKER));
         updatedClusterWideConfig.put(Util.getClusterWideConfig(), configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE));
