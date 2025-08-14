@@ -263,6 +263,13 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
         }
     }
 
+    /**
+     * Patches the resource with the given namespace and name to match the given desired resource
+     * and completes the given future accordingly.
+     * The patch is done using Server-Side Apply, which means that the server will handle the changes
+     * to the resource.
+     * First patch attempt is done without force, however if there is a conflict, operator will try again using force.
+     */
     protected Future<ReconcileResult<T>> internalServerSideApply(Reconciliation reconciliation, String namespace, String name, T desired) {
         R resourceOp = operation().inNamespace(namespace).withName(name);
 
@@ -292,6 +299,12 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
         }
     }
 
+    /**
+     * Creates {@link PatchContext} with SSA type for the Cluster Operator.
+     *
+     * @param useForce  boolean parameter determining if the force should be used or not.
+     * @return  {@link PatchContext} with SSA type for the Cluster Operator.
+     */
     private static PatchContext serverSideApplyPatchContext(boolean useForce) {
         return new PatchContext.Builder()
             .withFieldManager("strimzi-kafka-operator")
@@ -299,7 +312,6 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             .withPatchType(PatchType.SERVER_SIDE_APPLY)
             .build();
     }
-
 
     /**
      * Method for patching or replacing a resource. By default, is using JSON-type patch. Overriding this method can be
