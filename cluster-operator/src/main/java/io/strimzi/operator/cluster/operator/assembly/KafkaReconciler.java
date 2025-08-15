@@ -1010,7 +1010,7 @@ public class KafkaReconciler {
                             .map(org.apache.kafka.common.Node::id)
                             .toList();
 
-                    LOGGER.infoCr(reconciliation, "Nodes unregistration: currentBrokerIds = {}, registeredBrokersIds = {}",
+                    LOGGER.debugCr(reconciliation, "Nodes unregistration: currentBrokerIds = {}, registeredBrokersIds = {}",
                             currentBrokerIds, registeredBrokersIds);
 
                     Set<Integer> brokersIdsToUnregister = new HashSet<>(registeredBrokersIds);
