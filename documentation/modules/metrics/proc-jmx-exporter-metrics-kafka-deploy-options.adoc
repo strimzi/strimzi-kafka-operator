@@ -10,17 +10,17 @@ To enable and expose metrics in Strimzi for Prometheus, configure the appropriat
 
 Use `metricsConfig` to expose metrics for these components:
 
-* Kafka 
+* Kafka
 * Kafka Connect
-* MirrorMaker
+* Kafka MirrorMaker 2
+* Kafka Bridge
 * Cruise Control
 
 This enables the {JMXExporter}, which exposes metrics on port 9404 through an HTTP endpoint. 
 Prometheus scrapes this endpoint to collect Kafka metrics.
 
-Set `enableMetrics` to `true` to expose metrics for the following: 
+Set `enableMetrics` to `true` to expose metrics for the following:
 
-* Kafka Bridge
 * OAuth 2.0
 ** Configure in the `Kafka` resource for `oauth` or `keycloak` cluster authorization, or `oauth` listener authentication.
 ** Configure in the `KafkaBridge`, `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
@@ -90,26 +90,6 @@ data:
 ----
 <1> Copy the `metricsConfig` property that references the `ConfigMap` containing metrics configuration.
 <2> Copy the whole `ConfigMap` specifying the metrics configuration.
-
-.Enabling metrics for Kafka Bridge 
-
-To expose metrics for Kafka Bridge, set the `enableMetrics` property to `true` in the `KafkaBridge` resource.
-
-.Example metrics configuration for Kafka Bridge
-[source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: {KafkaApiVersion}
-kind: KafkaBridge
-metadata:
-  name: my-bridge
-spec:
-  # ...
-  bootstrapServers: my-cluster-kafka:9092
-  http:
-    # ...
-  enableMetrics: true
-  # ...
-----
 
 .Enabling metrics for OAuth 2.0 
 

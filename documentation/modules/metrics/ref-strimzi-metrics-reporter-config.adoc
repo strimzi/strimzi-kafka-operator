@@ -27,4 +27,7 @@
 |`KafkaMirrorMaker2`
 |`kafka-mirror-maker-2metrics.yaml`
 
+|Kafka Bridge
+|`KafkaBridge`
+|`kafka-bridge-metrics.yaml`
 |===
