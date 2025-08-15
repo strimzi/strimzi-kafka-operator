@@ -56,4 +56,9 @@ public class KafkaCmdClient {
         return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c", "bin/kafka-features.sh --bootstrap-server "
                 + bootstrapServer + " upgrade --feature " + featureName + "=" + featureValue).out();
     }
+
+    public static String describeFeaturesUsingPodCli(String namespaceName, String podName, String bootstrapServer) {
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c", "bin/kafka-features.sh --bootstrap-server "
+                + bootstrapServer + " describe").out();
+    }
 }

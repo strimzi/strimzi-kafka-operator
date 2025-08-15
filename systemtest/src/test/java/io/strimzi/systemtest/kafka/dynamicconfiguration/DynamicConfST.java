@@ -46,6 +46,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.DYNAMIC_CONFIGURATION;
@@ -495,7 +497,11 @@ public class DynamicConfST extends AbstractST {
         String kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
-        KafkaCmdClient.updateFeatureUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "eligible.leader.replicas.version", "1");
+        String elrUpgradedFromPod = KafkaCmdClient.updateFeatureUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "eligible.leader.replicas.version", "1");
+        assertThat(elrUpgradedFromPod, containsString("eligible.leader.replicas.version was upgraded to 1"));
+
+        String featuresDescribeFromPod = KafkaCmdClient.describeFeaturesUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        assertThat("Feature eligible.leader.replicas is not enabled", getElrVersion(featuresDescribeFromPod), is("1"));
 
         deepCopyOfSharedKafkaConfig.put("min.insync.replicas", 1);
 
@@ -513,6 +519,15 @@ public class DynamicConfST extends AbstractST {
             assertThat("Kafka configuration CM doesn't contain 'transaction.state.log.replication.factor=1'", kafkaConfiguration.contains("transaction.state.log.replication.factor=1"), is(true));
             assertThat("Kafka configuration CM doesn't contain 'min.insync.replicas=1'", kafkaConfiguration.contains("min.insync.replicas=1"), is(true));
         }
+    }
+
+    private String getElrVersion(String features) {
+        Pattern pattern = Pattern.compile(
+                "Feature:\\s*eligible\\.leader\\.replicas\\.version\\s+.*?FinalizedVersionLevel:\\s*([^\\t\\s]+)",
+                Pattern.DOTALL
+        );
+        Matcher matcher = pattern.matcher(features);
+        return matcher.find() ? matcher.group(1) : "0";
     }
 
     /**
