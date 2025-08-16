@@ -9,6 +9,8 @@
 * Ignore users (their ACLs, Quotas and SCRAM-SHA-512 credentials) managed by some other tools based on a configurable pattern in User Operator
 * Added support for Strimzi Metrics Reporter to Kafka Connect, Mirror Maker 2 and Kafka Bridge.
 * Add new feature gate `ServerSideApplyPhase1` (disabled by default) that adds support for Server Side Apply for `ConfigMap`, `Ingress`, `PVC`, `Service`, and `ServiceAccount` according to [Strimzi Proposal #105](https://github.com/strimzi/proposals/blob/main/105-server-side-apply-implementation-fg-timelines.md).
+* Added support for [KIP-1073](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1073:+Return+fenced+brokers+in+DescribeCluster+response)
+  to get the list of the registered brokers by using the Kafka Admin API. It replaces the usage of the `.status.registeredNodeIds` field in Kafka.
 
 ### Major changes, deprecations and removals
 
@@ -36,6 +38,7 @@
   ```
   In case you use the standalone User Operator, you can set the environment variable in its `Deployment`.
   Please keep in mind that the ignored users will apply not only to ACLs, but also to Quotas and SCRAM-SHA credentials.
+* The field `.status.registeredNodeIds` in Kafka is now deprecated, it is not used anymore, and it will be removed in the future.
 
 ## 0.47.0
 
