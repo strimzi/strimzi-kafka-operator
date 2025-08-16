@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -289,6 +290,45 @@ public class KafkaBrokerConfigurationDiffTest {
                 getDesiredConfiguration(emptyList()), kafkaVersion, nodeRef);
         assertThat(kcd.getDiffSize(), is(1));
         assertThat(kcd.canBeUpdatedDynamically(), is(false));
+    }
+
+    @Test
+    public void testClusterWideChanged() {
+        List<ConfigEntry> current = List.of(
+                new ConfigEntry("min.insync.replicas", "1"),
+                new ConfigEntry("log.retention.bytes", "2000000")
+        );
+        List<ConfigEntry> desired = List.of(
+                new ConfigEntry("min.insync.replicas", "2"),
+                new ConfigEntry("log.retention.bytes", "3000000")
+        );
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(current),
+                getDesiredConfiguration(desired), kafkaVersion, nodeRef);
+        assertThat(kcd.getDiffSize(), is(2));
+        assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE).size(), is(2));
+        assertThat(kcd.getConfigDiff(Scope.PER_BROKER).size(), is(0));
+    }
+
+    @Test
+    public void testPropertiesAllScopesChanged() {
+        List<ConfigEntry> current = List.of(
+                new ConfigEntry("min.insync.replicas", "1"),
+                new ConfigEntry("log.retention.bytes", "2000000"),
+                new ConfigEntry("listener.security.protocol.map", "foo"),
+                new ConfigEntry("auto.create.topics.enable", "true")
+        );
+        List<ConfigEntry> desired = List.of(
+                new ConfigEntry("min.insync.replicas", "2"),
+                new ConfigEntry("log.retention.bytes", "3000000"),
+                new ConfigEntry("listener.security.protocol.map", "bar"),
+                new ConfigEntry("auto.create.topics.enable", "false")
+        );
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(current),
+                getDesiredConfiguration(desired), kafkaVersion, nodeRef);
+        assertThat(kcd.getDiffSize(), is(4));
+        assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE).size(), is(2));
+        assertThat(kcd.getConfigDiff(Scope.PER_BROKER).size(), is(1));
+        assertThat(kcd.getConfigDiff(Scope.READ_ONLY).size(), is(1));
     }
 
 }

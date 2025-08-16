@@ -97,7 +97,8 @@ public class DynamicConfSharedST extends AbstractST {
                 // verify phase
                 assertThat(KafkaUtils.verifyCrDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), key, value), is(true));
                 assertThat(KafkaUtils.verifyPodDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, scraperPodName,
-                    KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), KafkaComponents.getBrokerPodSetName(suiteTestStorage.getClusterName()), key, value), is(true));
+                    KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), KafkaComponents.getBrokerPodSetName(suiteTestStorage.getClusterName()),
+                        key, value, TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).version()), is(true));
             }));
         }
 

@@ -267,29 +267,52 @@ public class KafkaUtils {
      * @param kafkaPodNamePrefix prefix of Kafka pods
      * @param brokerConfigName key of specific property
      * @param value value of specific property
+     * @param kafkaVersion Kafka version to get the config model
      * @return
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
+    public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value, String kafkaVersion) {
         List<Pod> brokerPods = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
         int[] brokerId = {0};
 
-        for (Pod pod : brokerPods) {
+        Map<String, ConfigModel> configModelMap = readConfigModel(kafkaVersion);
 
-            TestUtils.waitFor("dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
-                () -> {
-                    String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
+        // the check/describe for a dynamic change is different depending on the property being cluster-wide or per-broker
+        if (configModelMap.get(brokerConfigName).getScope().equals(Scope.CLUSTER_WIDE)) {
 
-                    LOGGER.debug("This dyn.configuration {} inside the Kafka Pod: {}/{}", result, namespaceName, pod.getMetadata().getName());
+            TestUtils.waitFor("cluster-wide dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
+                    () -> {
+                        String result = KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(namespaceName, scraperPodName, bootstrapServer);
 
-                    if (!result.contains(brokerConfigName + "=" + value)) {
-                        LOGGER.error("Kafka Pod: {}/{} doesn't contain {} with value {}", namespaceName, pod.getMetadata().getName(), brokerConfigName, value);
-                        LOGGER.error("Kafka configuration {}", result);
-                        return false;
-                    }
-                    return true;
-                });
+                        LOGGER.debug("This cluster-wide dyn.configuration {}", result);
+
+                        if (!result.contains(brokerConfigName + "=" + value)) {
+                            LOGGER.error("Cluster-wide configuration doesn't contain {} with value {}", brokerConfigName, value);
+                            LOGGER.error("Kafka configuration {}", result);
+                            return false;
+                        }
+                        return true;
+                    });
+
+        } else {
+
+            for (Pod pod : brokerPods) {
+
+                TestUtils.waitFor("dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
+                        () -> {
+                            String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
+
+                            LOGGER.debug("This dyn.configuration {} inside the Kafka Pod: {}/{}", result, namespaceName, pod.getMetadata().getName());
+
+                            if (!result.contains(brokerConfigName + "=" + value)) {
+                                LOGGER.error("Kafka Pod: {}/{} doesn't contain {} with value {}", namespaceName, pod.getMetadata().getName(), brokerConfigName, value);
+                                LOGGER.error("Kafka configuration {}", result);
+                                return false;
+                            }
+                            return true;
+                        });
+            }
         }
         return true;
     }

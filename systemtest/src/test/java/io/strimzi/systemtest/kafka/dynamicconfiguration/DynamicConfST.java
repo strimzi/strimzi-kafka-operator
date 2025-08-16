@@ -46,6 +46,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.DYNAMIC_CONFIGURATION;
@@ -129,7 +131,8 @@ public class DynamicConfST extends AbstractST {
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=true is available in Broker config", () ->
-            KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("unclean.leader.election.enable=" + true));
+            KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).contains("unclean.leader.election.enable=" + true));
+
 
         LOGGER.info("Verifying values after update");
 
@@ -209,7 +212,7 @@ public class DynamicConfST extends AbstractST {
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=true is available in Broker config", () ->
-            KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("unclean.leader.election.enable=" + true));
+            KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).contains("unclean.leader.election.enable=" + true));
 
         // Edit listeners - this should cause RU (because of new crts)
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector());
@@ -250,7 +253,7 @@ public class DynamicConfST extends AbstractST {
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("compression.type=snappy is set in Kafka", () ->
-            KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("compression.type=snappy"));
+            KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).contains("compression.type=snappy"));
 
         kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker " + podNum + " are:\n"));
@@ -261,7 +264,7 @@ public class DynamicConfST extends AbstractST {
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=true is available in Broker config", () ->
-                KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("unclean.leader.election.enable=" + true));
+            KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).contains("unclean.leader.election.enable=" + true));
 
         // Remove external listeners (node port) - this should cause RU (we need to update advertised.listeners)
         // Other external listeners cases are rolling because of crts
@@ -297,7 +300,7 @@ public class DynamicConfST extends AbstractST {
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=false is set in Kafka", () ->
-            KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("unclean.leader.election.enable=" + false));
+            KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).contains("unclean.leader.election.enable=" + false));
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
@@ -439,6 +442,92 @@ public class DynamicConfST extends AbstractST {
             externalKafkaClientPlain.sendMessagesPlain() + testStorage.getMessageCount(),
             externalKafkaClientPlain.receiveMessagesPlain()
         );
+    }
+
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+            description = @Desc("Test for verifying dynamic configuration changes in a Kafka cluster with multiple clusters in one namespace."),
+            steps = {
+                @Step(value = "Deep copy shared Kafka configuration.", expected = "Configuration map is duplicated with deep copy."),
+                @Step(value = "Create resources with wait.", expected = "Resources are created and ready."),
+                @Step(value = "Create scraper pod.", expected = "Scraper pod is created."),
+                @Step(value = "Retrieve and verify Kafka configurations from ConfigMaps.", expected = "Configurations meet expected values."),
+                @Step(value = "Retrieve Kafka broker configuration via CLI.", expected = "Dynamic configurations are retrieved."),
+                @Step(value = "Upgrade eligible.leader.replicas.version feature to 1.", expected = "Feature is upgraded."),
+                @Step(value = "Update Kafka configuration for min.insync.replicas.", expected = "Configuration is updated and verified for dynamic property."),
+                @Step(value = "Verify updated Kafka configurations.", expected = "Updated configurations are persistent and correct.")
+            },
+            labels = {
+                @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION),
+                @Label(value = TestDocsLabels.KAFKA)
+            }
+    )
+    void testClusterWideDynamicConfiguration() {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        Map<String, Object> deepCopyOfSharedKafkaConfig = kafkaConfig.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        deepCopyOfSharedKafkaConfig.put("min.insync.replicas", 2);
+
+        KubeResourceManager.get().createResourceWithWait(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), KAFKA_REPLICAS).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+        );
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), KAFKA_REPLICAS)
+                        .editSpec()
+                            .editKafka()
+                                .withConfig(deepCopyOfSharedKafkaConfig)
+                            .endKafka()
+                        .endSpec()
+                        .build(),
+                ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, testStorage.getScraperName()).build()
+        );
+
+        String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, testStorage.getScraperName()).get(0).getMetadata().getName();
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        int podNum = KafkaComponents.getPodNumFromPodName(testStorage.getBrokerComponentName(), brokerPodName);
+
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName())) {
+            String kafkaConfiguration = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(cmName).get().getData().get("server.config");
+            assertThat("Kafka configuration CM doesn't contain 'offsets.topic.replication.factor=1'", kafkaConfiguration.contains("offsets.topic.replication.factor=1"), is(true));
+            assertThat("Kafka configuration CM doesn't contain 'transaction.state.log.replication.factor=1'", kafkaConfiguration.contains("transaction.state.log.replication.factor=1"), is(true));
+            assertThat("Kafka configuration CM doesn't contain 'min.insync.replicas=2'", kafkaConfiguration.contains("min.insync.replicas=2"), is(true));
+        }
+
+        String kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);
+        assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
+
+        String elrUpgradedFromPod = KafkaCmdClient.updateFeatureUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "eligible.leader.replicas.version", "1");
+        assertThat(elrUpgradedFromPod, containsString("eligible.leader.replicas.version was upgraded to 1"));
+
+        String featuresDescribeFromPod = KafkaCmdClient.describeFeaturesUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        assertThat("Feature eligible.leader.replicas is not enabled", getElrVersion(featuresDescribeFromPod), is("1"));
+
+        deepCopyOfSharedKafkaConfig.put("min.insync.replicas", 1);
+
+        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfSharedKafkaConfig);
+
+        // Wait until the configuration is properly set and returned by Kafka Admin API
+        StUtils.waitUntilSupplierIsSatisfied("min.insync.replicas=1 is available in Broker config", () ->
+            KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())).contains("min.insync.replicas=1"));
+
+        LOGGER.info("Verifying values after update");
+
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName())) {
+            String kafkaConfiguration = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(cmName).get().getData().get("server.config");
+            assertThat("Kafka configuration CM doesn't contain 'offsets.topic.replication.factor=1'", kafkaConfiguration.contains("offsets.topic.replication.factor=1"), is(true));
+            assertThat("Kafka configuration CM doesn't contain 'transaction.state.log.replication.factor=1'", kafkaConfiguration.contains("transaction.state.log.replication.factor=1"), is(true));
+            assertThat("Kafka configuration CM doesn't contain 'min.insync.replicas=1'", kafkaConfiguration.contains("min.insync.replicas=1"), is(true));
+        }
+    }
+
+    private String getElrVersion(String features) {
+        Pattern pattern = Pattern.compile(
+                "Feature:\\s*eligible\\.leader\\.replicas\\.version\\s+.*?FinalizedVersionLevel:\\s*([^\\t\\s]+)",
+                Pattern.DOTALL
+        );
+        Matcher matcher = pattern.matcher(features);
+        return matcher.find() ? matcher.group(1) : "0";
     }
 
     /**

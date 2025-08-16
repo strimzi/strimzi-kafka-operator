@@ -10,6 +10,29 @@
 
 <hr style="border:1px solid">
 
+## testClusterWideDynamicConfiguration
+
+**Description:** Test for verifying dynamic configuration changes in a Kafka cluster with multiple clusters in one namespace.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Deep copy shared Kafka configuration. | Configuration map is duplicated with deep copy. |
+| 2. | Create resources with wait. | Resources are created and ready. |
+| 3. | Create scraper pod. | Scraper pod is created. |
+| 4. | Retrieve and verify Kafka configurations from ConfigMaps. | Configurations meet expected values. |
+| 5. | Retrieve Kafka broker configuration via CLI. | Dynamic configurations are retrieved. |
+| 6. | Upgrade eligible.leader.replicas.version feature to 1. | Feature is upgraded. |
+| 7. | Update Kafka configuration for min.insync.replicas. | Configuration is updated and verified for dynamic property. |
+| 8. | Verify updated Kafka configurations. | Updated configurations are persistent and correct. |
+
+**Labels:**
+
+* `dynamic-configuration` (description file doesn't exist)
+* [kafka](labels/kafka.md)
+
+
 ## testSimpleDynamicConfiguration
 
 **Description:** Test for verifying dynamic configuration changes in a Kafka cluster with multiple clusters in one namespace.
