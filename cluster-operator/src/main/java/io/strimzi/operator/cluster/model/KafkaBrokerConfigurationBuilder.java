@@ -770,7 +770,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param userConfig    The user configuration to extract the possible user-provided config provider configuration
      *                      from it
      */
-    private void configProviders(KafkaConfiguration userConfig)    {
+    private void printConfigProviders(KafkaConfiguration userConfig)    {
         printSectionHeader("Config providers");
         
         writer.println("# Configuration providers configured by the user and by Strimzi");
@@ -823,31 +823,6 @@ public class KafkaBrokerConfigurationBuilder {
         }
         
     }
-    
-    /**
-     * Get the user provided Kafka configuration provider aliases, throwing an InvalidConfigurationException if any are found that would overwrite the Strimzi defined configuration providers
-     * 
-     * @param strimziAliases            The Strimzi defined configuration providers
-     * @param userConfig                The user configuration to extract the possible user-provided config provider configuration from
-     * @return                          The user defined Kafka configuration provider aliases or empty string
-     */
-    private String getUserConfigProviderAliases(Collection<String> strimziAliases, KafkaConfiguration userConfig) {
-        String userConfigProviderAliases = "";
-        if (userConfig != null
-                && !userConfig.getConfiguration().isEmpty()
-                && userConfig.getConfigOption("config.providers") != null) {
-            userConfigProviderAliases = userConfig.getConfigOption("config.providers");
-            Collection<String> userAliases = Arrays.asList(userConfigProviderAliases.split(","));
-                        
-            userAliases.stream().forEach(alias -> {
-                if (strimziAliases.contains(alias)) {
-                    throw new InvalidConfigurationException("config.provider " + alias + " not permitted as it reserved for Strimzi. Not permitted aliases: " + strimziAliases); 
-                }
-            });
-            userConfig.removeConfigOption("config.providers");
-        }
-        return userConfigProviderAliases;
-    }
 
     /**
      * Adds the configurations passed by the user in the Kafka CR, injecting Strimzi configurations when needed.
@@ -868,7 +843,7 @@ public class KafkaBrokerConfigurationBuilder {
                 ? new KafkaConfiguration(userConfig)
                 : new KafkaConfiguration(reconciliation, new ArrayList<>());
 
-        configProviders(userConfig);
+        printConfigProviders(userConfig);
 
         printMetricReporters(userConfig, injectCcMetricsReporter, injectKafkaJmxReporter, injectStrimziMetricsReporter);
         printYammerReporters(userConfig, injectStrimziMetricsReporter);
