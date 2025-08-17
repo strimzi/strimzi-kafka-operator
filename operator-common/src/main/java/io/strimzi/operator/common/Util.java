@@ -4,25 +4,14 @@
  */
 package io.strimzi.operator.common;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
-import org.apache.kafka.common.config.ConfigResource;
 import org.quartz.CronExpression;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
@@ -36,16 +25,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.TreeMap;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
- * Class with various utility methods
+ * Class with various utility methods shared between modules
  */
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class Util {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Util.class);
 
@@ -55,22 +40,8 @@ public class Util {
     public static final int HASH_STUB_LENGTH = 8;
 
     /**
-     * Wrap the given action with a BiConsumer that {@link #unwrap(Throwable)
-     * unwrap}s the error, if any. This method is meant to wrap the action typically
-     * passed to {@link CompletionStage#whenComplete(BiConsumer)}.
-     *
-     * @param <T>    type of the asynchronous result
-     * @param action action to be wrapped, expecting the cause of any
-     *               {@link CompletionException} as its second argument
-     * @return a BiConsumer to delegate to the provided action
-     */
-    public static <T> BiConsumer<T, Throwable> unwrap(BiConsumer<T, Throwable> action) {
-        return (result, error) -> action.accept(result, unwrap(error));
-    }
-
-    /**
      * Returns the cause when the given Throwable is a {@link CompletionException}.
-     * Otherwise the error is returned unchanged.
+     * Otherwise, the error is returned unchanged.
      *
      * @param error any Throwable
      * @return the cause when error is a {@link CompletionException}, else the same
@@ -115,43 +86,6 @@ public class Util {
     }
 
     /**
-     * Returns exception when secret is missing. This is used from several different methods to provide identical exception.
-     *
-     * @param namespace     Namespace of the Secret
-     * @param secretName    Name of the Secret
-     * @return              RuntimeException
-     */
-    public static RuntimeException missingSecretException(String namespace, String secretName) {
-        return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
-    }
-
-    /**
-     * Create a file with Keystore or Truststore from the given {@code bytes}.
-     * The file will be set to get deleted when the JVM exist.
-     *
-     * @param prefix    Prefix which will be used for the filename
-     * @param suffix    Suffix which will be used for the filename
-     * @param bytes     Byte array with the certificate store
-     * @return          File with the certificate store
-     */
-    public static File createFileStore(String prefix, String suffix, byte[] bytes) {
-        File f = null;
-        try {
-            f = Files.createTempFile(prefix, suffix).toFile();
-            f.deleteOnExit();
-            try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
-                os.write(bytes);
-            }
-            return f;
-        } catch (IOException e) {
-            if (f != null && !f.delete()) {
-                LOGGER.warnOp("Failed to delete temporary file in exception handler");
-            }
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * Decode binary item from Kubernetes Secret from base64 into byte array
      *
      * @param secret    Kubernetes Secret
@@ -172,17 +106,6 @@ public class Util {
     }
 
     /**
-     * Decode binary item from Kubernetes Secret from base64 into String
-     *
-     * @param secret    Kubernetes Secret
-     * @param field     Field which should be retrieved and decoded
-     * @return          Decoded String
-     */
-    public static String asciiFieldFromSecret(Secret secret, String field) {
-        return fromAsciiBytes(decodeBase64FieldFromSecret(secret, field));
-    }
-
-    /**
      * Logs environment variables into the regular log file.
      */
     public static void printEnvInfo() {
@@ -197,14 +120,14 @@ public class Util {
     }
 
     /**
-     * Gets environment variable, checks if it contains a password and in case it does it masks the output. It expects
+     * Gets environment variable, checks if it contains a password and in case it does it mask the output. It expects
      * environment variables with passwords to contain `PASSWORD` in their name.
      *
      * @param key   Name of the environment variable
      * @param value Value of the environment variable
      * @return      Value of the environment variable or masked text in case of password
      */
-    public static String maskPassword(String key, String value)  {
+    /* test */ static String maskPassword(String key, String value)  {
         if (key.contains("PASSWORD"))  {
             return "********";
         } else {
@@ -240,7 +163,7 @@ public class Util {
                     .stream()
                     .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN))
                     .toList();
-                if (bannedLabelsOrAnnotations.size() > 0) {
+                if (!bannedLabelsOrAnnotations.isEmpty()) {
                     throw new InvalidResourceException("User provided labels or annotations includes a Strimzi annotation: " + bannedLabelsOrAnnotations);
                 }
 
@@ -256,122 +179,6 @@ public class Util {
         }
 
         return merged;
-    }
-
-    /**
-     * Created config resource instance
-     *
-     * @param podId Pod ID
-     *
-     * @return  Config resource
-     */
-    public static ConfigResource getBrokersConfig(int podId) {
-        return Util.getBrokersConfig(Integer.toString(podId));
-    }
-
-    /**
-     * Created config resource instance for cluster-wide dynamic changes
-     *
-     * @return  Config resource
-     */
-    public static ConfigResource getClusterWideConfig() {
-        return Util.getBrokersConfig("");
-    }
-
-    /**
-     * Created config resource instance
-     *
-     * @param podId Pod ID
-     *
-     * @return  Config resource
-     */
-    public static ConfigResource getBrokersLogging(int podId) {
-        return Util.getBrokersLogging(Integer.toString(podId));
-    }
-
-    /**
-     * Created config resource instance
-     *
-     * @param podId Pod ID
-     *
-     * @return  Config resource
-     */
-    public static ConfigResource getBrokersConfig(String podId) {
-        return new ConfigResource(ConfigResource.Type.BROKER, podId);
-    }
-
-    /**
-     * Created config resource instance
-     *
-     * @param podId Pod ID
-     *
-     * @return  Config resource
-     */
-    public static ConfigResource getBrokersLogging(String podId) {
-        return new ConfigResource(ConfigResource.Type.BROKER_LOGGER, podId);
-    }
-
-    /**
-     * Method parses all dynamically unchangeable entries from the logging configuration.
-     * @param loggingConfiguration logging configuration to be parsed
-     * @return String containing all unmodifiable entries.
-     */
-    public static String getLoggingDynamicallyUnmodifiableEntries(String loggingConfiguration) {
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(loggingConfiguration);
-        StringBuilder result = new StringBuilder();
-        for (Map.Entry<String, String> entry: new TreeMap<>(ops.asMap()).entrySet()) {
-            if (entry.getKey().startsWith("log4j.appender.") && !entry.getKey().equals("monitorInterval")) {
-                result.append(entry.getKey()).append("=").append(entry.getValue());
-            }
-        }
-        return result.toString();
-    }
-
-    /**
-     * Load the properties and expand any variables of format ${NAME} inside values with resolved values.
-     * Variables are resolved by looking up the property names only within the loaded map.
-     *
-     * @param env Multiline properties file as String
-     * @return Multiline properties file as String with variables resolved
-     */
-    public static String expandVars(String env) {
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(env);
-        Map<String, String> map = ops.asMap();
-        StringBuilder resultBuilder = new StringBuilder();
-        for (Map.Entry<String, String> entry: map.entrySet()) {
-            resultBuilder.append(entry.getKey() + "=" + expandVar(entry.getValue(), ops.asMap()) + "\n");
-        }
-        return resultBuilder.toString();
-    }
-
-    /**
-     * Search for occurrences of ${NAME} in the 'value' parameter and replace them with
-     * the value for the NAME key in the 'env' map.
-     *
-     * @param value String value possibly containing variables of format: ${NAME}
-     * @param env Var map with name:value pairs
-     * @return Input string with variable references resolved
-     */
-    public static String expandVar(String value, Map<String, String> env) {
-        StringBuilder sb = new StringBuilder();
-        int endIdx = -1;
-        int startIdx;
-        int prefixLen = "${".length();
-        while ((startIdx = value.indexOf("${", endIdx + 1)) != -1) {
-            sb.append(value, endIdx + 1, startIdx);
-            endIdx = value.indexOf("}", startIdx + prefixLen);
-            if (endIdx != -1) {
-                String key = value.substring(startIdx + prefixLen, endIdx);
-                String resolved = env.get(key);
-                sb.append(resolved != null ? resolved : "");
-            } else {
-                break;
-            }
-        }
-        sb.append(value.substring(endIdx + 1));
-        return sb.toString();
     }
 
     /**
@@ -409,44 +216,6 @@ public class Util {
             return sha1.digest(toBeHashed);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Failed to get SHA-1 hash", e);
-        }
-    }
-
-    /**
-     * Checks if the Kubernetes resource matches LabelSelector. This is useful when you use get/getAsync to retrieve a
-     * resource and want to check if it matches the labels from the selector (since get/getAsync is using name and not
-     * labels to identify the resource). This method currently supports only the matchLabels object. matchExpressions
-     * array is not supported.
-     *
-     * @param labelSelector The LabelSelector with the labels which should be present in the resource
-     * @param cr            The Custom Resource which labels should be checked
-     *
-     * @return              True if the resource contains all labels from the LabelSelector or if the LabelSelector is empty
-     */
-    public static boolean matchesSelector(LabelSelector labelSelector, HasMetadata cr) {
-        if (labelSelector != null && labelSelector.getMatchLabels() != null) {
-            if (cr.getMetadata().getLabels() != null) {
-                return cr.getMetadata().getLabels().entrySet().containsAll(labelSelector.getMatchLabels().entrySet());
-            } else {
-                return labelSelector.getMatchLabels().isEmpty();
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Deleted a file from the filesystem
-     *
-     * @param key   Path to the file which should be deleted
-     */
-    public static void delete(Path key) {
-        if (key != null) {
-            try {
-                Files.deleteIfExists(key);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 

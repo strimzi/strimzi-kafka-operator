@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -30,6 +31,7 @@ import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 
@@ -37,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 
@@ -150,7 +153,7 @@ public class ReconcilerUtils {
     private static Future<Secret> getSecret(SecretOperator secretOperator, String namespace, String secretName)  {
         return secretOperator.getAsync(namespace, secretName).compose(secret -> {
             if (secret == null) {
-                return Future.failedFuture(Util.missingSecretException(namespace, secretName));
+                return Future.failedFuture(missingSecretException(namespace, secretName));
             } else {
                 return Future.succeededFuture(secret);
             }
@@ -402,5 +405,56 @@ public class ReconcilerUtils {
             .forEach(entry -> sb.append(entry.getKey()).append(entry.getValue()));
         
         return Util.hashStub(sb.toString());
+    }
+
+    /**
+     * Returns exception when secret is missing. This is used from several different methods to provide identical exception.
+     *
+     * @param namespace     Namespace of the Secret
+     * @param secretName    Name of the Secret
+     * @return              RuntimeException
+     */
+    static RuntimeException missingSecretException(String namespace, String secretName) {
+        return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
+    }
+
+    /**
+     * Method parses all dynamically unchangeable entries from the logging configuration.
+     * @param loggingConfiguration logging configuration to be parsed
+     * @return String containing all unmodifiable entries.
+     */
+    static String getLoggingDynamicallyUnmodifiableEntries(String loggingConfiguration) {
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(loggingConfiguration);
+        StringBuilder result = new StringBuilder();
+        for (Map.Entry<String, String> entry: new TreeMap<>(ops.asMap()).entrySet()) {
+            if (entry.getKey().startsWith("log4j.appender.") && !entry.getKey().equals("monitorInterval")) {
+                result.append(entry.getKey()).append("=").append(entry.getValue());
+            }
+        }
+        return result.toString();
+    }
+
+    /**
+     * Checks if the Kubernetes resource matches LabelSelector. This is useful when you use get/getAsync to retrieve a
+     * resource and want to check if it matches the labels from the selector (since get/getAsync is using name and not
+     * labels to identify the resource). This method currently supports only the matchLabels object. matchExpressions
+     * array is not supported.
+     *
+     * @param labelSelector The LabelSelector with the labels which should be present in the resource
+     * @param cr            The Custom Resource which labels should be checked
+     *
+     * @return              True if the resource contains all labels from the LabelSelector or if the LabelSelector is empty
+     */
+    /* test */ static boolean matchesSelector(LabelSelector labelSelector, HasMetadata cr) {
+        if (labelSelector != null && labelSelector.getMatchLabels() != null) {
+            if (cr.getMetadata().getLabels() != null) {
+                return cr.getMetadata().getLabels().entrySet().containsAll(labelSelector.getMatchLabels().entrySet());
+            } else {
+                return labelSelector.getMatchLabels().isEmpty();
+            }
+        }
+
+        return true;
     }
 }

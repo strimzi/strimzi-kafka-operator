@@ -22,7 +22,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.TimeoutException;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.InvalidConfigParameterException;
@@ -213,7 +212,7 @@ public abstract class AbstractOperator<
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
 
-        if (!Util.matchesSelector(selector(), cr))  {
+        if (!ReconcilerUtils.matchesSelector(selector(), cr))  {
             // When the labels matching the selector are removed from the custom resource, a DELETE event is
             // triggered by the watch even through the custom resource might not match the watch labels anymore
             // and might not be really deleted. We have to filter these situations out and ignore the
@@ -608,7 +607,7 @@ public abstract class AbstractOperator<
         }
 
         return resourceOperator.getAsync(reconciliation.namespace(), reconciliation.name()).map(cr -> {
-            if (cr != null && Util.matchesSelector(selector(), cr)) {
+            if (cr != null && ReconcilerUtils.matchesSelector(selector(), cr)) {
                 resourcesStateCounter.computeIfAbsent(key, tags ->
                         metrics().metricsProvider().gauge(MetricsHolder.METRICS_RESOURCE_STATE, "Current state of the resource: 1 ready, 0 fail", metricTags)
                 );

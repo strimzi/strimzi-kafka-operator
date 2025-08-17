@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.OrderedProperties;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -296,5 +297,25 @@ public class LoggingUtilsTest {
 
         ex = assertThrows(InvalidResourceException.class, () -> LoggingUtils.validateLogging(new ExternalLoggingBuilder().build()));
         assertThat(ex.getMessage(), is("Logging configuration is invalid: [Config Map reference is missing]"));
+    }
+
+    @Test
+    public void testVarExpansion() {
+        String input = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
+                "connect.root.logger.level=INFO\n" +
+                "log4j.rootLogger=${connect.root.logger.level}, CONSOLE\n" +
+                "log4j.logger.org.reflections=ERROR";
+
+        String expectedOutput = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
+                "connect.root.logger.level=INFO\n" +
+                "log4j.rootLogger=INFO, CONSOLE\n" +
+                "log4j.logger.org.reflections=ERROR\n";
+
+        String result = LoggingUtils.expandVars(input);
+        assertThat(result, CoreMatchers.is(expectedOutput));
     }
 }

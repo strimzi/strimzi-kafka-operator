@@ -54,7 +54,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusUtils;
@@ -1152,7 +1151,7 @@ public class KafkaRebalanceAssemblyOperator
                                 new NoSuchResourceException("Kafka resource '" + clusterName
                                         + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL
                                         + "' does not exist in namespace " + clusterNamespace + ".")));
-                    } else if (!Util.matchesSelector(kafkaSelector, kafka)) {
+                    } else if (!ReconcilerUtils.matchesSelector(kafkaSelector, kafka)) {
                         LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.getMatchLabels());
                         return Future.succeededFuture(null);
                     } else if (!isKafkaClusterReady(kafka) && KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()) != KafkaRebalanceState.Ready) {
@@ -1194,12 +1193,12 @@ public class KafkaRebalanceAssemblyOperator
                             .compose(compositeFuture -> {
                                 Secret ccSecret = compositeFuture.resultAt(1);
                                 if (ccSecret == null) {
-                                    return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccSecretName));
+                                    return Future.failedFuture(ReconcilerUtils.missingSecretException(clusterNamespace, ccSecretName));
                                 }
 
                                 Secret ccApiSecret = compositeFuture.resultAt(2);
                                 if (ccApiSecret == null) {
-                                    return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccApiSecretName));
+                                    return Future.failedFuture(ReconcilerUtils.missingSecretException(clusterNamespace, ccApiSecretName));
                                 }
 
                                 CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet(), Map.of());

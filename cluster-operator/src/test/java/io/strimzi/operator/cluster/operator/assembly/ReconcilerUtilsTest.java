@@ -4,8 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -29,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -311,6 +315,51 @@ public class ReconcilerUtilsTest {
     public void testHashSecretContentWithNoSecret() {
         RuntimeException ex = assertThrows(RuntimeException.class, () -> ReconcilerUtils.hashSecretContent(null));
         assertThat(ex.getMessage(), is("Secret not found"));
+    }
+
+    @Test
+    public void testMatchesSelector()   {
+        Pod testResource = new PodBuilder()
+                .withNewMetadata()
+                .withName("test-pod")
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
+
+        // Resources without any labels
+        LabelSelector selector = null;
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(true));
+
+        selector = new LabelSelectorBuilder().withMatchLabels(emptyMap()).build();
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(true));
+
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2")).build();
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(false));
+
+        // Resources with Labels
+        testResource.getMetadata().setLabels(Map.of("label1", "value1", "label2", "value2"));
+
+        selector = null;
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(true));
+
+        selector = new LabelSelectorBuilder().withMatchLabels(emptyMap()).build();
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(true));
+
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2")).build();
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(true));
+
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1")).build();
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(true));
+
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value1")).build();
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(false));
+
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label3", "value3")).build();
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(false));
+
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1", "label3", "value3")).build();
+        assertThat(ReconcilerUtils.matchesSelector(selector, testResource), is(false));
     }
 
     static class MockJmxCluster implements SupportsJmx {

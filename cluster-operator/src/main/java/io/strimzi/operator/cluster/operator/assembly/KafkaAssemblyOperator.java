@@ -40,7 +40,6 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
@@ -774,7 +773,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Kafka kafka = kafkaOperator.get(resource.getMetadata().getNamespace(), kafkaName);
 
             if (kafka != null
-                    && Util.matchesSelector(selector(), kafka)) {
+                    && ReconcilerUtils.matchesSelector(selector(), kafka)) {
                 Reconciliation reconciliation = new Reconciliation("watch", kind(), kafka.getMetadata().getNamespace(), kafkaName);
                 LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action);
                 enqueueReconciliation(reconciliation);

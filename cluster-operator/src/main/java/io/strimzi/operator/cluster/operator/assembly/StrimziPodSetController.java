@@ -37,7 +37,6 @@ import io.strimzi.operator.common.InformerUtils;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusDiff;
@@ -233,7 +232,7 @@ public class StrimziPodSetController implements Runnable {
                 .list(pod.getMetadata().getNamespace())
                 .stream()
                 .filter(podSet -> podSet.getSpec() != null
-                        && Util.matchesSelector(podSet.getSpec().getSelector(), pod))
+                        && ReconcilerUtils.matchesSelector(podSet.getSpec().getSelector(), pod))
                 .findFirst().orElse(null);
     }
 
@@ -281,7 +280,7 @@ public class StrimziPodSetController implements Runnable {
             HasMetadata cr = findCustomResource(podSet);
 
             if (cr != null
-                    && Util.matchesSelector(crSelector, cr)) {
+                    && ReconcilerUtils.matchesSelector(crSelector, cr)) {
                 return true;
             } else {
                 LOGGER.debugOp("StrimziPodSet {} in namespace {} does not belong to a custom resource matching the selector", podSet.getMetadata().getName(), podSet.getMetadata().getNamespace());
@@ -486,7 +485,7 @@ public class StrimziPodSetController implements Runnable {
         Set<String> toBeDeleted = podInformer
                 .list(reconciliation.namespace())
                 .stream()
-                .filter(pod -> Util.matchesSelector(selector, pod))
+                .filter(pod -> ReconcilerUtils.matchesSelector(selector, pod))
                 .map(pod -> pod.getMetadata().getName())
                 .collect(Collectors.toSet());
         toBeDeleted.removeAll(desiredPodNames);
