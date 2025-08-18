@@ -181,7 +181,7 @@ public class CruiseControlReconciler {
                 ).mapEmpty();
     }
     /**
-     * Manages the Kafka Exporter Pod Disruption Budget
+     * Manages the Cruise Control Pod Disruption Budget
      *
      * @return  Future which completes when the reconciliation is done
      */

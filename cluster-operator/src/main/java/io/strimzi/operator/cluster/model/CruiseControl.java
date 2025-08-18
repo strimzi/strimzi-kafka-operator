@@ -547,9 +547,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 );
     }
     /**
-     * Generates the PodDisruptionBudget for the Entity Operator
+     * Generates the PodDisruptionBudget for Cruise Control
      *
-     * @return The PodDisruptionBudget for the Entity Operator
+     * @return The PodDisruptionBudget for Cruise Control
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(
