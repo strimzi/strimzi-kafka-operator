@@ -3,9 +3,13 @@ description: "Build and archive Strimzi images"
 
 inputs:
   architecture:
-    description: "Architecture"
+    description: "Architecture of Strimzi images"
     required: false
     default: "amd64"
+  runnerArch:
+    description: "Architecture of GitHub runner"
+    required: false
+    default: "arm64"
 
 runs:
   using: "composite"
@@ -15,11 +19,11 @@ runs:
     - name: Install yq
       uses: ./.github/actions/install-yq
       with:
-        architecture: ${{ inputs.architecture }}
+        architecture: ${{ inputs.runnerArch }}
     - name: Install Shellcheck
       uses: ./.github/actions/install-shellcheck
       with:
-        architecture: ${{ inputs.architecture }}
+        architecture: ${{ inputs.runnerArch }}
 
     - uses: actions/download-artifact@v4
       with:
@@ -32,7 +36,6 @@ runs:
     - name: Build images
       shell: bash
       run: |
-        sudo cat /etc/resolv.conf
         make docker_build docker_save
       env:
         MVN_ARGS: '-B -DskipTests -Dmaven.javadoc.skip=true'

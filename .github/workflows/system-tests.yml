@@ -103,6 +103,7 @@ jobs:
       - uses: ./.github/actions/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
+          runnerArch: "arm64"
 
   build-images:
     name: build-images
@@ -123,6 +124,7 @@ jobs:
       - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}
+          runnerArch: "arm64"
 
   run-tests:
     name: run-tests

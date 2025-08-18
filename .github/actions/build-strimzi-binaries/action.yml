@@ -6,6 +6,10 @@ inputs:
     description: "Maven arguments for the build"
     required: false
     default: ""
+  runnerArch:
+    description: "Architecture of GitHub runner"
+    required: false
+    default: "arm64"
 
 runs:
   using: "composite"
@@ -13,11 +17,11 @@ runs:
     - name: Install yq
       uses: ./.github/actions/install-yq
       with:
-        architecture: arm64
+        architecture: ${{ inputs.runnerArch }}
     - name: Install Shellcheck
       uses: ./.github/actions/install-shellcheck
       with:
-        architecture: arm64
+        architecture: ${{ inputs.runnerArch }}
     - name: Install Helm
       uses: ./.github/actions/install-helm
     - uses: actions/setup-java@v4

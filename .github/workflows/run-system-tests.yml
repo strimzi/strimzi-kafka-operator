@@ -174,11 +174,6 @@ jobs:
       - name: Install Docker
         uses: ./.github/actions/install-docker
 
-#      - name: Install Minikube
-#        uses: ./.github/actions/setup-minikube
-#        with:
-#          architecture: ${{ matrix.config.arch }}
-
       - name: Install Kind
         uses: ./.github/actions/setup-kind
         with:
