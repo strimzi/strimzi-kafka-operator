@@ -13,10 +13,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.operator.cluster.model.logging.LoggingUtils;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.json.JsonObject;
 
@@ -62,7 +62,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public CompletableFuture<Map<String, Object>> createOrUpdatePutRequest(
             Reconciliation reconciliation,
             String host, int port,
@@ -434,7 +433,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             }
             return k1.compareTo(k2);
         });
-        Map<String, String> desiredMap = new OrderedProperties().addStringPairs(Util.expandVars(desiredLogging)).asMap();
+        Map<String, String> desiredMap = new OrderedProperties().addStringPairs(LoggingUtils.expandVars(desiredLogging)).asMap();
 
         updateLoggers.putAll(fetchedLoggers.keySet().stream().collect(Collectors.toMap(
             Function.identity(),
@@ -478,15 +477,15 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         }
 
         //nothing found, use root level
-        return getLoggerLevelFromAppenderCouple(Util.expandVar(desired.get("log4j.rootLogger"), desired));
+        return getLoggerLevelFromAppenderCouple(LoggingUtils.expandVar(desired.get("log4j.rootLogger"), desired));
     }
 
     private void addToLoggers(Map<String, String> entries, Map<String, String> updateLoggers) {
         for (Map.Entry<String, String> e : entries.entrySet()) { // set desired loggers to desired levels
             if (e.getKey().equals("log4j.rootLogger")) {
-                updateLoggers.put("root", getLoggerLevelFromAppenderCouple(Util.expandVar(e.getValue(), entries)));
+                updateLoggers.put("root", getLoggerLevelFromAppenderCouple(LoggingUtils.expandVar(e.getValue(), entries)));
             } else if (e.getKey().startsWith("log4j.logger.")) {
-                updateLoggers.put(e.getKey().substring("log4j.logger.".length()), getLoggerLevelFromAppenderCouple(Util.expandVar(e.getValue(), entries)));
+                updateLoggers.put(e.getKey().substring("log4j.logger.".length()), getLoggerLevelFromAppenderCouple(LoggingUtils.expandVar(e.getValue(), entries)));
             }
         }
     }

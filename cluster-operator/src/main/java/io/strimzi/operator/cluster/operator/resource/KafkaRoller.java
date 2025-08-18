@@ -24,7 +24,6 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -692,7 +691,7 @@ public class KafkaRoller {
      * @return a Future which completes with the logging of the given broker.
      */
     /* test */ Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
-        ConfigResource resource = Util.getBrokersLogging(brokerId);
+        ConfigResource resource = getBrokersLogging(brokerId);
         return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
                 30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error getting broker logging", error)
@@ -705,11 +704,11 @@ public class KafkaRoller {
         Map<ConfigResource, Collection<AlterConfigOp>> updatedPerBrokerConfig = new HashMap<>(2);
         Map<ConfigResource, Collection<AlterConfigOp>> updatedClusterWideConfig = new HashMap<>(1);
         var podId = nodeRef.nodeId();
-        updatedPerBrokerConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff(Scope.PER_BROKER));
-        updatedClusterWideConfig.put(Util.getClusterWideConfig(), configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE));
+        updatedPerBrokerConfig.put(getBrokersConfig(podId), configurationDiff.getConfigDiff(Scope.PER_BROKER));
+        updatedClusterWideConfig.put(getClusterWideConfig(), configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE));
 
         if (!isLog4j2) {
-            updatedPerBrokerConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
+            updatedPerBrokerConfig.put(getBrokersLogging(podId), logDiff.getLoggingDiff());
         }
 
         LOGGER.traceCr(reconciliation, "Updating cluster wide configuration with {}", updatedClusterWideConfig);
@@ -717,14 +716,14 @@ public class KafkaRoller {
         LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", nodeRef, updatedPerBrokerConfig);
 
         AlterConfigsResult alterClusterConfigResult = ac.incrementalAlterConfigs(updatedClusterWideConfig);
-        KafkaFuture<Void> clusterConfigFuture = alterClusterConfigResult.values().get(Util.getClusterWideConfig());
+        KafkaFuture<Void> clusterConfigFuture = alterClusterConfigResult.values().get(getClusterWideConfig());
 
         AlterConfigsResult alterBrokerConfigResult = ac.incrementalAlterConfigs(updatedPerBrokerConfig);
-        KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(Util.getBrokersConfig(podId));
+        KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(podId));
 
         KafkaFuture<Void> brokerLoggingConfigFuture;
         if (!isLog4j2) {
-            brokerLoggingConfigFuture = alterBrokerConfigResult.values().get(Util.getBrokersLogging(podId));
+            brokerLoggingConfigFuture = alterBrokerConfigResult.values().get(getBrokersLogging(podId));
         } else {
             brokerLoggingConfigFuture = KafkaFuture.completedFuture(null);
         }
@@ -979,6 +978,37 @@ public class KafkaRoller {
                 LOGGER.warnCr(reconciliation, "Error waiting for pod {}/{} to become ready: {}", namespace, podName, error);
                 return Future.failedFuture(error);
             });
+    }
+
+    /**
+     * Created config resource instance
+     *
+     * @param podId Pod ID
+     *
+     * @return  Config resource
+     */
+    private static ConfigResource getBrokersConfig(int podId) {
+        return new ConfigResource(ConfigResource.Type.BROKER, Integer.toString(podId));
+    }
+
+    /**
+     * Created config resource instance for cluster-wide dynamic changes
+     *
+     * @return  Config resource
+     */
+    private static ConfigResource getClusterWideConfig() {
+        return new ConfigResource(ConfigResource.Type.BROKER, "");
+    }
+
+    /**
+     * Created config resource instance
+     *
+     * @param podId Pod ID
+     *
+     * @return  Config resource
+     */
+    private static ConfigResource getBrokersLogging(int podId) {
+        return new ConfigResource(ConfigResource.Type.BROKER_LOGGER, Integer.toString(podId));
     }
 }
 

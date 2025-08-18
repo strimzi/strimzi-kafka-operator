@@ -699,7 +699,7 @@ public class KafkaReconciler {
                             // For controllers only, we use the full logging configuration in the logging annotation
                             this.brokerLoggingHash.put(nodeId, Util.hashStub(logging));
                         } else {
-                            this.brokerLoggingHash.put(nodeId, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                            this.brokerLoggingHash.put(nodeId, Util.hashStub(ReconcilerUtils.getLoggingDynamicallyUnmodifiableEntries(logging)));
                         }
 
                         // We store hash of the broker configurations for later use in Pod and in rolling updates

@@ -191,7 +191,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                         if (useConnectorResources) {
                             // When connector resources are used, we do dynamic configuration update, and we need the hash to
                             // contain only settings that cannot be updated dynamically
-                            podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                            podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(ReconcilerUtils.getLoggingDynamicallyUnmodifiableEntries(logging)));
                         } else {
                             // When connector resources are not used, we do not do dynamic logging updates, and we need the
                             // hash to cover complete logging configuration
@@ -528,7 +528,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                     // (i.e. short circuit doing a whole KafkaConnect reconciliation).
                                     Reconciliation reconciliation = new Reconciliation("connector-watch", kind(), resource.getMetadata().getNamespace(), connectName);
 
-                                    if (!Util.matchesSelector(selector(), connect)) {
+                                    if (!ReconcilerUtils.matchesSelector(selector(), connect)) {
                                         LOGGER.debugCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} does not match label selector {} and will be ignored", connectorKind, connectorName, namespace, action, connectName, selector());
                                         return Future.succeededFuture();
                                     } else if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0 && !Annotations.isReconciliationPausedWithAnnotation(resource)) {

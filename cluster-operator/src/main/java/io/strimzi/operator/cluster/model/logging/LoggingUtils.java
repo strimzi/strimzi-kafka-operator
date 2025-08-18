@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -223,5 +224,51 @@ public class LoggingUtils {
         if (!errors.isEmpty())  {
             throw new InvalidResourceException("Logging configuration is invalid: " + errors);
         }
+    }
+
+    /**
+     * Load the properties and expand any variables of format ${NAME} inside values with resolved values.
+     * Variables are resolved by looking up the property names only within the loaded map.
+     *
+     * @param env Multiline properties file as String
+     * @return Multiline properties file as String with variables resolved
+     */
+    public static String expandVars(String env) {
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(env);
+        Map<String, String> map = ops.asMap();
+        StringBuilder resultBuilder = new StringBuilder();
+        for (Map.Entry<String, String> entry: map.entrySet()) {
+            resultBuilder.append(entry.getKey() + "=" + expandVar(entry.getValue(), ops.asMap()) + "\n");
+        }
+        return resultBuilder.toString();
+    }
+
+    /**
+     * Search for occurrences of ${NAME} in the 'value' parameter and replace them with
+     * the value for the NAME key in the 'env' map.
+     *
+     * @param value String value possibly containing variables of format: ${NAME}
+     * @param env Var map with name:value pairs
+     * @return Input string with variable references resolved
+     */
+    public static String expandVar(String value, Map<String, String> env) {
+        StringBuilder sb = new StringBuilder();
+        int endIdx = -1;
+        int startIdx;
+        int prefixLen = "${".length();
+        while ((startIdx = value.indexOf("${", endIdx + 1)) != -1) {
+            sb.append(value, endIdx + 1, startIdx);
+            endIdx = value.indexOf("}", startIdx + prefixLen);
+            if (endIdx != -1) {
+                String key = value.substring(startIdx + prefixLen, endIdx);
+                String resolved = env.get(key);
+                sb.append(resolved != null ? resolved : "");
+            } else {
+                break;
+            }
+        }
+        sb.append(value.substring(endIdx + 1));
+        return sb.toString();
     }
 }

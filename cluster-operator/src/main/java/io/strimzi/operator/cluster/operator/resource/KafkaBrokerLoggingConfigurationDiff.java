@@ -5,9 +5,9 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.operator.cluster.model.logging.LoggingUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.AbstractJsonDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
@@ -159,12 +159,12 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     String name = line.substring(startIdx, endIdx).trim();
                     String value = line.substring(endIdx + 1).split(",")[0].trim();
 
-                    value = Util.expandVar(value, env);
+                    value = LoggingUtils.expandVar(value, env);
                     parsed.put(name, value);
 
                 } else if (line.startsWith("log4j.rootLogger=")) {
                     int startIdx = "log4j.rootLogger=".length();
-                    parsed.put("root", Util.expandVar(line.substring(startIdx).split(",")[0].trim(), env));
+                    parsed.put("root", LoggingUtils.expandVar(line.substring(startIdx).split(",")[0].trim(), env));
 
                 } else {
                     LOGGER.debugCr(reconciliation, "Skipping log4j line: {}", line);
