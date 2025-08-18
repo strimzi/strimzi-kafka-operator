@@ -2,7 +2,7 @@
 
 **Description:** Tests user throttling quotas during topic operations.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
