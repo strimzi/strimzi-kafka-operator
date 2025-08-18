@@ -5,6 +5,11 @@
 package io.strimzi.systemtest.operators.topic;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
@@ -17,6 +22,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -67,6 +73,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Covers Topic Operator general functionality and edge-case scenarios."),
+    labels = {
+        @Label(TestDocsLabels.TOPIC_OPERATOR),
+    }
+)
 public class TopicST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
@@ -76,6 +88,18 @@ public class TopicST extends AbstractST {
     private static long topicOperatorReconciliationIntervalMs;
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Verifies Topic CRs with more replicas than brokers are not created in Kafka, error surfaced in status."),
+        steps = {
+            @Step(value = "Create KafkaTopic with replicationFactor > brokers.", expected = "KafkaTopic appears in Kubernetes but not in Kafka."),
+            @Step(value = "Wait for NotReady status and error message.", expected = "KafkaTopic status NotReady, error message present."),
+            @Step(value = "Delete topic and verify cleanup.", expected = "Topic removed from Kubernetes and Kafka."),
+            @Step(value = "Create topic with correct replication factor.", expected = "Topic is created in Kafka and Kubernetes.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     void testMoreReplicasThanAvailableBrokers() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         int topicReplicationFactor = 5;
@@ -110,6 +134,16 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Repeatedly create, delete, and recreate a KafkaTopic. Checks proper creation/deletion in both CRD and Kafka."),
+        steps = {
+            @Step(value = "Create KafkaTopic.", expected = "Topic appears in adminClient and CRD."),
+            @Step(value = "Loop ten times: Delete topic, verify absence, recreate, verify presence.", expected = "Topics are correctly deleted and recreated in both places.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     void testCreateDeleteCreate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -144,6 +178,17 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Verifies that sending messages to a non-existing topic triggers auto-creation when 'auto.topic.creation' is enabled."),
+        steps = {
+            @Step(value = "Ensure topic does not exist in Kafka.", expected = "Topic is absent."),
+            @Step(value = "Send messages to non-existent topic.", expected = "Kafka auto-creates the topic."),
+            @Step(value = "Check topic exists in Kafka.", expected = "Topic appears in adminClient.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     void testSendingMessagesToNonExistingTopic() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -161,6 +206,19 @@ public class TopicST extends AbstractST {
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+        description = @Desc("Verifies Topic deletion behavior when 'delete.topic.enable' is false, then enabled."),
+        steps = {
+            @Step(value = "Deploy Kafka with 'delete.topic.enable=false'.", expected = "Cluster is up, topic deletion disabled."),
+            @Step(value = "Create KafkaTopic and ensure it exists.", expected = "Topic present in CRD and Kafka."),
+            @Step(value = "Produce and consume messages.", expected = "Messages sent and received successfully."),
+            @Step(value = "Attempt to delete KafkaTopic.", expected = "Deletion blocked, error surfaced in status."),
+            @Step(value = "Enable topic deletion and delete topic.", expected = "Topic deleted from both CRD and Kafka.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     void testDeleteTopicEnableFalse() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -223,6 +281,18 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Verifies topic creation after an unsupported operation, like decreasing partitions or replicas."),
+        steps = {
+            @Step(value = "Create KafkaTopic with partitions and replicas.", expected = "Topic created and Ready."),
+            @Step(value = "Attempt unsupported decrease of partitions/replicas.", expected = "KafkaTopic NotReady, error message in status."),
+            @Step(value = "Create new valid topic after failed operation.", expected = "New topic created and Ready."),
+            @Step(value = "Delete both topics.", expected = "Topics deleted from CRD and Kafka.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     void testCreateTopicAfterUnsupportedOperation() {
         String topicName = "topic-with-replication-to-change";
         String newTopicName = "another-topic";
@@ -265,41 +335,27 @@ public class TopicST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicDeletion(Environment.TEST_SUITE_NAMESPACE, newTopicName);
     }
 
-    /**
-     * @description This test case checks Unidirectional Topic Operator metrics regarding different states of KafkaTopic.
-     *
-     * @steps
-     *  1. - Create KafkaTopic
-     *     - KafkaTopic is ready
-     *  2. - Create metrics collector for Topic Operator and collect the metrics
-     *     - Metrics collected
-     *  3. - Check that TOpic Operator metrics contains data about reconciliations
-     *     - Metrics contains proper data
-     *  4. - Check that metrics contain info about KafkaTopic with name stored in 'topicName' is Ready
-     *     - Metrics contains proper data
-     *  5. - Change spec.topicName for topic 'topicName' and wait for NotReady status
-     *     - KafkaTopic is in NotReady state
-     *  6. - Check that metrics contain info about KafkaTopic 'topicName' cannot be renamed and that KT status has proper values
-     *     - Metrics contains proper data and status contains proper values
-     *  7. - Revert changes in KafkaTopic and change number of Replicas
-     *     - KafkaTopic CR replica count is changed
-     *  8. - Check that metrics contain info about KafkaTopic 'topicName' replicas count cannot be changed and KT status has proper values
-     *     - Metrics contains proper data and KT status has proper values
-     *  9. - Decrease KT number of partitions
-     *     - Partitions count changed
-     *  10. - Check that metrics contains info about KafkaTopic NotReady status and KT status has proper values (cannot change partition count)
-     *      - Metrics contains proper data and KT status has proper values
-     *  11. - Set KafkaTopic configuration to default one
-     *      - KafkaTopic is in Ready state
-     *  12. - Check that metrics contain info about KafkaTopic 'topicName' is Ready
-     *      - Metrics contains proper data
-     *
-     * @testcase
-     *  - topic-operator-metrics
-     *  - kafkatopic-ready
-     *  - kafkatopic-not-ready
-     */
     @IsolatedTest
+    @TestDoc(
+        description = @Desc("Checks Topic Operator metrics and KafkaTopic status transitions when modifying topic name, replicas, and partitions in UTO mode."),
+        steps = {
+            @Step(value = "Create KafkaTopic.", expected = "KafkaTopic is ready."),
+            @Step(value = "Create metrics collector and collect Topic Operator metrics.", expected = "Metrics collected."),
+            @Step(value = "Check that Topic Operator metrics contain reconciliation data.", expected = "Metrics contain proper data."),
+            @Step(value = "Check that metrics include KafkaTopic in Ready state.", expected = "Metrics contain proper data."),
+            @Step(value = "Change spec.topicName and wait for NotReady.", expected = "KafkaTopic is in NotReady state."),
+            @Step(value = "Check that metrics show renaming is not allowed and status reflects this.", expected = "Metrics and status have proper values."),
+            @Step(value = "Revert topic name and change replica count.", expected = "Replica count is changed."),
+            @Step(value = "Check that metrics show replica change is not allowed and status reflects this.", expected = "Metrics and status have proper values."),
+            @Step(value = "Decrease partition count.", expected = "Partition count is changed."),
+            @Step(value = "Check that metrics and status reflect partition count change is not allowed.", expected = "Metrics and status have proper values."),
+            @Step(value = "Set KafkaTopic configuration to defaults.", expected = "KafkaTopic is in Ready state."),
+            @Step(value = "Check that metrics include KafkaTopic in Ready state.", expected = "Metrics contain proper data.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     void testKafkaTopicDifferentStatesInUTOMode() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         int initialReplicas = 1;
@@ -387,6 +443,17 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Verifies status handling for invalid min.insync.replicas configuration in KafkaTopic."),
+        steps = {
+            @Step(value = "Create KafkaTopic and ensure Ready.", expected = "Topic Ready."),
+            @Step(value = "Set min.insync.replicas to invalid value.", expected = "KafkaTopic NotReady, error message in status."),
+            @Step(value = "Wait for reconciliation and check error persists.", expected = "Status and error remain NotReady.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     void testKafkaTopicChangingMinInSyncReplicas() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -412,26 +479,19 @@ public class TopicST extends AbstractST {
         assertKafkaTopicStatus(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), resourceStatus, conditionStatus, reason, reasonMessage, 2);
     }
 
-    /**
-     * @description This test case checks that Kafka cluster will not act upon KafkaTopic CustomResources
-     * which are not of its concern, i.e., KafkaTopic CustomResources are not labeled accordingly.
-     *
-     * @steps
-     *  1. - Deploy Kafka with short reconciliation time configured on Topic Operator
-     *     - Kafka is deployed
-     *  2. - Create KafkaTopic CustomResource without any labels provided
-     *     - KafkaTopic CustomResource is created
-     *  3. - Verify that KafkaTopic specified by created KafkaTopic is not created
-     *     - Given KafkaTopic is not present inside Kafka cluster
-     *  4. - Delete given KafkaTopic CustomResource
-     *     - KafkaTopic CustomResource is deleted
-     *
-     * @testcase
-     *  - topic-operator
-     *  - kafka-topic
-     *  - labels
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Verifies that KafkaTopic CRs without labels are ignored by the Topic Operator."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with short reconciliation interval.", expected = "Kafka cluster and Topic Operator are ready."),
+            @Step(value = "Create KafkaTopic without labels.", expected = "KafkaTopic is created but not handled."),
+            @Step(value = "Verify KafkaTopic is not created and check logs.", expected = "KafkaTopic absent in Kafka, log shows ignored topic."),
+            @Step(value = "Delete KafkaTopic.", expected = "KafkaTopic is deleted, topic absent in Kafka.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     void testTopicWithoutLabels() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final long topicOperatorReconciliationMs = 10_000;
