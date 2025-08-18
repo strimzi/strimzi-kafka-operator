@@ -2,7 +2,7 @@
 
 **Description:** Validates KafkaTopic replication factor change logic using the Topic Operator and Cruise Control.
 
-**Before test execution steps:**
+**Before tests execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
