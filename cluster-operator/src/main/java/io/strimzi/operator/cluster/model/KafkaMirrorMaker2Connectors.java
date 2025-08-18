@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
@@ -180,8 +181,8 @@ public class KafkaMirrorMaker2Connectors {
         Map<String, Object> config = new HashMap<>(connector.getConfig());
 
         // Source and target cluster configurations
-        addClusterToMirrorMaker2ConnectorConfig(config, targetCluster, TARGET_CLUSTER_PREFIX);
-        addClusterToMirrorMaker2ConnectorConfig(config, sourceCluster, SOURCE_CLUSTER_PREFIX);
+        addClusterToMirrorMaker2ConnectorConfig(reconciliation, config, targetCluster, TARGET_CLUSTER_PREFIX);
+        addClusterToMirrorMaker2ConnectorConfig(reconciliation, config, sourceCluster, SOURCE_CLUSTER_PREFIX);
 
         // Topics pattern
         if (mirror.getTopicsPattern() != null) {
@@ -251,7 +252,7 @@ public class KafkaMirrorMaker2Connectors {
         return config;
     }
 
-    /* test */ static void addClusterToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
+    /* test */ static void addClusterToMirrorMaker2ConnectorConfig(Reconciliation reconciliation, Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
         config.put(configPrefix + "alias", cluster.getAlias());
         config.put(configPrefix + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers());
 
@@ -284,6 +285,19 @@ public class KafkaMirrorMaker2Connectors {
                 config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG,
                         oauthJaasConfig(cluster, oauthAuthentication));
                 config.put(configPrefix + SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS, "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
+            } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationCustom customAuth) { // Configure custom authentication
+                if (customAuth.isSasl()) {
+                    // If this authentication does not use SASL, we do not need to touch the security protocol
+                    securityProtocol = securityProtocol.equals("SSL") ? "SASL_SSL" : "SASL_PLAINTEXT";
+                }
+
+                Map<String, Object> customConfig = customAuth.getConfig();
+                if (customConfig == null) {
+                    customConfig = Map.of();
+                }
+
+                KafkaClientAuthenticationCustomConfiguration authConfig = new KafkaClientAuthenticationCustomConfiguration(reconciliation, customConfig.entrySet());
+                authConfig.asOrderedProperties().asMap().forEach((key, value) -> config.put(configPrefix + key, value));
             }
         }
 

@@ -1,0 +1,36 @@
+To configure custom authentication, set the `type` property to `custom`.
+Custom authentication allows for any type of Kafka-supported authentication to be used.
+It is especially useful with 3rd party Apache Kafka services - such as Amazon MSK - that use their own authentication mechanisms.
+
+.Example custom authentication configuration using the `AWS_MSK_IAM` authentication
+[source,yaml,subs="attributes+"]
+----
+  authentication:
+    type: custom
+    sasl: true
+    config:
+      sasl.mechanism: AWS_MSK_IAM
+      sasl.jaas.config: software.amazon.msk.auth.iam.IAMLoginModule required;
+      sasl.client.callback.handler.class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+----
+
+The `config` section accepts only options starting with the prefix `sasl.` and `ssl.keystore.`.
+All other options will be ignored.
+If you need to configure additional options, please use the other parts (such as `.spec.config` or `.spec.tls`) in the corresponding Strimzi custom resource.
+The `security.protocol` is automatically generated based on the `sasl` field and the `tls` section of the corresponding Strimzi custom resource.
+
+* SASL = True, TLS = True -> SASL_SSL
+* SASL = False, TLS = True -> SSL
+* SASL = True, TLS = False -> SASL_PLAINTEXT
+* SASL = False, TLS = False -> PLAINTEXT
+
+= Using Secrets in custom authentication
+
+If your custom authentication mechanism requires additional information from Secrets or Config Maps, you can use the link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^] feature to mount them into the operands.
+Kafka Configuration Providers can be used to load them from the disk.
+
+= Using additional authentication plugins
+
+Custom authentication mechanisms will often require custom plugins to be added to the operand.
+You can add them using the link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^] feature.
+Or by building a custom container image.

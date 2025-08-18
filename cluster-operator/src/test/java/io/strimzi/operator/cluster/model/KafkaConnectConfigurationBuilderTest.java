@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.ClientTlsBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustomBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
@@ -381,6 +383,98 @@ class KafkaConnectConfigurationBuilderTest {
                 "admin." + saslJaasConfig,
                 "admin.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
                 ));
+    }
+
+    @Test
+    public void testWithTlsAndCustomAuthMechanismWithSASL() {
+        ClientTls clientTls = new ClientTlsBuilder()
+                .addNewTrustedCertificate()
+                    .withSecretName("tls-trusted-certificate")
+                    .withCertificate("pem-content")
+                .endTrustedCertificate()
+                .build();
+
+        KafkaClientAuthenticationCustom authCustom = new KafkaClientAuthenticationCustomBuilder()
+                .withSasl()
+                .withConfig(Map.of("sasl.mechanism", "AWS_MSK_IAM", "sasl.jaas.config", "software.amazon.msk.auth.iam.IAMLoginModule required;", "sasl.client.callback.handler.class", "software.amazon.msk.auth.iam.IAMClientCallbackHandler", "not.allowed", "foo"))
+                .build();
+
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
+                .withTls(clientTls, "my-cluster")
+                .withAuthentication(authCustom, "my-cluster")
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "security.protocol=SASL_SSL",
+                "producer.security.protocol=SASL_SSL",
+                "consumer.security.protocol=SASL_SSL",
+                "admin.security.protocol=SASL_SSL",
+                "ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:*.crt}",
+                "ssl.truststore.type=PEM",
+                "producer.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:*.crt}",
+                "producer.ssl.truststore.type=PEM",
+                "consumer.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:*.crt}",
+                "consumer.ssl.truststore.type=PEM",
+                "admin.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:*.crt}",
+                "admin.ssl.truststore.type=PEM",
+                "sasl.mechanism=AWS_MSK_IAM",
+                "sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;",
+                "sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler",
+                "producer.sasl.mechanism=AWS_MSK_IAM",
+                "producer.sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;",
+                "producer.sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler",
+                "consumer.sasl.mechanism=AWS_MSK_IAM",
+                "consumer.sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;",
+                "consumer.sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler",
+                "admin.sasl.mechanism=AWS_MSK_IAM",
+                "admin.sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;",
+                "admin.sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler"
+        ));
+    }
+
+    @Test
+    public void testWithTlsAndCustomAuthMechanismWithoutSASL() {
+        ClientTls clientTls = new ClientTlsBuilder()
+                .addNewTrustedCertificate()
+                    .withSecretName("tls-trusted-certificate")
+                    .withCertificate("pem-content")
+                .endTrustedCertificate()
+                .build();
+
+        KafkaClientAuthenticationCustom authCustom = new KafkaClientAuthenticationCustomBuilder()
+                .withSasl(false)
+                .withConfig(Map.of("ssl.keystore.location", "/mnt/certs/keystore", "ssl.keystore.password", "changeme", "not.allowed", "foo"))
+                .build();
+
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
+                .withTls(clientTls, "my-cluster")
+                .withAuthentication(authCustom, "my-cluster")
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "security.protocol=SSL",
+                "producer.security.protocol=SSL",
+                "consumer.security.protocol=SSL",
+                "admin.security.protocol=SSL",
+                "ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:*.crt}",
+                "ssl.truststore.type=PEM",
+                "producer.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:*.crt}",
+                "producer.ssl.truststore.type=PEM",
+                "consumer.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:*.crt}",
+                "consumer.ssl.truststore.type=PEM",
+                "admin.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-connect-tls-trusted-certs:*.crt}",
+                "admin.ssl.truststore.type=PEM",
+                "ssl.keystore.location=/mnt/certs/keystore",
+                "ssl.keystore.password=changeme",
+                "producer.ssl.keystore.location=/mnt/certs/keystore",
+                "producer.ssl.keystore.password=changeme",
+                "consumer.ssl.keystore.location=/mnt/certs/keystore",
+                "consumer.ssl.keystore.password=changeme",
+                "admin.ssl.keystore.location=/mnt/certs/keystore",
+                "admin.ssl.keystore.password=changeme"
+        ));
     }
 
     @Test
