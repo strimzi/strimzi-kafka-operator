@@ -31,8 +31,6 @@ import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
 import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,8 +70,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaRollerTest {
-
-    private static final Logger LOGGER = LogManager.getLogger(KafkaRollerTest.class);
 
     private static final int REPLICAS = 5;
 
@@ -337,7 +333,6 @@ public class KafkaRollerTest {
     @Test
     public void testRollHandlesErrorWhenGettingActiveControllerFromActiveController(VertxTestContext testContext) {
         int activeController = 2;
-        int nonActiveController = 1;
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, 0, REPLICAS), podOps,
                 noException(), null,
