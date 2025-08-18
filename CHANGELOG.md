@@ -10,6 +10,7 @@
 * Added support for Strimzi Metrics Reporter to Kafka Connect, Mirror Maker 2 and Kafka Bridge.
 * Add new feature gate `ServerSideApplyPhase1` (disabled by default) that adds support for Server Side Apply for `ConfigMap`, `Ingress`, `PVC`, `Service`, and `ServiceAccount` according to [Strimzi Proposal #105](https://github.com/strimzi/proposals/blob/main/105-server-side-apply-implementation-fg-timelines.md).
 * Added distinction between changes of "cluster-wide" broker properties applied dynamically at cluster level, and "per-broker" broker properties applied dynamically at broker level.
+* Extend the EntityOperator, Cruise Control and KafkaExporter deployment to support PDB via the template section in the CR spec.
 
 ### Major changes, deprecations and removals
 

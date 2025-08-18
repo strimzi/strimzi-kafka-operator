@@ -141,8 +141,8 @@ public class CruiseControlReconciler {
                 .compose(i -> certificatesSecret(clock))
                 .compose(i -> apiSecret())
                 .compose(i -> service())
-                .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> podDisruptionBudget())
+                .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
     }
 

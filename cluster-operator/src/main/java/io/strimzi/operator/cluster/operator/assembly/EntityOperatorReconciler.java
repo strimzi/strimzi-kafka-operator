@@ -422,7 +422,11 @@ public class EntityOperatorReconciler {
             return Future.succeededFuture();
         }
     }
-
+    /**
+     * Manages the Entity Operator Pod Disruption Budget
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
     protected Future<Void> podDistruptionBudget() {
         if (isPodDisruptionBudgetGeneration) {
             return podDistruptionBudgetOperator
