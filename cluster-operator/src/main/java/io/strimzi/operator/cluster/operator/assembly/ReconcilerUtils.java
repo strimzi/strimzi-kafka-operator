@@ -461,7 +461,7 @@ public class ReconcilerUtils {
         return true;
     }
 
-     /**   
+    /**
      * Generates or reconciles the secret that combines secrets and certificates
      * provided for TLS truststore.
      *

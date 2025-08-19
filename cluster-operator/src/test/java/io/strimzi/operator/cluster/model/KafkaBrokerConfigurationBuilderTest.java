@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimziBuilder;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.RemoteStorageManager;
 import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
@@ -924,7 +925,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
                 "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PEM",
-                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
+                "listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/my-cluster-cluster-ca-cert:*.crt}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PEM",
                 "listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
                 "listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
                 "listener.name.replication-9091.ssl.keystore.type=PEM",
