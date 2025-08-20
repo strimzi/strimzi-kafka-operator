@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.16.2</strimzi-oauth.version>
+        <strimzi-oauth.version>0.17.0-pre</strimzi-oauth.version>
         <strimzi-metrics-reporter.version>0.2.0</strimzi-metrics-reporter.version>
         <prometheus.version>1.3.6</prometheus.version>
         <cruise-control.version>2.5.142</cruise-control.version>
@@ -35,6 +35,10 @@
         <repository>
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
+        </repository>
+        <repository>
+            <id>oauth-pre</id>
+            <url>https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/m2repo/m2repo</url>
         </repository>
     </repositories>
 

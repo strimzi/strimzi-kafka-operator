@@ -1816,6 +1816,8 @@ public class KafkaMirrorMaker2ClusterTest {
                     new KafkaClientAuthenticationOAuthBuilder()
                             .withClientId("my-client-id")
                             .withTokenEndpointUri("http://my-oauth-server")
+                            .withScope("all")
+                            .withGrantType("custom_client_credentials")
                             .withNewClientSecret()
                                 .withSecretName("my-secret-secret")
                                 .withKey("my-secret-key")
@@ -1837,6 +1839,8 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
                 "oauth.client.id=\"my-client-id\" " +
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
+                "oauth.client.credentials.grant.type=\"custom_client_credentials\" " +
+                "oauth.scope=\"all\" " +
                 "oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\";"));
 
         // Check PodSet

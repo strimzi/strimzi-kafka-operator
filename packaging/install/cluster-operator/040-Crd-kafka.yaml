@@ -115,6 +115,9 @@ spec:
                             clientAudience:
                               type: string
                               description: The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
+                            clientGrantType:
+                              type: string
+                              description: The grant type to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
                             clientId:
                               type: string
                               description: OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.

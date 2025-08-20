@@ -32,13 +32,14 @@ import java.util.Map;
     "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientSecret", "passwordSecret", "accessToken",
     "refreshToken", "tlsTrustedCertificates", "disableTlsHostnameVerification", "maxTokenExpirySeconds",
     "accessTokenIsJwt", "enableMetrics", "includeAcceptHeader", "accessTokenLocation",
-    "clientAssertion", "clientAssertionLocation", "clientAssertionType", "saslExtensions"})
+    "clientAssertion", "clientAssertionLocation", "clientAssertionType", "saslExtensions", "grantType"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     public static final String TYPE_OAUTH = "oauth";
 
     private String clientId;
+    private String grantType;
     private String username;
     private String scope;
     private String audience;
@@ -78,6 +79,16 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    @Description("OAuth grant type to use when authenticating against the authorization server. This value defaults to `client_credentials` when `clientId` and `clientSecret` are specified.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getGrantType() {
+        return grantType;
+    }
+
+    public void setGrantType(String grantType) {
+        this.grantType = grantType;
     }
 
     @Description("OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. "

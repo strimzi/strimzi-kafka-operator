@@ -374,6 +374,7 @@ public class AuthenticationUtils {
         addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
         addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
         addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
+        addOption(options, ClientConfig.OAUTH_CLIENT_CREDENTIALS_GRANT_TYPE, oauth.getGrantType());
         addOption(options, ClientConfig.OAUTH_SCOPE, oauth.getScope());
         addOption(options, ClientConfig.OAUTH_AUDIENCE, oauth.getAudience());
         if (oauth.isDisableTlsHostnameVerification()) {

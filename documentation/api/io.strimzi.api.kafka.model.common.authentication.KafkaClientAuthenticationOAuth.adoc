@@ -25,7 +25,7 @@ authentication:
     key: client-secret
 ----
 
-Optionally, `scope` and `audience` can be specified if needed.
+Optionally, `scope` and `audience` can be specified if needed. `grantType` can also be specified for custom client credentials implementations.
 
 .Client ID and refresh token
 You can configure the address of your OAuth server in the `tokenEndpointUri` property together with the OAuth client ID and refresh token.

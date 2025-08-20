@@ -35,7 +35,7 @@ import java.util.List;
     "accessTokenIsJwt", "tlsTrustedCertificates", "disableTlsHostnameVerification", "enableECDSA",
     "maxSecondsWithoutReauthentication", "enablePlain", "tokenEndpointUri", "enableOauthBearer", "customClaimCheck",
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientScope", "clientAudience",
-    "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation", "userNamePrefix"})
+    "clientGrantType", "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation", "userNamePrefix"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthentication {
@@ -81,6 +81,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private Integer httpRetryPauseMs;
     private String clientScope = null;
     private String clientAudience = null;
+    private String clientGrantType = null;
     private boolean enableMetrics = false;
     private boolean failFast = true;
     private boolean includeAcceptHeader = true;
@@ -215,6 +216,16 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setClientAudience(String audience) {
         this.clientAudience = audience;
+    }
+
+    @Description("The grant type to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getClientGrantType() {
+        return clientGrantType;
+    }
+
+    public void setClientGrantType(String grantType) {
+        this.clientGrantType = grantType;
     }
 
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")

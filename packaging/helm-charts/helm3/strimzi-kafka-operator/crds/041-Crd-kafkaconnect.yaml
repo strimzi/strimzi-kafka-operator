@@ -187,6 +187,9 @@ spec:
                     enableMetrics:
                       type: boolean
                       description: Enable or disable OAuth metrics. Default value is `false`.
+                    grantType:
+                      type: string
+                      description: OAuth grant type to use when authenticating against the authorization server. This value defaults to `client_credentials` when `clientId` and `clientSecret` are specified.
                     httpRetries:
                       type: integer
                       description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
