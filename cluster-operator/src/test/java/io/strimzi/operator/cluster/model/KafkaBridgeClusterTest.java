@@ -1064,6 +1064,7 @@ public class KafkaBridgeClusterTest {
                                 .withTokenEndpointUri("http://my-oauth-server")
                                 .withAudience("kafka")
                                 .withScope("all")
+                                .withGrantType("custom_client_credentials")
                                 .withNewClientSecret()
                                     .withSecretName("my-secret-secret")
                                     .withKey("my-secret-key")
@@ -1079,6 +1080,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
                 "oauth.client.id=\"my-client-id\" " +
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
+                "oauth.client.credentials.grant.type=\"custom_client_credentials\" " +
                 "oauth.scope=\"all\" " +
                 "oauth.audience=\"kafka\" " +
                 "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));

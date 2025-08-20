@@ -54,6 +54,10 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>oauth-pre</id>
+            <url>https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/m2repo/m2repo</url>
+        </repository>
     </repositories>
 
     <properties>
@@ -121,7 +125,7 @@
         -->
         <jetty-old-kafka.version>9.4.56.v20240826</jetty-old-kafka.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <strimzi-oauth.version>0.16.2</strimzi-oauth.version>
+        <strimzi-oauth.version>0.17.0-pre</strimzi-oauth.version>
         <netty.version>4.2.4.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
