@@ -755,6 +755,8 @@ public class KafkaMirrorMaker2ConnectorsTest {
                         .withKey("clientAssertionKey")
                         .withSecretName("clientAssertionSecretName")
                     .endClientAssertion()
+                    .withScope("all")
+                    .withGrantType("custom_client_credentials")
                     .withTlsTrustedCertificates(new CertSecretSourceBuilder().withCertificate("ca.crt").withSecretName("my-oauth-secret").build())
                 .endKafkaClientAuthenticationOAuth()
                 .build();
@@ -770,6 +772,8 @@ public class KafkaMirrorMaker2ConnectorsTest {
                         "oauth.refresh.token", "${strimzidir:/opt/kafka/mm2-oauth/sourceClusterAlias/refreshTokenSecretName:refreshTokenKey}",
                         "oauth.password.grant.password", "${strimzidir:/opt/kafka/mm2-oauth/sourceClusterAlias/passwordSecretSecretName:passwordSecretPassword}",
                         "oauth.client.assertion", "${strimzidir:/opt/kafka/mm2-oauth/sourceClusterAlias/clientAssertionSecretName:clientAssertionKey}",
+                        "oauth.scope", "all",
+                        "oauth.client.credentials.grant.type", "custom_client_credentials",
                         "oauth.ssl.truststore.location", "/tmp/kafka/clusters/sourceClusterAlias-oauth.truststore.p12",
                         "oauth.ssl.truststore.type", "PKCS12",
                         "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR)));
