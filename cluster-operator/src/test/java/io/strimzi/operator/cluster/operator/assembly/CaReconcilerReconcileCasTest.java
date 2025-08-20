@@ -86,6 +86,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests the reconcileCas method of CaReconciler in isolation.
+ * <p>
+ * Use CaReconcilerTest for testing all steps in CaReconciler.
+ */
 @ExtendWith(VertxExtension.class)
 public class CaReconcilerReconcileCasTest {
     private static final String NAMESPACE = "test";

@@ -92,6 +92,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Tests for actions taken by CaReconciler after the CA Secrets are reconciled,
+ * particularly the rolling updates for trust.
+ * The test cases use a mock CaReconciler class to capture when Kafka pods and
+ * other deployment (Kafka Exporter etc) are rolled.
+ * <p>
+ * Use CaReconcilerReconcileCasTest for testing the reconcileCas method in isolation.
+ */
 @ExtendWith(VertxExtension.class)
 public class CaReconcilerTest {
     private static final String NAMESPACE = "test";
