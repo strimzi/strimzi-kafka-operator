@@ -11,8 +11,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.SystemProperty;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,9 +26,8 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 class JvmOptionUtilsTest {
-    @ParallelTest
+    @Test
     void testInvalidHeapPercentage() {
         RuntimeException exception = assertThrows(IllegalArgumentException.class, () -> JvmOptionUtils.heapOptions(new ArrayList<>(), 0, 0, new JvmOptions(), new ResourceRequirements()));
         assertThat(exception.getMessage(), is("The Heap percentage 0 is invalid. It has to be >0 and <= 100."));
@@ -38,7 +36,7 @@ class JvmOptionUtilsTest {
         assertThat(exception.getMessage(), is("The Heap percentage 101 is invalid. It has to be >0 and <= 100."));
     }
 
-    @ParallelTest
+    @Test
     void testValidHeapPercentage() {
         Map<String, String> envVars = heapOptions(null, 1, 0, new ResourceRequirementsBuilder().withLimits(Map.of("memory", new Quantity("1Gi"))).build());
         assertThat(envVars.size(), is(1));
@@ -49,7 +47,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("100"));
     }
 
-    @ParallelTest
+    @Test
     void testJvmMemoryOptionsExplicit() {
         Map<String, String> env = heapOptions(jvmOptions("4", "4"), 50, 4_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4 -Xmx4"));
@@ -57,7 +55,7 @@ class JvmOptionUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     void testJvmMemoryOptionsXmsOnly() {
         Map<String, String> env = heapOptions(jvmOptions(null, "4"), 50, 5_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
@@ -65,7 +63,7 @@ class JvmOptionUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     void testJvmMemoryOptionsXmxOnly() {
         Map<String, String> env = heapOptions(jvmOptions("4", null), 50, 5_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xmx4"));
@@ -73,7 +71,7 @@ class JvmOptionUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     void testJvmMemoryOptionsDefaultWithNoMemoryLimitOrJvmOptions() {
         Map<String, String> env = heapOptions(jvmOptions(null, null), 50, 5_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS));
@@ -81,7 +79,7 @@ class JvmOptionUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     void testJvmMemoryOptionsDefaultWithMemoryLimit() {
         Map<String, String> env = heapOptions(jvmOptions(null, "4"), 50, 5_000_000_000L, new ResourceRequirementsBuilder().withLimits(Map.of("memory", new Quantity("1Gi"))).build());
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
@@ -89,7 +87,7 @@ class JvmOptionUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("5000000000"));
     }
 
-    @ParallelTest
+    @Test
     void testJvmMemoryOptionsMemoryRequest() {
         Map<String, String> env = heapOptions(null, 70, 10_000_000_000L, new ResourceRequirementsBuilder().withRequests(Map.of("memory", new Quantity("1Gi"))).build());
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is(nullValue()));
@@ -97,7 +95,7 @@ class JvmOptionUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("10000000000"));
     }
 
-    @ParallelTest
+    @Test
     void testJvmMemoryOptionsDefaultWithNoMemoryLimitButXXOptionsExist() {
         Map<String, String> env = heapOptions(jvmOptions(null, null, Map.of("Something", "80")), 50, 5_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS));
@@ -105,7 +103,7 @@ class JvmOptionUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     void testJvmMemoryOptionsWithMaxAndInitialRAMPercentage() {
         Map<String, String> env = heapOptions(jvmOptions(null, null, Map.of("MaxRAMPercentage", "80", "InitialRAMPercentage", "50")), 50, 5_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-XX:InitialRAMPercentage=50 -XX:MaxRAMPercentage=80"));
@@ -113,7 +111,7 @@ class JvmOptionUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     void testJvmMemoryOptionsWithInitialRAMPercentage() {
         Map<String, String> env = heapOptions(jvmOptions(null, null, Map.of("InitialRAMPercentage", "50")), 50, 5_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-XX:InitialRAMPercentage=50"));
@@ -121,7 +119,7 @@ class JvmOptionUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaPerformanceOptionsAreIgnoredOnNullJvmOptions() {
         // when
         var envVars = new ArrayList<EnvVar>();
@@ -133,7 +131,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, is(emptyList()));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaPerformanceOptionsAreIgnoredOnEmptyJvmOptions() {
         // when
         var envVars = new ArrayList<EnvVar>();
@@ -146,7 +144,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, is(emptyList()));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaPerformanceOptionsAreIgnoredOnEmptyXxProperty() {
         // when
         var envVars = new ArrayList<EnvVar>();
@@ -160,7 +158,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, is(emptyList()));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaHeapXXOptionsAreIgnored() {
         // when
         var envVars = new ArrayList<EnvVar>();
@@ -174,7 +172,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, is(emptyList()));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaPerformanceOptionsAreAddedToEnvVariable() {
         // when
         var envVars = new ArrayList<EnvVar>();
@@ -199,7 +197,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedPerformanceOpts)));
     }
 
-    @ParallelTest
+    @Test
     void testThatUnlockDiagnosticVMOptionsPerformanceOptionIsAlwaysSetFirst() {
         // when
         var envVars = new ArrayList<EnvVar>();
@@ -224,7 +222,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedPerformanceOpts)));
     }
 
-    @ParallelTest
+    @Test
     void testThatUnlockExperimentalVMOptionsPerformanceOptionIsAlwaysSetFirst() {
         // when
         var envVars = new ArrayList<EnvVar>();
@@ -247,7 +245,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedPerformanceOpts)));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsAreIgnoredOnNullJvmOptions() {
         // given
         var envVars = new ArrayList<EnvVar>();
@@ -259,7 +257,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, is(emptyList()));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsAreIgnoredOnEmptyJvmOptions() {
         // given
         var envVars = new ArrayList<EnvVar>();
@@ -272,7 +270,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, is(emptyList()));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsAreIgnoredOnEmptyXxProperty() {
         // given
         var envVars = new ArrayList<EnvVar>();
@@ -286,7 +284,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, is(emptyList()));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsWithHeapMinimumSizeIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();
@@ -304,7 +302,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedJavaOpts)));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsWithHeapMaximumSizeIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();
@@ -322,7 +320,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedJavaOpts)));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsWithHeapMinimumAndMaximumSizeIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();
@@ -341,7 +339,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedJavaOpts)));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsWithPerformanceOptionsIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();
@@ -363,7 +361,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedJavaOpts)));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsWithHeapAndPerformanceOptionsIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();
@@ -387,7 +385,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedJavaOpts)));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsWithSystemPropertiesIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();
@@ -407,7 +405,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedJavaOpts)));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsWithEmptySystemPropertiesIsIgnored() {
      // given
         var envVars = new ArrayList<EnvVar>();
@@ -421,7 +419,7 @@ class JvmOptionUtilsTest {
         assertThat(envVars, is(emptyList()));
     }
 
-    @ParallelTest
+    @Test
     void testThatJavaOptionsWithHeapPerformanceAndSystemPropertiesIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();

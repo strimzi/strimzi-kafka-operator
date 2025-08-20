@@ -12,8 +12,7 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.ReadWriteUtils;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +21,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class AbstractModelTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
@@ -35,7 +33,7 @@ public class AbstractModelTest {
 
     }
 
-    @ParallelTest
+    @Test
     public void testJvmPerformanceOptions() {
         JvmOptions opts = ReadWriteUtils.readObjectFromYamlString("{}", JvmOptions.class);
 
@@ -69,7 +67,7 @@ public class AbstractModelTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testOwnerReference() {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()

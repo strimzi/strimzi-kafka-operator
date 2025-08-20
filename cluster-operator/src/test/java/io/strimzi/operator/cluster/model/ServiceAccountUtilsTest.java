@@ -10,8 +10,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +19,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class ServiceAccountUtilsTest {
     private final static String NAME = "my-sa";
     private final static String NAMESPACE = "my-namespace";
@@ -39,7 +37,7 @@ public class ServiceAccountUtilsTest {
             .withStrimziComponentType("my-component-type")
             .withAdditionalLabels(Map.of("label-1", "value-1", "label-2", "value-2"));
 
-    @ParallelTest
+    @Test
     public void testServiceAccountCreationWithNullTemplate() {
         ServiceAccount sa = ServiceAccountUtils.createServiceAccount(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null);
 
@@ -50,7 +48,7 @@ public class ServiceAccountUtilsTest {
         assertThat(sa.getMetadata().getAnnotations(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testServiceAccountCreationWithEmptyTemplate() {
         ServiceAccount sa = ServiceAccountUtils.createServiceAccount(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, new ResourceTemplate());
 
@@ -61,7 +59,7 @@ public class ServiceAccountUtilsTest {
         assertThat(sa.getMetadata().getAnnotations(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testServiceAccountCreationWithTemplate() {
         ResourceTemplate template = new ResourceTemplateBuilder()
                 .withNewMetadata()

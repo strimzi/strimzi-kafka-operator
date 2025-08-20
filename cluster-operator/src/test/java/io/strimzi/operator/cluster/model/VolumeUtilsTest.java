@@ -15,9 +15,8 @@ import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +26,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class VolumeUtilsTest {
     private static final Storage JBOD_STORAGE = new JbodStorageBuilder().withVolumes(
                     new PersistentClaimStorageBuilder()
@@ -74,44 +72,44 @@ public class VolumeUtilsTest {
     private static final Storage EPHEMERAL_STORAGE = new EphemeralStorageBuilder().build();
 
 
-    @ParallelTest
+    @Test
     public void testCreateEmptyDirVolumeWithMedium() {
         Volume volume = VolumeUtils.createEmptyDirVolume("bar", "1Gi", "Memory");
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateEmptyDirVolumeWithNullMedium() {
         Volume volume = VolumeUtils.createEmptyDirVolume("bar", null, null);
         assertThat(volume.getEmptyDir().getMedium(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateEmptyDirVolumeWithSizeLimit() {
         Volume volume = VolumeUtils.createEmptyDirVolume("bar", "1Gi", null);
         assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateEmptyDirVolumeWithNullSizeLimit() {
         Volume volume = VolumeUtils.createEmptyDirVolume("bar", null, null);
         assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateEmptyDirVolumeWithEmptySizeLimit() {
         Volume volume = VolumeUtils.createEmptyDirVolume("bar", "", null);
         assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testValidVolumeNames() {
         assertThat(VolumeUtils.getValidVolumeName("my-user"), is("my-user"));
         assertThat(VolumeUtils.getValidVolumeName("my-0123456789012345678901234567890123456789012345678901234-user"),
                 is("my-0123456789012345678901234567890123456789012345678901234-user"));
     }
 
-    @ParallelTest
+    @Test
     public void testInvalidVolumeNames() {
         assertThat(VolumeUtils.getValidVolumeName("my.user"), is("my-user-4dbf077e"));
         assertThat(VolumeUtils.getValidVolumeName("my_user"), is("my-user-e10dbc61"));
@@ -125,31 +123,31 @@ public class VolumeUtilsTest {
         assertThat(VolumeUtils.getValidVolumeName("a"), is("a-86f7e437"));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateSecretVolumeWithValidName() {
         Volume volume = VolumeUtils.createSecretVolume("oauth-my-secret", "my-secret", true);
         assertThat(volume.getName(), is("oauth-my-secret"));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateSecretVolumeWithInvalidName() {
         Volume volume = VolumeUtils.createSecretVolume("oauth-my.secret", "my.secret", true);
         assertThat(volume.getName(), is("oauth-my-secret-b744ae5a"));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateConfigMapVolumeWithValidName() {
         Volume volume = VolumeUtils.createConfigMapVolume("oauth-my-cm", "my-cm");
         assertThat(volume.getName(), is("oauth-my-cm"));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateConfigMapVolumeWithInvalidName() {
         Volume volume = VolumeUtils.createConfigMapVolume("oauth-my.cm", "my.cm");
         assertThat(volume.getName(), is("oauth-my-cm-62fdd747"));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateConfigMapVolumeWithItems() {
         Volume volume = VolumeUtils.createConfigMapVolume("my-cm-volume", "my-cm", Collections.singletonMap("fileName.txt", "/path/to/fileName.txt"));
 
@@ -159,7 +157,7 @@ public class VolumeUtilsTest {
         assertThat(volume.getConfigMap().getItems().get(0), is(new KeyToPathBuilder().withKey("fileName.txt").withPath("/path/to/fileName.txt").build()));
     }
 
-    @ParallelTest
+    @Test
     public void testCreatePvcVolume()   {
         Volume volumeFromPvc = VolumeUtils.createPvcVolume("my-volume", "my-pvc");
 
@@ -172,7 +170,7 @@ public class VolumeUtilsTest {
     // PodSet volume tests
     ////////////////////
 
-    @ParallelTest
+    @Test
     public void testPodSetVolumesWithJbod()    {
         List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", JBOD_STORAGE, false);
 
@@ -183,7 +181,7 @@ public class VolumeUtilsTest {
         assertThat(volumes.get(1).getPersistentVolumeClaim().getClaimName(), is("data-1-my-pod"));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetVolumesWithJbodWithEphemeral()    {
         List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", JBOD_STORAGE_WITH_EPHEMERAL, false);
 
@@ -194,7 +192,7 @@ public class VolumeUtilsTest {
         assertThat(volumes.get(1).getEmptyDir(), is(notNullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetVolumesWithJbodWithoutId()    {
         InvalidResourceException ex = Assertions.assertThrows(
                 InvalidResourceException.class,
@@ -204,7 +202,7 @@ public class VolumeUtilsTest {
         assertThat(ex.getMessage(), is("The 'id' property is required for volumes in JBOD storage."));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetVolumesPersistentClaimOnly()    {
         List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", PERSISTENT_CLAIM_STORAGE, false);
 
@@ -213,7 +211,7 @@ public class VolumeUtilsTest {
         assertThat(volumes.get(0).getPersistentVolumeClaim().getClaimName(), is("data-my-pod"));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetVolumesPersistentClaimWithId()    {
         List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", PERSISTENT_CLAIM_STORAGE_WITH_ID, false);
 
@@ -222,7 +220,7 @@ public class VolumeUtilsTest {
         assertThat(volumes.get(0).getPersistentVolumeClaim().getClaimName(), is("data-my-pod"));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetVolumesEphemeralOnly()    {
         List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", EPHEMERAL_STORAGE, false);
 
@@ -231,7 +229,7 @@ public class VolumeUtilsTest {
         assertThat(volumes.get(0).getEmptyDir(), is(notNullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testKRaftMetadataPath() {
         // Test with unmarked no-JBOD storage
         assertThat(VolumeUtils.kraftMetadataPath(PERSISTENT_CLAIM_STORAGE), is("/var/lib/kafka/data"));

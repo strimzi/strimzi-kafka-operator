@@ -18,8 +18,6 @@ import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -30,9 +28,8 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class ModelUtilsTest {
-    @ParallelTest
+    @Test
     public void testParseImageMap() {
         Map<String, String> m = parseMap(
                 KafkaVersionTestUtils.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestUtils.LATEST_KAFKA_IMAGE + "\n  " +
@@ -67,7 +64,7 @@ public class ModelUtilsTest {
         assertThat(m.get("discovery.3scale.net/description-path"), is("oapi/"));
     }
 
-    @ParallelTest
+    @Test
     public void testStorageSerializationAndDeserialization()    {
         Storage jbod = new JbodStorageBuilder().withVolumes(
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build(),
@@ -83,7 +80,7 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.decodeStorageFromJson(ModelUtils.encodeStorageToJson(persistent)), is(persistent));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateOwnerReference()   {
         Kafka owner = new KafkaBuilder()
                 .withNewMetadata()
@@ -102,7 +99,7 @@ public class ModelUtilsTest {
         assertThat(ref.getController(), is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateControllerOwnerReference()   {
         StrimziPodSet owner = new StrimziPodSetBuilder()
                 .withNewMetadata()
@@ -121,7 +118,7 @@ public class ModelUtilsTest {
         assertThat(ref.getController(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testHasOwnerReference()    {
         OwnerReference owner = new OwnerReferenceBuilder()
                 .withApiVersion("my-api")
@@ -174,7 +171,7 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.hasOwnerReference(pod, owner), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testServiceDnsNames() {
         List<String> dnsNames = ModelUtils.generateAllServiceDnsNames("my-namespace", "my-service");
 

@@ -27,7 +27,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -110,7 +110,7 @@ public class HashLoginServiceApiCredentialsTest {
                 .build();
     }
 
-    @ParallelTest
+    @Test
     public void testApiUsersObjectCreation() {
         CruiseControlSpec s1 = new CruiseControlSpecBuilder()
             .withNewHashLoginServiceApiUsers()
@@ -154,7 +154,7 @@ public class HashLoginServiceApiCredentialsTest {
         assertThrows(InvalidConfigurationException.class, () -> HashLoginServiceApiCredentials.parseEntriesFromString(illegalConfig));
     }
 
-    @ParallelTest
+    @Test
     public void testParseEntriesFromString() {
         String config = """
                         username0: password0,USER
@@ -183,7 +183,7 @@ public class HashLoginServiceApiCredentialsTest {
                             """);
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateToManagedApiCredentials() {
         Secret secret = createSecret(Map.of("topic-operator.apiAdminName",  encodeToBase64("topic-operator"),
                 "topic-operator.apiAdminPassword",  encodeToBase64("password")));
@@ -205,7 +205,7 @@ public class HashLoginServiceApiCredentialsTest {
         assertThrows(Exception.class, () -> HashLoginServiceApiCredentials.generateUserManagedApiCredentials(entries, secret, SECRET_KEY));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateUserManagedApiCredentials() {
         String config = encodeToBase64("""
                         username0: password0,USER
@@ -262,7 +262,7 @@ public class HashLoginServiceApiCredentialsTest {
                             """);
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateCoManagedApiCredentials() {
         PasswordGenerator mockPasswordGenerator = new PasswordGenerator(10, "a", "a");
 
@@ -305,7 +305,7 @@ public class HashLoginServiceApiCredentialsTest {
         assertThat(entries.get("healthcheck").role(), is(HashLoginServiceApiCredentials.Role.USER));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateApiSecret() {
         Secret oldCruiseControlApiSecret = createSecret(Map.of(AUTH_FILE_KEY,
                 encodeToBase64("rebalance-operator: password,ADMIN\n" +

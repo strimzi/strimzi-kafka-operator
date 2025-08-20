@@ -12,8 +12,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -24,11 +23,10 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class ClusterCaTest {
     private final String cluster = "my-cluster";
 
-    @ParallelTest
+    @Test
     public void testRemoveExpiredCertificate() {
         // simulate certificate creation at following time, with expire at 365 days later (by default)
         String instantExpected = "2022-03-23T09:00:00Z";
@@ -61,7 +59,7 @@ public class ClusterCaTest {
         assertThat(clusterCa.caCertData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testIsExpiringCertificate() {
         // simulate certificate creation at following time, with expire at 365 days later (by default) and renewal days at 30 (by default)
         String instantExpected = "2022-03-30T09:00:00Z";
@@ -84,7 +82,7 @@ public class ClusterCaTest {
         assertThat(clusterCa.isExpiring(buildCertSecret(clusterCa), Ca.CA_CRT), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testRemoveOldCertificate() {
         // simulate certificate creation at following time, with expire at 365 days later (by default)
         String instantExpected = "2022-03-23T09:00:00Z";
@@ -111,7 +109,7 @@ public class ClusterCaTest {
         assertThat(clusterCa.caCertData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testNotRemoveOldCertificateWithCustomCa() {
         Map<String, String> clusterCaCertData = new HashMap<>();
         clusterCaCertData.put(Ca.CA_CRT, Base64.getEncoder().encodeToString("new-dummy-crt".getBytes()));

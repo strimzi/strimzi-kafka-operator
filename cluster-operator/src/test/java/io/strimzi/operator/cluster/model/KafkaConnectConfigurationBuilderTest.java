@@ -22,8 +22,7 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,12 +35,11 @@ import java.util.stream.Stream;
 import static io.strimzi.operator.cluster.TestUtils.IsEquivalent.isEquivalent;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 class KafkaConnectConfigurationBuilderTest {
 
     private static final String BOOTSTRAP_SERVERS = "my-cluster-kafka-bootstrap:9092";
 
-    @ParallelTest
+    @Test
     public void testBuild()  {
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS).build();
         assertThat(configuration, isEquivalent(
@@ -53,7 +51,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithTls() {
         ClientTls clientTls = new ClientTlsBuilder()
                 .addNewTrustedCertificate()
@@ -83,7 +81,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithTlsAndClientAuthentication() {
         ClientTls clientTls = new ClientTlsBuilder()
                 .addNewTrustedCertificate()
@@ -133,7 +131,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithPlainAndSaslMechanism() {
         KafkaClientAuthenticationPlain authPlain = new KafkaClientAuthenticationPlainBuilder()
                 .withUsername("user1")
@@ -164,7 +162,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithTlsAndSaslMechanism() {
         ClientTls clientTls = new ClientTlsBuilder()
                 .addNewTrustedCertificate()
@@ -211,7 +209,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithPlainAndScramSha256() {
         KafkaClientAuthenticationScramSha256 authScramSha256 = new KafkaClientAuthenticationScramSha256Builder()
                 .withUsername("my-user")
@@ -242,7 +240,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithTlsAndScramSha256() {
         ClientTls clientTls = new ClientTlsBuilder()
                 .addNewTrustedCertificate()
@@ -289,7 +287,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithPlainAndScramSha512() {
         KafkaClientAuthenticationScramSha512 authScramSha512 = new KafkaClientAuthenticationScramSha512Builder()
                 .withUsername("my-user")
@@ -320,7 +318,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithAuthOauth() {
         KafkaClientAuthenticationOAuth authOAuth = new KafkaClientAuthenticationOAuthBuilder()
                 .withClientId("oauth-client-id")
@@ -385,7 +383,7 @@ class KafkaConnectConfigurationBuilderTest {
                 ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithRackId() {
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withRackId()
@@ -402,7 +400,7 @@ class KafkaConnectConfigurationBuilderTest {
 
     }
 
-    @ParallelTest
+    @Test
     public void testWithConfigProviders() {
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withUserConfiguration(null, false, false)
@@ -430,7 +428,7 @@ class KafkaConnectConfigurationBuilderTest {
         );
     }
 
-    @ParallelTest
+    @Test
     public void testWithUserProvidedAndDefaultConfigurations() {
         Map<String, Object> userConfiguration = new HashMap<>();
         userConfiguration.put("myconfig", "abc");
@@ -465,7 +463,7 @@ class KafkaConnectConfigurationBuilderTest {
         );
     }
 
-    @ParallelTest
+    @Test
     public void testWithUserProvidedConfigMaps() {
         Map<String, Object> userConfiguration = new HashMap<>();
         userConfiguration.put("config.providers", "userenv");
@@ -499,7 +497,7 @@ class KafkaConnectConfigurationBuilderTest {
         );
     }
 
-    @ParallelTest
+    @Test
     public void testWithRestListeners() {
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withRestListeners(8083)
@@ -516,7 +514,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void withPluginPath() {
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withPluginPath().build();
@@ -531,7 +529,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testStrimziMetricsReporterEnabled() {
         StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(
                 new KafkaConnectSpecBuilder()
@@ -629,7 +627,7 @@ class KafkaConnectConfigurationBuilderTest {
         assertThat(actualConfig, isEquivalent(expectedConfig));
     }
 
-    @ParallelTest
+    @Test
     public void testStrimziMetricsReporterViaUserAndMetricsConfigs() {
         Map<String, Object> configMap = new HashMap<>();
         configMap.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);

@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +33,7 @@ public class CapacityConfigurationTest {
             new NodeRef("my-cluster-brokers-2", 2, "brokers", false, true)
     );
 
-    @ParallelTest
+    @Test
     public void testBrokerCapacity() {
         CruiseControlSpec spec = new CruiseControlSpecBuilder()
             .withNewBrokerCapacity()
@@ -111,7 +111,7 @@ public class CapacityConfigurationTest {
         assertEquals(expectedCapacityConfig, actualCapacityConfig);
     }
 
-    @ParallelTest
+    @Test
     public void testBrokerCapacityOverrides() {
         CruiseControlSpec spec = new CruiseControlSpecBuilder()
             .withNewBrokerCapacity()
@@ -181,7 +181,7 @@ public class CapacityConfigurationTest {
         assertEquals(expectedCapacityConfig, actualCapacityConfig);
     }
 
-    @ParallelTest
+    @Test
     public void testBrokerCapacityGeneratedCpu() {
         CruiseControlSpec spec = new CruiseControlSpecBuilder()
             .withNewBrokerCapacity()
@@ -262,7 +262,7 @@ public class CapacityConfigurationTest {
         assertEquals(expectedCapacityConfig, actualCapacityConfig);
     }
 
-    @ParallelTest
+    @Test
     public void testBrokerCapacitiesWithPools() {
         Set<NodeRef> nodes = Set.of(
                 new NodeRef("my-cluster-pool1-0", 0, "pool1", false, true),
@@ -369,7 +369,7 @@ public class CapacityConfigurationTest {
         assertEquals(expectedCapacityConfig, actualCapacityConfig);
     }
 
-    @ParallelTest
+    @Test
     public void testCpuCapacityGeneration() {
         String brokerCpuCapacity = "6.0";
         String brokerCpuCapacityOverride = "2.0";

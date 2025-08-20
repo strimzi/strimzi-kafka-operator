@@ -11,17 +11,15 @@ import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class StorageDiffTest {
-    @ParallelTest
+    @Test
     public void testJbodDiff()    {
         Storage jbod = new JbodStorageBuilder().withVolumes(
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build(),
@@ -48,7 +46,7 @@ public class StorageDiffTest {
         assertThat(diff.issuesDetected(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testPersistentDiff()    {
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
         Storage persistent2 = new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(false).withId(0).withSize("1000Gi").build();
@@ -64,7 +62,7 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testOverridesAreIgnoredInDiff()    {
         Storage persistent = new PersistentClaimStorageBuilder()
                 .withStorageClass("gp2-ssd")
@@ -109,7 +107,7 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testSizeChanges()    {
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
         Storage persistent2 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("1000Gi").build();
@@ -125,7 +123,7 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent5, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testEphemeralDiff()    {
         Storage ephemeral = new EphemeralStorageBuilder().build();
 
@@ -135,7 +133,7 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testCrossDiff()    {
         Storage jbod = new JbodStorageBuilder().withVolumes(
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build(),
@@ -167,7 +165,7 @@ public class StorageDiffTest {
         assertThat(diffJbodPersistent.issuesDetected(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testJbodDiffWithNewVolume()    {
         Storage jbod = new JbodStorageBuilder()
                 .withVolumes(new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("1000Gi").build())
@@ -269,7 +267,7 @@ public class StorageDiffTest {
         assertThat(diff.issuesDetected(), is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testSizeChangesInJbod()    {
         Storage jbod = new JbodStorageBuilder().withVolumes(
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("1000Gi").build(),
@@ -291,7 +289,7 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod3, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testKraftMetadataChanges()    {
         Storage jbod = new JbodStorageBuilder().withVolumes(
                         new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withKraftMetadata(KRaftMetadataStorage.SHARED).withId(0).withSize("100Gi").build(),
@@ -311,7 +309,7 @@ public class StorageDiffTest {
         assertThat(diff.issuesDetected(), is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testMultipleKraftMetadataVolumes()    {
         Storage jbod = new JbodStorageBuilder().withVolumes(
                         new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withKraftMetadata(KRaftMetadataStorage.SHARED).withId(0).withSize("100Gi").build(),
@@ -332,7 +330,7 @@ public class StorageDiffTest {
         assertThat(diff.issuesDetected(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testDuplicateVolumeIds()    {
         Storage jbod = new JbodStorageBuilder().withVolumes(
                         new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build(),

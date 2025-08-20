@@ -64,9 +64,8 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfiguration
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -102,7 +101,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
     "checkstyle:ClassDataAbstractionCoupling",
     "checkstyle:ClassFanOutComplexity"
 })
-@ParallelSuite
 public class CruiseControlTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
@@ -143,7 +141,7 @@ public class CruiseControlTest {
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateCapacityConfig() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         ConfigMap configMap = cc.generateConfigMap(new MetricsAndLogging(null, null));
@@ -196,7 +194,7 @@ public class CruiseControlTest {
         assertEquals(expectedCapacityConfig, actualCapacityConfig);
     }
 
-    @ParallelTest
+    @Test
     public void testFromConfigMap() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -212,7 +210,7 @@ public class CruiseControlTest {
         assertThat(cc.getImage(), is("my-image:latest"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeployment() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -300,13 +298,13 @@ public class CruiseControlTest {
         assertThat(volumeMount.getMountPath(), is(CruiseControl.CONFIG_VOLUME_MOUNT));
     }
 
-    @ParallelTest
+    @Test
     public void testEnvVars() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         assertThat(cc.getEnvVars(), is(getExpectedEnvVars()));
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullPolicy() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
 
@@ -317,7 +315,7 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
-    @ParallelTest
+    @Test
     public void testContainerTemplateEnvVarsWithKeyConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
@@ -349,7 +347,7 @@ public class CruiseControlTest {
         assertThat(envVarList, hasItems(new EnvVar(testEnvTwoKey, "my-cluster-kafka-bootstrap:9091", null)));
     }
 
-    @ParallelTest
+    @Test
     public void testCruiseControlNotDeployed() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -359,7 +357,7 @@ public class CruiseControlTest {
         assertThat(createCruiseControl(kafka, NODES, STORAGE, Map.of()), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateService() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         Service svc = cc.generateService();
@@ -378,7 +376,7 @@ public class CruiseControlTest {
     }
 
     @SuppressWarnings("MethodLength")
-    @ParallelTest
+    @Test
     public void testTemplate() {
         Map<String, String> depLabels = TestUtils.modifiableMap("l1", "v1", "l2", "v2");
         Map<String, String> depAnnotations = Map.of("a1", "v1", "a2", "v2");
@@ -532,7 +530,7 @@ public class CruiseControlTest {
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnnotations.entrySet()), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testResources() {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
@@ -557,7 +555,7 @@ public class CruiseControlTest {
         assertThat(ccContainer.getResources().getRequests(), is(requests));
     }
 
-    @ParallelTest
+    @Test
     public void testApiSecurity() {
         // Test with security enabled
         testApiSecurity(true, true);
@@ -591,7 +589,7 @@ public class CruiseControlTest {
         assertThat(envVarList.contains(e2),  is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testProbeConfiguration()   {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -619,7 +617,7 @@ public class CruiseControlTest {
         assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(987));
     }
 
-    @ParallelTest
+    @Test
     public void testSecurityContext() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -641,7 +639,7 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(789L));
     }
 
-    @ParallelTest
+    @Test
     public void testRestrictedSecurityContext() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         cc.securityProvider = new RestrictedPodSecurityProvider();
@@ -655,7 +653,7 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
     }
 
-    @ParallelTest
+    @Test
     public void testJvmOptions() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -687,7 +685,7 @@ public class CruiseControlTest {
         assertThat(perfOptions.getValue(), containsString("-XX:InitiatingHeapOccupancyPercent=36"));
     }
 
-    @ParallelTest
+    @Test
     public void testCruiseControlContainerSecurityContext() {
         SecurityContext securityContext = new SecurityContextBuilder()
                 .withPrivileged(false)
@@ -720,7 +718,7 @@ public class CruiseControlTest {
                 )));
     }
 
-    @ParallelTest
+    @Test
     public void testRestApiPortNetworkPolicy() {
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
@@ -739,7 +737,7 @@ public class CruiseControlTest {
         assertThat(rules.contains(clusterOperatorPeer), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testRestApiPortNetworkPolicyInTheSameNamespace() {
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
@@ -763,7 +761,7 @@ public class CruiseControlTest {
         assertThat(rules.contains(entityOperatorPeer), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testRestApiPortNetworkPolicyWithNamespaceLabels() {
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
@@ -793,7 +791,7 @@ public class CruiseControlTest {
         assertThat(rules.contains(entityOperatorPeer), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testGoalsCheck() {
         String customGoals = "com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal," +
                 "com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal";
@@ -811,7 +809,7 @@ public class CruiseControlTest {
         assertThat(anomalyDetectionGoals, is(customGoals));
     }
 
-    @ParallelTest
+    @Test
     public void testMetricsParsingFromConfigMap() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -831,13 +829,13 @@ public class CruiseControlTest {
         assertThat(((JmxPrometheusExporterModel) cc.metrics()).getConfigMapKey(), is("config.yaml"));
     }
 
-    @ParallelTest
+    @Test
     public void testMetricsParsingNoMetrics() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
         assertThat(cc.metrics(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testStrimziReporterMetricsConfig() {
         Kafka kafka = new KafkaBuilder(KAFKA)
             .editSpec()
@@ -857,7 +855,7 @@ public class CruiseControlTest {
         assertThat(ex.getMessage(), is("The Strimzi Metrics Reporter is not supported with this component"));
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultTopicNames() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
 
@@ -869,7 +867,7 @@ public class CruiseControlTest {
         expectedTopicConfigs.forEach((configParam, name) -> assertThat(cc.configuration.getConfiguration(), containsString(String.format("%s=%s", configParam, name))));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomTopicNames() {
         Map<String, Object> customConfig = new HashMap<>();
         customConfig.put(CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), "partition-topic");
@@ -887,7 +885,7 @@ public class CruiseControlTest {
         customConfig.forEach((configParam, name) -> assertThat(cc.configuration.getConfiguration(), containsString(String.format("%s=%s", configParam, name))));
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultSampleStoreTopicReplicationFactorConfig() {
         // Test that the replication factor of Cruise Control's sample store topic is set to Kafka cluster's `default.replication.factor`
         // when not explicitly set in Cruise Control config
@@ -897,7 +895,7 @@ public class CruiseControlTest {
         assertThat(parsePropertiesString(configMap.getData().get(CruiseControl.SERVER_CONFIG_FILENAME)).getProperty(CruiseControlConfigurationParameters.SAMPLE_STORE_TOPIC_REPLICATION_FACTOR.getValue()), is("3"));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomSampleStoreTopicReplicationFactorConfig() {
         // Test that the replication factor of Cruise Control's sample store topic is set to value set in Cruise Control config
         Kafka kafka = new KafkaBuilder(KAFKA)

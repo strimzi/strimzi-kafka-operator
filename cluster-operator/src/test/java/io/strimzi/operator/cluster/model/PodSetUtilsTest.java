@@ -7,17 +7,15 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class PodSetUtilsTest {
-    @ParallelTest
+    @Test
     public void testIntoTheMapAndBack() {
         Pod pod = new PodBuilder()
                     .withNewMetadata()

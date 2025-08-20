@@ -8,8 +8,7 @@ import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBuilder;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,7 +18,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 public class ProbeUtilsTest {
     private static final io.strimzi.api.kafka.model.common.Probe DEFAULT_CONFIG = new io.strimzi.api.kafka.model.common.ProbeBuilder()
             .withInitialDelaySeconds(1)
@@ -29,12 +27,12 @@ public class ProbeUtilsTest {
             .withFailureThreshold(5)
             .build();
 
-    @ParallelTest
+    @Test
     public void testNullProbeConfigThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> ProbeUtils.defaultBuilder(null));
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultBuilder() {
         Probe probe = ProbeUtils.defaultBuilder(DEFAULT_CONFIG)
                 .build();
@@ -50,7 +48,7 @@ public class ProbeUtilsTest {
     }
 
     // Inherits defaults from the io.strimzi.api.kafka.model.common.Probe class
-    @ParallelTest
+    @Test
     public void testDefaultBuilderNoValues() {
         Probe probe = ProbeUtils.defaultBuilder(new io.strimzi.api.kafka.model.common.ProbeBuilder().build())
                 .build();
@@ -61,7 +59,7 @@ public class ProbeUtilsTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testHttpProbe() {
         Probe probe = ProbeUtils.httpProbe(DEFAULT_CONFIG, "path", "1001");
         assertThat(probe, is(new ProbeBuilder()
@@ -78,19 +76,19 @@ public class ProbeUtilsTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testHttpProbeMissingPathThrows() {
         assertThrows(IllegalArgumentException.class, () -> ProbeUtils.httpProbe(DEFAULT_CONFIG, null, "1001"));
         assertThrows(IllegalArgumentException.class, () -> ProbeUtils.httpProbe(DEFAULT_CONFIG, "", "1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testHttpProbeMissingPortThrows() {
         assertThrows(IllegalArgumentException.class, () -> ProbeUtils.httpProbe(DEFAULT_CONFIG, "path", null));
         assertThrows(IllegalArgumentException.class, () -> ProbeUtils.httpProbe(DEFAULT_CONFIG, "path", ""));
     }
 
-    @ParallelTest
+    @Test
     public void testExecProbe() {
         Probe probe = ProbeUtils.execProbe(DEFAULT_CONFIG, Arrays.asList("command1", "command2"));
         assertThat(probe, is(new ProbeBuilder()
@@ -106,13 +104,13 @@ public class ProbeUtilsTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testExecProbeMissingCommandsThrows() {
         assertThrows(IllegalArgumentException.class, () -> ProbeUtils.execProbe(DEFAULT_CONFIG, null));
         assertThrows(IllegalArgumentException.class, () -> ProbeUtils.execProbe(DEFAULT_CONFIG, Collections.emptyList()));
     }
 
-    @ParallelTest
+    @Test
     public void testZeroInitialDelayIsSetToNull() {
         io.strimzi.api.kafka.model.common.Probe probeConfig = new io.strimzi.api.kafka.model.common.ProbeBuilder()
                 .withInitialDelaySeconds(0)
@@ -124,7 +122,7 @@ public class ProbeUtilsTest {
         assertThat(probe.getInitialDelaySeconds(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testExtractProbeOptionSet()  {
         EntityTopicOperatorSpec spec = new EntityTopicOperatorSpecBuilder()
                 .withNewLivenessProbe()
@@ -172,7 +170,7 @@ public class ProbeUtilsTest {
         assertThat(probe.getSuccessThreshold(), is(35));
     }
 
-    @ParallelTest
+    @Test
     public void testExtractProbeOptionNotSet()  {
         EntityTopicOperatorSpec spec = new EntityTopicOperatorSpecBuilder().build();
 

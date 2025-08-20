@@ -18,8 +18,7 @@ import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,7 +29,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class PersistentVolumeClaimUtilsTest {
     private final static String NAME = "my-cluster-kafka";
     private final static String NAMESPACE = "my-namespace";
@@ -67,7 +65,7 @@ public class PersistentVolumeClaimUtilsTest {
         THREE_NODES.add(new NodeRef(NAME + "-" + 2, 2, null, false, true));
     }
 
-    @ParallelTest
+    @Test
     public void testEphemeralStorage()  {
         assertThat(
                 PersistentVolumeClaimUtils
@@ -76,7 +74,7 @@ public class PersistentVolumeClaimUtilsTest {
         );
     }
 
-    @ParallelTest
+    @Test
     public void testEphemeralJbodStorage()  {
         JbodStorage jbod = new JbodStorageBuilder()
                 .withVolumes(new EphemeralStorage(), new EphemeralStorage())
@@ -89,7 +87,7 @@ public class PersistentVolumeClaimUtilsTest {
         );
     }
 
-    @ParallelTest
+    @Test
     public void testPersistentClaimStorage()  {
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
                 .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, PERSISTENT_CLAIM_STORAGE, false, LABELS, OWNER_REFERENCE, null);
@@ -108,7 +106,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
     }
 
-    @ParallelTest
+    @Test
     public void testPersistentClaimStorageWithId()  {
         Storage storage = new PersistentClaimStorageBuilder()
                 .withId(1)
@@ -133,7 +131,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
     }
 
-    @ParallelTest
+    @Test
     public void testJbodStorage()  {
         JbodStorage jbod = new JbodStorageBuilder()
                 .withVolumes(new PersistentClaimStorageBuilder()
@@ -160,7 +158,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
     }
 
-    @ParallelTest
+    @Test
     public void testTemplate()  {
         JbodStorage jbod = new JbodStorageBuilder()
                 .withVolumes(new PersistentClaimStorageBuilder()
@@ -187,7 +185,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithSelector()  {
         JbodStorage jbod = new JbodStorageBuilder()
                 .withVolumes(new PersistentClaimStorageBuilder()
@@ -215,7 +213,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
     }
 
-    @ParallelTest
+    @Test
     public void testJbodStorageWithDeleteClaim()  {
         JbodStorage jbod = new JbodStorageBuilder()
                 .withVolumes(new PersistentClaimStorageBuilder()
@@ -243,7 +241,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithStorageClassOverrides()  {
         JbodStorage jbod = new JbodStorageBuilder()
                 .withVolumes(new PersistentClaimStorageBuilder()
@@ -271,7 +269,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
     }
 
-    @ParallelTest
+    @Test
     public void testJbodWithClassOverridesAndDeleteClaims()  {
         JbodStorage jbod = new JbodStorageBuilder()
                 .withVolumes(

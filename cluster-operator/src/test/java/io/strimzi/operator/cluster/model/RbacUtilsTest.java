@@ -18,8 +18,7 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class RbacUtilsTest {
     private final static String NAME = "my-name";
     private final static String NAMESPACE = "my-namespace";
@@ -53,7 +51,7 @@ public class RbacUtilsTest {
             .endMetadata()
             .build();
 
-    @ParallelTest
+    @Test
     public void testRole()  {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("kafka.strimzi.io")
@@ -72,7 +70,7 @@ public class RbacUtilsTest {
         assertThat(role.getRules(), is(List.of(rule)));
     }
 
-    @ParallelTest
+    @Test
     public void testRoleWithTemplate()  {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("kafka.strimzi.io")
@@ -91,7 +89,7 @@ public class RbacUtilsTest {
         assertThat(role.getRules(), is(List.of(rule)));
     }
 
-    @ParallelTest
+    @Test
     public void testRoleBinding()  {
         Subject subject = new SubjectBuilder()
                 .withKind("ServiceAccount")
@@ -117,7 +115,7 @@ public class RbacUtilsTest {
         assertThat(roleBinding.getSubjects(), is(List.of(subject)));
     }
 
-    @ParallelTest
+    @Test
     public void testRoleBindingWithTemplate()  {
         Subject subject = new SubjectBuilder()
                 .withKind("ServiceAccount")
@@ -143,7 +141,7 @@ public class RbacUtilsTest {
         assertThat(roleBinding.getSubjects(), is(List.of(subject)));
     }
 
-    @ParallelTest
+    @Test
     public void testClusterRoleBinding()  {
         Subject subject = new SubjectBuilder()
                 .withKind("ServiceAccount")
@@ -169,7 +167,7 @@ public class RbacUtilsTest {
         assertThat(roleBinding.getSubjects(), is(List.of(subject)));
     }
 
-    @ParallelTest
+    @Test
     public void testClusterRoleBindingWithTemplate()  {
         Subject subject = new SubjectBuilder()
                 .withKind("ServiceAccount")

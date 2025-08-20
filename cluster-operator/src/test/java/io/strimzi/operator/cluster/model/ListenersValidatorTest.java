@@ -18,8 +18,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,7 +36,6 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 public class ListenersValidatorTest {
     private final static Set<NodeRef> THREE_NODES = Set.of(
             new NodeRef("name-kafka-0", 0, "kafka", false, true),
@@ -51,7 +49,7 @@ public class ListenersValidatorTest {
             new NodeRef("bar-kafka-2000", 2000, "kafka", false, true),
             new NodeRef("bar-kafka-2001", 2001, "kafka", false, true));
 
-    @ParallelTest
+    @Test
     public void testValidateListeners() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -69,7 +67,7 @@ public class ListenersValidatorTest {
         ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners);
     }
 
-    @ParallelTest
+    @Test
     public void testValidateThrowsException() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -89,7 +87,7 @@ public class ListenersValidatorTest {
         assertThat(exception.getMessage(), containsString("every listener needs to have a unique port number"));
     }
 
-    @ParallelTest
+    @Test
     public void testValidateDuplicatePorts() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -113,7 +111,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("every listener needs to have a unique port number"));
     }
 
-    @ParallelTest
+    @Test
     public void testValidateForbiddenPortByRange() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -125,7 +123,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("port 9000 is forbidden and cannot be used"));
     }
 
-    @ParallelTest
+    @Test
     public void testValidateForbiddenPortByException() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -137,7 +135,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("port 9404 is forbidden and cannot be used"));
     }
 
-    @ParallelTest
+    @Test
     public void testValidateDuplicateNames() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -161,7 +159,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("every listener needs to have a unique name"));
     }
 
-    @ParallelTest
+    @Test
     public void testInvalidNames() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener 1")
@@ -185,7 +183,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("listener names [listener 1, LISTENER2, listener12345678901234567890] are invalid and do not match the pattern ^[a-z0-9]{1,11}$"));
     }
 
-    @ParallelTest
+    @Test
     public void testTlsAuthOnNonTlsListener() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("plain")
@@ -200,7 +198,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("listener plain cannot use tls type authentication with disabled TLS encryption"));
     }
 
-    @ParallelTest
+    @Test
     public void testTlsCustomCertOnNonTlsListener() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("plain")
@@ -220,7 +218,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder("listener plain cannot configure custom TLS certificate with disabled TLS encryption"));
     }
 
-    @ParallelTest
+    @Test
     public void testInternalListener() {
         String name = "plain";
 
@@ -298,7 +296,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
-    @ParallelTest
+    @Test
     public void testLoadBalancerListener() {
         String name = "lb";
 
@@ -360,7 +358,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
-    @ParallelTest
+    @Test
     public void testLoadBalancerListenerWithNodePort() {
         String name = "lb";
 
@@ -380,7 +378,7 @@ public class ListenersValidatorTest {
         ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners);
     }
 
-    @ParallelTest
+    @Test
     public void testNodePortListener() {
         String name = "nodeport";
 
@@ -447,7 +445,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
-    @ParallelTest
+    @Test
     public void testRouteListenerWithoutTls() {
         String name = "route";
 
@@ -467,7 +465,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
-    @ParallelTest
+    @Test
     public void testRouteListener() {
         String name = "route";
 
@@ -539,7 +537,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
-    @ParallelTest
+    @Test
     public void testIngressListenerWithoutTls() {
         String name = "ingress";
 
@@ -572,7 +570,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
-    @ParallelTest
+    @Test
     public void testIngressListener() {
         String name = "ingress";
 
@@ -640,7 +638,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
-    @ParallelTest
+    @Test
     public void testIngressListenerHostNames() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("ingress")
@@ -733,7 +731,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), hasSize(0));
     }
 
-    @ParallelTest
+    @Test
     public void testIngressListenerHostNamesInNodePools() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("ingress")
@@ -807,7 +805,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), hasSize(0));
     }
 
-    @ParallelTest
+    @Test
     public void testClusterIPListenerWithoutTls() {
         String name = "clusterip";
 
@@ -836,7 +834,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), hasSize(0));
     }
 
-    @ParallelTest
+    @Test
     public void testClusterIPListener() {
         String name = "clusterip";
 
@@ -907,7 +905,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
-    @ParallelTest
+    @Test
     public void testValidateOauth() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -924,7 +922,7 @@ public class ListenersValidatorTest {
                 containsString("listener listener1: Valid Issuer URI has to be specified or 'checkIssuer' set to 'false'")));
     }
 
-    @ParallelTest
+    @Test
     public void testValidateBrokerCertChainAndKey() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -947,7 +945,7 @@ public class ListenersValidatorTest {
                 containsString("listener 'listener1' cannot have an empty certificate in the brokerCertChainAndKey")));
     }
 
-    @ParallelTest
+    @Test
     public void testMinimalConfiguration() {
         GenericKafkaListener internal = new GenericKafkaListenerBuilder()
                 .withName("internal")
@@ -1003,7 +1001,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), empty());
     }
 
-    @ParallelTest
+    @Test
     public void testValidateOauthPlain() {
         KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
                 .withEnableOauthBearer(false);
@@ -1042,7 +1040,7 @@ public class ListenersValidatorTest {
         assertDoesNotThrow(() -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners3));
     }
 
-    @ParallelTest
+    @Test
     public void testValidateAudienceOauth() {
         KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
                 .withCheckAudience(true);
@@ -1074,7 +1072,7 @@ public class ListenersValidatorTest {
                 not(containsString("listener listener1: 'clientId' has to be configured when 'checkAudience' is 'true'"))));
     }
 
-    @ParallelTest
+    @Test
     public void testValidateCustomClaimCheckOauth() {
         KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
                 .withCustomClaimCheck("invalid");
@@ -1106,7 +1104,7 @@ public class ListenersValidatorTest {
                 not(containsString("listener listener1: 'customClaimCheck' value not a valid JsonPath filter query - Failed to parse query: \"invalid\" at position: 0"))));
     }
 
-    @ParallelTest
+    @Test
     public void testValidateTimeoutsOauth() {
         KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
                 .withConnectTimeoutSeconds(0);
@@ -1156,7 +1154,7 @@ public class ListenersValidatorTest {
 
     }
 
-    @ParallelTest
+    @Test
     public void testValidateCreateBootstrapService() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -1193,7 +1191,7 @@ public class ListenersValidatorTest {
                 "listener listener3 cannot configure createBootstrapService because it is not load balancer listener"));
     }
     
-    @ParallelTest
+    @Test
     public void testValidateBootstrapExternalIPsListenener() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -1255,7 +1253,7 @@ public class ListenersValidatorTest {
                 "listener listener2 cannot configure brokers[].externalIPs because it is not NodePort based listener"));
     }
 
-    @ParallelTest
+    @Test
     public void testUnusedBrokerIds() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("my-name")
