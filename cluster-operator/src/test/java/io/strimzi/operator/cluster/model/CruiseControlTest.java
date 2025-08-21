@@ -35,6 +35,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
@@ -128,6 +129,10 @@ public class CruiseControlTest {
                     .withConfig(Map.of(CruiseControl.MIN_INSYNC_REPLICAS, MIN_INSYNC_REPLICAS, KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, REPLICATION_FACTOR))
                 .endKafka()
                 .withNewCruiseControl()
+                    .withNewTemplate()
+                        .withNewPodDisruptionBudget()
+                        .endPodDisruptionBudget()
+                    .endTemplate()
                 .endCruiseControl()
             .endSpec()
             .build();
@@ -392,6 +397,9 @@ public class CruiseControlTest {
         Map<String, String> saLabels = Map.of("l7", "v7", "l8", "v8");
         Map<String, String> saAnnotations = Map.of("a7", "v7", "a8", "v8");
 
+        Map<String, String> pbdLabels = Map.of("l9", "v9", "l10", "v10");
+        Map<String, String> pbdAnnotations = Map.of("a9", "v9", "a10", "v10");
+
         Affinity affinity = new AffinityBuilder()
                 .withNewNodeAffinity()
                     .withNewRequiredDuringSchedulingIgnoredDuringExecution()
@@ -489,6 +497,12 @@ public class CruiseControlTest {
                                     .withAnnotations(saAnnotations)
                                 .endMetadata()
                             .endServiceAccount()
+                            .withNewPodDisruptionBudget()
+                                .withNewMetadata()
+                                    .withLabels(pbdLabels)
+                                    .withAnnotations(pbdAnnotations)
+                                .endMetadata()
+                            .endPodDisruptionBudget()
                         .endTemplate()
                     .endCruiseControl()
                 .endSpec()
@@ -530,6 +544,12 @@ public class CruiseControlTest {
         ServiceAccount sa = cc.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnnotations.entrySet()), is(true));
+
+        // Check Pod Disruption Budget
+        PodDisruptionBudget pbd = cc.generatePodDisruptionBudget();
+        assertThat(pbd.getMetadata().getLabels().entrySet().containsAll(pbdLabels.entrySet()), is(true));
+        assertThat(pbd.getMetadata().getAnnotations().entrySet().containsAll(pbdAnnotations.entrySet()), is(true));
+        assertThat(pbd.getSpec().getMinAvailable(), is(new IntOrString(0)));
     }
 
     @ParallelTest

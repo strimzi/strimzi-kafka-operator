@@ -19,6 +19,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
@@ -50,11 +51,13 @@ public class EntityOperatorReconciler {
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
     private final boolean isNetworkPolicyGeneration;
+    private final boolean isPodDisruptionBudgetGeneration;
     private final RoleOperator roleOperator;
     private final RoleBindingOperator roleBindingOperator;
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final boolean isCruiseControlEnabled;
+    private final PodDisruptionBudgetOperator podDistruptionBudgetOperator;
 
     private String toCertificateHash = "";
     private String uoCertificateHash = "";
@@ -83,6 +86,7 @@ public class EntityOperatorReconciler {
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.isCruiseControlEnabled = kafkaAssembly.getSpec().getCruiseControl() != null;
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
         
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
@@ -91,6 +95,7 @@ public class EntityOperatorReconciler {
         this.roleBindingOperator = supplier.roleBindingOperations;
         this.configMapOperator = supplier.configMapOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
+        this.podDistruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
     }
 
     /**
@@ -111,6 +116,7 @@ public class EntityOperatorReconciler {
                 .compose(i -> topicOperatorRole())
                 .compose(i -> userOperatorRole())
                 .compose(i -> networkPolicy())
+                .compose(i -> podDistruptionBudget())
                 .compose(i -> topicOperatorRoleBindings())
                 .compose(i -> userOperatorRoleBindings())
                 .compose(i -> topicOperatorConfigMap())
@@ -416,7 +422,24 @@ public class EntityOperatorReconciler {
             return Future.succeededFuture();
         }
     }
-
+    /**
+     * Manages the Entity Operator Pod Disruption Budget
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> podDistruptionBudget() {
+        if (isPodDisruptionBudgetGeneration) {
+            return podDistruptionBudgetOperator
+                    .reconcile(
+                            reconciliation,
+                            reconciliation.namespace(),
+                            KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
+                            entityOperator != null ? entityOperator.generatePodDisruptionBudget() : null
+                    ).mapEmpty();
+        } else {
+            return Future.succeededFuture();
+        }
+    }
     /**
      * Manages the Entity Operator Deployment.
      *
