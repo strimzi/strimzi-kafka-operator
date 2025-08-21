@@ -11,9 +11,8 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.PasswordGenerator;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.junit5.VertxExtension;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
@@ -29,7 +28,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 @ExtendWith(VertxExtension.class)
 public class ClusterCaRenewalTest {
     private static final Function<NodeRef, Subject> SUBJECT_FN = node -> new Subject.Builder().build();
@@ -41,7 +39,7 @@ public class ClusterCaRenewalTest {
         NODES.add(new NodeRef("pod2", 2, null, false, true));
     }
 
-    @ParallelTest
+    @Test
     public void renewalOfCertificatesWithNullCertificates() throws IOException {
         ClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
@@ -71,7 +69,7 @@ public class ClusterCaRenewalTest {
         assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
     }
 
-    @ParallelTest
+    @Test
     public void renewalOfCertificatesWithCaRenewal() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertRenewed(true);
@@ -107,7 +105,7 @@ public class ClusterCaRenewalTest {
         assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
     }
 
-    @ParallelTest
+    @Test
     public void renewalOfCertificatesDelayedRenewalInWindow() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
@@ -143,7 +141,7 @@ public class ClusterCaRenewalTest {
         assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
     }
 
-    @ParallelTest
+    @Test
     public void renewalOfCertificatesDelayedRenewalOutsideWindow() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
@@ -173,7 +171,7 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod2").key()), is("old-key"));
     }
 
-    @ParallelTest
+    @Test
     public void renewalOfCertificatesWithNewNodesOutsideWindow() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
@@ -202,7 +200,7 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod2").key()), is("new-key0"));
     }
 
-    @ParallelTest
+    @Test
     public void noRenewal() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
@@ -229,7 +227,7 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod2").key()), is("old-key"));
     }
 
-    @ParallelTest
+    @Test
     public void noRenewalWithScaleUp() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
@@ -254,7 +252,7 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod2").key()), is("new-key1"));
     }
 
-    @ParallelTest
+    @Test
     public void noRenewalWithScaleUpInTheMiddle() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
@@ -280,7 +278,7 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod2").key()), is("old-key"));
     }
 
-    @ParallelTest
+    @Test
     public void noRenewalScaleDown() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
@@ -305,7 +303,7 @@ public class ClusterCaRenewalTest {
         assertThat(newCerts.get("pod2"), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void changedSubject() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);

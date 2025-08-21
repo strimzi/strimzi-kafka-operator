@@ -25,8 +25,7 @@ import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -38,7 +37,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
-@ParallelSuite
 public class KafkaClusterStorageTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -114,7 +112,7 @@ public class KafkaClusterStorageTest {
     // Tests
     //////////
 
-    @ParallelTest
+    @Test
     public void testPvcNames() {
         List<PersistentVolumeClaim> pvcs = KC.generatePersistentVolumeClaims();
         assertThat(pvcs.size(), is(8));
@@ -148,7 +146,7 @@ public class KafkaClusterStorageTest {
         assertThat(pvcs.stream().map(pvc -> pvc.getMetadata().getName()).toList(), is(List.of("data-0-foo-controllers-0", "data-0-foo-controllers-1", "data-0-foo-controllers-2", "data-0-foo-mixed-3", "data-0-foo-mixed-4", "data-0-foo-brokers-5", "data-0-foo-brokers-6", "data-0-foo-brokers-7", "data-1-foo-brokers-5", "data-1-foo-brokers-6", "data-1-foo-brokers-7")));
     }
 
-    @ParallelTest
+    @Test
     public void testGeneratePersistentVolumeClaimsPersistentWithClaimDeletion() {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
@@ -177,7 +175,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testGeneratePersistentVolumeClaimsPersistentWithoutClaimDeletion() {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
@@ -206,7 +204,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testGeneratePersistentVolumeClaimsJbod() {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
@@ -251,7 +249,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testGeneratePersistentVolumeClaimsJbodWithOverrides() {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
@@ -298,7 +296,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testPvcsWithEmptyStorageSelector() {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
@@ -322,7 +320,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testPvcsWithSetStorageSelector() {
         Map<String, String> selector = Map.of("foo", "bar");
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
@@ -349,7 +347,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testGeneratePersistentVolumeClaimsJbodWithTemplate() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -395,7 +393,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testGeneratePersistentVolumeClaimsJbodWithTemplateInKafkaAndNodePool() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -454,7 +452,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testGeneratePersistentVolumeClaimsJbodWithTemplateInNodePoolOnly() {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
@@ -499,7 +497,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testGeneratePersistentVolumeClaimsJbodWithoutVolumes() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
@@ -513,7 +511,7 @@ public class KafkaClusterStorageTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testEphemeralStorage()    {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
@@ -544,7 +542,7 @@ public class KafkaClusterStorageTest {
         assertThat(pvcs.stream().filter(pvc -> pvc.getMetadata().getName().contains("brokers")).count(), is(0L));
     }
 
-    @ParallelTest
+    @Test
     public void testGeneratePodSetWithSetSizeLimit() {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
@@ -572,7 +570,7 @@ public class KafkaClusterStorageTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testStorageValidationAfterInitialDeployment() {
         assertThrows(InvalidResourceException.class, () -> {
             Storage oldStorage = new JbodStorageBuilder()
@@ -591,7 +589,7 @@ public class KafkaClusterStorageTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testStorageReverting() {
         Storage jbod = new JbodStorageBuilder().withVolumes(
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build(),

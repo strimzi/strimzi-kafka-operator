@@ -11,8 +11,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -22,7 +21,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class JmxModelTest {
     private final static String NAME = "my-jmx-secret";
     private final static String NAMESPACE = "my-namespace";
@@ -46,7 +44,7 @@ public class JmxModelTest {
             .withData(Map.of(JmxModel.JMX_USERNAME_KEY, "username", JmxModel.JMX_PASSWORD_KEY, "password"))
             .build();
 
-    @ParallelTest
+    @Test
     public void testDisabledJmx() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().build();
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
@@ -59,7 +57,7 @@ public class JmxModelTest {
         assertThat(jmx.jmxSecret(null), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testEnabledJmx() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder()
                 .withNewJmxOptions()
@@ -92,7 +90,7 @@ public class JmxModelTest {
         assertThat(jmx.jmxSecret(null), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testEnabledJmxWithAuthentication() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder()
                 .withNewJmxOptions()
@@ -151,7 +149,7 @@ public class JmxModelTest {
         assertThat(existingSecret.getData().get(JmxModel.JMX_PASSWORD_KEY), is("password"));
     }
 
-    @ParallelTest
+    @Test
     public void testEnabledJmxWithAuthenticationAndTemplate() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder()
                 .withNewJmxOptions()

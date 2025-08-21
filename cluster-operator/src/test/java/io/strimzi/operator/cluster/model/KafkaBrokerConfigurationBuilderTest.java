@@ -40,8 +40,7 @@ import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -64,14 +63,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class KafkaBrokerConfigurationBuilderTest {
     private final static NodeRef NODE_REF = new NodeRef("my-cluster-kafka-2", 2, "kafka", false, true);
 
     private final static KafkaVersion KAFKA_VERSION = new KafkaVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, "", false, false, "");
 
-    @ParallelTest
+    @Test
     public void testBrokerId()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .build();
@@ -87,7 +85,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, containsString("node.id=3"));
     }
 
-    @ParallelTest
+    @Test
     public void testKraftMixedNodes()  {
         Set<NodeRef> nodes = Set.of(
                 new NodeRef("my-cluster-kafka-0", 0, "kafka", true, true),
@@ -106,7 +104,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "controller.quorum.voters=0@my-cluster-kafka-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-kafka-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090"));
     }
 
-    @ParallelTest
+    @Test
     public void testKraftControllerAndBrokerNodes()  {
         Set<NodeRef> nodes = Set.of(
                 new NodeRef("my-cluster-controllers-0", 0, "controllers", true, false),
@@ -140,7 +138,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoCruiseControl()  {
         // Broker configuration
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
@@ -157,7 +155,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2"));
     }
 
-    @ParallelTest
+    @Test
     public void testCruiseControl()  {
         CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("strimzi.cruisecontrol.metrics", 1, 1, 1);
 
@@ -190,7 +188,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2"));
     }
 
-    @ParallelTest
+    @Test
     public void testCruiseControlCustomMetricReporterTopic()  {
         CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("metric-reporter-topic", 2, 3, 4);
 
@@ -223,7 +221,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2"));
     }
 
-    @ParallelTest
+    @Test
     public void testStrimziMetricsReporterEnabled()  {
         StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(
                 new KafkaClusterSpecBuilder()
@@ -244,7 +242,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_log.*,kafka_network.*"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoRackAwareness()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withRackId(null)
@@ -253,7 +251,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2"));
     }
 
-    @ParallelTest
+    @Test
     public void testRackIdInKRaftBrokers()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
@@ -263,7 +261,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "broker.rack=${strimzidir:/opt/kafka/init:rack.id}"));
     }
 
-    @ParallelTest
+    @Test
     public void testRackIdInKRaftMixedNode()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-1", 1, "kafka", true, true))
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
@@ -273,7 +271,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "broker.rack=${strimzidir:/opt/kafka/init:rack.id}"));
     }
 
-    @ParallelTest
+    @Test
     public void testRackIdInKRaftControllers()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false))
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
@@ -282,7 +280,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=1"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoAuthorization()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withAuthorization("my-cluster", null)
@@ -291,7 +289,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2"));
     }
 
-    @ParallelTest
+    @Test
     public void testSimpleAuthorizationWithSuperUsers()  {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .addToSuperUsers("jakub", "CN=kuba")
@@ -306,7 +304,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
-    @ParallelTest
+    @Test
     public void testSimpleAuthorizationWithSuperUsersAndKRaft()  {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .addToSuperUsers("jakub", "CN=kuba")
@@ -321,7 +319,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
-    @ParallelTest
+    @Test
     public void testKeycloakAuthorization() {
         CertSecretSource cert = new CertSecretSourceBuilder()
                 .withSecretName("my-secret")
@@ -374,7 +372,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:giada;User:CN=paccu"));
     }
 
-    @ParallelTest
+    @Test
     public void testKeycloakAuthorizationWithDefaults() {
         CertSecretSource cert = new CertSecretSourceBuilder()
                 .withSecretName("my-secret")
@@ -406,7 +404,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
     }
 
-    @ParallelTest
+    @Test
     public void testOpaAuthorizationWithDefaults() {
         KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
                 .withUrl("http://opa:8181/v1/data/kafka/allow")
@@ -427,7 +425,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
     }
 
-    @ParallelTest
+    @Test
     public void testOpaAuthorization() {
         KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
                 .withUrl("http://opa:8181/v1/data/kafka/allow")
@@ -453,7 +451,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
     }
 
-    @ParallelTest
+    @Test
     public void testOpaAuthorizationWithTls() {
         CertSecretSource cert = new CertSecretSourceBuilder()
             .withSecretName("my-secret")
@@ -488,7 +486,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
     }
 
-    @ParallelTest
+    @Test
     public void testNullUserConfiguration()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withUserConfiguration(null, false, false, false)
@@ -504,7 +502,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
     }
 
-    @ParallelTest
+    @Test
     public void testNullUserConfigurationAndCCReporter()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withUserConfiguration(null, true, false, false)
@@ -521,7 +519,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
     }
 
-    @ParallelTest
+    @Test
     public void testEmptyUserConfiguration()  {
         Map<String, Object> userConfiguration = new HashMap<>();
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
@@ -540,7 +538,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
     }
 
-    @ParallelTest
+    @Test
     public void testUserConfiguration()  {
         Map<String, Object> userConfiguration = new HashMap<>();
         userConfiguration.put("auto.create.topics.enable", "false");
@@ -568,7 +566,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "transaction.state.log.min.isr=2"));
     }
 
-    @ParallelTest
+    @Test
     public void testUserConfigurationWithConfigProviders()  {
         Map<String, Object> userConfiguration = new HashMap<>();
         userConfiguration.put("config.providers", "env");
@@ -603,7 +601,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
     }
     
-    @ParallelTest
+    @Test
     public void testUserConfigurationWithInvalidConfigProviders()  {
         Map<String, Object> userConfiguration = new HashMap<>();
         userConfiguration.put("config.providers", "env,strimzienv");
@@ -619,7 +617,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         }, "InvalidConfigurationException was expected");
     }
 
-    @ParallelTest
+    @Test
     public void testNullUserConfigurationWithJmxMetricsReporter()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withUserConfiguration(null, false, true, false)
@@ -636,7 +634,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "metric.reporters=org.apache.kafka.common.metrics.JmxReporter"));
     }
 
-    @ParallelTest
+    @Test
     public void testNullUserConfigurationWithStrimziMetricsReporter() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withUserConfiguration(null, false, false, true)
@@ -654,7 +652,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
 
-    @ParallelTest
+    @Test
     public void testNullUserConfigurationWithCruiseControlAndStrimziMetricsReporters() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withUserConfiguration(null, true, false, true)
@@ -673,7 +671,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
     }
 
-    @ParallelTest
+    @Test
     public void testNullUserConfigurationWithCruiseControlAndJmxAndStrimziMetricsReporters() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withUserConfiguration(null, true, true, true)
@@ -760,7 +758,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(actualConfig, isEquivalent(expectedConfig));
     }
 
-    @ParallelTest
+    @Test
     public void testStrimziMetricsReporterViaUserAndMetricsConfigs() {
         Map<String, Object> configMap = new HashMap<>();
         configMap.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
@@ -783,7 +781,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
     }
 
-    @ParallelTest
+    @Test
     public void testEphemeralStorageLogDirs()  {
         Storage storage = new EphemeralStorageBuilder()
                 .withSizeLimit("5Gi")
@@ -797,7 +795,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "log.dirs=/var/lib/kafka/data/kafka-log2"));
     }
 
-    @ParallelTest
+    @Test
     public void testPersistentStorageLogDirs()  {
         Storage storage = new PersistentClaimStorageBuilder()
                 .withSize("1Ti")
@@ -813,7 +811,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "log.dirs=/var/lib/kafka/data/kafka-log2"));
     }
 
-    @ParallelTest
+    @Test
     public void testJbodStorageLogDirs()  {
         SingleVolumeStorage vol1 = new PersistentClaimStorageBuilder()
                 .withId(1)
@@ -846,7 +844,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "log.dirs=/var/lib/kafka/data-1/kafka-log2,/var/lib/kafka/data-2/kafka-log2,/var/lib/kafka/data-5/kafka-log2"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithNoListeners() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withListeners("my-cluster", KAFKA_VERSION, "my-namespace", emptyList(), null, null)
@@ -875,7 +873,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testConnectionLimits()  {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -946,7 +944,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithPlainListenersWithoutAuth()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")
@@ -982,7 +980,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testKraftListenersMixedNodes()  {
         Set<NodeRef> nodes = Set.of(
                 new NodeRef("my-cluster-kafka-0", 0, "kafka", true, true),
@@ -1030,7 +1028,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testKraftListenersBrokerAndControllerNodes()  {
         Set<NodeRef> nodes = Set.of(
                 new NodeRef("my-cluster-controllers-0", 0, "controllers", true, false),
@@ -1105,7 +1103,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testKraftOauthBrokerControllerAndMixedNodes()  {
         Set<NodeRef> nodes = Set.of(
                 new NodeRef("my-cluster-controllers-0", 0, "controllers", true, false),
@@ -1246,7 +1244,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithPlainListenersWithSaslAuth()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")
@@ -1286,7 +1284,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.plain-9092.sasl.enabled.mechanisms=SCRAM-SHA-512"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithTlsListenersWithoutAuth()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("tls")
@@ -1325,7 +1323,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.tls-9093.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithTlsListenersWithTlsAuth()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("tls")
@@ -1370,7 +1368,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.tls-9093.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithTlsListenersWithCustomCerts()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("tls")
@@ -1416,7 +1414,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.tls-9093.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalRouteListenersWithoutAuth()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1455,7 +1453,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.external-9094.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalRouteListenersWithTlsAuth()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1500,7 +1498,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.external-9094.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalRouteListenersWithSaslAuth()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1543,7 +1541,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.external-9094.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalRouteListenersWithCustomCerts()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1589,7 +1587,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.external-9094.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalListenersLoadBalancerWithTls()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1628,7 +1626,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.external-9094.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testPerBrokerWithExternalListeners()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1667,7 +1665,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.external-9094.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalListenersLoadBalancerWithoutTls()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1703,7 +1701,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalListenersNodePortWithTls()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1742,7 +1740,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.external-9094.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalListenersNodePortWithoutTls()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1778,7 +1776,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testPerBrokerWithExternalListenersNodePortWithoutTls()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
@@ -1814,7 +1812,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalListenersIngress()  {
         GenericKafkaListenerConfigurationBroker broker = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
@@ -1865,7 +1863,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.external-9094.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalListenersClusterIPWithTLS()  {
         GenericKafkaListenerConfigurationBroker broker = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
@@ -1913,7 +1911,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.external-9094.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithExternalListenersClusterIPWithoutTLS()  {
         GenericKafkaListenerConfigurationBroker broker = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
@@ -1958,7 +1956,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testOauthConfiguration()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")
@@ -2021,7 +2019,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
     }
 
-    @ParallelTest
+    @Test
     public void testOauthConfigurationWithPlainOnly()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")
@@ -2076,7 +2074,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
     }
 
-    @ParallelTest
+    @Test
     public void testOauthConfigurationWithoutOptions()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")
@@ -2118,7 +2116,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
     }
 
-    @ParallelTest
+    @Test
     public void testOauthConfigurationWithTlsConfig()  {
         CertSecretSource cert = new CertSecretSourceBuilder()
                 .withSecretName("my-secret")
@@ -2171,7 +2169,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
     }
 
-    @ParallelTest
+    @Test
     public void testOauthConfigurationWithClientSecret()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")
@@ -2222,7 +2220,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthOptions()  {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
                 .withValidIssuerUri("http://valid-issuer")
@@ -2299,7 +2297,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(actualOptions, is(equalTo(expectedOptions)));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomAuthConfigSetProtocolMapCorrectlyForsSslSasl() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("CUSTOM-LISTENER")
@@ -2319,7 +2317,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_SSL"));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomAuthConfigSetProtocolMapCorrectlyForPlainSasl() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("CUSTOM-LISTENER")
@@ -2340,7 +2338,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
 
-    @ParallelTest
+    @Test
     public void testCustomAuthConfigSetProtocolMapCorrectlyForPlain() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("CUSTOM-LISTENER")
@@ -2360,7 +2358,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, containsString("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:PLAINTEXT"));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomAuthConfigRemovesForbiddenPrefixes() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("CUSTOM-LISTENER")
@@ -2380,7 +2378,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, not(containsString("ssl.keystore.path")));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomAuthConfigPrefixesUserProvidedConfig() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("CUSTOM-LISTENER")
@@ -2434,7 +2432,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.custom-listener-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ;"));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomTlsAuth() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("CUSTOM-LISTENER")
@@ -2484,7 +2482,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthDefaultOptions()  {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
                 .build();
@@ -2493,7 +2491,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(actualOptions, is(equalTo(Collections.emptyMap())));
     }
 
-    @ParallelTest
+    @Test
     public void testWithTieredStorage() {
         TieredStorageCustom tieredStorage = new TieredStorageCustom();
         RemoteStorageManager rsm = new RemoteStorageManager();
@@ -2527,7 +2525,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testSimpleAuthorizationOnMigration() {
         NodeRef broker = new NodeRef("my-cluster-brokers-0", 0, "brokers", false, true);
         NodeRef controller = new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false);
@@ -2548,7 +2546,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, containsString("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer"));
     }
 
-    @ParallelTest
+    @Test
     public void testWithStrimziQuotas() {
         QuotasPluginStrimzi quotasPluginStrimzi = new QuotasPluginStrimziBuilder()
             .withConsumerByteRate(1000L)
@@ -2578,7 +2576,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithNullQuotas() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
             .withQuotas("my-personal-cluster", null)
@@ -2588,7 +2586,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, not(containsString("client.quota.callback.static")));
     }
 
-    @ParallelTest
+    @Test
     public void testWithKafkaQuotas() {
         QuotasPluginKafka quotasPluginKafka = new QuotasPluginKafkaBuilder()
             .withConsumerByteRate(1000L)
@@ -2605,7 +2603,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, not(containsString("client.quota.callback.static")));
     }
 
-    @ParallelTest
+    @Test
     public void testWithKRaftMetadataLogDir() {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
                 .withKRaftMetadataLogDir("/my/kraft/metadata")

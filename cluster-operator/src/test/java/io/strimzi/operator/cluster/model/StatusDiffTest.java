@@ -13,8 +13,7 @@ import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -22,9 +21,8 @@ import java.time.Instant;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class StatusDiffTest {
-    @ParallelTest
+    @Test
     public void testStatusDiff()    {
         ListenerStatus ls1 = new ListenerStatusBuilder()
                 .withName("plain")
@@ -111,7 +109,7 @@ public class StatusDiffTest {
         assertThat(diff.isEmpty(), is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testTimestampDiff() {
         ListenerStatus ls1 = new ListenerStatusBuilder()
                 .withName("plain")

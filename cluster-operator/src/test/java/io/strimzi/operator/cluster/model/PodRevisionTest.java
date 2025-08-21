@@ -12,8 +12,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -22,7 +21,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class PodRevisionTest {
     private static final Pod POD = new PodBuilder()
                 .withNewMetadata()
@@ -41,7 +39,7 @@ public class PodRevisionTest {
                 .endSpec()
                 .build();
 
-    @ParallelTest
+    @Test
     public void testRevisions() {
         String basicPodRevision = PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, POD);
 
@@ -65,7 +63,7 @@ public class PodRevisionTest {
         assertThat(PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, pod2), is(not(basicPodRevision)));
     }
 
-    @ParallelTest
+    @Test
     public void testHasChangedWithPods()    {
         // Two pods without the revision annotation
         assertThat(PodRevision.hasChanged(POD, new PodBuilder(POD).build()), is(false));
@@ -87,7 +85,7 @@ public class PodRevisionTest {
         assertThat(PodRevision.hasChanged(POD, pod2), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testHasChangedWithPodAndPodSet()    {
         // Two pods without the revision annotation
         assertThat(PodRevision.hasChanged(POD, podSet(POD)), is(false));

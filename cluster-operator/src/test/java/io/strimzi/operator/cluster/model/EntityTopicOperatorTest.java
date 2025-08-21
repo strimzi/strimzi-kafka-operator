@@ -24,8 +24,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +40,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 public class EntityTopicOperatorTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final String NAMESPACE = "my-namespace";
@@ -102,12 +100,12 @@ public class EntityTopicOperatorTest {
             .build();
     private static final EntityTopicOperator ETO = EntityTopicOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
-    @ParallelTest
+    @Test
     public void testEnvVars()   {
         assertThat(ETO.getEnvVars(), is(getExpectedEnvVars()));
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrd() {
         assertThat(ETO.namespace, is(NAMESPACE));
         assertThat(ETO.cluster, is(CLUSTER_NAME));
@@ -130,7 +128,7 @@ public class EntityTopicOperatorTest {
         assertThat(((InlineLogging) ETO.logging().getLogging()).getLoggers(), is(Map.of("topic-operator.root.logger", "OFF")));
     }
 
-    @ParallelTest
+    @Test
     public void testPeriodicReconciliationIntervalConfig() {
         // default value
         EntityTopicOperatorSpec entityTopicOperatorSpec0 = new EntityTopicOperatorSpecBuilder().build();
@@ -166,7 +164,7 @@ public class EntityTopicOperatorTest {
         return EntityTopicOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrdDefault() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -190,7 +188,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.logging().getLogging(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrdNoEntityOperator() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -202,7 +200,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrdNoTopicOperatorInEntityOperator() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -215,7 +213,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testWatchedNamespace() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -233,7 +231,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.watchedNamespace(), is("some-other-namespace"));
     }
 
-    @ParallelTest
+    @Test
     public void testGetContainers() {
         Container container = ETO.createContainer(null);
         assertThat(container.getName(), is(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME));
@@ -254,7 +252,7 @@ public class EntityTopicOperatorTest {
                 EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT)));
     }
 
-    @ParallelTest
+    @Test
     public void testRoleBindingInOtherNamespace()   {
         RoleBinding binding = ETO.generateRoleBindingForRole(NAMESPACE, "my-topic-namespace");
 
@@ -268,7 +266,7 @@ public class EntityTopicOperatorTest {
         assertThat(binding.getRoleRef().getName(), is("my-cluster-entity-operator"));
     }
 
-    @ParallelTest
+    @Test
     public void testRoleBindingInTheSameNamespace()   {
         RoleBinding binding = ETO.generateRoleBindingForRole(NAMESPACE, NAMESPACE);
 
@@ -282,7 +280,7 @@ public class EntityTopicOperatorTest {
         assertThat(binding.getRoleRef().getName(), is("my-cluster-entity-operator"));
     }
 
-    @ParallelTest
+    @Test
     public void testSetupWithCruiseControlEnabled() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -324,7 +322,7 @@ public class EntityTopicOperatorTest {
         )));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateCruiseControlApiSecret() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()

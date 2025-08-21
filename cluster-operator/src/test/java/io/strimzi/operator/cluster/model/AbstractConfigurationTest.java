@@ -7,9 +7,8 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidConfigParameterException;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +21,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@ParallelSuite
 public class AbstractConfigurationTest {
     static OrderedProperties createProperties(String... keyValues) {
         OrderedProperties properties = new OrderedProperties();
@@ -38,57 +36,57 @@ public class AbstractConfigurationTest {
 
     final private OrderedProperties defaultConfiguration = createProperties("default.option", "hello");
 
-    @ParallelTest
+    @Test
     public void testConfigurationStringDefaults()  {
         AbstractConfiguration config = new TestConfiguration("");
         assertThat(config.asOrderedProperties(), is(defaultConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testConfigurationStringOverridingDefaults()  {
         AbstractConfiguration config = new TestConfiguration("default.option=world");
         assertThat(config.asOrderedProperties(), is(createProperties("default.option", "world")));
     }
 
-    @ParallelTest
+    @Test
     public void testConfigurationStringOverridingDefaultsWithMore()  {
         AbstractConfiguration config = new TestConfiguration("default.option=world" + LINE_SEPARATOR + "var1=aaa" + LINE_SEPARATOR);
         assertThat(config.asOrderedProperties(), is(createProperties("default.option", "world", "var1", "aaa")));
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultsFromJson()  {
         AbstractConfiguration config = new TestConfiguration(new JsonObject());
         assertThat(config.asOrderedProperties(), is(defaultConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testJsonOverridingDefaults()  {
         AbstractConfiguration config = new TestConfiguration(new JsonObject().put("default.option", "world"));
         assertThat(config.asOrderedProperties(), is(createProperties("default.option", "world")));
     }
 
-    @ParallelTest
+    @Test
     public void testJsonOverridingDefaultsWithMore()  {
         AbstractConfiguration config = new TestConfiguration(new JsonObject().put("default.option", "world").put("var1", "aaa"));
         assertThat(config.asOrderedProperties(), is(createProperties("default.option", "world", "var1", "aaa")));
     }
 
-    @ParallelTest
+    @Test
     public void testEmptyConfigurationString() {
         String configuration = "";
         AbstractConfiguration config = new TestConfigurationWithoutDefaults(configuration);
         assertThat(config.getConfiguration().isEmpty(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testEmptyJson() {
         JsonObject configuration = new JsonObject();
         AbstractConfiguration config = new TestConfigurationWithoutDefaults(configuration);
         assertThat(config.getConfiguration().isEmpty(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testNonEmptyConfigurationString() {
         String configuration = "var1=aaa" + LINE_SEPARATOR +
                 "var2=bbb" + LINE_SEPARATOR +
@@ -101,7 +99,7 @@ public class AbstractConfigurationTest {
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testNonEmptyJson() {
         JsonObject configuration = new JsonObject()
                 .put("var1", "aaa")
@@ -115,7 +113,7 @@ public class AbstractConfigurationTest {
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testConfigurationStringWithDuplicates() {
         String configuration = "var1=aaa" + LINE_SEPARATOR +
                 "var2=bbb" + LINE_SEPARATOR +
@@ -129,7 +127,7 @@ public class AbstractConfigurationTest {
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testJsonWithDuplicates() {
         JsonObject configuration = new JsonObject()
                 .put("var1", "aaa")
@@ -144,7 +142,7 @@ public class AbstractConfigurationTest {
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testConfigurationStringWithForbiddenKeys() {
         String configuration = "var1=aaa" + LINE_SEPARATOR +
                 "var2=bbb" + LINE_SEPARATOR +
@@ -166,7 +164,7 @@ public class AbstractConfigurationTest {
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testConfigurationStringWithForbiddenKeysInUpperCase() {
         String configuration = "var1=aaa" + LINE_SEPARATOR +
                 "var2=bbb" + LINE_SEPARATOR +
@@ -181,7 +179,7 @@ public class AbstractConfigurationTest {
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testJsonWithForbiddenPrefixesAndOptions() {
         JsonObject configuration = new JsonObject().put("var1", "aaa")
                 .put("var2", "bbb")
@@ -202,7 +200,7 @@ public class AbstractConfigurationTest {
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testJsonWithDifferentTypes() {
         JsonObject configuration = new JsonObject().put("var1", 1)
                 .put("var2", "bbb")
@@ -215,7 +213,7 @@ public class AbstractConfigurationTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testWithHostPort() {
         JsonObject configuration = new JsonObject().put("option.with.port", "my-server:9092");
         OrderedProperties expectedConfiguration = createWithDefaults("option.with.port", "my-server:9092");
@@ -224,7 +222,7 @@ public class AbstractConfigurationTest {
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaCipherSuiteOverride() {
         Map<String, Object> conf = new HashMap<>();
         conf.put("ssl.cipher.suites", "cipher1,cipher2,cipher3"); // valid
@@ -234,7 +232,7 @@ public class AbstractConfigurationTest {
         assertThat(kc.asOrderedProperties().asMap().get("ssl.cipher.suites"), is("cipher1,cipher2,cipher3"));
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaConnectHostnameVerification() {
         Map<String, Object> conf = new HashMap<>();
         conf.put("key.converter", "my.package.Converter"); // valid
@@ -248,7 +246,7 @@ public class AbstractConfigurationTest {
         assertThat(configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"), is(""));
     }
 
-    @ParallelTest
+    @Test
     public void testSplittingOfPrefixes()   {
         String prefixes = "prefix1.field,prefix2.field , prefix3.field, prefix4.field,, ";
         List<String> prefixList = asList("prefix1.field", "prefix2.field", "prefix3.field", "prefix4.field");

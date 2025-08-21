@@ -23,8 +23,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 public class KafkaClusterOAuthTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -107,7 +105,7 @@ public class KafkaClusterOAuthTest {
     // Tests
     //////////
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithClientSecret() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -148,7 +146,7 @@ public class KafkaClusterOAuthTest {
         }));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithClientSecretAndTls() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("first-certificate")
@@ -226,7 +224,7 @@ public class KafkaClusterOAuthTest {
         }));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthEverywhere() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("first-certificate")
@@ -378,7 +376,7 @@ public class KafkaClusterOAuthTest {
         }));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithKeycloakAuthorization() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("first-certificate")
@@ -447,7 +445,7 @@ public class KafkaClusterOAuthTest {
         }));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithKeycloakAuthorizationMissingOAuthListeners() {
         assertThrows(InvalidResourceException.class, () -> {
             Kafka kafkaAssembly = new KafkaBuilder(KAFKA)

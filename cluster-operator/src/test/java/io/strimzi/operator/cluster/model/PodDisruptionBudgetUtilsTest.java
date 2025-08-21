@@ -11,8 +11,7 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +20,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class PodDisruptionBudgetUtilsTest {
     private final static String NAME = "my-pdb";
     private final static String NAMESPACE = "my-namespace";
@@ -48,7 +46,7 @@ public class PodDisruptionBudgetUtilsTest {
             .withMaxUnavailable(2)
             .build();
 
-    @ParallelTest
+    @Test
     public void testPdbWithoutTemplate() {
         PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createPodDisruptionBudget(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null);
 
@@ -66,7 +64,7 @@ public class PodDisruptionBudgetUtilsTest {
         assertThat(pdb.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_KIND_LABEL), is("my-kind"));
     }
 
-    @ParallelTest
+    @Test
     public void testPdbWithTemplate() {
         PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createPodDisruptionBudget(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE);
 
@@ -84,7 +82,7 @@ public class PodDisruptionBudgetUtilsTest {
         assertThat(pdb.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_KIND_LABEL), is("my-kind"));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomControllerPdbWithoutTemplate() {
         PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, REPLICAS);
 
@@ -102,7 +100,7 @@ public class PodDisruptionBudgetUtilsTest {
         assertThat(pdb.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_KIND_LABEL), is("my-kind"));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomControllerPdbWithTemplate() {
         PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, REPLICAS);
 

@@ -13,8 +13,7 @@ import io.strimzi.api.kafka.model.common.template.InternalServiceTemplateBuilder
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class ServiceUtilsTest {
     private final static String NAME = "my-service";
     private final static String NAMESPACE = "my-namespace";
@@ -52,7 +50,7 @@ public class ServiceUtilsTest {
             .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
             .build();
 
-    @ParallelTest
+    @Test
     public void testCreateServicePortName() {
         ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, PORT_NAME, "HTTP");
 
@@ -63,7 +61,7 @@ public class ServiceUtilsTest {
         assertThat(port.getProtocol(), is("HTTP"));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateServiceWithNodePort() {
         ServicePort port = ServiceUtils.createServicePort(PORT_NAME, 1234, PORT_NAME, 30000, "HTTP");
 
@@ -74,7 +72,7 @@ public class ServiceUtilsTest {
         assertThat(port.getProtocol(), is("HTTP"));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateHeadlessServiceWithNullTemplate() {
         Service svc = ServiceUtils.createHeadlessService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT));
 
@@ -97,7 +95,7 @@ public class ServiceUtilsTest {
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateHeadlessServiceWithEmptyTemplate() {
         Service svc = ServiceUtils.createHeadlessService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, new InternalServiceTemplate(), List.of(PORT));
 
@@ -120,7 +118,7 @@ public class ServiceUtilsTest {
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateHeadlessServiceWithTemplate() {
         Service svc = ServiceUtils.createHeadlessService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT));
 
@@ -143,7 +141,7 @@ public class ServiceUtilsTest {
         assertThat(svc.getSpec().getIpFamilies(), is(List.of("IPv4", "IPv6")));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterIpServiceWithNullTemplate() {
         Service svc = ServiceUtils.createClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT));
 
@@ -164,7 +162,7 @@ public class ServiceUtilsTest {
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterIpServiceWithEmptyTemplate() {
         Service svc = ServiceUtils.createClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, new InternalServiceTemplate(), List.of(PORT));
 
@@ -185,7 +183,7 @@ public class ServiceUtilsTest {
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterIpServiceWithTemplate() {
         Service svc = ServiceUtils.createClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT));
 
@@ -206,7 +204,7 @@ public class ServiceUtilsTest {
         assertThat(svc.getSpec().getIpFamilies(), is(List.of("IPv4", "IPv6")));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateDiscoverableServiceWithNullTemplate() {
         Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT), LABELS.strimziSelectorLabels(), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
 
@@ -227,7 +225,7 @@ public class ServiceUtilsTest {
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateDiscoverableServiceWithTemplate() {
         Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT), LABELS.strimziSelectorLabels(), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
 
@@ -248,7 +246,7 @@ public class ServiceUtilsTest {
         assertThat(svc.getSpec().getIpFamilies(), is(List.of("IPv4", "IPv6")));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateServiceWithNullTemplate() {
         Service svc = ServiceUtils.createService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT), Labels.fromMap(Map.of("selector-label", "selector-value")), "NodePort", Map.of("label", "label-value"), Map.of("anno", "anno-value"), IpFamilyPolicy.REQUIRE_DUAL_STACK, List.of(IpFamily.IPV6), true);
 
@@ -268,7 +266,7 @@ public class ServiceUtilsTest {
         assertThat(svc.getSpec().getPublishNotReadyAddresses(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateServiceWithTemplate() {
         Service svc = ServiceUtils.createService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT), Labels.fromMap(Map.of("selector-label", "selector-value")), "NodePort", Map.of("label", "label-value"), Map.of("anno", "anno-value"), IpFamilyPolicy.REQUIRE_DUAL_STACK, List.of(IpFamily.IPV6), false);
 

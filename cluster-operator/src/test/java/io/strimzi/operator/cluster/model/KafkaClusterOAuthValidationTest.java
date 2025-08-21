@@ -22,8 +22,7 @@ import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,6 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 public class KafkaClusterOAuthValidationTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -79,7 +77,7 @@ public class KafkaClusterOAuthValidationTest {
         return List.of(listener1);
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithIntrospectionMinimalPlain() {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
                 .withClientId("my-client-id")
@@ -94,7 +92,7 @@ public class KafkaClusterOAuthValidationTest {
         ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, getListeners(auth));
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthAuthnAuthz() {
         List<GenericKafkaListener> listeners = List.of(new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -139,7 +137,7 @@ public class KafkaClusterOAuthValidationTest {
         KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthAuthzWithoutAuthn() {
         assertThrows(InvalidResourceException.class, () -> {
             List<GenericKafkaListener> listeners = List.of(new GenericKafkaListenerBuilder()
@@ -172,7 +170,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithJwksMinRefreshPauseAndIntrospection() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -190,7 +188,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithJwksExpiryAndIntrospection() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -208,7 +206,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithJwksRefreshAndIntrospection() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -226,7 +224,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithReauthAndIntrospection() {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
                 .withClientId("my-client-id")
@@ -242,7 +240,7 @@ public class KafkaClusterOAuthValidationTest {
         ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, getListeners(auth));
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationMissingValidIssuerUri() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -258,7 +256,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationRefreshSecondsRelationWithExpirySeconds() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -272,7 +270,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationRefreshSecondsSetWithExpirySecondsNotSet() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -285,7 +283,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationRefreshSecondsNotSetWithExpirySecondsSet() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -298,7 +296,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationNoUriSpecified() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder().build();
@@ -307,7 +305,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithMinimumJWKS() {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
                 .withValidIssuerUri("http://valid-issuer")
@@ -317,7 +315,7 @@ public class KafkaClusterOAuthValidationTest {
         ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, getListeners(auth));
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithConnectTimeout() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -330,7 +328,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithReadTimeout() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -343,7 +341,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithGroupsClaim() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -356,7 +354,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationIntrospectionEndpointUriWithoutClientId() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -371,7 +369,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationIntrospectionEndpointUriWithoutClientSecret() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -383,7 +381,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationExpirySecondsWithoutEndpointUri() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -396,7 +394,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationRefreshSecondsWithoutEndpointUri() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -409,7 +407,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithOAuthWithIntrospectionWithNoTypeCheck() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -427,7 +425,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOAuthValidationWithOAuthWithJwksWithNotJwt() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()

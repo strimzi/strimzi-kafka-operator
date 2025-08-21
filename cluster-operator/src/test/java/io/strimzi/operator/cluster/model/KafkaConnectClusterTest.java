@@ -88,8 +88,7 @@ import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -118,7 +117,6 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
-@ParallelSuite
 public class KafkaConnectClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider(Map.of(
@@ -171,7 +169,7 @@ public class KafkaConnectClusterTest {
 
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS, SHARED_ENV_PROVIDER);
 
-    @ParallelTest
+    @Test
     public void testConnectConfigMap() {
         ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
         assertThat(configMap.getData().get(JmxPrometheusExporterModel.CONFIG_MAP_KEY), is(metricsCmJson));
@@ -210,7 +208,7 @@ public class KafkaConnectClusterTest {
         return expected;
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultValues() {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaConnect(namespace, clusterName), VERSIONS, SHARED_ENV_PROVIDER);
 
@@ -223,7 +221,7 @@ public class KafkaConnectClusterTest {
         assertThat(kc.configuration.asOrderedProperties(), is(defaultConfiguration));
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrd() {
         assertThat(kc.getReplicas(), is(replicas));
         assertThat(kc.image, is(image));
@@ -235,12 +233,12 @@ public class KafkaConnectClusterTest {
         assertThat(kc.bootstrapServers, is(bootstrapServers));
     }
 
-    @ParallelTest
+    @Test
     public void testEnvVars()   {
         assertThat(kc.getEnvVars(), is(getExpectedEnvVars()));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateService()   {
         Service svc = kc.generateService();
 
@@ -258,7 +256,7 @@ public class KafkaConnectClusterTest {
         TestUtils.checkOwnerReference(svc, resource);
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateHeadlessService()   {
         KafkaConnect resource = new KafkaConnectBuilder(resourceWithMetrics)
                 .editSpec()
@@ -291,7 +289,7 @@ public class KafkaConnectClusterTest {
         TestUtils.checkOwnerReference(svc, resource);
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithRack() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .editOrNewSpec()
@@ -317,7 +315,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void withAffinity() throws IOException {
         ResourceTester<KafkaConnect, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnect.class, VERSIONS, (connect, lookup) -> KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, connect, lookup, SHARED_ENV_PROVIDER), this.getClass().getSimpleName() + ".withAffinity");
         resourceTester.assertDesiredModel("-StrimziPodSet.yaml", kcc -> {
@@ -326,7 +324,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void withTolerations() throws IOException {
         ResourceTester<KafkaConnect, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnect.class, VERSIONS, (connect, lookup) -> KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, connect, lookup, SHARED_ENV_PROVIDER), this.getClass().getSimpleName() + ".withTolerations");
         resourceTester.assertDesiredModel("-StrimziPodSet.yaml", kcc -> {
@@ -335,7 +333,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithTls() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -358,7 +356,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, not(containsString("ssl.keystore.")));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithTlsAuth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -388,7 +386,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("ssl.truststore.type=PEM"));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithTlsSameSecret() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -417,7 +415,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithScramSha512Auth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -455,7 +453,7 @@ public class KafkaConnectClusterTest {
      * the volumes and volume mounts that reference the secret are correctly created and that each volume name is only created once - volumes
      * with duplicate names will cause Kubernetes to reject the deployment.
      */
-    @ParallelTest
+    @Test
     public void testPodSetWithScramSha512AuthAndTLSSameSecret() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
             .editSpec()
@@ -503,7 +501,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithScramSha256Auth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -542,7 +540,7 @@ public class KafkaConnectClusterTest {
      * the volumes and volume mounts that reference the secret are correctly created and that each volume name is only created once - volumes
      * with duplicate names will cause Kubernetes to reject the deployment.
      */
-    @ParallelTest
+    @Test
     public void testPodSetWithScramSha256AuthAndTLSSameSecret() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -590,7 +588,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithPlainAuth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -629,7 +627,7 @@ public class KafkaConnectClusterTest {
      * the volumes and volume mounts that reference the secret are correctly created and that each volume name is only created once - volumes
      * with duplicate names will cause Kubernetes to reject the deployment.
      */
-    @ParallelTest
+    @Test
     public void testPodSetWithPlainAuthAndTLSSameSecret() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
             .editSpec()
@@ -677,7 +675,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testPodSet()   {
         KafkaConnect resource = new KafkaConnectBuilder(resourceWithMetrics)
                 .editSpec()
@@ -734,7 +732,7 @@ public class KafkaConnectClusterTest {
         }
     }
 
-    @ParallelTest
+    @Test
     @SuppressWarnings({"checkstyle:methodlength"})
     public void testTemplate() {
         Map<String, String> spsLabels = Map.of("l1", "v1", "l2", "v2",
@@ -980,7 +978,7 @@ public class KafkaConnectClusterTest {
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testExternalConfigurationSecretEnvs() {
         ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
                 .withName("MY_ENV_VAR")
@@ -1010,7 +1008,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testExternalConfigurationConfigEnvs() {
         ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
                 .withName("MY_ENV_VAR")
@@ -1039,7 +1037,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationSecretVolumes() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
@@ -1073,7 +1071,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationSecretVolumesWithDots() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
@@ -1107,7 +1105,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationConfigVolumes() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
@@ -1141,7 +1139,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationConfigVolumesWithDots() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
@@ -1175,7 +1173,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationInvalidVolumes() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
@@ -1206,7 +1204,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testNoExternalConfigurationVolumes() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
@@ -1235,7 +1233,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testInvalidExternalConfigurationEnvs() {
         ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
                 .withName("MY_ENV_VAR")
@@ -1263,7 +1261,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testNoExternalConfigurationEnvs() {
         ExternalConfigurationEnv env = new ExternalConfigurationEnvBuilder()
                 .withName("MY_ENV_VAR")
@@ -1289,7 +1287,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testGracePeriod() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1309,7 +1307,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultGracePeriod() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource).build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
@@ -1321,7 +1319,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullSecrets() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -1346,7 +1344,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullSecretsCO() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -1362,7 +1360,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullSecretsBoth() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -1387,7 +1385,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultImagePullSecrets() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource).build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
@@ -1399,7 +1397,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testSecurityContext() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1422,7 +1420,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultSecurityContext() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource).build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
@@ -1434,7 +1432,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testRestrictedSecurityContext() {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         kc.securityProvider = new RestrictedPodSecurityProvider();
@@ -1451,7 +1449,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testPodDisruptionBudget() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1469,7 +1467,7 @@ public class KafkaConnectClusterTest {
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultPodDisruptionBudget() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource).build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
@@ -1479,7 +1477,7 @@ public class KafkaConnectClusterTest {
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullPolicy() {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
@@ -1495,7 +1493,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testResources() {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
@@ -1521,7 +1519,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testJvmOptions() {
         Map<String, String> xx = new HashMap<>(2);
         xx.put("UseG1GC", "true");
@@ -1549,7 +1547,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaConnectContainerEnvVars() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
@@ -1588,7 +1586,7 @@ public class KafkaConnectClusterTest {
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaConnectContainerSecurityContext() {
 
         SecurityContext securityContext = new SecurityContextBuilder()
@@ -1624,7 +1622,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testOpenTelemetryTracing() {
         KafkaConnectBuilder builder = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1649,7 +1647,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithOAuthWithAccessToken() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1675,7 +1673,7 @@ public class KafkaConnectClusterTest {
 
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithOAuthWithRefreshToken() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1717,7 +1715,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithOAuthWithClientSecret() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1746,7 +1744,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithOAuthWithClientSecretAndSaslExtensions() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1782,7 +1780,7 @@ public class KafkaConnectClusterTest {
 
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithOAuthWithClientAssertion() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1815,7 +1813,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithOAuthWithUsernameAndPassword() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -1852,7 +1850,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithOAuthWithMissingClientSecret() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaConnect resource = new KafkaConnectBuilder(this.resource)
@@ -1869,7 +1867,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithOAuthWithMissingUri() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaConnect resource = new KafkaConnectBuilder(this.resource)
@@ -1889,7 +1887,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testPodSetWithOAuthWithTls() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("first-certificate")
@@ -1949,7 +1947,7 @@ public class KafkaConnectClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testNetworkPolicyWithConnectorOperator() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .build();
@@ -1971,7 +1969,7 @@ public class KafkaConnectClusterTest {
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(MetricsModel.METRICS_PORT));
     }
 
-    @ParallelTest
+    @Test
     public void testNetworkPolicyWithConnectorOperatorSameNamespace() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .build();
@@ -1993,7 +1991,7 @@ public class KafkaConnectClusterTest {
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(MetricsModel.METRICS_PORT));
     }
 
-    @ParallelTest
+    @Test
     public void testNetworkPolicyWithConnectorOperatorWithNamespaceLabels() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .build();
@@ -2015,7 +2013,7 @@ public class KafkaConnectClusterTest {
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(MetricsModel.METRICS_PORT));
     }
 
-    @ParallelTest
+    @Test
     public void testNetworkPolicyWithoutConnectorOperator() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .build();
@@ -2024,7 +2022,7 @@ public class KafkaConnectClusterTest {
         assertThat(kc.generateNetworkPolicy(false, null, null), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testClusterRoleBindingRack() {
         String testNamespace = "other-namespace";
         String topologyKey = "topology-key";
@@ -2047,7 +2045,7 @@ public class KafkaConnectClusterTest {
         assertThat(crb.getSubjects().get(0).getName(), is(cluster.componentName));
     }
 
-    @ParallelTest
+    @Test
     public void testNullClusterRoleBinding() {
         String testNamespace = "other-namespace";
 
@@ -2063,7 +2061,7 @@ public class KafkaConnectClusterTest {
         assertThat(crb, is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -2084,13 +2082,13 @@ public class KafkaConnectClusterTest {
         assertThat(((JmxPrometheusExporterModel) kc.metrics()).getConfigMapKey(), is("config.yaml"));
     }
 
-    @ParallelTest
+    @Test
     public void testMetricsParsingNoMetrics() {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, VERSIONS, SHARED_ENV_PROVIDER);
         assertThat(kc.metrics(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testStrimziMetricsReporterConfig() {
         MetricsConfig metrics = new StrimziMetricsReporterBuilder()
                 .withNewValues()
@@ -2116,7 +2114,7 @@ public class KafkaConnectClusterTest {
         assertThat(rules.size(), is(1));
     }
 
-    @ParallelTest
+    @Test
     public void testJmxSecretCustomLabelsAndAnnotations() {
         Map<String, String> customLabels = new HashMap<>(2);
         customLabels.put("label1", "value1");
@@ -2155,7 +2153,7 @@ public class KafkaConnectClusterTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaConnectInitContainerSectionIsConfigurable() {
         Map<String, Quantity> limits = new HashMap<>();
         limits.put("cpu", Quantity.parse("1"));
@@ -2186,7 +2184,7 @@ public class KafkaConnectClusterTest {
         assertThat(initContainersResources.getLimits(), is(limits));
     }
 
-    @ParallelTest
+    @Test
     public void testLoggingWithLog4j1() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -2204,7 +2202,7 @@ public class KafkaConnectClusterTest {
         assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testLoggingWithLog4j4() {
         assertThat(kc.logging().isLog4j2(), is(true));
 
@@ -2219,7 +2217,7 @@ public class KafkaConnectClusterTest {
      * the volumes and volume mounts that reference the secret are correctly created and that each volume name is only created once - volumes
      * with duplicate names will cause Kubernetes to reject the deployment.
      */
-    @ParallelTest
+    @Test
     public void testOciConnectorPlugins() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
             .editSpec()

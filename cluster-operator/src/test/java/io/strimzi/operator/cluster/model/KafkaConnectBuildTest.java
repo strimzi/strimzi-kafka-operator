@@ -28,8 +28,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +42,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 public class KafkaConnectBuildTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -64,7 +62,7 @@ public class KafkaConnectBuildTest {
             "--image-name-with-digest-file=/dev/termination-log",
             "--destination=my-image:latest");
 
-    @ParallelTest
+    @Test
     public void testFromCrd()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -87,7 +85,7 @@ public class KafkaConnectBuildTest {
         KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER);
     }
 
-    @ParallelTest
+    @Test
     public void testValidationPluginsExist()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -110,7 +108,7 @@ public class KafkaConnectBuildTest {
         );
     }
 
-    @ParallelTest
+    @Test
     public void testValidationArtifactsExist()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -134,7 +132,7 @@ public class KafkaConnectBuildTest {
         );
     }
 
-    @ParallelTest
+    @Test
     public void testValidationUniqueNames()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -159,7 +157,7 @@ public class KafkaConnectBuildTest {
         );
     }
 
-    @ParallelTest
+    @Test
     public void testDeployment()   {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
@@ -227,7 +225,7 @@ public class KafkaConnectBuildTest {
         TestUtils.checkOwnerReference(pod, kc);
     }
 
-    @ParallelTest
+    @Test
     public void testDeploymentWithoutPushSecret()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -258,7 +256,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
     }
 
-    @ParallelTest
+    @Test
     public void testConfigMap()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -289,7 +287,7 @@ public class KafkaConnectBuildTest {
         TestUtils.checkOwnerReference(cm, kc);
     }
 
-    @ParallelTest
+    @Test
     public void testBuildconfigWithDockerOutput()   {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
@@ -345,7 +343,7 @@ public class KafkaConnectBuildTest {
     }
 
     // Test to validate that .spec.image and spec.build.output.image in Kafka Connect are not pointing to the same image
-    @ParallelTest
+    @Test
     public void testKafkaConnectBuildWithSpecImageSameAsDockerOutput() {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
@@ -381,7 +379,7 @@ public class KafkaConnectBuildTest {
         assertThat(thrown.getMessage(), is("KafkaConnect .spec.image cannot be the same as .spec.build.output.image"));
     }
 
-    @ParallelTest
+    @Test
     public void testBuildconfigWithImageStreamOutput()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -423,7 +421,7 @@ public class KafkaConnectBuildTest {
         TestUtils.checkOwnerReference(bc, kc);
     }
 
-    @ParallelTest
+    @Test
     public void testTemplate()   {
         Map<String, String> buildPodLabels = Map.of("l1", "v1", "l2", "v2");
         Map<String, String> buildPodAnnos = Map.of("a1", "v1", "a2", "v2");
@@ -520,7 +518,7 @@ public class KafkaConnectBuildTest {
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testValidKanikoOptions()   {
         List<String> expectedArgs = new ArrayList<>(defaultArgs);
         expectedArgs.add("--reproducible");
@@ -552,7 +550,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(expectedArgs));
     }
 
-    @ParallelTest
+    @Test
     public void testInvalidKanikoOptions()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()

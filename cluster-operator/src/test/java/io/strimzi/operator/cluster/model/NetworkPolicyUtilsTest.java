@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.annotations.ParallelSuite;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -21,7 +20,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class NetworkPolicyUtilsTest {
     private final static String NAME = "my-np";
     private final static String NAMESPACE = "my-namespace";

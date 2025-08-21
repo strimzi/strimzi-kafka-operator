@@ -26,8 +26,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +36,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class EntityUserOperatorTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final String NAMESPACE = "my-namespace";
@@ -99,12 +97,12 @@ public class EntityUserOperatorTest {
             .build();
     private static final EntityUserOperator EUO = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
-    @ParallelTest
+    @Test
     public void testEnvVars()   {
         checkEnvVars(getExpectedEnvVars(), EUO.getEnvVars());
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrd() {
         assertThat(EUO.namespace, is(NAMESPACE));
         assertThat(EUO.cluster, is(CLUSTER_NAME));
@@ -127,7 +125,7 @@ public class EntityUserOperatorTest {
         assertThat(EUO.secretPrefix, is("strimzi-"));
     }
 
-    @ParallelTest
+    @Test
     public void testPeriodicReconciliationIntervalConfig() {
         // default value
         EntityUserOperatorSpec entityUserOperatorSpec0 = new EntityUserOperatorSpecBuilder().build();
@@ -163,7 +161,7 @@ public class EntityUserOperatorTest {
         return EntityUserOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrdDefault() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -188,7 +186,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.secretPrefix, is(EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX));
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrdNoEntityOperator() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -200,7 +198,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator, is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrdNoUserOperatorInEntityOperator() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -213,7 +211,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator, is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testGetContainers() {
         Container container = EUO.createContainer(null);
         assertThat(container.getName(), is(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME));
@@ -234,7 +232,7 @@ public class EntityUserOperatorTest {
                 EntityOperator.EUO_CERTS_VOLUME_NAME, EntityOperator.EUO_CERTS_VOLUME_MOUNT)));
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrdCaValidityAndRenewal() {
         Kafka customValues = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -273,7 +271,7 @@ public class EntityUserOperatorTest {
         assertThat(Integer.parseInt(envVars2.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL)).findFirst().orElseThrow().getValue()), is(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS));
     }
 
-    @ParallelTest
+    @Test
     public void testRoleBindingInOtherNamespace()   {
         RoleBinding binding = EUO.generateRoleBindingForRole(NAMESPACE, "my-user-namespace");
 
@@ -287,7 +285,7 @@ public class EntityUserOperatorTest {
         assertThat(binding.getRoleRef().getName(), is("my-cluster-entity-operator"));
     }
 
-    @ParallelTest
+    @Test
     public void testRoleBindingInTheSameNamespace() {
         RoleBinding binding = EUO.generateRoleBindingForRole(NAMESPACE, NAMESPACE);
 
@@ -302,7 +300,7 @@ public class EntityUserOperatorTest {
     }
 
     @SuppressWarnings("deprecation") // OPA Authorization is deprecated
-    @ParallelTest
+    @Test
     public void testAclsAdminApiSupported() {
         testAclsAdminApiSupported(new KafkaAuthorizationSimple());
         testAclsAdminApiSupported(new KafkaAuthorizationOpa());
@@ -335,7 +333,7 @@ public class EntityUserOperatorTest {
                 is(String.valueOf(authorizer.supportsAdminApi())));
     }
 
-    @ParallelTest
+    @Test
     public void testMaintenanceTimeWindows()    {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -359,7 +357,7 @@ public class EntityUserOperatorTest {
         assertThat(f.getEnvVars().stream().filter(a -> EntityUserOperator.ENV_VAR_MAINTENANCE_TIME_WINDOWS.equals(a.getName())).findFirst().orElseThrow().getValue(), is("* * 8-10 * * ?;* * 14-15 * * ?"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoWatchedNamespace() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -374,7 +372,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.watchedNamespace(), is(NAMESPACE));
     }
 
-    @ParallelTest
+    @Test
     public void testWatchedNamespace() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()

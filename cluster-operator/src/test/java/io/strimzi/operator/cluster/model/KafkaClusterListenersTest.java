@@ -39,8 +39,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +56,6 @@ import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
-@ParallelSuite
 public class KafkaClusterListenersTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -142,7 +140,7 @@ public class KafkaClusterListenersTest {
     //////////
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @ParallelTest
+    @Test
     public void testListenersTemplate() {
         Map<String, String> svcLabels = Map.of("l5", "v5", "l6", "v6");
         Map<String, String> svcAnnotations = Map.of("a5", "v5", "a6", "v6");
@@ -338,7 +336,7 @@ public class KafkaClusterListenersTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @ParallelTest
+    @Test
     public void testListenersTemplateFromKafkaAndNodePools() {
         Map<String, String> svcLabels = Map.of("l5", "v5", "l6", "v6");
         Map<String, String> svcAnnotations = Map.of("a5", "v5", "a6", "v6");
@@ -596,7 +594,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testListenersTemplateFromNodePools() {
         // Node pool values
         Map<String, String> perPodSvcLabels2 = Map.of("l21", "v21", "l22", "v22");
@@ -726,7 +724,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testListenerResourcesWithInternalListenerOnly()  {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
@@ -736,7 +734,7 @@ public class KafkaClusterListenersTest {
         assertThat(kc.generateExternalRoutes().size(), is(0));
     }
 
-    @ParallelTest
+    @Test
     public void testExternalRoutes() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -836,7 +834,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalRoutesWithHostOverrides() {
         GenericKafkaListenerConfigurationBroker routeListenerBrokerConfig3 = new GenericKafkaListenerConfigurationBroker();
         routeListenerBrokerConfig3.setBroker(3);
@@ -896,7 +894,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalRoutesWithLabelsAndAnnotations() {
         GenericKafkaListenerConfigurationBroker routeListenerBrokerConfig3 = new GenericKafkaListenerConfigurationBroker();
         routeListenerBrokerConfig3.setBroker(3);
@@ -965,7 +963,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalLoadBalancers() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1045,7 +1043,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalLoadBalancersWithoutBootstrapService() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1071,7 +1069,7 @@ public class KafkaClusterListenersTest {
         assertThat(kc.generateExternalBootstrapServices().isEmpty(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testLoadBalancerExternalTrafficPolicyLocalFromListener() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1106,7 +1104,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testLoadBalancerExternalTrafficPolicyClusterFromListener() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1139,7 +1137,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalLoadBalancerAllocateNodePorts() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1173,7 +1171,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testFinalizersFromListener() {
         List<String> finalizers = List.of("service.kubernetes.io/load-balancer-cleanup", "my-domain.io/my-custom-finalizer");
 
@@ -1208,7 +1206,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testLoadBalancerSourceRangeFromListener() {
         List<String> sourceRanges = List.of("10.0.0.0/8", "130.211.204.1/32");
 
@@ -1243,7 +1241,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalLoadBalancersWithLabelsAndAnnotations() {
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
                 .withAnnotations(Map.of("external-dns.alpha.kubernetes.io/hostname", "bootstrap.my-ingress.com."))
@@ -1302,7 +1300,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalLoadBalancersWithLoadBalancerIPOverride() {
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
                 .withLoadBalancerIP("10.0.0.1")
@@ -1354,7 +1352,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalLoadBalancersWithLoadBalancerClass() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1386,7 +1384,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalNodePorts() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1456,7 +1454,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalNodePortWithLabelsAndAnnotations() {
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
                 .withAnnotations(Map.of("external-dns.alpha.kubernetes.io/hostname", "bootstrap.my-ingress.com."))
@@ -1515,7 +1513,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalNodePortsWithAddressType() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1561,7 +1559,7 @@ public class KafkaClusterListenersTest {
         }));
     }
 
-    @ParallelTest
+    @Test
     public void testExternalNodePortOverrides() {
         GenericKafkaListenerConfigurationBroker nodePortListenerBrokerConfig3 = new GenericKafkaListenerConfigurationBroker();
         nodePortListenerBrokerConfig3.setBroker(3);
@@ -1648,7 +1646,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testNodePortListenerWithExternalIPs() {
         // set externalIP
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
@@ -1706,7 +1704,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testNodePortWithLoadbalancer() {
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
                 .withNodePort(32189)
@@ -1778,7 +1776,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testPublishNotReadyAddressesFromListener() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1811,7 +1809,7 @@ public class KafkaClusterListenersTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @ParallelTest
+    @Test
     public void testExternalIngress() {
         GenericKafkaListenerConfigurationBroker broker3 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withHost("my-kafka-broker-3.com")
@@ -1972,7 +1970,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalIngressClass() {
         GenericKafkaListenerConfigurationBroker broker3 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withHost("my-kafka-broker-3.com")
@@ -2036,7 +2034,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testExternalIngressMissingConfiguration() {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
@@ -2069,7 +2067,7 @@ public class KafkaClusterListenersTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testClusterIP() {
         GenericKafkaListenerConfigurationBroker broker3 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withAdvertisedHost("my-ingress-3.com")
@@ -2173,7 +2171,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testClusterIPMissingConfiguration() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -2193,7 +2191,7 @@ public class KafkaClusterListenersTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testExternalServiceWithDualStackNetworking() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -2235,7 +2233,7 @@ public class KafkaClusterListenersTest {
         }
     }
 
-    @ParallelTest
+    @Test
     public void testCustomAuthSecretsAreMounted() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -2282,7 +2280,7 @@ public class KafkaClusterListenersTest {
         }));
     }
 
-    @ParallelTest
+    @Test
     public void testExternalCertificateIngress() {
         String cert = "my-external-cert.crt";
         String key = "my.key";
@@ -2338,7 +2336,7 @@ public class KafkaClusterListenersTest {
         }));
     }
 
-    @ParallelTest
+    @Test
     public void testCustomCertificateTls() {
         String cert = "my-external-cert.crt";
         String key = "my.key";

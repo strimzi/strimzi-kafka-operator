@@ -18,8 +18,7 @@ import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifactBuilder;
 import io.strimzi.operator.common.InvalidConfigurationException;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import static io.strimzi.operator.cluster.TestUtils.IsEquivalent.isEquivalent;
 import static java.util.Collections.emptyList;
@@ -28,7 +27,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 public class KafkaConnectDockerfileTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
@@ -75,7 +73,7 @@ public class KafkaConnectDockerfileTest {
             .withSha512sum("sha-512-checksum")
             .build();
 
-    @ParallelTest
+    @Test
     public void testEmptyDockerfile()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(emptyList())
@@ -88,7 +86,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoArtifacts()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -104,7 +102,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoChecksumJarArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -122,7 +120,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testChecksumJarArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -143,7 +141,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoChecksumOtherArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -161,7 +159,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testChecksumOtherArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -182,7 +180,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testChecksumOtherArtifactWithoutName()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -203,7 +201,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testMultipleJarArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -226,7 +224,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoChecksumTgzArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -246,7 +244,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoChecksumZipArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -267,7 +265,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testChecksumZipArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -291,7 +289,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testChecksumTgzArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -314,7 +312,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testMultipleTgzArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -341,7 +339,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testMultipleZipArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -370,7 +368,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testDockerfileWithComments()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -407,7 +405,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001\n\n"));
     }
 
-    @ParallelTest
+    @Test
     public void testNoUrlWhenRequired() {
         Artifact tgzArtifact = new TgzArtifactBuilder()
                 .build();
@@ -459,7 +457,7 @@ public class KafkaConnectDockerfileTest {
         assertThat(e.getMessage(), is("`other` artifact is missing a URL."));
     }
 
-    @ParallelTest
+    @Test
     public void testInsecureArtifacts()   {
         OtherArtifact art1 = new OtherArtifactBuilder((OtherArtifact) otherArtifactNoChecksum)
                 .withInsecure(true)
@@ -493,7 +491,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @ParallelTest
+    @Test
     public void testMavenDockerfile()   {
         JarArtifact jar = new JarArtifactBuilder()
                 .withUrl("http://url.com/ar.jar")
@@ -567,7 +565,7 @@ public class KafkaConnectDockerfileTest {
                 "\n"));
     }
 
-    @ParallelTest
+    @Test
     public void testMavenDockerfileWithCustomRepoUrl()   {
         MavenArtifact mvn = new MavenArtifactBuilder()
                 .withRepository("https://my-maven-repository.com/maven2")
@@ -612,7 +610,7 @@ public class KafkaConnectDockerfileTest {
                 "\n"));
     }
 
-    @ParallelTest
+    @Test
     public void testInsecureMavenArtifact()   {
         MavenArtifact mvn = new MavenArtifactBuilder()
                 .withRepository("https://my-maven-repository.com/maven2")
@@ -658,7 +656,7 @@ public class KafkaConnectDockerfileTest {
                 "\n"));
     }
 
-    @ParallelTest
+    @Test
     public void testMavenDockerfileWithEscapedRepoUrl()   {
         MavenArtifact mvn = new MavenArtifactBuilder()
                 .withRepository("https://my-maven-repository.com/maven2</hack>\"/repo")

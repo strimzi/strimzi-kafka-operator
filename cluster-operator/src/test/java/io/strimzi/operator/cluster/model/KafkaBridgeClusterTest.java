@@ -67,8 +67,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,7 +94,6 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaBridgeClusterTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -158,7 +156,7 @@ public class KafkaBridgeClusterTest {
         return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultValues() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaBridge(namespace, cluster), SHARED_ENV_PROVIDER);
         assertThat(kbc.image, is("quay.io/strimzi/kafka-bridge:latest"));
@@ -169,7 +167,7 @@ public class KafkaBridgeClusterTest {
         assertThat(kbc.livenessProbeOptions.getTimeoutSeconds(), is(5));
     }
 
-    @ParallelTest
+    @Test
     public void testFromCrd() {
         assertThat(kbc.getReplicas(), is(replicas));
         assertThat(kbc.image, is(image));
@@ -179,12 +177,12 @@ public class KafkaBridgeClusterTest {
         assertThat(kbc.livenessProbeOptions.getTimeoutSeconds(), is(healthTimeout));
     }
 
-    @ParallelTest
+    @Test
     public void testEnvVars()   {
         assertThat(kbc.getEnvVars(), is(getExpectedEnvVars()));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateService()   {
         Service svc = kbc.generateService();
 
@@ -203,7 +201,7 @@ public class KafkaBridgeClusterTest {
         TestUtils.checkOwnerReference(svc, resource);
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeployment()   {
         Deployment dep = kbc.generateDeployment(new HashMap<>(), true, null, null);
 
@@ -236,7 +234,7 @@ public class KafkaBridgeClusterTest {
         TestUtils.checkOwnerReference(dep, resource);
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithTls() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -261,7 +259,7 @@ public class KafkaBridgeClusterTest {
         assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(containers.get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS), is("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithTlsAuth() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -294,7 +292,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.ssl.keystore.type=PKCS12"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithTlsSameSecret() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -319,7 +317,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("my-secret"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithScramSha512Auth() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -347,7 +345,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithScramSha256Auth() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -375,7 +373,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithPlainAuth() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -403,7 +401,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
     }
 
-    @ParallelTest
+    @Test
     @SuppressWarnings({"checkstyle:methodlength"})
     public void testTemplate() {
         Map<String, String> depLabels = Map.of("l1", "v1", "l2", "v2",
@@ -565,7 +563,7 @@ public class KafkaBridgeClusterTest {
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testGracePeriod() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -582,7 +580,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultGracePeriod() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource).build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
@@ -591,7 +589,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(30L));
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullSecrets() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -613,7 +611,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullSecretsCO() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -630,7 +628,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullSecretsBoth() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -652,7 +650,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultImagePullSecrets() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource).build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
@@ -661,7 +659,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testSecurityContext() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -681,7 +679,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(789L));
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultSecurityContext() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource).build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
@@ -690,7 +688,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testRestrictedSecurityContext() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
         kbc.securityProvider = new RestrictedPodSecurityProvider();
@@ -704,7 +702,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
     }
 
-    @ParallelTest
+    @Test
     public void testPodDisruptionBudget() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -721,7 +719,7 @@ public class KafkaBridgeClusterTest {
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
     }
 
-    @ParallelTest
+    @Test
     public void testDefaultPodDisruptionBudget() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource).build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
@@ -730,7 +728,7 @@ public class KafkaBridgeClusterTest {
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullPolicy() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
 
@@ -741,7 +739,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
-    @ParallelTest
+    @Test
     public void testResources() {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
@@ -764,7 +762,7 @@ public class KafkaBridgeClusterTest {
         assertThat(cont.getResources().getRequests(), is(requests));
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaBridgeContainerEnvVars() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
@@ -803,7 +801,7 @@ public class KafkaBridgeClusterTest {
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithRack() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editOrNewSpec()
@@ -816,7 +814,7 @@ public class KafkaBridgeClusterTest {
         assertRackAwareDeploymentConfigured(resource, "quay.io/strimzi/operator:latest");
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithRackAndCustomInitImage() {
         final String customImage = "quay.io/strimzi/operator:custom";
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
@@ -831,7 +829,7 @@ public class KafkaBridgeClusterTest {
         assertRackAwareDeploymentConfigured(resource, customImage);
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithRackAndInitVolumeMounts() {
 
         ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder()
@@ -912,7 +910,7 @@ public class KafkaBridgeClusterTest {
         return deployment;
     }
 
-    @ParallelTest
+    @Test
     public void testClusterRoleBindingRack() {
         String testNamespace = "other-namespace";
         String topologyKey = "topology-key";
@@ -935,7 +933,7 @@ public class KafkaBridgeClusterTest {
         assertThat(crb.getSubjects().get(0).getName(), is(bridgeCluster.componentName));
     }
 
-    @ParallelTest
+    @Test
     public void testNullClusterRoleBinding() {
         String testNamespace = "other-namespace";
 
@@ -951,7 +949,7 @@ public class KafkaBridgeClusterTest {
         assertThat(crb, is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaBridgeContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvKey = KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS;
@@ -985,7 +983,7 @@ public class KafkaBridgeClusterTest {
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvValue), is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithAccessToken() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1008,7 +1006,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithAccessTokenLocation() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1027,7 +1025,7 @@ public class KafkaBridgeClusterTest {
                 "oauth.access.token.location=\"/var/run/secrets/kubernetes.io/serviceaccount/token\";"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithRefreshToken() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1054,7 +1052,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithClientSecret() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1085,7 +1083,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithClientSecretAndSaslExtensions() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1119,7 +1117,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithClientAssertion() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1149,7 +1147,7 @@ public class KafkaBridgeClusterTest {
                 "oauth.client.assertion=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithUsernameAndPassword() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1182,7 +1180,7 @@ public class KafkaBridgeClusterTest {
                 "oauth.password.grant.password=\"${strimzidir:/opt/strimzi/oauth/my-password-secret:user1.password}\";"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithMissingClientSecret() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
@@ -1199,7 +1197,7 @@ public class KafkaBridgeClusterTest {
         });
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithMissingUri() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
@@ -1220,7 +1218,7 @@ public class KafkaBridgeClusterTest {
     }
 
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthWithTls() {
         CertSecretSource cert1 = new CertSecretSourceBuilder()
                 .withSecretName("first-certificate")
@@ -1278,7 +1276,7 @@ public class KafkaBridgeClusterTest {
                 "oauth.ssl.truststore.type=\"PKCS12\";"));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithOAuthUsingOpaqueTokensAndTimeouts() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1320,7 +1318,7 @@ public class KafkaBridgeClusterTest {
                 "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
     }
 
-    @ParallelTest
+    @Test
     public void testDifferentHttpPort()   {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1353,7 +1351,7 @@ public class KafkaBridgeClusterTest {
         TestUtils.checkOwnerReference(svc, resource);
     }
 
-    @ParallelTest
+    @Test
     public void testProbeConfiguration()   {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1382,7 +1380,7 @@ public class KafkaBridgeClusterTest {
         assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(32));
     }
 
-    @ParallelTest
+    @Test
     public void testOpenTelemetryTracingConfiguration() {
         KafkaBridgeBuilder builder = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1397,7 +1395,7 @@ public class KafkaBridgeClusterTest {
         assertThat(configMap.getData().get(KafkaBridgeCluster.BRIDGE_CONFIGURATION_FILENAME), containsString("bridge.tracing=" + OpenTelemetryTracing.TYPE_OPENTELEMETRY));
     }
 
-    @ParallelTest
+    @Test
     public void testCorsConfiguration() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1419,7 +1417,7 @@ public class KafkaBridgeClusterTest {
         assertThat(configMap.getData().get(KafkaBridgeCluster.BRIDGE_CONFIGURATION_FILENAME), containsString("http.cors.allowedMethods=GET,POST,PUT,DELETE,PATCH"));
     }
 
-    @ParallelTest
+    @Test
     public void testJvmOptions() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1450,7 +1448,7 @@ public class KafkaBridgeClusterTest {
         assertThat(javaOpts.getValue(), containsString("-XX:InitiatingHeapOccupancyPercent=36"));
     }
 
-    @ParallelTest
+    @Test
     public void testConsumerProducerOptions() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1467,7 +1465,7 @@ public class KafkaBridgeClusterTest {
         assertThat(configMap.getData().get(KafkaBridgeCluster.BRIDGE_CONFIGURATION_FILENAME), containsString("http.producer.enabled=true"));
     }
 
-    @ParallelTest
+    @Test
     public void testConfigurationConfigMap() {
         KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, SHARED_ENV_PROVIDER);
         ConfigMap configMap = kb.generateBridgeConfigMap(metricsAndLogging);
@@ -1477,7 +1475,7 @@ public class KafkaBridgeClusterTest {
         assertThat(configMap.getData().get(KafkaBridgeCluster.BRIDGE_CONFIGURATION_FILENAME), is(notNullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testMetricsParsingFromConfigMap() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1495,7 +1493,7 @@ public class KafkaBridgeClusterTest {
         assertThat(((JmxPrometheusExporterModel) kbc.metrics()).getConfigMapKey(), is("config.yaml"));
     }
 
-    @ParallelTest
+    @Test
     public void testMetricsParsingNoMetrics() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .build();
@@ -1503,7 +1501,7 @@ public class KafkaBridgeClusterTest {
         assertThat(kbc.metrics(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testStrimziMetricsReporterConfig() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -1521,7 +1519,7 @@ public class KafkaBridgeClusterTest {
         assertThat(((StrimziMetricsReporterModel) kbc.metrics()).getAllowList(), is("kafka_producer_producer_metrics.*,kafka_producer_kafka_metrics_count_count"));
     }
 
-    @ParallelTest
+    @Test
     public void testJmxPrometheusExporterConfig() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()

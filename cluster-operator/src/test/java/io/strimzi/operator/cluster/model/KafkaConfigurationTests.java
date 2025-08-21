@@ -6,9 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -19,7 +18,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.oneOf;
 
-@ParallelSuite
 public class KafkaConfigurationTests {
 
     KafkaVersion kafkaVersion = KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion();
@@ -29,7 +27,7 @@ public class KafkaConfigurationTests {
         assertThat(kafkaConfiguration.validate(kafkaVersion), is(singletonList(errorMsg)));
     }
 
-    @ParallelTest
+    @Test
     public void unknownConfigIsNotAnError() {
         assertNoError("foo", true);
     }
@@ -39,57 +37,57 @@ public class KafkaConfigurationTests {
         assertThat(kafkaConfiguration.validate(kafkaVersion), is(oneOf(emptyList(), nullValue())));
     }
 
-    @ParallelTest
+    @Test
     public void outOfBoundsLong() {
         assertConfigError("log.flush.interval.messages", -2,
                 "log.flush.interval.messages has value -2 which less than the minimum value 1");
     }
 
-    @ParallelTest
+    @Test
     public void outOfBoundsInt() {
         assertConfigError("log.flush.offset.checkpoint.interval.ms", Long.MAX_VALUE,
                 "log.flush.offset.checkpoint.interval.ms has value '9223372036854775807' which is not an int");
     }
 
-    @ParallelTest
+    @Test
     public void wrongType() {
         assertConfigError("log.cleaner.io.buffer.load.factor", true,
                 "log.cleaner.io.buffer.load.factor has value 'true' which is not a double");
     }
 
-    @ParallelTest
+    @Test
     public void notAValidValue() {
         assertConfigError("log.message.timestamp.type", "dog",
                 "log.message.timestamp.type has value 'dog' which is not one of the allowed values: [CreateTime, LogAppendTime]");
     }
 
-    @ParallelTest
+    @Test
     public void listContainsInvalidItem() {
         assertConfigError("log.cleanup.policy", "csat, delete",
                 "log.cleanup.policy contains values [csat] which are not in the allowed items [compact, delete]");
     }
 
-    @ParallelTest
+    @Test
     public void classType() {
         assertNoError("principal.builder.class", "dof");
     }
 
-    @ParallelTest
+    @Test
     public void doubleType() {
         assertNoError("sasl.kerberos.ticket.renew.jitter", 101);
     }
 
-    @ParallelTest
+    @Test
     public void booleanType() {
         assertNoError("auto.create.topics.enable", "false");
     }
 
-    @ParallelTest
+    @Test
     public void passwordType() {
         assertNoError("delegation.token.master.key", "dclncswn");
     }
 
-    @ParallelTest
+    @Test
     public void unsupportedVersion() {
         RuntimeException exc = Assertions.assertThrows(RuntimeException.class, () ->
             KafkaConfiguration.readConfigModel(KafkaVersionTestUtils.getKafkaVersionLookup().version("2.6.0"))
@@ -98,7 +96,7 @@ public class KafkaConfigurationTests {
         assertThat(exc.getMessage(), containsString("Configuration model /kafka-2.6.0-config-model.json was not found"));
     }
 
-    @ParallelTest
+    @Test
     public void testGzipCompressionLevel() {
         assertNoError("compression.gzip.level", "9");
         assertNoError("compression.gzip.level", "-1");
@@ -107,13 +105,13 @@ public class KafkaConfigurationTests {
         assertConfigError("compression.gzip.level", "10", "compression.gzip.level has value '10' which does not match the required pattern: [1-9]{1}|-1");
     }
 
-    @ParallelTest
+    @Test
     public void testCaseSensitiveOptions() {
         assertNoError("compression.type", "gzip");
         assertConfigError("compression.type", "GZIP", "compression.type has value 'GZIP' which is not one of the allowed values: [uncompressed, zstd, lz4, snappy, gzip, producer]");
     }
 
-    @ParallelTest
+    @Test
     public void testCaseInsensitiveOptions() {
         assertNoError("group.consumer.migration.policy", "DISABLED");
         assertNoError("group.consumer.migration.policy", "downgrade");
@@ -121,7 +119,7 @@ public class KafkaConfigurationTests {
         assertConfigError("group.consumer.migration.policy", "wrong_option", "group.consumer.migration.policy has value 'wrong_option' which is not one of the allowed values (case-insensitive): [DISABLED, DOWNGRADE, UPGRADE, BIDIRECTIONAL]");
     }
 
-    @ParallelTest
+    @Test
     public void testRemoteStorageCopierThreadPoolSize() {
         assertNoError("remote.log.manager.copier.thread.pool.size", "9");
         assertNoError("remote.log.manager.copier.thread.pool.size", "1");
@@ -132,7 +130,7 @@ public class KafkaConfigurationTests {
         assertConfigError("remote.log.manager.copier.thread.pool.size", "-5", "remote.log.manager.copier.thread.pool.size has value -5 which less than the minimum value 1");
     }
 
-    @ParallelTest
+    @Test
     public void testRemoteStorageExpirationThreadPoolSize() {
         assertNoError("remote.log.manager.expiration.thread.pool.size", "9");
         assertNoError("remote.log.manager.expiration.thread.pool.size", "1");

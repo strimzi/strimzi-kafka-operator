@@ -43,9 +43,8 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,7 +60,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@ParallelSuite
 public class KafkaExporterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -107,7 +105,7 @@ public class KafkaExporterTest {
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 
-    @ParallelTest
+    @Test
     public void testFromConfigMapDefaultConfig() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -127,7 +125,7 @@ public class KafkaExporterTest {
         assertThat(ke.showAllOffsets, is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testFromConfigMap() {
         assertThat(KE.namespace, is(NAMESPACE));
         assertThat(KE.cluster, is(CLUSTER_NAME));
@@ -141,7 +139,7 @@ public class KafkaExporterTest {
         assertThat(KE.showAllOffsets, is(false));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeployment() {
         Deployment dep = KE.generateDeployment(Map.of(), true, null, null);
 
@@ -207,12 +205,12 @@ public class KafkaExporterTest {
         assertThat(volumeMount.getMountPath(), is(KafkaExporter.KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
     }
 
-    @ParallelTest
+    @Test
     public void testEnvVars()   {
         assertThat(KE.getEnvVars(), is(getExpectedEnvVars()));
     }
 
-    @ParallelTest
+    @Test
     public void testImagePullPolicy() {
         Deployment dep = KE.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
@@ -221,7 +219,7 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
-    @ParallelTest
+    @Test
     public void testContainerTemplateEnvVars() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
@@ -253,7 +251,7 @@ public class KafkaExporterTest {
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is(testEnvTwoValue));
     }
 
-    @ParallelTest
+    @Test
     public void testContainerTemplateEnvVarsWithKeyConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
@@ -285,7 +283,7 @@ public class KafkaExporterTest {
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("my-group-.*"));
     }
 
-    @ParallelTest
+    @Test
     public void testExporterNotDeployed() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -297,7 +295,7 @@ public class KafkaExporterTest {
         assertThat(ke, is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testTemplate() {
         Map<String, String> depLabels = Map.of("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
@@ -438,7 +436,7 @@ public class KafkaExporterTest {
         assertThat(pdb.getSpec().getMinAvailable(), is(new IntOrString(0)));
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateDeploymentWithRecreateDeploymentStrategy() {
         Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -457,7 +455,7 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
     }
 
-    @ParallelTest
+    @Test
     public void testNetworkPolicy() {
         NetworkPolicy np = KE.generateNetworkPolicy();
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(MetricsModel.METRICS_PORT))).findFirst().orElse(null), is(notNullValue()));

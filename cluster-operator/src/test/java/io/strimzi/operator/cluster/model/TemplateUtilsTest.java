@@ -23,8 +23,7 @@ import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,16 +36,15 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ParallelSuite
 public class TemplateUtilsTest {
 
-    @ParallelTest
+    @Test
     public void testMetadataWithNullTemplate() {
         assertThat(TemplateUtils.annotations(null), is(nullValue()));
         assertThat(TemplateUtils.labels(null), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testMetadataWithEmptyMetadataTemplate() {
         ResourceTemplate template = new ResourceTemplateBuilder()
                 .withNewMetadata()
@@ -57,7 +55,7 @@ public class TemplateUtilsTest {
         assertThat(TemplateUtils.labels(template), is(Map.of()));
     }
 
-    @ParallelTest
+    @Test
     public void testAnnotations() {
         ResourceTemplate template = new ResourceTemplateBuilder()
                 .withNewMetadata()
@@ -68,7 +66,7 @@ public class TemplateUtilsTest {
         assertThat(TemplateUtils.annotations(template), is(Map.of("anno-1", "value-1", "anno-2", "value-2")));
     }
 
-    @ParallelTest
+    @Test
     public void testLabels() {
         ResourceTemplate template = new ResourceTemplateBuilder()
                 .withNewMetadata()
@@ -79,7 +77,7 @@ public class TemplateUtilsTest {
         assertThat(TemplateUtils.labels(template), is(Map.of("label-1", "value-1", "label-2", "value-2")));
     }
 
-    @ParallelTest
+    @Test
     public void testAddAdditionalVolumes_InvalidNames() {
         List<Volume> existingVolumes = new ArrayList<>();
         existingVolumes.add(new VolumeBuilder().withName("invalid_name!").build());
@@ -90,7 +88,7 @@ public class TemplateUtilsTest {
         assertThat(exception.getMessage(), is("Volume names [invalid_name!] are invalid and do not match the pattern " + VOLUME_NAME_REGEX));
     }
 
-    @ParallelTest
+    @Test
     public void testAddAdditionalVolumes_DuplicateNames() {
         List<Volume> existingVolumes = new ArrayList<>();
         existingVolumes.add(new VolumeBuilder().withName("duplicate").build());
@@ -103,7 +101,7 @@ public class TemplateUtilsTest {
         assertThat(exception.getMessage(), is("Duplicate volume names found in additional volumes: [duplicate]"));
     }
 
-    @ParallelTest
+    @Test
     public void testAddAdditionalVolumes_ValidInputs() {
         List<Volume> existingVolumes = new ArrayList<>();
         existingVolumes.add(new VolumeBuilder().withName("existingVolume1").build());
@@ -196,7 +194,7 @@ public class TemplateUtilsTest {
         assertThat(existingVolumes.get(6).getCsi(), is(nullValue()));
     }
 
-    @ParallelTest
+    @Test
     public void testAddAdditionalVolumeMounts_ValidInputs() {
         List<VolumeMount> volumeMounts = new ArrayList<>();
         List<VolumeMount> additionalVolumeMounts = new ArrayList<>();
@@ -213,7 +211,7 @@ public class TemplateUtilsTest {
         assertThat(volumeMounts.get(1).getMountPath(), is(ALLOWED_MOUNT_PATH + "/path2"));
     }
 
-    @ParallelTest
+    @Test
     public void testAddAdditionalVolumeMounts_InvalidInputs() {
         List<VolumeMount> volumeMounts = new ArrayList<>();
         List<VolumeMount> additionalVolumeMounts = new ArrayList<>();

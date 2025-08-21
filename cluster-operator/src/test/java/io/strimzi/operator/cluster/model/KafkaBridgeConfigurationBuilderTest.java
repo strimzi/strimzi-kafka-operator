@@ -32,8 +32,7 @@ import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -43,13 +42,12 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ParallelSuite
 public class KafkaBridgeConfigurationBuilderTest {
 
     private static final String BRIDGE_CLUSTER = "my-bridge";
     private static final String BRIDGE_BOOTSTRAP_SERVERS = "my-cluster-kafka-bootstrap:9092";
 
-    @ParallelTest
+    @Test
     public void testBaseConfiguration()  {
         // test base/default bridge configuration
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS).build();
@@ -60,7 +58,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testConfigProviders() {
         // test config providers setting
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
@@ -96,7 +94,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testTracing() {
         // test no tracing configured
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS).build();
@@ -114,7 +112,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testTls() {
         // test TLS configuration (only server authentication, encryption)
         ClientTls clientTls = new ClientTlsBuilder()
@@ -161,7 +159,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testSaslMechanism() {
         // test plain authentication
         KafkaClientAuthenticationPlain authPlain = new KafkaClientAuthenticationPlainBuilder()
@@ -291,7 +289,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaProducer() {
         // test missing Kafka Producer configuration
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
@@ -362,7 +360,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaConsumer() {
         // test missing Kafka Consumer configuration
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
@@ -431,7 +429,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testKafkaAdminClient() {
         // test missing Kafka Admin configuration
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
@@ -494,7 +492,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testHttp() {
         // test default HTTP configuration.
         // NOTE: the "http" section is mandatory when using the KafkaBridge custom resource, so we define and set it
@@ -600,7 +598,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithStrimziMetricsReporter() {
         StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(
                 new KafkaBridgeSpecBuilder()
@@ -626,7 +624,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
     
-    @ParallelTest
+    @Test
     public void testWithPrometheusJmxExporterLegacyMode() {
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withJmxPrometheusExporter(null, true)
@@ -640,7 +638,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
     }
 
-    @ParallelTest
+    @Test
     public void testWithPrometheusJmxExporter() {
         JmxPrometheusExporterModel model = new JmxPrometheusExporterModel(
                 new KafkaBridgeSpecBuilder()
