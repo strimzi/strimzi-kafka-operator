@@ -34,11 +34,11 @@ kubectl describe KafkaMirrorMaker2 <mirrormaker_cluster_name>
 kubectl annotate KafkaMirrorMaker2 <mirrormaker_cluster_name> "strimzi.io/restart-connector=<mirrormaker_connector_name>"
 ----
 +
-In this example, connector `my-connector` in the `my-mirror-maker-2` cluster is restarted:
+In this example, connector `source-cluster->target-cluster.MirrorCheckpointConnector` in the `my-mirror-maker-2` cluster is restarted:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate KafkaMirrorMaker2 my-mirror-maker-2 "strimzi.io/restart-connector=my-connector"
+kubectl annotate KafkaMirrorMaker2 my-mirror-maker-2 "strimzi.io/restart-connector=source-cluster->target-cluster.MirrorCheckpointConnector"
 ----
 
 . Wait for the next reconciliation to occur (every two minutes by default).
