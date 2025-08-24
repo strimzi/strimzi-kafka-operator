@@ -53,6 +53,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT;
+
 /**
  * This class is used to generate the broker configuration template. The template is later passed using a config map to
  * the broker pods. The scripts in the container images will fill in the variables in the template and use the
@@ -63,7 +65,8 @@ public class KafkaBrokerConfigurationBuilder {
     private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-9090";
     private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
     // Names of environment variables expanded through config providers inside the Kafka node
-    private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
+    // the secrets file template: <namespace>/<secret_name>:<secret_key>
+    private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
     private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET_TEMPLATE_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:STRIMZI_%s_OAUTH_CLIENT_SECRET}";
 
     private final StringWriter stringWriter = new StringWriter();
@@ -114,12 +117,11 @@ public class KafkaBrokerConfigurationBuilder {
             // to the pods behind the bootstrap one when they are not ready during startup.
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL");
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PKCS12");
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION + "=/tmp/kafka/cluster.keystore.p12");
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD + "=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PKCS12");
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12");
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PEM");
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt"));
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_KEY + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key"));
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PEM");
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(clusterName), "*.crt"));
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true");
 
             if (ccMetricsReporter.numPartitions() != null) {
@@ -219,7 +221,6 @@ public class KafkaBrokerConfigurationBuilder {
      * generate the per-broker configuration which uses actual broker IDs and addresses instead of just placeholders.
      *
      * @param clusterName                Name of the cluster (important for the advertised hostnames)
-     * @param kafkaVersion               Kafka version of the cluster
      * @param namespace                  Namespace (important for generating the advertised hostname)
      * @param kafkaListeners             The listeners configuration from the Kafka CR
      * @param advertisedHostnameProvider Lambda method which provides the advertised hostname for given listener and
@@ -230,7 +231,6 @@ public class KafkaBrokerConfigurationBuilder {
      */
     public KafkaBrokerConfigurationBuilder withListeners(
             String clusterName,
-            KafkaVersion kafkaVersion,
             String namespace,
             List<GenericKafkaListener> kafkaListeners,
             Function<String, String> advertisedHostnameProvider,
@@ -247,7 +247,7 @@ public class KafkaBrokerConfigurationBuilder {
         // Control plane listener is configured for all nodes. Even brokers need to connect and talk to controllers, so
         // they need to know what is the security protocol and security configuration
         securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":SSL");
-        configureControlPlaneListener();
+        configureControlPlaneListener(clusterName);
 
         ////////////////////
         // Listeners for nodes with controller role
@@ -275,7 +275,7 @@ public class KafkaBrokerConfigurationBuilder {
                     // Pod name constructed to be templatable for each individual ordinal
                     DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName())
             ));
-            configureReplicationListener();
+            configureReplicationListener(clusterName);
 
             // User-configured listeners
             for (GenericKafkaListener listener : kafkaListeners) {
@@ -287,7 +287,7 @@ public class KafkaBrokerConfigurationBuilder {
 
                 listeners.add(listenerName + "://0.0.0.0:" + port);
                 advertisedListeners.add(String.format("%s://%s:%s", listenerName, advertisedHostnameProvider.apply(envVarListenerName), advertisedPortProvider.apply(envVarListenerName)));
-                configureAuthentication(listenerName, securityProtocol, listener.isTls(), listener.getAuth());
+                configureAuthentication(listenerName, securityProtocol, listener.isTls(), listener.getAuth(), clusterName);
                 configureListener(listenerName, listener.getConfiguration());
 
                 if (listener.isTls()) {
@@ -345,18 +345,18 @@ public class KafkaBrokerConfigurationBuilder {
      * Internal method which configures the control plane listener. The control plane listener configuration is currently
      * rather static, it always uses TLS with TLS client auth.
      */
-    private void configureControlPlaneListener() {
+    private void configureControlPlaneListener(String clusterName) {
         printSectionHeader("Control Plane listener");
-        configureListener(CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH));
+        configureListener(CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName);
     }
 
     /**
      * Internal method which configures the replication listener. The replication listener configuration is currently
      * rather static, it always uses TLS with TLS client auth.
      */
-    private void configureReplicationListener() {
+    private void configureReplicationListener(String clusterName) {
         printSectionHeader("Replication listener");
-        configureListener(REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH));
+        configureListener(REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH), clusterName);
     }
 
     /**
@@ -365,13 +365,12 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param listenerName  Name of the listener
      */
-    private void configureListener(String listenerName) {
-        writer.println("listener.name." + listenerName + ".ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("listener.name." + listenerName + ".ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-        writer.println("listener.name." + listenerName + ".ssl.keystore.type=PKCS12");
-        writer.println("listener.name." + listenerName + ".ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("listener.name." + listenerName + ".ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-        writer.println("listener.name." + listenerName + ".ssl.truststore.type=PKCS12");
+    private void configureListener(String listenerName, String clusterName) {
+        writer.println("listener.name." + listenerName + ".ssl.keystore.certificate.chain=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt"));
+        writer.println("listener.name." + listenerName + ".ssl.keystore.key=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key"));
+        writer.println("listener.name." + listenerName + ".ssl.keystore.type=PEM");
+        writer.println("listener.name." + listenerName + ".ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(clusterName), "*.crt"));
+        writer.println("listener.name." + listenerName + ".ssl.truststore.type=PEM");
         writer.println("listener.name." + listenerName + ".ssl.client.auth=required");
         writer.println();
     }
@@ -405,15 +404,18 @@ public class KafkaBrokerConfigurationBuilder {
     private void configureTls(String listenerName, CertAndKeySecretSource serverCertificate) {
         final String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
 
+        String certConfigProviderValue;
+        String keyConfigProviderValue;
         if (serverCertificate != null)  {
-            writer.println(String.format("listener.name.%s.ssl.keystore.location=/tmp/kafka/custom-%s.keystore.p12", listenerNameInProperty, listenerNameInProperty));
+            certConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), serverCertificate.getSecretName(), serverCertificate.getCertificate());
+            keyConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), serverCertificate.getSecretName(), serverCertificate.getKey());
         } else {
-            writer.println(String.format("listener.name.%s.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12", listenerNameInProperty));
+            certConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt");
+            keyConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key");
         }
-
-        writer.println(String.format("listener.name.%s.ssl.keystore.password=%s", listenerNameInProperty, PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR));
-        writer.println(String.format("listener.name.%s.ssl.keystore.type=PKCS12", listenerNameInProperty));
-
+        writer.println(String.format("listener.name.%s.ssl.keystore.certificate.chain=%s", listenerNameInProperty, certConfigProviderValue));
+        writer.println(String.format("listener.name.%s.ssl.keystore.key=%s", listenerNameInProperty, keyConfigProviderValue));
+        writer.println(String.format("listener.name.%s.ssl.keystore.type=PEM", listenerNameInProperty));
         writer.println();
     }
 
@@ -426,7 +428,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param tls   Flag whether this protocol is using TLS or not
      * @param auth  The authentication configuration from the Kafka CR
      */
-    private void configureAuthentication(String listenerName, List<String> securityProtocol, boolean tls, KafkaListenerAuthentication auth)    {
+    private void configureAuthentication(String listenerName, List<String> securityProtocol, boolean tls, KafkaListenerAuthentication auth, String clusterName)    {
         final String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
         final String listenerNameInEnvVar = listenerName.replace("-", "_");
 
@@ -441,9 +443,9 @@ public class KafkaBrokerConfigurationBuilder {
             }
 
             if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty())    {
-                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
-                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
+                String oauthTrustedCertsSecret = KafkaResources.internalOauthTrustedCertsSecretName(clusterName);
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/" + oauthTrustedCertsSecret + "/" + oauthTrustedCertsSecret + ".crt");
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PEM");
             }
 
             StringBuilder enabledMechanisms = new StringBuilder();
@@ -485,9 +487,8 @@ public class KafkaBrokerConfigurationBuilder {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, false)));
 
             writer.println(String.format("listener.name.%s.ssl.client.auth=required", listenerNameInProperty));
-            writer.println(String.format("listener.name.%s.ssl.truststore.location=/tmp/kafka/clients.truststore.p12", listenerNameInProperty));
-            writer.println(String.format("listener.name.%s.ssl.truststore.password=%s", listenerNameInProperty, PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR));
-            writer.println(String.format("listener.name.%s.ssl.truststore.type=PKCS12", listenerNameInProperty));
+            writer.println(String.format("listener.name.%s.ssl.truststore.certificates=%s", listenerNameInProperty, String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.clientsCaCertificateSecretName(clusterName), "*.crt")));
+            writer.println(String.format("listener.name.%s.ssl.truststore.type=PEM", listenerNameInProperty));
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationCustom customAuth) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, customAuth.isSasl())));
@@ -652,7 +653,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (authorization instanceof KafkaAuthorizationSimple simpleAuthz) {
             configureSimpleAuthorization(simpleAuthz, superUsers);
         } else if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
-            configureOpaAuthorization(opaAuthz, superUsers);
+            configureOpaAuthorization(clusterName, opaAuthz, superUsers);
         } else if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
             configureKeycloakAuthorization(clusterName, keycloakAuthz, superUsers);
         } else if (authorization instanceof KafkaAuthorizationCustom customAuthz) {
@@ -682,7 +683,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param superUsers        Super-users list who have all the rights on the cluster
      */
     @SuppressWarnings("deprecation") // OPA Authorization is deprecated
-    private void configureOpaAuthorization(KafkaAuthorizationOpa authorization, List<String> superUsers) {
+    private void configureOpaAuthorization(String clusterName, KafkaAuthorizationOpa authorization, List<String> superUsers) {
         writer.println("authorizer.class.name=" + KafkaAuthorizationOpa.AUTHORIZER_CLASS_NAME);
 
         writer.println(String.format("%s=%s", "opa.authorizer.url", authorization.getUrl()));
@@ -693,9 +694,8 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(authorization.getExpireAfterMs()).getSeconds()));
 
         if (authorization.getTlsTrustedCertificates() != null && !authorization.getTlsTrustedCertificates().isEmpty())    {
-            writer.println("opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12");
-            writer.println("opa.authorizer.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-            writer.println("opa.authorizer.truststore.type=PKCS12");
+            writer.println("opa.authorizer.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.internalAuthzTrustedCertsSecretName(clusterName), "*.crt"));
+            writer.println("opa.authorizer.truststore.type=PEM");
         }
 
         // User configured super-users
@@ -736,9 +736,8 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
 
         if (authorization.getTlsTrustedCertificates() != null && !authorization.getTlsTrustedCertificates().isEmpty())    {
-            writer.println("strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
-            writer.println("strimzi.authorization.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-            writer.println("strimzi.authorization.ssl.truststore.type=PKCS12");
+            writer.println("strimzi.authorization.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.internalAuthzTrustedCertsSecretName(clusterName), "*.crt"));
+            writer.println("strimzi.authorization.ssl.truststore.type=PEM");
             String endpointIdentificationAlgorithm = authorization.isDisableTlsHostnameVerification() ? "" : "HTTPS";
             writer.println("strimzi.authorization.ssl.endpoint.identification.algorithm=" + endpointIdentificationAlgorithm);
         }
@@ -778,6 +777,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         writer.println("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
         writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
+        writer.println("config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider");
 
         if (node.broker()) {
             // File and Directory providers are used only on broker nodes
@@ -799,6 +799,7 @@ public class KafkaBrokerConfigurationBuilder {
     private String getConfigProviderAliases(KafkaConfiguration userConfig) {
         Collection<String> strimziAliases = new ArrayList<>();
         strimziAliases.add("strimzienv");
+        strimziAliases.add("strimzisecrets");
         if (node.broker()) {
             // File and Directory providers are used only on broker nodes
             strimziAliases.add("strimzifile");
@@ -982,12 +983,11 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("rlmm.config.remote.log.metadata.common.client.bootstrap.servers="
             + clusterName + "-kafka-brokers:9091");
         writer.println("rlmm.config.remote.log.metadata.common.client.security.protocol=SSL");
-        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.type=PKCS12");
-        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PKCS12");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.certificate.chain=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt"));
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.key=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key"));
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.type=PEM");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(clusterName), "*.crt"));
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PEM");
 
         writer.println("# RSM configs set by the operator and by the user");
 
@@ -1045,12 +1045,11 @@ public class KafkaBrokerConfigurationBuilder {
         // configuration of Admin client that will check the cluster
         writer.println("client.quota.callback.static.kafka.admin.bootstrap.servers=" + KafkaResources.brokersServiceName(clusterName) + ":9091");
         writer.println("client.quota.callback.static.kafka.admin.security.protocol=SSL");
-        writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-        writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.type=PKCS12");
-        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.type=PKCS12");
+        writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.certificate.chain=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt"));
+        writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.key=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key"));
+        writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.type=PEM");
+        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(clusterName), "*.crt"));
+        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.type=PEM");
 
         // configuration of user specified settings
         addOptionIfNotNull(writer, "client.quota.callback.static.produce", quotasPluginStrimzi.getProducerByteRate());
