@@ -154,7 +154,8 @@ public class KafkaBridgeConfigurationBuilder {
                 writer.println("kafka.ssl.keystore.type=PKCS12");
             } else if (authentication instanceof KafkaClientAuthenticationCustom customAuth) { // Configure custom authentication
                 if (customAuth.isSasl())    {
-                    // If this authentication does not use SASL, we do not need to touch the security protocol
+                    // If this authentication uses SASL, we need to update the security protocol to combine the SASL
+                    // flag with the SSL or PLAINTEXT flag.
                     securityProtocol = securityProtocol.equals("SSL") ? "SASL_SSL" : "SASL_PLAINTEXT";
                 }
 
