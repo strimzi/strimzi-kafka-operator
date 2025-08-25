@@ -10,10 +10,18 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.GenericSecretSource;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -23,6 +31,7 @@ import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -30,16 +39,22 @@ import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 
@@ -456,5 +471,159 @@ public class ReconcilerUtils {
         }
 
         return true;
+    }
+
+    /**
+     * When TLS certificate or Auth certificate (or password) is changed, the hash is computed.
+     * It is used for rolling updates.
+     * @param secretOperations Secret operator
+     * @param namespace namespace to get Secrets in
+     * @param auth Authentication object to compute hash from
+     * @param certSecretSources TLS trusted certificates whose hashes are joined to result
+     * @return Future computing hash from TLS + Auth
+     */
+    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<CertSecretSource> certSecretSources) {
+        Future<Integer> tlsFuture;
+        if (certSecretSources == null || certSecretSources.isEmpty()) {
+            tlsFuture = Future.succeededFuture(0);
+        } else {
+            // get all TLS trusted certs, compute hash from each of them, sum hashes
+            tlsFuture = Future.join(certSecretSources.stream().map(certSecretSource ->
+                            getCertificateAsync(secretOperations, namespace, certSecretSource)
+                                    .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
+                    .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
+        }
+
+        if (auth == null) {
+            return tlsFuture;
+        } else {
+            // compute hash from Auth
+            if (auth instanceof KafkaClientAuthenticationScram) {
+                // only passwordSecret can be changed
+                return tlsFuture.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
+                        .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
+            } else if (auth instanceof KafkaClientAuthenticationPlain) {
+                // only passwordSecret can be changed
+                return tlsFuture.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
+                        .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
+            } else if (auth instanceof KafkaClientAuthenticationTls) {
+                // custom cert can be used (and changed)
+                return ((KafkaClientAuthenticationTls) auth).getCertificateAndKey() == null ? tlsFuture :
+                        tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, (KafkaClientAuthenticationTls) auth)
+                                .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
+            } else if (auth instanceof KafkaClientAuthenticationOAuth) {
+                List<Future<Integer>> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
+                        new ArrayList<>() : ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
+                        getCertificateAsync(secretOperations, namespace, certSecretSource)
+                                .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList());
+                futureList.add(tlsFuture);
+                futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getAccessToken()));
+                futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getClientSecret()));
+                futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getRefreshToken()));
+                return Future.join(futureList)
+                        .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
+            } else {
+                // unknown Auth type
+                return tlsFuture;
+            }
+        }
+    }
+
+    private static Future<Integer> addSecretHash(SecretOperator secretOperations, String namespace, GenericSecretSource genericSecretSource) {
+        if (genericSecretSource != null) {
+            return secretOperations.getAsync(namespace, genericSecretSource.getSecretName())
+                    .compose(secret -> {
+                        if (secret == null) {
+                            return Future.failedFuture("Secret " + genericSecretSource.getSecretName() + " not found");
+                        } else {
+                            return Future.succeededFuture(secret.getData().get(genericSecretSource.getKey()).hashCode());
+                        }
+                    });
+        }
+        return Future.succeededFuture(0);
+    }
+
+    /**
+     * Utility method which gets the secret and validates that the required fields are present in it
+     *
+     * @param secretOperator    Secret operator to get the secret from the Kubernetes API
+     * @param namespace         Namespace where the Secret exist
+     * @param name              Name of the Secret
+     * @param items             List of items which should be present in the Secret
+     *
+     * @return      Future with the Secret if is exits and has the required items. Failed future with an error message otherwise.
+     */
+    /* test */ static Future<Secret> getValidatedSecret(SecretOperator secretOperator, String namespace, String name, String... items) {
+        return secretOperator.getAsync(namespace, name)
+                .compose(secret -> validatedSecret(namespace, name, secret, items));
+    }
+
+    /**
+     * Utility method which validates that the required fields are present in a Secret passed to it
+     *
+     * @param namespace         Namespace of the Secret
+     * @param name              Name of the Secret (used for error message in case the Secret is null)
+     * @param secret            Secret that should be validated or null if the Secret does not exist
+     * @param items             List of items which should be present in the Secret
+     *
+     * @return      Future with the Secret if is exits and has the required items. Failed future with an error message otherwise.
+     */
+    private static Future<Secret> validatedSecret(String namespace, String name, Secret secret, String... items) {
+        if (secret == null) {
+            return Future.failedFuture(new InvalidConfigurationException("Secret " + name + " not found in namespace " + namespace));
+        } else {
+            List<String> errors = new ArrayList<>(0);
+
+            if (items != null) {
+                for (String item : items) {
+                    if (!secret.getData().containsKey(item)) {
+                        // Item not found => error will be raised
+                        errors.add(item);
+                    }
+                }
+            }
+
+            if (errors.isEmpty()) {
+                return Future.succeededFuture(secret);
+            } else {
+                return Future.failedFuture(new InvalidConfigurationException(String.format("Items with key(s) %s are missing in Secret %s", errors, name)));
+            }
+        }
+    }
+
+    private static Future<String> getCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
+        return secretOperator.getAsync(namespace, certSecretSource.getSecretName())
+                .compose(secret -> {
+                    if (certSecretSource.getCertificate() != null)  {
+                        return validatedSecret(namespace, certSecretSource.getSecretName(), secret, certSecretSource.getCertificate())
+                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().get(certSecretSource.getCertificate())));
+                    } else if (certSecretSource.getPattern() != null)    {
+                        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + certSecretSource.getPattern());
+
+                        return validatedSecret(namespace, certSecretSource.getSecretName(), secret)
+                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().entrySet().stream().filter(e -> matcher.matches(Paths.get(e.getKey()))).map(Map.Entry::getValue).sorted().collect(Collectors.joining())));
+                    } else {
+                        throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
+                    }
+                });
+    }
+
+    private static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthenticationTls auth) {
+        return getValidatedSecret(secretOperator, namespace, auth.getCertificateAndKey().getSecretName(), auth.getCertificateAndKey().getCertificate(), auth.getCertificateAndKey().getKey())
+                .compose(secret -> Future.succeededFuture(new CertAndKey(secret.getData().get(auth.getCertificateAndKey().getKey()).getBytes(StandardCharsets.UTF_8), secret.getData().get(auth.getCertificateAndKey().getCertificate()).getBytes(StandardCharsets.UTF_8))));
+    }
+
+    private static Future<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
+        if (auth instanceof KafkaClientAuthenticationPlain plainAuth) {
+
+            return getValidatedSecret(secretOperator, namespace, plainAuth.getPasswordSecret().getSecretName(), plainAuth.getPasswordSecret().getPassword())
+                    .compose(secret -> Future.succeededFuture(secret.getData().get(plainAuth.getPasswordSecret().getPassword())));
+        } else if (auth instanceof KafkaClientAuthenticationScram scramAuth) {
+
+            return getValidatedSecret(secretOperator, namespace, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword())
+                    .compose(secret -> Future.succeededFuture(secret.getData().get(scramAuth.getPasswordSecret().getPassword())));
+        } else {
+            return Future.failedFuture("Auth type " + auth.getType() + " does not have a password property");
+        }
     }
 }

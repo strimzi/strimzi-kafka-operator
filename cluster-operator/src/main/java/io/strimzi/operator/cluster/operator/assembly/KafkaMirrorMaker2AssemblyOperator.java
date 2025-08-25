@@ -203,7 +203,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                             .stream()
                             .map(cluster -> {
                                 List<CertSecretSource> trustedCertificates = cluster.getTls() == null ? Collections.emptyList() : cluster.getTls().getTrustedCertificates();
-                                return VertxUtil.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), trustedCertificates);
+                                return ReconcilerUtils.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), trustedCertificates);
                             }).collect(Collectors.toList())
                     )
                     .onSuccess(hashes -> {
