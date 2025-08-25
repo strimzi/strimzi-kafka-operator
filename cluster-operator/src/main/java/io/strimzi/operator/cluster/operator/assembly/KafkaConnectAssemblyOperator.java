@@ -311,7 +311,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private Future<Integer> generateAuthHash(String namespace, KafkaConnectSpec kafkaConnectSpec) {
         KafkaClientAuthentication auth = kafkaConnectSpec.getAuthentication();
         List<CertSecretSource> trustedCertificates = kafkaConnectSpec.getTls() == null ? Collections.emptyList() : kafkaConnectSpec.getTls().getTrustedCertificates();
-        return VertxUtil.authTlsHash(secretOperations, namespace, auth, trustedCertificates);
+        return ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, trustedCertificates);
     }
 
     /**

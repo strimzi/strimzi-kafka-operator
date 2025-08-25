@@ -21,7 +21,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.common.Annotations;
@@ -110,7 +109,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 return configMapOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.configMapName(reconciliation.name()), configMap);
             })
             .compose(i -> isPodDisruptionBudgetGeneration ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudget()) : Future.succeededFuture())
-            .compose(i -> VertxUtil.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
+            .compose(i -> ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
             .compose(authTlsHash -> {
                 podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(authTlsHash));
                 return deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets));
