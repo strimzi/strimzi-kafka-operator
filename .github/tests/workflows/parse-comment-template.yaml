@@ -1,0 +1,143 @@
+name: Parse-comment template
+
+on:
+  push:
+  issue_comment:
+    types:
+      - created
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: "Release version to test (i.e. 'latest', '0.46.0')"
+        required: false
+        default: "latest"
+      kafkaVersion:
+        description: "Kafka version. e.g. '4.0.0' or 'latest'"
+        required: false
+        default: "latest"
+      profile:
+        description: "Comma-separated or single profile name(s)"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  sut:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: parse
+        uses: ./.github/actions/parse-comment
+        with:
+          releaseVersion: ${{ github.event.inputs.releaseVersion }}
+          kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
+          profile: ${{ github.event.inputs.profile }}
+
+      - name: Assert expected outputs
+        shell: bash
+        env:
+          EXPECT_PIPELINES: ${{ env.EXPECT_PIPELINES }}
+          EXPECT_PROFILES: ${{ env.EXPECT_PROFILES }}
+          EXPECT_TESTS: ${{ env.EXPECT_TESTS }}
+          EXPECT_GROUPS: ${{ env.EXPECT_GROUPS }}
+          EXPECT_KAFKA: ${{ env.EXPECT_KAFKA }}
+          EXPECT_KUBE: ${{ env.EXPECT_KUBE }}
+          EXPECT_ARCHITECTURE: ${{ env.EXPECT_ARCHITECTURE }}
+          EXPECT_AGENT: ${{ env.EXPECT_AGENT }}
+          EXPECT_STRIMZI_FEATURE_GATES: ${{ env.EXPECT_STRIMZI_FEATURE_GATES }}
+          EXPECT_STRIMZI_RBAC_SCOPE: ${{ env.EXPECT_STRIMZI_RBAC_SCOPE }}
+          EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE: ${{ env.EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE }}
+          EXPECT_PARALLEL: ${{ env.EXPECT_PARALLEL }}
+          EXPECT_SHOULD_RUN: ${{ env.EXPECT_SHOULD_RUN }}
+          EXPECT_RELEASE: ${{ env.EXPECT_RELEASE }}
+        run: |
+          set -euo pipefail
+          
+          ACTUAL_PIPELINES='${{ steps.parse.outputs.pipelineList }}'
+          ACTUAL_PROFILES='${{ steps.parse.outputs.profileList }}'
+          ACTUAL_TESTS='${{ steps.parse.outputs.tests }}'
+          ACTUAL_GROUPS='${{ steps.parse.outputs.groups }}'
+          ACTUAL_KAFKA='${{ steps.parse.outputs.kafkaVersion }}'
+          ACTUAL_KUBE='${{ steps.parse.outputs.kubeVersion }}'
+          ACTUAL_ARCHITECTURE='${{ steps.parse.outputs.architecture }}'
+          ACTUAL_AGENT='${{ steps.parse.outputs.agent }}'
+          ACTUAL_STRIMZI_FEATURE_GATES='${{ steps.parse.outputs.strimzi_feature_gates }}'
+          ACTUAL_STRIMZI_RBAC_SCOPE='${{ steps.parse.outputs.strimzi_rbac_scope }}'
+          ACTUAL_CLUSTER_OPERATOR_INSTALL_TYPE='${{ steps.parse.outputs.cluster_operator_install_type }}'
+          ACTUAL_PARALLEL='${{ steps.parse.outputs.parallel }}'
+          ACTUAL_SHOULD_RUN='${{ steps.parse.outputs.shouldRun }}'
+          ACTUAL_RELEASE='${{ steps.parse.outputs.releaseVersion }}'
+          
+          echo "::group::Assertion details"
+          printf 'EXPECT_PIPELINES=%q\n' "$EXPECT_PIPELINES"
+          printf 'ACTUAL_PIPELINES=%q\n' "$ACTUAL_PIPELINES"
+          printf 'EXPECT_PROFILES=%q\n'  "$EXPECT_PROFILES"
+          printf 'ACTUAL_PROFILES=%q\n'  "$ACTUAL_PROFILES"
+          printf 'ACTUAL_TESTS=%q\n'  "$ACTUAL_TESTS"
+          printf 'EXPECT_TESTS=%q\n'  "$EXPECT_TESTS"
+          printf 'ACTUAL_GROUPS=%q\n'  "$ACTUAL_GROUPS"
+          printf 'EXPECT_GROUPS=%q\n'  "$EXPECT_GROUPS"
+          printf 'ACTUAL_KAFKA=%q\n'  "$ACTUAL_KAFKA"
+          printf 'EXPECT_KAFKA=%q\n'  "$EXPECT_KAFKA"
+          printf 'ACTUAL_KUBE=%q\n'  "$ACTUAL_KUBE"
+          printf 'EXPECT_KUBE=%q\n'  "$EXPECT_KUBE"
+          printf 'ACTUAL_ARCHITECTURE=%q\n'  "$ACTUAL_ARCHITECTURE"
+          printf 'EXPECT_ARCHITECTURE=%q\n'  "$EXPECT_ARCHITECTURE"
+          printf 'ACTUAL_AGENT=%q\n'  "$ACTUAL_AGENT"
+          printf 'EXPECT_AGENT=%q\n'  "$EXPECT_AGENT"
+          printf 'ACTUAL_STRIMZI_FEATURE_GATES=%q\n'  "$ACTUAL_STRIMZI_FEATURE_GATES"
+          printf 'EXPECT_STRIMZI_FEATURE_GATES=%q\n'  "$EXPECT_STRIMZI_FEATURE_GATES"
+          printf 'ACTUAL_STRIMZI_RBAC_SCOPE=%q\n'  "$ACTUAL_STRIMZI_RBAC_SCOPE"
+          printf 'EXPECT_STRIMZI_RBAC_SCOPE=%q\n'  "$EXPECT_STRIMZI_RBAC_SCOPE"
+          printf 'ACTUAL_CLUSTER_OPERATOR_INSTALL_TYPE=%q\n'  "$ACTUAL_CLUSTER_OPERATOR_INSTALL_TYPE"
+          printf 'EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE=%q\n'  "$EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE"
+          printf 'ACTUAL_PARALLEL=%q\n'  "$ACTUAL_PARALLEL"
+          printf 'EXPECT_PARALLEL=%q\n'  "$EXPECT_PARALLEL"
+          printf 'ACTUAL_SHOULD_RUN=%q\n'  "$ACTUAL_SHOULD_RUN"
+          printf 'EXPECT_SHOULD_RUN=%q\n'  "$EXPECT_SHOULD_RUN"
+          printf 'ACTUAL_RELEASE=%q\n'  "$ACTUAL_RELEASE"
+          printf 'EXPECT_RELEASE=%q\n'  "$EXPECT_RELEASE"
+          echo "::endgroup::"
+          
+          # Assert all values, including empty strings (skip only if EXPECT var is unset/null)
+          if [[ "${EXPECT_PIPELINES+defined}" == "defined" && "$ACTUAL_PIPELINES" != "$EXPECT_PIPELINES" ]]; then
+            echo "❌ pipelineList mismatch"; exit 1
+          fi
+          if [[ "${EXPECT_PROFILES+defined}" == "defined" && "$ACTUAL_PROFILES"  != "$EXPECT_PROFILES" ]]; then
+            echo "❌ profileList mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_TESTS+defined}" == "defined" && "$ACTUAL_TESTS"  != "$EXPECT_TESTS" ]]; then
+            echo "❌ tests mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_GROUPS+defined}" == "defined" && "$ACTUAL_GROUPS"  != "$EXPECT_GROUPS" ]]; then
+            echo "❌ groups mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_KAFKA+defined}" == "defined" && "$ACTUAL_KAFKA"  != "$EXPECT_KAFKA" ]]; then
+            echo "❌ kafkaVersion mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_KUBE+defined}" == "defined" && "$ACTUAL_KUBE"  != "$EXPECT_KUBE" ]]; then
+            echo "❌ kubeVersion mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_ARCHITECTURE+defined}" == "defined" && "$ACTUAL_ARCHITECTURE"  != "$EXPECT_ARCHITECTURE" ]]; then
+            echo "❌ architecture mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_AGENT+defined}" == "defined" && "$ACTUAL_AGENT"  != "$EXPECT_AGENT" ]]; then
+            echo "❌ agent mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_STRIMZI_FEATURE_GATES+defined}" == "defined" && "$ACTUAL_STRIMZI_FEATURE_GATES"  != "$EXPECT_STRIMZI_FEATURE_GATES" ]]; then
+            echo "❌ strimzi_feature_gates mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_STRIMZI_RBAC_SCOPE+defined}" == "defined" && "$ACTUAL_STRIMZI_RBAC_SCOPE"  != "$EXPECT_STRIMZI_RBAC_SCOPE" ]]; then
+            echo "❌ strimzi_rbac_scope mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE+defined}" == "defined" && "$ACTUAL_CLUSTER_OPERATOR_INSTALL_TYPE"  != "$EXPECT_CLUSTER_OPERATOR_INSTALL_TYPE" ]]; then
+            echo "❌ cluster_operator_install_type mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_SHOULD_RUN+defined}" == "defined" && "$ACTUAL_SHOULD_RUN"  != "$EXPECT_SHOULD_RUN" ]]; then
+            echo "❌ shouldRun mismatch";  exit 1
+          fi
+          if [[ "${EXPECT_RELEASE+defined}" == "defined" && "$ACTUAL_RELEASE"  != "$EXPECT_RELEASE" ]]; then
+            echo "❌ releaseVersion mismatch";  exit 1
+          fi
+          echo "✅ Assertions passed"

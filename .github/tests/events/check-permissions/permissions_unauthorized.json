@@ -1,0 +1,24 @@
+{
+  "event_name": "pull_request",
+  "action": "opened",
+  "actor": "pepa",
+  "pull_request": {
+    "number": 456,
+    "title": "Test unauthorized user", 
+    "head": {
+      "ref": "test-branch",
+      "sha": "def987654321",
+      "repo": {
+        "name": "ci-playground",
+        "owner": { "login": "pepa" }
+      }
+    }
+  },
+  "repository": {
+    "name": "ci-playground",
+    "owner": { 
+      "login": "frawless",
+      "type": "User"
+    }
+  }
+}

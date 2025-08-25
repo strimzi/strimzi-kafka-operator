@@ -1,0 +1,207 @@
+scenarios:
+  - id: comment-pipeline-only
+    description: "Comment with pipeline parameter only"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_1.json
+    expectations:
+      pipelines: "regression,upgrade"
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      should_run: "true"
+      release: "latest"
+
+  - id: comment-profile-only
+    description: "Comment with profile parameter only"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_2.json
+    expectations:
+      pipelines: ""
+      profiles: "operators,operands"
+      tests: "strimzi-tests"
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      should_run: "true"
+      release: "latest"
+
+  - id: comment-additional-params
+    description: "Comment with additional parameters"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_3.json
+    expectations:
+      pipelines: ""
+      profiles: "operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
+      tests: ""
+      groups: "nodeport"
+      kafka: "4.1.0"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      should_run: "true"
+      kube: "1.33.1"
+      architecture: "arm64"
+      agent: "strimzi-agent"
+      release: "latest"
+
+  - id: comment-pipeline-and-profile
+    description: "Comment with both pipeline and profile (pipeline priority)"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_4.json
+    expectations:
+      pipelines: "regression,upgrade"
+      profiles: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      should_run: "true"
+      release: "latest"
+
+  - id: comment-pipeline-priority
+    description: "Comment with profile before pipeline (pipeline takes priority)"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_5.json
+    expectations:
+      pipelines: "regression,upgrade"
+      profiles: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      should_run: "true"
+      release: "latest"
+
+  - id: comment-strimzi-params
+    description: "Comment with Strimzi-specific parameters"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_6.json
+    expectations:
+      pipelines: ""
+      profiles: "operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: "+SomeNewFeatureGate"
+      strimzi_rbac_scope: "NAMESPACE"
+      cluster_operator_install_type: "helm"
+      should_run: "true"
+      release: "latest"
+
+  - id: comment-basic-trigger
+    description: "Basic trigger without parameters"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_7.json
+    expectations:
+      pipelines: ""
+      profiles: "operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      should_run: "true"
+      release: "latest"
+
+  - id: comment-empty-pipeline
+    description: "Comment with empty pipeline value (fallback to default)"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_8.json
+    expectations:
+      pipelines: "regression,upgrade"
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      should_run: "true"
+      release: "latest"
+
+  - id: comment-no-trigger
+    description: "Comment without trigger phrase"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_9.json
+    expectations:
+      pipelines: ""
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: ""
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      should_run: "false"
+      release: "latest"
+
+  - id: comment-case-insensitive
+    description: "Uppercase trigger phrase (case insensitive)"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_10.json
+    expectations:
+      pipelines: "regression,upgrade"
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      should_run: "true"
+      release: "latest"
+
+  - id: dispatch-default
+    description: "Workflow dispatch with default values"
+    event: workflow_dispatch
+    fixture: .github/tests/events/parse-comment/dispatch_default.json
+    expectations:
+      pipelines: ""
+      profiles: "operators,operands,azp_kraft_upgrade"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      kafka: "4.1.0"
+      release: "0.48.0"
+      should_run: "true"
+
+  - id: dispatch-custom
+    description: "Workflow dispatch with custom values"
+    event: workflow_dispatch
+    fixture: .github/tests/events/parse-comment/dispatch_custom.json
+    expectations:
+      pipelines: ""
+      profiles: "custom-profile-1,custom-profile-2"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      tests: ""
+      groups: ""
+      kafka: "3.5.0"
+      release: "1.0.0"
+      should_run: "true"
+
+  - id: dispatch-empty
+    description: "Workflow dispatch with empty inputs"
+    event: workflow_dispatch
+    fixture: .github/tests/events/parse-comment/dispatch_empty.json
+    expectations:
+      pipelines: ""
+      profiles: "operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
+      strimzi_feature_gates: "+DummyFeatureGate"
+      strimzi_rbac_scope: "CLUSTER"
+      cluster_operator_install_type: "yaml"
+      tests: ""
+      groups: ""
+      kafka: ""
+      release: "latest"
+      should_run: "true"
