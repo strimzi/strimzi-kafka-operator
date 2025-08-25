@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScram;
@@ -27,6 +28,7 @@ import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER;
@@ -39,6 +41,7 @@ import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.OAUTH_SECRETS
  * configuration file. This class is using the builder pattern to make it easy to test the different parts etc. To
  * generate the configuration file, it is using the PrintWriter.
  */
+@SuppressWarnings("checkstyle:CyclomaticComplexity")
 public class KafkaBridgeConfigurationBuilder {
 
     // placeholders expanded through config providers inside the bridge node
@@ -149,8 +152,22 @@ public class KafkaBridgeConfigurationBuilder {
                 writer.println("kafka.ssl.keystore.location=/tmp/strimzi/bridge.keystore.p12");
                 writer.println("kafka.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
                 writer.println("kafka.ssl.keystore.type=PKCS12");
-            // otherwise SASL or OAuth is going to be used for authentication
-            } else {
+            } else if (authentication instanceof KafkaClientAuthenticationCustom customAuth) { // Configure custom authentication
+                if (customAuth.isSasl())    {
+                    // If this authentication uses SASL, we need to update the security protocol to combine the SASL
+                    // flag with the SSL or PLAINTEXT flag.
+                    securityProtocol = securityProtocol.equals("SSL") ? "SASL_SSL" : "SASL_PLAINTEXT";
+                }
+
+                Map<String, Object> customConfig = customAuth.getConfig();
+                if (customConfig == null) {
+                    customConfig = Map.of();
+                }
+
+                KafkaClientAuthenticationCustomConfiguration config = new KafkaClientAuthenticationCustomConfiguration(reconciliation, customConfig.entrySet());
+                config.asOrderedProperties().asMap().forEach((key, value) -> writer.println(String.format("kafka.%s=%s", key, value)));
+                writer.println();
+            } else { // otherwise SASL or OAuth is going to be used for authentication
                 securityProtocol = securityProtocol.equals("SSL") ? "SASL_SSL" : "SASL_PLAINTEXT";
                 String saslMechanism = null;
                 StringBuilder jaasConfig = new StringBuilder();
@@ -211,6 +228,7 @@ public class KafkaBridgeConfigurationBuilder {
                 writer.println();
             }
         }
+
         return this;
     }
 

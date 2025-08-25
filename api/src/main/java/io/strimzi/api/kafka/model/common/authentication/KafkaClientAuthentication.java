@@ -27,6 +27,7 @@ import java.util.Map;
     @JsonSubTypes.Type(name = KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaClientAuthenticationScramSha512.class),
     @JsonSubTypes.Type(name = KafkaClientAuthenticationPlain.TYPE_PLAIN, value = KafkaClientAuthenticationPlain.class),
     @JsonSubTypes.Type(name = KafkaClientAuthenticationOAuth.TYPE_OAUTH, value = KafkaClientAuthenticationOAuth.class),
+    @JsonSubTypes.Type(name = KafkaClientAuthenticationCustom.TYPE_CUSTOM, value = KafkaClientAuthenticationCustom.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
@@ -35,10 +36,11 @@ public abstract class KafkaClientAuthentication implements UnknownPropertyPreser
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
-            "Currently the supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and 'oauth'. " +
+            "Currently the supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, 'oauth', and `custom`. " +
             "`scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. " +
             "`plain` type uses SASL PLAIN Authentication. " +
             "`oauth` type uses SASL OAUTHBEARER Authentication. " +
+            "`custom` type allows configuring custom authentication mechanism. " +
             "The `tls` type uses TLS Client Authentication. " +
             "The `tls` type is supported only over TLS connections.")
     public abstract String getType();

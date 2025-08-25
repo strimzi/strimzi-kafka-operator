@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpecBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpecBuilder;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.ClientTlsBuilder;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustomBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationPlain;
@@ -157,6 +159,27 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
                 "kafka.ssl.keystore.type=PKCS12"
         ));
+
+        // test custom authentication without SASL
+        KafkaClientAuthenticationCustom customAuth = new KafkaClientAuthenticationCustomBuilder()
+                .withSasl(false)
+                .withConfig(Map.of("ssl.keystore.location", "/mnt/certs/keystore", "ssl.keystore.password", "changeme", "not.allowed", "foo"))
+                .build();
+
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withTls(clientTls)
+                .withAuthentication(customAuth)
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=SSL",
+                "kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12",
+                "kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "kafka.ssl.truststore.type=PKCS12",
+                "kafka.ssl.keystore.location=/mnt/certs/keystore",
+                "kafka.ssl.keystore.password=changeme"
+        ));
     }
 
     @Test
@@ -286,6 +309,23 @@ public class KafkaBridgeConfigurationBuilderTest {
                         "oauth.ssl.truststore.password=\"${strimzienv:CERTS_STORE_PASSWORD}\" " +
                         "oauth.ssl.truststore.type=\"PKCS12\";",
                 "kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
+        ));
+
+        // test custom authentication
+        KafkaClientAuthenticationCustom authCustom = new KafkaClientAuthenticationCustomBuilder()
+                .withSasl()
+                .withConfig(Map.of("sasl.mechanism", "AWS_MSK_IAM", "sasl.jaas.config", "software.amazon.msk.auth.iam.IAMLoginModule required;", "sasl.client.callback.handler.class", "software.amazon.msk.auth.iam.IAMClientCallbackHandler", "not.allowed", "foo"))
+                .build();
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withAuthentication(authCustom)
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=SASL_PLAINTEXT",
+                "kafka.sasl.mechanism=AWS_MSK_IAM",
+                "kafka.sasl.jaas.config=software.amazon.msk.auth.iam.IAMLoginModule required;",
+                "kafka.sasl.client.callback.handler.class=software.amazon.msk.auth.iam.IAMClientCallbackHandler"
         ));
     }
 

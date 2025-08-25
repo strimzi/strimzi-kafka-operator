@@ -39,6 +39,19 @@ public abstract class AbstractConfiguration {
      *
      * @param reconciliation             The reconciliation
      * @param jsonOptions                Json object with configuration options as key ad value pairs.
+     * @param allowedPrefixes            List with configuration key prefixes which are allowed. All other keys will be ignored.
+     */
+    public AbstractConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions, List<String> allowedPrefixes) {
+        options.addIterablePairs(jsonOptions);
+        filterAllowed(reconciliation, allowedPrefixes);
+    }
+
+    /**
+     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
+     * ConfigMap / CRD.
+     *
+     * @param reconciliation             The reconciliation
+     * @param jsonOptions                Json object with configuration options as key ad value pairs.
      * @param forbiddenPrefixes          List with configuration key prefixes which are not allowed. All keys which
      *                                   start with one of these prefixes will be ignored.
      * @param forbiddenPrefixExceptions  Exceptions excluded from forbidden prefix options checking
@@ -71,7 +84,7 @@ public abstract class AbstractConfiguration {
     }
 
     /**
-     * Filters forbidden values from the configuration.
+     * Filters forbidden values from the configuration based on a list of forbidden prefixes.
      *
      * @param reconciliation            The reconciliation
      * @param forbiddenPrefixes         List with configuration key prefixes which are not allowed. All keys which start
@@ -112,6 +125,27 @@ public abstract class AbstractConfiguration {
                 return forbidden;
             }));
         }
+    }
+
+    /**
+     * Filters forbidden values from the configuration based on a list of allowed prefixes.
+     *
+     * @param reconciliation            The reconciliation
+     * @param allowedPrefixes           List with configuration key prefixes which are allowed. All other keys will be ignored.
+     */
+    private void filterAllowed(Reconciliation reconciliation, List<String> allowedPrefixes)   {
+        options.filter(k -> {
+            boolean allowed = allowedPrefixes.stream().anyMatch(p -> k.toLowerCase(Locale.ENGLISH).startsWith(p));
+
+            if (allowed) {
+                LOGGER.traceCr(reconciliation, "Configuration option \"{}\" is allowed and will be passed to the assembly", k);
+            } else {
+                LOGGER.warnCr(reconciliation, "Configuration option \"{}\" is not allowed and will be ignored", k);
+            }
+
+            // We have to return the reverted value to filter out the not allowed options
+            return !allowed;
+        });
     }
 
     /**
