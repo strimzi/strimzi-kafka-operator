@@ -675,7 +675,7 @@ public class KafkaRoller {
     /**
      * Returns a config of the given broker.
      * @param nodeRef The reference of the broker.
-     * @return a Future which completes with the config of the given broker.
+     * @return the config of the given broker.
      */
     /* test */ Config brokerConfig(NodeRef nodeRef) throws ForceableProblem, InterruptedException {
         ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(nodeRef.nodeId()));
@@ -688,7 +688,7 @@ public class KafkaRoller {
     /**
      * Returns logging of the given broker.
      * @param brokerId The id of the broker.
-     * @return a Future which completes with the logging of the given broker.
+     * @return the logging config of the given broker.
      */
     /* test */ Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
         ConfigResource resource = getBrokersLogging(brokerId);
