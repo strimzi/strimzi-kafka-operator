@@ -1,0 +1,25 @@
+# Configuration for GitHub actions linting - docker://rhysd/actionlint:latest
+# For more info see https://github.com/rhysd/actionlint/blob/main/docs/config.md
+
+# Configuration related to self-hosted runner.
+self-hosted-runner:
+  # Labels of self-hosted runner in array of strings.
+  # Add other runners if needed
+  labels:
+    # container runners
+    - oracle-2cpu-8gb-arm64
+    - oracle-2cpu-8gb-x86_64
+    # VM runners
+    - oracle-vm-2cpu-8gb-x86-64
+    - oracle-vm-2cpu-8gb-arm64
+    - oracle-vm-4cpu-16gb-x86-64
+    - oracle-vm-4cpu-16gb-arm64
+    - oracle-vm-8cpu-32gb-x86-64
+    - oracle-vm-8cpu-32gb-arm64
+
+# Path-specific configurations.
+paths:
+  .github/workflows/run-system-tests.yml:
+    ignore:
+      # Ignore the specific error from shellcheck
+      - 'shellcheck reported issue in this script: SC2086:.+'
