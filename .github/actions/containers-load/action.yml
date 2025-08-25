@@ -1,0 +1,60 @@
+name: "Load Strimzi images"
+description: "Load Strimzi images"
+
+inputs:
+  architecture:
+    description: "Architecture"
+    required: false
+    default: "amd64"
+  registry:
+    description: "Registry type to use for images (minikube/kind/external)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: containers-${{ inputs.architecture }}.tar
+
+    - name: "Untar the ${{ inputs.architecture }} containers"
+      shell: bash
+      run: tar -xvf containers-${{ inputs.architecture }}.tar
+
+    - name: "Delete the original archive with the ${{ inputs.architecture }} containers"
+      shell: bash
+      run: rm containers-${{ inputs.architecture }}.tar
+
+    # This is for loading images into minikube registry
+    - name: Load & push Strimzi images into minikube registry
+      shell: bash
+      if: ${{ contains(inputs.registry, 'minikube') }}
+      run: |
+        eval $(minikube docker-env)
+        make docker_load docker_e2e docker_delete_archive
+      env:
+        DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
+
+    # This is for loading images into kind registry
+    - name: Load & push Strimzi images into kind registry
+      shell: bash
+      if: ${{ contains(inputs.registry, 'kind') }}
+      run: |
+        make docker_load docker_e2e docker_delete_archive
+      env:
+        DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
+
+    # This is for loading images into external registry
+    - name: Load & push Strimzi images external registry
+      shell: bash
+      if: ${{ contains(inputs.registry, 'external') }}
+      run: |
+        make docker_load docker_tag docker_push docker_delete_archive
+      env:
+        DOCKER_ARCHITECTURE: ${{ inputs.architecture }}
+
+    - name: List built images
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        docker images -a

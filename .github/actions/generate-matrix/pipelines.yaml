@@ -1,0 +1,394 @@
+####################################################################################################
+# This file contains predefined pipelines used by generate-matrix action
+# Each item has the following format:
+# agent                             used agent for execution, should be one of the CNCF agents on Oracle cloud
+# arch                              architecture of the agent
+# pipeline                          name of the connected pipeline
+# profile                           maven profile used for maven systemtests execution
+# timeout                           job's timeout in minutes
+# strimzi_feature_gates             systemtests configuration of feature gates
+# strimzi_rbac_scope                systemtests configuration of RBAC scope
+# cluster_operator_install_type     systemtests configuration of Strimzi installation type
+# parallel                          number of tests running in parallel
+#
+# Each of the following items is threatened as a single job that will be executed on specific agent
+####################################################################################################
+pipelines:
+  ##################
+  ### Regression ###
+  ##################
+  # x86-64
+  - agent: "oracle-vm-8cpu-32gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression"
+    profile: "brokers-and-security"
+    timeout: 480
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+  - agent: "oracle-vm-8cpu-32gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression"
+    profile: "operators"
+    timeout: 480
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+  - agent: "oracle-vm-8cpu-32gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression"
+    profile: "operands"
+    timeout: 480
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+  # arm64
+  - agent: "oracle-vm-8cpu-32gb-arm64"
+    arch: "arm64"
+    pipeline: "regression"
+    profile: "brokers-and-security"
+    timeout: 480
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+  - agent: "oracle-vm-8cpu-32gb-arm64"
+    arch: "arm64"
+    pipeline: "regression"
+    profile: "operators"
+    timeout: 480
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+  - agent: "oracle-vm-8cpu-32gb-arm64"
+    arch: "arm64"
+    pipeline: "regression"
+    profile: "operands"
+    timeout: 480
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+  #############
+  ### Smoke ###
+  #############
+  # Smoke pipelines can use smaller agents as the tests are not running in parallel even if configured
+  # x86-64
+  - agent: "oracle-vm-2cpu-8gb-x86-64"
+    arch: "amd64"
+    pipeline: "smoke"
+    profile: "smoke"
+    timeout: 60
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  # arm64
+  - agent: "oracle-vm-2cpu-8gb-arm64"
+    arch: "arm64"
+    pipeline: "smoke"
+    profile: "smoke"
+    timeout: 60
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  ###############
+  ### Upgrade ###
+  ###############
+  # x86-64
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "upgrade"
+    profile: "azp_kraft_upgrade"
+    timeout: 180
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "upgrade"
+    profile: "azp_kafka_upgrade"
+    timeout: 180
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  # arm64
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "upgrade"
+    profile: "azp_kraft_upgrade"
+    timeout: 180
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "upgrade"
+    profile: "azp_kafka_upgrade"
+    timeout: 180
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  ##################
+  ### Acceptance ###
+  ##################
+  # Acceptance pipelines can use smaller agents as the tests are not running in parallel even if configured
+  # x86-64
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "acceptance"
+    profile: "acceptance"
+    timeout: 180
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 2
+  # arm64
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "acceptance"
+    profile: "acceptance"
+    timeout: 180
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 2
+  #######################
+  ### Acceptance Helm ###
+  #######################
+  # x86-64
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "acceptance-helm"
+    profile: "acceptance"
+    timeout: 180
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "helm"
+    parallel: 2
+  # arm64
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "acceptance-helm"
+    profile: "acceptance"
+    timeout: 180
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "helm"
+    parallel: 2
+  #######################
+  ### Regression RBAC ###
+  #######################
+  # RBAC pipelines cannot be executed in parallel so there is a different schema for them
+  # Each of the pipeline use a specific profile as we use also on Azure
+  # In case we will need to adjust the profiles, we should update or create one in systemtest-settings.xml in .azure folder
+  # x86-64
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_kafka_oauth"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_security"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_dynconfig_listeners_tracing_watcher"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_operators"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_rolling_update_bridge"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_connect_mirrormaker"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-rbac"
+    profile: "azp_rbac_remaining"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  # arm64
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_kafka_oauth"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_security"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_dynconfig_listeners_tracing_watcher"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_operators"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_rolling_update_bridge"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_connect_mirrormaker"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  - agent: "oracle-vm-4cpu-16gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-rbac"
+    profile: "azp_rbac_remaining"
+    timeout: 360
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "NAMESPACE"
+    cluster_operator_install_type: "yaml"
+    excluded_groups: 'nodeport'
+    parallel: 1
+  ################################
+  ### Regression Feature Gates ###
+  ################################
+  # x86-64
+  - agent: "oracle-vm-8cpu-32gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-fg"
+    profile: "brokers-and-security"
+    timeout: 480
+    strimzi_feature_gates: "+DummyFeatureGate"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 3
+  - agent: "oracle-vm-8cpu-32gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-fg"
+    profile: "operators"
+    timeout: 480
+    strimzi_feature_gates: "+DummyFeatureGate"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+  - agent: "oracle-vm-8cpu-32gb-x86-64"
+    arch: "amd64"
+    pipeline: "regression-fg"
+    profile: "operands"
+    timeout: 480
+    strimzi_feature_gates: "+DummyFeatureGate"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 3
+  # arm64
+  - agent: "oracle-vm-8cpu-32gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-fg"
+    profile: "brokers-and-security"
+    timeout: 480
+    strimzi_feature_gates: "+DummyFeatureGate"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+  - agent: "oracle-vm-8cpu-32gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-fg"
+    profile: "operators"
+    timeout: 480
+    strimzi_feature_gates: "+DummyFeatureGate"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4
+  - agent: "oracle-vm-8cpu-32gb-arm64"
+    arch: "arm64"
+    pipeline: "regression-fg"
+    profile: "operands"
+    timeout: 480
+    strimzi_feature_gates: "+DummyFeatureGate"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 4

@@ -1,0 +1,51 @@
+name: Add Comment
+description: "Posts a comment on the pull-request"
+
+inputs:
+  commentMessage:
+    description: "Message that will be put as a comment"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Add comment
+      id: comment-and-check
+      uses: actions/github-script@v7
+      env:
+        MESSAGE: ${{ inputs.commentMessage }}
+      with:
+        script: |
+          const {owner, repo} = context.repo;
+
+          const msg       = process.env.MESSAGE
+          let   sha       = undefined
+          let   prNumber  = undefined;
+
+          //------------------------------------------------------------------
+          // 1) Work out PR number & HEAD SHA
+          //------------------------------------------------------------------
+          if (context.payload.pull_request) {
+            prNumber = context.payload.pull_request.number;
+            sha    ||= context.payload.pull_request.head.sha;
+          } else if (context.payload.issue?.pull_request) {
+            prNumber = context.payload.issue.number;
+            if (!sha) {
+              const pr = await github.request(
+                context.payload.issue.pull_request.url);
+              sha = pr.data.head.sha;
+            }
+          } else {
+            sha ||= context.sha;
+          }
+          
+          core.info(`Going to put a comment to PR “${prNumber}” (“${sha}”) - ”${msg}”`);
+
+          //------------------------------------------------------------------
+          // 2) Add / update PR comment
+          //------------------------------------------------------------------
+          if (prNumber) {
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: prNumber, body: msg
+            });
+          }

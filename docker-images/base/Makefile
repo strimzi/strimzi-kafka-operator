@@ -9,6 +9,9 @@ docker_push:
 docker_amend_manifest:
 	# Do nothing
 
+docker_e2e:
+	# Do nothing
+
 docker_push_manifest:
 	# Do nothing
 

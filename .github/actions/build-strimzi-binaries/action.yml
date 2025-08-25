@@ -1,0 +1,64 @@
+name: "Build Strimzi jars"
+description: "Build and archive Strimzi jars"
+
+inputs:
+  mvnArgs:
+    description: "Maven arguments for the build"
+    required: false
+    default: ""
+  runnerArch:
+    description: "Architecture of GitHub runner"
+    required: false
+    default: "arm64"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install yq
+      uses: ./.github/actions/install-yq
+      with:
+        architecture: ${{ inputs.runnerArch }}
+    - name: Install Shellcheck
+      uses: ./.github/actions/install-shellcheck
+      with:
+        architecture: ${{ inputs.runnerArch }}
+    - name: Install Helm
+      uses: ./.github/actions/install-helm
+    - uses: actions/setup-java@v5
+      with:
+        distribution: "temurin"
+        java-version: "17"
+        cache: 'maven'
+
+    # Caches for Maven and Kafka
+    - name: Cache local Maven repository
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: "maven-cache | **/pom.xml"
+        restore-keys: |
+          maven | ${{ github.job }}
+          maven
+    - name: Cache Kafka binaries
+      uses: actions/cache@v4
+      with:
+        path: docker-images/artifacts/binaries/kafka/archives
+        key: '"kafka-binaries" | kafka-versions.yaml'
+
+    # Building the artifacts
+    - name: Build artifacts
+      shell: bash
+      run: |
+        make java_install
+      env:
+        MVN_ARGS: ${{ inputs.mvnArgs }}
+
+    - name: Create tarball with artifact
+      shell: bash
+      run: "tar -cvpf strimzi-binaries.tar ./docker-images/artifacts/binaries"
+
+    - name: Upload containers artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: strimzi-binaries.tar
+        path: strimzi-binaries.tar

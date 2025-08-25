@@ -1,0 +1,65 @@
+name: "Setup Minikube"
+description: "Installs minikube and configures cluster"
+
+inputs:
+  kubectlVersion:
+    description: "Kubernetes CLI version to install"
+    required: false
+    default: "v1.25.0"
+  minikubeVersion:
+    description: "Minikube version to install"
+    required: false
+    default: "v1.36.0"
+  architecture:
+    description: "Architecture"
+    required: false
+    default: "amd64"
+  registry:
+    description: "Image used for Minikube Registry"
+    required: false
+    default: mirror.gcr.io/registry:2.8.3
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache registry Docker image
+      id: cache-registry
+      uses: actions/cache@v4
+      with:
+        path: /tmp/registry-image.tar
+        key: registry-image
+
+    - name: Load registry Docker image from cache
+      if: steps.cache-registry.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        docker load -i /tmp/registry-image.tar
+
+    - name: Pull and save registry Docker image if cache miss
+      if: steps.cache-registry.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        docker pull ${{ inputs.registry }}
+        docker save ${{ inputs.registry }} -o /tmp/registry-image.tar
+
+    - name: Setup Minikube
+      shell: bash
+      run: |
+        ./.azure/scripts/setup-kubernetes.sh "${{ inputs.architecture }}"
+
+      env:
+        TEST_CLUSTER: minikube
+        TEST_KUBECTL_VERSION: ${{ inputs.kubectlVersion }}
+        TEST_MINIKUBE_VERSION: ${{ inputs.minikubeVersion }}
+        REGISTRY_IMAGE: ${{ inputs.registry }}
+        RETRIES: ${{ inputs.retries }}
+
+    - name: Set DOCKER_REGISTRY
+      shell: bash
+      run: |
+        echo "DOCKER_REGISTRY=localhost:5000" >> $GITHUB_ENV
+
+    - name: DEBUG - check running containers
+      shell: bash
+      run: |
+        docker ps -a

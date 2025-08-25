@@ -1,0 +1,169 @@
+name: System Tests
+
+on:
+  # Trigger for manual execution from GitHub UI
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: "Release version to test (i.e. 'latest', '0.46.0')"
+        required: false
+        default: "latest"
+      kafkaVersion:
+        description: "Kafka version. e.g. '4.0.0' or 'latest'"
+        required: false
+        default: "latest"
+      profile:
+        description: "Comma-separated or single profile name(s)"
+        required: false
+        default: ""
+        type: string
+  # Automated trigger for issue comment
+  issue_comment:
+    types: [created]
+
+jobs:
+  check-rights:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
+
+  # Parse and build parameters from comment or from workflow params
+  parse-params:
+    needs:
+      - check-rights
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+      statuses: write
+    outputs:
+      pipelineList: ${{ steps.parse.outputs.pipelineList }}
+      profileList: ${{ steps.parse.outputs.profileList }}
+      agent: ${{ steps.parse.outputs.agent }}
+      architecture: ${{ steps.parse.outputs.architecture }}
+      strimzi_feature_gates: ${{ steps.parse.outputs.strimzi_feature_gates }}
+      strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
+      cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
+      parallel: ${{ steps.parse.outputs.parallel }}
+      groups: ${{ steps.parse.outputs.groups }}
+      tests: ${{ steps.parse.outputs.tests }}
+      kafkaVersion: ${{ steps.parse.outputs.kafkaVersion }}
+      releaseVersion: ${{ steps.parse.outputs.releaseVersion }}
+      shouldRun: ${{ steps.parse.outputs.shouldRun }}
+      kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
+      # Checkout ref data
+      repo_owner: ${{ steps.parse.outputs.repo_owner }}
+      repo_name: ${{ steps.parse.outputs.repo_name }}
+      ref: ${{ steps.parse.outputs.ref }}
+      sha: ${{ steps.parse.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Parse Comment
+        id: parse
+        uses: ./.github/actions/parse-comment
+        with:
+          # Parameters from manual trigger via UI
+          releaseVersion: ${{ github.event.inputs.releaseVersion }}
+          kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
+          profile: ${{ github.event.inputs.profile }}
+      - name: Add comment
+        uses: ./.github/actions/add-comment
+        with:
+          commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+      - name: Set check & commit status
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: pending
+          checkName: "System tests verification"
+          checkDescription: "Check for overall system test verification"
+
+  build-artifacts:
+    name: build-artifacts
+    needs:
+      - parse-params
+    # Run only if properly triggered and the run is not for release (already built images)
+    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.parse-params.outputs.releaseVersion == 'latest' }}
+    runs-on: oracle-2cpu-8gb-arm64
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
+          ref: ${{ needs.parse-params.outputs.sha }}
+      - uses: ./.github/actions/build-strimzi-binaries
+        with:
+          mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
+          runnerArch: "arm64"
+
+  build-images:
+    name: build-images
+    needs:
+      - parse-params
+      - build-artifacts
+    # Run only if properly triggered and the run is not for release (already built images)
+    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
+    strategy:
+      matrix:
+        architecture: [amd64, arm64]
+    runs-on: oracle-vm-2cpu-8gb-arm64
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
+          ref: ${{ needs.parse-params.outputs.sha }}
+      - uses: ./.github/actions/containers-build
+        with:
+          architecture: ${{ matrix.architecture }}
+          runnerArch: "arm64"
+
+  run-tests:
+    name: run-tests
+    needs:
+      - parse-params
+      - build-artifacts
+      - build-images
+    # Run if properly triggered and build-images job was either succeeded or skipped
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.build-images.result != 'failure' &&  needs.build-artifacts.result != 'failure' }}
+    uses: ./.github/workflows/run-system-tests.yml
+    with:
+      pipelineList: ${{ needs.parse-params.outputs.pipelineList }}
+      profileList: ${{ needs.parse-params.outputs.profileList }}
+      agent: ${{ needs.parse-params.outputs.agent }}
+      architecture: ${{ needs.parse-params.outputs.architecture }}
+      strimzi_feature_gates: ${{ needs.parse-params.outputs.strimzi_feature_gates }}
+      strimzi_rbac_scope: ${{ needs.parse-params.outputs.strimzi_rbac_scope }}
+      cluster_operator_install_type: ${{ needs.parse-params.outputs.cluster_operator_install_type }}
+      parallel: ${{ needs.parse-params.outputs.parallel }}
+      releaseVersion: ${{ needs.parse-params.outputs.releaseVersion }}
+      kafkaVersion: ${{ needs.parse-params.outputs.kafkaVersion }}
+      kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
+      # Checkout ref params
+      repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
+      ref: ${{ needs.parse-params.outputs.sha }}
+
+  report:
+    needs:
+      - run-tests
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: Add comment
+        uses: ./.github/actions/add-comment
+        with:
+          commentMessage: ":tada: Systemtest verification finished: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})!"
+      - name: Set check & commit status
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: ${{ needs.run-tests.result }}
+          checkName: "System tests verification"
+          checkDescription: "Check for overall system test verification"

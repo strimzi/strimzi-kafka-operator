@@ -1,0 +1,345 @@
+name: Run System Tests
+
+on:
+  workflow_call:
+    inputs:
+      profileList:
+        description: "Comma-separated or single profile name(s)"
+        required: false
+        default: ""
+        type: string
+      pipelineList:
+        description: "Comma-separated or single pipeline name(s)"
+        required: false
+        default: ""
+        type: string
+      excludedGroups:
+        description: "Excluded groups"
+        required: false
+        default: ""
+        type: string
+      cluster_operator_install_type:
+        description: "Install type method used for Strimzi operator"
+        required: false
+        default: "yaml"
+        type: string
+      strimzi_rbac_scope:
+        description: "RBAC configuration for operator access"
+        required: false
+        default: "CLUSTER"
+        type: string
+      parallel:
+        description: "How many tests should be executed in parallel"
+        required: false
+        default: "2"
+        type: string
+      strimzi_feature_gates:
+        description: "Which feature-gates will be used by operator"
+        required: false
+        default: ""
+        type: string
+      releaseVersion:
+        description: "Release version to test (i.e. 'latest', '0.46.0')"
+        required: false
+        default: "latest"
+        type: string
+      kafkaVersion:
+        description: "Kafka version. e.g. '4.0.0' or 'latest'"
+        required: false
+        default: "latest"
+        type: string
+      agent:
+        description: "On which agent the jobs will be executed"
+        required: true
+        type: string
+      architecture:
+        description: "Which architecture is used for the job"
+        required: true
+        type: string
+      groups:
+        description: "JUnit5 test groups that will be executed"
+        required: false
+        # Empty string means all groups
+        default: ""
+        type: string
+      tests:
+        description: "JUnit5 tests that will be executed"
+        required: false
+        # Empty string means all tests
+        default: ""
+        type: string
+      kubeVersion:
+        description: "Used Kubernetes version for Kind/Minikube. Note that for Kind you have to use whole image with sha digest!"
+        required: false
+        # Empty string means it will use default from setup scripts
+        default: ""
+        type: string
+      # Checkout ref params
+      repository:
+        description: "Repository that will be checkout"
+        required: true
+        type: string
+      ref:
+        description: "Repository ref that will be checkout"
+        required: true
+        type: string
+
+jobs:
+  generate-matrix:
+    runs-on: oracle-2cpu-8gb-arm64
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
+      - name: Generate Matrix
+        id: gen
+        uses: ./.github/actions/generate-matrix
+        with:
+          pipelines: ${{ inputs.pipelineList }}
+          profiles: ${{ inputs.profileList }}
+          default_agent: ${{ inputs.agent }}
+          default_arch: ${{ inputs.architecture }}
+          default_strimzi_feature_gates: ${{ inputs.strimzi_feature_gates }}
+          default_strimzi_rbac_scope: ${{ inputs.strimzi_rbac_scope }}
+          default_cluster_operator_install_type: ${{ inputs.cluster_operator_install_type }}
+          default_parallel: ${{ inputs.parallel }}
+
+  run-tests:
+    needs: generate-matrix
+    strategy:
+      matrix:
+        config: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+      fail-fast: false
+    # Max timeout ise set for 10h for the whole job, test execution has lower timeouts to not block the job for the whole time
+    # but have some additional time to collect logs, etc.
+    timeout-minutes: 600
+    name: ${{ matrix.config.jobName }}
+    runs-on: ${{ matrix.config.agent }}
+    # Environment variables
+    env:
+      KAFKA_VERSION: ${{ inputs.kafkaVersion }}
+      DOCKER_TAG: ${{ inputs.releaseVersion }}
+      PROFILE: ${{ matrix.config.profile }}
+      ARCH: ${{ matrix.config.architecture }}
+      STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
+      CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
+      STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_use_feature_gates }}
+      PARALLEL: ${{ matrix.config.parallel }}
+      STRIMZI_DEFAULT_LOG_LEVEL: DEBUG
+      OPERATOR_IMAGE_PULL_POLICY: IfNotPresent
+      COMPONENTS_IMAGE_PULL_POLICY: IfNotPresent
+      # Kube version for Kind
+      KIND_NODE_IMAGE: ${{ inputs.kubeVersion }}
+      # Kube version for Minikube
+      KUBE_VERSION: ${{ inputs.kubeVersion }}
+    # Job steps
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
+
+      - name: Set check & commit status
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: pending
+          checkName: ${{ matrix.config.jobName }}
+          checkDescription: "Test run for ${{ matrix.config.jobName }}"
+
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.9
+      - uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "17"
+          cache: 'maven'
+
+      - name: Install Helm
+        uses: ./.github/actions/install-helm
+
+      - name: Install Shellcheck
+        uses: ./.github/actions/install-shellcheck
+        with:
+          architecture: ${{ matrix.config.arch }}
+      - name: Install yq
+        uses: ./.github/actions/install-yq
+        with:
+          architecture: ${{ matrix.config.arch }}
+
+      - name: Install Docker
+        uses: ./.github/actions/install-docker
+
+      - name: Install Kind
+        uses: ./.github/actions/setup-kind
+        with:
+          architecture: ${{ matrix.config.arch }}
+          # Could be overriden per pipeline
+          controlNodes: 1
+          workerNodes: 1
+
+      - name: Set default environment variables
+        uses: ./.github/actions/set-defaults
+
+      - name: Set release version
+        if: ${{ inputs.releaseVersion != 'latest' }}
+        run: |
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+        env:
+          RELEASE_VERSION: ${{ inputs.releaseVersion }}
+
+      - name: Set DOCKER_TAG to releaseVersion
+        if: ${{ inputs.releaseVersion != 'latest' }}
+        run: |
+          echo "DOCKER_TAG=${{ inputs.releaseVersion }}" >> $GITHUB_ENV
+
+      - name: Set DOCKER_REGISTRY to quay.io if releaseVersion != latest
+        if: ${{ inputs.releaseVersion != 'latest' }}
+        run: |
+          echo "DOCKER_REGISTRY=quay.io" >> $GITHUB_ENV
+
+      - name: Set ST_KAFKA_VERSION if kafkaVersion != latest
+        if: ${{ env.KAFKA_VERSION != 'latest' }}
+        run: |
+          echo "ST_KAFKA_VERSION=${KAFKA_VERSION}" >> $GITHUB_ENV
+
+      - name: Print out environment info
+        uses: ./.github/actions/log-variables
+
+      # Build Strimzi and its images => used when running STs against PR or main branch where container images should be built
+      - name: Load Strimzi images
+        # Build images in case that we are not running tests on the `main` branch and the docker_tag is `latest`, which means
+        # that we are running tests on a PR
+        # add back: eval $(minikube docker-env)
+        if: ${{ env.DOCKER_TAG == 'latest' && github.ref_name != 'main' }}
+        uses: ./.github/actions/containers-load
+        with:
+          architecture: ${{ matrix.config.arch }}
+          registry: "kind"
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: "maven-cache | **/pom.xml"
+          restore-keys: |
+            maven | ${{ github.job }}
+            maven
+
+      # Build Strimzi without images => used when running the STs against releases or release candidates where the images
+      # are already built, and we need only the Java build
+      - name: Build Strimzi Java code
+        run: make java_install
+        env:
+          MVN_ARGS: "-DskipTests -Dmaven.javadoc.skip=true  -e -V -B"
+
+      - name: Create dir for Kafka binaries cache
+        if: ${{ env.DOCKER_TAG != 'latest' }}
+        run: mkdir -p docker-images/artifacts/binaries/kafka/archives
+
+      ############################################################################
+      # Build KafkaConnect image with file-sink plugin, skipping if "upgrade"
+      ############################################################################
+      - name: Build KafkaConnect image
+        # we want to let Connect image build for different versions of Kafka inside the upgrade/downgrade STs
+        if: ${{ !contains(env.PROFILE, 'upgrade') }}
+        run: |
+          export CONNECT_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"
+          export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
+          BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}"
+          echo "Base image: $BASE_IMAGE"
+          eval "$(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE" "$CONNECT_IMAGE")"
+          echo "connect build image: $CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN"
+          
+          # Push the images
+          docker push ${CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN}
+
+          # Provide "connectImage" variable for tests:
+          echo "CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=${CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN}" >> $GITHUB_ENV
+
+      ############################################################################
+      # We need to set DOCKER_REGISTRY to IP and port of service, which is created by minikube registry addon, port is always 80
+      # Default value for PRs is localhost:5000 because we need to push built images into minikube registry and make them available for pods
+      ############################################################################
+      - name: "Set docker_registry to local registry in minikube"
+        if: ${{ contains(env.DOCKER_REGISTRY, 'localhost:5000') }}
+        run: |
+          echo "DOCKER_REGISTRY=$(kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'):80" >> $GITHUB_ENV
+
+      ############################################################################
+      # Additional "setup_upgrade.sh" if profile includes "upgrade"
+      ############################################################################
+      - name: Setup environment for upgrade
+        if: ${{ contains(env.PROFILE, 'upgrade') }}
+        run: |
+          .azure/scripts/setup_upgrade.sh
+
+      ############################################################################
+      # Set KAFKA_TIERED_STORAGE_BASE_IMAGE for Tiered Storage tests
+      ############################################################################
+      - name: Set KAFKA_TIERED_STORAGE_BASE_IMAGE
+        run: |
+          export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
+          echo "KAFKA_TIERED_STORAGE_BASE_IMAGE=${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}" >> $GITHUB_ENV
+
+      - name: Print out environment info
+        uses: ./.github/actions/log-variables
+
+      ############################################################################
+      # Run system tests
+      ############################################################################
+      - name: Run systemtests
+        id: run_tests
+        timeout-minutes: ${{ fromJson(matrix.config.timeout) }}
+        run: |
+          mvn -f systemtest/pom.xml verify \
+            -P"${PROFILE}" \
+            -DexcludedGroups="${EXCLUDED_GROUPS}" \
+            $GROUPS_OPT \
+            $TESTS_OPT \
+            -Dmaven.javadoc.skip=true \
+            -B -V \
+            -Dfailsafe.rerunFailingTestsCount=1 \
+            -Djunit.jupiter.execution.parallel.enabled="$([[ ${PARALLEL:-1} -gt 1 ]] && echo true || echo false)" \
+            -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL}" \
+            -Dskip.surefire.tests \
+            -s ./.azure/systemtests/systemtest-settings.xml
+        env:
+          DOCKER_TAG: ${{ env.DOCKER_TAG }}
+          BRIDGE_IMAGE: "latest-released"
+          DOCKER_REGISTRY: ${{ env.DOCKER_REGISTRY }}
+          BUILD_ID: ${{ matrix.config.agent }}-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-systemtests
+          RESOURCE_ALLOCATION_STRATEGY: "SHARE_MEMORY_FOR_ALL_COMPONENTS"
+          TEST_LOG_DIR: "systemtest-logs"
+          CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN: ${{ env.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN }}
+          # Build the switch only when the input is non-empty
+          GROUPS_OPT: ${{ inputs.groups != '' && format('-Dgroups="{0}"', inputs.groups) || '' }}
+          TESTS_OPT: ${{ inputs.tests  != '' && format('-Dit.test="{0}"',  inputs.tests)  || '' }}
+          EXCLUDED_GROUPS: ${{ matrix.config.excluded_groups || '' }}
+          STRIMZI_TEST_LOG_LEVEL: INFO
+
+      - name: Archive JUnit test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-results-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
+          path: systemtest/target/failsafe-reports/**/TEST-*.xml
+
+      - name: Archive systemtest logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: systemtest-logs-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
+          path: systemtest-logs
+
+      - name: Set check & commit status
+        if: ${{ always() }}
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: ${{ steps.run_tests.conclusion }}
+          checkName: ${{ matrix.config.jobName }}
+          checkDescription: "Test run for ${{ matrix.config.jobName }}"

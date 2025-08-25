@@ -48,12 +48,12 @@ docker_push_default: docker_tag
 docker_save_default:
 	# Saves the container as TGZ file
 	test -d $(ARCHIVE_DIR) || mkdir -p  $(ARCHIVE_DIR)
-	docker save strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) | gzip > $(ARCHIVE_DIR)/$(PROJECT_NAME)-$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX).tar.gz
+	$(DOCKER_CMD) save strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) | gzip > $(ARCHIVE_DIR)/$(PROJECT_NAME)-$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX).tar.gz
 
 .PHONY: docker_load_default
 docker_load_default:
 	# Loads the container as TGZ file
-	docker load < $(ARCHIVE_DIR)/$(PROJECT_NAME)-$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX).tar.gz
+	$(DOCKER_CMD) load < $(ARCHIVE_DIR)/$(PROJECT_NAME)-$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX).tar.gz
 
 .PHONY: docker_delete_archive_default
 docker_delete_archive_default:
@@ -63,12 +63,18 @@ docker_delete_archive_default:
 .PHONY: docker_amend_manifest_default
 docker_amend_manifest_default:
 	# Create / Amend the manifest
-	docker manifest create $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) --amend $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX)
+	$(DOCKER_CMD) manifest create $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) --amend $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX)
+
+.PHONY: docker_e2e_default
+docker_e2e_default:
+	# Re-tag and push arch-specific images to latest to use it within CI only
+	$(DOCKER_CMD) tag strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
+	$(DOCKER_CMD) push $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
 
 .PHONY: docker_push_manifest_default
 docker_push_manifest_default:
 	# Push the manifest to the registry
-	docker manifest push $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
+	$(DOCKER_CMD) manifest push $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
 
 .PHONY: docker_sign_manifest_default
 docker_sign_manifest_default:
@@ -81,7 +87,7 @@ docker_sign_manifest_default:
 .PHONY: docker_delete_manifest_default
 docker_delete_manifest_default:
 	# Delete the manifest to the registry, ignore the error if manifest doesn't exist
-	docker manifest rm $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) || true
+	$(DOCKER_CMD) manifest rm $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) || true
 
 .PHONY: docker_sbom_default
 docker_sbom_default:
