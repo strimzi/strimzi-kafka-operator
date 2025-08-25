@@ -62,7 +62,7 @@ jobs:
       ref: ${{ steps.parse.outputs.ref }}
       sha: ${{ steps.parse.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Parse Comment
         id: parse
         uses: ./.github/actions/parse-comment
@@ -90,7 +90,7 @@ jobs:
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.parse-params.outputs.releaseVersion == 'latest' }}
     runs-on: oracle-2cpu-8gb-arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
           ref: ${{ needs.parse-params.outputs.sha }}
@@ -111,7 +111,7 @@ jobs:
         architecture: [amd64, arm64]
     runs-on: oracle-vm-2cpu-8gb-arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
           ref: ${{ needs.parse-params.outputs.sha }}
@@ -156,7 +156,7 @@ jobs:
       checks: write
       statuses: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Add comment
         uses: ./.github/actions/add-comment
         with:

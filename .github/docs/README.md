@@ -18,7 +18,7 @@ Usage example can be like this:
     name: build-artifacts
     runs-on: oracle-2cpu-8gb-arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
@@ -37,7 +37,7 @@ This actions has to be called separately for each architecture with matrix strat
         architecture: [amd64, arm64]
     runs-on: oracle-vm-2cpu-8gb-arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}
