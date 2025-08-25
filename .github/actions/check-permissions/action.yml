@@ -20,7 +20,10 @@ runs:
       with:
         script: |
           const {owner, repo} = context.repo;
-          const actor = process.env.GITHUB_ACTOR;
+          // Get actor from event payload first, fallback to GITHUB_ACTOR
+          const actor = context.payload.actor || 
+                       context.actor || 
+                       process.env.GITHUB_ACTOR;
           const team  = process.env.TEAM
           const denialMessage = process.env.MESSAGE
           
