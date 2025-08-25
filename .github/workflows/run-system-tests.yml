@@ -281,7 +281,6 @@ jobs:
       ############################################################################
       # Set KAFKA_TIERED_STORAGE_BASE_IMAGE for Tiered Storage tests
       ############################################################################
-      # TODO - check if the image is correct for releases
       - name: Set KAFKA_TIERED_STORAGE_BASE_IMAGE
         run: |
           export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")

@@ -20,8 +20,6 @@ on:
   # Automated trigger for issue comment
   issue_comment:
     types: [created]
-  # TODO - Remove this once tested and ready for merge
-  pull_request:
 
 jobs:
   check-rights:
@@ -31,11 +29,7 @@ jobs:
       pull-requests: write
       checks: write
     steps:
-      # TODO - switch with check-permissions aka remove checkout
-      - uses: actions/checkout@v4
-      # TODO - reference this action from main (right before merge)
-      - uses: ./.github/actions/check-permissions
-      #- uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
+      - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
 
   # Parse and build parameters from comment or from workflow params
   parse-params:
