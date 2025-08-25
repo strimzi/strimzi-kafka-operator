@@ -1,0 +1,98 @@
+[
+  {
+    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "regression",
+    "profile": "operators",
+    "timeout": 480,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 4,
+    "jobName": "regression-operators-amd64"
+  },
+  {
+    "agent": "oracle-vm-8cpu-32gb-arm64",
+    "arch": "arm64",
+    "pipeline": "regression",
+    "profile": "operators",
+    "timeout": 480,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 4,
+    "jobName": "regression-operators-arm64"
+  },
+  {
+    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "regression",
+    "profile": "brokers-and-security",
+    "timeout": 480,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 4,
+    "jobName": "regression-brokers-and-security-amd64"
+  },
+  {
+    "agent": "oracle-vm-8cpu-32gb-arm64",
+    "arch": "arm64",
+    "pipeline": "regression",
+    "profile": "brokers-and-security",
+    "timeout": 480,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 4,
+    "jobName": "regression-brokers-and-security-arm64"
+  },
+  {
+    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "regression-fg",
+    "profile": "operators",
+    "timeout": 480,
+    "strimzi_feature_gates": "+DummyFeatureGate",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 4,
+    "jobName": "regression-fg-operators-amd64"
+  },
+  {
+    "agent": "oracle-vm-8cpu-32gb-arm64",
+    "arch": "arm64",
+    "pipeline": "regression-fg",
+    "profile": "operators",
+    "timeout": 480,
+    "strimzi_feature_gates": "+DummyFeatureGate",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 4,
+    "jobName": "regression-fg-operators-arm64"
+  },
+  {
+    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "regression-fg",
+    "profile": "brokers-and-security",
+    "timeout": 480,
+    "strimzi_feature_gates": "+DummyFeatureGate",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 3,
+    "jobName": "regression-fg-brokers-and-security-amd64"
+  },
+  {
+    "agent": "oracle-vm-8cpu-32gb-arm64",
+    "arch": "arm64",
+    "pipeline": "regression-fg",
+    "profile": "brokers-and-security",
+    "timeout": 480,
+    "strimzi_feature_gates": "+DummyFeatureGate",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 4,
+    "jobName": "regression-fg-brokers-and-security-arm64"
+  }
+]

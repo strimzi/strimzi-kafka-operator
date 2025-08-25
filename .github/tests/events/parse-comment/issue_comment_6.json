@@ -1,0 +1,24 @@
+{
+  "event_name": "issue_comment",
+  "action": "created",
+  "comment": {
+    "body": "/gha run strimzi_feature_gates=+SomeNewFeatureGate strimzi_rbac_scope=NAMESPACE cluster_operator_install_type=helm parallel=4"
+  },
+  "issue": {
+    "number": 42,
+    "pull_request": {
+      "head": {
+        "ref": "feature-123",
+        "sha": "1111111111111111111111111111111111111111",
+        "repo": {
+          "name": "test-repo",
+          "owner": { "login": "batman" }
+        }
+      }
+    }
+  },
+  "repository": {
+    "name": "test-repo",
+    "owner": { "login": "batman" }
+  }
+}

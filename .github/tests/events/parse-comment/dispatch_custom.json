@@ -1,0 +1,17 @@
+{
+  "action": "workflow_dispatch",
+  "event_name": "workflow_dispatch",
+  "inputs": {
+    "profile": "custom-profile-1,custom-profile-2",
+    "kafkaVersion": "3.5.0",
+    "releaseVersion": "1.0.0"
+  },
+  "repository": {
+    "name": "test-repo",
+    "owner": { "login": "batman" }
+  },
+  "ref": "refs/heads/feature-branch",
+  "head_commit": {
+    "id": "4444444444444444444444444444444444444444"
+  }
+}

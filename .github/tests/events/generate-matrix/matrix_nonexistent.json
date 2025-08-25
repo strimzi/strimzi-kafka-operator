@@ -1,0 +1,12 @@
+{
+  "event_name": "workflow_dispatch",
+  "action": "workflow_dispatch",
+  "inputs": {
+    "pipelines": "nonexistent-pipeline",
+    "profiles": ""
+  },
+  "repository": {
+    "name": "ci-playground",
+    "owner": { "login": "frawless" }
+  }
+}

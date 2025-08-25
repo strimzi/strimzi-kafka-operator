@@ -1,0 +1,121 @@
+name: Generate-matrix template
+
+on:
+  workflow_dispatch:
+    inputs:
+      pipelines:
+        description: "Comma-separated list of pipelines"
+        required: false
+        default: ""
+      profiles:
+        description: "Comma-separated list of profiles"
+        required: false
+        default: ""
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Test the generate-matrix action
+      - id: generate-matrix
+        uses: ./.github/actions/generate-matrix
+        with:
+          pipelines: ${{ github.event.inputs.pipelines }}
+          profiles: ${{ github.event.inputs.profiles }}
+          runnerArch: "amd64"
+
+      # Validate the generated matrix
+      - name: Validate matrix generation
+        shell: bash
+        env:
+          EXPECTED_JSON_FILE: ${{ env.EXPECTED_JSON_FILE }}
+        run: |
+          set +e  # Don't exit on first error
+          VALIDATION_ERRORS=0
+          
+          MATRIX='${{ steps.generate-matrix.outputs.matrix }}'
+          
+          echo "::group::Generated Matrix"
+          echo "$MATRIX" | jq '.'
+          echo "::endgroup::"
+          
+          # Basic validation - check if matrix is valid JSON
+          if ! echo "$MATRIX" | jq empty 2>/dev/null; then
+            echo "❌ Generated matrix is not valid JSON"
+            VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+          else
+            echo "✅ Generated matrix is valid JSON"
+          fi
+          
+          MATRIX_LENGTH=$(echo "$MATRIX" | jq 'length')
+          echo "📊 Matrix contains $MATRIX_LENGTH items"
+          
+          # If expected JSON file is provided, do full JSON comparison
+          if [[ -n "$EXPECTED_JSON_FILE" ]]; then
+            if [[ ! -f "$EXPECTED_JSON_FILE" ]]; then
+              echo "❌ Expected JSON file not found: $EXPECTED_JSON_FILE"
+              VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            else
+              echo "🔍 Comparing with expected JSON: $EXPECTED_JSON_FILE"
+              
+              # Normalize both JSONs (sort arrays and pretty print) for comparison
+              NORMALIZED_ACTUAL=$(echo "$MATRIX" | jq 'sort_by(.jobName)')
+              NORMALIZED_EXPECTED=$(cat "$EXPECTED_JSON_FILE" | jq 'sort_by(.jobName)')
+              
+              echo "::group::Expected Matrix"
+              echo "$NORMALIZED_EXPECTED"
+              echo "::endgroup::"
+              
+              # Compare normalized JSON structures
+              if ! diff -u <(echo "$NORMALIZED_EXPECTED") <(echo "$NORMALIZED_ACTUAL"); then
+                echo "❌ Generated matrix does not match expected JSON"
+                echo ""
+                echo "📋 Differences found between expected and actual matrix"
+                echo "   Expected file: $EXPECTED_JSON_FILE"
+                echo "   Actual length: $MATRIX_LENGTH"
+                echo "   Expected length: $(cat "$EXPECTED_JSON_FILE" | jq 'length')"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+              else
+                echo "✅ Generated matrix matches expected JSON perfectly"
+              fi
+            fi
+          else
+            echo "ℹ️  No expected JSON file provided - performing basic validation only"
+            
+            # Validate all matrix items have required fields
+            REQUIRED_FIELDS=("agent" "arch" "pipeline" "jobName" "timeout")
+            FIELD_ERRORS=0
+            for i in $(seq 0 $((MATRIX_LENGTH - 1))); do
+              for field in "${REQUIRED_FIELDS[@]}"; do
+                if ! echo "$MATRIX" | jq -e ".[$i].$field" > /dev/null; then
+                  echo "❌ Matrix item $i missing required field: $field"
+                  FIELD_ERRORS=$((FIELD_ERRORS + 1))
+                fi
+              done
+            done
+            
+            if [[ $FIELD_ERRORS -eq 0 ]]; then
+              echo "✅ Matrix structure validation passed"
+            else
+              echo "❌ Matrix structure validation failed with $FIELD_ERRORS field errors"
+              VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            fi
+          fi
+          
+          # Show sample job names for debugging
+          echo "📝 Generated job names:"
+          echo "$MATRIX" | jq -r '.[].jobName' | head -5
+          
+          # Summary and exit with appropriate code
+          echo ""
+          echo "📋 Validation Summary:"
+          if [[ $VALIDATION_ERRORS -eq 0 ]]; then
+            echo "✅ All validations passed! Matrix generation is working correctly."
+            exit 0
+          else
+            echo "❌ Validation failed with $VALIDATION_ERRORS error(s)"
+            echo "   Please review the output above for detailed error information"
+            exit 1
+          fi

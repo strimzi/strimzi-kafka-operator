@@ -1,0 +1,24 @@
+{
+  "event_name": "pull_request",
+  "action": "opened", 
+  "actor": "frawless",
+  "pull_request": {
+    "number": 123,
+    "title": "Test authorized user",
+    "head": {
+      "ref": "test-branch",
+      "sha": "abc123456789",
+      "repo": {
+        "name": "ci-playground",
+        "owner": { "login": "frawless" }
+      }
+    }
+  },
+  "repository": {
+    "name": "ci-playground",
+    "owner": { 
+      "login": "frawless",
+      "type": "User"
+    }
+  }
+}

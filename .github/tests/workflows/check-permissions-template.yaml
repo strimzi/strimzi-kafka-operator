@@ -1,0 +1,57 @@
+name: Check-permissions template
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Test the check-permissions action
+      - id: check-permissions
+        uses: ./.github/actions/check-permissions
+        continue-on-error: true  # Don't fail the test if permissions check fails
+
+      # Validate the results
+      - name: Validate permissions check behavior
+        shell: bash
+        env:
+          EXPECT_SHOULD_PASS: ${{ env.EXPECT_SHOULD_PASS }}
+        run: |
+          set -e
+          
+          # Get the outcome of the permissions check
+          OUTCOME="${{ steps.check-permissions.outcome }}"
+          CONCLUSION="${{ steps.check-permissions.conclusion }}"
+          
+          echo "::group::Permissions Check Results"
+          echo "Outcome: $OUTCOME"
+          echo "Conclusion: $CONCLUSION"
+          echo "Expected to pass: $EXPECT_SHOULD_PASS"
+          echo "Actor: ${{ github.actor }}"
+          echo "Repository owner: ${{ github.repository_owner }}"
+          echo "Repository owner type: ${{ github.event.repository.owner.type }}"
+          echo "::endgroup::"
+          
+          # Validate outcome matches expectation
+          if [[ "$EXPECT_SHOULD_PASS" == "true" ]]; then
+            if [[ "$OUTCOME" == "success" ]]; then
+              echo "✅ Expected success and got success"
+            else
+              echo "❌ Expected success but got $OUTCOME"
+              exit 1
+            fi
+          elif [[ "$EXPECT_SHOULD_PASS" == "false" ]]; then
+            if [[ "$OUTCOME" == "failure" ]]; then
+              echo "✅ Expected failure and got failure"
+            else
+              echo "❌ Expected failure but got $OUTCOME"
+              exit 1
+            fi
+          else
+            echo "⚠️ EXPECT_SHOULD_PASS not set - only validating action execution"
+          fi
+          
+          echo "✅ Permissions check validation passed"

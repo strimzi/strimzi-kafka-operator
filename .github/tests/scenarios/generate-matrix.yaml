@@ -1,0 +1,49 @@
+scenarios:
+  - id: multiple-pipelines
+    description: "Generate matrix for multiple pipelines (regression,smoke)"
+    event: workflow_dispatch
+    fixture: .github/tests/events/generate-matrix/matrix_pipelines.json
+    expectations:
+      expected_json_file: ".github/tests/expected/generate-matrix/matrix_pipelines_expected.json"
+
+  - id: multiple-profiles
+    description: "Generate matrix for multiple profiles (operators,brokers-and-security)"
+    event: workflow_dispatch
+    fixture: .github/tests/events/generate-matrix/matrix_profiles.json
+    expectations:
+      expected_json_file: ".github/tests/expected/generate-matrix/matrix_profiles_expected.json"
+
+  - id: pipeline-priority
+    description: "Pipeline takes priority over profile when both provided"
+    event: workflow_dispatch
+    fixture: .github/tests/events/generate-matrix/matrix_priority.json
+    expectations:
+      expected_json_file: ".github/tests/expected/generate-matrix/matrix_priority_expected.json"
+
+  - id: single-pipeline
+    description: "Generate matrix for single pipeline (upgrade)"
+    event: workflow_dispatch
+    fixture: .github/tests/events/generate-matrix/matrix_single_pipeline.json
+    expectations:
+      expected_json_file: ".github/tests/expected/generate-matrix/matrix_single_pipeline_expected.json"
+
+  - id: single-profile
+    description: "Generate matrix for single profile (smoke)"
+    event: workflow_dispatch
+    fixture: .github/tests/events/generate-matrix/matrix_single_profile.json
+    expectations:
+      expected_json_file: ".github/tests/expected/generate-matrix/matrix_single_profile_expected.json"
+
+  - id: empty-inputs-fallback
+    description: "Generate default matrix when no pipelines/profiles provided"
+    event: workflow_dispatch
+    fixture: .github/tests/events/generate-matrix/matrix_empty.json
+    expectations:
+      expected_json_file: ".github/tests/expected/generate-matrix/matrix_empty_expected.json"
+
+  - id: nonexistent-pipeline
+    description: "Handle nonexistent pipeline gracefully"
+    event: workflow_dispatch
+    fixture: .github/tests/events/generate-matrix/matrix_nonexistent.json
+    expectations:
+      expected_json_file: ".github/tests/expected/generate-matrix/matrix_nonexistent_expected.json"

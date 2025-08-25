@@ -39,6 +39,10 @@ inputs:
   default_tests:
     description: "Default JUnit5 tests that will be executed"
     default: ""
+  runnerArch:
+    description: "Architecture of GitHub runner"
+    required: false
+    default: "amd64"
 
 outputs:
   matrix:
@@ -52,7 +56,8 @@ runs:
     - name: Install yq
       uses: ./.github/actions/install-yq
       with:
-        architecture: "arm64"
+        architecture: ${{ inputs.runnerArch }}
+
     - name: Generate Matrix JSON
       id: gen
       shell: bash

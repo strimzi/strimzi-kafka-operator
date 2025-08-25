@@ -1,0 +1,50 @@
+[
+  {
+    "agent": "oracle-vm-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "upgrade",
+    "profile": "azp_kraft_upgrade",
+    "timeout": 180,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 1,
+    "jobName": "upgrade-azp_kraft_upgrade-amd64"
+  },
+  {
+    "agent": "oracle-vm-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "upgrade",
+    "profile": "azp_kafka_upgrade",
+    "timeout": 180,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 1,
+    "jobName": "upgrade-azp_kafka_upgrade-amd64"
+  },
+  {
+    "agent": "oracle-vm-4cpu-16gb-arm64",
+    "arch": "arm64",
+    "pipeline": "upgrade",
+    "profile": "azp_kraft_upgrade",
+    "timeout": 180,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 1,
+    "jobName": "upgrade-azp_kraft_upgrade-arm64"
+  },
+  {
+    "agent": "oracle-vm-4cpu-16gb-arm64",
+    "arch": "arm64",
+    "pipeline": "upgrade",
+    "profile": "azp_kafka_upgrade",
+    "timeout": 180,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 1,
+    "jobName": "upgrade-azp_kafka_upgrade-arm64"
+  }
+]
