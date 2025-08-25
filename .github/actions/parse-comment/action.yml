@@ -81,8 +81,7 @@ runs:
         elif echo "${{ github.event.comment.body }}" | grep -qiE '/gha\s+run'; then
           SHOULD_RUN_VALUE="true"
         else
-          # TODO - set this to false, this is set to true just for testing purposes!!! - remove before merge
-          SHOULD_RUN_VALUE="true"
+          SHOULD_RUN_VALUE="false"
         fi
         
         echo "shouldRun=$SHOULD_RUN_VALUE" >> "$GITHUB_OUTPUT"
@@ -122,9 +121,6 @@ runs:
         else
           BUILT_COMMENT_VALUE="${{ github.event.comment.body }}"
         fi
-        # TODO - remove this before merge
-        BUILT_COMMENT_VALUE="/gha run pipeline=regression,upgrade"
-        BUILT_COMMENT_VALUE="/gha run pipeline=regression,upgrade,regression-fg,regression-rbac,acceptance,acceptance-helm"
         
         echo "builtComment=$BUILT_COMMENT_VALUE" >> "$GITHUB_OUTPUT"
         echo "Parsed builtComment: $BUILT_COMMENT_VALUE"
