@@ -24,6 +24,7 @@ jobs:
         with:
           pipelines: ${{ github.event.inputs.pipelines }}
           profiles: ${{ github.event.inputs.profiles }}
+          runnerArch: "amd64"
 
       # Validate the generated matrix
       - name: Validate matrix generation
