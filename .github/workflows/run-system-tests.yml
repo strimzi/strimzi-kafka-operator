@@ -106,6 +106,7 @@ jobs:
           default_strimzi_rbac_scope: ${{ inputs.strimzi_rbac_scope }}
           default_cluster_operator_install_type: ${{ inputs.cluster_operator_install_type }}
           default_parallel: ${{ inputs.parallel }}
+          runnerArch: "arm64"
 
   run-tests:
     needs: generate-matrix
