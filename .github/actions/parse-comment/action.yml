@@ -55,6 +55,9 @@ outputs:
   kubeVersion:
     description: "Version of Kubernetes used for tests"
     value: ${{ steps.should_run.outputs.kubeVersion }}
+  parallel:
+    description: "How many tests will be executed in parallel"
+    value: ${{ steps.parse_comment.output.parallel }}
   # Checkout ref outputs
   repo_owner:
     description: "Owner of the repository a.k.a org name"
@@ -149,7 +152,7 @@ runs:
         FG_VALUE="$DEFAULT_FEATURE_GATES"
         RBAC_VALUE="$DEFAULT_RBAC_SCOPE"
         COI_VALUE="$DEFAULT_OPERATOR_INSTALL_TYPE"
-        PARALLEL_VALUE=""
+        PARALLEL_VALUE="1"
         GROUPS_VALUE=""
         TESTS_VALUE=""
         KAFKA_VERSION_VALUE=""
