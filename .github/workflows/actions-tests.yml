@@ -46,17 +46,17 @@ jobs:
           echo "📁 Loading scenarios from: $SCENARIOS_FILE"
           
           # Get total number of scenarios
-          TOTAL=$(yq '.scenarios | length' "$SCENARIOS_FILE")
+          TOTAL=$(yq eval '.scenarios | length' "$SCENARIOS_FILE")
           echo "📊 Found $TOTAL test scenarios"
           echo
           
           # Loop through each scenario
           for i in $(seq 0 $((TOTAL - 1))); do
             # Extract scenario details using yq
-            id=$(yq ".scenarios[$i].id" "$SCENARIOS_FILE")
-            description=$(yq ".scenarios[$i].description" "$SCENARIOS_FILE")
-            event=$(yq ".scenarios[$i].event" "$SCENARIOS_FILE")
-            fixture=$(yq ".scenarios[$i].fixture" "$SCENARIOS_FILE")
+            id=$(yq eval ".scenarios[$i].id" "$SCENARIOS_FILE")
+            description=$(yq eval ".scenarios[$i].description" "$SCENARIOS_FILE")
+            event=$(yq eval ".scenarios[$i].event" "$SCENARIOS_FILE")
+            fixture=$(yq eval ".scenarios[$i].fixture" "$SCENARIOS_FILE")
             
             echo "───────────────────────────────────────"
             echo "🔍 Scenario $((i + 1))/$TOTAL: $id"
@@ -68,9 +68,9 @@ jobs:
             env_args=""
             
             # Get all expectation keys and build env vars
-            expectation_keys=$(yq ".scenarios[$i].expectations | keys | .[]" "$SCENARIOS_FILE")
+            expectation_keys=$(yq eval ".scenarios[$i].expectations | keys | .[]" "$SCENARIOS_FILE")
             for key in $expectation_keys; do
-              value=$(yq ".scenarios[$i].expectations.$key" "$SCENARIOS_FILE")
+              value=$(yq eval ".scenarios[$i].expectations.$key" "$SCENARIOS_FILE")
               env_key="EXPECT_$(echo "$key" | tr '[:lower:]' '[:upper:]')"
               env_args="$env_args --env $env_key=\"$value\""
             done
@@ -119,7 +119,7 @@ jobs:
           echo "📁 Loading scenarios from: $SCENARIOS_FILE"
           
           # Get total number of scenarios
-          TOTAL=$(yq '.scenarios | length' "$SCENARIOS_FILE")
+          TOTAL=$(yq eval '.scenarios | length' "$SCENARIOS_FILE")
           echo "📊 Found $TOTAL test scenarios"
           echo
           echo "⚠️  Note: These tests validate action structure and input handling."
@@ -129,10 +129,10 @@ jobs:
           # Loop through each scenario
           for i in $(seq 0 $((TOTAL - 1))); do
             # Extract scenario details using yq
-            id=$(yq ".scenarios[$i].id" "$SCENARIOS_FILE")
-            description=$(yq ".scenarios[$i].description" "$SCENARIOS_FILE")
-            event=$(yq ".scenarios[$i].event" "$SCENARIOS_FILE")
-            fixture=$(yq ".scenarios[$i].fixture" "$SCENARIOS_FILE")
+            id=$(yq eval ".scenarios[$i].id" "$SCENARIOS_FILE")
+            description=$(yq eval ".scenarios[$i].description" "$SCENARIOS_FILE")
+            event=$(yq eval ".scenarios[$i].event" "$SCENARIOS_FILE")
+            fixture=$(yq eval ".scenarios[$i].fixture" "$SCENARIOS_FILE")
             
             echo "───────────────────────────────────────"
             echo "🔍 Scenario $((i + 1))/$TOTAL: $id"
@@ -144,15 +144,15 @@ jobs:
             env_args=""
             
             # Get all expectation keys and build env vars
-            expectation_keys=$(yq ".scenarios[$i].expectations | keys | .[]" "$SCENARIOS_FILE")
+            expectation_keys=$(yq eval ".scenarios[$i].expectations | keys | .[]" "$SCENARIOS_FILE")
             for key in $expectation_keys; do
-              value=$(yq ".scenarios[$i].expectations.$key" "$SCENARIOS_FILE")
+              value=$(yq eval ".scenarios[$i].expectations.$key" "$SCENARIOS_FILE")
               env_key="EXPECT_$(echo "$key" | tr '[:lower:]' '[:upper:]')"
               env_args="$env_args --env $env_key=\"$value\""
             done
             
             # Extract actor from event fixture for proper GITHUB_ACTOR override
-            actor=$(yq '.actor' "$fixture")
+            actor=$(yq eval '.actor' "$fixture")
             echo "   👤 Actor from fixture: $actor"
             
             # Run act with the scenario
@@ -204,17 +204,17 @@ jobs:
           echo "📁 Loading scenarios from: $SCENARIOS_FILE"
           
           # Get total number of scenarios
-          TOTAL=$(yq '.scenarios | length' "$SCENARIOS_FILE")
+          TOTAL=$(yq eval '.scenarios | length' "$SCENARIOS_FILE")
           echo "📊 Found $TOTAL test scenarios"
           echo
           
           # Loop through each scenario
           for i in $(seq 0 $((TOTAL - 1))); do
             # Extract scenario details using yq
-            id=$(yq ".scenarios[$i].id" "$SCENARIOS_FILE")
-            description=$(yq ".scenarios[$i].description" "$SCENARIOS_FILE")
-            event=$(yq ".scenarios[$i].event" "$SCENARIOS_FILE")
-            fixture=$(yq ".scenarios[$i].fixture" "$SCENARIOS_FILE")
+            id=$(yq eval ".scenarios[$i].id" "$SCENARIOS_FILE")
+            description=$(yq eval ".scenarios[$i].description" "$SCENARIOS_FILE")
+            event=$(yq eval ".scenarios[$i].event" "$SCENARIOS_FILE")
+            fixture=$(yq eval ".scenarios[$i].fixture" "$SCENARIOS_FILE")
             
             echo "───────────────────────────────────────"
             echo "🔍 Scenario $((i + 1))/$TOTAL: $id"
@@ -226,9 +226,9 @@ jobs:
             env_args=""
             
             # Get all expectation keys and build env vars
-            expectation_keys=$(yq ".scenarios[$i].expectations | keys | .[]" "$SCENARIOS_FILE")
+            expectation_keys=$(yq eval ".scenarios[$i].expectations | keys | .[]" "$SCENARIOS_FILE")
             for key in $expectation_keys; do
-              value=$(yq ".scenarios[$i].expectations.$key" "$SCENARIOS_FILE")
+              value=$(yq eval ".scenarios[$i].expectations.$key" "$SCENARIOS_FILE")
               env_key="EXPECT_$(echo "$key" | tr '[:lower:]' '[:upper:]')"
               env_args="$env_args --env $env_key=\"$value\""
             done
