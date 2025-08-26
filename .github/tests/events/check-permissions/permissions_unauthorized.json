@@ -3,7 +3,7 @@
   "action": "opened",
   "actor": "pepa",
   "pull_request": {
-    "number": 456,
+    "number": 66666666666,
     "title": "Test unauthorized user", 
     "head": {
       "ref": "test-branch",
