@@ -2508,7 +2508,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
 |Authentication configuration for Kafka Connect.
 |config
 |map
@@ -2591,7 +2591,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationTls` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationTls` type from xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationTls` type from xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`].
 It must have the value `tls` for the type `KafkaClientAuthenticationTls`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2688,7 +2688,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationPlain` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationPlain` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationPlain` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`].
 It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2717,7 +2717,7 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 == `KafkaClientAuthenticationOAuth` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationOAuth` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`].
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationOAuth` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`].
 It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 [cols="2,2,3a",options="header"]
 |====
@@ -2797,6 +2797,35 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |saslExtensions
 |map
 |SASL extensions parameters.
+|====
+
+[id='type-KafkaClientAuthenticationCustom-{context}']
+= `KafkaClientAuthenticationCustom` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`]
+
+xref:type-KafkaClientAuthenticationCustom-schema-{context}[Full list of `KafkaClientAuthenticationCustom` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationCustom.adoc[leveloffset=+1]
+
+[id='type-KafkaClientAuthenticationCustom-schema-{context}']
+== `KafkaClientAuthenticationCustom` schema properties
+
+
+The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationCustom` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`].
+It must have the value `custom` for the type `KafkaClientAuthenticationCustom`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `custom`.
+|sasl
+|boolean
+|Enable or disable SASL on this authentication mechanism.
+|config
+|map
+|Configuration for the custom authentication mechanism. Only properties with the `sasl.` and `ssl.keystore.` prefixes are allowed. Specify other options in the regular configuration section of the custom resource.
 |====
 
 [id='type-JaegerTracing-{context}']
@@ -3759,7 +3788,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration for connecting Kafka Bridge to the cluster.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
 |Authentication configuration for connecting to the cluster.
 |http
 |xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
@@ -4232,7 +4261,7 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Cluster
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration for connecting MirrorMaker 2 connectors to a cluster.
 |authentication
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
 |Authentication configuration for connecting to the cluster.
 |config
 |map

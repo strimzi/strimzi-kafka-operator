@@ -1,0 +1,36 @@
+To configure custom client authentication, set the `type` property to `custom`.
+Custom client authentication allows you to use any type of Kafka-supported authentication mechanism.
+This authentication option is especially useful with third-party Apache Kafka services, such as Amazon MSK, that require their own authentication mechanisms.
+
+.Example custom client authentication configuration using the `AWS_MSK_IAM` authentication
+[source,yaml,subs="attributes+"]
+----
+  authentication:
+    type: custom
+    sasl: true
+    config:
+      sasl.mechanism: AWS_MSK_IAM
+      sasl.jaas.config: software.amazon.msk.auth.iam.IAMLoginModule required;
+      sasl.client.callback.handler.class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+----
+
+The `config` section accepts only options that start with the prefixes `sasl.` and `ssl.keystore.`.
+All other options are ignored.
+To configure additional options, use the related properties of the Strimzi custom resource, such as `.spec.config` or `.spec.tls`.
+The `security.protocol `setting is generated automatically from the `sasl` property (when you use `custom` authentication) and the `tls` configuration in the same Strimzi custom resource:
+
+* SASL = True, TLS = True -> SASL_SSL
+* SASL = False, TLS = True -> SSL
+* SASL = True, TLS = False -> SASL_PLAINTEXT
+* SASL = False, TLS = False -> PLAINTEXT
+
+= Using secrets in custom authentication
+
+If your custom authentication mechanism requires additional information from `Secret` or `ConfigMap` resources, use the link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^] feature to mount them into the operands.
+Kafka configuration providers can be used to load them from the disk.
+
+= Using additional authentication plugins
+
+Custom authentication mechanisms might require additional plugins for the operand.
+You can add them using the link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^] feature.
+Alternatively, you can build a custom container image.

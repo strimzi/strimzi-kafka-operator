@@ -611,7 +611,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .withBootstrapServers("sourceClusterAlias.sourceNamespace.svc:9092")
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
@@ -628,7 +628,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .withConfig(Map.of("config.storage.replication.factor", "-1"))
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
@@ -654,7 +654,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endTls()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
 
         assertThat(config.containsKey("prefix.sasl.jaas.config"), is(false));
         assertThat(new TreeMap<>(config),
@@ -681,7 +681,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                     .endKafkaClientAuthenticationPlain()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -712,7 +712,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endKafkaClientAuthenticationScramSha512()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -759,7 +759,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endKafkaClientAuthenticationOAuth()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -793,7 +793,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endKafkaClientAuthenticationOAuth()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -827,7 +827,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .endTls()
                 .build();
 
-        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(config, cluster, PREFIX);
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
 
         String jaasConfig = (String) config.remove("prefix.sasl.jaas.config");
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
@@ -844,6 +844,51 @@ public class KafkaMirrorMaker2ConnectorsTest {
                         "prefix.ssl.truststore.type", "PKCS12",
                         "prefix.sasl.mechanism", "SCRAM-SHA-512",
                         "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"))));
+    }
+
+    @Test
+    public void testAddClusterToMirrorMaker2ConnectorConfigWithCustomAuthenticationWithoutSasl() {
+        KafkaMirrorMaker2ClusterSpec cluster = new KafkaMirrorMaker2ClusterSpecBuilder()
+                .withAlias("sourceClusterAlias")
+                .withBootstrapServers("sourceClusterAlias.sourceNamespace.svc:9092")
+                .withNewKafkaClientAuthenticationCustom()
+                    .withSasl(false)
+                    .withConfig(Map.of("ssl.keystore.location", "/mnt/certs/keystore", "ssl.keystore.password", "changeme", "not.allowed", "foo"))
+                .endKafkaClientAuthenticationCustom()
+                .build();
+
+        Map<String, Object> config = new HashMap<>();
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
+
+        assertThat(config.size(), is(5));
+        assertThat(config.get("prefix.bootstrap.servers"), is("sourceClusterAlias.sourceNamespace.svc:9092"));
+        assertThat(config.get("prefix.alias"), is("sourceClusterAlias"));
+        assertThat(config.get("prefix.security.protocol"), is("PLAINTEXT"));
+        assertThat(config.get("prefix.ssl.keystore.location"), is("/mnt/certs/keystore"));
+        assertThat(config.get("prefix.ssl.keystore.password"), is("changeme"));
+    }
+
+    @Test
+    public void testAddClusterToMirrorMaker2ConnectorConfigWithCustomAuthenticationWithSasl() {
+        KafkaMirrorMaker2ClusterSpec cluster = new KafkaMirrorMaker2ClusterSpecBuilder()
+                .withAlias("sourceClusterAlias")
+                .withBootstrapServers("sourceClusterAlias.sourceNamespace.svc:9092")
+                .withNewKafkaClientAuthenticationCustom()
+                    .withSasl(true)
+                    .withConfig(Map.of("sasl.mechanism", "AWS_MSK_IAM", "sasl.jaas.config", "software.amazon.msk.auth.iam.IAMLoginModule required;", "sasl.client.callback.handler.class", "software.amazon.msk.auth.iam.IAMClientCallbackHandler", "not.allowed", "foo"))
+                .endKafkaClientAuthenticationCustom()
+                .build();
+
+        Map<String, Object> config = new HashMap<>();
+        KafkaMirrorMaker2Connectors.addClusterToMirrorMaker2ConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, config, cluster, PREFIX);
+
+        assertThat(config.size(), is(6));
+        assertThat(config.get("prefix.bootstrap.servers"), is("sourceClusterAlias.sourceNamespace.svc:9092"));
+        assertThat(config.get("prefix.alias"), is("sourceClusterAlias"));
+        assertThat(config.get("prefix.security.protocol"), is("SASL_PLAINTEXT"));
+        assertThat(config.get("prefix.sasl.mechanism"), is("AWS_MSK_IAM"));
+        assertThat(config.get("prefix.sasl.jaas.config"), is("software.amazon.msk.auth.iam.IAMLoginModule required;"));
+        assertThat(config.get("prefix.sasl.client.callback.handler.class"), is("software.amazon.msk.auth.iam.IAMClientCallbackHandler"));
     }
 
     @Test

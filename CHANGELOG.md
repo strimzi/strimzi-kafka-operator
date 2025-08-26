@@ -7,6 +7,7 @@
 * Make properties `broker.session.timeout.ms`, `broker.heartbeat.interval.ms` and `controller.socket.timeout.ms` configurable
 * Add monitoring of custom resources using [kubernetes-state-metrics (KSM)](https://github.com/kubernetes/kube-state-metrics) (see [Strimzi proposal 087](https://github.com/strimzi/proposals/blob/main/087-monitoring-of-custom-resources.md))
 * Ignore users (their ACLs, Quotas and SCRAM-SHA-512 credentials) managed by some other tools based on a configurable pattern in User Operator
+* Support for `type: custom` client authentication (to make it easier to use custom authentication mechanisms such as AWS IAM)
 * Added support for Strimzi Metrics Reporter to Kafka Connect, Mirror Maker 2 and Kafka Bridge.
 * Add new feature gate `ServerSideApplyPhase1` (disabled by default) that adds support for Server Side Apply for `ConfigMap`, `Ingress`, `PVC`, `Service`, and `ServiceAccount` according to [Strimzi Proposal #105](https://github.com/strimzi/proposals/blob/main/105-server-side-apply-implementation-fg-timelines.md).
 * Added distinction between changes of "cluster-wide" broker properties applied dynamically at cluster level, and "per-broker" broker properties applied dynamically at broker level.
