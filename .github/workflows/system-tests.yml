@@ -97,8 +97,8 @@ jobs:
     needs:
       - parse-params
       - check-rights
-    # Run only if properly triggered and the run is not for release (already built images)
-    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.parse-params.outputs.releaseVersion == 'latest' }}
+    # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
+    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.parse-params.outputs.releaseVersion == 'latest' }}
     runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
@@ -116,8 +116,8 @@ jobs:
       - parse-params
       - check-rights
       - build-artifacts
-    # Run only if properly triggered and the run is not for release (already built images)
-    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
+    # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
+    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
     strategy:
       matrix:
         architecture: [amd64, arm64]
@@ -139,8 +139,8 @@ jobs:
       - check-rights
       - build-artifacts
       - build-images
-    # Run if properly triggered and build-images job was either succeeded or skipped
-    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.build-images.result != 'failure' &&  needs.build-artifacts.result != 'failure' }}
+    # Run if properly triggered, permissions check passed, and build jobs succeeded or were skipped
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.build-images.result != 'failure' &&  needs.build-artifacts.result != 'failure' }}
     uses: ./.github/workflows/run-system-tests.yml
     with:
       pipelineList: ${{ needs.parse-params.outputs.pipelineList }}
