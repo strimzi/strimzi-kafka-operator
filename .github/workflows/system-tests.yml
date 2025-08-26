@@ -60,25 +60,6 @@ jobs:
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
           kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
           profile: ${{ github.event.inputs.profile }}
-      - name: Add comment
-        if: ${{ steps.parse.outputs.shouldRun == 'true' }}
-        uses: ./.github/actions/add-comment
-        with:
-          commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
-      - name: Set check & commit status (pending)
-        if: ${{ steps.parse.outputs.shouldRun == 'true' }}
-        uses: ./.github/actions/check-and-status
-        with:
-          checkState: pending
-          checkName: "System tests verification"
-          checkDescription: "Check for overall system test verification"
-      - name: Set check & commit status (neutral)
-        if: ${{ steps.parse.outputs.shouldRun == 'false' && github.event_name == 'issue_comment' }}
-        uses: ./.github/actions/check-and-status
-        with:
-          checkState: neutral
-          checkName: "System tests verification"
-          checkDescription: "System tests skipped - comment not on PR or invalid trigger"
 
   check-rights:
     needs:
@@ -91,6 +72,18 @@ jobs:
       checks: write
     steps:
       - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
+      # In case the user has proper rights, print comment with build link and set status
+      - name: Add comment
+        uses: ./.github/actions/add-comment
+        with:
+          commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+      - name: Set check & commit status (pending)
+        if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: pending
+          checkName: "System tests verification"
+          checkDescription: "Check for overall system test verification"
 
   build-artifacts:
     name: build-artifacts
@@ -163,7 +156,7 @@ jobs:
       - parse-params
       - check-rights
       - run-tests
-    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' }}
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
