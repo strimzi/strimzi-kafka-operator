@@ -3,7 +3,7 @@ description: "Sets a commit/issue status on the given (or auto-detected) SHA."
 
 inputs:
   checkState:
-    description: "Check state: error, failure, pending, or success"
+    description: "Check state: error, failure, neutral, pending, or success"
     default: success
   checkName:
     description: "Status-line “context” label (appears in the PR UI)"
@@ -70,6 +70,7 @@ runs:
               failure: 'failure',
               pending: 'in_progress', 
               error: 'neutral',
+              neutral: 'neutral',
               skipped: 'failure'
             };
             const conclusion = conclusionToState[checkState] ?? 'neutral';

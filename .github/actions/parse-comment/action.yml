@@ -81,7 +81,8 @@ runs:
       run: |
         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
           SHOULD_RUN_VALUE="true"
-        elif echo "${{ github.event.comment.body }}" | grep -qiE '/gha\s+run'; then
+        elif [[ "${{ github.event_name }}" == "issue_comment" ]] && [[ "${{ github.event.issue.pull_request }}" != "" ]] && echo "${{ github.event.comment.body }}" | grep -qiE '/gha\s+run'; then
+          # Only trigger on PR comments (not issue comments) that contain '/gha run'
           SHOULD_RUN_VALUE="true"
         else
           SHOULD_RUN_VALUE="false"
@@ -156,7 +157,7 @@ runs:
         GROUPS_VALUE=""
         TESTS_VALUE=""
         KAFKA_VERSION_VALUE=""
-        KUBE_VERSION_VALUE=""
+        KUBE_VERSION_VALUE="latest"
         
         # Check for trigger string
         if echo "$COMMENT_LOWER" | grep -q "/gha run"; then

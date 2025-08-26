@@ -61,17 +61,24 @@ jobs:
           kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
           profile: ${{ github.event.inputs.profile }}
       - name: Add comment
-        if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
+        if: ${{ steps.parse.outputs.shouldRun == 'true' }}
         uses: ./.github/actions/add-comment
         with:
           commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
-      - name: Set check & commit status
-        if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
+      - name: Set check & commit status (pending)
+        if: ${{ steps.parse.outputs.shouldRun == 'true' }}
         uses: ./.github/actions/check-and-status
         with:
           checkState: pending
           checkName: "System tests verification"
           checkDescription: "Check for overall system test verification"
+      - name: Set check & commit status (neutral)
+        if: ${{ steps.parse.outputs.shouldRun == 'false' && github.event_name == 'issue_comment' }}
+        uses: ./.github/actions/check-and-status
+        with:
+          checkState: neutral
+          checkName: "System tests verification"
+          checkDescription: "System tests skipped - comment not on PR or invalid trigger"
 
   check-rights:
     needs:
@@ -168,10 +175,11 @@ jobs:
       - name: Add comment
         uses: ./.github/actions/add-comment
         with:
-          commentMessage: ":tada: Systemtest verification finished: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})!"
+          commentMessage: |
+            ${{ needs.run-tests.result == 'success' && ':tada: System test verification **passed**' || needs.run-tests.result == 'failure' && ':x: System test verification **failed**' || ':warning: System test verification **skipped**' }}: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
       - name: Set check & commit status
         uses: ./.github/actions/check-and-status
         with:
-          checkState: ${{ needs.run-tests.result }}
+          checkState: ${{ needs.run-tests.result == 'skipped' && 'neutral' || needs.run-tests.result }}
           checkName: "System tests verification"
           checkDescription: "Check for overall system test verification"
