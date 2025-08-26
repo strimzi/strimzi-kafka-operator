@@ -22,19 +22,8 @@ on:
     types: [created]
 
 jobs:
-  check-rights:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      checks: write
-    steps:
-      - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
-
   # Parse and build parameters from comment or from workflow params
   parse-params:
-    needs:
-      - check-rights
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -72,20 +61,35 @@ jobs:
           kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
           profile: ${{ github.event.inputs.profile }}
       - name: Add comment
+        if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
         uses: ./.github/actions/add-comment
         with:
           commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
       - name: Set check & commit status
+        if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
         uses: ./.github/actions/check-and-status
         with:
           checkState: pending
           checkName: "System tests verification"
           checkDescription: "Check for overall system test verification"
 
+  check-rights:
+    needs:
+      - parse-params
+    if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
+
   build-artifacts:
     name: build-artifacts
     needs:
       - parse-params
+      - check-rights
     # Run only if properly triggered and the run is not for release (already built images)
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.parse-params.outputs.releaseVersion == 'latest' }}
     runs-on: oracle-2cpu-8gb-arm64
@@ -103,6 +107,7 @@ jobs:
     name: build-images
     needs:
       - parse-params
+      - check-rights
       - build-artifacts
     # Run only if properly triggered and the run is not for release (already built images)
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
@@ -124,6 +129,7 @@ jobs:
     name: run-tests
     needs:
       - parse-params
+      - check-rights
       - build-artifacts
       - build-images
     # Run if properly triggered and build-images job was either succeeded or skipped
@@ -147,8 +153,10 @@ jobs:
 
   report:
     needs:
+      - parse-params
+      - check-rights
       - run-tests
-    if: ${{ always() }}
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
