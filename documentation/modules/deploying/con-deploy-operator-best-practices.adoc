@@ -27,8 +27,9 @@ To avoid these risks, the recommended approach to deploying the Cluster Operator
 
 Run a single Cluster Operator::
 Deploy only one Cluster Operator per Kubernetes cluster. 
-Use a dedicated namespace::
-Install the Cluster Operator in its own namespace, separate from the Kafka components it manages, for a clear separation of resources and configurations.
+Consider a dedicated namespace::
+Install the Cluster Operator in its own namespace, separate from the Kafka components it manages.
+This separation is most useful when the operator is configured to watch multiple namespaces, but it can also help prevent uncontrolled growth of resources in a single namespace.
 Keep everything updated::
 Regularly update Strimzi and the version of Kafka it manages so that you have the latest features, bug fixes, and enhancements.
 
@@ -54,5 +55,5 @@ Each namespace should contain only one instance of a given component type, such 
 
 * Conflicting resource names
 * Ambiguity in access management
-* Internal topic collisions
+* Topic and user name collisions
 * Unpredictable behavior during upgrades or recovery

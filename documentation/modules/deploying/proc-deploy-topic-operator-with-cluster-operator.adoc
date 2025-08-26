@@ -15,7 +15,7 @@ A single Topic Operator can watch a single namespace.
 One namespace should be watched by only one Topic Operator.
 
 WARNING: Do not deploy more than one Kafka cluster into the same namespace. 
-This causes the Topic Operator connected to each cluster to compete for the same internal topics, such as `__consumer_offsets`, leading to name collisions and unpredictable behavior.
+This causes the Topic Operator connected to each cluster to compete for the same topic resources using the same names, leading to name collisions and unpredictable behavior.
 
 If you want to use the Topic Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-topic-operator-standalone-{context}[deploy the Topic Operator as a standalone component].
