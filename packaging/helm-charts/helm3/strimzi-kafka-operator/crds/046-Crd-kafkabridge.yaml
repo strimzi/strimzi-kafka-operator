@@ -179,7 +179,7 @@ spec:
                     config:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object
-                      description: Configuration to be used for the custom authentication mechanism. Allows are the `sasl.` and `ssl.keystore.` options. Other options should be specified in the regular configuration section.
+                      description: Configuration for the custom authentication mechanism. Only properties with the `sasl.` and `ssl.keystore.` prefixes are allowed. Specify other options in the regular configuration section of the custom resource.
                     connectTimeoutSeconds:
                       type: integer
                       description: "The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds."
@@ -279,7 +279,7 @@ spec:
                         - plain
                         - oauth
                         - custom
-                      description: "Authentication type. Currently the supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, 'oauth', and `custom`. `scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. `custom` type allows configuring custom authentication mechanism. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections."
+                      description: "Specifies the authentication type. Supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, 'oauth', and `custom`. `tls` uses TLS client authentication and is supported only over TLS connections. `scram-sha-256` and `scram-sha-512` use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 authentication, respectively. `plain` uses SASL PLAIN authentication. `oauth` uses SASL OAUTHBEARER authentication. `custom` allows you to configure a custom authentication mechanism."
                     username:
                       type: string
                       description: Username used for the authentication.

@@ -2825,7 +2825,7 @@ It must have the value `custom` for the type `KafkaClientAuthenticationCustom`.
 |Enable or disable SASL on this authentication mechanism.
 |config
 |map
-|Configuration to be used for the custom authentication mechanism. Allows are the `sasl.` and `ssl.keystore.` options. Other options should be specified in the regular configuration section.
+|Configuration for the custom authentication mechanism. Only properties with the `sasl.` and `ssl.keystore.` prefixes are allowed. Specify other options in the regular configuration section of the custom resource.
 |====
 
 [id='type-JaegerTracing-{context}']

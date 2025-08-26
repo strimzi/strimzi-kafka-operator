@@ -51,9 +51,9 @@ public class KafkaClientAuthenticationCustom extends KafkaClientAuthentication {
         this.sasl = enabled;
     }
 
-    @Description("Configuration to be used for the custom authentication mechanism. " +
-            "Allows are the `sasl.` and `ssl.keystore.` options. " +
-            "Other options should be specified in the regular configuration section.")
+    @Description("Configuration for the custom authentication mechanism. " +
+            "Only properties with the `sasl.` and `ssl.keystore.` prefixes are allowed. " +
+            "Specify other options in the regular configuration section of the custom resource.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Map<String, Object> getConfig() {
         return config;

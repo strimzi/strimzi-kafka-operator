@@ -35,14 +35,13 @@ import java.util.Map;
 public abstract class KafkaClientAuthentication implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties;
 
-    @Description("Authentication type. " +
-            "Currently the supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, 'oauth', and `custom`. " +
-            "`scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. " +
-            "`plain` type uses SASL PLAIN Authentication. " +
-            "`oauth` type uses SASL OAUTHBEARER Authentication. " +
-            "`custom` type allows configuring custom authentication mechanism. " +
-            "The `tls` type uses TLS Client Authentication. " +
-            "The `tls` type is supported only over TLS connections.")
+    @Description("Specifies the authentication type. " +
+            "Supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, 'oauth', and `custom`. " +
+            "`tls` uses TLS client authentication and is supported only over TLS connections. " +
+            "`scram-sha-256` and `scram-sha-512` use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 authentication, respectively. " +
+            "`plain` uses SASL PLAIN authentication. " +
+            "`oauth` uses SASL OAUTHBEARER authentication. " +
+            "`custom` allows you to configure a custom authentication mechanism.")
     public abstract String getType();
 
     @Override

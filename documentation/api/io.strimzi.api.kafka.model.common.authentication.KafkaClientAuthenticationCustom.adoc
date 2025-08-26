@@ -1,8 +1,8 @@
-To configure custom authentication, set the `type` property to `custom`.
-Custom authentication allows for any type of Kafka-supported authentication to be used.
-It is especially useful with 3rd party Apache Kafka services - such as Amazon MSK - that use their own authentication mechanisms.
+To configure custom client authentication, set the `type` property to `custom`.
+Custom client authentication allows you to use any type of Kafka-supported authentication mechanism.
+This authentication option is especially useful with third-party Apache Kafka services, such as Amazon MSK, that require their own authentication mechanisms.
 
-.Example custom authentication configuration using the `AWS_MSK_IAM` authentication
+.Example custom client authentication configuration using the `AWS_MSK_IAM` authentication
 [source,yaml,subs="attributes+"]
 ----
   authentication:
@@ -14,23 +14,23 @@ It is especially useful with 3rd party Apache Kafka services - such as Amazon MS
       sasl.client.callback.handler.class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
 ----
 
-The `config` section accepts only options starting with the prefix `sasl.` and `ssl.keystore.`.
-All other options will be ignored.
-If you need to configure additional options, please use the other parts (such as `.spec.config` or `.spec.tls`) in the corresponding Strimzi custom resource.
-The `security.protocol` is automatically generated based on the `sasl` field and the `tls` section of the corresponding Strimzi custom resource.
+The `config` section accepts only options that start with the prefixes `sasl.` and `ssl.keystore.`.
+All other options are ignored.
+To configure additional options, use the related properties of the Strimzi custom resource, such as `.spec.config` or `.spec.tls`.
+The `security.protocol `setting is generated automatically from the `sasl` property (when you use `custom` authentication) and the `tls` configuration in the same Strimzi custom resource:
 
 * SASL = True, TLS = True -> SASL_SSL
 * SASL = False, TLS = True -> SSL
 * SASL = True, TLS = False -> SASL_PLAINTEXT
 * SASL = False, TLS = False -> PLAINTEXT
 
-= Using Secrets in custom authentication
+= Using secrets in custom authentication
 
-If your custom authentication mechanism requires additional information from Secrets or Config Maps, you can use the link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^] feature to mount them into the operands.
-Kafka Configuration Providers can be used to load them from the disk.
+If your custom authentication mechanism requires additional information from `Secret` or `ConfigMap` resources, use the link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^] feature to mount them into the operands.
+Kafka configuration providers can be used to load them from the disk.
 
 = Using additional authentication plugins
 
-Custom authentication mechanisms will often require custom plugins to be added to the operand.
+Custom authentication mechanisms might require additional plugins for the operand.
 You can add them using the link:{BookURLConfiguring}#con-common-configuration-volumes-reference[Additional Volumes^] feature.
-Or by building a custom container image.
+Alternatively, you can build a custom container image.
