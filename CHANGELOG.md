@@ -49,11 +49,14 @@
 * Adding support for [JsonTemplateLayout](https://logging.apache.org/log4j/2.x/manual/json-template-layout.html) in Operators, Cruise Control and Kafka 4.0.0 or greater.
 * Strimzi Drain Cleaner updated to 1.4.0 (included in the Strimzi installation files)
 * Added support for Strimzi Metrics Reporter to the Kafka brokers/controllers component.
+* Kafka Connect truststore and keystore configurations now uses Kafka Kubernetes Config Provider to load PEM certificates directly from secrets.
 
 ### Major changes, deprecations and removals
 
 * Strimzi 0.47.0 (and any of its patch releases) is the last Strimzi version with support for Kubernetes 1.25 and 1.26.
   From Strimzi 0.48.0 on, we will support only Kubernetes 1.27 and newer.
+* KafkaConnect now uses PEM files instead of P12/JKS for keystore and truststore.
+  * If you override "ssl.truststore.location" and "ssl.keystore.location" in your Connector configurations, then you would need update them to override "ssl.truststore.certificates" and "ssl.keystore.certificate.chain" with PEM files instead.
 
 ## 0.46.0
 
@@ -79,7 +82,6 @@
 * Update OAuth library to 0.16.2.
 * Update HTTP bridge to 0.32.0.
 * Kubernetes events emitted during a Pod restart updated to have the Kafka resource as the `regardingObject` and the Pod in the `related` field.
-* Kafka Connect truststore and keystore configurations now uses Kafka Kubernetes Config Provider to load PEM certificates directly from secrets.
 
 ### Major changes, deprecations and removals
 
@@ -105,8 +107,6 @@
 * Kubernetes events for Pod restarts no longer have the Pod as the `regardingObject`.
   If you are using `regardingObject` as a `field-selector` for listing events you must update the selector to specify the Kafka resource instead.
 * From Kafka 4.0.0, to enable the JMXReporter you must either enable metrics in `.spec.kafka.metrics`, or explicitly add JMXReporter in `metric.reporters`.
-* KafkaConnect now uses PEM files instead of P12/JKS for keystore and truststore. 
-  * If you override "ssl.truststore.location" and "ssl.keystore.location" in your Connector configurations, then you would need update them to override "ssl.truststore.certificates" and "ssl.keystore.certificate.chain" with PEM files instead.
 
 ## 0.45.0
 
