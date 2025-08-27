@@ -1,0 +1,40 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-mirrormaker-heartbeat-connector-{context}']
+= Using the heartbeat connector to verify replication
+
+[role="_abstract"]
+You can enable the optional `MirrorHeartbeatConnector` to monitor the replication stream between clusters. 
+When enabled, this connector periodically creates _heartbeat_ messages and sends them to a dedicated `heartbeats` topic in the _source_ cluster.
+
+These messages are then replicated by the `MirrorSourceConnector` to the _target_ cluster. 
+By consuming the `heartbeats` topic on the target cluster, you can confirm that data is flowing correctly from source to target. 
+If you stop seeing new heartbeats on the target, it indicates a potential issue with the replication process.
+
+.Example configuration for the heartbeat connector
+[source,yaml,subs="+quotes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+  # ...
+  mirrors:
+    - sourceCluster: "my-cluster-source"
+      targetCluster: "my-cluster-target"
+      topicsPattern: "topic1|topic2|topic3"
+      groupsPattern: "group1|group2|group3"
+      # ...
+      heartbeatConnector: # <1>
+        autoRestart:
+          enabled: true
+        config:
+          heartbeats.topic.replication.factor: 1 # <2>
+          emit.heartbeats.interval.seconds: 10 # <3>
+  # ...
+----
+<1> Configuration for the `MirrorHeartbeatConnector` that performs connectivity checks. The config overrides the default configuration options.
+<2> Replication factor for the heartbeat topic.
+<3> The interval, in seconds, at which heartbeat messages are sent.

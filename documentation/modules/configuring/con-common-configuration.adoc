@@ -3,16 +3,17 @@
 // assembly-config.adoc
 
 [id='con-common-config-{context}']
-= Common configuration options
+= Applying optional common configuration
+You can further configure Strimzi components by applying any of the following optional common configuration settings. 
 Common configuration is configured independently for each component, such as the following:
 
 * Resource limits and requests (Recommended)
 * Metrics configuration
 * Liveness and readiness probes
-* Logging frequency
 * JVM options for maximum and minimum memory allocation
 * Adding additional volumes and volume mounts
 * Template configuration for pods and containers
+* Logging frequency
 
 Advanced or specialized options include:
 
@@ -20,7 +21,7 @@ Advanced or specialized options include:
 * Rack awareness
 * Distributed tracing
 
-You can configure common options for Strimzi custom resources in the `.spec` section of the custom resource.
+Configure common options for Strimzi custom resources in the `.spec` section of the custom resource.
 For more information on these configuration options, refer to link:{BookURLConfiguring}[Common configuration properties^].
 
 == Resource limits and requests (recommended)
@@ -159,7 +160,7 @@ spec:
   # ...  
 ----
 
-== Tracing configuration
+== Distributed tracing configuration
 
 Enable distributed tracing using OpenTelemetry to monitor Kafka component operations.
 

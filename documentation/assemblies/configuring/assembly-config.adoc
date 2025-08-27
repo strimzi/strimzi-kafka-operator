@@ -125,6 +125,8 @@ include::../../modules/configuring/con-mm2-recovery.adoc[leveloffset=+2]
 
 //configuring MM2 connectors
 include::../../modules/configuring/con-config-mirrormaker2-connectors.adoc[leveloffset=+1]
+//Using the heartbeat connector to verify replication
+include::../../modules/configuring/con-config-mirrormaker2-heartbeat.adoc[leveloffset=+2]
 //increasing the number of tasks
 include::../../modules/configuring/con-config-mirrormaker2-tasks-max.adoc[leveloffset=+2]
 //Procedure to manually pause or stop an MM2 connector
