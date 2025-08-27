@@ -1,0 +1,14 @@
+scenarios:
+  - id: authorized-user
+    description: "Real authorized user (repository owner/collaborator)"
+    event: pull_request
+    fixture: .github/tests/events/check-permissions/permissions_authorized.json
+    expectations:
+      should_pass: "true"
+
+  - id: unauthorized-user
+    description: "Real unauthorized user (external contributor)"
+    event: pull_request
+    fixture: .github/tests/events/check-permissions/permissions_unauthorized.json
+    expectations:
+      should_pass: "false"

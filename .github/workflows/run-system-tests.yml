@@ -31,7 +31,7 @@ on:
       parallel:
         description: "How many tests should be executed in parallel"
         required: false
-        default: "2"
+        default: "1"
         type: string
       strimzi_feature_gates:
         description: "Which feature-gates will be used by operator"
@@ -106,6 +106,7 @@ jobs:
           default_strimzi_rbac_scope: ${{ inputs.strimzi_rbac_scope }}
           default_cluster_operator_install_type: ${{ inputs.cluster_operator_install_type }}
           default_parallel: ${{ inputs.parallel }}
+          runnerArch: "arm64"
 
   run-tests:
     needs: generate-matrix
@@ -248,9 +249,10 @@ jobs:
         # we want to let Connect image build for different versions of Kafka inside the upgrade/downgrade STs
         if: ${{ !contains(env.PROFILE, 'upgrade') }}
         run: |
-          export CONNECT_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"
-          export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
+          CONNECT_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/connect-file-sink:latest"
+          KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
           BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}"
+          
           echo "Base image: $BASE_IMAGE"
           eval "$(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE" "$CONNECT_IMAGE")"
           echo "connect build image: $CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN"
@@ -283,7 +285,7 @@ jobs:
       ############################################################################
       - name: Set KAFKA_TIERED_STORAGE_BASE_IMAGE
         run: |
-          export KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
+          KAFKA_VERSION=$([[ "${KAFKA_VERSION}" == *"latest"* ]] && yq eval '.[] | select(.default) | .version' kafka-versions.yaml || echo "${KAFKA_VERSION}")
           echo "KAFKA_TIERED_STORAGE_BASE_IMAGE=${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}" >> $GITHUB_ENV
 
       - name: Print out environment info

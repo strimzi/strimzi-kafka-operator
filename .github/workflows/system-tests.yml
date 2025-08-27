@@ -38,11 +38,11 @@ jobs:
       strimzi_feature_gates: ${{ steps.parse.outputs.strimzi_feature_gates }}
       strimzi_rbac_scope: ${{ steps.parse.outputs.strimzi_rbac_scope }}
       cluster_operator_install_type: ${{ steps.parse.outputs.cluster_operator_install_type }}
-      parallel: ${{ steps.parse.outputs.parallel }}
       groups: ${{ steps.parse.outputs.groups }}
       tests: ${{ steps.parse.outputs.tests }}
       kafkaVersion: ${{ steps.parse.outputs.kafkaVersion }}
       releaseVersion: ${{ steps.parse.outputs.releaseVersion }}
+      parallel: ${{ steps.parse.outputs.parallel }}
       shouldRun: ${{ steps.parse.outputs.shouldRun }}
       kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
       # Checkout ref data
