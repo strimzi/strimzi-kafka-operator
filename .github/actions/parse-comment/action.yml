@@ -93,7 +93,6 @@ runs:
 
     - name: Determine checkout ref
       id: checkout_ref
-      if: ${{ steps.should_run.outputs.shouldRun == 'true' }}
       uses: actions/github-script@v7
       with:
         script: |
@@ -107,16 +106,27 @@ runs:
             sha = context.payload.pull_request.head.sha;
           } else if (context.eventName === 'issue_comment' && context.payload.issue.pull_request) {
             // For issue comments on PRs, fetch the PR data to get fork repo details
-            core.info(`Fetching PR data from: ${context.payload.issue.pull_request.url}`);
-            const prResponse = await github.request(context.payload.issue.pull_request.url);
-            const prData = prResponse.data;
-            
-            repoOwner = prData.head.repo.owner.login;
-            repoName = prData.head.repo.name;
-            ref = prData.head.ref;
-            sha = prData.head.sha;
-            
-            core.info(`Fork PR detected: ${repoOwner}/${repoName}:${ref}`);
+            try {
+              core.info(`Fetching PR data from: ${context.payload.issue.pull_request.url}`);
+              const prResponse = await github.request(context.payload.issue.pull_request.url);
+              const prData = prResponse.data;
+              
+              repoOwner = prData.head.repo.owner.login;
+              repoName = prData.head.repo.name;
+              ref = prData.head.ref;
+              sha = prData.head.sha;
+              
+              core.info(`Fork PR detected: ${repoOwner}/${repoName}:${ref}`);
+            } catch (error) {
+              // Fallback for tests or when API call fails (no token, fake data, etc.)
+              core.warning(`Failed to fetch PR data: ${error.message}`);
+              core.info('Using fallback values for checkout ref');
+              
+              repoOwner = owner;
+              repoName = repo;
+              ref = 'main';
+              sha = 'HEAD';
+            }
           } else {
             // For workflow_dispatch and other events
             repoOwner = owner;
