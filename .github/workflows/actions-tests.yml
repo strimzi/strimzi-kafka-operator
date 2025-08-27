@@ -75,10 +75,12 @@ jobs:
               env_args="$env_args --env $env_key=\"$value\""
             done
             
+            token_args="-s GITHUB_TOKEN=\"${{ secrets.GITHUB_TOKEN }}\""
+            
             # Run act with the scenario
             echo "▶️  Running test..."
             
-            if eval "act '$event' -W '$WORKFLOW' -e '$fixture' -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false $env_args"; then
+            if eval "act '$event' -W '$WORKFLOW' -e '$fixture' -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false $env_args $token_args"; then
               echo "✅ $id passed"
             else
               echo "❌ $id failed"

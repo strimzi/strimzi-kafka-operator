@@ -81,7 +81,8 @@ runs:
       run: |
         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
           SHOULD_RUN_VALUE="true"
-        elif echo "${{ github.event.comment.body }}" | grep -qiE '/gha\s+run'; then
+        elif [[ "${{ github.event_name }}" == "issue_comment" ]] && [[ "${{ github.event.issue.pull_request }}" != "" ]] && echo "${{ github.event.comment.body }}" | grep -qiE '/gha\s+run'; then
+          # Only trigger on PR comments (not issue comments) that contain '/gha run'
           SHOULD_RUN_VALUE="true"
         else
           SHOULD_RUN_VALUE="false"
@@ -92,28 +93,58 @@ runs:
 
     - name: Determine checkout ref
       id: checkout_ref
-      shell: bash
-      run: |
-        echo "event_name=${{ github.event_name }}" >> "$GITHUB_OUTPUT"
-        
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          echo "repo_owner=${{ github.event.pull_request.head.repo.owner.login }}" >> "$GITHUB_OUTPUT"
-          echo "repo_name=${{ github.event.pull_request.head.repo.name }}" >> "$GITHUB_OUTPUT"
-          echo "ref=${{ github.event.pull_request.head.ref }}" >> "$GITHUB_OUTPUT"
-          echo "sha=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
-        elif [[ "${{ github.event_name }}" == "issue_comment" ]]; then
-          # Assume comment was made on PR
-          echo "repo_owner=${{ github.event.issue.pull_request.head.repo.owner.login }}" >> "$GITHUB_OUTPUT"
-          echo "repo_name=${{ github.event.issue.pull_request.head.repo.name }}" >> "$GITHUB_OUTPUT"
-          echo "ref=${{ github.event.issue.pull_request.head.ref }}" >> "$GITHUB_OUTPUT"
-          echo "sha=${{ github.event.issue.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
-        else
-          # Assume this will be for the rest of events including workflow dispatch
-          echo "repo_owner=${{ github.repository_owner }}" >> "$GITHUB_OUTPUT"
-          echo "repo_name=$(basename "${{ github.repository }}")" >> "$GITHUB_OUTPUT"
-          echo "ref=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
-          echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
-        fi
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { owner, repo } = context.repo;
+          let repoOwner, repoName, ref, sha;
+          
+          if (context.eventName === 'pull_request') {
+            repoOwner = context.payload.pull_request.head.repo.owner.login;
+            repoName = context.payload.pull_request.head.repo.name;
+            ref = context.payload.pull_request.head.ref;
+            sha = context.payload.pull_request.head.sha;
+          } else if (context.eventName === 'issue_comment' && context.payload.issue.pull_request) {
+            // For issue comments on PRs, fetch the PR data to get fork repo details
+            try {
+              core.info(`Fetching PR data from: ${context.payload.issue.pull_request.url}`);
+              const prResponse = await github.request(context.payload.issue.pull_request.url);
+              const prData = prResponse.data;
+              
+              repoOwner = prData.head.repo.owner.login;
+              repoName = prData.head.repo.name;
+              ref = prData.head.ref;
+              sha = prData.head.sha;
+              
+              core.info(`Fork PR detected: ${repoOwner}/${repoName}:${ref}`);
+            } catch (error) {
+              // Fallback for tests or when API call fails (no token, fake data, etc.)
+              core.warning(`Failed to fetch PR data: ${error.message}`);
+              core.info('Using fallback values for checkout ref');
+              
+              repoOwner = owner;
+              repoName = repo;
+              ref = 'main';
+              sha = 'HEAD';
+            }
+          } else {
+            // For workflow_dispatch and other events
+            repoOwner = owner;
+            repoName = repo;
+            ref = context.ref.replace('refs/heads/', '');
+            sha = context.sha;
+          }
+          
+          core.setOutput('event_name', context.eventName);
+          core.setOutput('repo_owner', repoOwner);
+          core.setOutput('repo_name', repoName);
+          core.setOutput('ref', ref);
+          core.setOutput('sha', sha);
+          
+          core.info(`Event: ${context.eventName}`);
+          core.info(`Checkout repo: ${repoOwner}/${repoName}`);
+          core.info(`Checkout ref: ${ref}`);
+          core.info(`Checkout SHA: ${sha}`);
 
     - name: Build Comment
       id: build_comment
@@ -156,7 +187,7 @@ runs:
         GROUPS_VALUE=""
         TESTS_VALUE=""
         KAFKA_VERSION_VALUE=""
-        KUBE_VERSION_VALUE=""
+        KUBE_VERSION_VALUE="latest"
         
         # Check for trigger string
         if echo "$COMMENT_LOWER" | grep -q "/gha run"; then
