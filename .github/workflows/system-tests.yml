@@ -70,9 +70,11 @@ jobs:
       contents: write
       pull-requests: write
       checks: write
+      statuses: write
     steps:
       - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
       # In case the user has proper rights, print comment with build link and set status
+      - uses: actions/checkout@v5
       - name: Add comment
         uses: ./.github/actions/add-comment
         with:
