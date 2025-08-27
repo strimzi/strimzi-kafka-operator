@@ -14,7 +14,7 @@ By consuming the `heartbeats` topic on the target cluster, you can confirm that 
 If you stop seeing new heartbeats on the target, it indicates a potential issue with the replication process.
 
 .Example configuration for the heartbeat connector
-[source,yaml,subs="+quotes"]
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
 kind: KafkaMirrorMaker2
