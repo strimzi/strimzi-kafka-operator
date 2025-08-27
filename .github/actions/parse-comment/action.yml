@@ -93,6 +93,7 @@ runs:
 
     - name: Determine checkout ref
       id: checkout_ref
+      if: ${{ steps.should_run.outputs.shouldRun == 'true' }}
       uses: actions/github-script@v7
       with:
         script: |
