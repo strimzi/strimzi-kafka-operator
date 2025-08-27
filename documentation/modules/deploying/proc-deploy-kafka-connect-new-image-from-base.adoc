@@ -3,7 +3,7 @@
 // assembly-deploy-kafka-connect-with-plugins.adoc
 
 [id='creating-new-image-from-base-{context}']
-= Building new container images with connector plugins from the Kafka Connect base image
+= Building custom Kafka Connect images with connector plugins
 
 [role="_abstract"]
 Create a custom Docker image with connector plugins from the Kafka Connect base image.
@@ -77,13 +77,14 @@ This example adds plugins for Debezium connectors (MongoDB, MySQL, and PostgreSQ
 
 . Push your custom image to your container registry.
 
-. Point to the new container image.
+. Point to the new container image using one of the following methods.
 +
-You can point to the image in one of the following ways:
+* Method 1: Configure the `KafkaConnect` custom resource.
 +
-* Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource.
+Edit the `KafkaConnect.spec.image` property of the KafkaConnect custom resource to specify your custom image. 
+This approach is useful for individual cluster configurations.
 +
-If set, this property overrides the `STRIMZI_KAFKA_CONNECT_IMAGES` environment variable in the Cluster Operator.
+If set, this property overrides the values for the `STRIMZI_KAFKA_CONNECT_IMAGES` environment variable in the Cluster Operator.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -91,17 +92,23 @@ apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect-cluster
-spec: <1>
+spec: # <1>
+  version: {DefaultKafkaVersion} # <2>
+  image: my-new-container-image # <3>
   #...
-  image: my-new-container-image <2>
-  config: <3>
-    #...
 ----
 <1> link:{BookURLConfiguring}#type-KafkaConnectSpec-reference[The specification for the Kafka Connect cluster^].
-<2> The docker image for Kafka Connect pods.
-<3> Configuration of the Kafka Connect _workers_ (not connectors).
+<2> The Kafka version. Always specify the Kafka version that matches your Kafka cluster to avoid version conflicts.
+<3> The custom docker image for Kafka Connect pods.
 +
-* Edit the `STRIMZI_KAFKA_CONNECT_IMAGES` environment variable in the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to point to the new container image, and then reinstall the Cluster Operator.
+* Method 2: Configure the Cluster Operator.
++
+Edit the `STRIMZI_KAFKA_CONNECT_IMAGES` environment variable in the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to point to the new container image and corresponding Kafka version, and then reinstall the Cluster Operator.
+This approach applies the custom image globally for all Kafka Connect clusters managed by the operator.
+
+WARNING: Check the Kafka version you need for your custom image. 
+If `spec.version` is unspecified, Strimzi defaults to Kafka {DefaultKafkaVersion}, which may cause compatibility issues if your Kafka cluster runs an earlier version.
+Version mismatches may lead to connector failures and runtime errors.
 
 [role="_additional-resources"]
 .Additional resources

@@ -310,37 +310,55 @@ You can specify which container image to use for a component using the `image` p
 NOTE: Changing the Kafka image version does not automatically update the image versions for other Kafka components, such as Kafka Exporter.
 These components are not version dependent, so no additional configuration is necessary when updating the Kafka image version.
 
-*Configuring the `image` property for Kafka, Kafka Connect, and Kafka MirrorMaker*
+.Setting Kafka component images
 
-Kafka, Kafka Connect, and Kafka MirrorMaker 2 support multiple versions of Kafka.
-Each component requires its own image.
-The default images for the different Kafka versions are configured in the following environment variables:
+Strimzi supports multiple Kafka versions across Kafka, Kafka Connect, and Kafka MirrorMaker 2 components. 
+Each component requires a specific container image, which can be configured in two places:
 
-* `STRIMZI_KAFKA_IMAGES`
-* `STRIMZI_KAFKA_CONNECT_IMAGES`
-* `STRIMZI_KAFKA_MIRROR_MAKER2_IMAGES`
+. Cluster Operator environment variables (Default image mappings)
+. Custom resource configuration
 
-These environment variables contain mappings between Kafka versions and corresponding images.
-The mappings are used together with the `image` and `version` properties to determine the image used:
+Each environment variable maps Kafka versions to container images. 
+These mappings are used when a custom resource does not explicitly specify an image.
+You can override the default image by specifying the image and version in the custom resource.
 
-* If neither `image` nor `version` are given in the custom resource, the `version` defaults to the Cluster Operator's default Kafka version, and the image used is the one corresponding to this version in the environment variable.
+.Cluster Operator environment variables
+[cols="1,2m",options="header"]
+|===
+| Component       | Environment variable
 
-* If `image` is given but `version` is not, then the given image is used and the `version` is assumed to be the Cluster Operator's default Kafka version.
+| Kafka           | STRIMZI_KAFKA_IMAGES
+| Kafka Connect   | STRIMZI_KAFKA_CONNECT_IMAGES
+| MirrorMaker 2   | STRIMZI_KAFKA_MIRROR_MAKER2_IMAGES
+|===
 
-* If `version` is given but `image` is not, then the image that corresponds to the given version in the environment variable is used.
+.Custom resource configuration
+[cols="1m,1m,1m",options="header"]
+|===
+| Custom resource       | Image property     | Version property
 
-* If both `version` and `image` are given, then the given image is used. The image is assumed to contain a Kafka image with the given version.
+| Kafka                 | spec.kafka.image   | spec.kafka.version
+| KafkaConnect          | spec.image         | spec.version
+| KafkaMirrorMaker2     | spec.image         | spec.version
+|===
 
-The `image` and `version` for the components can be configured in the following properties:
+The values for the environment variables and those specified for `image` and `version` in the component configuration determines the image and Kafka version used:
 
-* For Kafka in `spec.kafka.image` and `spec.kafka.version`.
-* For Kafka Connect and Kafka MirrorMaker in `spec.image` and `spec.version`.
+.Values specified for image and Kafka version
+[cols="1m,1m,2",options="header"]
+|===
+| `image`     | `version`  | Result
 
-WARNING: It is recommended to provide only the `version` and leave the `image` property unspecified.
-This reduces the chance of making a mistake when configuring the custom resource.
-If you need to change the images used for different versions of Kafka, it is preferable to configure the Cluster Operator's environment variables.
+| ✗           | ✗         | Uses Cluster Operator's default image and corresponding Kafka version
+| ✓           | ✗         | Uses specified image and default Kafka version
+| ✗           | ✓         | Uses image from environment variable for specified Kafka version
+| ✓           | ✓         | Uses specified image and assumes specified Kafka version matches
+|===
 
-*Configuring the `image` property in other resources*
+NOTE: When configuring the custom resource, to avoid version-image mismatches, specify the `version` property and let the Cluster Operator automatically select the correct image from its mappings to ensure compatibility.
+If you need to change the default images used for different Kafka versions, configure the Cluster Operator's environment variables.
+
+.Configuring the `image` property in other resources
 
 For the `image` property in the custom resources for other components, the given value is used during deployment.
 If the `image` property is not set, the container `image` specified as an environment variable in the Cluster Operator configuration is used.
