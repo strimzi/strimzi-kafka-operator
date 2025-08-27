@@ -13,6 +13,7 @@ scenarios:
       strimzi_rbac_scope: "CLUSTER"
       cluster_operator_install_type: "yaml"
       should_run: "true"
+      kube: "latest"
       release: "latest"
 
   - id: comment-profile-only
@@ -29,6 +30,7 @@ scenarios:
       strimzi_rbac_scope: "CLUSTER"
       cluster_operator_install_type: "yaml"
       should_run: "true"
+      kube: "latest"
       release: "latest"
 
   - id: comment-additional-params
@@ -63,6 +65,7 @@ scenarios:
       strimzi_rbac_scope: "CLUSTER"
       cluster_operator_install_type: "yaml"
       should_run: "true"
+      kube: "latest"
       release: "latest"
 
   - id: comment-pipeline-priority
@@ -78,6 +81,7 @@ scenarios:
       strimzi_rbac_scope: "CLUSTER"
       cluster_operator_install_type: "yaml"
       should_run: "true"
+      kube: "latest"
       release: "latest"
 
   - id: comment-strimzi-params
@@ -94,6 +98,7 @@ scenarios:
       strimzi_rbac_scope: "NAMESPACE"
       cluster_operator_install_type: "helm"
       should_run: "true"
+      kube: "latest"
       release: "latest"
 
   - id: comment-basic-trigger
@@ -110,6 +115,7 @@ scenarios:
       strimzi_rbac_scope: "CLUSTER"
       cluster_operator_install_type: "yaml"
       should_run: "true"
+      kube: "latest"
       release: "latest"
 
   - id: comment-empty-pipeline
@@ -126,6 +132,7 @@ scenarios:
       strimzi_rbac_scope: "CLUSTER"
       cluster_operator_install_type: "yaml"
       should_run: "true"
+      kube: "latest"
       release: "latest"
 
   - id: comment-no-trigger
@@ -142,6 +149,7 @@ scenarios:
       strimzi_rbac_scope: "CLUSTER"
       cluster_operator_install_type: "yaml"
       should_run: "false"
+      kube: "latest"
       release: "latest"
 
   - id: comment-case-insensitive
@@ -158,6 +166,7 @@ scenarios:
       strimzi_rbac_scope: "CLUSTER"
       cluster_operator_install_type: "yaml"
       should_run: "true"
+      kube: "latest"
       release: "latest"
 
   - id: dispatch-default
@@ -173,6 +182,7 @@ scenarios:
       kafka: "4.1.0"
       release: "0.48.0"
       should_run: "true"
+      kube: "latest"
 
   - id: dispatch-custom
     description: "Workflow dispatch with custom values"
@@ -189,6 +199,7 @@ scenarios:
       kafka: "3.5.0"
       release: "1.0.0"
       should_run: "true"
+      kube: "latest"
 
   - id: dispatch-empty
     description: "Workflow dispatch with empty inputs"
@@ -205,3 +216,4 @@ scenarios:
       kafka: ""
       release: "latest"
       should_run: "true"
+      kube: "latest"
