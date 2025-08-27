@@ -327,6 +327,9 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |clientAudience
 |string
 |The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
+|clientGrantType
+|string
+|The grant type to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
 |enableMetrics
 |boolean
 |Enable or disable OAuth metrics. Default value is `false`.
@@ -2797,6 +2800,9 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |saslExtensions
 |map
 |SASL extensions parameters.
+|grantType
+|string
+|OAuth grant type to use when authenticating against the authorization server. This value defaults to `client_credentials` when `clientId` and `clientSecret` are specified.
 |====
 
 [id='type-KafkaClientAuthenticationCustom-{context}']
