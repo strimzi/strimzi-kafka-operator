@@ -118,7 +118,7 @@ runs:
     - name: Upload SBOM artifact
       uses: actions/upload-artifact@v4
       with:
-        name: SBOMs-${{ inputs.dockerTag }}
+        name: SBOMs-${{ env.DOCKER_TAG }}
         path: sbom.tar.gz
         
     - name: Push SBOMs to registry
