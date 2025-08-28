@@ -49,6 +49,7 @@
 * Adding support for [JsonTemplateLayout](https://logging.apache.org/log4j/2.x/manual/json-template-layout.html) in Operators, Cruise Control and Kafka 4.0.0 or greater.
 * Strimzi Drain Cleaner updated to 1.4.0 (included in the Strimzi installation files)
 * Added support for Strimzi Metrics Reporter to the Kafka brokers/controllers component.
+* Kafka nodes are now configured with PEM certificates instead of P12/JKS for keystore and truststore.
 
 ### Major changes, deprecations and removals
 
