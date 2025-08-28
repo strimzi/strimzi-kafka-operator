@@ -33,8 +33,8 @@ runs:
       env:
         ARCH: ${{ inputs.runnerArch }}
 
-    - uses: ./.github/actions/install-docker
-    - uses: ./.github/actions/install-yq
+    - uses: ./.github/actions/dependencies/install-docker
+    - uses: ./.github/actions/dependencies/install-yq
       with:
         architecture: ${{ inputs.runnerArch }}
 

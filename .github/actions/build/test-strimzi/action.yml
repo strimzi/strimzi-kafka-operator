@@ -17,21 +17,21 @@ runs:
         distribution: 'temurin'
         
     - name: Cache Maven dependencies
-      uses: ./.github/actions/cache-maven
+      uses: ./.github/actions/utils/cache-maven
       with:
         # TODI - Maybe change to github.run_id
         jobName: ${{ github.job }}
           
     - name: Install yq
-      uses: ./.github/actions/install-yq
+      uses: ./.github/actions/dependencies/install-yq
       with:
         architecture: ${{ inputs.runnerArch }}
       
     - name: Install Docker
-      uses: ./.github/actions/install-docker
+      uses: ./.github/actions/dependencies/install-docker
       
     - name: Setup Kind cluster
-      uses: ./.github/actions/setup-kind
+      uses: ./.github/actions/dependencies/setup-kind
       with:
         architecture: ${{ inputs.runnerArch }}
         

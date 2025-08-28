@@ -15,13 +15,13 @@ runs:
   using: "composite"
   steps:
     - name: Install Docker
-      uses: ./.github/actions/install-docker
+      uses: ./.github/actions/dependencies/install-docker
     - name: Install yq
-      uses: ./.github/actions/install-yq
+      uses: ./.github/actions/dependencies/install-yq
       with:
         architecture: ${{ inputs.runnerArch }}
     - name: Install Shellcheck
-      uses: ./.github/actions/install-shellcheck
+      uses: ./.github/actions/dependencies/install-shellcheck
       with:
         architecture: ${{ inputs.runnerArch }}
 
