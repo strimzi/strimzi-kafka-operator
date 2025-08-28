@@ -95,6 +95,10 @@ jobs:
         with:
           architectures: "amd64,arm64,ppc64le,s390x"
           runnerArch: "amd64"
+          quayUser: ${{ secrets.QUAY_USER }}
+          quayPass: ${{ secrets.QUAY_PASS }}
+          cosignPassword: ${{ secrets.COSIGN_PASSWORD }}
+          cosignPrivateKey: ${{ secrets.COSIGN_PRIVATE_KEY }}
 #
 #  # Publish Strimzi docs to the website - run only on main branch
 #  publish-docs:
@@ -111,6 +115,7 @@ jobs:
 #      - uses: ./.github/actions/publish-docs
 #        with:
 #          artifactName: "documentation.tar"
+#          githubDeployKey: ${{ secrets.GITHUB_DEPLOY_KEY }}
 #
 #  # Deploy Strimzi Java artifacts - run only on main branch
 #  deploy-java:
@@ -126,10 +131,8 @@ jobs:
 #      - uses: actions/checkout@v5
 #      - uses: ./.github/actions/deploy-java
 #        with:
-#          jdk_version: "17"
-#          runner_arch: "amd64"
-#        env:
-#          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-#          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
-#          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-#          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+#          runnerArch: "amd64"
+#          gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}
+#          gpgSigningKey: ${{ secrets.GPG_SIGNING_KEY }}
+#          centralUsername: ${{ secrets.CENTRAL_USERNAME }}
+#          centralPassword: ${{ secrets.CENTRAL_PASSWORD }}
