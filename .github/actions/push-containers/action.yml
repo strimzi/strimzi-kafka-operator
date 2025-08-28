@@ -5,19 +5,26 @@ inputs:
   architectures:
     description: "Comma-separated list of architectures (e.g., 'amd64,arm64,s390x,ppc64le')"
     required: true
+  runnerArch:
+    description: "Runner architecture (amd64, arm64)"
+    required: false
+    default: "amd64"
 
 runs:
   using: "composite"
   steps:
     - name: Install prerequisites
+      shell: bash
       run: |
         .azure/scripts/install_cosign.sh
         .azure/scripts/install_syft.sh
-      shell: bash
+      env:
+        ARCH: ${{ inputs.runnerArch }}
+
     - uses: ./.github/actions/install-docker
     - uses: ./.github/actions/install-yq
       with:
-        architecture: arm64
+        architecture: ${{ inputs.runnerArch }}
 
     - name: Download container artifact
       uses: actions/download-artifact@v5

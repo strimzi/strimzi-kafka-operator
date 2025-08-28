@@ -38,7 +38,6 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/test-strimzi
         with:
-          javaVersion: "17"
           runnerArch: "amd64"
 
   # Builds Strimzi docs
@@ -76,25 +75,26 @@ jobs:
 
 # The following jobs are used to push artifacts into respective services
 # Uncomment them once we want to migrate from Azure to GHA
-#  # Push Strimzi containers - run only on main branch
-#  push-containers:
-#    name: Push Containers
-#    needs:
-#      - build-strimzi
-#      - test-strimzi
-#      - build-containers
-#      - build-docs
-#    if: ${{ github.ref == 'refs/heads/main' }}
-#    runs-on: oracle-vm-2cpu-8gb-arm64
-#    env:
-#      DOCKER_REGISTRY: "quay.io"
-#      DOCKER_ORG: "strimzi"
-#      DOCKER_TAG: "latest"
-#    steps:
-#      - uses: actions/checkout@v5
-#      - uses: ./.github/actions/push-containers
-#        with:
-#          architectures: "amd64,arm64,ppc64le,s390x"
+  # Push Strimzi containers - run only on main branch
+  push-containers:
+    name: Push Containers
+    needs:
+      - build-strimzi
+      - test-strimzi
+      - build-containers
+      - build-docs
+    if: ${{ github.ref == 'refs/heads/gha-build' }}
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_REGISTRY: "quay.io"
+      DOCKER_ORG: "jstejska"
+      DOCKER_TAG: "latest"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/push-containers
+        with:
+          architectures: "amd64,arm64,ppc64le,s390x"
+          runnerArch: "amd64"
 #
 #  # Publish Strimzi docs to the website - run only on main branch
 #  publish-docs:
