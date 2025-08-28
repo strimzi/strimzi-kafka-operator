@@ -32,6 +32,7 @@ import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The Topic Operator.
@@ -51,7 +52,8 @@ public class TopicOperatorMain implements Liveness, Readiness {
     /* test */ final BatchingTopicController controller;
     
     private SharedIndexInformer<KafkaTopic> informer; // guarded by this
-    Thread shutdownHook; // guarded by this
+    /* test */ volatile Thread shutdownHook;
+    private final AtomicBoolean stopping = new AtomicBoolean(false);
 
     private final ResourceEventHandler<KafkaTopic> resourceEventHandler;
     private final HealthCheckAndMetricsServer healthAndMetricsServer;
@@ -118,21 +120,27 @@ public class TopicOperatorMain implements Liveness, Readiness {
         LOGGER.infoOp("TopicOperator started");
     }
 
-    synchronized void stop() {
-        if (shutdownHook == null) {
-            throw new IllegalStateException();
+    void stop() {
+        // Make stop() safe if invoked multiple times or from different threads.
+        if (!stopping.compareAndSet(false, true)) {
+            return;
         }
-        // shutdown(), will be be invoked indirectly by calling
-        // hook.run() has the side effect of nullifying this.shutdownHook
-        // so retain a reference now so we have something to call
-        // removeShutdownHook() with.
-        var hook = shutdownHook;
-        // Call run (not start()) on the thread so that shutdown() is executed
-        // on this thread.
+        final Thread hook;
+        synchronized (this) {
+            // snapshot for removal after shutdown()
+            hook = shutdownHook;
+        }
+        // Execute the actual shutdown sequence (idempotent).
         shutdown();
-        // stop() is _not_ called from the shutdown hook, so calling
-        // removeShutdownHook() should not cause IAE.
-        Runtime.getRuntime().removeShutdownHook(hook);
+
+        // Try to detach the shutdown hook if we're not already in JVM shutdown.
+        if (hook != null) {
+            try {
+                Runtime.getRuntime().removeShutdownHook(hook);
+            } catch (IllegalStateException ignored) {
+                // JVM is already shutting down i.e., safe to ignore.
+            }
+        }
     }
 
     private synchronized void shutdown() {
@@ -141,6 +149,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         LOGGER.infoOp("Shutdown initiated");
         try {
             shutdownHook = null;
+            // Idempotent resource teardown.
             if (informer != null) {
                 informer.stop();
                 informer = null;
@@ -170,7 +179,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
     public boolean isAlive() {
         boolean running;
         synchronized (this) {
-            running = informer.isRunning();
+            running = informer != null && informer.isRunning();
         }
         if (!running) {
             LOGGER.infoOp("isAlive returning false because informer is not running");
@@ -184,7 +193,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
     public boolean isReady() {
         boolean running;
         synchronized (this) {
-            running = informer.isRunning();
+            running = informer != null && informer.isRunning();
         }
         if (!running) {
             LOGGER.infoOp("isReady returning false because informer is not running");
