@@ -9,6 +9,18 @@ inputs:
     description: "Runner architecture (amd64, arm64)"
     required: false
     default: "amd64"
+  quayUser:
+    description: "Quay.io username"
+    required: true
+  quayPass:
+    description: "Quay.io password"
+    required: true
+  cosignPassword:
+    description: "Cosign password for signing"
+    required: true
+  cosignPrivateKey:
+    description: "Cosign private key for signing"
+    required: true
 
 runs:
   using: "composite"
@@ -44,7 +56,7 @@ runs:
 
     - name: Login to container registry
       shell: bash
-      run: docker login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PASS }} ${{ env.DOCKER_REGISTRY }}
+      run: docker login -u ${{ inputs.quayUser }} -p ${{ inputs.quayPass }} ${{ env.DOCKER_REGISTRY }}
 
     - name: Delete existing container manifests
       shell: bash
@@ -81,8 +93,8 @@ runs:
         BRANCH: ${{ github.ref }}
         BUILD_ID: ${{ github.run_number }}
         BUILD_COMMIT: ${{ github.sha }}
-        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        COSIGN_PASSWORD: ${{ inputs.cosignPassword }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosignPrivateKey }}
         
     - name: Generate SBOMs
       shell: bash
@@ -96,8 +108,8 @@ runs:
       env:
         BUILD_REASON: "IndividualCI"
         BRANCH: ${{ github.ref }}
-        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        COSIGN_PASSWORD: ${{ inputs.cosignPassword }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosignPrivateKey }}
 
     - name: Create SBOM archive
       shell: bash
@@ -122,5 +134,5 @@ runs:
       env:
         BUILD_REASON: "IndividualCI"
         BRANCH: ${{ github.ref }}
-        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        COSIGN_PASSWORD: ${{ inputs.cosignPassword }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosignPrivateKey }}

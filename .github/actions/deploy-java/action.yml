@@ -6,6 +6,18 @@ inputs:
     description: "Runner architecture (amd64, arm64)"
     required: false
     default: "amd64"
+  gpgPassphrase:
+    description: "GPG passphrase for signing"
+    required: true
+  gpgSigningKey:
+    description: "GPG signing key"
+    required: true
+  centralUsername:
+    description: "Maven Central username"
+    required: true
+  centralPassword:
+    description: "Maven Central password"
+    required: true
 
 runs:
   using: "composite"
@@ -32,7 +44,7 @@ runs:
       env:
         BUILD_REASON: "IndividualCI"
         BRANCH: ${{ github.ref }}
-        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
-        CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-        CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        GPG_PASSPHRASE: ${{ inputs.gpgPassphrase }}
+        GPG_SIGNING_KEY: ${{ inputs.gpgSigningKey }}
+        CENTRAL_USERNAME: ${{ inputs.centralUsername }}
+        CENTRAL_PASSWORD: ${{ inputs.centralPassword }}
