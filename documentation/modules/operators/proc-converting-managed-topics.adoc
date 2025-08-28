@@ -69,12 +69,12 @@ status:
 +
 For example, to change the `metadata.name`, do as follows:
 +
-.. Delete the original `KafkTopic` resource:
+.. Delete the original `KafkaTopic` resource:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl delete kafkatopic <kafka_topic_name>
 ----
-.. Recreate the `KafkTopic` resource with a different `metadata.name`, but use `spec.topicName` to refer to the same topic that was managed by the original 
+.. Recreate the `KafkaTopic` resource with a different `metadata.name`, but use `spec.topicName` to refer to the same topic that was managed by the original
 
 . If you haven't deleted the original `KafkaTopic` resource, and you wish to resume management of the Kafka topic again, set the `strimzi.io/managed` annotation to `true` or remove the annotation.
