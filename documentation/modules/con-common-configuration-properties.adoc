@@ -288,7 +288,7 @@ For more information on CPU specification, see {K8sMeaningOfCpu}.
 
 Use the `image` property to configure the container image used by the component.
 
-Overriding container images is recommended only in special situations where you need to use a different container registry or a customized image.
+Overriding container images is recommended only in special situations where you need to use a different container registry or a custom image.
 
 For example, if your network does not allow access to the container repository used by Strimzi, you can copy the Strimzi images or build them from the source.
 However, if the configured image is not compatible with Strimzi images, it might not work properly.
@@ -320,7 +320,7 @@ Each component requires a specific container image, which can be configured in t
 
 Each environment variable maps Kafka versions to container images. 
 These mappings are used when a custom resource does not explicitly specify an image.
-You can override the default image by specifying the image and version in the custom resource.
+You can override the default image by specifying the image and the matching version in the custom resource.
 
 .Cluster Operator environment variables
 [cols="1,2m",options="header"]
@@ -345,9 +345,9 @@ You can override the default image by specifying the image and version in the cu
 The values for the environment variables and those specified for `image` and `version` in the component configuration determines the image and Kafka version used:
 
 .Values specified for image and Kafka version
-[cols="1m,1m,2",options="header"]
+[cols="1,1,2",options="header"]
 |===
-| `image`     | `version`  | Result
+| `image` set?    | `version` set?  | Result
 
 | ✗           | ✗         | Uses Cluster Operator's default image and corresponding Kafka version
 | ✓           | ✗         | Uses specified image and default Kafka version
@@ -355,8 +355,49 @@ The values for the environment variables and those specified for `image` and `ve
 | ✓           | ✓         | Uses specified image and assumes specified Kafka version matches
 |===
 
-NOTE: When configuring the custom resource, to avoid version-image mismatches, specify the `version` property and let the Cluster Operator automatically select the correct image from its mappings to ensure compatibility.
-If you need to change the default images used for different Kafka versions, configure the Cluster Operator's environment variables.
+NOTE: To avoid Kafka version and image mismatches, set the `version` property and allow the Cluster Operator to select the matching image from its mappings. 
+If you need to change the default image mapping for a given Kafka version, configure the Cluster Operator’s environment variables.
+
+Even if the configuration is syntactically correct, it can still be invalid if the image and version mismatch.
+To ensure a valid configuration:
+
+* The specified `version` *must* match the Kafka version that the image is built for.
+* The specified `version` must be one of the versions supported by the operator.
+* If you set a custom `image`, always set `version` to the Kafka version of that image.
+
+Here we can see what happens with versions {KafkaVersionLower} and {DefaultKafkaVersion} (the default).
+
+.Valid and invalid configuration examples
+[cols="1,1,1,1,1",options="header"]
+|===
+| `image` set? | `version` set? | Image used | Kafka version | Valid?
+
+| ✗ | ✗ | {DefaultKafkaVersion} (default) | {DefaultKafkaVersion} | ✓
+| ✗ | {KafkaVersionLower} | {KafkaVersionLower} (from mapping) | {KafkaVersionLower} | ✓
+| Custom {KafkaVersionLower} | {KafkaVersionLower} | Custom {KafkaVersionLower} | {KafkaVersionLower} | ✓
+| Custom {KafkaVersionLower} | ✗ | Custom {KafkaVersionLower} | {DefaultKafkaVersion} (default) | ✗
+| Custom {KafkaVersionLower} | {DefaultKafkaVersion} | Custom {KafkaVersionLower} | {DefaultKafkaVersion} | ✗
+|===
+
+NOTE: _Custom {KafkaVersionLower}_ refers to a custom user-provided container image built against Kafka {KafkaVersionLower}.
+Setting a *custom image* means you set the `image` property to a user-provided image. 
+The operator does not automatically change this value during upgrades.
+
+*Handling upgrades with custom images*
+
+When using custom images, upgrades must keep the `image` and `version` in sync.
+The Cluster Operator cannot update custom images automatically during an upgrade.
+
+To avoid version mismatches when changing the Kafka version:
+
+* Pause reconciliation of the custom resource.
+* Upgrade the Cluster Operator to a release that supports a new Kafka version.
+* Update the custom resource:
+** Set `spec.*.version` to the target Kafka version
+** Set `spec.*.image` to the custom image built for that version
+* Unpause the reconciliation.
+
+If you don’t follow these steps, the operator might attempt to upgrade the resource before the correct image is specified, leading to mismatches.
 
 .Configuring the `image` property in other resources
 
