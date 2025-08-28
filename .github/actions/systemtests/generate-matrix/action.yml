@@ -54,7 +54,7 @@ runs:
   steps:
     # yq is required for generate-matrix action
     - name: Install yq
-      uses: ./.github/actions/install-yq
+      uses: ./.github/actions/dependencies/install-yq
       with:
         architecture: ${{ inputs.runnerArch }}
 

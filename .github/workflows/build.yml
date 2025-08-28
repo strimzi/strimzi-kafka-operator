@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/build-strimzi-binaries
+      - uses: ./.github/actions/build/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
           runnerArch: "amd64"
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/test-strimzi
+      - uses: ./.github/actions/build/test-strimzi
         with:
           runnerArch: "amd64"
 
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/build-docs
+      - uses: ./.github/actions/build/build-docs
         with:
           artifactName: "documentation.tar"
           runnerArch: "amd64"
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/containers-build
+      - uses: ./.github/actions/build/containers-build
         with:
           architecture: ${{ matrix.architecture }}
           runnerArch: "amd64"
@@ -91,7 +91,7 @@ jobs:
       DOCKER_TAG: "latest"
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/push-containers
+      - uses: ./.github/actions/build/containers-push
         with:
           architectures: "amd64,arm64,ppc64le,s390x"
           runnerArch: "amd64"
@@ -112,7 +112,7 @@ jobs:
 #    runs-on: oracle-2cpu-8gb-x86_64
 #    steps:
 #      - uses: actions/checkout@v5
-#      - uses: ./.github/actions/publish-docs
+#      - uses: ./.github/actions/build/publish-docs
 #        with:
 #          artifactName: "documentation.tar"
 #          githubDeployKey: ${{ secrets.GITHUB_DEPLOY_KEY }}
@@ -129,7 +129,7 @@ jobs:
 #    runs-on: oracle-2cpu-8gb-x86_64
 #    steps:
 #      - uses: actions/checkout@v5
-#      - uses: ./.github/actions/deploy-java
+#      - uses: ./.github/actions/build/deploy-java
 #        with:
 #          runnerArch: "amd64"
 #          gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}

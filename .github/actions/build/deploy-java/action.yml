@@ -28,13 +28,13 @@ runs:
         java-version: '17'
         distribution: 'temurin'
         
-    - uses: ./.github/actions/cache-maven
+    - uses: ./.github/actions/utils/cache-maven
       with:
         # TODI - Maybe change to github.run_id
         jobName: ${{ github.job }}
           
     - name: Install yq
-      uses: ./.github/actions/install-yq
+      uses: ./.github/actions/dependencies/install-yq
       with:
         architecture: ${{ inputs.runnerArch }}
         
