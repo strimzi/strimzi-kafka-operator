@@ -62,6 +62,7 @@ import io.vertx.core.Future;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClientQuotasResult;
+import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeFeaturesResult;
@@ -85,6 +86,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -244,13 +246,15 @@ public class ResourceUtils {
         try {
             Constructor<DescribeClusterResult> declaredConstructor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
             declaredConstructor.setAccessible(true);
-            KafkaFuture<Node> objectKafkaFuture = KafkaFuture.completedFuture(new Node(0, "localhost", 9091));
-            KafkaFuture<String> stringKafkaFuture = KafkaFuture.completedFuture("CLUSTERID");
-            dcr = declaredConstructor.newInstance(null, objectKafkaFuture, stringKafkaFuture, null);
+            KafkaFuture<Collection<Node>> nodesKafkaFuture = KafkaFuture.completedFuture(Collections.emptyList());
+            KafkaFuture<Node> controllerKafkaFuture = KafkaFuture.completedFuture(new Node(0, "localhost", 9091));
+            KafkaFuture<String> clusterIdKafkaFuture = KafkaFuture.completedFuture("CLUSTERID");
+            dcr = declaredConstructor.newInstance(nodesKafkaFuture, controllerKafkaFuture, clusterIdKafkaFuture, null);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
         when(mock.describeCluster()).thenReturn(dcr);
+        when(mock.describeCluster(any(DescribeClusterOptions.class))).thenReturn(dcr);
 
         ListTopicsResult ltr;
         try {
