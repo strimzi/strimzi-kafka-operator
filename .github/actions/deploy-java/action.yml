@@ -1,0 +1,38 @@
+name: "Deploy Java Artifacts"
+description: "Deploys Java artifacts to Maven Central"
+
+inputs:
+  runnerArch:
+    description: "Runner architecture (amd64, arm64)"
+    required: false
+    default: "amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - uses: ./.github/actions/cache-maven
+      with:
+        # TODI - Maybe change to github.run_id
+        jobName: ${{ github.job }}
+          
+    - name: Install yq
+      uses: ./.github/actions/install-yq
+      with:
+        architecture: ${{ inputs.runnerArch }}
+        
+    - name: Deploy Java artifacts
+      shell: bash
+      run: make pushtocentral
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+        CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+        CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
