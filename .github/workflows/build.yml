@@ -5,6 +5,8 @@ on:
     branches:
       - "main"
       - "release-*"
+      # TODO - remove this after testing
+      - "gha-build"
   pull_request:
     branches:
       - "*"
@@ -31,13 +33,13 @@ jobs:
     name: Strimzi Unit & IT tests
     needs:
       - build-strimzi
-    runs-on: oracle-vm-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/test-strimzi
         with:
           javaVersion: "17"
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
   # Builds Strimzi docs
   build-docs:
@@ -64,13 +66,13 @@ jobs:
           - arm64
           - s390x
           - ppc64le
-    runs-on: oracle-vm-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
 # The following jobs are used to push artifacts into respective services
 # Uncomment them once we want to migrate from Azure to GHA
