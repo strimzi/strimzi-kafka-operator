@@ -125,7 +125,7 @@ public class KafkaConnectResources {
      * @return The name of Kafka Connect role binding.
      */
     public static String connectRoleBindingName(String clusterName) {
-        return componentName(clusterName) + "-connect-role";
+        return componentName(clusterName) + "-role";
     }
 
     /**
