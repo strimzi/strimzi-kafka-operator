@@ -1,0 +1,57 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: strimzi-systemtest
+  labels:
+    app.kubernetes.io/component: strimzi-systemtest
+    app.kubernetes.io/name: strimzi-systemtest-pipeline
+spec:
+  description: >-
+    Pipeline for running Strimzi Kafka Operator system tests with configurable test profiles and groups.
+  params:
+    - name: test-image
+      description: Container image with Strimzi system tests
+      default: "quay.io/kornys/strimzi-systemtest:latest"
+    - name: kubeconfig-secret
+      description: Name of the secret containing kubeconfig
+      default: "kubeconfig"
+    - name: test-profile
+      description: Maven profile to execute (smoke, acceptance, regression, upgrade, performance, all)
+      default: "smoke"
+    - name: test-groups
+      description: Specific test groups to run (optional, comma-separated)
+      default: ""
+    - name: parallel-tests
+      description: Number of parallel test executions
+      default: "1"
+    - name: maven-args
+      description: Additional Maven arguments
+      default: ""
+    - name: env-configmap
+      description: ConfigMap containing environment variables (optional)
+      default: "dummy"
+  workspaces:
+    - name: test-results
+      description: Workspace for storing test results and artifacts
+  tasks:
+    - name: run-systemtests
+      taskRef:
+        name: strimzi-systemtest-task
+      params:
+        - name: test-image
+          value: $(params.test-image)
+        - name: kubeconfig-secret
+          value: $(params.kubeconfig-secret)
+        - name: test-profile
+          value: $(params.test-profile)
+        - name: test-groups
+          value: $(params.test-groups)
+        - name: parallel-tests
+          value: $(params.parallel-tests)
+        - name: maven-args
+          value: $(params.maven-args)
+        - name: env-configmap
+          value: $(params.env-configmap)
+      workspaces:
+        - name: test-results
+          workspace: test-results

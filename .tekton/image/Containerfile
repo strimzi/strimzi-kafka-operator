@@ -1,0 +1,67 @@
+FROM registry.access.redhat.com/ubi9/openjdk-17:latest
+
+LABEL maintainer="Strimzi Team <strimzi@lists.cncf.io>"
+LABEL description="Container image for running Strimzi Kafka Operator system tests"
+LABEL io.k8s.description="Strimzi Kafka Operator System Tests"
+LABEL io.k8s.display-name="Strimzi System Tests"
+LABEL io.openshift.tags="strimzi,kafka,systemtest,operator"
+
+# Set environment variables
+ENV STRIMZI_HOME=/opt/strimzi
+ENV KUBECONFIG=${STRIMZI_HOME}/.kube/config
+ENV MAVEN_OPTS="-Xmx2048m -XX:+UseContainerSupport"
+
+# Switch to root to install dependencies
+USER root
+
+# Install required tools
+RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
+        git \
+        openssl \
+        unzip \
+        tar \
+        gzip \
+    && microdnf clean all -y
+
+# Install kubectl, oc, operator-sdk and helm3 clients
+RUN export ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac) && \
+    export OS=$(uname | awk '{print tolower($0)}') && \
+    export OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v${OPERATOR_SDK_VERSION} && \
+    curl -L "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux-${ARCH}-rhel9.tar.gz" -o openshift-client-linux.tar.gz && \
+    tar -xzf openshift-client-linux.tar.gz && \
+    chmod +x oc kubectl && \
+    mv oc /usr/local/bin/ && \
+    mv kubectl /usr/local/bin/ && \
+    rm -f openshift-client-linux.tar.gz README.md && \
+    curl -LO ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH} && \
+    chmod +x operator-sdk_${OS}_${ARCH} && \
+    mv operator-sdk_${OS}_${ARCH} /usr/local/bin/operator-sdk  && \
+    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
+    chmod 700 get_helm.sh && \
+    ./get_helm.sh
+
+# Create strimzi user and directories
+RUN useradd -r -m -g 0 strimzi && \
+    mkdir -p ${STRIMZI_HOME} && \
+    mkdir -p ${STRIMZI_HOME}/.kube && \
+    chown -R 1001:0 ${STRIMZI_HOME} && \
+    chmod -R g+rwX ${STRIMZI_HOME}
+
+# Copy the entire project
+COPY --chown=strimzi:0 ../../ ${STRIMZI_HOME}/
+
+# Create .kube directory volume mount point
+VOLUME ["${STRIMZI_HOME}/.kube"]
+
+# Set working directory
+WORKDIR ${STRIMZI_HOME}
+
+# Switch to strimzi user
+USER strimzi
+
+# Build the entire project
+RUN mvn clean install -DskipTests -DskipITs -Dmaven.javadoc.skip=true -am -pl systemtest && \
+    mvn compile -pl config-model-generator -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress
+
+# Set default command to run smoke tests
+CMD ["mvn", "verify", "-Psmoke", "-pl", "systemtest"]

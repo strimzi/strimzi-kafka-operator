@@ -1,0 +1,75 @@
+# Container build ignore file for Strimzi system tests
+
+# Git and version control
+.git/
+.gitignore
+.gitmodules
+
+# Build artifacts
+target/
+*/target/
+bin/
+*/bin/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.swp
+*.swo
+*~
+
+# Documentation (keep only essential docs)
+*.md
+!README.md
+!*/README.md
+docs/
+development-docs/
+
+# Test results and reports
+surefire-reports/
+failsafe-reports/
+test-output/
+allure-results/
+
+# Maven specific
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# Docker/Container files in subdirectories
+**/Dockerfile
+**/Containerfile
+**/.dockerignore
+**/.containerignore
+
+# Helm charts development files
+charts/*/charts/
+charts/*/Chart.lock
+
+# Kubernetes manifests (keep only necessary ones)
+install/
+examples/
+packaging/
+
+# Other project artifacts
+*.zip
+*.tar.gz
+*.jar
+!systemtest/target/lib/*.jar

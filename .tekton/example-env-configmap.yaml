@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: strimzi-test-env
+  labels:
+    app.kubernetes.io/component: strimzi-systemtest
+    app.kubernetes.io/name: strimzi-test-env-config
+data:
+  env-vars: |
+    # Example environment variables for Strimzi system tests
+    # Each line should be in the format: VARIABLE_NAME=value
+    
+    KAFKA_TIERED_STORAGE_BASE_IMAGE=quay.io/strimzi/kafka:latest-kafka-4.0.0
+    CLUSTER_OPERATOR_INSTALL_TYPE=Yaml
+    BRIDGE_IMAGE=latest-released
+    STRIMZI_LOG_LEVEL=DEBUG
