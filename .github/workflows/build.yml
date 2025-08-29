@@ -5,8 +5,6 @@ on:
     branches:
       - "main"
       - "release-*"
-      # TODO - remove this after testing
-      - "gha-build"
   pull_request:
     branches:
       - "*"
@@ -20,25 +18,25 @@ jobs:
   # Build Strimzi Java code and does basic checks of the PR
   build-strimzi:
     name: Build Strimzi
-    runs-on: ubuntu-latest
+    runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/build/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "amd64"
+          runnerArch: "arm64"
 
   # Runs Strimzi unit and integration tests
   test-strimzi:
     name: Strimzi Unit & IT tests
     needs:
       - build-strimzi
-    runs-on: ubuntu-latest
+    runs-on: oracle-vm-4cpu-16gb-arm64
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/build/test-strimzi
         with:
-          runnerArch: "amd64"
+          runnerArch: "arm64"
 
   # Builds Strimzi docs
   build-docs:
@@ -65,40 +63,40 @@ jobs:
           - arm64
           - s390x
           - ppc64le
-    runs-on: ubuntu-latest
+    runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/build/containers-build
         with:
           architecture: ${{ matrix.architecture }}
-          runnerArch: "amd64"
+          runnerArch: "arm64"
 
 # The following jobs are used to push artifacts into respective services
 # Uncomment them once we want to migrate from Azure to GHA
-  # Push Strimzi containers - run only on main branch
-  push-containers:
-    name: Push Containers
-    needs:
-      - build-strimzi
-      - test-strimzi
-      - build-containers
-      - build-docs
-    if: ${{ github.ref == 'refs/heads/gha-build' }}
-    runs-on: ubuntu-latest
-    env:
-      DOCKER_REGISTRY: "quay.io"
-      DOCKER_ORG: "jstejska"
-      DOCKER_TAG: "latest"
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/containers-push
-        with:
-          architectures: "amd64,arm64,ppc64le,s390x"
-          runnerArch: "amd64"
-          quayUser: ${{ secrets.QUAY_USER }}
-          quayPass: ${{ secrets.QUAY_PASS }}
-          cosignPassword: ${{ secrets.COSIGN_PASSWORD }}
-          cosignPrivateKey: ${{ secrets.COSIGN_PRIVATE_KEY }}
+#  # Push Strimzi containers - run only on main branch
+#  push-containers:
+#    name: Push Containers
+#    needs:
+#      - build-strimzi
+#      - test-strimzi
+#      - build-containers
+#      - build-docs
+#    if: ${{ github.ref == 'refs/heads/gha-build' }}
+#    runs-on: ubuntu-latest
+#    env:
+#      DOCKER_REGISTRY: "quay.io"
+#      DOCKER_ORG: "strimzi"
+#      DOCKER_TAG: "latest"
+#    steps:
+#      - uses: actions/checkout@v5
+#      - uses: ./.github/actions/build/containers-push
+#        with:
+#          architectures: "amd64,arm64,ppc64le,s390x"
+#          runnerArch: "amd64"
+#          quayUser: ${{ secrets.QUAY_USER }}
+#          quayPass: ${{ secrets.QUAY_PASS }}
+#          cosignPassword: ${{ secrets.COSIGN_PASSWORD }}
+#          cosignPrivateKey: ${{ secrets.COSIGN_PRIVATE_KEY }}
 #
 #  # Publish Strimzi docs to the website - run only on main branch
 #  publish-docs:
