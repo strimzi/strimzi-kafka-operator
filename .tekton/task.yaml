@@ -1,0 +1,301 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: strimzi-systemtest-task
+  labels:
+    app.kubernetes.io/component: strimzi-systemtest
+    app.kubernetes.io/name: strimzi-systemtest-task
+spec:
+  description: >-
+    This task runs Strimzi Kafka Operator system tests using Maven in a container environment.
+  params:
+    - name: test-image
+      description: Container image with Strimzi system tests
+      default: "strimzi/systemtest:latest"
+    - name: kubeconfig-secret
+      description: Name of the secret containing kubeconfig
+      default: "kubeconfig"
+    - name: test-profile
+      description: Maven profile to execute
+      default: "smoke"
+    - name: test-groups
+      description: Specific test groups to run (optional)
+      default: ""
+    - name: parallel-tests
+      description: Number of parallel test executions
+      default: "1"
+    - name: maven-args
+      description: Additional Maven arguments
+      default: ""
+    - name: env-configmap
+      description: ConfigMap containing environment variables (optional)
+      default: ""
+  workspaces:
+    - name: test-results
+      description: Workspace for storing test results and artifacts
+      mountPath: /tmp/test-results
+  steps:
+    - name: check-environment
+      image: $(params.test-image)
+      script: |
+        #!/bin/bash
+        set -ex
+        
+        echo "Setting up test environment..."
+        echo "Test profile: $(params.test-profile)"
+        echo "Test groups: $(params.test-groups)"
+        echo "Parallel tests: $(params.parallel-tests)"
+        
+        # Set up kubeconfig from secret
+        export KUBECONFIG=/tmp/kubeconfig/config
+        
+        # Verify cluster connectivity
+        kubectl version --client
+        kubectl cluster-info
+        
+        # Check java and maven
+        mvn -version
+        java -version
+                
+        echo "Environment setup completed successfully"
+      volumeMounts:
+        - name: env-config-volume
+          mountPath: /tmp/env-config
+          readOnly: true
+        - name: kubeconfig-volume
+          mountPath: /tmp/kubeconfig
+          readOnly: true
+    
+    - name: run-systemtests
+      image: $(params.test-image)
+      script: |
+        #!/bin/bash
+        set -ex
+        
+        echo "Starting Strimzi system tests..."
+        
+        # Load environment variables from ConfigMap if provided
+        if [ -n "$(params.env-configmap)" ] && [ "$(params.env-configmap)" != "" ]; then
+          echo "Loading environment variables from ConfigMap: $(params.env-configmap)"
+          if [ -f "/tmp/env-config/env-vars" ]; then
+            echo "Found environment variables file, sourcing it..."
+            set -a  # automatically export all variables
+            source /tmp/env-config/env-vars
+            set +a
+            echo "Environment variables loaded successfully"
+          else
+            echo "Warning: ConfigMap specified but env-vars file not found"
+          fi
+        fi
+        
+        # Set up environment variables
+        export KUBECONFIG=/tmp/kubeconfig/config
+        
+        cd /opt/strimzi
+        
+        # Build Maven command
+        MAVEN_CMD="mvn verify -P$(params.test-profile) -pl systemtest"
+        
+        if [ -n "$(params.test-groups)" ]; then
+          MAVEN_CMD="$MAVEN_CMD -Dgroups=$(params.test-groups)"
+        fi
+        
+        if [ "$(params.parallel-tests)" != "1" ]; then
+          MAVEN_CMD="$MAVEN_CMD -Dfailsafe.forkCount=$(params.parallel-tests)"
+        fi
+        
+        if [ -n "$(params.maven-args)" ]; then
+          MAVEN_CMD="$MAVEN_CMD $(params.maven-args)"
+        fi
+        
+        echo "Executing: $MAVEN_CMD"
+        
+        # Run tests with proper error handling
+        $MAVEN_CMD || {
+          echo "Tests failed, collecting logs and artifacts..."
+          # Copy test results even on failure to shared volume
+          if [ -d "target" ]; then
+            echo "Copying test artifacts to shared volume..."
+            cp -r systemtest/target/* /tmp/shared-artifacts/ 2>/dev/null || true
+          fi
+          find target -name "*.xml" -o -name "*.log" | head -20
+          exit 1
+        }
+        
+        # Copy test results to shared volume for collect-results step
+        if [ -d "target" ]; then
+          echo "Copying test artifacts to shared volume..."
+          mkdir -p /tmp/shared-artifacts
+          cp -r systemtest/target/* /tmp/shared-artifacts/ 2>/dev/null || true
+        fi
+        
+        echo "System tests completed successfully"
+      volumeMounts:
+        - name: env-config-volume
+          mountPath: /tmp/env-config
+          readOnly: true
+        - name: kubeconfig-volume
+          mountPath: /tmp/kubeconfig
+          readOnly: true
+        - name: shared-artifacts
+          mountPath: /tmp/shared-artifacts
+    
+    - name: collect-results
+      image: $(params.test-image)
+      script: |
+        #!/bin/bash
+        set -e
+        
+        echo "Collecting test results..." 
+        
+        # Create results directory
+        mkdir -p /tmp/test-results
+        
+        # Copy test results from shared volume to workspace
+        if [ -d "/tmp/shared-artifacts" ] && [ "$(ls -A /tmp/shared-artifacts)" ]; then
+          echo "Copying test results from shared artifacts to workspace..."
+          cp -r /tmp/shared-artifacts/* /tmp/test-results/ 2>/dev/null || true
+          
+          # Copy specific test artifacts
+          find /tmp/shared-artifacts -name "*.xml" -exec cp {} /tmp/test-results/ \; 2>/dev/null || true
+          find /tmp/shared-artifacts -name "*.log" -exec cp {} /tmp/test-results/ \; 2>/dev/null || true
+          find /tmp/shared-artifacts -name "*.json" -exec cp {} /tmp/test-results/ \; 2>/dev/null || true
+        else
+          echo "Warning: No test artifacts found in shared volume"
+        fi
+        
+        # Analyze test results and create comprehensive summary
+        echo "Analyzing test results..."
+        
+        # Create test-results.txt with detailed analysis
+        echo "=== STRIMZI SYSTEM TEST RESULTS ===" > /tmp/test-results/test-results.txt
+        echo "Generated: $(date)" >> /tmp/test-results/test-results.txt
+        echo "Test Profile: $(params.test-profile)" >> /tmp/test-results/test-results.txt
+        echo "Test Groups: $(params.test-groups)" >> /tmp/test-results/test-results.txt
+        echo "Parallel Tests: $(params.parallel-tests)" >> /tmp/test-results/test-results.txt
+        echo "" >> /tmp/test-results/test-results.txt
+        
+        # Find failsafe-reports directory
+        FAILSAFE_DIR=""
+        if [ -d "/tmp/shared-artifacts/failsafe-reports" ]; then
+          FAILSAFE_DIR="/tmp/shared-artifacts/failsafe-reports"
+        elif [ -d "/tmp/test-results/failsafe-reports" ]; then
+          FAILSAFE_DIR="/tmp/test-results/failsafe-reports"
+        else
+          # Search for any failsafe-reports directory
+          FAILSAFE_DIR=$(find /tmp/shared-artifacts /tmp/test-results -name "failsafe-reports" -type d 2>/dev/null | head -1)
+        fi
+        
+        if [ -n "$FAILSAFE_DIR" ] && [ -d "$FAILSAFE_DIR" ]; then
+          echo "Found failsafe reports in: $FAILSAFE_DIR"
+          echo "FAILSAFE REPORTS DIRECTORY: $FAILSAFE_DIR" >> /tmp/test-results/test-results.txt
+          echo "" >> /tmp/test-results/test-results.txt
+          
+          # Initialize counters
+          TOTAL_TESTS=0
+          SUCCESSFUL_TESTS=0
+          FAILED_TESTS=0
+          SKIPPED_TESTS=0
+          FLAKY_TESTS=0
+          
+          # Process each test report XML file
+          for xml_file in "$FAILSAFE_DIR"/*.xml; do
+            if [ -f "$xml_file" ]; then
+              echo "Processing: $(basename "$xml_file")"
+              
+              # Extract test statistics from XML
+              if command -v xmllint >/dev/null 2>&1; then
+                # Use xmllint if available
+                TESTS=$(xmllint --xpath 'string(//testsuite/@tests)' "$xml_file" 2>/dev/null || echo "0")
+                FAILURES=$(xmllint --xpath 'string(//testsuite/@failures)' "$xml_file" 2>/dev/null || echo "0")
+                ERRORS=$(xmllint --xpath 'string(//testsuite/@errors)' "$xml_file" 2>/dev/null || echo "0")
+                SKIPPED=$(xmllint --xpath 'string(//testsuite/@skipped)' "$xml_file" 2>/dev/null || echo "0")
+              else
+                # Fallback to grep/sed parsing
+                TESTS=$(grep -o 'tests="[0-9]*"' "$xml_file" | sed 's/tests="//;s/"//' | head -1)
+                FAILURES=$(grep -o 'failures="[0-9]*"' "$xml_file" | sed 's/failures="//;s/"//' | head -1)
+                ERRORS=$(grep -o 'errors="[0-9]*"' "$xml_file" | sed 's/errors="//;s/"//' | head -1)
+                SKIPPED=$(grep -o 'skipped="[0-9]*"' "$xml_file" | sed 's/skipped="//;s/"//' | head -1)
+              fi
+              
+              # Set defaults if empty
+              TESTS=${TESTS:-0}
+              FAILURES=${FAILURES:-0}
+              ERRORS=${ERRORS:-0}
+              SKIPPED=${SKIPPED:-0}
+              
+              # Calculate test outcomes for this file
+              FILE_FAILED=$((FAILURES + ERRORS))
+              FILE_SUCCESSFUL=$((TESTS - FILE_FAILED - SKIPPED))
+              
+              # Check for flaky tests (tests that failed but eventually passed)
+              FLAKY_IN_FILE=0
+              if [ "$FILE_FAILED" -gt 0 ]; then
+                # Check if there are rerun entries indicating flaky tests
+                RERUN_COUNT=$(grep -c "rerunFailure" "$xml_file" 2>/dev/null || echo "0")
+                FINAL_FAILURES=$(grep -c '<failure' "$xml_file" 2>/dev/null || echo "0")
+                FINAL_ERRORS=$(grep -c '<error' "$xml_file" 2>/dev/null || echo "0")
+                FINAL_FAILED=$((FINAL_FAILURES + FINAL_ERRORS))
+                
+                # If there were reruns but final result shows fewer failures, some tests were flaky
+                if [ "$RERUN_COUNT" -gt 0 ] && [ "$FINAL_FAILED" -lt "$FILE_FAILED" ]; then
+                  FLAKY_IN_FILE=$((FILE_FAILED - FINAL_FAILED))
+                  FILE_FAILED=$FINAL_FAILED
+                  FILE_SUCCESSFUL=$((FILE_SUCCESSFUL + FLAKY_IN_FILE))
+                fi
+              fi
+              
+              # Update totals
+              TOTAL_TESTS=$((TOTAL_TESTS + TESTS))
+              SUCCESSFUL_TESTS=$((SUCCESSFUL_TESTS + FILE_SUCCESSFUL))
+              FAILED_TESTS=$((FAILED_TESTS + FILE_FAILED))
+              SKIPPED_TESTS=$((SKIPPED_TESTS + SKIPPED))
+              FLAKY_TESTS=$((FLAKY_TESTS + FLAKY_IN_FILE))
+              
+              # Log details for this test file
+              echo "  Tests: $TESTS, Successful: $FILE_SUCCESSFUL, Failed: $FILE_FAILED, Skipped: $SKIPPED, Flaky: $FLAKY_IN_FILE"
+            fi
+          done
+          
+          # Write summary to results file
+          echo "=== TEST SUMMARY ===" >> /tmp/test-results/test-results.txt
+          echo "Total Tests: $TOTAL_TESTS" >> /tmp/test-results/test-results.txt
+          echo "Successful Tests: $SUCCESSFUL_TESTS" >> /tmp/test-results/test-results.txt
+          echo "Failed Tests: $FAILED_TESTS" >> /tmp/test-results/test-results.txt
+          echo "Skipped Tests: $SKIPPED_TESTS" >> /tmp/test-results/test-results.txt
+          echo "Flaky Tests (failed but eventually passed): $FLAKY_TESTS" >> /tmp/test-results/test-results.txt
+          echo "" >> /tmp/test-results/test-results.txt
+          
+        else
+          echo "No failsafe-reports directory found"
+          echo "ERROR: No failsafe-reports directory found" >> /tmp/test-results/test-results.txt
+          echo "Available directories:" >> /tmp/test-results/test-results.txt
+          find /tmp/shared-artifacts /tmp/test-results -type d 2>/dev/null | head -10 >> /tmp/test-results/test-results.txt
+        fi
+        
+        # List all copied artifacts
+        echo "" >> /tmp/test-results/test-results.txt
+        echo "=== AVAILABLE ARTIFACTS ===" >> /tmp/test-results/test-results.txt
+        ls -lah /tmp/test-results/ >> /tmp/test-results/test-results.txt
+        
+        # Display the summary
+        echo ""
+        echo "=== FINAL TEST RESULTS SUMMARY ==="
+        cat /tmp/test-results/test-results.txt
+        
+        echo ""
+        echo "Results collection completed successfully"
+      onError: continue
+      volumeMounts:
+        - name: shared-artifacts
+          mountPath: /tmp/shared-artifacts
+  volumes:
+    - name: env-config-volume
+      configMap:
+        name: $(params.env-configmap)
+        optional: true
+    - name: kubeconfig-volume
+      secret:
+        secretName: $(params.kubeconfig-secret)
+    - name: shared-artifacts
+      emptyDir: {}
