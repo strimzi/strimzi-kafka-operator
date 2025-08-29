@@ -20,7 +20,7 @@ jobs:
 
       # Test the generate-matrix action
       - id: generate-matrix
-        uses: ./.github/actions/generate-matrix
+        uses: ./.github/actions/systemtests/generate-matrix
         with:
           pipelines: ${{ github.event.inputs.pipelines }}
           profiles: ${{ github.event.inputs.profiles }}

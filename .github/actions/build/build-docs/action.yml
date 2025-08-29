@@ -1,0 +1,45 @@
+name: "Build Documentation"
+description: "Builds Strimzi documentation in HTML and PDF formats"
+
+inputs:
+  artifactName:
+    description: "Name of the documentation artifact to upload"
+    required: false
+    default: "documentation.tar"
+  runnerArch:
+    description: "Runner architecture (amd64, arm64)"
+    required: false
+    default: "amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install yq
+      uses: ./.github/actions/dependencies/install-yq
+      with:
+        architecture: ${{ inputs.runnerArch }}
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+        
+    - name: Install asciidoctor
+      shell: bash
+      run: |
+        gem install asciidoctor
+        gem install asciidoctor-pdf
+        
+    - name: Build documentation
+      shell: bash
+      run: make docu_html docu_htmlnoheader docu_pdf
+      
+    - name: Create documentation archive
+      shell: bash
+      run: tar -cvpf documentation.tar ./documentation/html ./documentation/htmlnoheader ./documentation/pdf
+      
+    - name: Upload documentation artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifactName }}
+        path: documentation.tar
