@@ -80,4 +80,15 @@ public class KafkaMirrorMaker2Resources {
     public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
         return "strimzi-" + namespace + "-" + componentName(clusterName) + "-init";
     }
+
+    /**
+     * Get the name of the Kafka MirrorMaker 2 role binding given the name of the {@code cluster}.
+     *
+     * @param clusterName  The cluster name.
+     *
+     * @return The name of Kafka MirrorMaker 2 role binding.
+     */
+    public static String mm2RoleBindingName(String clusterName) {
+        return componentName(clusterName) + "-role";
+    }
 }
