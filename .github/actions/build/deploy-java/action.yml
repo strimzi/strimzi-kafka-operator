@@ -28,10 +28,14 @@ runs:
         java-version: '17'
         distribution: 'temurin'
         
-    - uses: ./.github/actions/utils/cache-maven
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
       with:
-        # TODI - Maybe change to github.run_id
-        jobName: ${{ github.job }}
+        path: ~/.m2/repository
+        key: "maven-cache | **/pom.xml"
+        restore-keys: |
+          maven | ${{ github.job }}
+          maven
           
     - name: Install yq
       uses: ./.github/actions/dependencies/install-yq
