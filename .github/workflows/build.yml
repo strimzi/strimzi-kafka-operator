@@ -63,7 +63,7 @@ jobs:
           - arm64
           - s390x
           - ppc64le
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: oracle-vm-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/build/containers-build
