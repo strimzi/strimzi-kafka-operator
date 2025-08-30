@@ -31,6 +31,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.strimzi.crdgenerator.annotations.Type;
 
 import java.io.File;
@@ -741,6 +742,9 @@ class CrdGenerator {
             if (property.isAnnotationPresent(JsonProperty.class)
                     && property.getAnnotation(JsonProperty.class).required()
                 || property.isDiscriminator()) {
+                result.add(property.getName());
+            } else if (property.isAnnotationPresent(RequiredInVersions.class)
+                    && ApiVersion.parseRange(property.getAnnotation(RequiredInVersions.class).value()).contains(crApiVersion)) {
                 result.add(property.getName());
             }
         }

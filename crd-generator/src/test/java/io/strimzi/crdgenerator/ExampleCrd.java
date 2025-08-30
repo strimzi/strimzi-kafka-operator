@@ -23,6 +23,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 
 import java.util.List;
 import java.util.Map;
@@ -290,6 +291,7 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
         this.longProperty = longProperty;
     }
 
+    @RequiredInVersions("v1alpha1")
     public boolean isBooleanProperty() {
         return booleanProperty;
     }
