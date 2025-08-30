@@ -102,13 +102,14 @@ public class DynamicConfST extends AbstractST {
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), KAFKA_REPLICAS).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
         );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), KAFKA_REPLICAS)
-            .editSpec()
-                .editKafka()
-                    .withConfig(deepCopyOfSharedKafkaConfig)
-                .endKafka()
-            .endSpec()
-            .build(),
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), KAFKA_REPLICAS)
+                .editSpec()
+                    .editKafka()
+                        .addToConfig(deepCopyOfSharedKafkaConfig)
+                    .endKafka()
+                .endSpec()
+                .build(),
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, testStorage.getScraperName()).build()
         );
 
@@ -125,9 +126,7 @@ public class DynamicConfST extends AbstractST {
         String kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
-        deepCopyOfSharedKafkaConfig.put("unclean.leader.election.enable", true);
-
-        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfSharedKafkaConfig);
+        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), Map.of("unclean.leader.election.enable", true));
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=true is available in Broker config", () ->
@@ -163,9 +162,6 @@ public class DynamicConfST extends AbstractST {
     void testUpdateToExternalListenerCausesRollingRestart() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), KAFKA_REPLICAS).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
@@ -191,7 +187,6 @@ public class DynamicConfST extends AbstractST {
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(false)
                                 .build())
-                    .withConfig(deepCopyOfShardKafkaConfig)
                 .endKafka()
             .endSpec()
             .build(),
@@ -206,9 +201,7 @@ public class DynamicConfST extends AbstractST {
 
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker " + podNum + " are:\n"));
 
-        deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", true);
-
-        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), Map.of("unclean.leader.election.enable", true));
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=true is available in Broker config", () ->
@@ -247,9 +240,7 @@ public class DynamicConfST extends AbstractST {
         kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker " + podNum + " are:\n"));
 
-        deepCopyOfShardKafkaConfig.put("compression.type", "snappy");
-
-        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), Map.of("compression.type", "snappy"));
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("compression.type=snappy is set in Kafka", () ->
@@ -258,9 +249,7 @@ public class DynamicConfST extends AbstractST {
         kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker " + podNum + " are:\n"));
 
-        deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", true);
-
-        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), Map.of("unclean.leader.election.enable", true));
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=true is available in Broker config", () ->
@@ -294,9 +283,7 @@ public class DynamicConfST extends AbstractST {
         kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker " + podNum + " are:\n"));
 
-        deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", false);
-
-        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), Map.of("unclean.leader.election.enable", false));
 
         // Wait until the configuration is properly set and returned by Kafka Admin API
         StUtils.waitUntilSupplierIsSatisfied("unclean.leader.election.enable=false is set in Kafka", () ->
@@ -328,9 +315,6 @@ public class DynamicConfST extends AbstractST {
     void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), KAFKA_REPLICAS).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
@@ -344,7 +328,6 @@ public class DynamicConfST extends AbstractST {
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
                         .build())
-                    .withConfig(deepCopyOfShardKafkaConfig)
                 .endKafka()
             .endSpec()
             .build());
@@ -542,7 +525,7 @@ public class DynamicConfST extends AbstractST {
         LOGGER.info("Updating configuration of Kafka cluster");
         KafkaUtils.replace(namespaceName, clusterName, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.setConfig(kafkaConfig);
+            kafkaClusterSpec.getConfig().putAll(kafkaConfig);
         });
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaComponents.getBrokerPodSetName(clusterName));
