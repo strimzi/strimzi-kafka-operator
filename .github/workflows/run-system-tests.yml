@@ -80,9 +80,6 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: read
-
 jobs:
   generate-matrix:
     runs-on: ubuntu-latest

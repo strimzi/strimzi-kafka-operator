@@ -142,6 +142,11 @@ jobs:
       - build-images
     # Run if properly triggered, permissions check passed, and build jobs succeeded or were skipped
     if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.build-images.result != 'failure' &&  needs.build-artifacts.result != 'failure' }}
+    # Job needs write rights for setting statuses on pull-requests
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
     uses: ./.github/workflows/run-system-tests.yml
     with:
       pipelineList: ${{ needs.parse-params.outputs.pipelineList }}
