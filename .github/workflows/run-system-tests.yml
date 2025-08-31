@@ -84,6 +84,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   generate-matrix:
     runs-on: oracle-2cpu-8gb-arm64
@@ -211,11 +214,8 @@ jobs:
       - name: Print out environment info
         uses: ./.github/actions/log-variables
 
-      # Build Strimzi and its images => used when running STs against PR or main branch where container images should be built
+      # Load Strimzi images
       - name: Load Strimzi images
-        # Build images in case that we are not running tests on the `main` branch and the docker_tag is `latest`, which means
-        # that we are running tests on a PR
-        # add back: eval $(minikube docker-env)
         if: ${{ env.DOCKER_TAG == 'latest' && github.ref_name != 'main' }}
         uses: ./.github/actions/containers-load
         with:

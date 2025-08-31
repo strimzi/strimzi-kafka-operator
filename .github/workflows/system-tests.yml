@@ -21,14 +21,16 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  contents: read
+
 jobs:
   # Parse and build parameters from comment or from workflow params
   parse-params:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
-      checks: write
       statuses: write
     outputs:
       pipelineList: ${{ steps.parse.outputs.pipelineList }}
@@ -67,9 +69,8 @@ jobs:
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
-      checks: write
       statuses: write
     steps:
       - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
@@ -161,9 +162,8 @@ jobs:
     if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
-      checks: write
       statuses: write
     steps:
       - uses: actions/checkout@v5

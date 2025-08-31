@@ -92,7 +92,7 @@ With GitHub Actions we are now able to propagate a specific parameters to our e2
 ### Triggers
 There are two options how the workflows could be triggered - manually via GitHub UI, via issue comment.
 Not every issue comment trigger the whole workflow, there are checks that basically look after a specific text in the comment and trigger the workflows only once the comment has proper format.
-Comment for triggering the workflow has to contain string `/gha run` and then additional parameters can be specified.
+Comment for triggering the workflow has to starts with string `/gha run` and then additional parameters can be specified.
 
 The whole script that parse the trigger even is part of [parse-comment](../actions/parse-comment) action.
 Currently, we have these parameters that can be passed through the comment:
