@@ -102,7 +102,7 @@ jobs:
       - check-rights
     # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.parse-params.outputs.releaseVersion == 'latest' }}
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -110,7 +110,7 @@ jobs:
       - uses: ./.github/actions/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
   build-images:
     name: build-images
@@ -122,8 +122,8 @@ jobs:
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
     strategy:
       matrix:
-        architecture: [amd64, arm64]
-    runs-on: oracle-vm-2cpu-8gb-arm64
+        architecture: [amd64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -131,7 +131,7 @@ jobs:
       - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
   run-tests:
     name: run-tests
