@@ -58,19 +58,6 @@ outputs:
   parallel:
     description: "How many tests will be executed in parallel"
     value: ${{ steps.parse_comment.output.parallel }}
-  # Checkout ref outputs
-  repo_owner:
-    description: "Owner of the repository a.k.a org name"
-    value: ${{ steps.checkout_ref.outputs.repo_owner }}
-  repo_name:
-    description: "Repository name"
-    value: ${{ steps.checkout_ref.outputs.repo_name }}
-  ref:
-    description: "Branch name"
-    value: ${{ steps.checkout_ref.outputs.ref }}
-  sha:
-    description: "Branch commit sha reference"
-    value: ${{ steps.checkout_ref.outputs.sha }}
 
 runs:
   using: "composite"
@@ -94,46 +81,6 @@ runs:
         echo "shouldRun=$SHOULD_RUN_VALUE" >> "$GITHUB_OUTPUT"
         echo "Parsed shouldRun: $SHOULD_RUN_VALUE"
 
-    - name: Determine checkout ref
-      id: checkout_ref
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { owner, repo } = context.repo;
-          let repoOwner, repoName, ref, sha;
-          
-          if (context.eventName === 'pull_request') {
-            // For PR events, use merge ref to test the merged state
-            repoOwner = owner;
-            repoName = repo;
-            ref = `refs/pull/${context.payload.pull_request.number}/merge`;
-            sha = context.payload.pull_request.merge_commit_sha || 'HEAD';
-          } else if (context.eventName === 'issue_comment' && context.payload.issue.pull_request) {
-            // For PR comments, use merge ref to test against merge commit
-            repoOwner = owner;
-            repoName = repo;
-            ref = `refs/pull/${context.payload.issue.number}/merge`;
-            sha = 'HEAD'; // Let GitHub resolve the merge commit
-            
-            core.info(`PR comment detected: Testing merge commit for PR #${context.payload.issue.number}`);
-          } else {
-            // For workflow_dispatch and other events, use the current branch
-            repoOwner = owner;
-            repoName = repo;
-            ref = context.ref;
-            sha = context.sha;
-          }
-          
-          core.setOutput('event_name', context.eventName);
-          core.setOutput('repo_owner', repoOwner);
-          core.setOutput('repo_name', repoName);
-          core.setOutput('ref', ref);
-          core.setOutput('sha', sha);
-          
-          core.info(`Event: ${context.eventName}`);
-          core.info(`Checkout repo: ${repoOwner}/${repoName}`);
-          core.info(`Checkout ref: ${ref}`);
-          core.info(`Checkout SHA: ${sha}`);
 
     - name: Build Comment
       id: build_comment

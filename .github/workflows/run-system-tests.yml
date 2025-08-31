@@ -143,7 +143,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
 
       - name: Set check & commit status

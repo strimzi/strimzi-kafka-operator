@@ -47,13 +47,18 @@ jobs:
       parallel: ${{ steps.parse.outputs.parallel }}
       shouldRun: ${{ steps.parse.outputs.shouldRun }}
       kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
-      # Checkout ref data
-      repo_owner: ${{ steps.parse.outputs.repo_owner }}
-      repo_name: ${{ steps.parse.outputs.repo_name }}
-      ref: ${{ steps.parse.outputs.ref }}
-      sha: ${{ steps.parse.outputs.sha }}
+      ref: ${{ steps.determine_ref.outputs.ref }}
+      sha: ${{ steps.determine_ref.outputs.sha }}
     steps:
+      # TODO - remove checkout an duse it directly from main
       - uses: actions/checkout@v5
+      - name: Determine checkout ref
+        id: determine_ref
+        uses: ./.github/actions/determine-ref
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.determine_ref.outputs.ref }}
+      # TODO - think about this how to handle it after check-rights
       - name: Parse Comment
         id: parse
         uses: ./.github/actions/parse-comment
@@ -76,6 +81,8 @@ jobs:
       - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
       # In case the user has proper rights, print comment with build link and set status
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add comment
         uses: ./.github/actions/add-comment
         with:
@@ -99,8 +106,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
-          ref: ${{ needs.parse-params.outputs.sha }}
+          ref: ${{ needs.parse-params.outputs.ref }}
       - uses: ./.github/actions/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
@@ -121,8 +127,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
-          ref: ${{ needs.parse-params.outputs.sha }}
+          ref: ${{ needs.parse-params.outputs.ref }}
       - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}
@@ -151,8 +156,7 @@ jobs:
       kafkaVersion: ${{ needs.parse-params.outputs.kafkaVersion }}
       kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
       # Checkout ref params
-      repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
-      ref: ${{ needs.parse-params.outputs.sha }}
+      ref: ${{ needs.parse-params.outputs.ref }}
 
   report:
     needs:
@@ -167,6 +171,8 @@ jobs:
       statuses: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add comment
         uses: ./.github/actions/add-comment
         with:
