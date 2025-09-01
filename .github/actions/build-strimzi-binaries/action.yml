@@ -24,7 +24,8 @@ runs:
         architecture: ${{ inputs.runnerArch }}
     - name: Install Helm
       uses: ./.github/actions/install-helm
-    - uses: actions/setup-java@v5
+    - name: Setup Java
+      uses: actions/setup-java@v5
       with:
         distribution: "temurin"
         java-version: "17"
