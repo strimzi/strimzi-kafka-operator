@@ -259,6 +259,13 @@
   third-party-libs: 4.0.x
   supported: true
   default: false
+- version: 4.0.1
+  metadata: 4.0
+  url: https://dist.apache.org/repos/dist/dev/kafka/4.0.1-rc2/kafka_2.13-4.0.1.tgz
+  checksum: 23B241098672D828CA86A6DD1DD99102FCDB9DE8680ECF213B47251A7AE7A342343CF41ADF6FEE9F920D171AE13F94C39475165F5A246E1A46609A7D9D5A6811
+  third-party-libs: 4.0.x
+  supported: true
+  default: false
 - version: 4.1.0
   metadata: 4.1
   url: https://archive.apache.org/dist/kafka/4.1.0/kafka_2.13-4.1.0.tgz
