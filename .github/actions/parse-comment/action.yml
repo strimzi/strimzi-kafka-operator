@@ -71,7 +71,7 @@ runs:
       run: |
         if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
           SHOULD_RUN_VALUE="true"
-        elif [[ "$GITHUB_EVENT_NAME" == "issue_comment" ]] && [[ "${{ github.event.issue.pull_request }}" != "" && "${{ github.event.issue.pull_request }}" != "null" ]] && echo "$COMMENT_BODY" | grep -qiE '^/gha\s+run'; then
+        elif [[ "$GITHUB_EVENT_NAME" == "issue_comment" ]] && [[ "${{ github.event.issue.pull_request }}" != "" && "${{ github.event.issue.pull_request }}" != "null" ]] && echo '$COMMENT_BODY' | grep -qiE '^/gha\s+run'; then
           # Only trigger on PR comments (not issue comments) that start with '/gha run'
           SHOULD_RUN_VALUE="true"
         else
@@ -80,7 +80,6 @@ runs:
         
         echo "shouldRun=$SHOULD_RUN_VALUE" >> "$GITHUB_OUTPUT"
         echo "Parsed shouldRun: $SHOULD_RUN_VALUE"
-
 
     - name: Build Comment
       id: build_comment
@@ -93,7 +92,7 @@ runs:
         if [[ "$COMMENT_BODY" == "" ]]; then
           BUILT_COMMENT_VALUE="/gha run profile=$INPUT_PROFILE kafkaVersion=$INPUT_KAFKA_VERSION"
         else
-          BUILT_COMMENT_VALUE="$COMMENT_BODY"
+          BUILT_COMMENT_VALUE='$COMMENT_BODY'
         fi
         
         echo "builtComment=$BUILT_COMMENT_VALUE" >> "$GITHUB_OUTPUT"
@@ -102,12 +101,14 @@ runs:
     - name: Parse Comment
       id: parse_comment
       shell: bash
+      env:
+        BUILT_COMMENT: ${{ steps.build_comment.outputs.builtComment }}
       run: |
         set -e
         
-        # Read the comment body
-        COMMENT="${{ steps.build_comment.outputs.builtComment }}"
-        COMMENT_LOWER=$(echo "$COMMENT" | tr '[:upper:]' '[:lower:]')
+        # Read the comment body safely from environment variable
+        COMMENT='$BUILT_COMMENT'
+        COMMENT_LOWER=$(echo '$COMMENT' | tr '[:upper:]' '[:lower:]')
         
         # Default values
         DEFAULT_PIPELINES="regression,upgrade"
