@@ -62,6 +62,29 @@ public class Annotations extends ResourceAnnotations {
         ">\\d+)$");
 
     /**
+     * Pattern for validation of restart connector annotation value.
+     * */
+    public static final Pattern ANNO_STRIMZI_IO_RESTART_ARGS_PATTERN = Pattern.compile("^includeTasks," +
+            "onlyFailed$|^onlyFailed,includeTasks$|^includeTasks$|^onlyFailed$|^true$");
+
+    /**
+     * Pattern for validation of MirrorMaker2 restart connector annotation value.
+     * */
+    public static final Pattern ANNO_STRIMZI_IO_RESTART_CONNECTOR_ARGS_PATTERN = Pattern
+            .compile("^([a-zA-Z0-9-_]+):includeTasks,onlyFailed$|^([a-zA-Z0-9-_]+):onlyFailed,includeTasks$" +
+                    "|^([a-zA-Z0-9-_]+):includeTasks$|^([a-zA-Z0-9-_]+):onlyFailed$|^([a-zA-Z0-9-_]+)$");
+
+    /**
+     * This optional argument can be used to include tasks in the restart connector operation.
+     * */
+    public static final String ANNO_STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG = "includeTasks";
+
+    /**
+     * This optional argument can be used to restart connector only failed tasks.
+     * */
+    public static final String ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG = "onlyFailed";
+
+    /**
      * Annotation on PVCs storing the original configuration. It is used to revert any illegal changes.
      */
     public static final String ANNO_STRIMZI_IO_STORAGE = STRIMZI_DOMAIN + "storage";

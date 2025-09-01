@@ -66,7 +66,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_RESTART_TASK;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
+import static io.strimzi.operator.common.Annotations.*;
 
 /**
  * <p>Assembly operator for a "Kafka Connect" assembly, which manages:</p>
@@ -614,6 +614,55 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @Override
     protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
         return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_RESTART, false);
+    }
+
+    /**
+     * Checks if restart annotation value has valid combination of values. These are valid and not valid combinations:
+     * strimzi.io/restart=includeTasks,onlyFailed          # restart with args: includeTasks=true and onlyFailed=true
+     * strimzi.io/restart=includeTasks                     # restart with args: includeTasks=true and onlyFailed=false
+     * strimzi.io/restart=onlyFailed                       # restart with args: includeTasks=false and onlyFailed=true
+     * strimzi.io/restart=true                             # restart with args: includeTasks=false and onlyFailed=false
+     * strimzi.io/restart=false,includeTasks,onlyFailed    # do not restart, fail and log error because you can't set args and boolean value together
+     * strimzi.io/restart=true,includeTasks,onlyFailed     # do not restart, fail and log error because you can't set args and boolean value together
+     * strimzi.io/restart=includeTasks,wrongArg            # do not restart, fail and log error because wrongArg is not supported
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has valid restart annotation. False otherwise.
+     * */
+    @SuppressWarnings({ "rawtypes" })
+    protected boolean restartAnnotationIsValid(CustomResource resource){
+        String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "");
+        return ANNO_STRIMZI_IO_RESTART_ARGS_PATTERN.matcher(restartValue).matches();
+    }
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument includeTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected boolean restartAnnotationHasIncludeTasksArg(CustomResource resource) {
+        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
+                .contains(ANNO_STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
+    }
+
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument onlyFailedTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected boolean restartAnnotationHasOnlyFailedTasksArg(CustomResource resource){
+        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
+                .contains(ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }
 
     /**

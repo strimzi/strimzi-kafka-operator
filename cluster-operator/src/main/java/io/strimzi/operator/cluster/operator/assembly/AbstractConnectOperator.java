@@ -746,8 +746,16 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     @SuppressWarnings({ "rawtypes" })
     private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         if (hasRestartAnnotation(resource, connectorName)) {
-            LOGGER.debugCr(reconciliation, "Restarting connector {}", connectorName);
-            return VertxUtil.completableFutureToVertxFuture(apiClient.restart(host, port, connectorName, false, false))
+            if (!restartAnnotationIsValid(resource)) {
+                String message = "Invalid annotation format";
+                LOGGER.warnCr(reconciliation, message);
+                conditions.add(StatusUtils.buildWarningCondition("RestartConnector", message));
+                return Future.succeededFuture(conditions);
+            }
+            boolean restartIncludeTasks = restartAnnotationHasIncludeTasksArg(resource);
+            boolean restartOnlyFailedTasks = restartAnnotationHasOnlyFailedTasksArg(resource);
+            LOGGER.infoCr(reconciliation, "Restarting connector {}", connectorName);
+            return VertxUtil.completableFutureToVertxFuture(apiClient.restart(host, port, connectorName, restartIncludeTasks, restartOnlyFailedTasks))
                     .compose(ignored -> removeRestartAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
                         throwable -> {
@@ -1058,6 +1066,36 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     @SuppressWarnings({ "rawtypes" })
     abstract boolean hasRestartAnnotation(CustomResource resource, String connectorName);
+
+    /**
+     * Checks if restart annotation value is valid
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has valid restart annotation. False otherwise.
+     * */
+    @SuppressWarnings({ "rawtypes" })
+    abstract boolean restartAnnotationIsValid(CustomResource resource);
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument includeTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    abstract boolean restartAnnotationHasIncludeTasksArg(CustomResource resource);
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument onlyFailedTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    abstract boolean restartAnnotationHasOnlyFailedTasksArg(CustomResource resource);
 
     /**
      * Returns the ID of the connector task to be restarted from the (a KafkaConnector or KafkaMirrorMaker2) custom resource.

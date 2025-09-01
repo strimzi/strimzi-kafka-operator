@@ -46,11 +46,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK;
+import static io.strimzi.operator.common.Annotations.*;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -312,6 +308,53 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
         String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
         return connectorName.equals(restartAnnotationConnectorName);
+    }
+
+    /**
+     * Checks if restart annotation value has valid combination of values. These are valid and not valid combinations:
+     * strimzi.io/restart-connector=mirrormaker_connector_name:includeTasks,onlyFailed # restart with args: includeTasks=true and onlyFailed=true
+     * strimzi.io/restart-connector=mirrormaker_connector_name:includeTasks # restart with args: includeTasks=true and onlyFailed=false
+     * strimzi.io/restart-connector=mirrormaker_connector_name:onlyFailed # restart with args: includeTasks=false and onlyFailed=true
+     * strimzi.io/restart-connector=mirrormaker_connector_name # restart with args: includeTasks=false and onlyFailed=false
+     * strimzi.io/restart-connector=includeTasks,onlyFailed # do not restart, fail and log error because connector name is required
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has valid restart annotation. False otherwise.
+     * */
+    @SuppressWarnings({ "rawtypes" })
+    protected boolean restartAnnotationIsValid(CustomResource resource){
+        String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "");
+        return ANNO_STRIMZI_IO_RESTART_CONNECTOR_ARGS_PATTERN.matcher(restartValue).matches();
+    }
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument includeTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected boolean restartAnnotationHasIncludeTasksArg(CustomResource resource) {
+        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
+                .contains(ANNO_STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
+    }
+
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument onlyFailedTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected boolean restartAnnotationHasOnlyFailedTasksArg(CustomResource resource){
+        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
+                .contains(ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }
 
     /**
