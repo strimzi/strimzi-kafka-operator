@@ -385,8 +385,9 @@ The operator does not automatically change this value during upgrades.
 
 *Handling upgrades with custom images*
 
-When using custom images, upgrades must keep the `image` and `version` in sync.
-The Cluster Operator cannot update custom images automatically during an upgrade.
+When you set a custom image through the `image` property in a custom resource, you must keep the `image` and version in `sync` during upgrades.
+The Cluster Operator does not automatically update images defined this way. 
+(This limitation does not apply when you use Kafka Connect Build or the default image mappings defined in the Cluster Operator environment variables.)
 
 To avoid version mismatches when changing the Kafka version:
 
