@@ -12,6 +12,8 @@ Strimzi provides a Helm chart to deploy the Cluster Operator.
 After you have deployed the Cluster Operator this way, you can deploy Strimzi components using custom resources.
 For example, you can deploy the `Kafka` custom resource, and the installed Cluster Operator will create a Kafka cluster.
 
+WARNING:  While the Cluster Operator can be configured to watch multiple namespaces, each watched namespace should contain only one instance of a specific component type, such as one Kafka cluster, to avoid conflicts.
+
 For information on upgrades, see xref:assembly-upgrade-{context}[].
 
 .Prerequisites

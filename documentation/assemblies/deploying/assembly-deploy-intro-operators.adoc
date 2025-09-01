@@ -10,6 +10,24 @@
 Strimzi uses operators to deploy and manage Kafka components.
 The operators continuously monitor Strimzi custom resources (like `Kafka`, `KafkaTopic`, and `KafkaUser`) and reconcile the state of Kafka components to match their configuration.
 
+This reconciliation process involves three main operations:
+
+Creation::
+When you create a Strimzi custom resource, the responsible operator detects it and takes the necessary actions to create the component. 
+This might involve creating Kubernetes resources, such as `Deployment`, `Pod`, `Service`, and `ConfigMap`, or configuring items inside the Kafka cluster itself, such as topics and users.
+
+Update::
+Each time you update a custom resource, the operator detects the change and applies a corresponding update if the changes are valid. 
+This could trigger a rolling update of pods or reconfigure a resource within Kafka.
+Rolling updates maintain the availability of the Kafka cluster, but can lead to service disruption in the Kafka clients.
+
+Deletion::
+When you delete a custom resource, the operator detects the deletion and acts to remove the component.
+Most dependent resources are deleted automatically by Kubernetes garbage collection.
+The exact behavior depends on the resource type.
+For a Kafka cluster, PVCs are retained by default to prevent data loss.
+For a Kafka topic, the topic is fully deleted from the Apache Kafka cluster.
+
 Strimzi provides the following operators, each responsible for different aspects of a Kafka deployment:
 
 Cluster Operator (required):: The Cluster Operator is the core operator and must be deployed first. 

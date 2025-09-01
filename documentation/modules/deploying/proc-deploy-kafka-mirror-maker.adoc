@@ -16,6 +16,9 @@ In this procedure, we use the following example file:
 
 * `examples/mirror-maker/kafka-mirror-maker-2.yaml`
 
+WARNING: When deploying multiple Kafka MirrorMaker 2 clusters managed by the Cluster Operator, deploy each cluster into a separate namespace.
+Deploying multiple clusters in the same namespace can lead to naming conflicts and resource collisions.
+
 .Prerequisites
 
 * Cluster Operator is deployed.

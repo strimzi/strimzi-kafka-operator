@@ -22,6 +22,9 @@ One namespace should be watched by only one User Operator.
 If you want to use more than one User Operator, configure each of them to watch different namespaces. 
 In this way, you can use the User Operator with multiple Kafka clusters.  
 
+WARNING: Do not configure standalone User Operators that connect to different Kafka clusters to watch the same namespace. 
+This can cause the operators to compete for the same `KafkaUser` resources, leading to name collisions and unpredictable behavior.
+
 .Prerequisites
 
 * The standalone User Operator deployment files, which are included in the Strimzi xref:downloads-{context}[deployment files].

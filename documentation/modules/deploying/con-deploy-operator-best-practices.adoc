@@ -3,24 +3,57 @@
 // deploying/assembly_deploy-tasks-prep.adoc
 
 [id='con-deploy-operator-best-practices-{context}']
-= Operator deployment best practices
+= Planning your Cluster Operator deployment
 
 [role="_abstract"]
-Potential issues can arise from installing more than one Strimzi operator in the same Kubernetes cluster, especially when using different versions.
-Each Strimzi operator manages a set of resources in a Kubernetes cluster. 
-When you install multiple Strimzi operators, they may attempt to manage the same resources concurrently. 
-This can lead to conflicts and unpredictable behavior within your cluster.
-Conflicts can still occur even if you deploy Strimzi operators in different namespaces within the same Kubernetes cluster. 
-Although namespaces provide some degree of resource isolation, certain resources managed by the Strimzi operator, such as Custom Resource Definitions (CRDs) and roles, have a cluster-wide scope. 
+To support a stable and reliable Strimzi deployment, follow the best practices in this section. 
+Run a single Cluster Operator per Kubernetes cluster, choose an appropriate watch strategy, and isolate components within watched namespaces to reduce the risk of conflicts and unexpected behavior.
 
-Additionally, installing multiple operators with different versions can result in compatibility issues between the operators and the Kafka clusters they manage. 
-Different versions of Strimzi operators may introduce changes, bug fixes, or improvements that are not backward-compatible. 
+== Avoiding deployment conflicts 
 
-To avoid the issues associated with installing multiple Strimzi operators in a Kubernetes cluster, the following guidelines are recommended:
+[role="_abstract"]
+A single operator is capable of managing multiple Kafka clusters across different namespaces. 
+Deploying multiple instances of the Cluster Operator, particularly with different versions, introduces the following risks: 
 
-* Install the Strimzi operator in a separate namespace from the Kafka cluster and other Kafka components it manages, to ensure clear separation of resources and configurations.
-* Use a single Strimzi operator to manage all your Kafka instances within a Kubernetes cluster.
-* Update the Strimzi operator and the supported Kafka version as often as possible to reflect the latest features and enhancements.
+Resource conflicts:: 
+Conflicts over cluster-scoped resources like Custom Resource Definitions (CRDs) and ClusterRoles, leading to unpredictable behavior.
+This conflict occurs even when the operators are deployed in separate namespaces.
+Version incompatibility:: Different operator versions can create compatibility issues with the Kafka clusters they manage. 
+New Strimzi releases may introduce features, bug fixes, or other changes that are not backward-compatible. 
 
-By following these best practices and ensuring consistent updates for a single Strimzi operator, you can enhance the stability of managing Kafka instances in a Kubernetes cluster.
-This approach also enables you to make the most of Strimzi's latest features and capabilities.
+.Approach to avoid risks
+ 
+To avoid these risks, the recommended approach to deploying the Cluster Operator is as follows:
+
+Run a single Cluster Operator::
+Deploy only one Cluster Operator per Kubernetes cluster. 
+Consider a dedicated namespace::
+Install the Cluster Operator in its own namespace, separate from the Kafka components it manages.
+This separation is most useful when the operator is configured to watch multiple namespaces, but it can also help prevent uncontrolled growth of resources in a single namespace.
+Keep everything updated::
+Regularly update Strimzi and the version of Kafka it manages so that you have the latest features, bug fixes, and enhancements.
+
+== Choosing namespace watch options
+
+[role="_abstract"]
+You configure the Cluster Operator to watch for changes to xref:con-operators-namespaces-{context}[Kafka resources] in specific namespaces. 
+
+You can configure the operator to watch:
+
+* xref:deploying-cluster-operator-{context}[A single selected namespace]
+* xref:deploying-cluster-operator-to-watch-multiple-namespaces-{context}[A specific list of multiple namespaces]
+* xref:deploying-cluster-operator-to-watch-whole-cluster-{context}[All namespaces in the cluster]
+
+Choosing to watch a specific list of multiple namespaces can have the biggest impact on performance due to increased processing overhead. 
+To optimize performance, the recommended modes are to either watch a single namespace for focused monitoring or all namespaces for a comprehensive view of the entire cluster.
+
+== Isolating components in watched namespaces
+
+After deploying the Cluster Operator, it begins watching specified namespaces for changes to Kafka resources. 
+To reduce risks and maintain reliability, isolate component types within each watched namespace. 
+Each namespace should contain only one instance of a given component type, such as one Kafka cluster, to avoid the following types of issues:
+
+* Conflicting resource names
+* Ambiguity in access management
+* Topic and user name collisions
+* Unpredictable behavior during upgrades or recovery
