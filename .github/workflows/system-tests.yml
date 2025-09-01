@@ -50,11 +50,9 @@ jobs:
       ref: ${{ steps.determine_ref.outputs.ref }}
       sha: ${{ steps.determine_ref.outputs.sha }}
     steps:
-      # TODO - remove checkout an duse it directly from main
-      - uses: actions/checkout@v5
       - name: Determine checkout ref
         id: determine_ref
-        uses: ./.github/actions/determine-ref
+        uses: strimzi/strimzi-kafka-operator/.github/actions/determine-ref@main
       - uses: actions/checkout@v5
         with:
           ref: ${{ steps.determine_ref.outputs.ref }}
@@ -102,7 +100,7 @@ jobs:
       - check-rights
     # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.parse-params.outputs.releaseVersion == 'latest' }}
-    runs-on: ubuntu-latest
+    runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
         with:
@@ -110,7 +108,7 @@ jobs:
       - uses: ./.github/actions/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "amd64"
+          runnerArch: "arm64"
 
   build-images:
     name: build-images
@@ -122,8 +120,8 @@ jobs:
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
     strategy:
       matrix:
-        architecture: [amd64]
-    runs-on: ubuntu-latest
+        architecture: [amd64, arm64]
+    runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
         with:
@@ -131,7 +129,7 @@ jobs:
       - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}
-          runnerArch: "amd64"
+          runnerArch: "arm64"
 
   run-tests:
     name: run-tests
