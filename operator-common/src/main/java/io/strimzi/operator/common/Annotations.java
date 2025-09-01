@@ -70,7 +70,7 @@ public class Annotations extends ResourceAnnotations {
     /**
      * Pattern for validation of MirrorMaker2 restart connector annotation value.
      * */
-    public static final Pattern ANNO_STRIMZI_IO_RESTART_CONNECTOR_ARGS_PATTERN = Pattern
+    public static final Pattern ANNO_STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN = Pattern
             .compile("^([a-zA-Z0-9-_]+):includeTasks,onlyFailed$|^([a-zA-Z0-9-_]+):onlyFailed,includeTasks$" +
                     "|^([a-zA-Z0-9-_]+):includeTasks$|^([a-zA-Z0-9-_]+):onlyFailed$|^([a-zA-Z0-9-_]+)$");
 

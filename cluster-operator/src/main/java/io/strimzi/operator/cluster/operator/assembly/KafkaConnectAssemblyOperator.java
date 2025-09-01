@@ -66,7 +66,10 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_RESTART_TASK;
-import static io.strimzi.operator.common.Annotations.*;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_ARGS_PATTERN;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG;
 
 /**
  * <p>Assembly operator for a "Kafka Connect" assembly, which manages:</p>
@@ -631,7 +634,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
     @SuppressWarnings({ "rawtypes" })
-    protected boolean restartAnnotationIsValid(CustomResource resource){
+    protected boolean restartAnnotationIsValid(CustomResource resource) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "");
         return ANNO_STRIMZI_IO_RESTART_ARGS_PATTERN.matcher(restartValue).matches();
     }
@@ -660,7 +663,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean restartAnnotationHasOnlyFailedTasksArg(CustomResource resource){
+    protected boolean restartAnnotationHasOnlyFailedTasksArg(CustomResource resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
                 .contains(ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }

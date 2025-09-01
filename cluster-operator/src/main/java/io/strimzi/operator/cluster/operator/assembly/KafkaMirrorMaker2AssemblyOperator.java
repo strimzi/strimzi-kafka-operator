@@ -46,7 +46,14 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR;
-import static io.strimzi.operator.common.Annotations.*;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -323,9 +330,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
     @SuppressWarnings({ "rawtypes" })
-    protected boolean restartAnnotationIsValid(CustomResource resource){
+    protected boolean restartAnnotationIsValid(CustomResource resource) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "");
-        return ANNO_STRIMZI_IO_RESTART_CONNECTOR_ARGS_PATTERN.matcher(restartValue).matches();
+        return ANNO_STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN.matcher(restartValue).matches();
     }
 
     /**
@@ -352,7 +359,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean restartAnnotationHasOnlyFailedTasksArg(CustomResource resource){
+    protected boolean restartAnnotationHasOnlyFailedTasksArg(CustomResource resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
                 .contains(ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }

@@ -747,9 +747,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         if (hasRestartAnnotation(resource, connectorName)) {
             if (!restartAnnotationIsValid(resource)) {
-                String message = "Invalid annotation format";
-                LOGGER.warnCr(reconciliation, message);
-                conditions.add(StatusUtils.buildWarningCondition("RestartConnector", message));
+                LOGGER.warnCr(reconciliation, "Invalid annotation format");
+                conditions.add(StatusUtils.buildWarningCondition("RestartConnector", "Invalid annotation format"));
                 return Future.succeededFuture(conditions);
             }
             boolean restartIncludeTasks = restartAnnotationHasIncludeTasksArg(resource);
