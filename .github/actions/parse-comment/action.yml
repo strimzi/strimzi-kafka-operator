@@ -54,173 +54,126 @@ outputs:
     value: ${{ steps.should_run.outputs.shouldRun }}
   kubeVersion:
     description: "Version of Kubernetes used for tests"
-    value: ${{ steps.should_run.outputs.kubeVersion }}
+    value: ${{ steps.parse_comment.outputs.kubeVersion }}
   parallel:
     description: "How many tests will be executed in parallel"
-    value: ${{ steps.parse_comment.output.parallel }}
+    value: ${{ steps.parse_comment.outputs.parallel }}
 
 runs:
   using: "composite"
   steps:
     - name: Should Run
       id: should_run
-      shell: bash
-      env:
-        GITHUB_EVENT_NAME: ${{ github.event_name }}
-        COMMENT_BODY: ${{ github.event.comment.body }}
-      run: |
-        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-          SHOULD_RUN_VALUE="true"
-        elif [[ "$GITHUB_EVENT_NAME" == "issue_comment" ]] && [[ "${{ github.event.issue.pull_request }}" != "" && "${{ github.event.issue.pull_request }}" != "null" ]] && echo '$COMMENT_BODY' | grep -qiE '^/gha\s+run'; then
-          # Only trigger on PR comments (not issue comments) that start with '/gha run'
-          SHOULD_RUN_VALUE="true"
-        else
-          SHOULD_RUN_VALUE="false"
-        fi
-        
-        echo "shouldRun=$SHOULD_RUN_VALUE" >> "$GITHUB_OUTPUT"
-        echo "Parsed shouldRun: $SHOULD_RUN_VALUE"
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const ev = context.eventName;
+          const body = context.payload?.comment?.body ?? '';
+          let shouldRun = false;
+
+          if (ev === 'workflow_dispatch') {
+            shouldRun = true;
+          } else if (ev === 'issue_comment' && context.payload?.issue?.pull_request) {
+            shouldRun = /^\s*\/gha\s+run\b/i.test(body || '');
+          }
+
+          core.setOutput('shouldRun', String(shouldRun));
+          core.info(`Parsed shouldRun: ${shouldRun}`);
 
     - name: Build Comment
       id: build_comment
-      shell: bash
+      uses: actions/github-script@v7
       env:
-        COMMENT_BODY: ${{ github.event.comment.body }}
         INPUT_PROFILE: ${{ inputs.profile }}
         INPUT_KAFKA_VERSION: ${{ inputs.kafkaVersion }}
-      run: |
-        if [[ "$COMMENT_BODY" == "" ]]; then
-          BUILT_COMMENT_VALUE="/gha run profile=$INPUT_PROFILE kafkaVersion=$INPUT_KAFKA_VERSION"
-        else
-          BUILT_COMMENT_VALUE='$COMMENT_BODY'
-        fi
-        
-        echo "builtComment=$BUILT_COMMENT_VALUE" >> "$GITHUB_OUTPUT"
-        echo "Parsed builtComment: $BUILT_COMMENT_VALUE"
+      with:
+        script: |
+          const body = context.payload?.comment?.body ?? '';
+          const fallback = `/gha run profile=${process.env.INPUT_PROFILE} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
+          const builtComment = (body && body.trim().length) ? body : fallback;
+          
+          core.setOutput('builtComment', builtComment);
+          core.info(`Parsed builtComment: ${builtComment}`);
 
     - name: Parse Comment
       id: parse_comment
-      shell: bash
+      uses: actions/github-script@v7
       env:
+        INPUT_PROFILE: ${{ inputs.profile }}
+        INPUT_KAFKA_VERSION: ${{ inputs.kafkaVersion }}
+        INPUT_RELEASE_VERSION: ${{ inputs.releaseVersion }}
         BUILT_COMMENT: ${{ steps.build_comment.outputs.builtComment }}
-      run: |
-        set -e
-        
-        # Read the comment body safely from environment variable
-        COMMENT='$BUILT_COMMENT'
-        COMMENT_LOWER=$(echo '$COMMENT' | tr '[:upper:]' '[:lower:]')
-        
-        # Default values
-        DEFAULT_PIPELINES="regression,upgrade"
-        DEFAULT_PROFILES="operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
-        DEFAULT_FEATURE_GATES="+DummyFeatureGate"
-        DEFAULT_RBAC_SCOPE="CLUSTER"
-        DEFAULT_OPERATOR_INSTALL_TYPE="yaml"
-        
-        PIPELINE_LIST=""
-        PROFILE_LIST=""
-        AGENT_VALUE=""
-        ARCH_VALUE=""
-        FG_VALUE="$DEFAULT_FEATURE_GATES"
-        RBAC_VALUE="$DEFAULT_RBAC_SCOPE"
-        COI_VALUE="$DEFAULT_OPERATOR_INSTALL_TYPE"
-        PARALLEL_VALUE="1"
-        GROUPS_VALUE=""
-        TESTS_VALUE=""
-        KAFKA_VERSION_VALUE=""
-        KUBE_VERSION_VALUE="latest"
-        
-        # Check for trigger string (must start with /gha run)
-        if echo "$COMMENT_LOWER" | grep -q "^/gha run"; then
-        
-          # Check if pipeline parameter exists (pipeline=...)
-          if echo "$COMMENT_LOWER" | grep -q "pipeline="; then
-            VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*pipeline=\([^ ]*\).*/\1/p')
-            if [ -z "$VALUE" ]; then
-              PIPELINE_LIST="$DEFAULT_PIPELINES"
-            else
-              PIPELINE_LIST="$VALUE"
-            fi
-          else
-            # Otherwise check for profile parameter (profile=...)
-            if echo "$COMMENT_LOWER" | grep -q "profile="; then
-              VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*profile=\([^ ]*\).*/\1/p')
-              if [ -z "$VALUE" ]; then
-                PROFILE_LIST="$DEFAULT_PROFILES"
-              else
-                PROFILE_LIST="$VALUE"
-              fi
-            else
-              PROFILE_LIST="$DEFAULT_PROFILES"
-            fi
-          fi
-        
-          # Parse additional fields (if present)
-          if echo "$COMMENT_LOWER" | grep -q "agent="; then
-            AGENT_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*agent=\([^ ]*\).*/\1/p')
-          fi
-          if echo "$COMMENT" | grep -q "strimzi_feature_gates="; then
-            FG_VALUE=$(echo "$COMMENT" | sed -n 's/.*strimzi_feature_gates=\([^ ]*\).*/\1/p')
-          fi
-          if echo "$COMMENT" | grep -q "strimzi_rbac_scope="; then
-            RBAC_VALUE=$(echo "$COMMENT" | sed -n 's/.*strimzi_rbac_scope=\([^ ]*\).*/\1/p')
-          fi
-          if echo "$COMMENT_LOWER" | grep -q "cluster_operator_install_type="; then
-            COI_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*cluster_operator_install_type=\([^ ]*\).*/\1/p')
-          fi
-          if echo "$COMMENT_LOWER" | grep -q "parallel="; then
-            PARALLEL_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*parallel=\([^ ]*\).*/\1/p')
-          fi
-          if echo "$COMMENT_LOWER" | grep -q "architecture="; then
-            ARCH_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*architecture=\([^ ]*\).*/\1/p')
-          fi
-          if echo "$COMMENT_LOWER" | grep -q "groups="; then
-            GROUPS_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*groups=\([^ ]*\).*/\1/p')
-          fi
-          if echo "$COMMENT_LOWER" | grep -q "tests="; then
-            TESTS_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*tests=\([^ ]*\).*/\1/p')
-          fi
-          if echo "$COMMENT_LOWER" | grep -q "kubeversion="; then
-            KUBE_VERSION_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*kubeversion=\([^ ]*\).*/\1/p')
-          fi
-          if echo "$COMMENT_LOWER" | grep -q "kafkaversion="; then
-            KAFKA_VERSION_VALUE=$(echo "$COMMENT_LOWER" | sed -n 's/.*kafkaversion=\([^ ]*\).*/\1/p')
-          else
-            KAFKA_VERSION_VALUE="latest"
-          fi
-        fi
-        
-        # Set releaseVersion to latest if it was passed empty from event
-        RELEASE_VERSION_VALUE="${{ inputs.releaseVersion }}"
-        if [ -z "$RELEASE_VERSION_VALUE" ]; then
-          RELEASE_VERSION_VALUE="latest"
-        fi
-        
-        # Output the collected values as simple comma-separated strings
-        echo "pipelineList=$PIPELINE_LIST" >> $GITHUB_OUTPUT
-        echo "profileList=$PROFILE_LIST" >> $GITHUB_OUTPUT
-        echo "agent=$AGENT_VALUE" >> $GITHUB_OUTPUT
-        echo "architecture=$ARCH_VALUE" >> $GITHUB_OUTPUT
-        echo "strimzi_feature_gates=$FG_VALUE" >> $GITHUB_OUTPUT
-        echo "strimzi_rbac_scope=$RBAC_VALUE" >> $GITHUB_OUTPUT
-        echo "cluster_operator_install_type=$COI_VALUE" >> $GITHUB_OUTPUT
-        echo "parallel=$PARALLEL_VALUE" >> $GITHUB_OUTPUT
-        echo "groups=$GROUPS_VALUE" >> $GITHUB_OUTPUT
-        echo "tests=$TESTS_VALUE" >> $GITHUB_OUTPUT
-        echo "kafkaVersion=$KAFKA_VERSION_VALUE" >> $GITHUB_OUTPUT
-        echo "releaseVersion=$RELEASE_VERSION_VALUE" >> $GITHUB_OUTPUT
-        echo "kubeVersion=$KUBE_VERSION_VALUE" >> $GITHUB_OUTPUT
+      with:
+        script: |
+          const comment = process.env.BUILT_COMMENT;
 
-        echo "Parsed pipelineList: $PIPELINE_LIST"
-        echo "Parsed profileList: $PROFILE_LIST"
-        echo "Parsed agent: $AGENT_VALUE"
-        echo "Parsed architecture: $ARCH_VALUE"
-        echo "Parsed strimzi_feature_gates: $FG_VALUE"
-        echo "Parsed strimzi_rbac_scope: $RBAC_VALUE"
-        echo "Parsed cluster_operator_install_type: $COI_VALUE"
-        echo "Parsed parallel: $PARALLEL_VALUE"
-        echo "Parsed groups: $GROUPS_VALUE"
-        echo "Parsed tests: $TESTS_VALUE"
-        echo "Parsed kafkaVersion: $KAFKA_VERSION_VALUE"
-        echo "Parsed releaseVersion: $RELEASE_VERSION_VALUE"
-        echo "Parsed kubeVersion: $KUBE_VERSION_VALUE"
+          // Remove all backticks from the comment
+          const sanitized = comment.replace(/`/g, '');
+          
+          // Create one-line comment in case it is multi-line
+          const flat   = sanitized.replace(/\s+/g, ' ').trim();
+          
+          // Create lower-case 
+          const lower  = flat.toLowerCase();
+          
+          // Check whether the comment starts with /gha run
+          const starts = /^\s*\/gha\s+run\b/i.test(sanitized);
+
+          // Function for getting parameter from string
+          const getParameter = (key, src = flat) => {
+            const regex = new RegExp(`\\b${key}=("([^"]*)"|'([^']*)'|([^\\s]+))`, 'i');
+            const match = src.match(regex);
+            if (!match) {
+              return '';
+            }
+            return match[2] ?? match[3] ?? match[4] ?? '';
+          };
+
+          const DEFAULTS = {
+            pipelines:    'regression,upgrade',
+            profiles:     'operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade',
+            featureGate:  '+DummyFeatureGate',
+            rbacScope:    'CLUSTER',
+            installType:  'yaml',
+            parallel:     '1',
+            kafkaVersion: 'latest',
+            kubeVersion:  'latest',
+          };
+
+          let pipelineList = '', profileList = '';
+          if (starts) {
+            const pipe = getParameter('pipeline', lower);
+            const prof = getParameter('profile',  lower);
+            if (pipe) {
+              pipelineList = pipe;
+            } else {
+              profileList = prof || DEFAULTS.profiles;
+            }
+          }
+
+          const out = {
+            pipelineList,
+            profileList,
+            agent:                         getParameter('agent', lower),
+            architecture:                  getParameter('architecture', lower),
+            strimzi_feature_gates:         getParameter('strimzi_feature_gates', sanitized), // keep case
+            strimzi_rbac_scope:            getParameter('strimzi_rbac_scope',  sanitized),  // keep case
+            cluster_operator_install_type: getParameter('cluster_operator_install_type', lower) || DEFAULTS.installType,
+            parallel:                      getParameter('parallel', lower) || DEFAULTS.parallel,
+            groups:                        getParameter('groups', lower),
+            tests:                         getParameter('tests', lower),
+            kafkaVersion:                  getParameter('kafkaversion', lower) || DEFAULTS.kafkaVersion,
+            kubeVersion:                   getParameter('kubeversion',  lower) || DEFAULTS.kubeVersion,
+            releaseVersion:                process.env.INPUT_RELEASE_VERSION || 'latest',
+          };
+
+          if (starts && !out.pipelineList && !out.profileList) {
+            out.profileList = DEFAULTS.profiles;
+          }
+
+          // Export collected data as outputs
+          for (const [k, v] of Object.entries(out)) {
+            core.setOutput(k, v);
+          }
+          
+          core.info(`Parsed:\n${JSON.stringify(out, null, 2)}`);
