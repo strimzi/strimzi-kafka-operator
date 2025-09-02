@@ -1,0 +1,24 @@
+{
+  "event_name": "issue_comment",
+  "action": "created",
+  "comment": {
+    "body": "Testing with `backticks` and code blocks:\n```bash\necho \"fake command here\"\n```\n\nBut the real command is: /gha run profile=operators kafkaVersion=3.8.0\n\nWith some inline `code` and more ``` triple backticks.\nAnd even `nested backticks` in parameters."
+  },
+  "issue": {
+    "number": 42,
+    "pull_request": {
+      "head": {
+        "ref": "feature-backticks-test",
+        "sha": "2222222222222222222222222222222222222222",
+        "repo": {
+          "name": "test-repo",
+          "owner": { "login": "batman" }
+        }
+      }
+    }
+  },
+  "repository": {
+    "name": "test-repo",
+    "owner": { "login": "batman" }
+  }
+}

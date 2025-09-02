@@ -21,14 +21,16 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  contents: read
+
 jobs:
   # Parse and build parameters from comment or from workflow params
   parse-params:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
-      checks: write
       statuses: write
     outputs:
       pipelineList: ${{ steps.parse.outputs.pipelineList }}
@@ -45,13 +47,16 @@ jobs:
       parallel: ${{ steps.parse.outputs.parallel }}
       shouldRun: ${{ steps.parse.outputs.shouldRun }}
       kubeVersion: ${{ steps.parse.outputs.kubeVersion }}
-      # Checkout ref data
-      repo_owner: ${{ steps.parse.outputs.repo_owner }}
-      repo_name: ${{ steps.parse.outputs.repo_name }}
-      ref: ${{ steps.parse.outputs.ref }}
-      sha: ${{ steps.parse.outputs.sha }}
+      ref: ${{ steps.determine_ref.outputs.ref }}
+      sha: ${{ steps.determine_ref.outputs.sha }}
     steps:
+      - name: Determine checkout ref
+        id: determine_ref
+        uses: strimzi/strimzi-kafka-operator/.github/actions/determine-ref@main
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.determine_ref.outputs.ref }}
+      # TODO - think about this how to handle it after check-rights
       - name: Parse Comment
         id: parse
         uses: ./.github/actions/parse-comment
@@ -67,14 +72,15 @@ jobs:
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
-      checks: write
       statuses: write
     steps:
       - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
       # In case the user has proper rights, print comment with build link and set status
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add comment
         uses: ./.github/actions/add-comment
         with:
@@ -98,8 +104,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
-          ref: ${{ needs.parse-params.outputs.sha }}
+          ref: ${{ needs.parse-params.outputs.ref }}
       - uses: ./.github/actions/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
@@ -116,12 +121,11 @@ jobs:
     strategy:
       matrix:
         architecture: [amd64, arm64]
-    runs-on: oracle-vm-2cpu-8gb-arm64
+    runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
-          ref: ${{ needs.parse-params.outputs.sha }}
+          ref: ${{ needs.parse-params.outputs.ref }}
       - uses: ./.github/actions/containers-build
         with:
           architecture: ${{ matrix.architecture }}
@@ -136,6 +140,11 @@ jobs:
       - build-images
     # Run if properly triggered, permissions check passed, and build jobs succeeded or were skipped
     if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.build-images.result != 'failure' &&  needs.build-artifacts.result != 'failure' }}
+    # Job needs write rights for setting statuses on pull-requests
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
     uses: ./.github/workflows/run-system-tests.yml
     with:
       pipelineList: ${{ needs.parse-params.outputs.pipelineList }}
@@ -150,8 +159,7 @@ jobs:
       kafkaVersion: ${{ needs.parse-params.outputs.kafkaVersion }}
       kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
       # Checkout ref params
-      repository: ${{ needs.parse-params.outputs.repo_owner }}/${{ needs.parse-params.outputs.repo_name }}
-      ref: ${{ needs.parse-params.outputs.sha }}
+      ref: ${{ needs.parse-params.outputs.ref }}
 
   report:
     needs:
@@ -161,12 +169,13 @@ jobs:
     if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
-      checks: write
       statuses: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add comment
         uses: ./.github/actions/add-comment
         with:

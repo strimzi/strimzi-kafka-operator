@@ -8,6 +8,9 @@ on:
     branches:
       - "main"
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -50,6 +53,9 @@ jobs:
           echo "📊 Found $TOTAL test scenarios"
           echo
           
+          # Initialize overall result tracker
+          overall_result=true
+          
           # Loop through each scenario
           for i in $(seq 0 $((TOTAL - 1))); do
             # Extract scenario details using yq
@@ -84,10 +90,16 @@ jobs:
               echo "✅ $id passed"
             else
               echo "❌ $id failed"
-              exit 1
+              overall_result=false
             fi
+            # Print blank line for better readability
             echo
           done
+          
+          if [ "$overall_result" = "false" ]; then
+            echo "There are some test ❌. Please check the logs for more details." 
+            exit 1
+          fi
           
           echo "───────────────────────────────────────"
           echo "🎉 All $TOTAL parse-comment scenarios passed!"
@@ -127,6 +139,9 @@ jobs:
           echo "⚠️  Note: These tests validate action structure and input handling."
           echo "   GitHub API permission checks depend on actual repository permissions."
           echo
+          
+          # Initialize overall result tracker
+          overall_result=true
           
           # Loop through each scenario
           for i in $(seq 0 $((TOTAL - 1))); do
@@ -168,10 +183,16 @@ jobs:
               echo "✅ $id completed"
             else
               echo "❌ $id failed"
-              exit 1
+              overall_result=false
             fi
+            # Print blank line for better readability
             echo
           done
+          
+          if [ "$overall_result" = "false" ]; then
+            echo "There are some test ❌. Please check the logs for more details." 
+            exit 1
+          fi
           
           echo "───────────────────────────────────────"
           echo "🎉 All $TOTAL check-permissions scenarios completed!"
@@ -210,6 +231,9 @@ jobs:
           echo "📊 Found $TOTAL test scenarios"
           echo
           
+          # Initialize overall result tracker
+          overall_result=true
+          
           # Loop through each scenario
           for i in $(seq 0 $((TOTAL - 1))); do
             # Extract scenario details using yq
@@ -244,10 +268,16 @@ jobs:
               echo "✅ $id completed"
             else
               echo "❌ $id failed"
-              exit 1
+              overall_result=false
             fi
+            # Print blank line for better readability
             echo
           done
+          
+          if [ "$overall_result" = "false" ]; then
+            echo "There are some test ❌. Please check the logs for more details." 
+            exit 1
+          fi
           
           echo "───────────────────────────────────────"
           echo "🎉 All $TOTAL generate-matrix scenarios passed!"

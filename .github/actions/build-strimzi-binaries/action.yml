@@ -9,7 +9,7 @@ inputs:
   runnerArch:
     description: "Architecture of GitHub runner"
     required: false
-    default: "arm64"
+    default: "amd64"
 
 runs:
   using: "composite"

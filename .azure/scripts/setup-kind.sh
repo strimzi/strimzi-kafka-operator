@@ -6,7 +6,12 @@ rm -rf ~/.kube
 KIND_VERSION=${KIND_VERSION:-"v0.29.0"}
 KIND_CLOUD_PROVIDER_VERSION=${KIND_CLOUD_PROVIDER_VERSION:-"v0.6.0"}
 # To properly upgrade Kind version check the releases in github https://github.com/kubernetes-sigs/kind/releases and use proper image based on Kind version
-KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-"kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f"}
+KIND_DEFAULT_IMAGE="kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f"
+KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-$KIND_DEFAULT_IMAGE}
+# Replace latest as one special version
+if [[ "${KIND_NODE_IMAGE}" == "latest" ]]; then
+    KIND_NODE_IMAGE=$KIND_DEFAULT_IMAGE
+fi
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 DOCKER_CMD="${DOCKER_CMD:-docker}"
 REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry:2"}

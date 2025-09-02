@@ -75,10 +75,6 @@ on:
         default: ""
         type: string
       # Checkout ref params
-      repository:
-        description: "Repository that will be checkout"
-        required: true
-        type: string
       ref:
         description: "Repository ref that will be checkout"
         required: true
@@ -86,13 +82,12 @@ on:
 
 jobs:
   generate-matrix:
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
       - name: Generate Matrix
         id: gen
@@ -106,7 +101,7 @@ jobs:
           default_strimzi_rbac_scope: ${{ inputs.strimzi_rbac_scope }}
           default_cluster_operator_install_type: ${{ inputs.cluster_operator_install_type }}
           default_parallel: ${{ inputs.parallel }}
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
   run-tests:
     needs: generate-matrix
@@ -140,7 +135,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
 
       - name: Set check & commit status
@@ -211,11 +205,8 @@ jobs:
       - name: Print out environment info
         uses: ./.github/actions/log-variables
 
-      # Build Strimzi and its images => used when running STs against PR or main branch where container images should be built
+      # Load Strimzi images
       - name: Load Strimzi images
-        # Build images in case that we are not running tests on the `main` branch and the docker_tag is `latest`, which means
-        # that we are running tests on a PR
-        # add back: eval $(minikube docker-env)
         if: ${{ env.DOCKER_TAG == 'latest' && github.ref_name != 'main' }}
         uses: ./.github/actions/containers-load
         with:

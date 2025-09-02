@@ -1,0 +1,45 @@
+name: "Determine checkout ref"
+description: "Determines the correct ref to checkout based on event context"
+
+outputs:
+  ref:
+    description: "The ref to checkout"
+    value: ${{ steps.determine.outputs.ref }}
+  sha:
+    description: "The SHA to checkout"
+    value: ${{ steps.determine.outputs.sha }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Determine ref
+      id: determine
+      shell: bash
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          # For PR events, use merge ref to test the merged state
+          REF="refs/pull/${{ github.event.pull_request.number }}/merge"
+          SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          if [[ "$SHA" == "" || "$SHA" == "null" ]]; then
+            SHA="HEAD"
+          fi
+          echo "PR event detected: Using merge ref for PR #${{ github.event.pull_request.number }}"
+        elif [[ "${{ github.event_name }}" == "issue_comment" ]] && [[ "${{ github.event.issue.pull_request }}" != "" && "${{ github.event.issue.pull_request }}" != "null" ]]; then
+          # For PR comments, use merge ref to test against merge commit
+          REF="refs/pull/${{ github.event.issue.number }}/merge"
+          SHA="HEAD"
+          echo "PR comment detected: Using merge ref for PR #${{ github.event.issue.number }}"
+        else
+          # For workflow_dispatch and other events, use the current branch
+          REF="${{ github.ref }}"
+          SHA="${{ github.sha }}"
+          echo "Standard event: Using current ref $REF"
+        fi
+        
+        echo "ref=$REF" >> $GITHUB_OUTPUT
+        echo "sha=$SHA" >> $GITHUB_OUTPUT
+        echo "REF=$REF" >> $GITHUB_ENV
+        echo "SHA=$SHA" >> $GITHUB_ENV
+        
+        echo "Determined ref: $REF"
+        echo "Determined SHA: $SHA"
