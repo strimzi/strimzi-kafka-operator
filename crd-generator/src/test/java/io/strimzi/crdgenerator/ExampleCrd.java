@@ -37,7 +37,7 @@ import java.util.Map;
             categories = {"strimzi"}),
         scope = "Namespaced",
         versions = {
-            @Crd.Spec.Version(name = "v1alpha1", served = true, storage = true),
+            @Crd.Spec.Version(name = "v1alpha1", served = true, storage = true, deprecated = true, deprecationWarning = "This version is deprecated"),
             @Crd.Spec.Version(name = "v1beta1", served = true, storage = false)
         },
         additionalPrinterColumns = {

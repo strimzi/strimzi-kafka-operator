@@ -353,6 +353,12 @@ class CrdGenerator {
             versionNode.put("served", servedVersion != null ? servedVersion.contains(crApiVersion) : version.served());
             versionNode.put("storage", storageVersion != null ? crApiVersion.equals(storageVersion) : version.storage());
 
+            // Deprecation
+            versionNode.put("deprecated", version.deprecated());
+            if (version.deprecationWarning() != null && !version.deprecationWarning().isEmpty()) {
+                versionNode.put("deprecationWarning", version.deprecationWarning());
+            }
+
             // Subresources
             ObjectNode subresourcesForVersion = subresources.get(crApiVersion);
             if (!subresourcesForVersion.isEmpty()) {
