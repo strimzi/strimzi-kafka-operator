@@ -18,6 +18,7 @@ spec:
   - name: v1
     served: true
     storage: true
+    deprecated: false
     subresources:
       status: {}
       scale:
@@ -63,6 +64,7 @@ spec:
   - name: v2
     served: true
     storage: false
+    deprecated: false
     subresources:
       status: {}
       scale:

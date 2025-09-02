@@ -105,6 +105,16 @@ public @interface Crd {
              * @return  Specifies if this version is stored
              */
             boolean storage();
+
+            /**
+             * @return  Specifies if this version is deprecated
+             */
+            boolean deprecated() default false;
+
+            /**
+             * @return  Specifies the deprecation warning. Should be used only for deprecated resource versions.
+             */
+            String deprecationWarning() default "";
         }
 
         /**

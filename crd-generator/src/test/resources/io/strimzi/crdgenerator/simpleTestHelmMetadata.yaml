@@ -24,6 +24,8 @@ spec:
   - name: v1alpha1
     served: true
     storage: true
+    deprecated: true
+    deprecationWarning: This version is deprecated
     additionalPrinterColumns:
     - name: Foo
       description: The foo
@@ -636,6 +638,7 @@ spec:
   - name: v1beta1
     served: true
     storage: false
+    deprecated: false
     additionalPrinterColumns:
     - name: Foo
       description: The foo
