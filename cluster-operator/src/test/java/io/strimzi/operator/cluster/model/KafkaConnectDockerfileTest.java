@@ -533,12 +533,12 @@ public class KafkaConnectDockerfileTest {
                 "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
                 "RUN 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/64cebd9c/pom.xml' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom' \\\n" +
                 "      && 'echo' '<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>https://repo1.maven.org/maven2/</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>' > '/tmp/64cebd9c.xml' \\\n" +
-                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/64cebd9c.xml' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
+                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/64cebd9c.xml' '-DincludeScope=runtime' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
                 "      && 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/64cebd9c/a1-v1.jar' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar'\n" +
                 "\n" +
                 "RUN 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/9983060e/pom.xml' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom' \\\n" +
                 "      && 'echo' '<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>https://repo1.maven.org/maven2/</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>' > '/tmp/9983060e.xml' \\\n" +
-                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/9983060e.xml' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/9983060e' '-f' '/tmp/my-connector-plugin/9983060e/pom.xml' \\\n" +
+                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/9983060e.xml' '-DincludeScope=runtime' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/9983060e' '-f' '/tmp/my-connector-plugin/9983060e/pom.xml' \\\n" +
                 "      && 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/9983060e/a2-v2.jar' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar'\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
@@ -594,7 +594,7 @@ public class KafkaConnectDockerfileTest {
                 "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
                 "RUN 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/64cebd9c/pom.xml' 'https://my-maven-repository.com/maven2/g1/a1/v1/a1-v1.pom' \\\n" +
                 "      && 'echo' '<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>https://my-maven-repository.com/maven2/</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>' > '/tmp/64cebd9c.xml' \\\n" +
-                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/64cebd9c.xml' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
+                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/64cebd9c.xml' '-DincludeScope=runtime' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
                 "      && 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/64cebd9c/a1-v1.jar' 'https://my-maven-repository.com/maven2/g1/a1/v1/a1-v1.jar'\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
@@ -640,7 +640,7 @@ public class KafkaConnectDockerfileTest {
                 "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
                 "RUN 'curl' '-f' '-k' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/64cebd9c/pom.xml' 'https://my-maven-repository.com/maven2/g1/a1/v1/a1-v1.pom' \\\n" +
                 "      && 'echo' '<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>https://my-maven-repository.com/maven2/</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>' > '/tmp/64cebd9c.xml' \\\n" +
-                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/64cebd9c.xml' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-Daether.connector.https.securityMode=insecure' '-Dmaven.wagon.http.ssl.insecure=true' '-Dmaven.wagon.http.ssl.allowall=true' '-Dmaven.wagon.http.ssl.ignore.validity.dates=true' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
+                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/64cebd9c.xml' '-DincludeScope=runtime' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-Daether.connector.https.securityMode=insecure' '-Dmaven.wagon.http.ssl.insecure=true' '-Dmaven.wagon.http.ssl.allowall=true' '-Dmaven.wagon.http.ssl.ignore.validity.dates=true' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
                 "      && 'curl' '-f' '-k' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/64cebd9c/a1-v1.jar' 'https://my-maven-repository.com/maven2/g1/a1/v1/a1-v1.jar'\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
@@ -685,7 +685,7 @@ public class KafkaConnectDockerfileTest {
                 "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
                 "RUN 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/64cebd9c/pom.xml' 'https://my-maven-repository.com/maven2</hack>\"/repo/g1/a1/v1/a1-v1.pom' \\\n" +
                 "      && 'echo' '<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>https://my-maven-repository.com/maven2&lt;/hack&gt;&quot;/repo/</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>' > '/tmp/64cebd9c.xml' \\\n" +
-                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/64cebd9c.xml' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
+                "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/64cebd9c.xml' '-DincludeScope=runtime' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
                 "      && 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/64cebd9c/a1-v1.jar' 'https://my-maven-repository.com/maven2</hack>\"/repo/g1/a1/v1/a1-v1.jar'\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
