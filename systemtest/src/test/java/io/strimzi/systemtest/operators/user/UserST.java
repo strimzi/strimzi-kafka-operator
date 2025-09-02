@@ -308,7 +308,7 @@ class UserST extends AbstractST {
         steps = {
             @Step(value = "Configure cluster operator with custom secret prefix.", expected = "Cluster operator is reconfigured with the specified secret prefix."),
             @Step(value = "Create TLS and SCRAM-SHA-512 users.", expected = "Users are created successfully with TLS and SCRAM-SHA-512 authentication."),
-            @Step(value = "Verify user secrets are created with proper prefix.", expected = "User secrets are created with the configured prefix in their names."),
+            @Step(value = "Verify user secrets are created with correct prefix.", expected = "User secrets are created with the configured prefix in their names."),
             @Step(value = "Test message sending and receiving.", expected = "Messages are successfully sent and received using both authentication methods."),
             @Step(value = "Update users and verify secret updates.", expected = "User updates are reflected in the prefixed secrets."),
             @Step(value = "Delete users and verify cleanup.", expected = "User deletion removes the prefixed secrets properly.")

@@ -24,7 +24,7 @@
 | - | - | - |
 | 1. | Configure cluster operator with custom secret prefix. | Cluster operator is reconfigured with the specified secret prefix. |
 | 2. | Create TLS and SCRAM-SHA-512 users. | Users are created successfully with TLS and SCRAM-SHA-512 authentication. |
-| 3. | Verify user secrets are created with proper prefix. | User secrets are created with the configured prefix in their names. |
+| 3. | Verify user secrets are created with correct prefix. | User secrets are created with the configured prefix in their names. |
 | 4. | Test message sending and receiving. | Messages are successfully sent and received using both authentication methods. |
 | 5. | Update users and verify secret updates. | User updates are reflected in the prefixed secrets. |
 | 6. | Delete users and verify cleanup. | User deletion removes the prefixed secrets properly. |
