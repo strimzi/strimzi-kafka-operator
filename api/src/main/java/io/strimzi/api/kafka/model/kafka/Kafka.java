@@ -32,15 +32,13 @@ import java.util.function.Predicate;
         names = @Crd.Spec.Names(
             kind = Kafka.RESOURCE_KIND,
             plural = Kafka.RESOURCE_PLURAL,
-            shortNames = {Kafka.SHORT_NAME},
+            shortNames = {"k"},
             categories = {Constants.STRIMZI_CATEGORY}
         ),
         group = Kafka.RESOURCE_GROUP,
         scope = Kafka.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = Kafka.V1BETA2, served = true, storage = false),
-            @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = true),
-            @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
+            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true)
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status()
@@ -76,27 +74,22 @@ import java.util.function.Predicate;
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Namespaced, UnknownPropertyPreserving {
-    public static final String V1BETA2 = Constants.V1BETA2;
-    public static final String V1BETA1 = Constants.V1BETA1;
-    public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final String CONSUMED_VERSION = V1BETA2;
-    public static final List<String> VERSIONS = List.of(V1BETA2, V1BETA1, V1ALPHA1);
     private static final long serialVersionUID = 1L;
 
-    public static final String SCOPE = "Namespaced";
+    public static final String SCOPE = Constants.SCOPE_NAMESPACED;
+    public static final List<String> VERSIONS = List.of(Constants.V1BETA2);
     public static final String RESOURCE_KIND = "Kafka";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkas";
     public static final String RESOURCE_SINGULAR = "kafka";
-    public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
-    public static final String SHORT_NAME = "k";
-    public static final List<String> RESOURCE_SHORTNAMES = List.of(SHORT_NAME);
 
     private Map<String, Object> additionalProperties;
 
-    // Added to avoid duplication during Json serialization
+    // Added to avoid duplication during JSON serialization
+    @SuppressWarnings({"UnusedDeclaration"})
     private String apiVersion;
+    @SuppressWarnings({"UnusedDeclaration"})
     private String kind;
 
     public Kafka() {

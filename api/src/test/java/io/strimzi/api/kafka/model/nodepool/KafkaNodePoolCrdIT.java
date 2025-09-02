@@ -49,13 +49,13 @@ public class KafkaNodePoolCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
-        CrdUtils.createCrd(client, KafkaNodePool.CRD_NAME, CrdUtils.CRD_KAFKA_NODE_POOL);
+        CrdUtils.createCrd(client, CrdUtils.CRD_KAFKA_NODE_POOL_NAME, CrdUtils.CRD_KAFKA_NODE_POOL);
         TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        CrdUtils.deleteCrd(client, KafkaNodePool.CRD_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_KAFKA_NODE_POOL_NAME);
         TestUtils.deleteNamespace(client, NAMESPACE);
         client.close();
     }

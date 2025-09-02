@@ -44,7 +44,6 @@ public class KafkaCrdOperatorTest extends AbstractNamespacedResourceOperatorTest
     @Override
     protected Kafka resource(String name) {
         return new KafkaBuilder()
-                .withApiVersion(Kafka.RESOURCE_GROUP + "/" + Kafka.V1BETA1)
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(NAMESPACE)

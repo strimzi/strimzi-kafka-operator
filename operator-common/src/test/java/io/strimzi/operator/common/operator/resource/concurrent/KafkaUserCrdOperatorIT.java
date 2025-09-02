@@ -38,7 +38,7 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
 
     @Override
     protected String getCrdName() {
-        return KafkaUser.CRD_NAME;
+        return CrdUtils.CRD_KAFKA_USER_NAME;
     }
 
     @Override

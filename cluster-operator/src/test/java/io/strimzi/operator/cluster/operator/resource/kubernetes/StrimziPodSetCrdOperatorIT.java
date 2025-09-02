@@ -60,7 +60,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
     @Override
     protected String getCrdName() {
-        return StrimziPodSet.CRD_NAME;
+        return CrdUtils.CRD_STRIMZI_POD_SET_NAME;
     }
 
     @Override

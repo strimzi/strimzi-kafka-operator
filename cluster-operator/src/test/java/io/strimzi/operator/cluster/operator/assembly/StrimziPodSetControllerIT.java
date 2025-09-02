@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectList;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -88,10 +89,10 @@ public class StrimziPodSetControllerIT {
         LOGGER.info("Created namespace");
 
         LOGGER.info("Creating CRDs");
-        CrdUtils.createCrd(client, Kafka.CRD_NAME, CrdUtils.CRD_KAFKA);
-        CrdUtils.createCrd(client, KafkaConnect.CRD_NAME, CrdUtils.CRD_KAFKA_CONNECT);
-        CrdUtils.createCrd(client, KafkaMirrorMaker2.CRD_NAME, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2);
-        CrdUtils.createCrd(client, StrimziPodSet.CRD_NAME, CrdUtils.CRD_STRIMZI_POD_SET);
+        CrdUtils.createCrd(client, CrdUtils.CRD_KAFKA_NAME, CrdUtils.CRD_KAFKA);
+        CrdUtils.createCrd(client, CrdUtils.CRD_KAFKA_CONNECT_NAME, CrdUtils.CRD_KAFKA_CONNECT);
+        CrdUtils.createCrd(client, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2_NAME, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2);
+        CrdUtils.createCrd(client, CrdUtils.CRD_STRIMZI_POD_SET_NAME, CrdUtils.CRD_STRIMZI_POD_SET);
         LOGGER.info("Created CRDs");
 
         vertx = Vertx.vertx();
@@ -114,10 +115,10 @@ public class StrimziPodSetControllerIT {
         kafkaOp().inNamespace(NAMESPACE).withName(KAFKA_NAME).delete();
         kafkaOp().inNamespace(NAMESPACE).withName(OTHER_KAFKA_NAME).delete();
 
-        CrdUtils.deleteCrd(client, Kafka.CRD_NAME);
-        CrdUtils.deleteCrd(client, KafkaConnect.CRD_NAME);
-        CrdUtils.deleteCrd(client, KafkaMirrorMaker2.CRD_NAME);
-        CrdUtils.deleteCrd(client, StrimziPodSet.CRD_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_KAFKA_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_KAFKA_CONNECT_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_STRIMZI_POD_SET_NAME);
 
         TestUtils.deleteNamespace(client, NAMESPACE);
 
@@ -207,7 +208,7 @@ public class StrimziPodSetControllerIT {
 
         assertThat(owner, is(notNullValue()));
         assertThat(owner.getKind(), is("StrimziPodSet"));
-        assertThat(owner.getApiVersion(), is(StrimziPodSet.RESOURCE_GROUP + "/" + StrimziPodSet.V1BETA2));
+        assertThat(owner.getApiVersion(), is(StrimziPodSet.RESOURCE_GROUP + "/" + Constants.V1BETA2));
         assertThat(owner.getName(), is(podSetName));
     }
 

@@ -31,13 +31,13 @@ import java.util.Map;
                 names = @Crd.Spec.Names(
                         kind = StrimziPodSet.RESOURCE_KIND,
                         plural = StrimziPodSet.RESOURCE_PLURAL,
-                        shortNames = {StrimziPodSet.SHORT_NAME},
+                        shortNames = {"sps"},
                         categories = {Constants.STRIMZI_CATEGORY}
                 ),
                 group = StrimziPodSet.RESOURCE_GROUP,
                 scope = StrimziPodSet.SCOPE,
                 versions = {
-                    @Crd.Spec.Version(name = StrimziPodSet.V1BETA2, served = true, storage = true)
+                    @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true)
                 },
                 subresources = @Crd.Spec.Subresources(
                     status = @Crd.Spec.Subresources.Status()
@@ -85,21 +85,20 @@ import java.util.Map;
 public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodSetStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    public static final String SCOPE = "Namespaced";
-    public static final String V1BETA2 = Constants.V1BETA2;
-    public static final List<String> VERSIONS = List.of(V1BETA2);
+    public static final String SCOPE = Constants.SCOPE_NAMESPACED;
+    public static final List<String> VERSIONS = List.of(Constants.V1BETA2);
     public static final String RESOURCE_KIND = "StrimziPodSet";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_CORE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "strimzipodsets";
     public static final String RESOURCE_SINGULAR = "strimzipodset";
-    public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
-    public static final String SHORT_NAME = "sps";
 
     private Map<String, Object> additionalProperties;
 
-    // Added to avoid duplication during Json serialization
+    // Added to avoid duplication during JSON serialization
+    @SuppressWarnings({"UnusedDeclaration"})
     private String apiVersion;
+    @SuppressWarnings({"UnusedDeclaration"})
     private String kind;
 
     public StrimziPodSet() {
