@@ -14,3 +14,4 @@ They verify user authentication mechanisms (TLS, SCRAM-SHA-512, external TLS), a
 - [testTlsUserWithQuotas](../io.strimzi.systemtest.operators.user.UserST.md)
 - [testUpdateUser](../io.strimzi.systemtest.operators.user.UserST.md)
 - [testUserWithNameMoreThan64Chars](../io.strimzi.systemtest.operators.user.UserST.md)
+- [testUserWithQuotas](../io.strimzi.systemtest.operators.user.UserST.md)

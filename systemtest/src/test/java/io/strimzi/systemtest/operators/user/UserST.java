@@ -239,6 +239,19 @@ class UserST extends AbstractST {
         KafkaUser user = KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, "scramed-arnost", sharedTestStorage.getClusterName()).build();
         testUserWithQuotas(user);
     }
+
+    @TestDoc(
+        description = @Desc("Auxiliary method for Kafka user quota configuration and verification for different authentication types."),
+        steps = {
+            @Step(value = "Create user with specified quota configuration.", expected = "User is created successfully with producer rate, consumer rate, request percentage, and controller mutation rate quotas."),
+            @Step(value = "Verify quota settings are applied in Kafka.", expected = "Quota configurations are visible and correctly set using Kafka CLI tools."),
+            @Step(value = "Test message sending and receiving based on authentication type.", expected = "Messages are successfully sent and received using appropriate authentication method (i.e., TLS, SCRAM-SHA-512, or TLS external)."),
+            @Step(value = "Delete user and verify quota cleanup.", expected = "User deletion removes all quota configurations from Kafka.")
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
     void testUserWithQuotas(KafkaUser user) {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 

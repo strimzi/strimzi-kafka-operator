@@ -134,3 +134,21 @@
 
 * [user-operator](labels/user-operator.md)
 
+
+## testUserWithQuotas
+
+**Description:** Auxiliary method for Kafka user quota configuration and verification for different authentication types.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Create user with specified quota configuration. | User is created successfully with producer rate, consumer rate, request percentage, and controller mutation rate quotas. |
+| 2. | Verify quota settings are applied in Kafka. | Quota configurations are visible and correctly set using Kafka CLI tools. |
+| 3. | Test message sending and receiving based on authentication type. | Messages are successfully sent and received using appropriate authentication method (i.e., TLS, SCRAM-SHA-512, or TLS external). |
+| 4. | Delete user and verify quota cleanup. | User deletion removes all quota configurations from Kafka. |
+
+**Labels:**
+
+* [user-operator](labels/user-operator.md)
+
