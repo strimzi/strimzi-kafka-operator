@@ -3,61 +3,78 @@
 // assembly-scheduling.adoc
 
 [id='proc-dedicated-nodes-{context}']
-= Setting up dedicated nodes and scheduling pods on them
+= Configuring pod affinity for dedicated nodes
+
+[role="_abstract"]
+You can dedicate a set of worker nodes exclusively to your Kafka brokers so that no other applications can compete with Kafka for resources on those nodes.
+
+To configure dedicated worker nodes for Kafka pods in a specific pool, set taints on the worker nodes, and configure `tolerations`` and `nodeAffinity` in your `KafkaNodePool` resource.
 
 .Prerequisites
 
 * A Kubernetes cluster
 * A running Cluster Operator
+* Dedicated worker nodes without scheduled workloads
 
 .Procedure
 
-. Select the nodes which should be used as dedicated.
-. Make sure there are no workloads scheduled on these nodes.
-. Set the taints on the selected nodes:
+. Taint the dedicated worker nodes to prevent other pods from being scheduled on them:
 +
-This can be done using `kubectl taint`:
-[source,shell,subs=+quotes]
-kubectl taint node _NAME-OF-NODE_ dedicated=Kafka:NoSchedule
-+
-. Additionally, add a label to the selected nodes as well.
-+
-This can be done using `kubectl label`:
-[source,shell,subs=+quotes]
-kubectl label node _NAME-OF-NODE_ dedicated=Kafka
-+
-. Edit the `affinity` and `tolerations` properties in the resource specifying the cluster deployment.
-+
-For example:
-+
-[source,yaml,subs=attributes+]
+[source,shell]
 ----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-spec:
-  kafka:
-    # ...
-    template:
-      pod:
-        tolerations:
-          - key: "dedicated"
-            operator: "Equal"
-            value: "Kafka"
-            effect: "NoSchedule"
-        affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-              - matchExpressions:
-                - key: dedicated
-                  operator: In
-                  values:
-                  - Kafka
-    # ...
+kubectl taint node <name_of_node> dedicated=Kafka:NoSchedule
+----
++
+This command marks the node so that only pods with a corresponding toleration can use it.
+
+. Label the dedicated nodes where you want to schedule your Kafka pods. 
++
+If the nodes aren't already labeled, apply labels using `kubectl label`:
++
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl label node <name_of_node> dedicated=kafka
 ----
 
-. Create or update the resource.
+. In your `KafkaNodePool` custom resource, edit the `tolerations` and `affinity` properties in the `spec.template.pod` section.
 +
-This can be done using `kubectl apply`:
-[source,shell,subs=+quotes]
-kubectl apply -f _<kafka_configuration_file>_
+To assign Kafka pods from the same node pool to a worker node, add a `nodeAffinity` rule. 
++
+* Add a toleration that exactly matches the taint you applied to the node.
+The Kafka pods are only scheduled on the dedicated nodes.
+* Use `nodeSelectorTerms` with `matchExpressions` to specify the key (label name) and values of the nodes you want to schedule pods on. 
+Pods are only scheduled on nodes that match these expressions.
++
+.Example affinity configuration for dedicated nodes
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: broker
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  template:
+    pod:
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "kafka"
+          effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: dedicated
+                operator: In
+                values:
+                - kafka
+  # ...
+----
+
+. Apply the changes to the `KafkaNodePool` configuration.

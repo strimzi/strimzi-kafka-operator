@@ -3,10 +3,12 @@
 // assembly-scheduling.adoc
 
 [id='configuring-pod-anti-affinity-in-kafka-components-{context}']
-= Configuring pod anti-affinity in Kafka components
+= Configuring pod anti-affinity against other workloads
 
-Pod anti-affinity configuration helps with the stability and performance of Kafka brokers. By using `podAntiAffinity`, Kubernetes will not schedule Kafka brokers on the same nodes as other workloads. 
-Typically, you want to avoid Kafka running on the same worker node as other network or storage intensive applications such as databases, storage or other messaging platforms.
+[role="_abstract"]
+To improve the stability and performance of your Kafka cluster, you can prevent its pods from running on the same worker nodes as other resource-intensive applications. 
+
+Using `podAntiAffinity` in your `KafkaNodePool` resource tells Kubernetes to avoid scheduling Kafka nodes from the same pool alongside specific workloads, such as databases or other messaging systems.
 
 .Prerequisites
 
@@ -15,36 +17,41 @@ Typically, you want to avoid Kafka running on the same worker node as other netw
 
 .Procedure
 
-. Edit the `affinity` property in the resource specifying the cluster deployment.
-Use labels to specify the pods which should not be scheduled on the same nodes.
-The `topologyKey` should be set to `kubernetes.io/hostname` to specify that the selected pods should not be scheduled on nodes with the same hostname.
-For example:
+. In your `KafkaNodePool` custom resource, edit the `affinity` property in the `spec.template.pod` section.
 +
+To prevent Kafka pods from the same node pool sharing a worker node with other application pods, add a `podAntiAffinity` rule.
++
+* Use a `labelSelector` to identify the pods to keep separate from your Kafka nodes.
+* Set the `topologyKey` to `"kubernetes.io/hostname"`. 
+This defines each worker node as a separate domain for the scheduling rule, preventing the targeted pods from being placed on the same host.
++
+.Example anti-affinity configuration against other workloads
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: broker
+  labels:
+    strimzi.io/cluster: my-cluster
 spec:
-  kafka:
-    # ...
-    template:
-      pod:
-        affinity:
-          podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                    - key: application
-                      operator: In
-                      values:
-                        - postgresql
-                        - mongodb
-                topologyKey: "kubernetes.io/hostname"
-    # ...
+  replicas: 3
+  roles:
+    - broker
+  template:
+    pod:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: application
+                    operator: In
+                    values:
+                      - postgresql
+                      - mongodb
+              topologyKey: "kubernetes.io/hostname"
+  # ...
 ----
 
-. Create or update the resource.
-+
-This can be done using `kubectl apply`:
-[source,shell,subs=+quotes]
-kubectl apply -f _<kafka_configuration_file>_
+. Apply the changes to the `KafkaNodePool` configuration.

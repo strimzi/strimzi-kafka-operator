@@ -3,33 +3,51 @@
 // assembly-scheduling.adoc
 
 [id='proc-configuring-node-affinity-{context}']
-= Configuring node affinity in Kafka components
+= Configuring pod affinity for specific nodes
+
+[role="_abstract"]
+Your Kubernetes cluster might have different types of worker nodes, some with specialized hardware like fast SSD storage, powerful CPUs, or high-speed network cards. 
+
+To optimize performance and resource usage, configure `nodeAffinity` in your `KafkaNodePool` resource so that Kafka pods in a specific pool are scheduled only on the nodes that meet their requirements.
 
 .Prerequisites
 
 * A Kubernetes cluster
 * A running Cluster Operator
+* Worker nodes are labelled
 
 .Procedure
 
-. Label the nodes where Strimzi components should be scheduled.
+. Label the worker nodes where you want to schedule your Kafka pods. 
 +
-This can be done using `kubectl label`:
+If the nodes aren't already labeled, apply labels using `kubectl label`:
++
 [source,shell,subs="+quotes,attributes+"]
-kubectl label node _NAME-OF-NODE_ node-type=fast-network
+----
+kubectl label node <name_of_node> node-type=fast-network
+----
+
+. In your `KafkaNodePool` custom resource, edit the `affinity` property in the `spec.template.pod` section.
 +
-Alternatively, some of the existing labels might be reused.
-. Edit the `affinity` property in the resource specifying the cluster deployment.
-For example:
+To assign Kafka pods from the same node pool to a worker node, add a `nodeAffinity` rule.
 +
+* Use `nodeSelectorTerms` with `matchExpressions` to specify the key (label name) and values of the nodes you want to schedule pods on. 
+Pods are only scheduled on nodes that match these expressions.
++
+.Example affinity configuration for specific nodes
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: broker
+  labels:
+    strimzi.io/cluster: my-cluster
 spec:
-  kafka:
-    # ...
-    template:
+  replicas: 3
+  roles:
+    - broker
+  template:
       pod:
         affinity:
           nodeAffinity:
@@ -40,11 +58,7 @@ spec:
                     operator: In
                     values:
                     - fast-network
-    # ...
+  # ...
 ----
 
-. Create or update the resource.
-+
-This can be done using `kubectl apply`:
-[source,shell,subs="+quotes,attributes+"]
-kubectl apply -f _<kafka_configuration_file>_
+. Apply the changes to the `KafkaNodePool` configuration.
