@@ -43,13 +43,13 @@ jobs:
     name: Build docs
     needs:
       - build-strimzi
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/build/build-docs
         with:
           artifactName: "documentation.tar"
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
   # Builds Strimzi containers
   build-containers:
