@@ -25,7 +25,8 @@ runs:
       with:
         architecture: ${{ inputs.runnerArch }}
 
-    - uses: actions/download-artifact@v4
+    - name: Download Strimzi binaries
+      uses: actions/download-artifact@v4
       with:
         name: strimzi-binaries.tar
 
