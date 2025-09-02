@@ -34,7 +34,7 @@
 
 - fromVersion: 0.47.0
   fromExamples: strimzi-0.47.0
-  deployKafkaVersion: 3.9.0
+  deployKafkaVersion: 4.0.0
   fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.47.0/strimzi-0.47.0.zip
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.47.0/kafka-versions.yaml
   additionalTopics: 2
@@ -56,7 +56,7 @@
     toKafka: "/examples/kafka/kafka-persistent.yaml"
 - fromVersion: 0.47.0
   fromExamples: strimzi-0.47.0
-  deployKafkaVersion: 3.9.0
+  deployKafkaVersion: 4.0.0
   fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.47.0/strimzi-0.47.0.zip
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.47.0/kafka-versions.yaml
   additionalTopics: 2

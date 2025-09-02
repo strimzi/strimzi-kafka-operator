@@ -65,7 +65,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -457,28 +456,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         } else {
             return Future.succeededFuture();
         }
-    }
-
-    /**
-     * Dynamically updates loggers in the Kafka Connect cluster.
-     *
-     * @param reconciliation    Reconciliation marker
-     * @param host              Kafka Connect REST API host
-     * @param desiredLogging    Desired logging configuration
-     * @param defaultLogging    Default logging configuration
-     *
-     * @return  Future that succeeds once the logging configuration is reconciled.
-     */
-    protected Future<Void> reconcileConnectLoggers(Reconciliation reconciliation, String host, String desiredLogging, OrderedProperties defaultLogging) {
-        KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-        return VertxUtil.completableFutureToVertxFuture(apiClient.updateConnectLoggers(reconciliation, host, port, desiredLogging, defaultLogging))
-                .compose(updated -> {
-                    if (Boolean.TRUE.equals(updated))    {
-                        LOGGER.infoCr(reconciliation, "Logging configuration was updated");
-                    }
-
-                    return Future.succeededFuture();
-                });
     }
 
     /**

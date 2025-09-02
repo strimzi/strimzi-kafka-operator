@@ -66,11 +66,11 @@ public class LoggingUtils {
                 }
             }
 
-            return createLog4jProperties(newSettings, logging.isLog4j2());
+            return createLog4jProperties(newSettings);
         } else if (logging.getLogging() instanceof ExternalLogging externalLogging) {
             if (externalLogging.getValueFrom() != null && externalLogging.getValueFrom().getConfigMapKeyRef() != null && externalLogging.getValueFrom().getConfigMapKeyRef().getKey() != null) {
                 if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(externalLogging.getValueFrom().getConfigMapKeyRef().getKey())) {
-                    return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(externalLogging.getValueFrom().getConfigMapKeyRef().getKey()), logging.isLog4j2());
+                    return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(externalLogging.getValueFrom().getConfigMapKeyRef().getKey()));
                 } else {
                     throw new InvalidResourceException(
                             String.format("ConfigMap %s with external logging configuration does not exist or doesn't contain the configuration under the %s key.",
@@ -83,7 +83,7 @@ public class LoggingUtils {
             }
         } else {
             LOGGER.debugCr(reconciliation, "logging is not set, using default loggers");
-            return createLog4jProperties(defaultLogConfig(reconciliation, logging.getDefaultLogConfigBaseName()), logging.isLog4j2());
+            return createLog4jProperties(defaultLogConfig(reconciliation, logging.getDefaultLogConfigBaseName()));
         }
     }
 
@@ -115,45 +115,37 @@ public class LoggingUtils {
     }
 
     /**
-     * Adds 'monitorInterval=30' to Log4j2 logging. If the logging configuration already has it or is not Log4j2,
+     * Adds 'monitorInterval=30' to Log4j2 logging. If the logging configuration already has it,
      * returns the logging configuration without any change.
      *
      * @param data      String with Log4j2 properties in format key=value separated by new lines
-     * @param isLog4j2  Indicator whether Log4j1 or Log4j2 logging is used
      *
      * @return  Log4j2 configuration with monitorInterval property
      */
-    private static String maybeAddMonitorIntervalToExternalLogging(String data, boolean isLog4j2) {
-        if (isLog4j2) {
-            OrderedProperties orderedProperties = new OrderedProperties();
-            orderedProperties.addStringPairs(data);
+    private static String maybeAddMonitorIntervalToExternalLogging(String data) {
+        OrderedProperties orderedProperties = new OrderedProperties();
+        orderedProperties.addStringPairs(data);
 
-            Optional<String> mi = orderedProperties.asMap().keySet().stream()
-                    .filter(key -> key.matches("^monitorInterval$")).findFirst();
-            if (mi.isPresent()) {
-                return data;
-            } else {
-                // do not override custom value
-                return data + "\nmonitorInterval=" + LOG4J2_MONITOR_INTERVAL_SECONDS + "\n";
-            }
-        } else {
+        Optional<String> mi = orderedProperties.asMap().keySet().stream()
+                .filter(key -> key.matches("^monitorInterval$")).findFirst();
+        if (mi.isPresent()) {
             return data;
+        } else {
+            // do not override custom value
+            return data + "\nmonitorInterval=" + LOG4J2_MONITOR_INTERVAL_SECONDS + "\n";
         }
     }
 
     /**
-     * Transforms map to Log4j properties file format. If Log4j2 logging is used, it also injects the refresh interval
-     * if needed.
+     * Transforms map to Log4j properties file format. It also injects the refresh interval if needed.
      *
      * @param properties    Map of Log4j properties
-     * @param isLog4j2  Indicator whether Log4j1 or Log4j2 logging is used
      *
      * @return  Log4j properties as a String.
      */
-    /* test */ static String createLog4jProperties(OrderedProperties properties, boolean isLog4j2) {
+    /* test */ static String createLog4jProperties(OrderedProperties properties) {
         return maybeAddMonitorIntervalToExternalLogging(
-                properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource."),
-                isLog4j2
+                properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.")
         );
     }
 

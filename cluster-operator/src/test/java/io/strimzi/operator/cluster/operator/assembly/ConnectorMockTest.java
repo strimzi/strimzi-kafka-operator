@@ -46,7 +46,6 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.mockkube3.MockKube3;
@@ -255,7 +254,6 @@ public class ConnectorMockTest {
                     .build();
             return CompletableFuture.completedFuture(Collections.singletonList(connectorPlugin));
         });
-        when(api.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
         when(api.getConnectorConfig(any(), any(), any(), anyInt(), any())).thenAnswer(invocation -> {
             String host = invocation.getArgument(2);
             String connectorName = invocation.getArgument(4);

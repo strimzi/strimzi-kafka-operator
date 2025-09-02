@@ -13,11 +13,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
-import io.strimzi.operator.cluster.model.logging.LoggingUtils;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
@@ -28,21 +26,16 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -419,77 +412,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 });
     }
 
-    private CompletableFuture<Boolean> updateLoggers(Reconciliation reconciliation, String host, int port,
-                                       String desiredLogging,
-                                       Map<String, String> fetchedLoggers,
-                                       OrderedProperties defaultLogging) {
-
-        Map<String, String> updateLoggers = new TreeMap<>((k1, k2) -> {
-            if ("root".equals(k1)) {
-                // we need root logger always to be the first logger to be set via REST API
-                return "root".equals(k2) ? 0 : -1;
-            } else if ("root".equals(k2)) {
-                return 1;
-            }
-            return k1.compareTo(k2);
-        });
-        Map<String, String> desiredMap = new OrderedProperties().addStringPairs(LoggingUtils.expandVars(desiredLogging)).asMap();
-
-        updateLoggers.putAll(fetchedLoggers.keySet().stream().collect(Collectors.toMap(
-            Function.identity(),
-            key -> getEffectiveLevel(key, desiredMap))));
-        addToLoggers(defaultLogging.asMap(), updateLoggers);
-        addToLoggers(desiredMap, updateLoggers);
-
-        if (updateLoggers.equals(fetchedLoggers)) {
-            return CompletableFuture.completedFuture(false);
-        } else {
-            CompletableFuture<Void> result = CompletableFuture.completedFuture(null);
-            for (Map.Entry<String, String> logger : updateLoggers.entrySet()) {
-                result = result.thenCompose(previous -> updateConnectorLogger(reconciliation, host, port,
-                        logger.getKey(), logger.getValue()));
-            }
-            return result.thenApply(r -> true);
-        }
-    }
-
-    /**
-     * Gets the level of the given {@code logger} in the given map of {@code desired} levels,
-     * or the level inherited from the logger hierarchy.
-     * @param logger The logger name
-     * @param desired Map of logger levels
-     * @return The effective level of the given logger.
-     */
-    protected String getEffectiveLevel(String logger, Map<String, String> desired) {
-        // direct hit
-        if (desired.containsKey("log4j.logger." + logger)) {
-            return desired.get("log4j.logger." + logger);
-        }
-
-        Map<String, String> desiredSortedReverse = new TreeMap<>(Comparator.reverseOrder());
-        desiredSortedReverse.putAll(desired);
-        //desired contains substring of logger, search in reversed order to find the most specific match
-        Optional<Map.Entry<String, String>> opt = desiredSortedReverse.entrySet().stream()
-                .filter(entry -> ("log4j.logger." + logger).startsWith(entry.getKey()))
-                .findFirst();
-        if (opt.isPresent()) {
-            return opt.get().getValue();
-        }
-
-        //nothing found, use root level
-        return getLoggerLevelFromAppenderCouple(LoggingUtils.expandVar(desired.get("log4j.rootLogger"), desired));
-    }
-
-    private void addToLoggers(Map<String, String> entries, Map<String, String> updateLoggers) {
-        for (Map.Entry<String, String> e : entries.entrySet()) { // set desired loggers to desired levels
-            if (e.getKey().equals("log4j.rootLogger")) {
-                updateLoggers.put("root", getLoggerLevelFromAppenderCouple(LoggingUtils.expandVar(e.getValue(), entries)));
-            } else if (e.getKey().startsWith("log4j.logger.")) {
-                updateLoggers.put(e.getKey().substring("log4j.logger.".length()), getLoggerLevelFromAppenderCouple(LoggingUtils.expandVar(e.getValue(), entries)));
-            }
-        }
-    }
-
     /**
      * Parses logger level from couple LEVEL, APPENDER
      * @param couple tested input
@@ -502,12 +424,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         } else {
             return couple.trim();
         }
-    }
-
-    @Override
-    public CompletableFuture<Boolean> updateConnectLoggers(Reconciliation reconciliation, String host, int port, String desiredLogging, OrderedProperties defaultLogging) {
-        return listConnectLoggers(reconciliation, host, port)
-                .thenCompose(fetchedLoggers -> updateLoggers(reconciliation, host, port, desiredLogging, fetchedLoggers, defaultLogging));
     }
 
     @Override

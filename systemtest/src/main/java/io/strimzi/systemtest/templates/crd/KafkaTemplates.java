@@ -184,20 +184,11 @@ public class KafkaTemplates {
     // -------------------------------------------------------------------------------------------
 
     private static void setDefaultLogging(KafkaBuilder kafkaBuilder) {
-        final String kafkaRootLogger;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            kafkaRootLogger = "kafka.root.logger.level";
-        } else {
-            // Kafka 4.0
-            kafkaRootLogger = "rootLogger.level";
-        }
-
         kafkaBuilder
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
-                        .addToLoggers(kafkaRootLogger, "DEBUG")
+                        .addToLoggers("rootLogger.level", "DEBUG")
                     .endInlineLogging()
                 .endKafka()
                 .editEntityOperator()

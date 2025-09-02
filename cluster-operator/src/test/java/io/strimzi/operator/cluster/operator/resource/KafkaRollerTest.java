@@ -922,7 +922,6 @@ public class KafkaRollerTest {
                     adminClientProvider,
                     kafkaAgentClientProvider,
                     brokerId -> "compression.type=gzip",
-                    "",
                     KafkaVersionTestUtils.getLatestVersion(),
                     true,
                     mock(KubernetesRestartEventPublisher.class));
@@ -1041,7 +1040,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem {
+        protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff) throws ForceableProblem {
             ForceableProblem problem = alterConfigsException.apply(nodeRef.nodeId());
             if (problem != null) {
                 throw problem;

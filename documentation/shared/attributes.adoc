@@ -23,9 +23,9 @@
 // Kafka upgrade attributes used in kafka upgrades section
 :DefaultKafkaVersion: 4.1.0
 :DefaultKafkaMetadataVersion: 4.1
-:KafkaMetadataVersionLower: 3.9-IV0
+:KafkaMetadataVersionLower: 4.0-IV0
 :KafkaMetadataVersionHigher: 4.1-IV1
-:KafkaVersionLower: 3.9.0
+:KafkaVersionLower: 4.0.0
 :KafkaVersionHigher: 4.1.0
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 

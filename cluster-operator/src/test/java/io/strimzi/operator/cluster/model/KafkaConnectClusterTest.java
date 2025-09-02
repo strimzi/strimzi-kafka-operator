@@ -2185,30 +2185,9 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
-    public void testLoggingWithLog4j1() {
-        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
-                .editSpec()
-                    .withVersion("3.9.0")
-                .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        assertThat(kc.logging().isLog4j2(), is(false));
-
+    public void testLoggingWithLog4j2() {
         // Check config map
         ConfigMap cm = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
-        assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
-        assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(nullValue()));
-    }
-
-    @Test
-    public void testLoggingWithLog4j4() {
-        assertThat(kc.logging().isLog4j2(), is(true));
-
-        // Check config map
-        ConfigMap cm = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
-        assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(nullValue()));
         assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
     }
 

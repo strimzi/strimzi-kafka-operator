@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.json.JsonObject;
 
 import java.net.http.HttpResponse;
@@ -161,18 +160,6 @@ public interface KafkaConnectApi {
      * this returns the list of connector plugins.
      */
     CompletableFuture<List<ConnectorPlugin>> listConnectorPlugins(Reconciliation reconciliation, String host, int port);
-
-    /**
-     * Make a {@code GET} request to {@code /admin/loggers/$logger}.
-     * @param reconciliation The reconciliation
-     * @param host The host to make the request to.
-     * @param port The port to make the request to.
-     * @param desiredLogging Desired logging.
-     * @param defaultLogging Default logging.
-     * @return A Future which completes with the result of the request. If the request was successful,
-     * this returns whether any loggers were actually changed.
-     */
-    CompletableFuture<Boolean> updateConnectLoggers(Reconciliation reconciliation, String host, int port, String desiredLogging, OrderedProperties defaultLogging);
 
     /**
      * Make a {@code GET} request to {@code /admin/loggers}.

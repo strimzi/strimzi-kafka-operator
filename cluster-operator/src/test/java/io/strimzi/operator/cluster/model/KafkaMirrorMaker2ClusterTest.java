@@ -2312,30 +2312,9 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @Test
-    public void testLoggingWithLog4j1() {
-        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
-                .editSpec()
-                    .withVersion("3.9.0")
-                .endSpec()
-                .build();
-
-        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
-
-        assertThat(kmm2.logging().isLog4j2(), is(false));
-
+    public void testLoggingWithLog4j2() {
         // Check config map
         ConfigMap cm = kmm2.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
-        assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
-        assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(nullValue()));
-    }
-
-    @Test
-    public void testLoggingWithLog4j4() {
-        assertThat(kmm2.logging().isLog4j2(), is(true));
-
-        // Check config map
-        ConfigMap cm = kmm2.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
-        assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(nullValue()));
         assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
     }
 }

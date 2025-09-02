@@ -120,7 +120,6 @@ public class KafkaRoller {
     private final AdminClientProvider adminClientProvider;
     private final KafkaAgentClientProvider kafkaAgentClientProvider;
     private final Function<Integer, String> kafkaConfigProvider;
-    private final String kafkaLogging;
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
     private final boolean allowReconfiguration;
@@ -149,7 +148,6 @@ public class KafkaRoller {
      * @param adminClientProvider       Kafka Admin client provider
      * @param kafkaAgentClientProvider  Kafka Agent client provider
      * @param kafkaConfigProvider       Kafka configuration provider
-     * @param kafkaLogging              Kafka logging configuration
      * @param kafkaVersion              Kafka version
      * @param allowReconfiguration      Flag indicting whether reconfiguration is allowed or not
      * @param eventsPublisher           Kubernetes Events publisher for publishing events about pod restarts
@@ -157,7 +155,7 @@ public class KafkaRoller {
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        TlsPemIdentity coTlsPemIdentity, AdminClientProvider adminClientProvider, KafkaAgentClientProvider kafkaAgentClientProvider,
-                       Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
+                       Function<Integer, String> kafkaConfigProvider, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
         this.nodes = nodes;
@@ -174,7 +172,6 @@ public class KafkaRoller {
         this.adminClientProvider = adminClientProvider;
         this.kafkaAgentClientProvider = kafkaAgentClientProvider;
         this.kafkaConfigProvider = kafkaConfigProvider;
-        this.kafkaLogging = kafkaLogging;
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
         this.allowReconfiguration = allowReconfiguration;
@@ -309,7 +306,6 @@ public class KafkaRoller {
         boolean forceRestart;
         boolean podStuck;
         KafkaBrokerConfigurationDiff brokerConfigDiff;
-        KafkaBrokerLoggingConfigurationDiff brokerLoggingDiff;
         KafkaQuorumCheck quorumCheck;
 
         RestartContext(Supplier<BackOff> backOffSupplier) {
@@ -535,7 +531,7 @@ public class KafkaRoller {
 
         if (restartContext.needsReconfig) {
             try {
-                dynamicUpdateBrokerConfig(nodeRef, brokerAdminClient, restartContext.brokerConfigDiff, restartContext.brokerLoggingDiff);
+                dynamicUpdateBrokerConfig(nodeRef, brokerAdminClient, restartContext.brokerConfigDiff);
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
                 LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), will restart", nodeRef, e);
@@ -559,7 +555,6 @@ public class KafkaRoller {
         restartContext.needsReconfig = false;
         restartContext.forceRestart = true;
         restartContext.brokerConfigDiff = null;
-        restartContext.brokerLoggingDiff = null;
     }
 
     /**
@@ -584,7 +579,6 @@ public class KafkaRoller {
 
         boolean needsRestart = reasonToRestartPod.shouldRestart();
         KafkaBrokerConfigurationDiff brokerConfigDiff = null;
-        KafkaBrokerLoggingConfigurationDiff brokerLoggingDiff = null;
         boolean needsReconfig = false;
 
         if (isController) {
@@ -643,7 +637,6 @@ public class KafkaRoller {
             if (!needsRestart && allowReconfiguration) {
                 LOGGER.traceCr(reconciliation, "Pod {}: description {}", nodeRef, brokerConfig);
                 brokerConfigDiff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(nodeRef.nodeId()), kafkaVersion, nodeRef);
-                brokerLoggingDiff = logging(nodeRef);
 
                 if (brokerConfigDiff.getDiffSize() > 0) {
                     if (brokerConfigDiff.canBeUpdatedDynamically()) {
@@ -655,13 +648,6 @@ public class KafkaRoller {
                         needsRestart = true;
                     }
                 }
-
-                // needsRestart value might have changed from the check in the parent if. So we need to check it again.
-                if (!needsRestart && brokerLoggingDiff.getDiffSize() > 0
-                        && KafkaVersion.compareDottedVersions(kafkaVersion.version(), "4.0.0") < 0) { // The reconfiguration is needed only when we still use Log4j1
-                    LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", nodeRef);
-                    needsReconfig = true;
-                }
             }
         }
 
@@ -669,7 +655,6 @@ public class KafkaRoller {
         restartContext.needsReconfig = needsReconfig;
         restartContext.forceRestart = false;
         restartContext.brokerConfigDiff = brokerConfigDiff;
-        restartContext.brokerLoggingDiff = brokerLoggingDiff;
     }
 
     /**
@@ -698,18 +683,13 @@ public class KafkaRoller {
         );
     }
 
-    /* test */ void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
+    /* test */ void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff)
             throws ForceableProblem, InterruptedException {
-        boolean isLog4j2 = KafkaVersion.compareDottedVersions(kafkaVersion.version(), "4.0.0") >= 0;
         Map<ConfigResource, Collection<AlterConfigOp>> updatedPerBrokerConfig = new HashMap<>(2);
         Map<ConfigResource, Collection<AlterConfigOp>> updatedClusterWideConfig = new HashMap<>(1);
         var podId = nodeRef.nodeId();
         updatedPerBrokerConfig.put(getBrokersConfig(podId), configurationDiff.getConfigDiff(Scope.PER_BROKER));
         updatedClusterWideConfig.put(getClusterWideConfig(), configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE));
-
-        if (!isLog4j2) {
-            updatedPerBrokerConfig.put(getBrokersLogging(podId), logDiff.getLoggingDiff());
-        }
 
         LOGGER.traceCr(reconciliation, "Updating cluster wide configuration with {}", updatedClusterWideConfig);
         LOGGER.debugCr(reconciliation, "Updating broker configuration {}", nodeRef);
@@ -721,13 +701,6 @@ public class KafkaRoller {
         AlterConfigsResult alterBrokerConfigResult = ac.incrementalAlterConfigs(updatedPerBrokerConfig);
         KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(podId));
 
-        KafkaFuture<Void> brokerLoggingConfigFuture;
-        if (!isLog4j2) {
-            brokerLoggingConfigFuture = alterBrokerConfigResult.values().get(getBrokersLogging(podId));
-        } else {
-            brokerLoggingConfigFuture = KafkaFuture.completedFuture(null);
-        }
-
         await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, clusterConfigFuture), 30, TimeUnit.SECONDS,
                 error -> {
                     LOGGER.errorCr(reconciliation, "Error updating cluster-wide configuration", error);
@@ -738,20 +711,7 @@ public class KafkaRoller {
                 LOGGER.errorCr(reconciliation, "Error updating broker configuration for pod {}", nodeRef, error);
                 return new ForceableProblem("Error updating broker configuration for pod " + nodeRef, error);
             });
-        await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
-            error -> {
-                LOGGER.errorCr(reconciliation, "Error updating broker logging configuration pod {}", nodeRef, error);
-                return new ForceableProblem("Error updating broker logging configuration pod " + nodeRef, error);
-            });
-
         LOGGER.infoCr(reconciliation, "Dynamic update of pod {} was successful.", nodeRef);
-    }
-
-    private KafkaBrokerLoggingConfigurationDiff logging(NodeRef nodeRef)
-            throws ForceableProblem, InterruptedException {
-        Config brokerLogging = brokerLogging(nodeRef.nodeId());
-        LOGGER.traceCr(reconciliation, "Pod {}: logging description {}", nodeRef, brokerLogging);
-        return new KafkaBrokerLoggingConfigurationDiff(reconciliation, brokerLogging, kafkaLogging);
     }
 
     /** Exceptions which we're prepared to ignore (thus forcing a restart) in some circumstances. */
