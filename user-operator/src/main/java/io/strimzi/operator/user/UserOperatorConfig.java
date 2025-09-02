@@ -461,7 +461,7 @@ public class UserOperatorConfig {
                 "\n\tbatchMaxBlockTime=" + getBatchMaxBlockTime() +
                 "\n\tuserOperationsThreadPoolSize=" + getUserOperationsThreadPoolSize() +
                 "\n\tfeatureGates='" + featureGates() + "'" +
-                "\n\tignoredUsersPattern='" + ignoredUsersPattern().pattern() + "'" +
+                "\n\tignoredUsersPattern='" + (ignoredUsersPattern() != null ? ignoredUsersPattern().pattern() : null) + "'" +
                 '}';
     }
 }
