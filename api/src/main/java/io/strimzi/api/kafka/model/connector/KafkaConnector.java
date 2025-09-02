@@ -30,20 +30,19 @@ import java.util.function.Predicate;
         names = @Crd.Spec.Names(
             kind = KafkaConnector.RESOURCE_KIND,
             plural = KafkaConnector.RESOURCE_PLURAL,
-            shortNames = {KafkaConnector.SHORT_NAME},
+            shortNames = {"kctr"},
             categories = {Constants.STRIMZI_CATEGORY}
         ),
         group = KafkaConnector.RESOURCE_GROUP,
         scope = KafkaConnector.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = KafkaConnector.V1BETA2, served = true, storage = false),
-            @Crd.Spec.Version(name = KafkaConnector.V1ALPHA1, served = true, storage = true)
+            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true)
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status(),
             scale = @Crd.Spec.Subresources.Scale(
-                specReplicasPath = KafkaConnector.SPEC_REPLICAS_PATH,
-                statusReplicasPath = KafkaConnector.STATUS_REPLICAS_PATH
+                specReplicasPath = ".spec.tasksMax",
+                statusReplicasPath = ".status.tasksMax"
             )
         ),
         additionalPrinterColumns = {
@@ -84,25 +83,20 @@ import java.util.function.Predicate;
 public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConnectorStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    public static final String V1BETA2 = Constants.V1BETA2;
-    public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final String CONSUMED_VERSION = V1BETA2;
-    public static final List<String> VERSIONS = List.of(V1BETA2, V1ALPHA1);
-    public static final String SCOPE = "Namespaced";
+    public static final List<String> VERSIONS = List.of(Constants.V1BETA2);
+    public static final String SCOPE = Constants.SCOPE_NAMESPACED;
     public static final String RESOURCE_PLURAL = "kafkaconnectors";
     public static final String RESOURCE_SINGULAR = "kafkaconnector";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_KIND = "KafkaConnector";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
-    public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
-    public static final String SHORT_NAME = "kctr";
-    public static final String SPEC_REPLICAS_PATH = ".spec.tasksMax";
-    public static final String STATUS_REPLICAS_PATH = ".status.tasksMax";
 
     private Map<String, Object> additionalProperties;
 
-    // Added to avoid duplication during Json serialization
+    // Added to avoid duplication during JSON serialization
+    @SuppressWarnings({"UnusedDeclaration"})
     private String apiVersion;
+    @SuppressWarnings({"UnusedDeclaration"})
     private String kind;
 
     public KafkaConnector() {

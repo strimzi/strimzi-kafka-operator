@@ -48,13 +48,13 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
-        CrdUtils.createCrd(client, KafkaUser.CRD_NAME, CrdUtils.CRD_KAFKA_USER);
+        CrdUtils.createCrd(client, CrdUtils.CRD_KAFKA_USER_NAME, CrdUtils.CRD_KAFKA_USER);
         TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        CrdUtils.deleteCrd(client, KafkaUser.CRD_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_KAFKA_USER_NAME);
         TestUtils.deleteNamespace(client, NAMESPACE);
         client.close();
     }

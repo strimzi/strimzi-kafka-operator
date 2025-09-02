@@ -72,13 +72,13 @@ public class StrimziPodSetCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
-        CrdUtils.createCrd(client, StrimziPodSet.CRD_NAME, CrdUtils.CRD_STRIMZI_POD_SET);
+        CrdUtils.createCrd(client, CrdUtils.CRD_STRIMZI_POD_SET_NAME, CrdUtils.CRD_STRIMZI_POD_SET);
         TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        CrdUtils.deleteCrd(client, StrimziPodSet.CRD_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_STRIMZI_POD_SET_NAME);
         TestUtils.deleteNamespace(client, NAMESPACE);
         client.close();
     }

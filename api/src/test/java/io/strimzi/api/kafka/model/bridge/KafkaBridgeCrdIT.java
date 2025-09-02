@@ -121,13 +121,13 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
-        CrdUtils.createCrd(client, KafkaBridge.CRD_NAME, CrdUtils.CRD_KAFKA_BRIDGE);
+        CrdUtils.createCrd(client, CrdUtils.CRD_KAFKA_BRIDGE_NAME, CrdUtils.CRD_KAFKA_BRIDGE);
         TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        CrdUtils.deleteCrd(client, KafkaBridge.CRD_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_KAFKA_BRIDGE_NAME);
         TestUtils.deleteNamespace(client, NAMESPACE);
         client.close();
     }

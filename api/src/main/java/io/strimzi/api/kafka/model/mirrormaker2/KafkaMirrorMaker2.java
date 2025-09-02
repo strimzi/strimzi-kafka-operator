@@ -32,21 +32,20 @@ import java.util.function.Predicate;
         names = @Crd.Spec.Names(
             kind = KafkaMirrorMaker2.RESOURCE_KIND,
             plural = KafkaMirrorMaker2.RESOURCE_PLURAL,
-            shortNames = {KafkaMirrorMaker2.SHORT_NAME},
+            shortNames = {"kmm2"},
             categories = {Constants.STRIMZI_CATEGORY}
         ),
         group = KafkaMirrorMaker2.RESOURCE_GROUP,
         scope = KafkaMirrorMaker2.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = KafkaMirrorMaker2.V1BETA2, served = true, storage = false),
-            @Crd.Spec.Version(name = KafkaMirrorMaker2.V1ALPHA1, served = true, storage = true)
+            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true)
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status(),
             scale = @Crd.Spec.Subresources.Scale(
-                specReplicasPath = KafkaMirrorMaker2.SPEC_REPLICAS_PATH,
-                statusReplicasPath = KafkaMirrorMaker2.STATUS_REPLICAS_PATH,
-                labelSelectorPath = KafkaMirrorMaker2.LABEL_SELECTOR_PATH
+                specReplicasPath = ".spec.replicas",
+                statusReplicasPath = ".status.replicas",
+                labelSelectorPath = ".status.labelSelector"
             )
         ),
         additionalPrinterColumns = {
@@ -65,7 +64,6 @@ import java.util.function.Predicate;
 )
 @Buildable(
         editableEnabled = false,
-        generateBuilderPackage = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API,
         refs = {@BuildableReference(CustomResource.class), @BuildableReference(io.fabric8.kubernetes.api.model.ObjectMeta.class)}
 )
@@ -78,27 +76,20 @@ import java.util.function.Predicate;
 public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    public static final String SCOPE = "Namespaced";
-    public static final String V1BETA2 = Constants.V1BETA2;
-    public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final String CONSUMED_VERSION = V1BETA2;
-    public static final List<String> VERSIONS = List.of(V1BETA2, V1ALPHA1);
+    public static final String SCOPE = Constants.SCOPE_NAMESPACED;
+    public static final List<String> VERSIONS = List.of(Constants.V1BETA2);
     public static final String RESOURCE_KIND = "KafkaMirrorMaker2";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkamirrormaker2s";
     public static final String RESOURCE_SINGULAR = "kafkamirrormaker2";
-    public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
-    public static final String SHORT_NAME = "kmm2";
-    public static final List<String> RESOURCE_SHORTNAMES = List.of(SHORT_NAME);
-    public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
-    public static final String STATUS_REPLICAS_PATH = ".status.replicas";
-    public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private Map<String, Object> additionalProperties;
 
-    // Added to avoid duplication during Json serialization
+    // Added to avoid duplication during JSON serialization
+    @SuppressWarnings({"UnusedDeclaration"})
     private String apiVersion;
+    @SuppressWarnings({"UnusedDeclaration"})
     private String kind;
 
     public KafkaMirrorMaker2() {

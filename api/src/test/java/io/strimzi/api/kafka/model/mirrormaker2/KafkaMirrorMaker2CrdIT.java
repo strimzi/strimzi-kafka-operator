@@ -106,13 +106,13 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
-        CrdUtils.createCrd(client, KafkaMirrorMaker2.CRD_NAME, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2);
+        CrdUtils.createCrd(client, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2_NAME, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2);
         TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        CrdUtils.deleteCrd(client, KafkaMirrorMaker2.CRD_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2_NAME);
         TestUtils.deleteNamespace(client, NAMESPACE);
         client.close();
     }

@@ -32,22 +32,20 @@ import java.util.function.Predicate;
         names = @Crd.Spec.Names(
             kind = KafkaConnect.RESOURCE_KIND,
             plural = KafkaConnect.RESOURCE_PLURAL,
-            shortNames = {KafkaConnect.SHORT_NAME},
+            shortNames = {"kc"},
             categories = {Constants.STRIMZI_CATEGORY}
         ),
         group = KafkaConnect.RESOURCE_GROUP,
         scope = KafkaConnect.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = KafkaConnect.V1BETA2, served = true, storage = false),
-            @Crd.Spec.Version(name = KafkaConnect.V1BETA1, served = true, storage = true),
-            @Crd.Spec.Version(name = KafkaConnect.V1ALPHA1, served = true, storage = false)
+            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true)
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status(),
             scale = @Crd.Spec.Subresources.Scale(
-                specReplicasPath = KafkaConnect.SPEC_REPLICAS_PATH,
-                statusReplicasPath = KafkaConnect.STATUS_REPLICAS_PATH,
-                labelSelectorPath = KafkaConnect.LABEL_SELECTOR_PATH
+                specReplicasPath = ".spec.replicas",
+                statusReplicasPath = ".status.replicas",
+                labelSelectorPath = ".status.labelSelector"
             )
         ),
         additionalPrinterColumns = {
@@ -78,28 +76,20 @@ import java.util.function.Predicate;
 public class KafkaConnect extends CustomResource<KafkaConnectSpec, KafkaConnectStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    public static final String SCOPE = "Namespaced";
-    public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final String V1BETA1 = Constants.V1BETA1;
-    public static final String V1BETA2 = Constants.V1BETA2;
-    public static final String CONSUMED_VERSION = V1BETA2;
-    public static final List<String> VERSIONS = List.of(V1BETA2, V1BETA1, V1ALPHA1);
+    public static final String SCOPE = Constants.SCOPE_NAMESPACED;
+    public static final List<String> VERSIONS = List.of(Constants.V1BETA2);
     public static final String RESOURCE_KIND = "KafkaConnect";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkaconnects";
     public static final String RESOURCE_SINGULAR = "kafkaconnect";
-    public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
-    public static final String SHORT_NAME = "kc";
-    public static final List<String> RESOURCE_SHORTNAMES = List.of(SHORT_NAME);
-    public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
-    public static final String STATUS_REPLICAS_PATH = ".status.replicas";
-    public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private Map<String, Object> additionalProperties;
 
-    // Added to avoid duplication during Json serialization
+    // Added to avoid duplication during JSON serialization
+    @SuppressWarnings({"UnusedDeclaration"})
     private String apiVersion;
+    @SuppressWarnings({"UnusedDeclaration"})
     private String kind;
 
     public KafkaConnect() {

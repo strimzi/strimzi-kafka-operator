@@ -40,7 +40,7 @@ public class KafkaConnectorCrdOperatorIT extends AbstractCustomResourceOperatorI
 
     @Override
     protected String getCrdName() {
-        return KafkaConnector.CRD_NAME;
+        return CrdUtils.CRD_KAFKA_CONNECTOR_NAME;
     }
 
     @Override

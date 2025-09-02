@@ -40,7 +40,7 @@ public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperat
 
     @Override
     protected String getCrdName() {
-        return KafkaMirrorMaker2.CRD_NAME;
+        return CrdUtils.CRD_KAFKA_MIRROR_MAKER_2_NAME;
     }
 
     @Override

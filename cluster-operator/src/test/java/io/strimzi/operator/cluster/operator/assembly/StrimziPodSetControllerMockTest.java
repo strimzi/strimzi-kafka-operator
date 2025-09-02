@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
+import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectList;
@@ -240,7 +241,7 @@ public class StrimziPodSetControllerMockTest {
 
         assertThat(owner, is(notNullValue()));
         assertThat(owner.getKind(), is("StrimziPodSet"));
-        assertThat(owner.getApiVersion(), is(StrimziPodSet.RESOURCE_GROUP + "/" + StrimziPodSet.V1BETA2));
+        assertThat(owner.getApiVersion(), is(StrimziPodSet.RESOURCE_GROUP + "/" + Constants.V1BETA2));
         assertThat(owner.getName(), is(podSetName));
     }
 

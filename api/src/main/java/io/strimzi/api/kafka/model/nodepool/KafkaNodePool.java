@@ -33,20 +33,20 @@ import java.util.Map;
                 names = @Crd.Spec.Names(
                         kind = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.RESOURCE_KIND,
                         plural = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.RESOURCE_PLURAL,
-                        shortNames = {io.strimzi.api.kafka.model.nodepool.KafkaNodePool.SHORT_NAME},
+                        shortNames = {"knp"},
                         categories = {Constants.STRIMZI_CATEGORY}
                 ),
                 group = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.RESOURCE_GROUP,
                 scope = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.SCOPE,
                 versions = {
-                    @Crd.Spec.Version(name = io.strimzi.api.kafka.model.nodepool.KafkaNodePool.V1BETA2, served = true, storage = true)
+                    @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status(),
                         scale = @Crd.Spec.Subresources.Scale(
-                                specReplicasPath = KafkaNodePool.SPEC_REPLICAS_PATH,
-                                statusReplicasPath = KafkaNodePool.STATUS_REPLICAS_PATH,
-                                labelSelectorPath = KafkaNodePool.LABEL_SELECTOR_PATH
+                                specReplicasPath = ".spec.replicas",
+                                statusReplicasPath = ".status.replicas",
+                                labelSelectorPath = ".status.labelSelector"
                         )
                 ),
                 additionalPrinterColumns = {
@@ -82,24 +82,20 @@ import java.util.Map;
 public class KafkaNodePool extends CustomResource<KafkaNodePoolSpec, KafkaNodePoolStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    public static final String SCOPE = "Namespaced";
-    public static final String V1BETA2 = Constants.V1BETA2;
-    public static final List<String> VERSIONS = List.of(V1BETA2);
+    public static final String SCOPE = Constants.SCOPE_NAMESPACED;
+    public static final List<String> VERSIONS = List.of(Constants.V1BETA2);
     public static final String RESOURCE_KIND = "KafkaNodePool";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkanodepools";
     public static final String RESOURCE_SINGULAR = "kafkanodepool";
-    public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
-    public static final String SHORT_NAME = "knp";
-    public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
-    public static final String STATUS_REPLICAS_PATH = ".status.replicas";
-    public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private Map<String, Object> additionalProperties;
 
-    // Added to avoid duplication during Json serialization
+    // Added to avoid duplication during JSON serialization
+    @SuppressWarnings({"UnusedDeclaration"})
     private String apiVersion;
+    @SuppressWarnings({"UnusedDeclaration"})
     private String kind;
 
     public KafkaNodePool() {

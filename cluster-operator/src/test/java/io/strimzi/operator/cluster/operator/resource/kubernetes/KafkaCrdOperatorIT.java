@@ -42,7 +42,7 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kuberne
 
     @Override
     protected String getCrdName() {
-        return Kafka.CRD_NAME;
+        return CrdUtils.CRD_KAFKA_NAME;
     }
 
     @Override

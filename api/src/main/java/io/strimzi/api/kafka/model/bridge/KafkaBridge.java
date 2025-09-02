@@ -32,21 +32,20 @@ import java.util.function.Predicate;
         names = @Crd.Spec.Names(
             kind = KafkaBridge.RESOURCE_KIND,
             plural = KafkaBridge.RESOURCE_PLURAL,
-            shortNames = {KafkaBridge.SHORT_NAME},
+            shortNames = {"kb"},
             categories = {Constants.STRIMZI_CATEGORY}
         ),
         group = KafkaBridge.RESOURCE_GROUP,
         scope = KafkaBridge.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = KafkaBridge.V1BETA2, served = true, storage = false),
-            @Crd.Spec.Version(name = KafkaBridge.V1ALPHA1, served = true, storage = true)
+            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true)
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status(),
             scale = @Crd.Spec.Subresources.Scale(
-                specReplicasPath = KafkaBridge.SPEC_REPLICAS_PATH,
-                statusReplicasPath = KafkaBridge.STATUS_REPLICAS_PATH,
-                labelSelectorPath = KafkaBridge.LABEL_SELECTOR_PATH
+                specReplicasPath = ".spec.replicas",
+                statusReplicasPath = ".status.replicas",
+                labelSelectorPath = ".status.labelSelector"
             )
         ),
         additionalPrinterColumns = {
@@ -76,32 +75,25 @@ import java.util.function.Predicate;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_GROUP_NAME)
-@ToString
+@ToString(callSuper = true)
 public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    public static final String SCOPE = "Namespaced";
-    public static final String V1BETA2 = Constants.V1BETA2;
-    public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final String CONSUMED_VERSION = V1BETA2;
-    public static final List<String> VERSIONS = List.of(V1BETA2, V1ALPHA1);
+    public static final String SCOPE = Constants.SCOPE_NAMESPACED;
+    public static final List<String> VERSIONS = List.of(Constants.V1BETA2);
     public static final String RESOURCE_KIND = "KafkaBridge";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkabridges";
     public static final String RESOURCE_SINGULAR = "kafkabridge";
-    public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
-    public static final String SHORT_NAME = "kb";
-    public static final List<String> RESOURCE_SHORTNAMES = List.of(SHORT_NAME);
-    public static final String SPEC_REPLICAS_PATH = ".spec.replicas";
-    public static final String STATUS_REPLICAS_PATH = ".status.replicas";
-    public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
-    // Added to avoid duplication during Json serialization
+    // Added to avoid duplication during JSON serialization
+    @SuppressWarnings({"UnusedDeclaration"})
     private String apiVersion;
+    @SuppressWarnings({"UnusedDeclaration"})
     private String kind;
 
     private Map<String, Object> additionalProperties;

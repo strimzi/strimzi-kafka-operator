@@ -106,13 +106,13 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
-        CrdUtils.createCrd(client, KafkaConnect.CRD_NAME, CrdUtils.CRD_KAFKA_CONNECT);
+        CrdUtils.createCrd(client, CrdUtils.CRD_KAFKA_CONNECT_NAME, CrdUtils.CRD_KAFKA_CONNECT);
         TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        CrdUtils.deleteCrd(client, KafkaConnect.CRD_NAME);
+        CrdUtils.deleteCrd(client, CrdUtils.CRD_KAFKA_CONNECT_NAME);
         TestUtils.deleteNamespace(client, NAMESPACE);
         client.close();
     }

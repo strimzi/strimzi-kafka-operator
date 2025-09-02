@@ -42,7 +42,7 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
 
     @Override
     protected String getCrdName() {
-        return KafkaBridge.CRD_NAME;
+        return CrdUtils.CRD_KAFKA_BRIDGE_NAME;
     }
 
     @Override
