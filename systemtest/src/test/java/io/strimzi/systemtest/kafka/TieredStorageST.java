@@ -389,7 +389,7 @@ public class TieredStorageST extends AbstractST {
      *
      * @throws IOException  IO exception during image build.
      */
-    private void tieredStorageImageBuild() throws IOException {
+    private void resolveTieredStorageImage() throws IOException {
         if (Environment.KAFKA_TIERED_STORAGE_IMAGE.isEmpty()) {
             ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
             tieredStorageImageName = Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG);
@@ -412,6 +412,6 @@ public class TieredStorageST extends AbstractST {
             .install();
 
         suiteStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        tieredStorageImageBuild();
+        resolveTieredStorageImage();
     }
 }
