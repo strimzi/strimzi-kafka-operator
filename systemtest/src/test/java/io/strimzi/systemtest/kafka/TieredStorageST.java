@@ -89,6 +89,7 @@ public class TieredStorageST extends AbstractST {
     private static final String MOUNT_PATH = "/mnt/nfs";
     private static final String VOLUME_NAME = "nfs-volume";
     private TestStorage suiteStorage;
+    private String tieredStorageImageName;
 
     @ParallelTest
     @TestDoc(
@@ -128,7 +129,7 @@ public class TieredStorageST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
-                    .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
+                    .withImage(tieredStorageImageName)
                     .withNewTieredStorageCustomTiered()
                         .withNewRemoteStorageManager()
                             .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
@@ -246,7 +247,7 @@ public class TieredStorageST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(suiteStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
-                    .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
+                    .withImage(tieredStorageImageName)
                     .withNewTieredStorageCustomTiered()
                         .withNewRemoteStorageManager()
                             .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
@@ -381,6 +382,22 @@ public class TieredStorageST extends AbstractST {
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
 
+    /**
+     * Method that builds Kafka image with TieredStorage plugin (Aiven one) in case that {@link Environment#KAFKA_TIERED_STORAGE_IMAGE} is not set.
+     * The image is built and then value for the particular image output registry is assigned to {@link #tieredStorageImageName}.
+     * Otherwise, the {@link Environment#KAFKA_TIERED_STORAGE_IMAGE} is used and assigned into {@link #tieredStorageImageName}.
+     *
+     * @throws IOException  IO exception during image build.
+     */
+    private void resolveTieredStorageImage() throws IOException {
+        if (Environment.KAFKA_TIERED_STORAGE_IMAGE.isEmpty()) {
+            ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
+            tieredStorageImageName = Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG);
+        } else {
+            tieredStorageImageName = Environment.KAFKA_TIERED_STORAGE_IMAGE;
+        }
+    }
+
     @BeforeAll
     void setup() throws IOException {
         // we skip test case for kind + podman
@@ -395,6 +412,6 @@ public class TieredStorageST extends AbstractST {
             .install();
 
         suiteStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
+        resolveTieredStorageImage();
     }
 }
