@@ -53,15 +53,5 @@ public abstract class Storage implements UnknownPropertyPreserving {
         }
         this.additionalProperties.put(name, value);
     }
-
-    public static boolean deleteClaim(Storage storage) {
-        return storage instanceof PersistentClaimStorage
-                && ((PersistentClaimStorage) storage).isDeleteClaim();
-    }
-
-    public static String storageClass(Storage storage) {
-        return storage instanceof PersistentClaimStorage ?
-                ((PersistentClaimStorage) storage).getStorageClass() : null;
-    }
 }
 
