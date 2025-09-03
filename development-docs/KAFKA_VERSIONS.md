@@ -47,6 +47,7 @@ Remember to remove the staging repository when the Apache Kafka release is GA.
 ## Removing Kafka version
 
 * Edit the `kafka-versions.yaml` file and mark the version as unsupported (do not remove it, just set the `supported` flag to `false`)
+* Delete the corresponding thirdparty libs folder under `docker-images/artifacts/kafka-thirdparty-libs` (for example, `3.9.x`)
 * Run `make all` to update all the installation files, generated docs files, Helm chart etc.
   You will need to commit also all the files it updates before opening a PR.
 * Make sure the version is not referenced anywhere anymore (apart from the obvious places such as CHANGELOG.md)
