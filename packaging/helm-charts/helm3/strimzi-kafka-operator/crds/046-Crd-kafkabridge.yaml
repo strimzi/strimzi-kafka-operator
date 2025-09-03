@@ -405,7 +405,7 @@ spec:
                             type: string
                             description: The system property value.
                       description: A map of additional system properties which will be passed using the `-D` option to the JVM.
-                  description: '**Currently not supported** JVM Options for pods.'
+                  description: JVM Options for pods.
                 logging:
                   type: object
                   properties:
