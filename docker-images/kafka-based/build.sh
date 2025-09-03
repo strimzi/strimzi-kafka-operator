@@ -54,19 +54,10 @@ function build {
             relative_dist_dir="./tmp/$kafka_version"
         fi
 
-        # Used to copy the right version of the agent depending on the Kafka version
-        # This can be removed once Kafka 3.x support is dropped
-        if [[ "${kafka_version:0:1}" == "3" ]]
-        then
-          kafka_agent_version="kafka-agent-3"
-        else
-          kafka_agent_version="kafka-agent"
-        fi
-
         for image in $kafka_images
         do
             make -C "$image" "$targets" \
-                DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_AGENT_VERSION=${kafka_agent_version} --build-arg KAFKA_DIST_DIR=${relative_dist_dir} --build-arg THIRD_PARTY_LIBS=${lib_directory} $(alternate_base "$image")" \
+                DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_DIST_DIR=${relative_dist_dir} --build-arg THIRD_PARTY_LIBS=${lib_directory} $(alternate_base "$image")" \
                 DOCKER_TAG="${tag}-kafka-${kafka_version}" \
                 BUILD_TAG="build-kafka-${kafka_version}" \
                 KAFKA_VERSION="${kafka_version}" \

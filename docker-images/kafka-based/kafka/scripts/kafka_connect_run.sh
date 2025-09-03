@@ -18,12 +18,7 @@ echo ""
 export GC_LOG_ENABLED="false"
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
-  if [[ "${KAFKA_VERSION:0:1}" == "3" ]]
-    then
-      export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
-    else
-      export KAFKA_LOG4J_OPTS="-Dlog4j2.configurationFile=$KAFKA_HOME/custom-config/log4j2.properties"
-    fi
+  export KAFKA_LOG4J_OPTS="-Dlog4j2.configurationFile=$KAFKA_HOME/custom-config/log4j2.properties"
 fi
 
 # We don't need LOG_DIR because we write no log files, but setting it to a

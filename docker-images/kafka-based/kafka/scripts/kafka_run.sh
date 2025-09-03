@@ -14,12 +14,7 @@ echo "STRIMZI_BROKER_ID=${STRIMZI_BROKER_ID}"
 export GC_LOG_ENABLED="false"
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
-  if [[ "${KAFKA_VERSION:0:1}" == "3" ]]
-  then
-    export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
-  else
-    export KAFKA_LOG4J_OPTS="-Dlog4j2.configurationFile=$KAFKA_HOME/custom-config/log4j2.properties"
-  fi
+  export KAFKA_LOG4J_OPTS="-Dlog4j2.configurationFile=$KAFKA_HOME/custom-config/log4j2.properties"
 fi
 
 . ./set_kafka_jmx_options.sh "${STRIMZI_JMX_ENABLED}" "${STRIMZI_JMX_USERNAME}" "${STRIMZI_JMX_PASSWORD}"
