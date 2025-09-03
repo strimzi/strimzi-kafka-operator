@@ -3807,7 +3807,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |CPU and memory resources to reserve.
 |jvmOptions
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|**Currently not supported** JVM Options for pods.
+|JVM Options for pods.
 |logging
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |Logging configuration for Kafka Bridge.

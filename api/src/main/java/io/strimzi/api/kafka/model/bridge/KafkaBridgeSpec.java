@@ -120,7 +120,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("**Currently not supported** JVM Options for pods")
+    @Description("JVM Options for pods")
     public JvmOptions getJvmOptions() {
         return jvmOptions;
     }
