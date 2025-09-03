@@ -7,16 +7,16 @@ runs:
     - name: Print environment variables
       shell: bash
       run: |
-        echo "BRANCH: ${{ github.ref_name }}"
-        echo "TAG: ${{ env.TAG }}"
+        echo "GITHUB_REF_NAME: ${{ github.ref_name }}"
+        echo "REPO_SLUG: ${{ github.repository }}"
+        echo "REASON (event_name): ${{ github.event_name }}"
+        echo "REF (determined): ${{ env.REF }}"
         echo "COMMIT: ${{ github.sha }}"
+        echo "TAG: ${{ env.TAG }}"
         echo "PULL_REQUEST: ${{ env.PULL_REQUEST }}"
         echo "DOCKER_ORG: ${{ env.DOCKER_ORG }}"
         echo "DOCKER_REGISTRY: ${{ env.DOCKER_REGISTRY }}"
         echo "DOCKER_TAG: ${{ env.DOCKER_TAG }}"
-        echo "REASON: ${{ github.event_name }}"
-        echo "REPO_SLUG: ${{ github.repository }}"
-        echo "PATH: $PATH"
         echo "OPERATOR_IMAGE_PULL_POLICY: ${{ env.OPERATOR_IMAGE_PULL_POLICY }}"
         echo "ST_KAFKA_VERSION: ${{ env.ST_KAFKA_VERSION }}"
         echo "KAFKA_VERSION: ${{ env.KAFKA_VERSION }}"
