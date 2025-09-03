@@ -6,6 +6,11 @@ package io.strimzi.systemtest.operators.user;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -25,6 +30,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.CrdClients;
@@ -60,6 +66,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for various Kafka User operations and configurations."),
+    beforeTestSteps = {
+        @Step(value = "Initialize shared test storage and deploy Kafka cluster with necessary configuration.", expected = "Kafka cluster and scraper pod are deployed and ready for testing.")
+    },
+    labels = {
+        @Label(TestDocsLabels.USER_OPERATOR)
+    }
+)
 class UserST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
@@ -67,6 +82,18 @@ class UserST extends AbstractST {
     private TestStorage sharedTestStorage;
     private String scraperPodName = "";
 
+    @TestDoc(
+        description = @Desc("Verifies that Kafka users with names longer than 64 characters are rejected, while users with valid names are accepted."),
+        steps = {
+            @Step(value = "Create Kafka user with valid name (64 characters).", expected = "User is successfully created and becomes ready."),
+            @Step(value = "Create SASL user with long name (65 characters).", expected = "SASL user is created successfully since SASL users support longer names."),
+            @Step(value = "Attempt to create TLS user with long name (65 characters).", expected = "User creation fails with validation error."),
+            @Step(value = "Verify error condition and message.", expected = "Error condition indicates username limitation and provides an appropriate error message.")
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
     @ParallelTest
     void testUserWithNameMoreThan64Chars() {
         String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
@@ -95,6 +122,20 @@ class UserST extends AbstractST {
         assertThat(condition.getReason(), CoreMatchers.is("ExecutionException"));
     }
 
+    @TestDoc(
+        description = @Desc("Verifies updating a Kafka user from TLS to SCRAM-SHA-512 authentication and validates user secret contents."),
+        steps = {
+            @Step(value = "Create TLS Kafka user.", expected = "User is created with TLS authentication and secret contains TLS certificates."),
+            @Step(value = "Verify TLS user secret contents.", expected = "Secret contains `ca.crt`, `user.crt`, and `user.key` fields."),
+            @Step(value = "Test message sending and receiving with TLS user.", expected = "Messages are successfully sent and received."),
+            @Step(value = "Update user authentication to SCRAM-SHA-512.", expected = "User authentication is updated successfully."),
+            @Step(value = "Verify SCRAM-SHA-512 user secret contents.", expected = "Secret contains SCRAM-SHA-512 `password` field and TLS certificates are removed."),
+            @Step(value = "Test message sending and receiving with SCRAM-SHA-512 user.", expected = "Messages are successfully sent and received with SCRAM-SHA-512 authentication.")
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testUpdateUser() {
@@ -151,6 +192,15 @@ class UserST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
+    @TestDoc(
+        description = @Desc("Verifies that TLS authenticated Kafka users can be configured with quotas."),
+        steps = {
+            @Step(value = "Create TLS user with quota configuration.", expected = "User is created successfully with TLS authentication and quota settings applied.")
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
     @ParallelTest
     void testTlsUserWithQuotas() {
         KafkaUser user = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, "encrypted-arnost", sharedTestStorage.getClusterName()).build();
@@ -158,6 +208,15 @@ class UserST extends AbstractST {
         testUserWithQuotas(user);
     }
 
+    @TestDoc(
+        description = @Desc("Verifies that Kafka users authenticated with external TLS can be configured with quotas."),
+        steps = {
+            @Step(value = "Create TLS external user with quota configuration.", expected = "User is created successfully with TLS external authentication and quota settings applied.")
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
     @ParallelTest
     void testTlsExternalUserWithQuotas() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -166,11 +225,33 @@ class UserST extends AbstractST {
         testUserWithQuotas(tlsExternalUser);
     }
 
+    @TestDoc(
+        description = @Desc("Verifies that SCRAM-SHA-512 authenticated Kafka users can be configured with quotas."),
+        steps = {
+            @Step(value = "Create SCRAM-SHA-512 user with quota configuration.", expected = "User is created successfully with SCRAM-SHA-512 authentication and quota settings applied.")
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
     @ParallelTest
     void testScramUserWithQuotas() {
         KafkaUser user = KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, "scramed-arnost", sharedTestStorage.getClusterName()).build();
         testUserWithQuotas(user);
     }
+
+    @TestDoc(
+        description = @Desc("Auxiliary method for Kafka user quota configuration and verification for different authentication types."),
+        steps = {
+            @Step(value = "Create user with specified quota configuration.", expected = "User is created successfully with producer rate, consumer rate, request percentage, and controller mutation rate quotas."),
+            @Step(value = "Verify quota settings are applied in Kafka.", expected = "Quota configurations are visible and correctly set using Kafka CLI tools."),
+            @Step(value = "Test message sending and receiving based on authentication type.", expected = "Messages are successfully sent and received using appropriate authentication method (i.e., TLS, SCRAM-SHA-512, or TLS external)."),
+            @Step(value = "Delete user and verify quota cleanup.", expected = "User deletion removes all quota configurations from Kafka.")
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
     void testUserWithQuotas(KafkaUser user) {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -235,6 +316,20 @@ class UserST extends AbstractST {
             });
     }
 
+    @TestDoc(
+        description = @Desc("Verifies creating Kafka users with custom secret prefixes for organizing user secrets."),
+        steps = {
+            @Step(value = "Configure cluster operator with custom secret prefix.", expected = "Cluster operator is reconfigured with the specified secret prefix."),
+            @Step(value = "Create TLS and SCRAM-SHA-512 users.", expected = "Users are created successfully with TLS and SCRAM-SHA-512 authentication."),
+            @Step(value = "Verify user secrets are created with correct prefix.", expected = "User secrets are created with the configured prefix in their names."),
+            @Step(value = "Test message sending and receiving.", expected = "Messages are successfully sent and received using both authentication methods."),
+            @Step(value = "Update users and verify secret updates.", expected = "User updates are reflected in the prefixed secrets."),
+            @Step(value = "Delete users and verify cleanup.", expected = "User deletion removes the prefixed secrets properly.")
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
     @ParallelNamespaceTest
     void testCreatingUsersWithSecretPrefix() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -301,7 +396,7 @@ class UserST extends AbstractST {
             .withUsername(secretPrefix + scramShaUserName)
             .build();
 
-        LOGGER.info("Checking if SCRAM-SHA user is able to send messages");
+        LOGGER.info("Checking if SCRAM-SHA-512 user is able to send messages");
         KubeResourceManager.get().createResourceWithWait(clients.producerScramShaPlainStrimzi(), clients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
@@ -322,6 +417,18 @@ class UserST extends AbstractST {
         assertNull(KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(scramShaSecret.getMetadata().getName()).get());
     }
 
+    @TestDoc(
+        description = @Desc("Verifies TLS external user authentication with custom certificates and ACL authorization."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with TLS authentication and Simple authorization.", expected = "Kafka cluster is deployed with TLS listener and Simple ACL authorization enabled."),
+            @Step(value = "Create TLS external user with ACL permissions.", expected = "TLS external user is created with specified ACL rules for topic access."),
+            @Step(value = "Create custom external TLS secret for user.", expected = "External TLS secret is created with custom certificates."),
+            @Step(value = "Test message sending and receiving with TLS external user.", expected = "Messages are successfully sent and received using external TLS certificates.")
+        },
+        labels = {
+            @Label(TestDocsLabels.USER_OPERATOR)
+        }
+    )
     @ParallelNamespaceTest
     void testTlsExternalUser() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
