@@ -22,6 +22,12 @@ if [[ ${RELEASE:-False} == True ]]; then
 	export DOCKER_TAG="${PACKIT_TAG_NAME}"
 fi
 
+# Get latest Kafka version from kafka-versions.yaml
+KAFKA_VERSION=$(cat kafka-versions.yaml | yq eval '.[] | select(.default) | .version' -)
+
+# Configure the `KAFKA_TIERED_STORAGE_BASE_IMAGE` needed for the TieredStorageST
+export KAFKA_TIERED_STORAGE_BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}"
+
 echo "Using container registry '$DOCKER_REGISTRY'"
 echo "Using container org '$DOCKER_ORG'"
 echo "Using container tag '$DOCKER_TAG'"
