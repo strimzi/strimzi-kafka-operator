@@ -1,0 +1,16 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  replicas: 1
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
+  authentication:
+    type: oauth
+    tokenEndpointUri: https://token-endpoint
+    clientId: kafka-bridge
+    clientSecret:
+      secretName: my-bridge-oauth
+      key: clientSecret
+  http:
+    port: 8080

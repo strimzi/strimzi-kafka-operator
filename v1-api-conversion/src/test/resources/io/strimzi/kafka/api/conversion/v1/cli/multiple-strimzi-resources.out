@@ -1,0 +1,126 @@
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: my-connect
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+    - resource:
+        type: group
+        name: connect-cluster
+      operations:
+      - Read
+    - resource:
+        type: topic
+        name: connect-cluster-configs
+      operations:
+      - Read
+    - resource:
+        type: topic
+        name: connect-cluster-configs
+      operations:
+      - Describe
+    - resource:
+        type: topic
+        name: connect-cluster-configs
+      operations:
+      - Write
+    - resource:
+        type: topic
+        name: connect-cluster-configs
+      operations:
+      - Create
+    - resource:
+        type: topic
+        name: connect-cluster-status
+      operations:
+      - Read
+    - resource:
+        type: topic
+        name: connect-cluster-status
+      operations:
+      - Describe
+    - resource:
+        type: topic
+        name: connect-cluster-status
+      operations:
+      - Write
+    - resource:
+        type: topic
+        name: connect-cluster-status
+      operations:
+      - Create
+    - resource:
+        type: topic
+        name: connect-cluster-offsets
+      operations:
+      - Read
+    - resource:
+        type: topic
+        name: connect-cluster-offsets
+      operations:
+      - Write
+    - resource:
+        type: topic
+        name: connect-cluster-offsets
+      operations:
+      - Describe
+    - resource:
+        type: topic
+        name: connect-cluster-offsets
+      operations:
+      - Create
+    - resource:
+        type: group
+        name: connect-cluster
+      operations:
+      - Read
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Read
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Describe
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Write
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Create
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  version: 2.7.0
+  replicas: 1
+  bootstrapServers: my-cluster-kafka-bootstrap:9093
+  groupId: connect-cluster
+  configStorageTopic: connect-cluster-configs
+  statusStorageTopic: connect-cluster-status
+  offsetStorageTopic: connect-cluster-offsets
+  tls:
+    trustedCertificates:
+    - secretName: my-cluster-cluster-ca-cert
+      certificate: ca.crt
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-connect
+      certificate: user.crt
+      key: user.key

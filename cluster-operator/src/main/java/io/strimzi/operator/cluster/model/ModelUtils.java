@@ -278,6 +278,31 @@ public class ModelUtils {
     }
 
     /**
+     * Removes old owner references to the same resource with a different API version.
+     *
+     * @param resource  Resource in which the owner reference should be patched
+     * @param owner     OwnerReference that will be used
+     */
+    public static void patchOwnerReferenceThroughDifferentVersions(HasMetadata resource, OwnerReference owner)   {
+        if (resource.getMetadata().getOwnerReferences() != null) {
+            List<OwnerReference> ownerReferences = resource.getMetadata().getOwnerReferences()
+                    .stream()
+                    .filter(o -> owner.getKind().equals(o.getKind())
+                            && owner.getName().equals(o.getName()))
+                    .toList();
+
+            if (!ownerReferences.isEmpty()) {
+                resource.getMetadata().getOwnerReferences().removeAll(ownerReferences);
+                resource.getMetadata().getOwnerReferences().add(owner);
+            } else {
+                resource.getMetadata().getOwnerReferences().add(owner);
+            }
+        } else {
+            resource.getMetadata().setOwnerReferences(List.of(owner));
+        }
+    }
+
+    /**
      * Generates all possible DNS names for a Kubernetes service:
      *     - service-name
      *     - service-name.namespace

@@ -540,7 +540,8 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
 
-        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaMirrorMaker2.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
+        // We use the KafkaMirrorMaker2.v1beta2.kafka.strimzi.io kind to use the v1beta2 API. It should be removed once the KafkaConnect CR used is a valid v1 resource.
+        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaMirrorMaker2.RESOURCE_KIND + ".v1beta2.kafka.strimzi.io", testStorage.getClusterName(), scaleTo);
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getMM2Selector(), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
