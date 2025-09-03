@@ -113,7 +113,7 @@ spec:
     # ...
     database.history.producer.security.protocol: SSL
     database.history.producer.ssl.truststore.type: PEM
-    database.history.producer.ssl.truststore.certificates: "${directory:/mtn/cluster-ca:ca.crt}"
+    database.history.producer.ssl.truststore.certificates: "${directory:/mnt/cluster-ca:ca.crt}"
     database.history.producer.ssl.keystore.type: PEM
     database.history.producer.ssl.keystore.certificate.chain: "${directory:/mnt/my-user:user.crt}"
     database.history.producer.ssl.keystore.key: "${directory:/mnt/my-user:user.key}"
