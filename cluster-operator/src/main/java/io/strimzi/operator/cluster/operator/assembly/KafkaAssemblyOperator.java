@@ -132,7 +132,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:NPathComplexity", "deprecation"}) // .status.kafkaMetadataState is deprecated
     public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
         Promise<KafkaStatus> createOrUpdatePromise = Promise.promise();
         ReconciliationState reconcileState = createReconciliationState(reconciliation, kafkaAssembly);

@@ -1,0 +1,41 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+  # use-connector-resources configures this KafkaConnect
+  # to use KafkaConnector resources to avoid
+  # needing to call the Connect REST API directly
+    strimzi.io/use-connector-resources: "true"
+spec:
+  version: 4.1.0
+  bootstrapServers: my-cluster-kafka-bootstrap:9093
+  tls:
+    trustedCertificates:
+      - secretName: my-cluster-cluster-ca-cert
+        certificate: ca.crt
+  config:
+    group.id: my-connect-cluster
+    offset.storage.topic: my-connect-cluster-offsets
+    config.storage.topic: my-connect-cluster-configs
+    status.storage.topic: my-connect-cluster-status
+  template:
+    deployment:
+      deploymentStrategy: Recreate
+  build:
+    output:
+      type: docker
+      image: quay.io/account/image:latest
+      pushSecret: kafkaconnectbuild-pull-secret
+      additionalKanikoOptions:
+        - --log-format=json
+        - --ignore-path=/usr/bin/newuidmap
+        - --ignore-path=/usr/bin/newgidmap
+    plugins:
+      - name: echo-sink-connector
+        artifacts:
+          - type: jar
+            url: https://github.com/scholzj/echo-sink/releases/download/1.6.0/echo-sink-1.6.0.jar
+            sha512sum: 3f30d48079578f9f2d0a097ed9a7088773b135dff3dc8e70d87f8422c073adc1181cb41d823c1d1472b0447a337e4877e535daa34ca8ef21d608f8ee6f5e4a9c
+  tracing:
+    type: jaeger

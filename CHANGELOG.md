@@ -5,6 +5,8 @@
 * Add support for Kafka 4.0.1
 * Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
   Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
+* Introduce the `v1` API to Strimzi CRDs and move User and Topic Operators to use it.
+  The `v1` APi Conversion Tool can be used to convert the resources in files or in your Kubernetes cluter from the `v1beta2` API to the `v1` API.
 * Make `.spec` sections required in the `v1` version of all Strimzi custom resources.
 * Make `.spec.replicas` properties required in the `v1` of the `KafkaBridge`, `KafkaConnect`, and `KafkaMirrorMaker2` custom resources.
 * New fields `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` in the `KafkaConnect` custom resource for configuring Connect's group ID and internal topics.
@@ -20,6 +22,9 @@
 
 ### Major changes, deprecations, and removals
 
+* **This version introduces a new API version to our CRDs.**
+  **Before upgrading to Strimzi 0.49 or newer, make sure that you update your `KafkaUser` resources to use the `.spec.authorization.acls[]operations` field instead of the deprecated `.spec.authorization.acls[]operation`.**
+  **Especially when using Helm, make sure that the CRDs are updated when you upgrade the operator.**
 * The `.status.kafkaMetadataState` field in the `Kafka` custom resource is deprecated and not used anymore.
 * The `type: oauth` authentication in Kafka brokers and Kafka clients (Kafka Connect, MirrorMaker 2, and Strimzi HTTP Bridge) has been deprecated.
   Please use the `type: custom` authentication instead.

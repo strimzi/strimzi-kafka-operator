@@ -421,18 +421,17 @@ class CoreFeaturesIT implements TestSeparator {
             .build();
     }
 
-    private static KafkaTopic kafkaTopicWithNoSpec(String metadataName, boolean spec) {
-        var builder = new KafkaTopicBuilder()
-            .withNewMetadata()
-            .withName(metadataName)
-            .withNamespace(NAMESPACE)
-            .withLabels(SELECTOR)
-            .addToAnnotations(TopicOperatorUtil.MANAGED, "true")
-            .endMetadata();
-        if (spec) {
-            builder = builder.editOrNewSpec().endSpec();
-        }
-        return builder.build();
+    private static KafkaTopic kafkaTopicWithEmptySpec(String metadataName) {
+        return new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withName(metadataName)
+                    .withNamespace(NAMESPACE)
+                    .withLabels(SELECTOR)
+                    .addToAnnotations(TopicOperatorUtil.MANAGED, "true")
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
     }
 
     static List<KafkaTopic> managedKafkaTopics() {
@@ -2075,12 +2074,14 @@ class CoreFeaturesIT implements TestSeparator {
         assertTrue(operator.isAlive());
 
         KafkaTopic kt = new KafkaTopicBuilder()
-            .withNewMetadata()
-            .withNamespace(NAMESPACE)
-            .withName("foo")
-            .withLabels(SELECTOR)
-            .endMetadata()
-            .build();
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName("foo")
+                    .withLabels(SELECTOR)
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
 
         // when
 
@@ -2241,24 +2242,10 @@ class CoreFeaturesIT implements TestSeparator {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false", "num.partitions", "3", "default.replication.factor", "1"));
 
         var topicName = "my-topic";
-        createTopic(kafkaCluster, kafkaTopicWithNoSpec(topicName, true));
+        createTopic(kafkaCluster, kafkaTopicWithEmptySpec(topicName));
         var topicDescription = awaitTopicDescription(topicName);
         assertEquals(3, numPartitions(topicDescription));
         assertEquals(Set.of(1), replicationFactors(topicDescription));
-    }
-
-    @Test
-    public void shouldNotReconcileKafkaTopicWithMissingSpec() throws InterruptedException {
-        startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false", "num.partitions", "3", "default.replication.factor", "1"));
-
-        var topicName = "my-topic";
-        maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster));
-
-        Crds.topicOperation(kubernetesClient)
-            .resource(kafkaTopicWithNoSpec(topicName, false))
-            .create();
-
-        assertNotExistsInKafka(topicName);
     }
 
     @Test

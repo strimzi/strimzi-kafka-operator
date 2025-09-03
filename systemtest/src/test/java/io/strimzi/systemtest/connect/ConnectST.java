@@ -1327,7 +1327,9 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("-------> Scaling KafkaConnect subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaConnect.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
+
+        // We use the KafkaConnect.v1beta2.kafka.strimzi.io kind to use the v1beta2 API. It should be removed once the KafkaConnect CR used is a valid v1 resource.
+        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaConnect.RESOURCE_KIND + ".v1beta2.kafka.strimzi.io", testStorage.getClusterName(), scaleTo);
 
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), scaleTo, true);
 

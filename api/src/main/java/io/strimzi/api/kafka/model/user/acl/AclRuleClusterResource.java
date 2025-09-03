@@ -19,7 +19,7 @@ import lombok.ToString;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"type"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)

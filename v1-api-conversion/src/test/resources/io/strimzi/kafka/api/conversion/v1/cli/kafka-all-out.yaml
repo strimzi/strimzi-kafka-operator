@@ -1,0 +1,238 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-cluster
+  labels:
+    app: my-cluster
+spec:
+  kafka:
+    replicas: 3
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+        authentication:
+          type: scram-sha-512
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+    config:
+      auto.create.topics.enable: "false"
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+    storage:
+      volumes:
+        - type: persistent-claim
+          size: 100Gi
+          class: ssd
+          deleteClaim: true
+          id: 0
+      type: jbod
+    authorization:
+      type: simple
+      superUsers:
+        - CN=my-connect
+        - my-connect
+        - CN=my-bridge
+        - my-bridge
+    template:
+      statefulset:
+        metadata:
+          labels:
+            key1: label1x
+            key2: label2x
+            app.kubernetes.io/part-of: part-of-something
+            app.kubernetes.io/managed-by: managed-by-something
+          annotations:
+            akey1: label1
+            akey2: label2
+      pod:
+        metadata:
+          labels:
+            key1: label1y
+            key2: label2y
+          annotations:
+            akey1: label1
+            akey2: label2
+  zookeeper:
+    replicas: 3
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      class: ssd
+      deleteClaim: true
+    resources:
+      limits:
+        memory: 1Gi
+        cpu: 500m
+      requests:
+        memory: 1Gi
+        cpu: 300m
+    template:
+      statefulset:
+        metadata:
+          labels:
+            key1: label1z
+            key2: label2z
+          annotations:
+            akey1: label1
+            akey2: label2
+      pod:
+        metadata:
+          labels:
+            key1: label1v
+            key2: label2v
+          annotations:
+            akey1: label1
+            akey2: label2
+  entityOperator:
+    tlsSidecar:
+      logLevel: notice
+    topicOperator:
+      reconciliationIntervalSeconds: 60
+      zookeeperSessionTimeoutSeconds: 10
+      topicMetadataMaxAttempts: 5
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 200m
+        limits:
+          memory: 256Mi
+          cpu: 500m
+    userOperator:
+      reconciliationIntervalSeconds: 30
+      zookeeperSessionTimeoutSeconds: 15
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: 200m
+        limits:
+          memory: 512Mi
+          cpu: 500m
+    template:
+      deployment:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      tlsSidecarContainer:
+        env:
+          - name: EXAMPLE_ENV_1
+            value: example.env.one
+  kafkaExporter:
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 500m
+    template:
+      deployment:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      pod:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      service:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+  cruiseControl:
+    tlsSidecar:
+      logLevel: alert
+    brokerCapacity:
+      disk: 1Ti
+      cpuUtilization: 90
+      inboundNetwork: 1GiB/s
+      outboundNetwork: 1GiB/s
+    template:
+      pod:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      tlsSidecarContainer:
+        env:
+          - name: EXAMPLE_ENV_2
+            value: example.env.two
+  jmxTrans:
+    outputDefinitions:
+      - outputType: "com.googlecode.jmxtrans.model.output.StdOutWriter"
+        name: "standardOut"
+      - outputType: "com.googlecode.jmxtrans.model.output.GraphiteOutputWriter"
+        host: "mylogstash.com"
+        port: 31028
+        flushDelayInSeconds: 5
+        name: "logstash"
+    kafkaQueries:
+      - targetMBean: "kafka.server:type=BrokerTopicMetrics,name=*"
+        attributes: [ "Count" ]
+        outputs: [ "standardOut" ]
+  clusterCa:
+    validityDays: 1000
+  clientsCa:
+    validityDays: 1000
+status:
+  clusterId: XP9FP2P-RByvEy0W4cOEUA
+  conditions:
+    - lastTransitionTime: '2023-01-20T17:56:29.396588Z'
+      status: 'True'
+      type: Ready
+  kafkaMetadataState: KRaft
+  registeredNodeIds:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+  kafkaVersion: 4.1.0
+  kafkaNodePools:
+    - name: broker
+    - name: controller
+  listeners:
+    - addresses:
+        - host: my-cluster-kafka-bootstrap.myproject.svc
+          port: 9092
+      bootstrapServers: 'my-cluster-kafka-bootstrap.myproject.svc:9092'
+      name: plain
+      type: plain
+    - addresses:
+        - host: my-cluster-kafka-bootstrap.myproject.svc
+          port: 9093
+      bootstrapServers: 'my-cluster-kafka-bootstrap.myproject.svc:9093'
+      certificates:
+        - |
+          -----BEGIN CERTIFICATE-----
+
+          -----END CERTIFICATE-----
+      name: tls
+      type: tls
+  observedGeneration: 3
+  operatorLastSuccessfulVersion: 0.48.0
