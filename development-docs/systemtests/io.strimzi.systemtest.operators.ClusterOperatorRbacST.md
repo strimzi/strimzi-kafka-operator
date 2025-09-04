@@ -2,12 +2,6 @@
 
 **Description:** Test suite containing Cluster Operator RBAC scenarios related to ClusterRoleBinding (CRB) permissions, ensuring proper functionality when namespace-scoped RBAC is used instead of cluster-wide permissions.
 
-**Before tests execution steps:**
-
-| Step | Action | Result |
-| - | - | - |
-| 1. | Deploy Cluster Operator with namespace-scoped RBAC configuration. | Cluster Operator is deployed with limited RBAC scope. |
-
 **Labels:**
 
 * [connect](labels/connect.md)
