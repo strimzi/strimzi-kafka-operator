@@ -6,29 +6,64 @@
 = Configuring pod anti-affinity for Kafka nodes
 
 [role="_abstract"]
-By default, multiple Kafka nodes from the same pool can run on the same worker node in your Kubernetes cluster.
-If that worker node fails, all Kafka nodes hosted on it become unavailable, impacting the reliability of your cluster.
+To improve fault tolerance, you can prevent multiple Kafka broker pods from running on the same worker node.
+Configure `podAntiAffinity` so that the pods are scheduled on different worker nodes. 
 
-To improve fault tolerance, configure `podAntiAffinity` in your `KafkaNodePool` resource so that Kafka nodes within a pool are scheduled on different worker nodes. 
+The simplest way to configure this is to set a cluster-wide policy in the `Kafka` resource.
+For more granular control, if needed, you can override the default policy for specific node pools using the `KafkaNodePool` resource.
+This procedure shows example configurations for both.
+
+IMPORTANT: A `podAntiAffinity` rule defined in a `KafkaNodePool` resource overrides any rule in the `Kafka` resource. 
+The rules are not merged.
 
 .Prerequisites
 
-* A Kubernetes cluster
-* A running Cluster Operator
-* Other workloads in the cluster are labelled
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]  
 
 .Procedure
 
-. In your `KafkaNodePool` custom resource, edit the `affinity` property in the `spec.template.pod` section.
+. Configure `podAntiAffinity` in either the `Kafka` or `KafkaNodePool` resource.
 +
-To prevent Kafka pods from the same node pool from sharing a worker node, add a `podAntiAffinity` rule.
+--
+* To set a cluster-wide rule, edit the `affinity` property in `spec.kafka.template.pod` of your `Kafka` resource. 
+Use the `strimzi.io/name` label to select all broker pods.
+* To set a pool-specific rule, edit the `affinity` property in `spec.template.pod` of your `KafkaNodePool` resource. 
+Use the `strimzi.io/pool-name` label to select only the pods in that pool.
+--
 +
-* Use a `labelSelector` to identify the pods using the node pool name.
-* Set the `topologyKey` to `"kubernetes.io/hostname"`. 
-This defines each worker node as a separate domain for the scheduling rule, preventing the targeted pods from being placed on the same host.
+In both cases, set the `topologyKey` to `"kubernetes.io/hostname"` to prevent pods from being placed on the same host.
 +
-.Example anti-affinity configuration for a node pool
-[source,yaml,subs="+quotes,attributes+"]
+This example applies a rule to a `Kafka` resource named `my-cluster` that prevents any of its broker pods from running on the same node.
++
+.Example cluster-wide anti-affinity configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    template:
+      pod:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: strimzi.io/name
+                      operator: In
+                      values:
+                        - my-cluster-kafka
+                topologyKey: "kubernetes.io/hostname"
+  # ...
+----
++
+This example applies a rule to a `KafkaNodePool` resource named `broker` that prevents pods from that specific pool from running on the same node.
++
+.Example node pool-specific anti-affinity configuration
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaNodePoolApiVersion}
 kind: KafkaNodePool
@@ -54,8 +89,5 @@ spec:
               topologyKey: "kubernetes.io/hostname"
   # ...
 ----
-+
-NOTE: For a stricter, cluster-wide anti-affinity rule, use the `strimzi.io/cluster` label with your cluster name as the value. 
-This prevents a pod from running on the same node as any other pod from the same Kafka cluster (such as controllers or brokers from a different pool).
 
-. Apply the changes to the `KafkaNodePool` configuration.
+. Apply the changes to your custom resource configuration.

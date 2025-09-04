@@ -3,62 +3,71 @@
 // assembly-scheduling.adoc
 
 [id='proc-configuring-node-affinity-{context}']
-= Configuring pod affinity for specific nodes
+= Configuring pod scheduling for specific nodes
 
 [role="_abstract"]
-Your Kubernetes cluster might have different types of worker nodes, some with specialized hardware like fast SSD storage, powerful CPUs, or high-speed network cards. 
+Your Kubernetes cluster might have different types of worker nodes, some with specialized hardware (fast SSDs, powerful CPUs) or a particular location (a specific availability zone). 
+To optimize performance and resource usage, configure `nodeAffinity` so that Kafka pods are scheduled only on the nodes that match your requirements.
 
-To optimize performance and resource usage, configure `nodeAffinity` in your `KafkaNodePool` resource so that Kafka pods in a specific pool are scheduled only on the nodes that meet their requirements.
+The simplest way to configure this is to set a cluster-wide policy in the `Kafka` resource.
+For more granular control, if needed, you can override the default policy for specific node pools using the `KafkaNodePool` resource.
+For example, you can tie different pools to different availability zones.
+This procedure shows example configurations for both.
+
+IMPORTANT: A `nodeAffinity` rule defined in a `KafkaNodePool` resource overrides any rule in the `Kafka` resource. 
+The rules are not merged.
 
 .Prerequisites
 
-* A Kubernetes cluster
-* A running Cluster Operator
-* Worker nodes are labelled
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]  
+* Worker nodes are labeled to identify their specific characteristics (such as `disk:sdd`).
 
 .Procedure
 
-. Label the worker nodes where you want to schedule your Kafka pods. 
-+
-If the nodes aren't already labeled, apply labels using `kubectl label`:
+. Label the worker nodes to identify them when scheduling the kafka pods.
 +
 [source,shell,subs="+quotes,attributes+"]
 ----
-kubectl label node <name_of_node> node-type=fast-network
+kubectl label node <name_of_node> disk=sdd
 ----
 
-. In your `KafkaNodePool` custom resource, edit the `affinity` property in the `spec.template.pod` section.
+. Configure `nodeAffinity` in either the `Kafka` or `KafkaNodePool` resource to match the label.
 +
-To assign Kafka pods from the same node pool to a worker node, add a `nodeAffinity` rule.
+--
+* To set a cluster-wide rule, edit the `affinity` property in `spec.kafka.template.pod` of your `Kafka` resource.
+* To set a pool-specific rule, edit the `affinity` property in `spec.template.pod` of your `KafkaNodePool` resource.
+--
 +
-* Use `nodeSelectorTerms` with `matchExpressions` to specify the key (label name) and values of the nodes you want to schedule pods on. 
-Pods are only scheduled on nodes that match these expressions.
+In both cases, use `nodeSelectorTerms` with `matchExpressions` to specify the key-value label of the nodes you want to schedule pods on.
 +
-.Example affinity configuration for specific nodes
-[source,yaml,subs=attributes+]
+This example applies a rule to a `Kafka` resource that assigns all its broker pods to run only on nodes with the label `disk: ssd`.
++
+.Example cluster-wide affinity configuration for specific nodes
+[source,yaml,subs="+attributes"]
 ----
-apiVersion: {KafkaNodePoolApiVersion}
-kind: KafkaNodePool
+apiVersion: {KafkaApiVersion}
+kind: Kafka
 metadata:
-  name: broker
-  labels:
-    strimzi.io/cluster: my-cluster
+  name: my-cluster
 spec:
-  replicas: 3
-  roles:
-    - broker
-  template:
+  kafka:
+    # ...
+    template:
       pod:
         affinity:
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
               nodeSelectorTerms:
                 - matchExpressions:
-                  - key: node-type
+                  - key: disk
                     operator: In
                     values:
-                    - fast-network
+                    - sdd
   # ...
 ----
++
+.Example availability zone scheduling for node pools
+For node pools, a common production scenario is to configure node pools so that pods are scheduled only on nodes within a specified availability zone. 
+For more information, see xref:proc-managing-storage-affinity-node-pools-str[Managing storage affinity using node pools]
 
-. Apply the changes to the `KafkaNodePool` configuration.
+. Apply the changes to your custom resource configuration.

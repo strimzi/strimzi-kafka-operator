@@ -6,26 +6,63 @@
 = Configuring pod anti-affinity against other workloads
 
 [role="_abstract"]
-To improve the stability and performance of your Kafka cluster, you can prevent its pods from running on the same worker nodes as other resource-intensive applications. 
+To improve stability and performance, you can prevent Kafka pods from running on the same worker nodes as other resource-intensive applications, such as databases. 
+Configure `podAntiAffinity` so that these workloads are scheduled on separate nodes.
 
-Using `podAntiAffinity` in your `KafkaNodePool` resource tells Kubernetes to avoid scheduling Kafka nodes from the same pool alongside specific workloads, such as databases or other messaging systems.
+The simplest way to configure this is to set a cluster-wide policy in the `Kafka` resource.
+For more granular control, if needed, you can override the default policy for specific node pools using the `KafkaNodePool` resource.
+This procedure shows example configurations for both.
+
+IMPORTANT: A `podAntiAffinity` rule defined in a `KafkaNodePool` resource overrides any rule in the `Kafka` resource. 
+The rules are not merged.
 
 .Prerequisites
 
-* A Kubernetes cluster
-* A running Cluster Operator
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.] 
+* The other workloads in your cluster use consistent labels.
 
 .Procedure
 
-. In your `KafkaNodePool` custom resource, edit the `affinity` property in the `spec.template.pod` section.
+. Configure `podAntiAffinity` in either the `Kafka` or `KafkaNodePool` resource.
 +
-To prevent Kafka pods from the same node pool sharing a worker node with other application pods, add a `podAntiAffinity` rule.
+--
+* To set a cluster-wide rule, edit the `affinity` property in `spec.kafka.template.pod` of your `Kafka` resource. 
+* To set a pool-specific rule, edit the `affinity` property in `spec.template.pod` of your `KafkaNodePool` resource. 
+--
 +
-* Use a `labelSelector` to identify the pods to keep separate from your Kafka nodes.
-* Set the `topologyKey` to `"kubernetes.io/hostname"`. 
-This defines each worker node as a separate domain for the scheduling rule, preventing the targeted pods from being placed on the same host.
+In both cases, use a `labelSelector` to identify the application pods you want to keep separate from your Kafka pods and set the `topologyKey` to `"kubernetes.io/hostname"` to prevent pods from being placed on the same host.
 +
-.Example anti-affinity configuration against other workloads
+This example applies a rule to a `Kafka` resource named `my-cluster` that prevents any of its broker pods from running on the same node as pods labeled `postgresql` and `mongodb`.
++
+.Example cluster-wide anti-affinity configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    template:
+      pod:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: application
+                      operator: In
+                      values:
+                      - postgresql
+                      - mongodb
+                topologyKey: "kubernetes.io/hostname"
+  # ...
+----
++
+This example applies a rule to a `KafkaNodePool` resource named `broker` that prevents pods from that pool from running on the same node as pods labeled `postgresql` and `mongodb`.
++
+.Example node pool-specific anti-affinity configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaNodePoolApiVersion}
@@ -54,4 +91,4 @@ spec:
   # ...
 ----
 
-. Apply the changes to the `KafkaNodePool` configuration.
+. Apply the changes to your custom resource configuration.

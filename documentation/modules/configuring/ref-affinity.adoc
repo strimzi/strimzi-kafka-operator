@@ -18,18 +18,38 @@ Use node affinity to schedule workloads onto specific nodes::
 Kubernetes clusters often include nodes optimized for different workloads, such as CPU, memory, storage, or network.  
 Node affinity enables scheduling Kafka components onto nodes that match specific labels, such as `beta.kubernetes.io/instance-type` or custom labels, to optimize performance and cost.
 
-Use node affinity and tolerations for dedicated nodes::
-Cluster administrators can taint nodes to exclude them from general scheduling.  
-Kafka pods can be scheduled onto these dedicated nodes by configuring both node affinity and tolerations.  
+Use node affinity, taints, and tolerations for dedicated nodes::
+To reserve nodes for Kafka, you can taint them to exclude them from general workloads. 
+Kafka pods can still be scheduled onto these nodes by configuring:
++
+--
+* Tolerations, which allow the pods to bypass the taint.
+* Node affinity, for the pods to run on those specific nodes.
+--
++  
+These settings direct Kafka pods to dedicated nodes while preventing other workloads from being scheduled there
 This approach isolates Kafka from other workloads, reducing resource contention and improving stability.
 
-To apply scheduling strategies, use `template.pod` properties in the `spec` section of the following resources
+You can apply these scheduling strategies in the `template.pod` property within the `spec` of a Strimzi custom resource. 
+For Kafka brokers specifically, Strimzi provides a two-level configuration:
 
+* `Kafka.spec.kafka.template.pod` +
+Use this to set a cluster-wide default scheduling policy for all Kafka broker and controller pods.
+* `KafkaNodePool.spec.template.pod` + 
+Use this to set scheduling policy for a specific node pool. 
+Any scheduling rules defined here override the cluster-wide default for the pods managed by that specific node pool.
+
+Other Strimzi components have their own template properties for scheduling:
+
+* `Kafka.spec.kafka.template.pod`
 * `KafkaNodePool.spec.template.pod`
 * `Kafka.spec.entityOperator.template.pod`
 * `Kafka.spec.cruiseControl.template.pod`
 * `KafkaConnect.spec.template.pod`
 * `KafkaBridge.spec.template.pod`
 * `KafkaMirrorMaker2.spec.template.pod`
+
+The following procedures provide configuration examples for the `Kafka` and `KafkaNodePool` resources. 
+The same affinity and tolerations configurations shown in these examples can be applied to the `template.pod` property of any other component.
 
 Scheduling properties follow the Kubernetes specification.
