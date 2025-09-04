@@ -85,6 +85,7 @@ runs:
         BUILD_REASON: "IndividualCI"
         BRANCH: ${{ github.ref }}
 
+    # TODO - We can use cosign in better way. See https://github.com/strimzi/strimzi-kafka-operator/issues/11826 for more details.
     - name: Sign container manifests
       shell: bash
       run: make docker_sign_manifest
@@ -95,7 +96,8 @@ runs:
         BUILD_COMMIT: ${{ github.sha }}
         COSIGN_PASSWORD: ${{ inputs.cosignPassword }}
         COSIGN_PRIVATE_KEY: ${{ inputs.cosignPrivateKey }}
-        
+
+    # TODO - We can use existing GitHub Action for SBOMs - https://github.com/strimzi/strimzi-kafka-operator/issues/11827
     - name: Generate SBOMs
       shell: bash
       run: |
