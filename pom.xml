@@ -101,7 +101,7 @@
         <fasterxml.jackson-jaxrs.version>2.18.3</fasterxml.jackson-jaxrs.version>
         <vertx.version>5.0.4</vertx.version>
         <vertx-junit5.version>5.0.4</vertx-junit5.version>
-        <kafka.version>4.0.0</kafka.version>
+        <kafka.version>4.1.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
         <!-- Used for test-frame and the systemtests-->
@@ -113,7 +113,7 @@
         <quartz.version>2.3.2</quartz.version>
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
-        <jetty.version>12.0.16</jetty.version>
+        <jetty.version>12.0.22</jetty.version>
         <!--
         This property is used to track the Jetty version used by Kafka. Kafka uses old Jetty version that is not
         supported anymore. This also needs to be used by the kafka-agent module. Strimzi operators uses newer supported
