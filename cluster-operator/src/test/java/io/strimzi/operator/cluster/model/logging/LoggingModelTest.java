@@ -17,13 +17,11 @@ public class LoggingModelTest {
     public void testLog4j2()   {
         LoggingModel model = new LoggingModel(
                 new KafkaConnectSpecBuilder().build(),
-                "KafkaConnectCluster",
-                false
+                "KafkaConnectCluster"
         );
 
         assertThat(LoggingModel.LOG4J2_CONFIG_MAP_KEY, is("log4j2.properties"));
         assertThat(model.getDefaultLogConfigBaseName(), is("KafkaConnectCluster"));
-        assertThat(model.isShouldPatchLoggerAppender(), is(false));
         assertThat(model.loggingConfiguration(Reconciliation.DUMMY_RECONCILIATION, null), is("""
                 # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
                 name=KafkaConnectConfig

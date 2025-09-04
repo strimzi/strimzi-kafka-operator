@@ -104,7 +104,7 @@ public class ConfigMapUtilsTest {
 
         @Override
         public LoggingModel logging() {
-            return new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster", true);
+            return new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster");
         }
 
         @Override

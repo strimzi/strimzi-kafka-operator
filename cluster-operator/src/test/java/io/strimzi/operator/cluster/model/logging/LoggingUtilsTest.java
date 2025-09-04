@@ -81,7 +81,7 @@ public class LoggingUtilsTest {
     public void testNullLog4j2LoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
-                new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster", true),
+                new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster"),
                 null
         );
 
@@ -112,8 +112,7 @@ public class LoggingUtilsTest {
                         new KafkaConnectSpecBuilder()
                                 .withLogging(new InlineLoggingBuilder().withLoggers(new TreeMap<>(Map.of("logger.mypackage.name", "io.mydomain.mypackage", "logger.mypackage.level", "WARN"))).build())
                                 .build(),
-                        "KafkaConnectCluster",
-                        true),
+                        "KafkaConnectCluster"),
                 null
         );
 
@@ -150,8 +149,7 @@ public class LoggingUtilsTest {
                                         .endValueFrom()
                                         .build())
                                 .build(),
-                        "KafkaConnectCluster",
-                        true),
+                        "KafkaConnectCluster"),
                 new ConfigMapBuilder()
                         .withData(Map.of("my-key", """
                                 name = KafkaConnectConfig

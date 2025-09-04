@@ -287,7 +287,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             result.metrics = new StrimziMetricsReporterModel(spec, DEFAULT_METRICS_ALLOW_LIST);
         }
 
-        result.logging = new LoggingModel(spec, result.getClass().getSimpleName(), false);
+        result.logging = new LoggingModel(spec, result.getClass().getSimpleName());
 
         result.jmx = new JmxModel(
                 reconciliation.namespace(),

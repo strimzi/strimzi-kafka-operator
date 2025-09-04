@@ -20,21 +20,18 @@ public class LoggingModel {
 
     private final Logging logging;
     private final String defaultLogConfigBaseName;
-    private final boolean shouldPatchLoggerAppender;
 
     /**
      * Constructs the Logging Model for managing logging
      *
      * @param specSection                   Custom resource section configuring logging
      * @param defaultLogConfigBaseName      Base of the file name with the default logging configuration
-     * @param shouldPatchLoggerAppender     Indicates whether logger appenders should be patched or not
      */
-    public LoggingModel(HasConfigurableLogging specSection, String defaultLogConfigBaseName, boolean shouldPatchLoggerAppender) {
+    public LoggingModel(HasConfigurableLogging specSection, String defaultLogConfigBaseName) {
         LoggingUtils.validateLogging(specSection.getLogging());
 
         this.logging = specSection.getLogging();
         this.defaultLogConfigBaseName = defaultLogConfigBaseName;
-        this.shouldPatchLoggerAppender = shouldPatchLoggerAppender;
     }
 
     /**
@@ -68,12 +65,5 @@ public class LoggingModel {
      */
     public String getDefaultLogConfigBaseName() {
         return defaultLogConfigBaseName;
-    }
-
-    /**
-     * @return  Indicates whether logger appenders should be patched or not
-     */
-    public boolean isShouldPatchLoggerAppender() {
-        return shouldPatchLoggerAppender;
     }
 }

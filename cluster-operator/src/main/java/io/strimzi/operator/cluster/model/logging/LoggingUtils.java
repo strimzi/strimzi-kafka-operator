@@ -49,21 +49,7 @@ public class LoggingUtils {
             OrderedProperties newSettings = defaultLogConfig(reconciliation, logging.getDefaultLogConfigBaseName());
 
             if (inlineLogging.getLoggers() != null) {
-                // Inline logging as specified and some loggers are configured
-                if (logging.isShouldPatchLoggerAppender()) {
-                    String rootAppenderName = getRootAppenderNamesFromDefaultLoggingConfig(reconciliation, newSettings);
-                    String newRootLogger = inlineLogging.getLoggers().get("log4j.rootLogger");
-                    newSettings.addMapPairs(inlineLogging.getLoggers());
-
-                    if (newRootLogger != null && !rootAppenderName.isEmpty() && !newRootLogger.contains(",")) {
-                        // this should never happen as appender name is added in default configuration
-                        LOGGER.debugCr(reconciliation, "Newly set rootLogger does not contain appender. Setting appender to {}.", rootAppenderName);
-                        String level = newSettings.asMap().get("log4j.rootLogger");
-                        newSettings.addPair("log4j.rootLogger", level + ", " + rootAppenderName);
-                    }
-                } else {
-                    newSettings.addMapPairs(inlineLogging.getLoggers());
-                }
+                newSettings.addMapPairs(inlineLogging.getLoggers());
             }
 
             return createLog4jProperties(newSettings);

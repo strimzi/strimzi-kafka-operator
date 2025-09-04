@@ -339,7 +339,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             result.metrics = new StrimziMetricsReporterModel(kafkaClusterSpec, DEFAULT_METRICS_ALLOW_LIST);
         }
 
-        result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName(), false);
+        result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName());
 
         result.jmx = new JmxModel(
                 reconciliation.namespace(),
