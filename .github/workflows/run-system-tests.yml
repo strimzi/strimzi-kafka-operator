@@ -207,7 +207,7 @@ jobs:
 
       # Load Strimzi images
       - name: Load Strimzi images
-        if: ${{ env.DOCKER_TAG == 'latest' && github.ref_name != 'main' }}
+        if: ${{ env.DOCKER_TAG == 'latest' && inputs.ref != 'main' }}
         uses: ./.github/actions/containers-load
         with:
           architecture: ${{ matrix.config.arch }}
