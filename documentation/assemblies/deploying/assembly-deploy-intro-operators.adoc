@@ -59,3 +59,5 @@ include::../../modules/operators/con-operators-namespaces.adoc[leveloffset=+1]
 include::../../modules/operators/ref-operator-cluster-rbac-resources.adoc[leveloffset=+1]
 //cluster operator's management of pod resources
 include::../../modules/configuring/con-pod-management.adoc[leveloffset=+1]
+//warnings on locks for cluster operations
+include::../../modules/configuring/con-failed-lock-warnings.adoc[leveloffset=+1]
