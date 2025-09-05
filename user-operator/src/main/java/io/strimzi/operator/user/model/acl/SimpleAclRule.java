@@ -146,7 +146,7 @@ public class SimpleAclRule {
         if (rule.getOperations() != null && rule.getOperation() != null) {
             throw new InvalidResourceException("Both fields `operations` and `operation` cannot be filled in at the same time");
         } else if (rule.getOperations() == null && rule.getOperation() == null) {
-            throw new InvalidResourceException("Both fields `operations` and `operation` are null. At least one of them must be specified!");
+            throw new InvalidResourceException("Both fields `operations` and `operation` are null. At least one of them must be specified.");
         } else if (rule.getOperations() != null) {
             List<SimpleAclRule> simpleAclRules = new ArrayList<>();
             for (AclOperation operation : rule.getOperations()) {

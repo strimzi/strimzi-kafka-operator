@@ -85,7 +85,7 @@ public class SimpleAclRuleTest {
             SimpleAclRule.fromCrd(rule);
         });
 
-        assertThat(ex.getMessage(), is("Both fields `operations` and `operation` are null. At least one of them must be specified!"));
+        assertThat(ex.getMessage(), is("Both fields `operations` and `operation` are null. At least one of them must be specified."));
     }
 
     @Test
