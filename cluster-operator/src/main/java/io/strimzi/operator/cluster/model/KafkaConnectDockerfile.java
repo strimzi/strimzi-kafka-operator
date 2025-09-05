@@ -159,7 +159,7 @@ public class KafkaConnectDockerfile {
                         cmd = run("curl", "-f", "-k", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
                                 .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
                                 .andRun("mvn", "dependency:copy-dependencies", "-s", settingsFile,
-                                        "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-Daether.connector.https.securityMode=insecure",
+                                        "-DincludeScope=runtime", "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-Daether.connector.https.securityMode=insecure",
                                         "-Dmaven.wagon.http.ssl.insecure=true", "-Dmaven.wagon.http.ssl.allowall=true",
                                         "-Dmaven.wagon.http.ssl.ignore.validity.dates=true", "-f", "/tmp/" + artifactDir + "/pom.xml")
                                 .andRun("curl", "-f", "-k", "-L", "--create-dirs", "--output",
@@ -169,7 +169,7 @@ public class KafkaConnectDockerfile {
                         cmd = run("curl", "-f", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
                                 .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
                                 .andRun("mvn", "dependency:copy-dependencies", "-s", settingsFile,
-                                        "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml")
+                                        "-DincludeScope=runtime", "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml")
                                 .andRun("curl", "-f", "-L", "--create-dirs", "--output",
                                         "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar",
                                         assembleResourceUrl(repo, mvn, "jar"));
