@@ -13,7 +13,7 @@ inputs:
   profile:
     description: "Comma-separated or single profile name(s)"
     required: false
-    default: ""
+    default: "smoke"
 
 outputs:
   pipelineList:
@@ -72,6 +72,9 @@ runs:
           let shouldRun = false;
 
           if (ev === 'workflow_dispatch') {
+            shouldRun = true;
+          } else if (ev === 'pull_request') {
+            // Auto-run smoke tests on PR workflow changes
             shouldRun = true;
           } else if (ev === 'issue_comment' && context.payload?.issue?.pull_request) {
             shouldRun = /^\s*\/gha\s+run\b/i.test(body || '');
