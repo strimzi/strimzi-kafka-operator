@@ -20,6 +20,12 @@ on:
   # Automated trigger for issue comment
   issue_comment:
     types: [created]
+  # Testing trigger for PRs - tests workflow changes
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '.github/workflows/run-system-tests.yml'
+      - '.github/workflows/system-tests.yml'
 
 permissions:
   contents: read
