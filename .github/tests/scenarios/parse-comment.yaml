@@ -207,7 +207,7 @@ scenarios:
     fixture: .github/tests/events/parse-comment/dispatch_empty.json
     expectations:
       pipelines: ""
-      profiles: "operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
+      profiles: "smoke"
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
