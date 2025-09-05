@@ -17,12 +17,13 @@ runs:
         echo "TAG=$GITHUB_REF_NAME" >> $GITHUB_ENV
         
         # Check if we're in a pull request context
-        if [[ "${{ github.event.issue.pull_request }}" != "" && "${{ github.event.issue.pull_request }}" != "null" ]]; then
+        if [[ "${{ github.event.issue.pull_request }}" != "" && "${{ github.event.issue.pull_request }}" != "null" ]] || [[ "${{ github.event_name }}" == "pull_request" ]]; then
           echo "Detected: Pull Request"
           
           echo "PULL_REQUEST=true" >> $GITHUB_ENV
           echo "DOCKER_ORG=strimzi" >> $GITHUB_ENV
           echo "TAG=pr" >> $GITHUB_ENV
+          # For PR events, preserve the DOCKER_REGISTRY set by setup-kind (Kind registry)
         else
           # Not a PR - use standard Strimzi settings
           echo "PULL_REQUEST=false" >> $GITHUB_ENV
