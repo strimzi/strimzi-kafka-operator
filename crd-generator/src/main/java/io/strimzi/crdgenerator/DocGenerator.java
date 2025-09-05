@@ -14,6 +14,7 @@ import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -117,7 +118,7 @@ class DocGenerator {
     }
 
     private List<? extends Class<?>> subtypesOrSelf(Class<?> returnType) {
-        return isPolymorphic(returnType) ? subtypes(returnType) : singletonList(returnType);
+        return isPolymorphic(returnType) ? subtypes(null, returnType) : singletonList(returnType);
     }
 
     public void generate(Class<? extends CustomResource> crdClass) throws IOException {
@@ -413,7 +414,18 @@ class DocGenerator {
     private void appendDiscriminator(Crd crd, Class<?> cls) throws IOException {
         String discriminator = discriminator(cls.getSuperclass());
         if (discriminator != null) {
-            String subtypeLinks = subtypes(cls.getSuperclass()).stream().filter(c -> !c.equals(cls)).map(c -> {
+            if (cls.isAnnotationPresent(PresentInVersions.class)) {
+                // Adds a note about presence in different versions
+                out.append("The type ")
+                        .append(cls.getSimpleName())
+                        .append(" is supported only in the Strimzi API version(s) ")
+                        .append(ApiVersion.parseRange(cls.getAnnotation(PresentInVersions.class).value()).toString())
+                        .append(".")
+                        .append(NL)
+                        .append(NL);
+            }
+
+            String subtypeLinks = subtypes(null, cls.getSuperclass()).stream().filter(c -> !c.equals(cls)).map(c -> {
                 try {
                     return typeLink(crd, c);
                 } catch (IOException e) {
@@ -459,7 +471,7 @@ class DocGenerator {
                 || boolean.class.equals(cls)) {
             out.append(cls.getSimpleName().toLowerCase(Locale.ENGLISH));
         } else if (isPolymorphic(cls)) {
-            out.append(subtypes(cls).stream().map(c -> {
+            out.append(subtypes(null, cls).stream().map(c -> {
                 try {
                     return typeLink(crd, c);
                 } catch (IOException e) {

@@ -714,10 +714,7 @@ spec:
                 type: string
                 enum:
                 - left
-                - right
               leftProperty:
-                type: string
-              rightProperty:
                 type: string
             required:
             - discrim
@@ -1092,10 +1089,7 @@ spec:
                   type: string
                   enum:
                   - left
-                  - right
                 leftProperty:
-                  type: string
-                rightProperty:
                   type: string
               required:
               - discrim

@@ -261,6 +261,15 @@ class Property implements AnnotatedElement {
         return cls.isAnnotationPresent(JsonSubTypes.class);
     }
 
+    /**
+     * Returns a map of type classes and their identifiers. The key of the map is the class and the value is the
+     * identifier. This method always returns all classes regardless the API version they are present in. This method
+     * is used to generate the API reference docs.
+     *
+     * @param crdClass  The parent class for which the type identifiers should be returned
+     *
+     * @return  Map with the classes as keys and identifiers as values
+     */
     static Map<Class<?>, String> subtypeMap(Class<?> crdClass) {
         JsonSubTypes subtypes = crdClass.getAnnotation(JsonSubTypes.class);
         if (subtypes != null) {
@@ -274,12 +283,28 @@ class Property implements AnnotatedElement {
         }
     }
 
-    static List<Class<?>> subtypes(Class<?> crdClass) {
+    /**
+     * This method is used to provide the typed classes that are part of a typed API. This method is used to generate
+     * the CRDs and the API reference docs.
+     *
+     * @param crApiVersion  Strimzi API version for which the type classes should be returned (some types might be present only in some versions)
+     * @param crdClass      The parent class for which the type identifiers should be returned
+     *
+     * @return  List of the available subtype classes
+     */
+    static List<Class<?>> subtypes(ApiVersion crApiVersion, Class<?> crdClass) {
         JsonSubTypes subtypes = crdClass.getAnnotation(JsonSubTypes.class);
         if (subtypes != null) {
             ArrayList<Class<?>> result = new ArrayList<>(subtypes.value().length);
             for (JsonSubTypes.Type type : subtypes.value()) {
-                result.add(type.value());
+                // When the Strimzi API version is null, we return all types. This is usually used for validations and docs.
+                // When the PresentInVersion annotation is missing, the type is included in all versions
+                // When it is present, it is included only in matching versions
+                if (crApiVersion == null
+                        || !type.value().isAnnotationPresent(PresentInVersions.class)
+                        || ApiVersion.parseRange(type.value().getAnnotation(PresentInVersions.class).value()).contains(crApiVersion)) {
+                    result.add(type.value());
+                }
             }
             return result;
         } else {
@@ -287,12 +312,25 @@ class Property implements AnnotatedElement {
         }
     }
 
-    static List<String> subtypeNames(Class<?> crdClass) {
+    /**
+     * This method is used to provide the type identifiers for typed APIs. This method is used to generate the CRDs.
+     *
+     * @param crApiVersion  Strimzi API version for which the identifiers should be returned (some types might be present only in some versions)
+     * @param crdClass      The parent class for which the type identifiers should be returned
+     *
+     * @return  List of the available types
+     */
+    static List<String> subtypeNames(ApiVersion crApiVersion, Class<?> crdClass) {
         JsonSubTypes subtypes = crdClass.getAnnotation(JsonSubTypes.class);
         if (subtypes != null) {
             ArrayList<String> result = new ArrayList<>(subtypes.value().length);
             for (JsonSubTypes.Type type : subtypes.value()) {
-                result.add(type.name());
+                // When the PresentInVersion annotation is missing, the type is included in all versions
+                // When it is present, it is included only in matching versions
+                if (!type.value().isAnnotationPresent(PresentInVersions.class)
+                        || ApiVersion.parseRange(type.value().getAnnotation(PresentInVersions.class).value()).contains(crApiVersion)) {
+                    result.add(type.name());
+                }
             }
             return result;
         } else {

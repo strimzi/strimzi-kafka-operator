@@ -729,13 +729,9 @@ spec:
                 type: string
                 enum:
                 - left
-                - right
               leftProperty:
                 type: string
                 description: "when descrim=left, the left-hand property."
-              rightProperty:
-                type: string
-                description: "when descrim=right, the right-hand property."
             required:
             - discrim
           affinity:
@@ -1110,13 +1106,9 @@ spec:
                   type: string
                   enum:
                   - left
-                  - right
                 leftProperty:
                   type: string
                   description: "when descrim=left, the left-hand property."
-                rightProperty:
-                  type: string
-                  description: "when descrim=right, the right-hand property."
               required:
               - discrim
           rawList:

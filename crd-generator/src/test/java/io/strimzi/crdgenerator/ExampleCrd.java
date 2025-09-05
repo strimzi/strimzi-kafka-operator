@@ -23,6 +23,7 @@ import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.Pattern;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 
 import java.util.List;
@@ -229,6 +230,7 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonPropertyOrder({"discrim", "commonProperty", "rightProperty"})
+    @PresentInVersions("v1alpha1")
     public static class PolymorphicRight extends PolymorphicTop {
         private String rightProperty;
 
