@@ -118,12 +118,12 @@ public class TopicOperatorMain implements Liveness, Readiness {
         LOGGER.infoOp("TopicOperator started");
     }
 
-    void stop() {
+    synchronized void stop() {
         // Execute the actual shutdown sequence (idempotent).
         shutdown();
     }
 
-    private synchronized void shutdown() {
+    private void shutdown() {
         if (shutdownHook == null) {
             LOGGER.debugOp("Already shut down.");
             return;
