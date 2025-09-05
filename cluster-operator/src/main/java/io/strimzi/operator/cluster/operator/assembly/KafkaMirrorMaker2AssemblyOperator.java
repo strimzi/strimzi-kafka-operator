@@ -22,13 +22,13 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.Future;
@@ -130,13 +130,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> oauthTrustedCertsSecret(reconciliation, namespace, mirrorMaker2Cluster))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, mirrorMaker2Cluster))
                 .compose(logAndMetricsConfigMap -> {
-                    String logging = logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.logging().configMapKey());
-
-                    if (!mirrorMaker2Cluster.logging().isLog4j2()) {
-                        // Logging annotation is set only for Log4j1
-                        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(ReconcilerUtils.getLoggingDynamicallyUnmodifiableEntries(logging)));
-                    }
-
+                    String logging = logAndMetricsConfigMap.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY);
                     desiredLogging.set(logging);
                     return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
                 })
@@ -148,7 +142,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     return Future.succeededFuture();
                 })
                 .compose(i -> reconcilePodSet(reconciliation, mirrorMaker2Cluster, podAnnotations, null, null))
-                .compose(i -> hasZeroReplicas || mirrorMaker2Cluster.logging().isLog4j2() ? Future.succeededFuture() : reconcileConnectLoggers(reconciliation, KafkaMirrorMaker2Resources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), mirrorMaker2Cluster.defaultLogConfig()))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
                 .map((Void) null)
                 .onComplete(reconciliationResult -> {

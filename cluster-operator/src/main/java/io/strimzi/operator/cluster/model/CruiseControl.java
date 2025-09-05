@@ -227,7 +227,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 throw new InvalidResourceException("The Strimzi Metrics Reporter is not supported with this component");
             }
 
-            result.logging = new LoggingModel(ccSpec, result.getClass().getSimpleName(), true, false);
+            result.logging = new LoggingModel(ccSpec, result.getClass().getSimpleName());
             result.resources = ccSpec.getResources();
 
             if (ccSpec.getTemplate() != null) {

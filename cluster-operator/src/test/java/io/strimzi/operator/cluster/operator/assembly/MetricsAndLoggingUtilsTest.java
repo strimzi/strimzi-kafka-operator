@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
 public class MetricsAndLoggingUtilsTest {
     @Test
     public void testNoMetricsAndNoExternalLogging(VertxTestContext context)   {
-        LoggingModel logging = new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster", false, true);
+        LoggingModel logging = new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster");
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
 
@@ -57,7 +57,7 @@ public class MetricsAndLoggingUtilsTest {
 
     @Test
     public void testMetricsAndExternalLogging(VertxTestContext context)   {
-        LoggingModel logging = new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster", false, true);
+        LoggingModel logging = new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster");
         JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("metrics.yaml", "metrics-cm", false)).endValueFrom().build()).build());
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
@@ -81,7 +81,7 @@ public class MetricsAndLoggingUtilsTest {
 
     @Test
     public void testNoMetricsAndExternalLogging(VertxTestContext context)   {
-        LoggingModel logging = new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster", false, true);
+        LoggingModel logging = new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster");
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         when(mockCmOps.getAsync(any(), eq("logging-cm"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withNewMetadata().withName("logging-cm").endMetadata().withData(Map.of()).build()));
@@ -102,7 +102,7 @@ public class MetricsAndLoggingUtilsTest {
 
     @Test
     public void testMetricsAndNoExternalLogging(VertxTestContext context)   {
-        LoggingModel logging = new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster", false, true);
+        LoggingModel logging = new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster");
         JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("metrics.yaml", "metrics-cm", false)).endValueFrom().build()).build());
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);

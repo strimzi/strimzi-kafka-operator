@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
@@ -64,7 +65,7 @@ public class ConfigMapUtils {
         Map<String, String> data = new HashMap<>(2);
 
         if (model instanceof SupportsLogging supportsLogging) {
-            data.put(supportsLogging.logging().configMapKey(), supportsLogging.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm()));
+            data.put(LoggingModel.LOG4J2_CONFIG_MAP_KEY, supportsLogging.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm()));
         }
 
         if (model instanceof SupportsMetrics supportsMetrics && supportsMetrics.metrics() instanceof JmxPrometheusExporterModel jmxMetrics) {

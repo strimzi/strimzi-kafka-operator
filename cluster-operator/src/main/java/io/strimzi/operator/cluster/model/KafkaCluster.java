@@ -339,9 +339,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             result.metrics = new StrimziMetricsReporterModel(kafkaClusterSpec, DEFAULT_METRICS_ALLOW_LIST);
         }
 
-        // Kafka 4.0 and newer uses Log4j2
-        boolean usesLog4j2 = KafkaVersion.compareDottedVersions(result.kafkaVersion.version(), "4.0.0") >= 0;
-        result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName(), usesLog4j2, !usesLog4j2);
+        result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName());
 
         result.jmx = new JmxModel(
                 reconciliation.namespace(),
@@ -1872,7 +1870,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     data.put(JmxPrometheusExporterModel.CONFIG_MAP_KEY, parsedMetrics);
                 }
 
-                data.put(logging.configMapKey(), parsedLogging);
+                data.put(LoggingModel.LOG4J2_CONFIG_MAP_KEY, parsedLogging);
                 data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerConfiguration(node, pool, advertisedHostnames, advertisedPorts));
 
                 // List of configured listeners => StrimziPodSets still need this because of OAUTH and how the OAUTH secret

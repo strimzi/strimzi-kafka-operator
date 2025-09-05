@@ -57,15 +57,8 @@ public class LoggingUtilsTest {
         logging.addPair("my-key1", "my-value1");
         logging.addPair("my-key2", "my-value2");
 
-        // Log4j1 does not have monitorInterval
-        assertThat(LoggingUtils.createLog4jProperties(logging, false), is("""
-                # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
-                my-key1=my-value1
-                my-key2=my-value2
-                """));
-
         // Log4j2 does have monitorInterval
-        assertThat(LoggingUtils.createLog4jProperties(logging, true), is("""
+        assertThat(LoggingUtils.createLog4jProperties(logging), is("""
                 # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
                 my-key1=my-value1
                 my-key2=my-value2
@@ -76,7 +69,7 @@ public class LoggingUtilsTest {
         logging.addPair("monitorInterval", "13");
 
         // Specified monitorInterval is not overwritten
-        assertThat(LoggingUtils.createLog4jProperties(logging, true), is("""
+        assertThat(LoggingUtils.createLog4jProperties(logging), is("""
                 # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
                 my-key1=my-value1
                 my-key2=my-value2
@@ -85,29 +78,10 @@ public class LoggingUtilsTest {
     }
 
     @Test
-    public void testNullLog4j1LoggingConfiguration()  {
-        String log4jProperties = LoggingUtils.loggingConfiguration(
-                Reconciliation.DUMMY_RECONCILIATION,
-                new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster", false, true),
-                null
-        );
-
-        assertThat(log4jProperties, is("""
-                # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
-                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
-                connect.root.logger.level=INFO
-                log4j.rootLogger=${connect.root.logger.level}, CONSOLE
-                log4j.logger.org.reflections=ERROR
-                """));
-    }
-
-    @Test
     public void testNullLog4j2LoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
-                new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster", true, true),
+                new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster"),
                 null
         );
 
@@ -131,32 +105,6 @@ public class LoggingUtilsTest {
     }
 
     @Test
-    public void testLog4j1InlineLoggingConfiguration()  {
-        String log4jProperties = LoggingUtils.loggingConfiguration(
-                Reconciliation.DUMMY_RECONCILIATION,
-                new LoggingModel(
-                        new KafkaConnectSpecBuilder()
-                                .withLogging(new InlineLoggingBuilder().withLoggers(Map.of("log4j.logger.org.reflections", "DEBUG", "logger.myclass.level", "TRACE")).build())
-                                .build(),
-                        "KafkaConnectCluster",
-                        false,
-                        true),
-                null
-        );
-
-        assertThat(log4jProperties, is("""
-                # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
-                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
-                connect.root.logger.level=INFO
-                log4j.rootLogger=${connect.root.logger.level}, CONSOLE
-                log4j.logger.org.reflections=DEBUG
-                logger.myclass.level=TRACE
-                """));
-    }
-
-    @Test
     public void testLog4j2InlineLoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -164,9 +112,7 @@ public class LoggingUtilsTest {
                         new KafkaConnectSpecBuilder()
                                 .withLogging(new InlineLoggingBuilder().withLoggers(new TreeMap<>(Map.of("logger.mypackage.name", "io.mydomain.mypackage", "logger.mypackage.level", "WARN"))).build())
                                 .build(),
-                        "KafkaConnectCluster",
-                        true,
-                        true),
+                        "KafkaConnectCluster"),
                 null
         );
 
@@ -192,41 +138,6 @@ public class LoggingUtilsTest {
     }
 
     @Test
-    public void testLog4j1ExternalLoggingConfiguration()  {
-        String log4jProperties = LoggingUtils.loggingConfiguration(
-                Reconciliation.DUMMY_RECONCILIATION,
-                new LoggingModel(
-                        new KafkaConnectSpecBuilder()
-                                .withLogging(new ExternalLoggingBuilder()
-                                        .withNewValueFrom()
-                                        .withNewConfigMapKeyRef("my-key", "my-cm", false)
-                                        .endValueFrom()
-                                        .build())
-                                .build(),
-                        "KafkaConnectCluster",
-                        false,
-                        true),
-                new ConfigMapBuilder()
-                        .withData(Map.of("my-key", """
-                                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-                                kafka.root.logger=INFO
-                                log4j.rootLogger=${kafka.root.logger}, CONSOLE
-                                """))
-                        .build()
-        );
-
-        assertThat(log4jProperties, is("""
-                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-                kafka.root.logger=INFO
-                log4j.rootLogger=${kafka.root.logger}, CONSOLE
-                """));
-    }
-
-    @Test
     public void testLog4j2ExternalLoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -238,9 +149,7 @@ public class LoggingUtilsTest {
                                         .endValueFrom()
                                         .build())
                                 .build(),
-                        "KafkaConnectCluster",
-                        true,
-                        true),
+                        "KafkaConnectCluster"),
                 new ConfigMapBuilder()
                         .withData(Map.of("my-key", """
                                 name = KafkaConnectConfig

@@ -32,6 +32,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectBuild;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
@@ -184,20 +185,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> oauthTrustedCertsSecret(reconciliation, namespace, connect))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, connect))
                 .compose(logAndMetricsConfigMap -> {
-                    String logging = logAndMetricsConfigMap.getData().get(connect.logging().configMapKey());
-
-                    if (!connect.logging().isLog4j2()) {
-                        // Logging annotation is set only for Log4j1
-                        if (useConnectorResources) {
-                            // When connector resources are used, we do dynamic configuration update, and we need the hash to
-                            // contain only settings that cannot be updated dynamically
-                            podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(ReconcilerUtils.getLoggingDynamicallyUnmodifiableEntries(logging)));
-                        } else {
-                            // When connector resources are not used, we do not do dynamic logging updates, and we need the
-                            // hash to cover complete logging configuration
-                            podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(logging));
-                        }
-                    }
+                    String logging = logAndMetricsConfigMap.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY);
 
                     desiredLogging.set(logging);
 
@@ -213,7 +201,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return Future.succeededFuture();
                 })
                 .compose(i -> reconcilePodSet(reconciliation, connect, podAnnotations, controllerAnnotations, image.get()))
-                .compose(i -> useConnectorResources && !hasZeroReplicas && !connect.logging().isLog4j2() ? reconcileConnectLoggers(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), connect.defaultLogConfig()) : Future.succeededFuture())
                 .compose(i -> useConnectorResources && !hasZeroReplicas ? reconcileAvailableConnectorPlugins(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), kafkaConnectStatus) : Future.succeededFuture())
                 .compose(i -> useConnectorResources ? reconcileConnectors(reconciliation, kafkaConnect, hasZeroReplicas) : Future.succeededFuture())
                 .onComplete(reconciliationResult -> {

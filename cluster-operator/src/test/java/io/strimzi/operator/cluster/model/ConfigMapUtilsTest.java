@@ -86,7 +86,7 @@ public class ConfigMapUtilsTest {
 
         assertThat(data.size(), is(2));
         assertThat(data.get(JmxPrometheusExporterModel.CONFIG_MAP_KEY), is(notNullValue()));
-        assertThat(data.get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
+        assertThat(data.get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
     }
 
     private static class ModelWithoutMetricsAndLogging extends AbstractModel   {
@@ -104,7 +104,7 @@ public class ConfigMapUtilsTest {
 
         @Override
         public LoggingModel logging() {
-            return new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster", false, true);
+            return new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster");
         }
 
         @Override

@@ -114,12 +114,6 @@
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>12.0.22</jetty.version>
-        <!--
-        This property is used to track the Jetty version used by Kafka. Kafka uses old Jetty version that is not
-        supported anymore. This also needs to be used by the kafka-agent module. Strimzi operators uses newer supported
-        Jetty version.
-        -->
-        <jetty-old-kafka.version>9.4.56.v20240826</jetty-old-kafka.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.16.2</strimzi-oauth.version>
         <netty.version>4.2.5.Final</netty.version>
@@ -161,7 +155,6 @@
 
     <modules>
         <module>kafka-agent</module>
-        <module>kafka-agent-3</module>
         <module>tracing-agent</module>
         <module>test</module>
         <module>crd-annotations</module>

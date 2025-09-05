@@ -4,7 +4,6 @@ PROJECT_NAME=kafka
 include ../../../Makefile.docker
 
 kafka_agent_dist := ../../artifacts/binaries/kafka-agent-$(RELEASE_VERSION)-dist.zip
-kafka_agent_3_dist := ../../artifacts/binaries/kafka-agent-3-$(RELEASE_VERSION)-dist.zip
 tracing_agent_dist := ../../artifacts/binaries/tracing-agent-$(RELEASE_VERSION)-dist.zip
 
 clean:
@@ -16,12 +15,6 @@ clean:
 	unzip -qoj $(kafka_agent_dist) lib/io.strimzi.kafka-agent-$(RELEASE_VERSION).jar -d tmp/
 	mv tmp/io.strimzi.kafka-agent-$(RELEASE_VERSION).jar tmp/kafka-agent-$(RELEASE_VERSION).jar
 	touch .kafka-agent.tmp
-
-.kafka-agent-3.tmp: $(kafka_agent_3_dist)
-	test -d tmp || mkdir tmp
-	unzip -qoj $(kafka_agent_3_dist) lib/io.strimzi.kafka-agent-3-$(RELEASE_VERSION).jar -d tmp/
-	mv tmp/io.strimzi.kafka-agent-3-$(RELEASE_VERSION).jar tmp/kafka-agent-3-$(RELEASE_VERSION).jar
-	touch .kafka-agent-3.tmp
 
 .tracing-agent.tmp: $(tracing_agent_dist)
 	test -d tmp || mkdir tmp
@@ -49,7 +42,7 @@ clean:
 	cp ../../artifacts/binaries/kafka/$(KAFKA_VERSION).ignorelist tmp/$(KAFKA_VERSION).ignorelist
 	touch .kafka-$(KAFKA_VERSION)-ignorelist.tmp
 
-docker_build: .kafka-agent.tmp .kafka-agent-3.tmp .tracing-agent.tmp .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp .thirdparty-libs-cc.tmp .kafka-$(KAFKA_VERSION).tmp .kafka-$(KAFKA_VERSION)-ignorelist.tmp docker_build_default
+docker_build: .kafka-agent.tmp .tracing-agent.tmp .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp .thirdparty-libs-cc.tmp .kafka-$(KAFKA_VERSION).tmp .kafka-$(KAFKA_VERSION)-ignorelist.tmp docker_build_default
 	# Pull dependencies first
 
 docker_build:

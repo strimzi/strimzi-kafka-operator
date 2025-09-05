@@ -7,14 +7,12 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -37,7 +35,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -241,74 +238,5 @@ public class KafkaConnectApiIT {
                         return null;
                     }))
             .join();
-    }
-
-    // This test is at the moment designed for Kafka Connect 3.x and Log4j1. With Kafka 4.0 / Log4j2 we use the Log4j2
-    // auto-reloading feature instead of the Connect APIs to change logging configuration.
-    //
-    // We keep this test as we still use this functionality with Kafka 3.x / Log4j1. But we cannot run it because these
-    // IT tests use Kafka 4.0 now. It should be deleted together with the related KafkaConnectApi methods once we drop
-    // support for Kafka 3.x.
-    @Disabled
-    @Test
-    public void testChangeLoggers() {
-        String desired = "log4j.rootLogger=TRACE, CONSOLE\n" +
-                "log4j.logger.org.reflections.Reflection=INFO\n" +
-                "log4j.logger.org.reflections=FATAL\n" +
-                "log4j.logger.foo=WARN\n" +
-                "log4j.logger.foo.bar=TRACE\n" +
-                "log4j.logger.foo.bar.quux=DEBUG";
-
-        KafkaConnectApi client = new KafkaConnectApiImpl();
-
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(desired);
-
-        client.updateConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, desired, ops)
-                .whenComplete((wasChanged, error) -> assertEquals(true, wasChanged))
-                .thenCompose(a -> client.listConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", port)
-                        .whenComplete((map, error) -> {
-                            assertThat(map.get("root"), is("TRACE"));
-                            assertThat(map.get("org.reflections"), is("FATAL"));
-                            assertThat(map.get("org.reflections.Reflection"), is("INFO"));
-                            assertThat(map.get("org.reflections.Reflection"), is("INFO"));
-                            assertThat(map.get("foo"), is("WARN"));
-                            assertThat(map.get("foo.bar"), is("TRACE"));
-                            assertThat(map.get("foo.bar.quux"), is("DEBUG"));
-
-                        }))
-                .thenCompose(b -> client.updateConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, desired, ops)
-                        .whenComplete((wasChanged, error) -> {
-                            assertEquals(false, wasChanged);
-                        })).join();
-    }
-
-    // This test is at the moment designed for Kafka Connect 3.x and Log4j1. With Kafka 4.0 / Log4j2 we use the Log4j2
-    // auto-reloading feature instead of the Connect APIs to change logging configuration.
-    //
-    // We keep this test as we still use this functionality with Kafka 3.x / Log4j1. But we cannot run it because these
-    // IT tests use Kafka 4.0 now. It should be deleted together with the related KafkaConnectApi methods once we drop
-    // support for Kafka 3.x.
-    @Disabled
-    @Test
-    public void testHierarchy() {
-        String rootLevel = "TRACE";
-        String desired = "log4j.rootLogger=" + rootLevel + ", CONSOLE\n" +
-                "log4j.logger.oorg.reflections.Reflection=INFO\n" +
-                "log4j.logger.oorg.reflections=FATAL\n" +
-                "log4j.logger.foo=WARN\n" +
-                "log4j.logger.foo.bar=TRACE\n" +
-                "log4j.logger.oorg.eclipse.jetty.util=DEBUG\n" +
-                "log4j.logger.foo.bar.quux=DEBUG";
-
-        KafkaConnectApiImpl client = new KafkaConnectApiImpl();
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(desired);
-        assertEquals("TRACE", client.getEffectiveLevel("foo.bar", ops.asMap()));
-        assertEquals("WARN", client.getEffectiveLevel("foo.lala", ops.asMap()));
-        assertEquals(rootLevel, client.getEffectiveLevel("bar.faa", ops.asMap()));
-        assertEquals("TRACE", client.getEffectiveLevel("org", ops.asMap()));
-        assertEquals("DEBUG", client.getEffectiveLevel("oorg.eclipse.jetty.util.thread.strategy.EatWhatYouKill", ops.asMap()));
-        assertEquals(rootLevel, client.getEffectiveLevel("oorg.eclipse.group.art", ops.asMap()));
     }
 }

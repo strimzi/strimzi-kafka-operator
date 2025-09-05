@@ -4,7 +4,6 @@ LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-
 
 ARG KAFKA_DIST_DIR
 ARG KAFKA_VERSION
-ARG KAFKA_AGENT_VERSION
 ARG THIRD_PARTY_LIBS
 ARG strimzi_version
 ARG TARGETOS
@@ -95,7 +94,7 @@ RUN set -ex; \
 #####
 # Add Strimzi agents
 #####
-COPY ./tmp/${KAFKA_AGENT_VERSION}-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
+COPY ./tmp/kafka-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
 COPY ./tmp/tracing-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
 
 #####

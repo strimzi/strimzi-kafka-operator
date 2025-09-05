@@ -132,7 +132,6 @@ class LoggingChangeST extends AbstractST {
         // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        // Kafka 4.0
         final String loggersConfigKafka = """
             name = KafkaConfig
             
@@ -374,86 +373,66 @@ class LoggingChangeST extends AbstractST {
         // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        String loggersConfigKafka;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            loggersConfigKafka = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                    "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
-                    "kafka.root.logger.level=INFO\n" +
-                    "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-                    "log4j.logger.kafka=INFO\n" +
-                    "log4j.logger.org.apache.kafka=INFO\n" +
-                    "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
-                    "log4j.logger.kafka.network.Processor=OFF\n" +
-                    "log4j.logger.kafka.server.KafkaApis=OFF\n" +
-                    "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
-                    "log4j.logger.kafka.controller=TRACE\n" +
-                    "log4j.logger.kafka.log.LogCleaner=INFO\n" +
-                    "log4j.logger.state.change.logger=TRACE\n" +
-                    "log4j.logger.kafka.authorizer.logger=INFO";
-        } else {
-            // Kafka 4.0
-            loggersConfigKafka = """
-                    name = KafkaConfig
+        String loggersConfigKafka = """
+                name = KafkaConfig
 
-                    appender.console.type = Console
-                    appender.console.name = STDOUT
-                    appender.console.layout.type=JsonLayout
-                    
-                    rootLogger.level = INFO
-                    rootLogger.appenderRefs = console
-                    rootLogger.appenderRef.console.ref = STDOUT
-                    rootLogger.additivity = false
-                    
-                    logger.kafka.name = kafka
-                    logger.kafka.level = INFO
-                    logger.kafka.appenderRefs = console
-                    logger.kafka.appenderRef.console.ref = STDOUT
-                    logger.kafka.additivity = false
-                    
-                    logger.orgapachekafka.name = org.apache.kafka
-                    logger.orgapachekafka.level = INFO
-                    logger.orgapachekafka.appenderRefs = console
-                    logger.orgapachekafka.appenderRef.console.ref = STDOUT
-                    logger.orgapachekafka.additivity = false
-                    
-                    logger.requestlogger.name = kafka.request.logger
-                    logger.requestlogger.level = WARN
-                    logger.requestlogger.appenderRefs = console
-                    logger.requestlogger.appenderRef.console.ref = STDOUT
-                    logger.requestlogger.additivity = false
-                    
-                    logger.requestchannel.name = kafka.network.RequestChannel$
-                    logger.requestchannel.level = WARN
-                    logger.requestchannel.appenderRefs = console
-                    logger.requestchannel.appenderRef.console.ref = STDOUT
-                    logger.requestchannel.additivity = false
-                    
-                    logger.controller.name = org.apache.kafka.controller
-                    logger.controller.level = INFO
-                    logger.controller.appenderRefs = console
-                    logger.controller.appenderRef.console.ref = STDOUT
-                    logger.controller.additivity = false
-                    
-                    logger.logcleaner.name = kafka.log.LogCleaner
-                    logger.logcleaner.level = INFO
-                    logger.logcleaner.appenderRefs = console
-                    logger.logcleaner.appenderRef.console.ref = STDOUT
-                    logger.logcleaner.additivity = false
-                    
-                    logger.statechange.name = state.change.logger
-                    logger.statechange.level = INFO
-                    logger.statechange.appenderRefs = console
-                    logger.statechange.appenderRef.console.ref = STDOUT
-                    logger.statechange.additivity = false
-                    
-                    logger.authorizer.name = kafka.authorizer.logger
-                    logger.authorizer.level = INFO
-                    logger.authorizer.appenderRefs = console
-                    logger.authorizer.appenderRef.console.ref = STDOUT
-                    logger.authorizer.additivity = false
-                    """;
-        }
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type=JsonLayout
+                
+                rootLogger.level = INFO
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
+                logger.kafka.name = kafka
+                logger.kafka.level = INFO
+                logger.kafka.appenderRefs = console
+                logger.kafka.appenderRef.console.ref = STDOUT
+                logger.kafka.additivity = false
+                
+                logger.orgapachekafka.name = org.apache.kafka
+                logger.orgapachekafka.level = INFO
+                logger.orgapachekafka.appenderRefs = console
+                logger.orgapachekafka.appenderRef.console.ref = STDOUT
+                logger.orgapachekafka.additivity = false
+                
+                logger.requestlogger.name = kafka.request.logger
+                logger.requestlogger.level = WARN
+                logger.requestlogger.appenderRefs = console
+                logger.requestlogger.appenderRef.console.ref = STDOUT
+                logger.requestlogger.additivity = false
+                
+                logger.requestchannel.name = kafka.network.RequestChannel$
+                logger.requestchannel.level = WARN
+                logger.requestchannel.appenderRefs = console
+                logger.requestchannel.appenderRef.console.ref = STDOUT
+                logger.requestchannel.additivity = false
+                
+                logger.controller.name = org.apache.kafka.controller
+                logger.controller.level = INFO
+                logger.controller.appenderRefs = console
+                logger.controller.appenderRef.console.ref = STDOUT
+                logger.controller.additivity = false
+                
+                logger.logcleaner.name = kafka.log.LogCleaner
+                logger.logcleaner.level = INFO
+                logger.logcleaner.appenderRefs = console
+                logger.logcleaner.appenderRef.console.ref = STDOUT
+                logger.logcleaner.additivity = false
+                
+                logger.statechange.name = state.change.logger
+                logger.statechange.level = INFO
+                logger.statechange.appenderRefs = console
+                logger.statechange.appenderRef.console.ref = STDOUT
+                logger.statechange.additivity = false
+                
+                logger.authorizer.name = kafka.authorizer.logger
+                logger.authorizer.level = INFO
+                logger.authorizer.appenderRefs = console
+                logger.authorizer.appenderRef.console.ref = STDOUT
+                logger.authorizer.additivity = false
+                """;
 
         String loggersConfigOperators = "appender.console.type=Console\n" +
             "appender.console.name=STDOUT\n" +
@@ -1058,13 +1037,7 @@ class LoggingChangeST extends AbstractST {
         final Pattern log4jPatternDebugLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) DEBUG (?<message>.+)");
         final Pattern log4jPatternInfoLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) INFO (?<message>.+)");
 
-        final InlineLogging inlineLogging;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("connect.root.logger.level", "OFF")).build();
-        } else {
-            inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "OFF")).build();
-        }
+        final InlineLogging inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "OFF")).build();
 
         final int connectReplicas = 3;
         final KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), connectReplicas)
@@ -1098,13 +1071,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
 
-        final InlineLogging inlineLoggingDebug;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("connect.root.logger.level", "DEBUG")).build();
-        } else {
-            inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "DEBUG")).build();
-        }
+        final InlineLogging inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "DEBUG")).build();
 
         KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(inlineLoggingDebug);
@@ -1118,13 +1085,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing rootLogger level from DEBUG to INFO with inline logging");
 
-        final InlineLogging inlineLoggingInfo;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLoggingInfo = new InlineLoggingBuilder().withLoggers(Map.of("connect.root.logger.level", "INFO")).build();
-        } else {
-            inlineLoggingInfo = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "INFO")).build();
-        }
+        final InlineLogging inlineLoggingInfo = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "INFO")).build();
 
         KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(inlineLoggingInfo);
@@ -1139,35 +1100,23 @@ class LoggingChangeST extends AbstractST {
         assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
 
         // external logging
+        final String log4jConfig = """
+                name = KafkaConnectConfig
 
-        final String log4jConfig;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            log4jConfig = """
-                    log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                    log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                    log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
-                    log4j.rootLogger=OFF, CONSOLE
-                    log4j.logger.org.reflections=ERROR""";
-        } else {
-            log4jConfig = """
-                    name = KafkaConnectConfig
-
-                    appender.console.type = Console
-                    appender.console.name = STDOUT
-                    appender.console.layout.type = PatternLayout
-                    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
-                    
-                    rootLogger.level = OFF
-                    rootLogger.appenderRefs = console
-                    rootLogger.appenderRef.console.ref = STDOUT
-                    rootLogger.additivity = false
-                    
-                    logger.reflections.name = org.reflections
-                    logger.reflections.level = ERROR
-                    logger.reflections.additivity = false
-                    """;
-        }
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type = PatternLayout
+                appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                
+                rootLogger.level = OFF
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
+                logger.reflections.name = org.reflections
+                logger.reflections.level = ERROR
+                logger.reflections.additivity = false
+                """;
 
         final String externalCmName = "external-cm";
 
@@ -1205,40 +1154,6 @@ class LoggingChangeST extends AbstractST {
         KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelOff, "OFF");
 
         assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
-
-        // ##### 2nd phase - non-dynamic update of root logger with RollingUpdate => this is done only for KAfka 3.9 ####
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
-            final String connectDepName = KafkaConnectResources.componentName(testStorage.getClusterName());
-
-            // set use connector resource to false
-            KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kC -> {
-                final Map<String, String> annotations = kC.getMetadata().getAnnotations();
-
-                annotations.put(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "false");
-
-                kC.getMetadata().setAnnotations(annotations);
-            });
-
-            // KafkaConnect should roll because of change in annotation
-            StUtils.waitTillStrimziPodSetOrDeploymentRolled(testStorage.getNamespaceName(), connectDepName, connectReplicas, connectPods, testStorage.getKafkaConnectSelector());
-
-            connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
-
-            LOGGER.info("Changing rootLogger level from INFO to DEBUG with inline logging");
-            StUtils.waitUntilSupplierIsSatisfied("Changing rootLogger level from INFO to DEBUG with inline logging",
-                    () -> {
-                        KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
-                                kC -> kC.getSpec().setLogging(inlineLoggingDebug));
-                        return true;
-                    });
-            // KafkaConnect should roll because of rootLogger level change with STRIMZI_IO_USE_CONNECTOR_RESOURCES set to `false`
-            StUtils.waitTillStrimziPodSetOrDeploymentRolled(testStorage.getNamespaceName(), connectDepName, connectReplicas, connectPods, testStorage.getKafkaConnectSelector());
-
-            // check if lines from Logs contain messages with log level DEBUG
-            hasLogLevelDebug = connectLogs -> connectLogs != null && !connectLogs.isEmpty() && log4jPatternDebugLevel.matcher(connectLogs).find();
-            KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelDebug, "DEBUG");
-        }
     }
 
     @ParallelNamespaceTest
@@ -1263,37 +1178,18 @@ class LoggingChangeST extends AbstractST {
     void testDynamicallySetKafkaLoggingLevels() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final InlineLogging inlineLogging;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            Map<String, String> log4jConfig = new HashMap<>();
-            log4jConfig.put("kafka.root.logger.level", "OFF");
-            log4jConfig.put("log4j.logger.kafka", "OFF");
-            log4jConfig.put("log4j.logger.org.apache.kafka", "OFF");
-            log4jConfig.put("log4j.logger.kafka.request.logger", "OFF, CONSOLE");
-            log4jConfig.put("log4j.logger.kafka.network.Processor", "OFF");
-            log4jConfig.put("log4j.logger.kafka.server.KafkaApis", "OFF");
-            log4jConfig.put("log4j.logger.kafka.network.RequestChannel$", "OFF");
-            log4jConfig.put("log4j.logger.kafka.controller", "OFF");
-            log4jConfig.put("log4j.logger.kafka.log.LogCleaner", "OFF");
-            log4jConfig.put("log4j.logger.state.change.logger", "OFF");
-            log4jConfig.put("log4j.logger.kafka.authorizer.logger", "OFF");
+        Map<String, String> log4j2Config = new HashMap<>();
+        log4j2Config.put("rootLogger.leve", "OFF");
+        log4j2Config.put("logger.kafka.level", "OFF");
+        log4j2Config.put("logger.orgapachekafka.level", "OFF");
+        log4j2Config.put("logger.requestlogger.level", "OFF");
+        log4j2Config.put("logger.requestchannel.level", "OFF");
+        log4j2Config.put("logger.controller.level", "OFF");
+        log4j2Config.put("logger.logcleaner.level", "OFF");
+        log4j2Config.put("logger.statechange.level", "OFF");
+        log4j2Config.put("logger.authorizer.level", "OFF");
 
-            inlineLogging = new InlineLoggingBuilder().withLoggers(log4jConfig).build();
-        } else {
-            Map<String, String> log4j2Config = new HashMap<>();
-            log4j2Config.put("rootLogger.leve", "OFF");
-            log4j2Config.put("logger.kafka.level", "OFF");
-            log4j2Config.put("logger.orgapachekafka.level", "OFF");
-            log4j2Config.put("logger.requestlogger.level", "OFF");
-            log4j2Config.put("logger.requestchannel.level", "OFF");
-            log4j2Config.put("logger.controller.level", "OFF");
-            log4j2Config.put("logger.logcleaner.level", "OFF");
-            log4j2Config.put("logger.statechange.level", "OFF");
-            log4j2Config.put("logger.authorizer.level", "OFF");
-
-            inlineLogging = new InlineLoggingBuilder().withLoggers(log4j2Config).build();
-        }
+        final InlineLogging inlineLogging = new InlineLoggingBuilder().withLoggers(log4j2Config).build();
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -1329,14 +1225,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
 
-        final InlineLogging inlineLoggingDebug;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("kafka.root.logger.level", "DEBUG")).build();
-        } else {
-            // Kafka 4.0
-            inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "DEBUG")).build();
-        }
+        final InlineLogging inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "DEBUG")).build();
 
         KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(inlineLoggingDebug);
@@ -1360,86 +1249,67 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Setting external logging INFO");
 
-        final String externalLogging;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            externalLogging = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                    "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                    "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
-                    "log4j.rootLogger=INFO, CONSOLE\n" +
-                    "log4j.logger.kafka=INFO\n" +
-                    "log4j.logger.org.apache.kafka=INFO\n" +
-                    "log4j.logger.kafka.request.logger=WARN\n" +
-                    "log4j.logger.kafka.network.Processor=ERROR\n" +
-                    "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
-                    "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
-                    "log4j.logger.kafka.controller=TRACE\n" +
-                    "log4j.logger.kafka.log.LogCleaner=INFO\n" +
-                    "log4j.logger.state.change.logger=TRACE\n" +
-                    "log4j.logger.kafka.authorizer.logger=INFO";
-        } else {
-            externalLogging = """
-                    name = KafkaConfig
-                    
-                    appender.console.type = Console
-                    appender.console.name = STDOUT
-                    appender.console.layout.type = PatternLayout
-                    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
-                    
-                    rootLogger.level = INFO
-                    rootLogger.appenderRefs = console
-                    rootLogger.appenderRef.console.ref = STDOUT
-                    rootLogger.additivity = false
-                    
-                    logger.kafka.name = kafka
-                    logger.kafka.level = INFO
-                    logger.kafka.appenderRefs = console
-                    logger.kafka.appenderRef.console.ref = STDOUT
-                    logger.kafka.additivity = false
-                    
-                    logger.orgapachekafka.name = org.apache.kafka
-                    logger.orgapachekafka.level = INFO
-                    logger.orgapachekafka.appenderRefs = console
-                    logger.orgapachekafka.appenderRef.console.ref = STDOUT
-                    logger.orgapachekafka.additivity = false
-                    
-                    logger.requestlogger.name = kafka.request.logger
-                    logger.requestlogger.level = WARN
-                    logger.requestlogger.appenderRefs = console
-                    logger.requestlogger.appenderRef.console.ref = STDOUT
-                    logger.requestlogger.additivity = false
-                    
-                    logger.requestchannel.name = kafka.network.RequestChannel$
-                    logger.requestchannel.level = WARN
-                    logger.requestchannel.appenderRefs = console
-                    logger.requestchannel.appenderRef.console.ref = STDOUT
-                    logger.requestchannel.additivity = false
-                    
-                    logger.controller.name = org.apache.kafka.controller
-                    logger.controller.level = INFO
-                    logger.controller.appenderRefs = console
-                    logger.controller.appenderRef.console.ref = STDOUT
-                    logger.controller.additivity = false
-                    
-                    logger.logcleaner.name = kafka.log.LogCleaner
-                    logger.logcleaner.level = INFO
-                    logger.logcleaner.appenderRefs = console
-                    logger.logcleaner.appenderRef.console.ref = STDOUT
-                    logger.logcleaner.additivity = false
-                    
-                    logger.statechange.name = state.change.logger
-                    logger.statechange.level = INFO
-                    logger.statechange.appenderRefs = console
-                    logger.statechange.appenderRef.console.ref = STDOUT
-                    logger.statechange.additivity = false
-                    
-                    logger.authorizer.name = kafka.authorizer.logger
-                    logger.authorizer.level = INFO
-                    logger.authorizer.appenderRefs = console
-                    logger.authorizer.appenderRef.console.ref = STDOUT
-                    logger.authorizer.additivity = false
-                    """;
-        }
+        final String externalLogging = """
+                name = KafkaConfig
+                
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type = PatternLayout
+                appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                
+                rootLogger.level = INFO
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
+                logger.kafka.name = kafka
+                logger.kafka.level = INFO
+                logger.kafka.appenderRefs = console
+                logger.kafka.appenderRef.console.ref = STDOUT
+                logger.kafka.additivity = false
+                
+                logger.orgapachekafka.name = org.apache.kafka
+                logger.orgapachekafka.level = INFO
+                logger.orgapachekafka.appenderRefs = console
+                logger.orgapachekafka.appenderRef.console.ref = STDOUT
+                logger.orgapachekafka.additivity = false
+                
+                logger.requestlogger.name = kafka.request.logger
+                logger.requestlogger.level = WARN
+                logger.requestlogger.appenderRefs = console
+                logger.requestlogger.appenderRef.console.ref = STDOUT
+                logger.requestlogger.additivity = false
+                
+                logger.requestchannel.name = kafka.network.RequestChannel$
+                logger.requestchannel.level = WARN
+                logger.requestchannel.appenderRefs = console
+                logger.requestchannel.appenderRef.console.ref = STDOUT
+                logger.requestchannel.additivity = false
+                
+                logger.controller.name = org.apache.kafka.controller
+                logger.controller.level = INFO
+                logger.controller.appenderRefs = console
+                logger.controller.appenderRef.console.ref = STDOUT
+                logger.controller.additivity = false
+                
+                logger.logcleaner.name = kafka.log.LogCleaner
+                logger.logcleaner.level = INFO
+                logger.logcleaner.appenderRefs = console
+                logger.logcleaner.appenderRef.console.ref = STDOUT
+                logger.logcleaner.additivity = false
+                
+                logger.statechange.name = state.change.logger
+                logger.statechange.level = INFO
+                logger.statechange.appenderRefs = console
+                logger.statechange.appenderRef.console.ref = STDOUT
+                logger.statechange.additivity = false
+                
+                logger.authorizer.name = kafka.authorizer.logger
+                logger.authorizer.level = INFO
+                logger.authorizer.appenderRefs = console
+                logger.authorizer.appenderRef.console.ref = STDOUT
+                logger.authorizer.additivity = false
+                """;
 
         ConfigMap configMap = new ConfigMapBuilder()
             .withNewMetadata()
@@ -1519,23 +1389,11 @@ class LoggingChangeST extends AbstractST {
         String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        final InlineLogging inlineLogging;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("log4j.logger.paprika", "INFO")).build();
-        } else {
-            // Kafka 4.0
-            inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("logger.paprika.name", "paprika", "logger.paprika.level", "INFO")).build();
-        }
+        final InlineLogging inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("logger.paprika.name", "paprika", "logger.paprika.level", "INFO")).build();
 
         KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(inlineLogging);
         });
-
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9 -> rolling update is expected only with Kafka 3.9
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods);
-        }
 
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("paprika=INFO"));
@@ -1566,14 +1424,7 @@ class LoggingChangeST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        final InlineLogging inlineLogging;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("kafka.root.logger.level", "PAPRIKA")).build();
-        } else {
-            // Kafka 4.0
-            inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "PAPRIKA")).build();
-        }
+        final InlineLogging inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "PAPRIKA")).build();
 
         KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(inlineLogging);
@@ -1603,86 +1454,67 @@ class LoggingChangeST extends AbstractST {
     void testDynamicallySetKafkaExternalLogging() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        String externalLogging;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            externalLogging = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                    "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                    "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
-                    "log4j.rootLogger=INFO, CONSOLE\n" +
-                    "log4j.logger.kafka=INFO\n" +
-                    "log4j.logger.org.apache.kafka=INFO\n" +
-                    "log4j.logger.kafka.request.logger=WARN\n" +
-                    "log4j.logger.kafka.network.Processor=ERROR\n" +
-                    "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
-                    "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
-                    "log4j.logger.kafka.controller=TRACE\n" +
-                    "log4j.logger.kafka.log.LogCleaner=INFO\n" +
-                    "log4j.logger.state.change.logger=TRACE\n" +
-                    "log4j.logger.kafka.authorizer.logger=INFO";
-        } else {
-            externalLogging = """
-                    name = KafkaConfig
-                    
-                    appender.console.type = Console
-                    appender.console.name = STDOUT
-                    appender.console.layout.type = PatternLayout
-                    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
-                    
-                    rootLogger.level = INFO
-                    rootLogger.appenderRefs = console
-                    rootLogger.appenderRef.console.ref = STDOUT
-                    rootLogger.additivity = false
-                    
-                    logger.kafka.name = kafka
-                    logger.kafka.level = INFO
-                    logger.kafka.appenderRefs = console
-                    logger.kafka.appenderRef.console.ref = STDOUT
-                    logger.kafka.additivity = false
-                    
-                    logger.orgapachekafka.name = org.apache.kafka
-                    logger.orgapachekafka.level = INFO
-                    logger.orgapachekafka.appenderRefs = console
-                    logger.orgapachekafka.appenderRef.console.ref = STDOUT
-                    logger.orgapachekafka.additivity = false
-                    
-                    logger.requestlogger.name = kafka.request.logger
-                    logger.requestlogger.level = WARN
-                    logger.requestlogger.appenderRefs = console
-                    logger.requestlogger.appenderRef.console.ref = STDOUT
-                    logger.requestlogger.additivity = false
-                    
-                    logger.requestchannel.name = kafka.network.RequestChannel$
-                    logger.requestchannel.level = WARN
-                    logger.requestchannel.appenderRefs = console
-                    logger.requestchannel.appenderRef.console.ref = STDOUT
-                    logger.requestchannel.additivity = false
-                    
-                    logger.controller.name = org.apache.kafka.controller
-                    logger.controller.level = INFO
-                    logger.controller.appenderRefs = console
-                    logger.controller.appenderRef.console.ref = STDOUT
-                    logger.controller.additivity = false
-                    
-                    logger.logcleaner.name = kafka.log.LogCleaner
-                    logger.logcleaner.level = INFO
-                    logger.logcleaner.appenderRefs = console
-                    logger.logcleaner.appenderRef.console.ref = STDOUT
-                    logger.logcleaner.additivity = false
-                    
-                    logger.statechange.name = state.change.logger
-                    logger.statechange.level = INFO
-                    logger.statechange.appenderRefs = console
-                    logger.statechange.appenderRef.console.ref = STDOUT
-                    logger.statechange.additivity = false
-                    
-                    logger.authorizer.name = kafka.authorizer.logger
-                    logger.authorizer.level = INFO
-                    logger.authorizer.appenderRefs = console
-                    logger.authorizer.appenderRef.console.ref = STDOUT
-                    logger.authorizer.additivity = false
-                    """;
-        }
+        String externalLogging = """
+                name = KafkaConfig
+                
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type = PatternLayout
+                appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                
+                rootLogger.level = INFO
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
+                logger.kafka.name = kafka
+                logger.kafka.level = INFO
+                logger.kafka.appenderRefs = console
+                logger.kafka.appenderRef.console.ref = STDOUT
+                logger.kafka.additivity = false
+                
+                logger.orgapachekafka.name = org.apache.kafka
+                logger.orgapachekafka.level = INFO
+                logger.orgapachekafka.appenderRefs = console
+                logger.orgapachekafka.appenderRef.console.ref = STDOUT
+                logger.orgapachekafka.additivity = false
+                
+                logger.requestlogger.name = kafka.request.logger
+                logger.requestlogger.level = WARN
+                logger.requestlogger.appenderRefs = console
+                logger.requestlogger.appenderRef.console.ref = STDOUT
+                logger.requestlogger.additivity = false
+                
+                logger.requestchannel.name = kafka.network.RequestChannel$
+                logger.requestchannel.level = WARN
+                logger.requestchannel.appenderRefs = console
+                logger.requestchannel.appenderRef.console.ref = STDOUT
+                logger.requestchannel.additivity = false
+                
+                logger.controller.name = org.apache.kafka.controller
+                logger.controller.level = INFO
+                logger.controller.appenderRefs = console
+                logger.controller.appenderRef.console.ref = STDOUT
+                logger.controller.additivity = false
+                
+                logger.logcleaner.name = kafka.log.LogCleaner
+                logger.logcleaner.level = INFO
+                logger.logcleaner.appenderRefs = console
+                logger.logcleaner.appenderRef.console.ref = STDOUT
+                logger.logcleaner.additivity = false
+                
+                logger.statechange.name = state.change.logger
+                logger.statechange.level = INFO
+                logger.statechange.appenderRefs = console
+                logger.statechange.appenderRef.console.ref = STDOUT
+                logger.statechange.additivity = false
+                
+                logger.authorizer.name = kafka.authorizer.logger
+                logger.authorizer.level = INFO
+                logger.authorizer.appenderRefs = console
+                logger.authorizer.appenderRef.console.ref = STDOUT
+                logger.authorizer.additivity = false
+                """;
 
         ConfigMap configMap = new ConfigMapBuilder()
                 .withNewMetadata()
@@ -1725,86 +1557,67 @@ class LoggingChangeST extends AbstractST {
         String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            externalLogging = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                    "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                    "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
-                    "log4j.rootLogger=INFO, CONSOLE\n" +
-                    "log4j.logger.kafka=ERROR\n" +
-                    "log4j.logger.org.apache.kafka=ERROR\n" +
-                    "log4j.logger.kafka.request.logger=WARN\n" +
-                    "log4j.logger.kafka.network.Processor=ERROR\n" +
-                    "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
-                    "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
-                    "log4j.logger.kafka.controller=TRACE\n" +
-                    "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
-                    "log4j.logger.state.change.logger=TRACE\n" +
-                    "log4j.logger.kafka.authorizer.logger=${kafka.my.level.string}\n" +
-                    "kafka.my.level.string=ERROR";
-        } else {
-            externalLogging = """
-                    name = KafkaConfig
-                    
-                    appender.console.type = Console
-                    appender.console.name = STDOUT
-                    appender.console.layout.type = PatternLayout
-                    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
-                    
-                    rootLogger.level = ERROR
-                    rootLogger.appenderRefs = console
-                    rootLogger.appenderRef.console.ref = STDOUT
-                    rootLogger.additivity = false
-                    
-                    logger.kafka.name = kafka
-                    logger.kafka.level = ERROR
-                    logger.kafka.appenderRefs = console
-                    logger.kafka.appenderRef.console.ref = STDOUT
-                    logger.kafka.additivity = false
-                    
-                    logger.orgapachekafka.name = org.apache.kafka
-                    logger.orgapachekafka.level = ERROR
-                    logger.orgapachekafka.appenderRefs = console
-                    logger.orgapachekafka.appenderRef.console.ref = STDOUT
-                    logger.orgapachekafka.additivity = false
-                    
-                    logger.requestlogger.name = kafka.request.logger
-                    logger.requestlogger.level = WARN
-                    logger.requestlogger.appenderRefs = console
-                    logger.requestlogger.appenderRef.console.ref = STDOUT
-                    logger.requestlogger.additivity = false
-                    
-                    logger.requestchannel.name = kafka.network.RequestChannel$
-                    logger.requestchannel.level = WARN
-                    logger.requestchannel.appenderRefs = console
-                    logger.requestchannel.appenderRef.console.ref = STDOUT
-                    logger.requestchannel.additivity = false
-                    
-                    logger.controller.name = org.apache.kafka.controller
-                    logger.controller.level = ERROR
-                    logger.controller.appenderRefs = console
-                    logger.controller.appenderRef.console.ref = STDOUT
-                    logger.controller.additivity = false
-                    
-                    logger.logcleaner.name = kafka.log.LogCleaner
-                    logger.logcleaner.level = ERROR
-                    logger.logcleaner.appenderRefs = console
-                    logger.logcleaner.appenderRef.console.ref = STDOUT
-                    logger.logcleaner.additivity = false
-                    
-                    logger.statechange.name = state.change.logger
-                    logger.statechange.level = ERROR
-                    logger.statechange.appenderRefs = console
-                    logger.statechange.appenderRef.console.ref = STDOUT
-                    logger.statechange.additivity = false
-                    
-                    logger.authorizer.name = kafka.authorizer.logger
-                    logger.authorizer.level = ERROR
-                    logger.authorizer.appenderRefs = console
-                    logger.authorizer.appenderRef.console.ref = STDOUT
-                    logger.authorizer.additivity = false
-                    """;
-        }
+        externalLogging = """
+                name = KafkaConfig
+                
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type = PatternLayout
+                appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                
+                rootLogger.level = ERROR
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
+                logger.kafka.name = kafka
+                logger.kafka.level = ERROR
+                logger.kafka.appenderRefs = console
+                logger.kafka.appenderRef.console.ref = STDOUT
+                logger.kafka.additivity = false
+                
+                logger.orgapachekafka.name = org.apache.kafka
+                logger.orgapachekafka.level = ERROR
+                logger.orgapachekafka.appenderRefs = console
+                logger.orgapachekafka.appenderRef.console.ref = STDOUT
+                logger.orgapachekafka.additivity = false
+                
+                logger.requestlogger.name = kafka.request.logger
+                logger.requestlogger.level = WARN
+                logger.requestlogger.appenderRefs = console
+                logger.requestlogger.appenderRef.console.ref = STDOUT
+                logger.requestlogger.additivity = false
+                
+                logger.requestchannel.name = kafka.network.RequestChannel$
+                logger.requestchannel.level = WARN
+                logger.requestchannel.appenderRefs = console
+                logger.requestchannel.appenderRef.console.ref = STDOUT
+                logger.requestchannel.additivity = false
+                
+                logger.controller.name = org.apache.kafka.controller
+                logger.controller.level = ERROR
+                logger.controller.appenderRefs = console
+                logger.controller.appenderRef.console.ref = STDOUT
+                logger.controller.additivity = false
+                
+                logger.logcleaner.name = kafka.log.LogCleaner
+                logger.logcleaner.level = ERROR
+                logger.logcleaner.appenderRefs = console
+                logger.logcleaner.appenderRef.console.ref = STDOUT
+                logger.logcleaner.additivity = false
+                
+                logger.statechange.name = state.change.logger
+                logger.statechange.level = ERROR
+                logger.statechange.appenderRefs = console
+                logger.statechange.appenderRef.console.ref = STDOUT
+                logger.statechange.additivity = false
+                
+                logger.authorizer.name = kafka.authorizer.logger
+                logger.authorizer.level = ERROR
+                logger.authorizer.appenderRefs = console
+                logger.authorizer.appenderRef.console.ref = STDOUT
+                logger.authorizer.additivity = false
+                """;
 
         configMap = new ConfigMapBuilder()
                 .withNewMetadata()
@@ -1819,39 +1632,6 @@ class LoggingChangeST extends AbstractST {
         assertThat("Kafka Pod should not roll", RollingUpdateUtils.componentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods), is(false));
         TestUtils.waitFor("Verify logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("kafka.authorizer.logger=ERROR"));
-
-        // The Rolling update at conversion pattern change is expected only on Kafka 3.9 / Log4j1
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // log4j.appender.CONSOLE.layout.ConversionPattern is changed and thus we need RU
-            configMap = new ConfigMapBuilder()
-                    .withNewMetadata()
-                    .withName("external-cm")
-                    .withNamespace(testStorage.getNamespaceName())
-                    .endMetadata()
-                    .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                            "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                            "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
-                            "log4j.rootLogger=INFO, CONSOLE\n" +
-                            "log4j.logger.kafka=ERROR\n" +
-                            "log4j.logger.org.apache.kafka=ERROR\n" +
-                            "log4j.logger.kafka.request.logger=WARN\n" +
-                            "log4j.logger.kafka.network.Processor=ERROR\n" +
-                            "log4j.logger.kafka.server.KafkaApis=ERROR\n" +
-                            "log4j.logger.kafka.network.RequestChannel$=ERROR\n" +
-                            "log4j.logger.kafka.controller=ERROR\n" +
-                            "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
-                            "log4j.logger.state.change.logger=TRACE\n" +
-                            "log4j.logger.kafka.authorizer.logger=${kafka.my.level.string}\n" +
-                            "kafka.my.level.string=DEBUG"
-                    ))
-                    .build();
-
-            KubeResourceManager.get().updateResource(configMap);
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods);
-
-            TestUtils.waitFor("Verify logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-                    () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum).contains("kafka.authorizer.logger=DEBUG"));
-        }
     }
 
     @ParallelNamespaceTest
@@ -1877,14 +1657,7 @@ class LoggingChangeST extends AbstractST {
     void testDynamicallySetMM2LoggingLevels() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        final InlineLogging inlineLoggingOff;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLoggingOff = new InlineLoggingBuilder().withLoggers(Map.of("connect.root.logger.level", "OFF", "log4j.logger.org.reflections", "OFF")).build();
-        } else {
-            // Kafka 4.0
-            inlineLoggingOff = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "OFF", "logger.reflections.level", "OFF")).build();
-        }
+        final InlineLogging inlineLoggingOff = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "OFF", "logger.reflections.level", "OFF")).build();
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
@@ -1918,14 +1691,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
 
-        final InlineLogging inlineLoggingDebug;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("connect.root.logger.level", "DEBUG")).build();
-        } else {
-            // Kafka 4.0
-            inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "DEBUG")).build();
-        }
+        final InlineLogging inlineLoggingDebug = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "DEBUG")).build();
 
         KafkaMirrorMaker2Utils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             mm2 -> mm2.getSpec().setLogging(inlineLoggingDebug)
@@ -1942,34 +1708,23 @@ class LoggingChangeST extends AbstractST {
                 return mmLog != null && !mmLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(mmLog).find();
             });
 
-        final String log4jConfig;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            log4jConfig = """
-                    log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                    log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                    log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
-                    log4j.rootLogger=OFF, CONSOLE
-                    log4j.logger.org.reflections=ERROR""";
-        } else {
-            log4jConfig = """
-                    name = KafkaMirrorMaker2Config
+        final String log4jConfig = """
+                name = KafkaMirrorMaker2Config
 
-                    appender.console.type = Console
-                    appender.console.name = STDOUT
-                    appender.console.layout.type = PatternLayout
-                    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
-                    
-                    rootLogger.level = OFF
-                    rootLogger.appenderRefs = console
-                    rootLogger.appenderRef.console.ref = STDOUT
-                    rootLogger.additivity = false
-                    
-                    logger.reflections.name = org.reflections
-                    logger.reflections.level = ERROR
-                    logger.reflections.additivity = false
-                    """;
-        }
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type = PatternLayout
+                appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                
+                rootLogger.level = OFF
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
+                logger.reflections.name = org.reflections
+                logger.reflections.level = ERROR
+                logger.reflections.additivity = false
+                """;
 
         String externalCmName = "external-cm";
 
@@ -2048,45 +1803,32 @@ class LoggingChangeST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), 1).build());
 
-        String log4jConfig;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            log4jConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                    "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                    "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
-                    "log4j.rootLogger=OFF, CONSOLE\n" +
-                    "log4j.logger.org.eclipse.jetty.util.thread=FATAL\n" +
-                    "log4j.logger.org.apache.kafka.connect.runtime.WorkerTask=OFF\n" +
-                    "log4j.logger.org.eclipse.jetty.util.thread.strategy.EatWhatYouKill=OFF\n" +
-                    "log4j.logger.org.reflections=ERROR";
-        } else {
-            log4jConfig = """
-                    name = KafkaMirrorMaker2Config
+        String log4jConfig = """
+                name = KafkaMirrorMaker2Config
 
-                    appender.console.type = Console
-                    appender.console.name = STDOUT
-                    appender.console.layout.type = PatternLayout
-                    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
-                    
-                    rootLogger.level = OFF
-                    rootLogger.appenderRefs = console
-                    rootLogger.appenderRef.console.ref = STDOUT
-                    rootLogger.additivity = false
-                    
-                    logger.reflections.name = org.reflections
-                    logger.reflections.level = ERROR
-                    logger.reflections.additivity = false
-                    
-                    logger.jettythread.name = org.eclipse.jetty.util.thread
-                    logger.jettythread.level = FATAL
-                    
-                    logger.workertask.name = org.apache.kafka.connect.runtime.WorkerTask
-                    logger.workertask.level = OFF
-                    
-                    logger.jettythreadstrategy.name = org.eclipse.jetty.util.thread.strategy.EatWhatYouKill
-                    logger.jettythreadstrategy.level = OFF
-                    """;
-        }
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type = PatternLayout
+                appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                
+                rootLogger.level = OFF
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
+                logger.reflections.name = org.reflections
+                logger.reflections.level = ERROR
+                logger.reflections.additivity = false
+                
+                logger.jettythread.name = org.eclipse.jetty.util.thread
+                logger.jettythread.level = FATAL
+                
+                logger.workertask.name = org.apache.kafka.connect.runtime.WorkerTask
+                logger.workertask.level = OFF
+                
+                logger.jettythreadstrategy.name = org.eclipse.jetty.util.thread.strategy.EatWhatYouKill
+                logger.jettythreadstrategy.level = OFF
+                """;
 
         String externalCmName = "external-cm-hierarchy";
 
@@ -2130,40 +1872,30 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing log levels");
 
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            log4jConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                    "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                    "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
-                    "log4j.rootLogger=INFO, CONSOLE\n" +
-                    "log4j.logger.org.eclipse.jetty.util.thread=WARN\n" +
-                    "log4j.logger.org.reflections=ERROR";
-        } else {
-            log4jConfig = """
-                    name = KafkaMirrorMaker2Config
+        log4jConfig = """
+                name = KafkaMirrorMaker2Config
 
-                    appender.console.type = Console
-                    appender.console.name = STDOUT
-                    appender.console.layout.type = PatternLayout
-                    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
-                    
-                    rootLogger.level = INFO
-                    rootLogger.appenderRefs = console
-                    rootLogger.appenderRef.console.ref = STDOUT
-                    rootLogger.additivity = false
-                    
-                    logger.reflections.name = org.reflections
-                    logger.reflections.level = ERROR
-                    logger.reflections.additivity = false
-                    
-                    logger.jettythread.name = org.eclipse.jetty.util.thread
-                    logger.jettythread.level = WARN
-                    
-                    # To test the hierarchy, we keep the loggers and remove the level
-                    logger.workertask.name = org.apache.kafka.connect.runtime.WorkerTask
-                    logger.jettythreadstrategy.name = org.eclipse.jetty.util.thread.strategy.EatWhatYouKill
-                    """;
-        }
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type = PatternLayout
+                appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                
+                rootLogger.level = INFO
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
+                logger.reflections.name = org.reflections
+                logger.reflections.level = ERROR
+                logger.reflections.additivity = false
+                
+                logger.jettythread.name = org.eclipse.jetty.util.thread
+                logger.jettythread.level = WARN
+                
+                # To test the hierarchy, we keep the loggers and remove the level
+                logger.workertask.name = org.apache.kafka.connect.runtime.WorkerTask
+                logger.jettythreadstrategy.name = org.eclipse.jetty.util.thread.strategy.EatWhatYouKill
+                """;
 
         mm2LoggingMap = new ConfigMapBuilder()
                 .withNewMetadata()
@@ -2205,48 +1937,34 @@ class LoggingChangeST extends AbstractST {
     )
     void testNotExistingCMSetsDefaultLogging() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String propertiesFilename;
-        final String defaultProps;
-        final String loggingConfiguration;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            defaultProps = ReadWriteUtils.readFile(TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/default-logging/KafkaCluster.log4j1.properties");
-            propertiesFilename = "log4j.properties";
-            loggingConfiguration = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                    "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                    "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
-                    "log4j.rootLogger=INFO, CONSOLE\n" +
-                    "log4j.logger.kafka=INFO\n" +
-                    "log4j.logger.org.apache.kafka=INFO";
-        } else {
-            defaultProps = ReadWriteUtils.readFile(TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/default-logging/KafkaCluster.properties");
-            propertiesFilename = "log4j2.properties";
-            loggingConfiguration = """
-                    name = KafkaConfig
-                    
-                    appender.console.type = Console
-                    appender.console.name = STDOUT
-                    appender.console.layout.type = PatternLayout
-                    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
-                    
-                    rootLogger.level = INFO
-                    rootLogger.appenderRefs = console
-                    rootLogger.appenderRef.console.ref = STDOUT
-                    rootLogger.additivity = false
-                    
-                    logger.kafka.name = kafka
-                    logger.kafka.level = INFO
-                    logger.kafka.appenderRefs = console
-                    logger.kafka.appenderRef.console.ref = STDOUT
-                    logger.kafka.additivity = false
-                    
-                    logger.orgapachekafka.name = org.apache.kafka
-                    logger.orgapachekafka.level = INFO
-                    logger.orgapachekafka.appenderRefs = console
-                    logger.orgapachekafka.appenderRef.console.ref = STDOUT
-                    logger.orgapachekafka.additivity = false
-                    """;
-        }
+
+        final String defaultProps = ReadWriteUtils.readFile(TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/default-logging/KafkaCluster.properties");
+        final String propertiesFilename = "log4j2.properties";
+        final String loggingConfiguration = """
+                name = KafkaConfig
+                
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type = PatternLayout
+                appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                
+                rootLogger.level = INFO
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
+                logger.kafka.name = kafka
+                logger.kafka.level = INFO
+                logger.kafka.appenderRefs = console
+                logger.kafka.appenderRef.console.ref = STDOUT
+                logger.kafka.additivity = false
+                
+                logger.orgapachekafka.name = org.apache.kafka
+                logger.orgapachekafka.level = INFO
+                logger.orgapachekafka.appenderRefs = console
+                logger.orgapachekafka.appenderRef.console.ref = STDOUT
+                logger.orgapachekafka.additivity = false
+                """;
 
         String existingCmName = "external-cm";
         String nonExistingCmName = "non-existing-cm-name";
@@ -2372,13 +2090,7 @@ class LoggingChangeST extends AbstractST {
         final String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Changing rootLogger level in KafkaConnector to ERROR with inline logging");
-        final InlineLogging inlineLogging;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("log4j.logger." + connectorClassName, "ERROR")).build();
-        } else {
-            inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("logger.connector.name", connectorClassName, "logger.connector.level", "ERROR")).build();
-        }
+        final InlineLogging inlineLogging = new InlineLoggingBuilder().withLoggers(Map.of("logger.connector.name", connectorClassName, "logger.connector.level", "ERROR")).build();
 
         KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineLogging));
 
@@ -2403,13 +2115,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing KafkaConnect's root logger to WARN, KafkaConnector: {} shouldn't inherit it", testStorage.getClusterName());
 
-        final InlineLogging inlineLoggingWithConnect;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            inlineLoggingWithConnect = new InlineLoggingBuilder().withLoggers(Map.of("connect.root.logger.level", "WARN", "log4j.logger." + connectorClassName, "ERROR")).build();
-        } else {
-            inlineLoggingWithConnect = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "WARN", "logger.connector.name", connectorClassName, "logger.connector.level", "ERROR")).build();
-        }
+        final InlineLogging inlineLoggingWithConnect = new InlineLoggingBuilder().withLoggers(Map.of("rootLogger.level", "WARN", "logger.connector.name", connectorClassName, "logger.connector.level", "ERROR")).build();
 
         KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineLoggingWithConnect));
 

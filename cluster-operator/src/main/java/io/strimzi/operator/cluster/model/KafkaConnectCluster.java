@@ -287,10 +287,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             result.metrics = new StrimziMetricsReporterModel(spec, DEFAULT_METRICS_ALLOW_LIST);
         }
 
-        // Kafka 4.0 and newer uses Log4j2
-        KafkaVersion version = versions.supportedVersion(spec.getVersion());
-        boolean usesLog4j2 = KafkaVersion.compareDottedVersions(version.version(), "4.0.0") >= 0;
-        result.logging = new LoggingModel(spec, result.getClass().getSimpleName(), usesLog4j2, !usesLog4j2);
+        result.logging = new LoggingModel(spec, result.getClass().getSimpleName());
 
         result.jmx = new JmxModel(
                 reconciliation.namespace(),

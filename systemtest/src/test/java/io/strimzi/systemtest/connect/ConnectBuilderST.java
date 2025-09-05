@@ -48,7 +48,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
@@ -262,16 +261,6 @@ class ConnectBuilderST extends AbstractST {
         // this test also testing push into Docker output
         final String imageName = getImageNameForTestCase();
 
-        // we need to configure different root logger for Connect to properly catch desired log at the end of test
-        final String rootLogger;
-        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
-            // Kafka 3.9
-            rootLogger = "connect.root.logger.level";
-        } else {
-            // Kafka 4.0
-            rootLogger = "rootLogger.level";
-        }
-
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
         KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), suiteTestStorage.getClusterName(), 1)
             .editMetadata()
@@ -287,7 +276,7 @@ class ConnectBuilderST extends AbstractST {
                     .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
                 .withNewInlineLogging()
-                    .addToLoggers(rootLogger, "INFO")
+                    .addToLoggers("rootLogger.level", "INFO")
                 .endInlineLogging()
             .endSpec()
             .build());

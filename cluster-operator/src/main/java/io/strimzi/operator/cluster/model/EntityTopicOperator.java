@@ -134,7 +134,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             result.image = image;
             result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
             result.reconciliationIntervalMs = configuredReconciliationIntervalMs(topicOperatorSpec);
-            result.logging = new LoggingModel(topicOperatorSpec, result.getClass().getSimpleName(), true, false);
+            result.logging = new LoggingModel(topicOperatorSpec, result.getClass().getSimpleName());
             result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = topicOperatorSpec.getJvmOptions();
             result.resources = topicOperatorSpec.getResources();

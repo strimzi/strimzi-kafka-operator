@@ -157,8 +157,6 @@ public class KafkaReconciler {
     // marked as final, but their contents is modified during the reconciliation)
     private final Set<String> fsResizingRestartRequest = new HashSet<>();
 
-    private String logging = "";
-    private final Map<Integer, String> brokerLoggingHash = new HashMap<>();
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
     private final List<String> secretsToDelete = new ArrayList<>();
@@ -474,7 +472,6 @@ public class KafkaReconciler {
                     adminClientProvider,
                     kafkaAgentClientProvider,
                     brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts),
-                    logging,
                     kafka.getKafkaVersion(),
                     allowReconfiguration,
                     eventsPublisher
@@ -635,9 +632,6 @@ public class KafkaReconciler {
     protected Future<Void> perBrokerKafkaConfiguration(MetricsAndLogging metricsAndLogging) {
         return configMapOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
                 .compose(existingConfigMaps -> {
-                    // This is used during Kafka rolling updates -> we have to store it for later
-                    this.logging = kafka.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm());
-
                     List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts);
                     List<Future<?>> ops = new ArrayList<>();
 
@@ -696,10 +690,6 @@ public class KafkaReconciler {
                         if (pool.isController() && !pool.isBroker())   {
                             // For controllers only, we extract the controller-relevant configurations and use it in the configuration annotations
                             nodeConfiguration = kc.controllerConfigsWithValues().toString();
-                            // For controllers only, we use the full logging configuration in the logging annotation
-                            this.brokerLoggingHash.put(nodeId, Util.hashStub(logging));
-                        } else {
-                            this.brokerLoggingHash.put(nodeId, Util.hashStub(ReconcilerUtils.getLoggingDynamicallyUnmodifiableEntries(logging)));
                         }
 
                         // We store hash of the broker configurations for later use in Pod and in rolling updates
@@ -845,12 +835,6 @@ public class KafkaReconciler {
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(this.clientsCa.caCertGeneration()));
         podAnnotations.put(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, brokerConfigurationHash.get(node.nodeId()));
         podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafka.getKafkaVersion().version());
-
-        if (!kafka.logging().isLog4j2()) {
-            // The logging hash annotation is set only when Log4j1 is used. For Log4j2, we use the Log4j2 reloading feature
-            podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, brokerLoggingHash.get(node.nodeId()));
-        }
-
         podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(node.nodeId())); // Annotation of broker certificate hash
 
         // Annotations with custom cert thumbprints to help with rolling updates when they change

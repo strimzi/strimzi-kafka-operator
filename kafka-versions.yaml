@@ -243,14 +243,14 @@
   url: https://archive.apache.org/dist/kafka/3.9.0/kafka_2.13-3.9.0.tgz
   checksum: 5324C1F44D4C84EA469712C2CC3D2D15545C3716EDBB5353722DF9C661FCC78B031FCF07D1C4F0309C5FDB32686665DFB0CFFE55210CD3A1FE2A370538CB4E6D
   third-party-libs: 3.9.x
-  supported: true
+  supported: false
   default: false
 - version: 3.9.1
   metadata: 3.9
   url: https://archive.apache.org/dist/kafka/3.9.1/kafka_2.13-3.9.1.tgz
   checksum: 1EA204BA73411737A275429CA976D440F007FF0957B90B19BE41DC5A4BAE52617267769BE9F0B5791714D0B3C4C760605BD426FAEA39EDD90763585523FA2CFE
   third-party-libs: 3.9.x
-  supported: true
+  supported: false
   default: false
 - version: 4.0.0
   metadata: 4.0

@@ -1198,62 +1198,11 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testPerBrokerConfigMapsLog4j1() {
-        MetricsAndLogging metricsAndLogging = new MetricsAndLogging(null, null);
-        KafkaVersionChange versionChange = new KafkaVersionChange(KafkaVersionTestUtils.getKafkaVersionLookup().version("3.9.0"), KafkaVersionTestUtils.getKafkaVersionLookup().version("3.9.0"), null, null, "3.9");
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withVersion("3.9.0")
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, POOLS, VERSIONS, versionChange, "dummy-cluster-id", SHARED_ENV_PROVIDER);
-        List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
-
-        assertThat(kc.logging().isLog4j2(), is(false));
-
-        assertThat(cms.size(), is(8));
-
-        for (ConfigMap cm : cms)    {
-            assertThat(cm.getMetadata().getName(), startsWith("foo-"));
-
-            if (cm.getMetadata().getName().contains("controllers")) {
-                assertThat(cm.getData().size(), is(5));
-                assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
-                assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(nullValue()));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=controller\n"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is(nullValue()));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
-            } else if (cm.getMetadata().getName().contains("brokers")) {
-                assertThat(cm.getData().size(), is(5));
-                assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
-                assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(nullValue()));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=broker\n"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is("PLAIN_9092 TLS_9093"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
-            } else {
-                assertThat(cm.getData().size(), is(5));
-                assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
-                assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(nullValue()));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=broker,controller\n"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is("PLAIN_9092 TLS_9093"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
-            }
-        }
-    }
-
-    @Test
     public void testPerBrokerConfigMaps() {
         MetricsAndLogging metricsAndLogging = new MetricsAndLogging(null, null);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, "dummy-cluster-id", SHARED_ENV_PROVIDER);
         List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
 
-        assertThat(kc.logging().isLog4j2(), is(true));
-
         assertThat(cms.size(), is(8));
 
         for (ConfigMap cm : cms)    {
@@ -1261,7 +1210,6 @@ public class KafkaClusterTest {
 
             if (cm.getMetadata().getName().contains("controllers")) {
                 assertThat(cm.getData().size(), is(5));
-                assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(nullValue()));
                 assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=controller\n"));
@@ -1269,7 +1217,6 @@ public class KafkaClusterTest {
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
             } else if (cm.getMetadata().getName().contains("brokers")) {
                 assertThat(cm.getData().size(), is(5));
-                assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(nullValue()));
                 assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=broker\n"));
@@ -1277,7 +1224,6 @@ public class KafkaClusterTest {
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
             } else {
                 assertThat(cm.getData().size(), is(5));
-                assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(nullValue()));
                 assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=broker,controller\n"));

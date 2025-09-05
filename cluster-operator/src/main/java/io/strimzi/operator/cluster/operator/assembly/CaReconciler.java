@@ -507,7 +507,6 @@ public class CaReconciler {
                 kafkaAgentClientProvider,
                 brokerId -> null,
                 null,
-                null,
                 false,
                 eventPublisher);
     }

@@ -129,7 +129,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
             result.watchedNamespace = userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
             result.reconciliationIntervalMs = configuredReconciliationIntervalMs(userOperatorSpec);
             result.secretPrefix = userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix();
-            result.logging = new LoggingModel(userOperatorSpec, result.getClass().getSimpleName(), true, false);
+            result.logging = new LoggingModel(userOperatorSpec, result.getClass().getSimpleName());
             result.gcLoggingEnabled = userOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = userOperatorSpec.getJvmOptions();
             result.resources = userOperatorSpec.getResources();

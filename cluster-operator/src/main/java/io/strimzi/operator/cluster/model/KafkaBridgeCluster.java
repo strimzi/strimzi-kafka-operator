@@ -175,7 +175,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         result.tracing = spec.getTracing();
         result.resources = spec.getResources();
-        result.logging = new LoggingModel(spec, result.getClass().getSimpleName(), true, false);
+        result.logging = new LoggingModel(spec, result.getClass().getSimpleName());
         result.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
         result.jvmOptions = spec.getJvmOptions();
         String image = spec.getImage();
