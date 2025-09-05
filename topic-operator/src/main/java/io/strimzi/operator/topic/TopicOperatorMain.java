@@ -93,7 +93,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
             throw new IllegalStateException();
         }
 
-        shutdownHook = new Thread(this::stop,"TopicOperator-shutdown-hook");
+        shutdownHook = new Thread(this::stop, "TopicOperator-shutdown-hook");
         LOGGER.infoOp("Installing shutdown hook");
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         LOGGER.infoOp("Starting health and metrics");
