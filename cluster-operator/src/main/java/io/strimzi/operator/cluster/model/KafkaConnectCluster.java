@@ -948,9 +948,16 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 .build();
 
         RoleBinding rb = RbacUtils
-                .createRoleBinding(KafkaConnectResources.connectRoleBindingName(cluster), namespace, roleRef, List.of(subject), labels, ownerReference, null);
+               .createRoleBinding(getRoleBindingName(), namespace, roleRef, List.of(subject), labels, ownerReference, null);
 
         return rb;
+    }
+
+    /**
+     * @return The name of the RoleBinding for the Kafka Connect
+     */
+    public String getRoleBindingName() {
+        return KafkaConnectResources.connectRoleBindingName(getCluster());
     }
 
     /**
