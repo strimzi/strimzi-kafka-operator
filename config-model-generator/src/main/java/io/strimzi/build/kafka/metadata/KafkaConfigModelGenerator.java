@@ -134,13 +134,8 @@ public class KafkaConfigModelGenerator {
                 continue;
             } else if (key.validator != null && "class org.apache.kafka.raft.QuorumConfig$ControllerQuorumBootstrapServersValidator".equals(key.validator.getClass().toString()))   { // we compare the class names because of changes done between Kafka version 3.7 and 3.8 => this is for Kafka 3.8 and newer
                 continue;
-            } else if (key.validator != null && "class org.apache.kafka.common.record.CompressionType$1$1".equals(key.validator.getClass().toString()) && configName.equals("compression.gzip.level"))   { // we compare the class names because of changes done between Kafka version 3.8.0 and 3.8.1 => this is for Kafka 3.8.1 and newer. Given it is an anonymous class, we also check the field name to protect against some changes. From Kafka 4.0.0, the compression.gzip.level is using the LambdaValidator below.
-                descriptor.setPattern("[1-9]{1}|-1");
             } else if (key.validator != null && "class org.apache.kafka.common.config.ConfigDef$LambdaValidator".equals(key.validator.getClass().toString()) && configName.equals("compression.gzip.level"))   { // From Kafka 4.0.0, the compression.gzip.level is using the LambdaValidator
                 descriptor.setPattern("[1-9]{1}|-1");
-            } else if (key.validator != null && "class org.apache.kafka.common.config.ConfigDef$LambdaValidator".equals(key.validator.getClass().toString())
-                    && (configName.equals("remote.log.manager.copier.thread.pool.size") || configName.equals("remote.log.manager.expiration.thread.pool.size")))   { // This validator might be used also for other fields. So we compare also the field names to handle it differently for various fields. This is used from Kafka 3.9.0-rc5.
-                descriptor.setPattern("[1-9]{1}[0-9]*|-1");
             } else if (key.validator != null) {
                 throw new IllegalStateException("Invalid validator '" + key.validator.getClass() + "' for option '" + configName + "'");
             }
