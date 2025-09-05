@@ -93,7 +93,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
             throw new IllegalStateException();
         }
 
-        shutdownHook = new Thread(this::shutdown, "TopicOperator-shutdown-hook");
+        shutdownHook = new Thread(this::stop,"TopicOperator-shutdown-hook");
         LOGGER.infoOp("Installing shutdown hook");
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         LOGGER.infoOp("Starting health and metrics");
@@ -120,10 +120,6 @@ public class TopicOperatorMain implements Liveness, Readiness {
 
     synchronized void stop() {
         // Execute the actual shutdown sequence (idempotent).
-        shutdown();
-    }
-
-    private void shutdown() {
         if (shutdownHook == null) {
             LOGGER.debugOp("Already shut down.");
             return;
@@ -145,6 +141,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
             this.healthAndMetricsServer.stop();
             LOGGER.infoOp("Shutdown completed normally");
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOGGER.infoOp("Interrupted during shutdown");
             throw new RuntimeException(e);
         }
