@@ -74,6 +74,21 @@ public class SimpleAclRuleTest {
     }
 
     @Test
+    public void testFromCrdWithNoOperationsAndOperationSet()   {
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
+            AclRule rule = new AclRuleBuilder()
+                .withType(AclRuleType.ALLOW)
+                .withResource(ACL_RULE_TOPIC_RESOURCE)
+                .withHost("127.0.0.1")
+                .build();
+
+            SimpleAclRule.fromCrd(rule);
+        });
+
+        assertThat(ex.getMessage(), is("Both fields `operations` and `operation` are null. At least one of them must be specified."));
+    }
+
+    @Test
     public void testFromCrdWithThreeOperationsPerRule()   {
         AclRule rule = new AclRuleBuilder()
             .withType(AclRuleType.ALLOW)
