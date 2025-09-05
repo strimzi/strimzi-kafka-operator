@@ -32,7 +32,6 @@ import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The Topic Operator.
@@ -53,7 +52,6 @@ public class TopicOperatorMain implements Liveness, Readiness {
     
     private SharedIndexInformer<KafkaTopic> informer; // guarded by this
     /* test */ volatile Thread shutdownHook;
-    private final AtomicBoolean stopping = new AtomicBoolean(false);
 
     private final ResourceEventHandler<KafkaTopic> resourceEventHandler;
     private final HealthCheckAndMetricsServer healthAndMetricsServer;
@@ -121,36 +119,17 @@ public class TopicOperatorMain implements Liveness, Readiness {
     }
 
     void stop() {
-        // Make stop() safe if invoked multiple times or from different threads.
-        if (!stopping.compareAndSet(false, true)) {
-            return;
-        }
-        final Thread hook;
-        synchronized (this) {
-            // snapshot for removal after shutdown()
-            hook = shutdownHook;
-        }
         // Execute the actual shutdown sequence (idempotent).
         shutdown();
-
-        // Try to detach the shutdown hook if we're not already in JVM shutdown.
-        if (hook != null) {
-            try {
-                Runtime.getRuntime().removeShutdownHook(hook);
-            } catch (IllegalStateException ignored) {
-                // JVM is already shutting down i.e., safe to ignore.
-            }
-        }
     }
 
     private synchronized void shutdown() {
         if (shutdownHook == null) {
-            LOGGER.infoOp("Already shut down.");
+            LOGGER.debugOp("Already shut down.");
             return;
         }
-
-        LOGGER.infoOp("Shutdown initiated");
         shutdownHook = null;
+        LOGGER.infoOp("Shutdown initiated");
         // Note: This method can be invoked on either via the shutdown hook thread or
         // on the thread(s) on which stop()/start() are called
         try {
