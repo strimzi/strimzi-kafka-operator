@@ -12,6 +12,27 @@
 * Add new feature gate `ServerSideApplyPhase1` (disabled by default) that adds support for Server Side Apply for `ConfigMap`, `Ingress`, `PVC`, `Service`, and `ServiceAccount` according to [Strimzi Proposal #105](https://github.com/strimzi/proposals/blob/main/105-server-side-apply-implementation-fg-timelines.md).
 * Added distinction between changes of "cluster-wide" broker properties applied dynamically at cluster level, and "per-broker" broker properties applied dynamically at broker level.
 * Extend the EntityOperator, Cruise Control and KafkaExporter deployment to support PDB via the template section in the CR spec.
+* Fix RBAC naming for **KafkaMirrorMaker2** to avoid Role/RoleBinding collisions when a **KafkaConnect** with the same name exists in the same namespace. KafkaMirrorMaker2 now uses dedicated Role/RoleBinding names.
+
+  **Upgrade note for KafkaMirrorMaker2 users (0.47.0 → 0.48.0+): Cleanup recommended**
+
+  After upgrading the operator, a new (dedicated) **RoleBinding** for **KafkaMirrorMaker2** will be created and used automatically.
+  The old RoleBinding, if it exists, may remain in the cluster but is no longer referenced.
+
+    ```bash
+    # List RoleBindings for your KafkaMirrorMaker2 instance (replace <namespace> and <mm2-name>)
+    kubectl get rolebindings -n <namespace> \
+      -l strimzi.io/kind=KafkaMirrorMaker2,strimzi.io/cluster=<mm2-name>
+    ```
+
+  If multiple RoleBindings are shown, the **legacy** one is `<mm2-name>-connect-connect-role`
+  and the **new** one is `<mm2-name>-mirrormaker2-role`.
+
+  You can safely delete just the legacy RoleBinding (unused after upgrade):
+
+    ```bash
+    kubectl delete rolebinding -n <namespace> <mm2-name>-connect-connect-role
+    ```
 
 ### Major changes, deprecations and removals
 
