@@ -11,7 +11,7 @@ jobs:
 
       # Test the check-permissions action
       - id: check-permissions
-        uses: ./.github/actions/check-permissions
+        uses: ./.github/actions/utils/check-permissions
         continue-on-error: true  # Don't fail the test if permissions check fails
 
       # Validate the results

@@ -59,7 +59,7 @@ jobs:
       # TODO - think about this how to handle it after check-rights
       - name: Parse Comment
         id: parse
-        uses: ./.github/actions/parse-comment
+        uses: ./.github/actions/systemtests/parse-comment
         with:
           # Parameters from manual trigger via UI
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
@@ -82,12 +82,12 @@ jobs:
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add comment
-        uses: ./.github/actions/add-comment
+        uses: ./.github/actions/utils/add-comment
         with:
           commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
       - name: Set check & commit status (pending)
         if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
-        uses: ./.github/actions/check-and-status
+        uses: ./.github/actions/utils/check-and-status
         with:
           checkState: pending
           checkName: "System tests verification"
@@ -105,7 +105,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
-      - uses: ./.github/actions/build-strimzi-binaries
+      - uses: ./.github/actions/build/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
           runnerArch: "arm64"
@@ -126,7 +126,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
-      - uses: ./.github/actions/containers-build
+      - uses: ./.github/actions/build/containers-build
         with:
           architecture: ${{ matrix.architecture }}
           runnerArch: "arm64"
@@ -177,7 +177,7 @@ jobs:
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add comment
-        uses: ./.github/actions/add-comment
+        uses: ./.github/actions/utils/add-comment
         with:
           commentMessage: |
             ${{
@@ -186,7 +186,7 @@ jobs:
               ':warning: System test verification **skipped**'
             }}: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
       - name: Set check & commit status
-        uses: ./.github/actions/check-and-status
+        uses: ./.github/actions/utils/check-and-status
         with:
           checkState: ${{ needs.run-tests.result == 'skipped' && 'neutral' || needs.run-tests.result }}
           checkName: "System tests verification"
