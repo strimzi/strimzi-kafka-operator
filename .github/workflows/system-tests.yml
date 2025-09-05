@@ -105,7 +105,7 @@ jobs:
       - parse-params
       - check-rights
     # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
-    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.parse-params.outputs.releaseVersion == 'latest' }}
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.parse-params.outputs.releaseVersion == 'latest' }}
     runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
@@ -123,7 +123,7 @@ jobs:
       - check-rights
       - build-artifacts
     # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
-    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
     strategy:
       matrix:
         architecture: [amd64, arm64]
