@@ -92,7 +92,8 @@ runs:
       with:
         script: |
           const body = context.payload?.comment?.body ?? '';
-          const fallback = `/gha run profile=${process.env.INPUT_PROFILE} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
+          const profile = process.env.INPUT_PROFILE || 'smoke';
+          const fallback = `/gha run profile=${profile} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
           const builtComment = (body && body.trim().length) ? body : fallback;
           
           core.setOutput('builtComment', builtComment);
