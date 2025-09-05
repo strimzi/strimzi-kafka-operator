@@ -145,14 +145,14 @@ public class TopicOperatorMain implements Liveness, Readiness {
 
     private synchronized void shutdown() {
         if (shutdownHook == null) {
-            LOGGER.infoOp("Already shutting down");
-            return; // already shut down
+            LOGGER.infoOp("Already shut down.");
+            return;
         }
+
+        LOGGER.infoOp("Shutdown initiated");
         shutdownHook = null;
         // Note: This method can be invoked on either via the shutdown hook thread or
         // on the thread(s) on which stop()/start() are called
-        LOGGER.infoOp("Shutdown initiated");
-
         try {
             // Idempotent resource teardown.
             if (informer != null) {
