@@ -176,6 +176,8 @@ It must have the value `left` for the type `PolymorphicLeft`.
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
 
+The type PolymorphicRight is supported only in the Strimzi API version(s) v1alpha1.
+
 The `discrim` property is a discriminator that distinguishes use of the `PolymorphicRight` type from xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`].
 It must have the value `right` for the type `PolymorphicRight`.
 [cols="2,2,3a",options="header"]
