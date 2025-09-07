@@ -615,7 +615,7 @@ class CrdGenerator {
             checkClassOverrides(crdClass, "hashCode");
             hasAnyGetterAndAnySetter(crdClass);
         } else {
-            for (Class<?> c : subtypes(crdClass)) {
+            for (Class<?> c : subtypes(null, crdClass)) {
                 hasAnyGetterAndAnySetter(c);
                 checkDiscriminatorIsIncluded(crdClass, c);
                 checkJsonPropertyOrder(c);
@@ -711,7 +711,7 @@ class CrdGenerator {
         JsonPropertyOrder order = crdClass.getAnnotation(JsonPropertyOrder.class);
 
         TreeMap<String, Property> result = new TreeMap<>();
-        for (Class<?> subtype : Property.subtypes(crdClass)) {
+        for (Class<?> subtype : Property.subtypes(crApiVersion, crdClass)) {
             Map<String, Property> properties = properties(crApiVersion, subtype);
             checkPropertiesInJsonPropertyOrder(subtype, properties.keySet());
             result.putAll(properties);
@@ -1003,7 +1003,7 @@ class CrdGenerator {
 
         if (property.getDeclaringClass().isAnnotationPresent(JsonTypeInfo.class)
             && property.getName().equals(property.getDeclaringClass().getAnnotation(JsonTypeInfo.class).property())) {
-            result.set("enum", stringArray(Property.subtypeNames(property.getDeclaringClass())));
+            result.set("enum", stringArray(Property.subtypeNames(crApiVersion, property.getDeclaringClass())));
         }
 
         return result;
