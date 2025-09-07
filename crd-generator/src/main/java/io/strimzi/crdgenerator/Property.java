@@ -287,8 +287,10 @@ class Property implements AnnotatedElement {
      * This method is used to provide the typed classes that are part of a typed API. This method is used to generate
      * the CRDs and the API reference docs.
      *
-     * @param crApiVersion  Strimzi API version for which the type classes should be returned (some types might be present only in some versions)
-     * @param crdClass      The parent class for which the type identifiers should be returned
+     * @param crApiVersion  Strimzi API version for which the type classes should be returned (some types might be present
+     *                      only in some versions). If null, all types are returned. This might be used in places where
+     *                      we want all subtypes regardless of their versions, for example, for generating the docs.
+     * @param crdClass      The parent class for which the type identifiers should be returned.
      *
      * @return  List of the available subtype classes
      */
@@ -315,8 +317,9 @@ class Property implements AnnotatedElement {
     /**
      * This method is used to provide the type identifiers for typed APIs. This method is used to generate the CRDs.
      *
-     * @param crApiVersion  Strimzi API version for which the identifiers should be returned (some types might be present only in some versions)
-     * @param crdClass      The parent class for which the type identifiers should be returned
+     * @param crApiVersion  Strimzi API version for which the identifiers should be returned (some types might be present
+     *                      only in some versions). It should always contain a specific version and not be null.
+     * @param crdClass      The parent class for which the type identifiers should be returned.
      *
      * @return  List of the available types
      */
