@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.17.0-RC1</strimzi-oauth.version>
+        <strimzi-oauth.version>0.17.0</strimzi-oauth.version>
         <strimzi-metrics-reporter.version>0.2.0</strimzi-metrics-reporter.version>
         <prometheus.version>1.3.6</prometheus.version>
         <cruise-control.version>2.5.142</cruise-control.version>
