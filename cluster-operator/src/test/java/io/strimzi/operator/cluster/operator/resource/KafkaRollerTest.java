@@ -998,7 +998,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
+        protected KafkaQuorumCheck quorumCheck(Admin ac, NodeRef ref) {
             Admin admin = mock(Admin.class);
             DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
             when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
