@@ -51,7 +51,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
     /* test */ final BatchingTopicController controller;
     
     private SharedIndexInformer<KafkaTopic> informer; // guarded by this
-    Thread shutdownHook; // guarded by this
+    /* test */ volatile Thread shutdownHook;
 
     private final ResourceEventHandler<KafkaTopic> resourceEventHandler;
     private final HealthCheckAndMetricsServer healthAndMetricsServer;
@@ -93,7 +93,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
             throw new IllegalStateException();
         }
 
-        shutdownHook = new Thread(this::shutdown, "TopicOperator-shutdown-hook");
+        shutdownHook = new Thread(this::stop, "TopicOperator-shutdown-hook");
         LOGGER.infoOp("Installing shutdown hook");
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         LOGGER.infoOp("Starting health and metrics");
@@ -119,28 +119,17 @@ public class TopicOperatorMain implements Liveness, Readiness {
     }
 
     synchronized void stop() {
+        // Execute the actual shutdown sequence (idempotent).
         if (shutdownHook == null) {
-            throw new IllegalStateException();
+            LOGGER.debugOp("Already shut down.");
+            return;
         }
-        // shutdown(), will be be invoked indirectly by calling
-        // hook.run() has the side effect of nullifying this.shutdownHook
-        // so retain a reference now so we have something to call
-        // removeShutdownHook() with.
-        var hook = shutdownHook;
-        // Call run (not start()) on the thread so that shutdown() is executed
-        // on this thread.
-        shutdown();
-        // stop() is _not_ called from the shutdown hook, so calling
-        // removeShutdownHook() should not cause IAE.
-        Runtime.getRuntime().removeShutdownHook(hook);
-    }
-
-    private synchronized void shutdown() {
+        shutdownHook = null;
+        LOGGER.infoOp("Shutdown initiated");
         // Note: This method can be invoked on either via the shutdown hook thread or
         // on the thread(s) on which stop()/start() are called
-        LOGGER.infoOp("Shutdown initiated");
         try {
-            shutdownHook = null;
+            // Idempotent resource teardown.
             if (informer != null) {
                 informer.stop();
                 informer = null;
@@ -152,6 +141,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
             this.healthAndMetricsServer.stop();
             LOGGER.infoOp("Shutdown completed normally");
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOGGER.infoOp("Interrupted during shutdown");
             throw new RuntimeException(e);
         }
@@ -170,7 +160,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
     public boolean isAlive() {
         boolean running;
         synchronized (this) {
-            running = informer.isRunning();
+            running = informer != null && informer.isRunning();
         }
         if (!running) {
             LOGGER.infoOp("isAlive returning false because informer is not running");
@@ -184,7 +174,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
     public boolean isReady() {
         boolean running;
         synchronized (this) {
-            running = informer.isRunning();
+            running = informer != null && informer.isRunning();
         }
         if (!running) {
             LOGGER.infoOp("isReady returning false because informer is not running");
