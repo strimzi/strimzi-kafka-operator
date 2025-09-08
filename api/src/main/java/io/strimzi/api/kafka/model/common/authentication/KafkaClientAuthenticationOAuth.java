@@ -81,7 +81,8 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.clientId = clientId;
     }
 
-    @Description("OAuth grant type to use when authenticating against the authorization server. This value defaults to `client_credentials` when `clientId` and `clientSecret` are specified.")
+    @Description("A custom OAuth grant type to use when authenticating against the authorization server with `clientId` and one of `clientSecret` or `clientAssertion`. "
+            + "The value defaults to `client_credentials` in these cases. This is optional configuration, only used with custom authorization server implementations.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getGrantType() {
         return grantType;
