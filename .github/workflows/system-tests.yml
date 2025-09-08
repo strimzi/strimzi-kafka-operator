@@ -58,7 +58,8 @@ jobs:
     steps:
       - name: Determine checkout ref
         id: determine_ref
-        uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
+        # TODO - change path before merge!
+        uses: strimzi/strimzi-kafka-operator/.github/actions/determine-ref@main
       - uses: actions/checkout@v5
         with:
           ref: ${{ steps.determine_ref.outputs.ref }}
