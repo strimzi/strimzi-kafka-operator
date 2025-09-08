@@ -30,14 +30,23 @@ Kafka pods can still be scheduled onto these nodes by configuring:
 These settings direct Kafka pods to dedicated nodes while preventing other workloads from being scheduled there
 This approach isolates Kafka from other workloads, reducing resource contention and improving stability.
 
+Use topology spread constraints to balance pods across zones or nodes::
+Topology spread constraints help distribute pods evenly across specified topology domains, such as zones, regions, or nodes.
+For Kafka, this strategy reduces the risk of scheduling too many brokers on the same zone or node, improving availability and resilience.
+
 You can apply these scheduling strategies in the `template.pod` property within the `spec` of a Strimzi custom resource. 
+
 For Kafka brokers specifically, Strimzi provides a two-level configuration:
 
 * `Kafka.spec.kafka.template.pod` +
 Use this to set a cluster-wide default scheduling policy for all Kafka broker and controller pods.
 * `KafkaNodePool.spec.template.pod` + 
-Use this to set scheduling policy for a specific node pool. 
-Any scheduling rules defined here override the cluster-wide default for the pods managed by that specific node pool.
+For more granular control, if needed, you can override the default policy for specific node pools using the `KafkaNodePool` resource.
+
+IMPORTANT: If any property is defined under `KafkaNodePool.spec.template`, *all* `Kafka.spec.kafka.template` settings are ignored for pods in that node pool. 
+Properties are not merged. 
+In other words, node pools using `KafkaNodePool.spec.template` settings do not inherit any settings from the cluster-wide template. 
+Every required setting must be specified in the pool’s template.
 
 Other Strimzi components have their own template properties for scheduling:
 
@@ -49,7 +58,13 @@ Other Strimzi components have their own template properties for scheduling:
 * `KafkaBridge.spec.template.pod`
 * `KafkaMirrorMaker2.spec.template.pod`
 
-The following procedures provide configuration examples for the `Kafka` and `KafkaNodePool` resources. 
-The same affinity and tolerations configurations shown in these examples can be applied to the `template.pod` property of any other component.
+The following procedures provide scheduling configuration examples for the `Kafka` and `KafkaNodePool` resources. 
+The same configurations shown in these examples can be applied to the `template.pod` property of any other component.
 
 Scheduling properties follow the Kubernetes specification.
+
+.Additional resources
+
+* {K8sAffinity}
+* {K8sTolerations}
+* {K8sTopologySpreadConstraints}

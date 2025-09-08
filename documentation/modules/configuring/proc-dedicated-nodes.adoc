@@ -14,12 +14,11 @@ Taints:: Apply taints to worker nodes to prevent other pods from being scheduled
 Tolerations:: Apply tolerations to Kafka pods to allow them to be scheduled on tainted nodes.
 Affinity:: Apply affinity to Kafka pods to schedule them on specifically labeled nodes.
 
-The simplest way to configure this is to set a cluster-wide policy in the `Kafka` resource.
-For more granular control, if needed, you can override the default policy for specific node pools using the `KafkaNodePool` resource.
-This procedure shows example configurations for both.
+This procedure provides configuration examples for the cluster-wide `Kafka` resource and the pool-specific `KafkaNodePool` resource.
 
-IMPORTANT: A `nodeAffinity` rule defined in a `KafkaNodePool` resource overrides any rule in the `Kafka` resource. 
-The rules are not merged.
+NOTE: If you configure `KafkaNodePool.spec.template`, its settings replace `Kafka.spec.kafka.template` for that node pool.
+Properties are not merged. 
+For more information, see xref:affinity-{context}[Scheduling strategies].
 
 .Prerequisites
 

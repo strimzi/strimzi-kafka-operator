@@ -9,12 +9,11 @@
 To improve stability and performance, you can prevent Kafka pods from running on the same worker nodes as other resource-intensive applications, such as databases. 
 Configure `podAntiAffinity` so that these workloads are scheduled on separate nodes.
 
-The simplest way to configure this is to set a cluster-wide policy in the `Kafka` resource.
-For more granular control, if needed, you can override the default policy for specific node pools using the `KafkaNodePool` resource.
-This procedure shows example configurations for both.
+This procedure provides configuration examples for the cluster-wide `Kafka` resource and the pool-specific `KafkaNodePool` resource.
 
-IMPORTANT: A `podAntiAffinity` rule defined in a `KafkaNodePool` resource overrides any rule in the `Kafka` resource. 
-The rules are not merged.
+NOTE: If you configure `KafkaNodePool.spec.template`, its settings replace `Kafka.spec.kafka.template` for that node pool.
+Properties are not merged. 
+For more information, see xref:affinity-{context}[Scheduling strategies].
 
 .Prerequisites
 
