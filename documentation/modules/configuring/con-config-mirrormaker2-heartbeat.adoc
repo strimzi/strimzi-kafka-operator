@@ -13,7 +13,12 @@ These messages are then replicated by the `MirrorSourceConnector` to the _target
 By consuming the `heartbeats` topic on the target cluster, you can confirm that data is flowing correctly from source to target. 
 If you stop seeing new heartbeats on the target, it indicates a potential issue with the replication process.
 
-.Example configuration for the heartbeat connector
+Because the `MirrorHeartbeatConnector` writes heartbeat messages to the _source_ cluster, it usually requires a different Connect cluster from the one that runs the `MirrorSourceConnector` and `MirrorCheckpointConnector`. 
+
+Before enabling the heartbeat connector in the `KafkaMirrorMaker2` resource, consider the advantages and disadvantages of running and maintaining an additional Kafka Connect cluster.
+If you already operate a Kafka Connect cluster that stores state in the source Kafka cluster, you can deploy the `MirrorHeartbeatConnector` there instead of using the `KafkaMirrorMaker2` resource.
+
+.Example configuration for the heartbeat connector defined in a `KafkaMirrorMaker2` resource
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -21,20 +26,34 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker2
   # ...
+  connectCluster: "my-cluster-target" # <1>
+  clusters:
+  - alias: "my-cluster-source"
+    bootstrapServers: my-cluster-source-bootstrap:9092 # <2>
+  - alias: "my-cluster-target"
+    bootstrapServers: my-cluster-target-bootstrap:9092 # <3>
   mirrors:
-    - sourceCluster: "my-cluster-source"
-      targetCluster: "my-cluster-target"
+    - sourceCluster: "my-cluster-source" # <4>
+      targetCluster: "my-cluster-target" # <5>
       topicsPattern: "topic1|topic2|topic3"
       groupsPattern: "group1|group2|group3"
       # ...
-      heartbeatConnector: # <1>
+      heartbeatConnector: # <6>
         autoRestart:
           enabled: true
         config:
-          heartbeats.topic.replication.factor: 1 # <2>
-          emit.heartbeats.interval.seconds: 10 # <3>
+          heartbeats.topic.replication.factor: 1 # <7>
+          emit.heartbeats.interval.seconds: 10 # <8>
   # ...
 ----
-<1> Configuration for the `MirrorHeartbeatConnector` that performs connectivity checks. The config overrides the default configuration options.
-<2> Replication factor for the heartbeat topic.
-<3> The interval, in seconds, at which heartbeat messages are sent.
+<1> Alias of the Kafka Connect cluster where the connectors run. Must match the alias given in `targetCluster`.  
+<2> Bootstrap address of the source cluster.  
+<3> Bootstrap address of the target cluster.  
+<4> Alias of the source cluster, as defined in the `clusters` section.  
+<5> Alias of the target cluster, as defined in the `clusters` section.    
+<6> Configuration for the `MirrorHeartbeatConnector` that performs connectivity checks. Overrides the default configuration options.  
+<7> Replication factor for the heartbeat topic.  
+<8> Interval, in seconds, at which heartbeat messages are sent.  
+
+NOTE: If you deploy the `MirrorHeartbeatConnector` in a standalone Kafka Connect cluster instead of the `KafkaMirrorMaker2` resource, 
+the source and target cluster aliases must match those used by the `MirrorSourceConnector`.
