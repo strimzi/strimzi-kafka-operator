@@ -35,7 +35,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
           
       - name: Install yq
-        uses: ./.github/actions/install-yq
+        uses: ./.github/actions/dependencies/install-yq
 
       # Test all parse-comment scenarios
       - name: Test parse-comment action scenarios
@@ -119,7 +119,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
           
       - name: Install yq
-        uses: ./.github/actions/install-yq
+        uses: ./.github/actions/dependencies/install-yq
 
       # Test all check-permissions scenarios
       - name: Test check-permissions action scenarios
@@ -213,7 +213,7 @@ jobs:
           sudo install -m 0755 ./bin/act /usr/local/bin/act
 
       - name: Install yq
-        uses: ./.github/actions/install-yq
+        uses: ./.github/actions/dependencies/install-yq
 
       # Test all generate-matrix scenarios
       - name: Test generate-matrix action scenarios

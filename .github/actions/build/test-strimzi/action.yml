@@ -1,0 +1,70 @@
+name: "Test Strimzi"
+description: "Runs Strimzi unit and integration tests with Maven"
+
+inputs:
+  runnerArch:
+    description: "Runner architecture (amd64, arm64)"
+    required: false
+    default: "amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: "17"
+        distribution: 'temurin'
+        
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: "maven-cache | **/pom.xml"
+        restore-keys: |
+          maven | ${{ github.job }}
+          maven
+
+    - name: Install yq
+      uses: ./.github/actions/dependencies/install-yq
+      with:
+        architecture: ${{ inputs.runnerArch }}
+      
+    - name: Install Docker
+      uses: ./.github/actions/dependencies/install-docker
+      
+    - name: Setup Kind cluster
+      uses: ./.github/actions/dependencies/setup-kind
+      with:
+        architecture: ${{ inputs.runnerArch }}
+        
+    - name: Run unit and integration tests
+      shell: bash
+      run: |
+        mvn -e -V -B -Dmaven.javadoc.skip=true \
+          -Dsurefire.rerunFailingTestsCount=5 \
+          -Dfailsafe.rerunFailingTestsCount=2 \
+          install
+      env:
+        # Test container optimization and eliminate pulling RYUK image from DockerHub to prevent limits
+        TESTCONTAINERS_RYUK_DISABLED: true
+        TESTCONTAINERS_CHECKS_DISABLE: true
+        # Disable container logging for cleaner test output
+        STRIMZI_TEST_CONTAINER_LOGGING_ENABLED: false
+        
+    - name: Publish test results
+      uses: dorny/test-reporter@v2
+      if: always()
+      with:
+        name: 'Unit & Integration Tests'
+        path: '**/TEST-*.xml'
+        reporter: java-junit
+        fail-on-error: false
+        
+    - name: Upload test coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: ./target/site/jacoco/jacoco.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false

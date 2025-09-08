@@ -1,0 +1,136 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - "main"
+      - "release-*"
+  pull_request:
+    branches:
+      - "*"
+
+# Cancel previous builds on the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Build Strimzi Java code and does basic checks of the PR
+  build-strimzi:
+    name: Build Strimzi
+    runs-on: oracle-2cpu-8gb-arm64
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/build-strimzi-binaries
+        with:
+          mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
+          runnerArch: "arm64"
+
+  # Runs Strimzi unit and integration tests
+  test-strimzi:
+    name: Strimzi Unit & IT tests
+    needs:
+      - build-strimzi
+    runs-on: oracle-vm-4cpu-16gb-arm64
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/test-strimzi
+        with:
+          runnerArch: "arm64"
+
+  # Builds Strimzi docs
+  build-docs:
+    name: Build docs
+    needs:
+      - build-strimzi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/build-docs
+        with:
+          artifactName: "documentation.tar"
+          runnerArch: "amd64"
+
+  # Builds Strimzi containers
+  build-containers:
+    name: Build Containers
+    needs:
+      - build-strimzi
+    strategy:
+      matrix:
+        architecture:
+          - amd64
+          - arm64
+          - s390x
+          - ppc64le
+    runs-on: oracle-vm-2cpu-8gb-arm64
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/containers-build
+        with:
+          architecture: ${{ matrix.architecture }}
+          runnerArch: "arm64"
+
+# The following jobs are used to push artifacts into respective services
+# Uncomment them once we want to migrate from Azure to GHA
+#  # Push Strimzi containers - run only on main branch
+#  push-containers:
+#    name: Push Containers
+#    needs:
+#      - build-strimzi
+#      - test-strimzi
+#      - build-containers
+#      - build-docs
+#    if: ${{ github.ref == 'refs/heads/gha-build' }}
+#    runs-on: ubuntu-latest
+#    env:
+#      DOCKER_REGISTRY: "quay.io"
+#      DOCKER_ORG: "strimzi"
+#      DOCKER_TAG: "latest"
+#    steps:
+#      - uses: actions/checkout@v5
+#      - uses: ./.github/actions/build/containers-push
+#        with:
+#          architectures: "amd64,arm64,ppc64le,s390x"
+#          runnerArch: "amd64"
+#          quayUser: ${{ secrets.QUAY_USER }}
+#          quayPass: ${{ secrets.QUAY_PASS }}
+#          cosignPassword: ${{ secrets.COSIGN_PASSWORD }}
+#          cosignPrivateKey: ${{ secrets.COSIGN_PRIVATE_KEY }}
+#
+#  # Publish Strimzi docs to the website - run only on main branch
+#  publish-docs:
+#    name: Publish Docs
+#    needs:
+#      - build-strimzi
+#      - test-strimzi
+#      - build-containers
+#      - build-docs
+#    if: ${{ github.ref == 'refs/heads/main' }}
+#    runs-on: oracle-2cpu-8gb-x86_64
+#    steps:
+#      - uses: actions/checkout@v5
+#      - uses: ./.github/actions/build/publish-docs
+#        with:
+#          artifactName: "documentation.tar"
+#          githubDeployKey: ${{ secrets.GITHUB_DEPLOY_KEY }}
+#
+#  # Deploy Strimzi Java artifacts - run only on main branch
+#  deploy-java:
+#    name: Deploy Java artifacts
+#    needs:
+#      - build-strimzi
+#      - test-strimzi
+#      - build-containers
+#      - build-docs
+#    if: ${{ github.ref == 'refs/heads/main' }}
+#    runs-on: oracle-2cpu-8gb-x86_64
+#    steps:
+#      - uses: actions/checkout@v5
+#      - uses: ./.github/actions/build/deploy-java
+#        with:
+#          runnerArch: "amd64"
+#          gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}
+#          gpgSigningKey: ${{ secrets.GPG_SIGNING_KEY }}
+#          centralUsername: ${{ secrets.CENTRAL_USERNAME }}
+#          centralPassword: ${{ secrets.CENTRAL_PASSWORD }}

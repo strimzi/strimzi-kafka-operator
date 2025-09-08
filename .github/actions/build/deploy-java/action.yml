@@ -1,0 +1,54 @@
+name: "Deploy Java Artifacts"
+description: "Deploys Java artifacts to Maven Central"
+
+inputs:
+  runnerArch:
+    description: "Runner architecture (amd64, arm64)"
+    required: false
+    default: "amd64"
+  gpgPassphrase:
+    description: "GPG passphrase for signing"
+    required: true
+  gpgSigningKey:
+    description: "GPG signing key"
+    required: true
+  centralUsername:
+    description: "Maven Central username"
+    required: true
+  centralPassword:
+    description: "Maven Central password"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: "maven-cache | **/pom.xml"
+        restore-keys: |
+          maven | ${{ github.job }}
+          maven
+          
+    - name: Install yq
+      uses: ./.github/actions/dependencies/install-yq
+      with:
+        architecture: ${{ inputs.runnerArch }}
+        
+    - name: Deploy Java artifacts
+      shell: bash
+      run: make pushtocentral
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+        GPG_PASSPHRASE: ${{ inputs.gpgPassphrase }}
+        GPG_SIGNING_KEY: ${{ inputs.gpgSigningKey }}
+        CENTRAL_USERNAME: ${{ inputs.centralUsername }}
+        CENTRAL_PASSWORD: ${{ inputs.centralPassword }}

@@ -1,0 +1,140 @@
+name: "Push Containers"
+description: "Pushes container images and creates manifests"
+
+inputs:
+  architectures:
+    description: "Comma-separated list of architectures (e.g., 'amd64,arm64,s390x,ppc64le')"
+    required: true
+  runnerArch:
+    description: "Runner architecture (amd64, arm64)"
+    required: false
+    default: "amd64"
+  quayUser:
+    description: "Quay.io username"
+    required: true
+  quayPass:
+    description: "Quay.io password"
+    required: true
+  cosignPassword:
+    description: "Cosign password for signing"
+    required: true
+  cosignPrivateKey:
+    description: "Cosign private key for signing"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install prerequisites
+      shell: bash
+      run: |
+        .azure/scripts/install_cosign.sh
+        .azure/scripts/install_syft.sh
+      env:
+        ARCH: ${{ inputs.runnerArch }}
+
+    - uses: ./.github/actions/dependencies/install-docker
+    - uses: ./.github/actions/dependencies/install-yq
+      with:
+        architecture: ${{ inputs.runnerArch }}
+
+    - name: Download container artifact
+      uses: actions/download-artifact@v5
+      with:
+        pattern: containers-*
+        path: ./
+        merge-multiple: true
+        
+    - name: Extract container archives
+      shell: bash
+      run: |
+        IFS=',' read -ra ARCH_ARRAY <<< "${{ inputs.architectures }}"
+        for arch in "${ARCH_ARRAY[@]}"; do
+          tar -xvf "containers-${arch}.tar"
+          rm "containers-${arch}.tar"
+        done
+
+    - name: Login to container registry
+      shell: bash
+      run: docker login -u ${{ inputs.quayUser }} -p ${{ inputs.quayPass }} ${{ env.DOCKER_REGISTRY }}
+
+    - name: Delete existing container manifests
+      shell: bash
+      run: make docker_delete_manifest
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+        
+    - name: Push containers and create manifests
+      shell: bash
+      run: |
+        IFS=',' read -ra ARCH_ARRAY <<< "${{ inputs.architectures }}"
+        for arch in "${ARCH_ARRAY[@]}"; do
+          echo "Processing architecture: ${arch}"
+          export DOCKER_ARCHITECTURE="${arch}"
+          make docker_load docker_tag docker_push docker_amend_manifest docker_delete_archive
+        done
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+
+    - name: Push container manifests
+      shell: bash
+      run: make docker_push_manifest
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+
+    # TODO - We can use cosign in better way. See https://github.com/strimzi/strimzi-kafka-operator/issues/11826 for more details.
+    - name: Sign container manifests
+      shell: bash
+      run: make docker_sign_manifest
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+        BUILD_ID: ${{ github.run_number }}
+        BUILD_COMMIT: ${{ github.sha }}
+        COSIGN_PASSWORD: ${{ inputs.cosignPassword }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosignPrivateKey }}
+
+    # TODO - We can use existing GitHub Action for SBOMs - https://github.com/strimzi/strimzi-kafka-operator/issues/11827
+    - name: Generate SBOMs
+      shell: bash
+      run: |
+        IFS=',' read -ra ARCH_ARRAY <<< "${{ inputs.architectures }}"
+        for arch in "${ARCH_ARRAY[@]}"; do
+          echo "Generating SBOM for architecture: ${arch}"
+          export DOCKER_ARCHITECTURE="${arch}"
+          make docker_sbom
+        done
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+        COSIGN_PASSWORD: ${{ inputs.cosignPassword }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosignPrivateKey }}
+
+    - name: Create SBOM archive
+      shell: bash
+      run: tar -z -C ./sbom/ -cvpf sbom.tar.gz ./
+
+    - name: Upload SBOM artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SBOMs-${{ env.DOCKER_TAG }}
+        path: sbom.tar.gz
+        
+    - name: Push SBOMs to registry
+      if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
+      shell: bash
+      run: |
+        IFS=',' read -ra ARCH_ARRAY <<< "${{ inputs.architectures }}"
+        for arch in "${ARCH_ARRAY[@]}"; do
+          echo "Generating SBOM for architecture: ${arch}"
+          export DOCKER_ARCHITECTURE="${arch}"
+          make docker_push_sbom
+        done
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+        COSIGN_PASSWORD: ${{ inputs.cosignPassword }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosignPrivateKey }}

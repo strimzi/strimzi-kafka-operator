@@ -15,15 +15,15 @@ runs:
   using: "composite"
   steps:
     - name: Install yq
-      uses: ./.github/actions/install-yq
+      uses: ./.github/actions/dependencies/install-yq
       with:
         architecture: ${{ inputs.runnerArch }}
     - name: Install Shellcheck
-      uses: ./.github/actions/install-shellcheck
+      uses: ./.github/actions/dependencies/install-shellcheck
       with:
         architecture: ${{ inputs.runnerArch }}
     - name: Install Helm
-      uses: ./.github/actions/install-helm
+      uses: ./.github/actions/dependencies/install-helm
     - name: Setup Java
       uses: actions/setup-java@v5
       with:

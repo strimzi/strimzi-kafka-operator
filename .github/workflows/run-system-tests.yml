@@ -91,7 +91,7 @@ jobs:
           ref: ${{ inputs.ref }}
       - name: Generate Matrix
         id: gen
-        uses: ./.github/actions/generate-matrix
+        uses: ./.github/actions/systemtests/generate-matrix
         with:
           pipelines: ${{ inputs.pipelineList }}
           profiles: ${{ inputs.profileList }}
@@ -138,7 +138,7 @@ jobs:
           ref: ${{ inputs.ref }}
 
       - name: Set check & commit status
-        uses: ./.github/actions/check-and-status
+        uses: ./.github/actions/utils/check-and-status
         with:
           checkState: pending
           checkName: ${{ matrix.config.jobName }}
@@ -155,22 +155,22 @@ jobs:
           cache: 'maven'
 
       - name: Install Helm
-        uses: ./.github/actions/install-helm
+        uses: ./.github/actions/dependencies/install-helm
 
       - name: Install Shellcheck
-        uses: ./.github/actions/install-shellcheck
+        uses: ./.github/actions/dependencies/install-shellcheck
         with:
           architecture: ${{ matrix.config.arch }}
       - name: Install yq
-        uses: ./.github/actions/install-yq
+        uses: ./.github/actions/dependencies/install-yq
         with:
           architecture: ${{ matrix.config.arch }}
 
       - name: Install Docker
-        uses: ./.github/actions/install-docker
+        uses: ./.github/actions/dependencies/install-docker
 
       - name: Install Kind
-        uses: ./.github/actions/setup-kind
+        uses: ./.github/actions/dependencies/setup-kind
         with:
           architecture: ${{ matrix.config.arch }}
           # Could be overriden per pipeline
@@ -178,7 +178,7 @@ jobs:
           workerNodes: 1
 
       - name: Set default environment variables
-        uses: ./.github/actions/set-defaults
+        uses: ./.github/actions/utils/set-defaults
 
       - name: Set release version
         if: ${{ inputs.releaseVersion != 'latest' }}
@@ -203,12 +203,12 @@ jobs:
           echo "ST_KAFKA_VERSION=${KAFKA_VERSION}" >> $GITHUB_ENV
 
       - name: Print out environment info
-        uses: ./.github/actions/log-variables
+        uses: ./.github/actions/utils/log-variables
 
       # Load Strimzi images
       - name: Load Strimzi images
         if: ${{ env.DOCKER_TAG == 'latest' && inputs.ref != 'main' }}
-        uses: ./.github/actions/containers-load
+        uses: ./.github/actions/build/containers-load
         with:
           architecture: ${{ matrix.config.arch }}
           registry: "kind"
@@ -280,7 +280,7 @@ jobs:
           echo "KAFKA_TIERED_STORAGE_BASE_IMAGE=${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-${KAFKA_VERSION}" >> $GITHUB_ENV
 
       - name: Print out environment info
-        uses: ./.github/actions/log-variables
+        uses: ./.github/actions/utils/log-variables
 
       ############################################################################
       # Run system tests
@@ -331,7 +331,7 @@ jobs:
 
       - name: Set check & commit status
         if: ${{ always() }}
-        uses: ./.github/actions/check-and-status
+        uses: ./.github/actions/utils/check-and-status
         with:
           checkState: ${{ steps.run_tests.conclusion }}
           checkName: ${{ matrix.config.jobName }}

@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - id: parse
-        uses: ./.github/actions/parse-comment
+        uses: ./.github/actions/systemtests/parse-comment
         with:
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
           kafkaVersion: ${{ github.event.inputs.kafkaVersion }}

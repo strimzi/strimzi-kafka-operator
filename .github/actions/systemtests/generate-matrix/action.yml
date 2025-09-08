@@ -54,7 +54,7 @@ runs:
   steps:
     # yq is required for generate-matrix action
     - name: Install yq
-      uses: ./.github/actions/install-yq
+      uses: ./.github/actions/dependencies/install-yq
       with:
         architecture: ${{ inputs.runnerArch }}
 
@@ -65,7 +65,7 @@ runs:
         set -e
 
         # Read the pipelines config from a file stored in the action directory.
-        DEFINED_PIPELINES=$(yq eval '.pipelines' -j ".github/actions/generate-matrix/pipelines.yaml")
+        DEFINED_PIPELINES=$(yq eval '.pipelines' -j ".github/actions/systemtests/generate-matrix/pipelines.yaml")
         
         # Debug log of passed data
         echo "INPUT_PIPELINES: $INPUT_PIPELINES"

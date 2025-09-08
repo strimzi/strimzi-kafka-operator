@@ -1,0 +1,32 @@
+name: "Publish Documentation"
+description: "Publishes documentation to the Strimzi website"
+
+inputs:
+  artifactName:
+    description: "Name of the documentation artifact to download"
+    required: false
+    default: "Documentation"
+  githubDeployKey:
+    description: "GitHub deploy key for website publishing"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download documentation artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifactName }}
+        path: ./
+        
+    - name: Extract documentation
+      shell: bash
+      run: tar -xvf documentation.tar
+      
+    - name: Publish docs to website
+      shell: bash
+      run: make docu_pushtowebsite
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+        GITHUB_DEPLOY_KEY: ${{ inputs.githubDeployKey }}
