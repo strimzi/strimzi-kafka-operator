@@ -25,8 +25,6 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -232,18 +230,13 @@ public class KafkaConfigModelGenerator {
     }
 
     private static Field getField(Class<?> cls, String fieldName) {
-        return AccessController.doPrivileged(new PrivilegedAction<Field>() {
-                @Override
-                public Field run() {
-                    try {
-                        Field f1 = cls.getDeclaredField(fieldName);
-                        f1.setAccessible(true);
-                        return f1;
-                    } catch (ReflectiveOperationException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
+        try {
+            Field f1 = cls.getDeclaredField(fieldName);
+            f1.setAccessible(true);
+            return f1;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static ConfigModel range(ConfigDef.ConfigKey key, ConfigModel descriptor) {
