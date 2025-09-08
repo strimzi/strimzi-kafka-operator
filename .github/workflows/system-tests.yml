@@ -83,12 +83,61 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
-      - name: Add comment
+
+  validate-matrix:
+    needs:
+      - parse-params
+      - check-rights
+    if: ${{ 
+      always() && 
+      needs.parse-params.outputs.shouldRun == 'true' && 
+      (needs.check-rights.result == 'success' || github.event_name == 'pull_request')
+    }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
+    outputs:
+      is_valid: ${{ steps.validate.outputs.is_valid }}
+      message: ${{ steps.validate.outputs.message }}
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.parse-params.outputs.ref }}
+      - name: Generate Matrix for Validation
+        id: gen
+        uses: ./.github/actions/generate-matrix
+        with:
+          pipelines: ${{ needs.parse-params.outputs.pipelineList }}
+          profiles: ${{ needs.parse-params.outputs.profileList }}
+          default_agent: ${{ needs.parse-params.outputs.agent }}
+          default_arch: ${{ needs.parse-params.outputs.architecture }}
+          default_strimzi_feature_gates: ${{ needs.parse-params.outputs.strimzi_feature_gates }}
+          default_strimzi_rbac_scope: ${{ needs.parse-params.outputs.strimzi_rbac_scope }}
+          default_cluster_operator_install_type: ${{ needs.parse-params.outputs.cluster_operator_install_type }}
+          default_parallel: ${{ needs.parse-params.outputs.parallel }}
+          runnerArch: "amd64"
+      - name: Validate Matrix
+        id: validate
+        uses: ./.github/actions/validate-matrix
+        with:
+          matrix: ${{ steps.gen.outputs.matrix }}
+      - name: Add validation comment
+        if: ${{ github.event_name == 'issue_comment' && steps.validate.outputs.is_valid == 'true' }}
         uses: ./.github/actions/utils/add-comment
         with:
-          commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+          commentMessage: ':hourglass_flowing_sand: System test verification started: [link](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          ${{ steps.validate.outputs.message }}'
+      - name: Add validation error comment
+        if: ${{ github.event_name == 'issue_comment' && steps.validate.outputs.is_valid == 'false' }}
+        uses: ./.github/actions/add-comment
+        with:
+          commentMessage: ${{ steps.validate.outputs.message }}
       - name: Set check & commit status (pending)
-        if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
+        if: ${{ steps.validate.outputs.is_valid == 'true' }}
         uses: ./.github/actions/utils/check-and-status
         with:
           checkState: pending
@@ -100,8 +149,14 @@ jobs:
     needs:
       - parse-params
       - check-rights
-    # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
-    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.parse-params.outputs.releaseVersion == 'latest' }}
+      - validate-matrix
+    # Run only if properly triggered, permissions check passed, matrix is valid, and the run is not for release (already built images)
+    if: ${{ 
+      always() &&needs.parse-params.outputs.shouldRun == 'true' && 
+      (needs.check-rights.result == 'success' || github.event_name == 'pull_request')&& 
+      needs.validate-matrix.outputs.is_valid == 'true' && 
+      needs.parse-params.outputs.releaseVersion == 'latest'
+    }}
     runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
@@ -117,9 +172,16 @@ jobs:
     needs:
       - parse-params
       - check-rights
+      - validate-matrix
       - build-artifacts
-    # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
-    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
+    # Run only if properly triggered, permissions check passed, matrix is valid, and the run is not for release (already built images)
+    if: ${{ 
+      always() &&needs.parse-params.outputs.shouldRun == 'true' && 
+      (needs.check-rights.result == 'success' || github.event_name == 'pull_request')&& 
+      needs.validate-matrix.outputs.is_valid == 'true' && 
+      needs.parse-params.outputs.releaseVersion == 'latest' && 
+      needs.build-artifacts.result != 'failure'
+    }}
     strategy:
       matrix:
         architecture: [amd64, arm64]
@@ -138,10 +200,18 @@ jobs:
     needs:
       - parse-params
       - check-rights
+      - validate-matrix
       - build-artifacts
       - build-images
-    # Run if properly triggered, permissions check passed, and build jobs succeeded or were skipped
-    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.build-images.result != 'failure' &&  needs.build-artifacts.result != 'failure' }}
+    # Run if properly triggered, permissions check passed, matrix is valid, and build jobs succeeded or were skipped
+    if: ${{ 
+      always() && 
+      needs.parse-params.outputs.shouldRun == 'true' && 
+      (needs.check-rights.result == 'success' || github.event_name == 'pull_request')&& 
+      needs.validate-matrix.outputs.is_valid == 'true' && 
+      needs.build-images.result != 'failure' && 
+      needs.build-artifacts.result != 'failure'
+    }}
     # Job needs write rights for setting statuses on pull-requests
     permissions:
       contents: read
@@ -162,13 +232,20 @@ jobs:
       kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
       # Checkout ref params
       ref: ${{ needs.parse-params.outputs.ref }}
+      # Pass the validated matrix directly
+      matrix: ${{ needs.validate-matrix.outputs.matrix }}
 
   report:
     needs:
       - parse-params
       - check-rights
       - run-tests
-    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && github.event_name != 'pull_request' }}
+    if: ${{ 
+      always() && 
+      needs.parse-params.outputs.shouldRun == 'true' && 
+      needs.check-rights.result == 'success' && 
+      github.event_name != 'pull_request'
+    }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
