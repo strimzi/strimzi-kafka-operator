@@ -128,7 +128,7 @@
         <junit.platform.version>1.9.3</junit.platform.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>5.9.3</jupiter.version>
-        <strimzi-test-container.version>0.111.0</strimzi-test-container.version>
+        <strimzi-test-container.version>0.112.0</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <valid4j.version>1.1</valid4j.version>
         <javax.json.version>1.1.4</javax.json.version>
