@@ -31,7 +31,7 @@ metadata:
   - alias: "my-cluster-source"
     bootstrapServers: my-cluster-source-bootstrap:9092 # <2>
   - alias: "my-cluster-target"
-    bootstrapServers: my-cluster-target-bootstrap:9092 # <3>
+    bootstrapServers: my-cluster-source-bootstrap:9092 # <3>
   mirrors:
     - sourceCluster: "my-cluster-source" # <4>
       targetCluster: "my-cluster-target" # <5>
@@ -48,12 +48,11 @@ metadata:
 ----
 <1> Alias of the Kafka Connect cluster where the connectors run. Must match the alias given in `targetCluster`.  
 <2> Bootstrap address of the source cluster.  
-<3> Bootstrap address of the target cluster.  
-<4> Alias of the source cluster, as defined in the `clusters` section.  
-<5> Alias of the target cluster, as defined in the `clusters` section.    
+<3> Bootstrap address of the target cluster. Use the same alias as the target cluster, but specify the bootstrap servers of the source cluster, because the heartbeat topic is created in the source.
+<4> Alias of the source cluster, as defined in the `clusters` section. 
+<5> Alias of the target cluster, as defined in the `clusters` section.
 <6> Configuration for the `MirrorHeartbeatConnector` that performs connectivity checks. Overrides the default configuration options.  
 <7> Replication factor for the heartbeat topic.  
 <8> Interval, in seconds, at which heartbeat messages are sent.  
 
-NOTE: If you deploy the `MirrorHeartbeatConnector` in a standalone Kafka Connect cluster instead of the `KafkaMirrorMaker2` resource, 
-the source and target cluster aliases must match those used by the `MirrorSourceConnector`.
+IMPORTANT: The source and target cluster aliases in the `MirrorHeartbeatConnector` configuration must match the aliases defined for the `MirrorSourceConnector` in the `KafkaMirrorMaker2` resource.
