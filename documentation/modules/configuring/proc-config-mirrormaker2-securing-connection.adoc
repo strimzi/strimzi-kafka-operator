@@ -336,7 +336,7 @@ spec:
       sourceConnector:
         config:
           replication.factor: 1
-          offset-syncs.topic.replication.factor: 1
+          offset-syncs.topic.replication.factor: -1
           sync.topic.acls.enabled: "false"
       heartbeatConnector:
         config:
