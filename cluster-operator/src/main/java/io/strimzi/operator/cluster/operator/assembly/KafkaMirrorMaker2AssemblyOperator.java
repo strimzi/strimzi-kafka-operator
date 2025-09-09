@@ -321,7 +321,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     @Override
     protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
         String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
-        return connectorName.equals(restartAnnotationConnectorName);
+        return restartAnnotationConnectorName != null && restartAnnotationConnectorName.contains(connectorName);
     }
 
     /**

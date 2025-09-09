@@ -622,7 +622,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @SuppressWarnings({ "rawtypes" })
     @Override
     protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
-        return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_RESTART, false);
+        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, null) != null;
     }
 
     /**

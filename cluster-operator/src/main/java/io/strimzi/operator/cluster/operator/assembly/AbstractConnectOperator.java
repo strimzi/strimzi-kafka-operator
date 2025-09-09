@@ -767,7 +767,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
             boolean restartIncludeTasks = restartAnnotationHasIncludeTasksArg(resource);
             boolean restartOnlyFailedTasks = restartAnnotationHasOnlyFailedTasksArg(resource);
-            LOGGER.infoCr(reconciliation, "Restarting connector {}", connectorName);
+            LOGGER.infoCr(reconciliation, "Restarting connector {}, IncludeTasks {}, OnlyFailedTasks {}", connectorName, restartIncludeTasks, restartOnlyFailedTasks);
 
             return VertxUtil.completableFutureToVertxFuture(apiClient.restart(host, port, connectorName, restartIncludeTasks, restartOnlyFailedTasks))
                     .compose(ignored -> removeRestartAnnotation(reconciliation, resource)
