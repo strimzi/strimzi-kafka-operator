@@ -166,7 +166,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartTest {
     }
 
     private KafkaConnector buildKafkaConnector() {
-       return new KafkaConnectorBuilder()
+        return new KafkaConnectorBuilder()
                     .withNewMetadata()
                     .withName("my-connector")
                     .withNamespace("my-namespace")
@@ -179,16 +179,16 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartTest {
                     .build();
     }
 
-    private void configMock(ResourceOperatorSupplier supplier,KafkaConnectApi mockConnectApi) {
-        when(supplier.mirrorMaker2Operator.patchAsync(any(),any())).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2()));
+    private void configMock(ResourceOperatorSupplier supplier, KafkaConnectApi mockConnectApi) {
+        when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2()));
 
         when(mockConnectApi.getConnectorConfig(any(), any(), any(), anyInt(), any())).thenReturn(
                 CompletableFuture.completedFuture(Map.of("topic", "my-topic", "tasks.max", "3", "name", "my-connector", "connector.class", "MyClass")));
         when(mockConnectApi.createOrUpdatePutRequest(any(), any(), anyInt(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
         when(mockConnectApi.getConnectorTopics(any(), any(), anyInt(), any())).thenReturn(CompletableFuture.completedFuture(null));
-        when(mockConnectApi.restart(any(),anyInt(),any(),anyBoolean(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(null));
 
-        Map<String,Object> status = Map.of("connector", Map.of("state", "RUNNING"));
+        Map<String, Object> status = Map.of("connector", Map.of("state", "RUNNING"));
         when(mockConnectApi.statusWithBackOff(any(), any(), any(), anyInt(), any())).thenReturn(CompletableFuture.completedFuture(status));
         when(mockConnectApi.status(any(), any(), anyInt(), any())).thenReturn(CompletableFuture.completedFuture(status));
     }

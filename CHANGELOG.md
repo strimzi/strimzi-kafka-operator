@@ -16,6 +16,8 @@
 * Extend the EntityOperator, Cruise Control and KafkaExporter deployment to support PDB via the template section in the CR spec.
 * Added support for [KIP-1073](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1073:+Return+fenced+brokers+in+DescribeCluster+response)
   to get the list of the registered brokers by using the Kafka Admin API. It replaces the usage of the `.status.registeredNodeIds` field in Kafka.
+* Added support for [KIP-745](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=181308623) in Kafka Connector and Mirror Maker 2, allowing the usage of 
+  `includeTasks` and `onlyFailed` arguments in kafka connectors restart.
 
 ### Major changes, deprecations and removals
 
