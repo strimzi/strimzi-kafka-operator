@@ -12,7 +12,7 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testAdvertisedHostNamesAppearsInBrokerCerts](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCertificateWithNonExistingDataCrt](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCertificateWithNonExistingDataKey](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
-- [testChangingInternalToExternalLoggingTriggerRollingUpdate](../io.strimzi.systemtest.log.LoggingChangeST.md)
+- [testChangingInternalToExternalLoggingDoesNotTriggerRollingUpdate](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testClusterIp](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testClusterIpTls](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testClusterOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
