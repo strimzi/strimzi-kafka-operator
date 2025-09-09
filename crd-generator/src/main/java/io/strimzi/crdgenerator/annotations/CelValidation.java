@@ -55,5 +55,10 @@ public @interface CelValidation {
          * @return  Return fieldPath
          */
         String fieldPath() default "";
+
+        /**
+         * @return The versions in which this validation rule is used
+         */
+        String versions() default "";
     }
 }
