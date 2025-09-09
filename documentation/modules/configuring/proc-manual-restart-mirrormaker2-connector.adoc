@@ -41,6 +41,10 @@ In this example, connector `source-cluster->target-cluster.MirrorCheckpointConne
 kubectl annotate KafkaMirrorMaker2 my-mirror-maker-2 "strimzi.io/restart-connector=source-cluster->target-cluster.MirrorCheckpointConnector"
 ----
 
+You can also use arguments like `includeTasks` and `onlyFailed`, to customize the restart behavior, the default is `false` for both arguments.
+Separate the connector name and the arguments with a colon (`:`).
+Here is a valid example: `strimzi.io/restart-connector=source-cluster->target-cluster.MirrorCheckpointConnector:includeTasks,onlyFailed`.
+
 . Wait for the next reconciliation to occur (every two minutes by default).
 +
 The MirrorMaker 2 connector is restarted, as long as the annotation was detected by the reconciliation process.
