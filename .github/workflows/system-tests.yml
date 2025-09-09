@@ -52,7 +52,7 @@ jobs:
     steps:
       - name: Determine checkout ref
         id: determine_ref
-        uses: strimzi/strimzi-kafka-operator/.github/actions/determine-ref@main
+        uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
       - uses: actions/checkout@v5
         with:
           ref: ${{ steps.determine_ref.outputs.ref }}
@@ -76,7 +76,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
+      - uses: strimzi/strimzi-kafka-operator/.github/actions/utils/check-permissions@main
       # In case the user has proper rights, print comment with build link and set status
       - uses: actions/checkout@v5
         with:
