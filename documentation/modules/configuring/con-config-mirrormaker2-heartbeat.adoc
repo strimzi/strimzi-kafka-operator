@@ -49,8 +49,8 @@ metadata:
 <1> Alias of the Kafka Connect cluster where the connectors run. Must match the alias given in `targetCluster`.  
 <2> Bootstrap address of the source cluster.  
 <3> Bootstrap address of the target cluster. Use the same alias as the target cluster, but specify the bootstrap servers of the source cluster, because the heartbeat topic is created in the source.
-<4> Alias of the source cluster, as defined in the `clusters` section. 
-<5> Alias of the target cluster, as defined in the `clusters` section.
+<4> Alias of the source cluster. Must match the source alias defined for the `MirrorSourceConnector`.
+<5> Alias of the target cluster. Must match the target alias defined for the `MirrorSourceConnector`.
 <6> Configuration for the `MirrorHeartbeatConnector` that performs connectivity checks. Overrides the default configuration options.  
 <7> Replication factor for the heartbeat topic.  
 <8> Interval, in seconds, at which heartbeat messages are sent.  

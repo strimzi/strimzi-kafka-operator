@@ -27,8 +27,9 @@ However, applying those checkpoints in the target cluster requires the target gr
 If consumers switch to the target cluster between checkpoints, they might reprocess some messages because the last synchronized offset lags behind the source.
 This duplication is expected.
 
-NOTE: If the target consumer group is active, the connector cannot apply the checkpoint. 
-In this case, the connector logs a warning and the offset is not synchronized.
+NOTE: The connector continues to emit checkpoints to the checkpoints topic even if the target consumer group is active. 
+However, the offsets cannot be committed while the group has active members. 
+In this case, the connector logs a warning and the offsets are not synchronized.
 
 .Example configuration to enable offset synchronization
 [source,yaml,subs="+quotes,attributes"]
