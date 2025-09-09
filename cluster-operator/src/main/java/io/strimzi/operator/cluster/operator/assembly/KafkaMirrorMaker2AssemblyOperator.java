@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -42,18 +43,16 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -65,6 +64,14 @@ import static java.util.Collections.emptyMap;
  */
 public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMaker2AssemblyOperator.class.getName());
+
+    /**
+     * Pattern for validation of MirrorMaker2 restart connector annotation value.
+     * */
+    private static final Pattern STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN = Pattern
+            .compile("^([a-zA-Z0-9-_]+):includeTasks,onlyFailed$|^([a-zA-Z0-9-_]+):onlyFailed,includeTasks$" +
+                    "|^([a-zA-Z0-9-_]+):includeTasks$|^([a-zA-Z0-9-_]+):onlyFailed$|^([a-zA-Z0-9-_]+)$");
+
 
     /**
      * Constructor
@@ -332,7 +339,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     @SuppressWarnings({ "rawtypes" })
     protected boolean restartAnnotationIsValid(CustomResource resource) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "");
-        return ANNO_STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN.matcher(restartValue).matches();
+        return STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN.matcher(restartValue).matches();
     }
 
     /**
@@ -346,7 +353,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     @Override
     protected boolean restartAnnotationHasIncludeTasksArg(CustomResource resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
-                .contains(ANNO_STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
+                .contains(STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
     }
 
 
@@ -359,9 +366,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean restartAnnotationHasOnlyFailedTasksArg(CustomResource resource) {
+    protected boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
-                .contains(ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
+                .contains(STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }
 
     /**

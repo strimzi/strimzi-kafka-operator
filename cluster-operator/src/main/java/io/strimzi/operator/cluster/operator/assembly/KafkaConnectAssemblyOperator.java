@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
@@ -62,14 +63,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_RESTART_TASK;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_ARGS_PATTERN;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG;
 
 /**
  * <p>Assembly operator for a "Kafka Connect" assembly, which manages:</p>
@@ -82,6 +81,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final ConnectBuildOperator connectBuildOperator;
+
+    /**
+     * Pattern for validation of restart connector annotation value.
+     * */
+    private static final Pattern STRIMZI_IO_RESTART_ARGS_PATTERN = Pattern.compile("^includeTasks," +
+            "onlyFailed$|^onlyFailed,includeTasks$|^includeTasks$|^onlyFailed$|^true$");
+
 
     /**
      * Constructor
@@ -636,7 +642,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @SuppressWarnings({ "rawtypes" })
     protected boolean restartAnnotationIsValid(CustomResource resource) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "");
-        return ANNO_STRIMZI_IO_RESTART_ARGS_PATTERN.matcher(restartValue).matches();
+        return STRIMZI_IO_RESTART_ARGS_PATTERN.matcher(restartValue).matches();
     }
 
     /**
@@ -650,7 +656,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @Override
     protected boolean restartAnnotationHasIncludeTasksArg(CustomResource resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
-                .contains(ANNO_STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
+                .contains(STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
     }
 
 
@@ -663,9 +669,9 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean restartAnnotationHasOnlyFailedTasksArg(CustomResource resource) {
+    protected boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
-                .contains(ANNO_STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
+                .contains(STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }
 
     /**
