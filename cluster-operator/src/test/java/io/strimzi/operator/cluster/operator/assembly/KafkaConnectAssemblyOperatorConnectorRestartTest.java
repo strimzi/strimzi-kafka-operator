@@ -120,7 +120,7 @@ public class KafkaConnectAssemblyOperatorConnectorRestartTest {
         KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
         configMock(supplier, mockConnectApi);
 
-        KafkaConnector connector = buildKafkaConnector("true," + STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
+        KafkaConnector connector = buildKafkaConnector("invalid");
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig());

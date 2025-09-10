@@ -149,7 +149,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartTest {
         KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
         configMock(supplier, mockConnectApi);
 
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Builder("true," + STRIMZI_IO_RESTART_ONLY_FAILED_ARG).build();
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Builder("invalid").build();
         KafkaConnector connector = buildKafkaConnector();
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
