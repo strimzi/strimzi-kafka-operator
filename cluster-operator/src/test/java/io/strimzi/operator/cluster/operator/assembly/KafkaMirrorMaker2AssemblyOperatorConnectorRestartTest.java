@@ -196,33 +196,33 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartTest {
     private KafkaMirrorMaker2Builder kafkaMirrorMaker2Builder(String restartAnnotationValue) {
         return new KafkaMirrorMaker2Builder()
                 .withNewMetadata()
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR, restartAnnotationValue != null ? "my-connector:" + restartAnnotationValue : "my-connector"))
-                .withName("test")
-                .withNamespace("test")
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR, restartAnnotationValue != null ? "my-connector:" + restartAnnotationValue : "my-connector"))
+                    .withName("test")
+                    .withNamespace("test")
                 .endMetadata()
                 .withNewSpec()
-                .withReplicas(1)
-                .withConnectCluster("target")
-                .withClusters(
-                        new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
-                        new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build()
-                ).withMirrors(
-                        new KafkaMirrorMaker2MirrorSpecBuilder()
-                                .withSourceCluster("source")
-                                .withTargetCluster("target")
-                                .withNewSourceConnector()
-                                .withTasksMax(1)
-                                .withConfig(Map.of("replication.factor", "-1"))
-                                .endSourceConnector()
-                                .withNewCheckpointConnector()
-                                .withTasksMax(1)
-                                .withConfig(Map.of("replication.factor", "-1"))
-                                .endCheckpointConnector()
-                                .withNewHeartbeatConnector()
-                                .withTasksMax(1)
-                                .withConfig(Map.of("replication.factor", "-1"))
-                                .endHeartbeatConnector()
-                                .build()
-                ).endSpec();
+                    .withReplicas(1)
+                    .withConnectCluster("target")
+                    .withClusters(
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build()
+                    ).withMirrors(
+                            new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withSourceCluster("source")
+                                    .withTargetCluster("target")
+                                    .withNewSourceConnector()
+                                        .withTasksMax(1)
+                                        .withConfig(Map.of("replication.factor", "-1"))
+                                    .endSourceConnector()
+                                    .withNewCheckpointConnector()
+                                        .withTasksMax(1)
+                                        .withConfig(Map.of("replication.factor", "-1"))
+                                        .endCheckpointConnector()
+                                    .withNewHeartbeatConnector()
+                                        .withTasksMax(1)
+                                        .withConfig(Map.of("replication.factor", "-1"))
+                                    .endHeartbeatConnector()
+                                    .build()
+                    ).endSpec();
     }
 }
