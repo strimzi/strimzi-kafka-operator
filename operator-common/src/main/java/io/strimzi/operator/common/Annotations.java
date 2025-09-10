@@ -61,7 +61,6 @@ public class Annotations extends ResourceAnnotations {
         ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK +
         ">\\d+)$");
 
-
     /**
      * Annotation on PVCs storing the original configuration. It is used to revert any illegal changes.
      */
