@@ -45,6 +45,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -820,7 +821,7 @@ class CrdGenerator {
             addDescription(crApiVersion, schema, property);
         }
 
-        celValidationRules(property, schema);
+        celValidationRules(crApiVersion, property, schema);
 
         return schema;
     }
@@ -933,10 +934,11 @@ class CrdGenerator {
     /**
      * Adds CEL validation rules to the CRD for additional validation
      *
-     * @param element   The element where the CEL validation annotation will be checked
-     * @param result    The JSON Object where the CEL validation rules should be added
+     * @param crApiVersion  Strimzi API version for which the validation rules should be generated
+     * @param element       The element where the CEL validation annotation will be checked
+     * @param result        The JSON Object where the CEL validation rules should be added
      */
-    private void celValidationRules(Property element, ObjectNode result)    {
+    private void celValidationRules(ApiVersion crApiVersion, Property element, ObjectNode result)    {
         // Annotation from the field has the priority. But if it does not exist, we try the type
         CelValidation celValidation = element.getAnnotation(CelValidation.class);
         if (celValidation == null) {
@@ -946,23 +948,34 @@ class CrdGenerator {
         if (celValidation != null
                 && celValidation.rules() != null
                 && celValidation.rules().length > 0) {
-            ArrayNode rules = result.putArray("x-kubernetes-validations");
+            List<ObjectNode> ruleObjects = new ArrayList<>();
 
             for (CelValidation.CelValidationRule rule : celValidation.rules()) {
-                ObjectNode celRule = rules.addObject().put("rule", rule.rule());
+                if (rule.versions().isEmpty() || ApiVersion.parseRange(rule.versions()).contains(crApiVersion)) {
+                    ObjectNode celRule = nf.objectNode();
+                    celRule.put("rule", rule.rule());
 
-                if (!rule.message().isEmpty())  {
-                    celRule.put("message", rule.message());
+                    if (!rule.message().isEmpty())  {
+                        celRule.put("message", rule.message());
+                    }
+                    if (!rule.messageExpression().isEmpty())  {
+                        celRule.put("messageExpression", rule.messageExpression());
+                    }
+                    if (!rule.fieldPath().isEmpty())  {
+                        celRule.put("fieldPath", rule.fieldPath());
+                    }
+                    if (!rule.reason().isEmpty())  {
+                        celRule.put("reason", rule.reason());
+                    }
+
+                    ruleObjects.add(celRule);
                 }
-                if (!rule.messageExpression().isEmpty())  {
-                    celRule.put("messageExpression", rule.messageExpression());
-                }
-                if (!rule.fieldPath().isEmpty())  {
-                    celRule.put("fieldPath", rule.fieldPath());
-                }
-                if (!rule.reason().isEmpty())  {
-                    celRule.put("reason", rule.reason());
-                }
+            }
+
+            // There might be API versions where there is no rule. So we create the validations array only if there are any rules
+            if (!ruleObjects.isEmpty()) {
+                ArrayNode rules = result.putArray("x-kubernetes-validations");
+                rules.addAll(ruleObjects);
             }
         }
     }
