@@ -71,8 +71,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private static final Pattern STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN = Pattern
             .compile("^([a-zA-Z0-9-_]+):includeTasks,onlyFailed$|^([a-zA-Z0-9-_]+):onlyFailed,includeTasks$" +
                     "|^([a-zA-Z0-9-_]+):includeTasks$|^([a-zA-Z0-9-_]+):onlyFailed$|^([a-zA-Z0-9-_]+)$");
-
-
     /**
      * Constructor
      *
