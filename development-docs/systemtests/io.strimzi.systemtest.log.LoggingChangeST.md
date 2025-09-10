@@ -15,17 +15,17 @@
 
 <hr style="border:1px solid">
 
-## testChangingInternalToExternalLoggingTriggerRollingUpdate
+## testChangingInternalToExternalLoggingDoesNotTriggerRollingUpdate
 
-**Description:** This test case checks that changing Logging configuration from internal to external triggers Rolling Update.
+**Description:** This test case checks that changing Logging configuration from internal to external will not trigger Rolling Update.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy Kafka cluster, without any logging related configuration. | Cluster is deployed. |
-| 2. | Modify Kafka by changing specification of logging to new external value. | Change in logging specification triggers Rolling Update. |
-| 3. | Modify ConfigMap to new logging format. | Change in logging specification triggers Rolling Update. |
+| 2. | Modify Kafka by changing specification of logging to new external value. | Change in logging specification doesn't trigger Rolling Update. |
+| 3. | Modify ConfigMap to new logging format. | Change in logging specification doesn't trigger Rolling Update. |
 
 **Labels:**
 
