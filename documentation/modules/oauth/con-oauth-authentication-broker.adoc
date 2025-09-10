@@ -266,16 +266,12 @@ Some of these properties apply only to certain authentication mechanisms or when
 
 For example, when using OAuth over `PLAIN`, access tokens are passed as `password` property values with or without an `$accessToken:` prefix.
 
-* If you configure a token endpoint (`tokenEndpointUri`) in the listener configuration, you need the prefix.
-* If you don't configure a token endpoint in the listener configuration, you don't need the prefix.
-The Kafka broker interprets the password as a raw access token.
+* If a `tokenEndpointUri` is configured in the listener, the `$accessToken:` prefix must be used.
+* If no `tokenEndpointUri` is configured, the prefix is not required, and the `password` is interpreted directly as a raw access token.
 
-If the `password` is set as the access token, the `username` must be set to the same principal name that the Kafka broker obtains from the access token.
+When an access token is used as the `password`, the `username` must match the principal name extracted from that token.
 You can specify username extraction options in your listener using the `userNameClaim`, `usernamePrefix`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, and `userInfoEndpointUri` properties.
 The username extraction process also depends on your authorization server; in particular, how it maps client IDs to account names.
-
-NOTE: The `PLAIN` mechanism does not support password grant authentication. 
-Use either client credentials (client ID + secret) or an access token for authentication.
 
 .Example optional configuration settings
 [source,yaml,subs="+quotes,attributes"]
@@ -296,15 +292,16 @@ Use either client credentials (client ID + secret) or an access token for authen
     enablePlain: true # <10>
     tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint> # <11>
     customClaimCheck: "@.custom == 'custom-value'" # <12>
-    clientAudience: audience # <13>
-    clientScope: scope # <14>
-    connectTimeoutSeconds: 60 # <15>
-    readTimeoutSeconds: 60 # <16>
-    httpRetries: 2 # <17>
-    httpRetryPauseMs: 300 # <18>
-    groupsClaim: "$.groups" # <19>
-    groupsClaimDelimiter: "," # <20>
-    includeAcceptHeader: false # <21>
+    clientGrantType: client_credentials # <13>
+    clientAudience: audience # <14>
+    clientScope: scope # <15>
+    connectTimeoutSeconds: 60 # <16>
+    readTimeoutSeconds: 60 # <17>
+    httpRetries: 2 # <18>
+    httpRetryPauseMs: 300 # <19>
+    groupsClaim: "$.groups" # <20>
+    groupsClaimDelimiter: "," # <21>
+    includeAcceptHeader: false # <22>
 ----
 <1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
 <2> If your authorization server provides an `aud` (audience) claim, and you want to enforce an audience check, set `checkAudience` to `true`. Audience checks identify the intended recipients of tokens. As a result, the Kafka broker will reject tokens that do not have its `clientId` in their `aud` claim. Default is `false`.
@@ -319,12 +316,13 @@ Use either client credentials (client ID + secret) or an access token for authen
 <11> Additional configuration for the `PLAIN` mechanism. If specified, clients can authenticate over `PLAIN` by passing an access token as the `password` using an `$accessToken:` prefix.
 For production, always use `https://` urls.
 <12> Additional custom rules can be imposed on the JWT access token during validation by setting this to a JsonPath filter query. If the access token does not contain the necessary data, it is rejected. When using the `introspectionEndpointUri`, the custom check is applied to the introspection endpoint response JSON.
-<13> An `audience` parameter passed to the token endpoint. An _audience_ is used  when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over `PLAIN` client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
-<14> A `scope` parameter passed to the token endpoint. A _scope_ is used when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over `PLAIN` client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
-<15> The connect timeout in seconds when connecting to the authorization server. The default value is 60.
-<16> The read timeout in seconds when connecting to the authorization server. The default value is 60.
-<17> The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
-<18> The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
-<19> A JsonPath query that is used to extract groups information from either the JWT token or the introspection endpoint response. This option is not set by default. By configuring this option, a custom authorizer can make authorization decisions based on user groups.
-<20> A delimiter used to parse groups information when it is returned as a single delimited string. The default value is ',' (comma).
-<21> Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
+<13> Grant type used when requesting a token from the authorization server. Applicable only with OAuth over PLAIN when the `username` and `password` in the client configuration are passed as the `clientId` and `secret`.  
+<14> An `audience` parameter passed to the token endpoint. An _audience_ is used  when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth over `PLAIN` client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
+<15> A `scope` parameter passed to the token endpoint. A _scope_ is used when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth over `PLAIN` client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
+<16> The connect timeout in seconds when connecting to the authorization server. The default value is 60.
+<17> The read timeout in seconds when connecting to the authorization server. The default value is 60.
+<18> The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
+<19> The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
+<20> A JsonPath query that is used to extract groups information from either the JWT token or the introspection endpoint response. This option is not set by default. By configuring this option, a custom authorizer can make authorization decisions based on user groups.
+<21> A delimiter used to parse groups information when it is returned as a single delimited string. The default value is ',' (comma).
+<22> Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
