@@ -63,7 +63,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
@@ -81,12 +80,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final ConnectBuildOperator connectBuildOperator;
-
-    /**
-     * Pattern for validation of restart connector annotation value.
-     * */
-    private static final Pattern STRIMZI_IO_RESTART_ARGS_PATTERN = Pattern.compile("^includeTasks," +
-            "onlyFailed$|^onlyFailed,includeTasks$|^includeTasks$|^onlyFailed$|^true$");
 
 
     /**
@@ -636,13 +629,37 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * strimzi.io/restart=includeTasks,wrongArg            # do not restart, fail and log error because wrongArg is not supported
      *
      * @param resource          Resource instance to check
+     * @param connectorName     Connector name of the connector to check
      *
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
     @SuppressWarnings({ "rawtypes" })
-    protected boolean restartAnnotationIsValid(CustomResource resource) {
+    protected boolean restartAnnotationIsValid(CustomResource resource, String connectorName) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "");
-        return STRIMZI_IO_RESTART_ARGS_PATTERN.matcher(restartValue).matches();
+        String[] values = restartValue.split(",");
+        boolean hasBooleanValue = false;
+        boolean hasCustomArgsValue = false;
+
+        for (String value : values) {
+            if (Boolean.TRUE.toString().equalsIgnoreCase(value.trim()) || Boolean.FALSE.toString().equalsIgnoreCase(value.trim())) {
+                hasBooleanValue = true;
+            } else if (STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG.equalsIgnoreCase(value.trim()) || STRIMZI_IO_RESTART_ONLY_FAILED_ARG.equalsIgnoreCase(value.trim())) {
+                hasCustomArgsValue = true;
+            } else {
+                // unsupported value
+                return false;
+            }
+        }
+
+        if (!hasBooleanValue && !hasCustomArgsValue) {
+            // needs at least one valid value, could be boolean (true/false) or custom args
+            return false;
+        } else if (hasBooleanValue && hasCustomArgsValue) {
+            // cannot mix boolean value with custom args
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -652,9 +669,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      *
      * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean restartAnnotationHasIncludeTasksArg(CustomResource resource) {
+    protected boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
                 .contains(STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
     }

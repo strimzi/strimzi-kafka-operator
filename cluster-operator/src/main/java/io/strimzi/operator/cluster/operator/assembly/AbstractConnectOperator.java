@@ -759,7 +759,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         if (hasRestartAnnotation(resource, connectorName)) {
 
-            if (!restartAnnotationIsValid(resource)) {
+            if (!restartAnnotationIsValid(resource, connectorName)) {
                 LOGGER.warnCr(reconciliation, "Invalid annotation format");
                 conditions.add(StatusUtils.buildWarningCondition("RestartConnector", "Invalid annotation format"));
                 return Future.succeededFuture(conditions);
@@ -1085,11 +1085,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Checks if restart annotation value is valid
      *
      * @param resource          Resource instance to check
+     * @param connectorName     Connector name of the connector to check
      *
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
     @SuppressWarnings({ "rawtypes" })
-    abstract boolean restartAnnotationIsValid(CustomResource resource);
+    abstract boolean restartAnnotationIsValid(CustomResource resource, String connectorName);
 
     /**
      * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument includeTasks in restart annotation.
@@ -1098,8 +1099,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
-    abstract boolean restartAnnotationHasIncludeTasksArg(CustomResource resource);
+    abstract boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource);
 
     /**
      * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument onlyFailedTasks in restart annotation.
@@ -1108,7 +1108,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
     abstract boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource);
 
     /**

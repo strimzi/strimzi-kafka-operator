@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
@@ -65,12 +64,6 @@ import static java.util.Collections.emptyMap;
 public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMaker2AssemblyOperator.class.getName());
 
-    /**
-     * Pattern for validation of MirrorMaker2 restart connector annotation value.
-     * */
-    private static final Pattern STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN = Pattern
-            .compile("^([a-zA-Z0-9-_]+):includeTasks,onlyFailed$|^([a-zA-Z0-9-_]+):onlyFailed,includeTasks$" +
-                    "|^([a-zA-Z0-9-_]+):includeTasks$|^([a-zA-Z0-9-_]+):onlyFailed$|^([a-zA-Z0-9-_]+)$");
     /**
      * Constructor
      *
@@ -335,9 +328,33 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
     @SuppressWarnings({ "rawtypes" })
-    protected boolean restartAnnotationIsValid(CustomResource resource) {
+    protected boolean restartAnnotationIsValid(CustomResource resource, String connectorName) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "");
-        return STRIMZI_IO_RESTART_CONNECTOR_MM2_ARGS_PATTERN.matcher(restartValue).matches();
+        String[] values = restartValue.split(":");
+
+        // invalid format, more than one ':' character
+        if (values.length != 1 && values.length != 2) {
+            return false;
+        }
+
+        //check if connector name is present and valid
+        if (!values[0].equalsIgnoreCase(connectorName)) {
+            return false;
+        }
+
+        // we expect that second item in array contains a lis of arguments to be used
+        if (values.length == 2) {
+            String[] argValues = values[1].split(",");
+
+            for (String arg : argValues) {
+                if (!STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG.equalsIgnoreCase(arg.trim()) && !STRIMZI_IO_RESTART_ONLY_FAILED_ARG.equalsIgnoreCase(arg.trim())) {
+                    // invalid argument found
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -347,9 +364,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean restartAnnotationHasIncludeTasksArg(CustomResource resource) {
+    protected boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource) {
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
                 .contains(STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
     }
