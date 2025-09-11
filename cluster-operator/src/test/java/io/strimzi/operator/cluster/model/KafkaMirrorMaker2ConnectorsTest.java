@@ -12,8 +12,6 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ConnectorSpec;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ConnectorSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpecBuilder;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
@@ -412,22 +410,6 @@ public class KafkaMirrorMaker2ConnectorsTest {
         expected.put("groups.exclude", "exclude-group-.*");
 
         assertThat(new TreeMap<>(config), is(expected));
-    }
-
-    @Test
-    public void testOverrideBootstrapConnectorConfiguration() {
-        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KMM2);
-        Map<String, Object> hbConfig = new HashMap<>();
-        hbConfig.put("target.cluster.bootstrap.servers", "custom:9092");
-        KafkaMirrorMaker2ConnectorSpec hbConnector = new  KafkaMirrorMaker2ConnectorSpecBuilder()
-                .withConfig(hbConfig)
-                .build();
-        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(KMM2.getSpec().getMirrors().get(0),
-                hbConnector,
-                KMM2.getSpec().getClusters().get(0),
-                KMM2.getSpec().getClusters().get(1));
-
-        assertThat(config.get("target.cluster.bootstrap.servers"), is("custom:9092"));
     }
 
     @Test

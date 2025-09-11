@@ -340,7 +340,7 @@ public class ClusterCaRenewalTest {
         private boolean isCertExpiring;
 
         public MockedClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName, Secret caCertSecret, Secret caKeySecret, int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
-            super(reconciliation, certManager, passwordGenerator, commonName, caCertSecret, caKeySecret, validityDays, renewalDays, generateCa, CertificateManagerType.STRIMZI_IO, policy);
+            super(reconciliation, certManager, passwordGenerator, commonName, caCertSecret, caKeySecret, validityDays, renewalDays, generateCa, CertificateManagerType.STRIMZI_IO, policy, null);
         }
 
         @Override

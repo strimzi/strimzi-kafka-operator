@@ -36,7 +36,7 @@ public class CertificateRenewalTest {
     public void testRenewalOfDeploymentCertificatesWithNullSecret() throws IOException {
         CertAndKey newCertAndKey = new CertAndKey("new-key".getBytes(), "new-cert".getBytes(), "new-truststore".getBytes(), "new-keystore".getBytes(), "new-password");
         ClusterCa clusterCaMock = mock(ClusterCa.class);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.getSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
         when(clusterCaMock.caCertGenerationFullAnnotation()).thenReturn(Map.entry(ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
         String namespace = "my-namespace";
         String secretName = "my-secret";
@@ -65,7 +65,7 @@ public class CertificateRenewalTest {
         ClusterCa clusterCaMock = mock(ClusterCa.class);
         when(clusterCaMock.certRenewed()).thenReturn(true);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(false);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.getSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
         when(clusterCaMock.caCertGenerationFullAnnotation()).thenReturn(Map.entry(ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
         String namespace = "my-namespace";
         String secretName = "my-secret";
@@ -94,7 +94,7 @@ public class CertificateRenewalTest {
         ClusterCa clusterCaMock = mock(ClusterCa.class);
         when(clusterCaMock.certRenewed()).thenReturn(false);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(true);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.getSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
         when(clusterCaMock.caCertGenerationFullAnnotation()).thenReturn(Map.entry(ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
         String namespace = "my-namespace";
         String secretName = "my-secret";
@@ -123,7 +123,7 @@ public class CertificateRenewalTest {
         ClusterCa clusterCaMock = mock(ClusterCa.class);
         when(clusterCaMock.certRenewed()).thenReturn(false);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(true);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.getSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
         when(clusterCaMock.caCertGenerationFullAnnotation()).thenReturn(Map.entry(ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
         String namespace = "my-namespace";
         String secretName = "my-secret";
@@ -154,7 +154,7 @@ public class CertificateRenewalTest {
         ClusterCa clusterCaMock = mock(ClusterCa.class);
         when(clusterCaMock.certRenewed()).thenReturn(false);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(false);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.getSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
         when(clusterCaMock.caCertGenerationFullAnnotation()).thenReturn(Map.entry(ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
         String namespace = "my-namespace";
         String secretName = "my-secret";

@@ -32,6 +32,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="com.fasterxml.jackson" />
         <allow pkg="io.fabric8.zjsonpatch" />
         <allow pkg="io.fabric8.kubernetes.api.model" />
+        <allow pkg="io.fabric8.certmanager.api.model" />
         <allow class="io.fabric8.kubernetes.client.utils.Serialization" />
         <allow class="io.fabric8.kubernetes.client.CustomResource" />
 
@@ -59,6 +60,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="io.fabric8.zjsonpatch" />
         <allow pkg="io.fabric8.openshift.api.model" />
         <allow pkg="io.fabric8.kubernetes.api.model" />
+        <allow pkg="io.fabric8.certmanager.api.model" />
         <allow pkg="io.vertx.core.json" />
         <allow class="edu.umd.cs.findbugs.annotations.SuppressFBWarnings" />
 

@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.model.Ca.CA_CRT;
@@ -1419,11 +1420,11 @@ public class CaReconcilerReconcileCasTest {
 
         CertAndKey initialClusterCa = generateCa(clusterCa, "cert-manager-ca");
         Secret initialUserManagedClusterCaCertSecret = createSecret(clusterCaSecretName, Map.of(CA_CRT, initialClusterCa.certAsBase64String()), Map.of());
-        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
+        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
 
         CertAndKey initialClientsCa = generateCa(clientsCa, "cert-manager-ca");
         Secret initialUserManagedClientsCaCertSecret = createSecret(clientsCaSecretName, Map.of(CA_CRT, initialClientsCa.certAsBase64String()), Map.of());
-        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
+        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
 
         CertAndKey clusterOperatorCertAndKey = generateClusterOperatorSignedCert(initialClusterCa, clusterCa.getValidityDays());
         Secret clusterOperatorSecret = createSecret(KafkaResources.clusterOperatorCertsSecretName(NAME),
@@ -1500,10 +1501,10 @@ public class CaReconcilerReconcileCasTest {
         CertAndKey initialClientsCa = generateCa(clientsCa, "ca");
         CertAndKey renewedClientsCa = renewCaCert(initialClientsCa, clientsCa.getValidityDays());
 
-        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
+        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
         Secret renewedClusterCaCertSecret = createSecret(clusterCaSecretName, Map.of(CA_CRT, renewedClusterCa.certAsBase64String()), Map.of());
 
-        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
+        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
         Secret renewedClientsCaCertSecret = createSecret(clientsCaSecretName, Map.of(CA_CRT, renewedClientsCa.certAsBase64String()), Map.of());
 
         CertAndKey clusterOperatorCertAndKey = generateClusterOperatorSignedCert(initialClusterCa, clusterCa.getValidityDays());
@@ -1581,10 +1582,10 @@ public class CaReconcilerReconcileCasTest {
         CertAndKey initialClientsCa = generateCa(clientsCa, "ca");
         CertAndKey renewedClientsCa = generateCa(clientsCa, "ca");
 
-        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
+        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
         Secret renewedClusterCaCertSecret = createSecret(clusterCaSecretName, Map.of(CA_CRT, renewedClusterCa.certAsBase64String()), Map.of());
 
-        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
+        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
         Secret renewedClientsCaCertSecret = createSecret(clientsCaSecretName, Map.of(CA_CRT, renewedClientsCa.certAsBase64String()), Map.of());
 
         CertAndKey clusterOperatorCertAndKey = generateClusterOperatorSignedCert(initialClusterCa, clusterCa.getValidityDays());
@@ -1614,7 +1615,14 @@ public class CaReconcilerReconcileCasTest {
                     assertThat(clusterCaAnnotations.get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
                     assertThat(clusterCaAnnotations.get(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION), is("1"));
                     assertThat(clusterCaAnnotations.get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is(CertUtils.getCertificateThumbprint(Ca.x509Certificate(renewedClusterCa.cert()))));
+                    Map<String, String> clusterCaCertData = clusterCaCert.getValue().getData();
+                    assertThat(clusterCaCertData, is(aMapWithSize(2)));
                     assertThat(clusterCaCert.getValue().getData().get(CA_CRT), is(renewedClusterCaCertSecret.getData().get(CA_CRT)));
+                    clusterCaCertData.remove(CA_CRT);
+                    Pattern oldCaCertKeyPattern = Pattern.compile("ca-[0-9]+-[0-9]+-[0-9]+T[0-9]+-[0-9]+-[0-9]+Z\\.crt");
+                    String oldCaCertKey = clusterCaCertData.keySet().stream().findFirst().orElse("");
+                    assertThat(oldCaCertKeyPattern.matcher(oldCaCertKey).matches(), is(true));
+                    assertThat(clusterCaCertData.get(oldCaCertKey), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
 
                     assertThat(clientsCaCert.getValue(), is(notNullValue()));
                     Map<String, String> clientsCaAnnotations = clientsCaCert.getValue().getMetadata().getAnnotations();
@@ -1662,10 +1670,10 @@ public class CaReconcilerReconcileCasTest {
         CertAndKey initialClientsCa = generateCa(clientsCa, "ca");
         CertAndKey renewedClientsCa = renewCaCert(initialClientsCa, clientsCa.getValidityDays());
 
-        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
+        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
         Secret renewedClusterCaCertSecret = createSecret(clusterCaSecretName, Map.of(CA_CRT, renewedClusterCa.certAsBase64String()), Map.of());
 
-        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
+        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
         Secret renewedClientsCaCertSecret = createSecret(clientsCaSecretName, Map.of(CA_CRT, renewedClientsCa.certAsBase64String()), Map.of());
 
         secrets.add(initialClusterCaCertSecret);
@@ -1737,10 +1745,10 @@ public class CaReconcilerReconcileCasTest {
         CertAndKey initialClientsCa = generateCa(clientsCa, "ca");
         CertAndKey renewedClientsCa = generateCa(clientsCa, "ca");
 
-        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
+        Secret initialClusterCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), initialClusterCa.certAsBase64String(), true);
         Secret renewedClusterCaCertSecret = createSecret(clusterCaSecretName, Map.of(CA_CRT, renewedClusterCa.certAsBase64String()), Map.of());
 
-        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCertManagerCaCertSecret(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
+        Secret initialClientsCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), initialClientsCa.certAsBase64String(), false);
         Secret renewedClientsCaCertSecret = createSecret(clientsCaSecretName, Map.of(CA_CRT, renewedClientsCa.certAsBase64String()), Map.of());
 
         secrets.add(initialClusterCaCertSecret);
