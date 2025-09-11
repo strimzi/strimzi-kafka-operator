@@ -206,7 +206,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         if (KafkaConfiguration.isCustomConfigurationOption(entry.name(), configModel)) {
             // we are deleting custom option
             LOGGER.traceCr(reconciliation, "removing custom property {}", entry.name());
-        } else if (entry.isDefault()) {
+        } else if (entry.isDefault() || ConfigEntry.ConfigSource.DYNAMIC_DEFAULT_BROKER_CONFIG.equals(entry.source())) {
             // entry is in current, is not in desired, is default -> it uses default value, skip.
             // Some default properties do not have set ConfigEntry.ConfigSource.DEFAULT_CONFIG and thus
             // we are removing property. That might cause redundant RU. To fix this we would have to add defaultValue
