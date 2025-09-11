@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateManagerType;
+import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
@@ -31,6 +32,7 @@ import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
@@ -88,6 +90,7 @@ public class CaReconciler {
     private final CertManager certManager;
     private final PasswordGenerator passwordGenerator;
     private final KubernetesRestartEventPublisher eventPublisher;
+    private final CertManagerCertificateOperator certManagerCertificateOperator;
 
     // Fields based on the Kafka CR required for the reconciliation
     private final List<String> maintenanceWindows;
@@ -104,6 +107,7 @@ public class CaReconciler {
     private ClientsCa clientsCa;
     private Secret clusterCaCertSecret;
     private Secret coSecret;
+    private CertificateManagerType clusterCaCertManagerType;
 
     /* test */ boolean isClusterCaNeedFullTrust;
     /* test */ boolean isClusterCaFullyUsed;
@@ -136,6 +140,7 @@ public class CaReconciler {
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
         this.podOperator = supplier.podOperations;
+        this.certManagerCertificateOperator = supplier.certManagerCertificateOperator;
 
         this.adminClientProvider = supplier.adminClientProvider;
         this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
@@ -212,7 +217,8 @@ public class CaReconciler {
     public Future<CaReconciliationResult> reconcile(Clock clock)    {
         return reconcileCas(clock)
                 .compose(i -> verifyClusterCaFullyTrustedAndUsed())
-                .compose(i -> reconcileClusterOperatorSecret(clock))
+                .compose(i -> maybeReconcileClusterOperatorCMCertificate())
+                .compose(certManagerSecret -> reconcileClusterOperatorSecret(clock, certManagerSecret))
                 .compose(i -> maybeRollingUpdateForNewClusterCaKey())
                 .compose(i -> maybeRemoveOldClusterCaCertificates())
                 .map(i -> new CaReconciliationResult(clusterCa, clientsCa));
@@ -267,8 +273,12 @@ public class CaReconciler {
 
                     boolean generateClusterCa = clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority();
                     boolean generateClientsCa = clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority();
-                    CertificateManagerType clusterCaCertManagerType = clusterCaConfig != null ? clusterCaConfig.getType() : CertificateManagerType.STRIMZI_IO;
+                    clusterCaCertManagerType = clusterCaConfig != null ? clusterCaConfig.getType() : CertificateManagerType.STRIMZI_IO;
                     CertificateManagerType clientsCaCertManagerType = clientsCaConfig != null ? clientsCaConfig.getType() : CertificateManagerType.STRIMZI_IO;
+                    IssuerRef issuerRef = null;
+                    if (clusterCaConfig != null && CertificateManagerType.CERT_MANAGER_IO.equals(clusterCaCertManagerType)) {
+                        issuerRef = clusterCaConfig.getCertManager() == null ?  null : clusterCaConfig.getCertManager().getIssuerRef();
+                    }
 
                     LOGGER.infoCr(reconciliation, "Reconciling Cluster CA. Generate CA is " + generateClusterCa + ", CertificateManagerType is " + clusterCaCertManagerType);
                     LOGGER.infoCr(reconciliation, "Reconciling Clients CA. Generate CA is " + generateClientsCa + ", CertificateManagerType is " + clientsCaCertManagerType);
@@ -281,7 +291,8 @@ public class CaReconciler {
                             ModelUtils.getRenewalDays(clusterCaConfig),
                             generateClusterCa,
                             clusterCaCertManagerType,
-                            clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
+                            clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null,
+                            issuerRef);
 
 
                     clientsCa = new ClientsCa(reconciliation, certManager, passwordGenerator,
@@ -291,7 +302,8 @@ public class CaReconciler {
                             ModelUtils.getRenewalDays(clientsCaConfig),
                             generateClientsCa,
                             clientsCaCertManagerType,
-                            clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
+                            clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null,
+                            issuerRef);
 
                     List<Future<ReconcileResult<Secret>>> secretReconciliations = new ArrayList<>(4);
 
@@ -375,6 +387,30 @@ public class CaReconciler {
     }
 
     /**
+     * If the Cluster CA is using cert-manager, asynchronously reconciles the cert-manager
+     * Certificate used by the cluster operator to connect to Kafka.
+     * <p>
+     * This method also waits for the Certificate to be ready.
+     */
+    private Future<Secret> maybeReconcileClusterOperatorCMCertificate() {
+        if (CertificateManagerType.CERT_MANAGER_IO.equals(clusterCaCertManagerType)) {
+            return certManagerCertificateOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
+                    CertUtils.buildCertManagerCertificate(
+                            clusterCa,
+                            reconciliation.namespace(),
+                            KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
+                            "cluster-operator",
+                            clusterOperatorSecretLabels,
+                            ownerRef
+                    ))
+                    .compose(v -> certManagerCertificateOperator.waitForReady(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name())))
+                    .compose(v -> secretOperator.getAsync(reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()) + "-cm"));
+        } else {
+            return Future.succeededFuture(null);
+        }
+    }
+
+    /**
      * Asynchronously reconciles the cluster operator Secret used to connect to Kafka.
      * This only updates the Secret if the latest Cluster CA is fully trusted across the cluster, otherwise if
      * something goes wrong during reconciliation when the next loop starts it won't be able to connect to Kafka.
@@ -382,7 +418,7 @@ public class CaReconciler {
      * @param clock    The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *                 That time is used for checking maintenance windows
      */
-    Future<Void> reconcileClusterOperatorSecret(Clock clock) {
+    Future<Void> reconcileClusterOperatorSecret(Clock clock, Secret certManagerSecret) {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))
                 .compose(oldSecret -> {
                     coSecret = oldSecret;
@@ -391,22 +427,31 @@ public class CaReconciler {
                         return Future.succeededFuture();
                     }
 
-                    coSecret = CertUtils.buildTrustedCertificateSecret(
-                            reconciliation,
-                            clusterCa,
-                            coSecret,
-                            reconciliation.namespace(),
-                            KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
-                            "cluster-operator",
-                            "cluster-operator",
-                            clusterOperatorSecretLabels,
-                            ownerRef,
-                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())
-                    );
-
-                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()), coSecret)
-                            .mapEmpty();
-                });
+                    if (clusterCaCertManagerType == CertificateManagerType.CERT_MANAGER_IO) {
+                        coSecret = CertUtils.buildTrustedCertificateSecretFromCertManager(
+                                clusterCa,
+                                certManagerSecret,
+                                reconciliation.namespace(),
+                                KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
+                                "cluster-operator",
+                                clusterOperatorSecretLabels,
+                                ownerRef
+                        );
+                    } else {
+                        coSecret = CertUtils.buildTrustedCertificateSecret(
+                                reconciliation,
+                                clusterCa,
+                                coSecret,
+                                reconciliation.namespace(),
+                                KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
+                                "cluster-operator",
+                                "cluster-operator",
+                                clusterOperatorSecretLabels,
+                                ownerRef,
+                                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
+                    }
+                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()), coSecret);
+                }).mapEmpty();
     }
 
     /**

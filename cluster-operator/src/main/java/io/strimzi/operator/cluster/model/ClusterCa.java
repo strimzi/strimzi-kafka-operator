@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.common.CertificateManagerType;
+import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.certs.CertAndKey;
@@ -57,7 +58,7 @@ public class ClusterCa extends Ca {
      * @param caKeySecret           Name of the CA private key secret
      */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
-        this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, true, CertificateManagerType.STRIMZI_IO, null);
+        this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, true, CertificateManagerType.STRIMZI_IO, null, null);
     }
 
     /**
@@ -74,6 +75,7 @@ public class ClusterCa extends Ca {
      * @param generateCa             Flag indicating if Strimzi CA should be generated or custom CA is used
      * @param certificateManagerType Certificate manager type
      * @param policy                 Renewal policy
+     * @param issuerRef              Reference to issuer for issuing certificates through other services like cert-manager
      */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager,
                      PasswordGenerator passwordGenerator,
@@ -83,13 +85,15 @@ public class ClusterCa extends Ca {
                      int validityDays,
                      int renewalDays,
                      boolean generateCa,
-                     CertificateManagerType certificateManagerType, CertificateExpirationPolicy policy) {
+                     CertificateManagerType certificateManagerType,
+                     CertificateExpirationPolicy policy,
+                     IssuerRef issuerRef) {
         super(reconciliation, certManager, passwordGenerator,
                 "cluster-ca",
                 AbstractModel.clusterCaCertSecretName(clusterName),
                 clusterCaCert,
                 AbstractModel.clusterCaKeySecretName(clusterName),
-                clusterCaKey, validityDays, renewalDays, generateCa, certificateManagerType, policy);
+                clusterCaKey, validityDays, renewalDays, generateCa, certificateManagerType, policy, issuerRef);
     }
 
     @Override
@@ -365,7 +369,7 @@ public class ClusterCa extends Ca {
      */
     public void maybeDeleteOldCerts() {
         // the operator doesn't have to touch Secret provided by the user with his own custom CA certificate
-        if (this.generateCa) {
+        if (this.generateCa || CertificateManagerType.CERT_MANAGER_IO.equals(this.certificateManagerType)) {
             if (removeCerts(this.caCertData, entry -> OLD_CA_CERT_PATTERN.matcher(entry.getKey()).matches())) {
                 LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", this);
                 this.caCertsRemoved = true;
