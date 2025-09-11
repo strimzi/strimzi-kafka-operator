@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodDNSConfig;
@@ -38,8 +39,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
-    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig", 
-    "enableServiceLinks", "tmpDirSizeLimit", "volumes"})
+    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig",
+    "enableServiceLinks", "tmpDirSizeLimit", "volumes", "additionalContainers"})
 @EqualsAndHashCode
 @ToString
 @DescriptionFile
@@ -60,6 +61,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private String tmpDirSizeLimit;
     private List<AdditionalVolume> volumes;
     private Map<String, Object> additionalProperties;
+    private List<Container> additionalContainers;
 
     @Description("Metadata applied to the resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -233,6 +235,17 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
 
     public void setVolumes(List<AdditionalVolume> volumes) {
         this.volumes = volumes;
+    }
+
+    @Description("Additional sidecar containers that can be added to the pod.")
+    @KubeLink(group = "core", version = "v1", kind = "container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<Container> getAdditionalContainers() {
+        return additionalContainers;
+    }
+
+    public void setAdditionalContainers(List<Container> additionalContainers) {
+        this.additionalContainers = additionalContainers;
     }
 
     @Override

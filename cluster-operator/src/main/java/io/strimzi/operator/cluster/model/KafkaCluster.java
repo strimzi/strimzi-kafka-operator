@@ -92,6 +92,8 @@ import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.server.common.MetadataVersion;
+import io.strimzi.operator.cluster.model.SidecarUtils;
+import io.strimzi.operator.cluster.model.SecurityContextUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -348,6 +350,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 result.ownerReference,
                 kafkaClusterSpec
         );
+        
+        // Validate sidecar containers - this will throw InvalidResourceException if validation fails
+        validateSidecarContainers(reconciliation, kafkaClusterSpec, listeners, result.jmx, result.metrics);
 
         // Handle Kafka broker configuration
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
@@ -1211,7 +1216,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             KafkaResources.brokersServiceName(cluster),
                             getMergedAffinity(pool),
                             ContainerUtils.listOrNull(createInitContainer(imagePullPolicy, pool)),
-                            List.of(createContainer(imagePullPolicy, pool)),
+                            createAllContainers(imagePullPolicy, pool),
                             getPodSetVolumes(node, pool.storage, pool.templatePod, isOpenShift),
                             imagePullSecrets,
                             securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(pool.storage, pool.templatePod))
@@ -1610,6 +1615,110 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         );
     }
 
+    /**
+     * Creates sidecar containers from the pod template
+     *
+     * @param templatePod Pod template containing sidecar container definitions
+     * @param imagePullPolicy Image pull policy to apply to sidecar containers
+     * @return List of sidecar containers
+     */
+    private List<Container> createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy) {
+    if (templatePod == null || templatePod.getAdditionalContainers() == null) {
+        return new ArrayList<>();
+    }
+    
+    List<Container> sidecarContainers = new ArrayList<>();
+    
+    for (Container sidecar : templatePod.getAdditionalContainers()) {
+        // Apply image pull policy if not set
+        if (sidecar.getImagePullPolicy() == null && imagePullPolicy != null) {
+            sidecar.setImagePullPolicy(ContainerUtils.determineImagePullPolicy(imagePullPolicy, sidecar.getImage()));
+        }
+        
+        // Apply security context inheritance if needed
+        if (sidecar.getSecurityContext() == null && templatePod.getSecurityContext() != null) {
+            sidecar.setSecurityContext(SecurityContextUtils.inheritFromPod(templatePod));
+        }
+        
+        sidecarContainers.add(sidecar);
+    }
+    
+    return sidecarContainers;
+}
+
+    /**
+     * Validates sidecar container configurations against Strimzi internal definitions
+     * Called during CR processing in fromCrd()
+     *
+     * @param kafkaClusterSpec KafkaClusterSpec containing the template with sidecar containers
+     * @param listeners List of configured listeners (needed for port validation)
+     * @param jmx JMX model (needed for port validation)  
+     * @param metrics Metrics model (needed for port validation)
+     */
+    private static void validateSidecarContainers(Reconciliation reconciliation,
+                                                KafkaClusterSpec kafkaClusterSpec,
+                                                List<GenericKafkaListener> listeners,
+                                                JmxModel jmx,
+                                                MetricsModel metrics) {
+        if (kafkaClusterSpec.getTemplate() == null 
+                || kafkaClusterSpec.getTemplate().getPod() == null
+                || kafkaClusterSpec.getTemplate().getPod().getAdditionalContainers() == null) {
+            return;
+        }
+
+        // Collect all ports that will be used by the main Kafka container
+        Set<Integer> usedPorts = new HashSet<>();
+        
+        // Add listener ports
+        for (GenericKafkaListener listener : listeners) {
+            usedPorts.add(listener.getPort());
+        }
+        
+        // Add JMX ports if enabled
+        if (jmx != null) {
+            usedPorts.addAll(jmx.containerPorts().stream()
+                    .map(ContainerPort::getContainerPort)
+                    .collect(Collectors.toSet()));
+        }
+        
+        // Add metrics port if enabled
+        if (metrics != null) {
+            usedPorts.add(MetricsModel.METRICS_PORT);
+        }
+        
+        // Validate sidecar containers
+        SidecarUtils.validateSidecarContainers(
+                reconciliation,
+                kafkaClusterSpec.getTemplate().getPod().getAdditionalContainers(),
+                usedPorts
+        );
+        
+        // Validate volume references
+        SidecarUtils.validateVolumeReferences(
+                reconciliation,
+                kafkaClusterSpec.getTemplate().getPod().getAdditionalContainers(),
+                kafkaClusterSpec.getTemplate().getPod().getVolumes()
+        );
+    }
+
+    /**
+     * Creates all containers for a Kafka pod including the main Kafka container and any sidecar containers
+     *
+     * @param imagePullPolicy Image pull policy configuration
+     * @param pool Node pool for which containers are being created
+     * @return List of all containers for the pod
+     */
+    private List<Container> createAllContainers(ImagePullPolicy imagePullPolicy, KafkaPool pool) {
+        List<Container> allContainers = new ArrayList<>();
+        
+        // Add main Kafka container
+        allContainers.add(createContainer(imagePullPolicy, pool));
+        
+        // Add sidecar containers - no conversion needed!
+        allContainers.addAll(createSidecarContainers(pool.templatePod, imagePullPolicy));
+
+        return allContainers;
+    }
     /**
      * Generates environment variables for the Kafka container
      *
