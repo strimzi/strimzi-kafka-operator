@@ -45,7 +45,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -123,6 +125,21 @@ public class KafkaClusterListenersTest {
                 .withRoles(ProcessRoles.BROKER)
             .endSpec()
             .build();
+
+    private final static Map<Integer, Map<String, String>> ADVERTISED_HOSTNAMES = Map.of(
+            3, Map.of("PLAIN_9092", "mixed-3", "TLS_9093", "mixed-3", "EXTERNAL_9094", "mixed-3"),
+            4, Map.of("PLAIN_9092", "mixed-4", "TLS_9093", "mixed-4", "EXTERNAL_9094", "mixed-4"),
+            5, Map.of("PLAIN_9092", "broker-5", "TLS_9093", "broker-5", "EXTERNAL_9094", "broker-5"),
+            6, Map.of("PLAIN_9092", "broker-6", "TLS_9093", "broker-6", "EXTERNAL_9094", "broker-6"),
+            7, Map.of("PLAIN_9092", "broker-7", "TLS_9093", "broker-7", "EXTERNAL_9094", "broker-7")
+    );
+    private final static Map<Integer, Map<String, String>> ADVERTISED_PORTS = Map.of(
+            3, Map.of("PLAIN_9092", "9092", "TLS_9093", "10003", "EXTERNAL_9094", "20003"),
+            4, Map.of("PLAIN_9092", "9092", "TLS_9093", "10004", "EXTERNAL_9094", "20004"),
+            5, Map.of("PLAIN_9092", "9092", "TLS_9093", "10005", "EXTERNAL_9094", "20005"),
+            6, Map.of("PLAIN_9092", "9092", "TLS_9093", "10006", "EXTERNAL_9094", "20006"),
+            7, Map.of("PLAIN_9092", "9092", "TLS_9093", "10007", "EXTERNAL_9094", "20007")
+    );
 
     //////////
     // Utility methods
@@ -2307,33 +2324,14 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        String brokerConfig = kc.generatePerBrokerConfiguration(5, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
 
-        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            // Volumes
-            List<Volume> volumes = pod.getSpec().getVolumes();
-            Volume vol = volumes.stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
+        assertThat(brokerConfig, is(containsString("listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-secret:my-external-cert.crt}")));
+        assertThat(brokerConfig, is(containsString("listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-secret:my.key}")));
+        assertThat(brokerConfig, is(containsString("listener.name.external-9094.ssl.keystore.type=PEM")));
 
-            // Volume mounts
-            Container container = pod.getSpec().getContainers().stream().findFirst().orElseThrow();
-            VolumeMount mount = container.getVolumeMounts().stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
-
-            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(vol, is(nullValue()));
-                assertThat(mount, is(nullValue()));
-            } else {
-                assertThat(vol, is(notNullValue()));
-                assertThat(vol.getSecret().getSecretName(), is(secret));
-                assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
-                assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
-                assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
-                assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
-
-                assertThat(mount, is(notNullValue()));
-                assertThat(mount.getName(), is("custom-external-9094-certs"));
-                assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-external-9094-certs"));
-            }
-        }));
+        String controllerConfig = kc.generatePerBrokerConfiguration(0, Map.of(0, Map.of("CONTROLPLANE_9090", "controller-0")), Map.of(0, Map.of("CONTROLPLANE_9090", "9090")));
+        assertThat(controllerConfig, not(containsString("listener.name.external-9094")));
     }
 
     @Test
@@ -2363,32 +2361,13 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        String mixedConfig = kc.generatePerBrokerConfiguration(4, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
 
-        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            // Test volumes
-            List<Volume> volumes = pod.getSpec().getVolumes();
-            Volume vol = volumes.stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
+        assertThat(mixedConfig, is(containsString("listener.name.tls-9093.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-secret:my-external-cert.crt}")));
+        assertThat(mixedConfig, is(containsString("listener.name.tls-9093.ssl.keystore.key=${strimzisecrets:namespace/my-secret:my.key}")));
+        assertThat(mixedConfig, is(containsString("listener.name.tls-9093.ssl.keystore.type=PEM")));
 
-            // Test volume mounts
-            Container container = pod.getSpec().getContainers().stream().findAny().orElseThrow();
-            VolumeMount mount = container.getVolumeMounts().stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
-
-            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(vol, is(nullValue()));
-                assertThat(mount, is(nullValue()));
-            } else {
-                assertThat(vol, is(notNullValue()));
-                assertThat(vol.getSecret().getSecretName(), is(secret));
-                assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
-                assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
-                assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
-                assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
-
-                assertThat(mount, is(notNullValue()));
-                assertThat(mount.getName(), is("custom-tls-9093-certs"));
-                assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-tls-9093-certs"));
-            }
-        }));
+        String controllerConfig = kc.generatePerBrokerConfiguration(0, Map.of(0, Map.of("CONTROLPLANE_9090", "controller-0")), Map.of(0, Map.of("CONTROLPLANE_9090", "9090")));
+        assertThat(controllerConfig, not(containsString("listener.name.tls-9093")));
     }
 }
