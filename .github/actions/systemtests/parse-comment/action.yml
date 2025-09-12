@@ -77,7 +77,14 @@ runs:
             // Auto-run smoke tests on PR workflow changes
             shouldRun = true;
           } else if (ev === 'issue_comment' && context.payload?.issue?.pull_request) {
-            shouldRun = /^\s*\/gha\s+run\b/i.test(body || '');
+            // For issue comments on PRs, check if PR is closed first
+            const issueState = context.payload?.issue?.state;
+            if (issueState === 'closed') {
+              core.info(`PR #${context.payload.issue.number} is closed, skipping execution`);
+              shouldRun = false;
+            } else {
+              shouldRun = /^\s*\/gha\s+run\b/i.test(body || '');
+            }
           }
 
           core.setOutput('shouldRun', String(shouldRun));
@@ -134,8 +141,8 @@ runs:
           };
 
           const DEFAULTS = {
-            pipelines:    'regression,upgrade',
-            profiles:     'operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade',
+            pipelines:    '',
+            profiles:     '',
             featureGate:  '+DummyFeatureGate',
             rbacScope:    'CLUSTER',
             installType:  'yaml',

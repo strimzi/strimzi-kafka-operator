@@ -39,7 +39,7 @@ scenarios:
     fixture: .github/tests/events/parse-comment/issue_comment_3.json
     expectations:
       pipelines: ""
-      profiles: "operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
+      profiles: ""
       tests: ""
       groups: "nodeport"
       kafka: "4.1.0"
@@ -90,7 +90,7 @@ scenarios:
     fixture: .github/tests/events/parse-comment/issue_comment_6.json
     expectations:
       pipelines: ""
-      profiles: "operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
+      profiles: ""
       tests: ""
       groups: ""
       kafka: "latest"
@@ -107,7 +107,7 @@ scenarios:
     fixture: .github/tests/events/parse-comment/issue_comment_7.json
     expectations:
       pipelines: ""
-      profiles: "operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade"
+      profiles: ""
       tests: ""
       groups: ""
       kafka: "latest"
@@ -160,6 +160,23 @@ scenarios:
       pipelines: "regression,upgrade"
       profiles: ""
       tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: ""
+      strimzi_rbac_scope: ""
+      cluster_operator_install_type: "yaml"
+      should_run: "true"
+      kube: "latest"
+      release: "latest"
+
+  - id: comment-random-tests
+    description: "Pass tests param without specifying profile or pipeline"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_11.json
+    expectations:
+      pipelines: ""
+      profiles: ""
+      tests: "random-tests"
       groups: ""
       kafka: "latest"
       strimzi_feature_gates: ""
@@ -228,6 +245,57 @@ scenarios:
       tests: ""
       groups: ""
       kafka: "3.8.0"
+      strimzi_feature_gates: ""
+      strimzi_rbac_scope: ""
+      cluster_operator_install_type: "yaml"
+      should_run: "false"
+      kube: "latest"
+      release: "latest"
+
+  - id: comment-closed-pr
+    description: "Comment on closed PR should not run"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_closed_pr.json
+    expectations:
+      pipelines: "regression,upgrade"
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: ""
+      strimzi_rbac_scope: ""
+      cluster_operator_install_type: "yaml"
+      should_run: "false"
+      kube: "latest"
+      release: "latest"
+
+  - id: comment-closed-issue
+    description: "Comment on closed issue should not run"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_closed_issue.json
+    expectations:
+      pipelines: ""
+      profiles: "operators,operands"
+      tests: ""
+      groups: ""
+      kafka: "latest"
+      strimzi_feature_gates: ""
+      strimzi_rbac_scope: ""
+      cluster_operator_install_type: "yaml"
+      should_run: "false"
+      kube: "latest"
+      release: "latest"
+
+  - id: comment-closed-pr-random-comment
+    description: "Comment on closed issue should not run"
+    event: issue_comment
+    fixture: .github/tests/events/parse-comment/issue_comment_closed_pr_random_comment.json
+    expectations:
+      pipelines: ""
+      profiles: ""
+      tests: ""
+      groups: ""
+      kafka: "latest"
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
