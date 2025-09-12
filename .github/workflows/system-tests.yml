@@ -59,13 +59,9 @@ jobs:
       - name: Determine checkout ref
         id: determine_ref
         uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ steps.determine_ref.outputs.ref }}
-      # TODO - think about this how to handle it after check-rights
       - name: Parse Comment
         id: parse
-        uses: ./.github/actions/systemtests/parse-comment
+        uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
         with:
           # Parameters from manual trigger via UI
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
