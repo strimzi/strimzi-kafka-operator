@@ -42,6 +42,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     private final Reconciliation reconciliation;
     private final Collection<AlterConfigOp> brokerConfigDiff;
     private final Map<String, ConfigModel> configModel;
+    private final short elrVersion;
 
     /**
      * These options are skipped because they contain placeholders
@@ -73,11 +74,18 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
      * @param desired           Desired configuration
      * @param kafkaVersion      Kafka version
      * @param brokerNodeRef     Broker node reference
+     * @param elrVersion        If Eligible Leader Replicas (ELR) is enabled on the Kafka cluster
      */
-    protected KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, NodeRef brokerNodeRef) {
+    protected KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, NodeRef brokerNodeRef, short elrVersion) {
         this.reconciliation = reconciliation;
+        this.elrVersion = elrVersion;
         this.configModel = KafkaConfiguration.readConfigModel(kafkaVersion);
         this.brokerConfigDiff = diff(brokerNodeRef, desired, brokerConfigs, configModel);
+    }
+
+    // TODO: to be removed. Having this ctor to avoid changes in all tests for now, until the solution is approved
+    protected KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, NodeRef brokerNodeRef) {
+        this(reconciliation, brokerConfigs, desired, kafkaVersion, brokerNodeRef, (short) 0);
     }
 
     /**
@@ -206,7 +214,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         if (KafkaConfiguration.isCustomConfigurationOption(entry.name(), configModel)) {
             // we are deleting custom option
             LOGGER.traceCr(reconciliation, "removing custom property {}", entry.name());
-        } else if (entry.isDefault() || ConfigEntry.ConfigSource.DYNAMIC_DEFAULT_BROKER_CONFIG.equals(entry.source())) {
+        } else if (entry.isDefault()) {
             // entry is in current, is not in desired, is default -> it uses default value, skip.
             // Some default properties do not have set ConfigEntry.ConfigSource.DEFAULT_CONFIG and thus
             // we are removing property. That might cause redundant RU. To fix this we would have to add defaultValue
@@ -215,7 +223,11 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         } else {
             // entry is in current, is not in desired, is not default -> it was using non-default value and was removed
             // if the entry was custom, it should be deleted
-            if (!isIgnorableProperty(pathValueWithoutSlash, nodeIsController)) {
+            // TODO: to evaluate if we want a list of such properties or leaving the single one involved
+            //       also if the elrVersion could be even higher than 1 in the future so condition should be > 1
+            if ("min.insync.replicas".equals(entry.name()) && elrVersion == 1) {
+                LOGGER.infoCr(reconciliation, "min.insync.replicas cannot be deleted when ELR is enabled");
+            } else if (!isIgnorableProperty(pathValueWithoutSlash, nodeIsController)) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
                 LOGGER.infoCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
             } else {
