@@ -24,7 +24,7 @@ coverage:
 # Hide promo/footer bits in the PR comment and only post when there is a real drop.
 comment:
   # Choose exactly which blocks appear (omit footer/feedback to remove marketing lines)
-  layout: "header, diff, files"
+  layout: "condensed_header, diff, files"
   hide_project_coverage: false
   behavior: default
   # Only post when project coverage changes
