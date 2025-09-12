@@ -12,8 +12,6 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfiguration
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.KafkaTopicDescription;
-import io.strimzi.systemtest.labels.LabelSelectors;
-import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -114,7 +112,8 @@ public class CruiseControlUtils {
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
-    public static void verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(Properties kafkaProperties) {
+    public static void verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(String clusterName, String namespace, String brokerPodName) throws IOException {
+        Properties kafkaProperties = getKafkaCruiseControlMetricsReporterConfiguration(namespace, clusterName, brokerPodName);
         String kafkaClusterName = kafkaProperties.getProperty("cluster-name");
         TestUtils.waitFor("Verify that Kafka configuration " + kafkaProperties + " has correct CruiseControl metric reporter properties",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () ->
@@ -122,12 +121,10 @@ public class CruiseControlUtils {
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue()).equals("HTTPS") &&
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS.getValue()).equals(kafkaClusterName + "-kafka-brokers:9091") &&
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL.getValue()).equals("SSL") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue()).equals("PKCS12") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION.getValue()).equals("/tmp/kafka/cluster.keystore.p12") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD.getValue()).equals("${strimzienv:CERTS_STORE_PASSWORD}") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue()).equals("PKCS12") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION.getValue()).equals("/tmp/kafka/cluster.truststore.p12") &&
-            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD.getValue()).equals("${strimzienv:CERTS_STORE_PASSWORD}"));
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE.getValue()).equals("PEM") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN.getValue()).equals("${strimzisecrets:" + namespace + "/" + brokerPodName + ":" + brokerPodName + ".crt}") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE.getValue()).equals("PEM") &&
+            kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES.getValue()).equals("${strimzisecrets:" + namespace + "/" + clusterName + "-cluster-ca-cert:*.crt}"));
     }
 
     public static void verifyThatCruiseControlTopicsArePresent(AdminClient adminClient, int defaultReplicaCount) {
@@ -153,9 +150,7 @@ public class CruiseControlUtils {
         assertThat(ccPartitionMetricTopic.partitionCount(), is(32));
     }
 
-    public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {
-        String cmName = KubeResourceManager.get().kubeClient().listPods(namespaceName, LabelSelectors.kafkaLabelSelector(clusterName, KafkaComponents.getBrokerPodSetName(clusterName))).get(0).getMetadata().getName();
-
+    public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName, String cmName) throws IOException {
         InputStream configurationFileStream = new ByteArrayInputStream(KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(cmName).get()
             .getData().get("server.config").getBytes(StandardCharsets.UTF_8));
 

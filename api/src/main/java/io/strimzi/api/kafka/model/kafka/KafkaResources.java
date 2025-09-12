@@ -49,6 +49,17 @@ public class KafkaResources {
         return clusterName + "-clients-ca";
     }
 
+    /**
+     * Get the name of the Kafka role binding given the name of the {@code cluster}.
+     *
+     * @param clusterName  The cluster name.
+     *
+     * @return The name of Kafka role binding.
+     */
+    public static String kafkaRoleBindingName(String clusterName) {
+        return kafkaComponentName(clusterName) + "-role";
+    }
+
     ////////
     // Kafka methods
     ////////

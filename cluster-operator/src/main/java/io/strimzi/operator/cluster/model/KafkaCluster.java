@@ -32,13 +32,16 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
-import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
@@ -63,6 +66,7 @@ import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
@@ -97,6 +101,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +147,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     private static final String ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED = "KAFKA_JMX_EXPORTER_ENABLED";
+    private static final String ENV_VAR_KAFKA_CLUSTER_NAME = "KAFKA_CLUSTER_NAME";
     private static final String ENV_VAR_STRIMZI_OPA_AUTHZ_TRUSTED_CERTS = "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS";
     private static final String ENV_VAR_STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS = "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS";
 
@@ -172,12 +178,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final int INGRESS_PORT = 443;
 
     protected static final String KAFKA_NAME = "kafka";
-    protected static final String CLUSTER_CA_CERTS_VOLUME = "cluster-ca";
-    protected static final String BROKER_CERTS_VOLUME = "broker-certs";
-    protected static final String CLIENT_CA_CERTS_VOLUME = "client-ca-cert";
-    protected static final String CLUSTER_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/cluster-ca-certs";
-    protected static final String BROKER_CERTS_VOLUME_MOUNT = "/opt/kafka/broker-certs";
-    protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-certs";
     protected static final String TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/certificates";
     protected static final String CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT = "/opt/kafka/custom-authn-secrets";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
@@ -1363,9 +1363,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, node.podName(), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaResources.clientsCaCertificateSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, node.podName()));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
 
@@ -1378,25 +1375,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
             // Listener specific volumes related to their specific authentication or encryption settings
             for (GenericKafkaListener listener : listeners) {
-                if (listener.isTls()
-                        && listener.getConfiguration() != null
-                        && listener.getConfiguration().getBrokerCertChainAndKey() != null) {
-                    CertAndKeySecretSource secretSource = listener.getConfiguration().getBrokerCertChainAndKey();
-
-                    Map<String, String> items = new HashMap<>(2);
-                    items.put(secretSource.getKey(), "tls.key");
-                    items.put(secretSource.getCertificate(), "tls.crt");
-
-                    volumeList.add(
-                            VolumeUtils.createSecretVolume(
-                                    "custom-" + ListenersUtils.identifier(listener) + "-certs",
-                                    secretSource.getSecretName(),
-                                    items,
-                                    isOpenShift
-                            )
-                    );
-                }
-
                 if (ListenersUtils.isListenerWithOAuth(listener)) {
                     KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                     CertUtils.createTrustedCertificatesVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift, "oauth-" + ListenersUtils.identifier(listener));
@@ -1455,9 +1433,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate, boolean isBroker) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
-        volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
 
@@ -1471,12 +1446,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             // Listener specific volumes related to their specific authentication or encryption settings
             for (GenericKafkaListener listener : listeners) {
                 String identifier = ListenersUtils.identifier(listener);
-
-                if (listener.isTls()
-                        && listener.getConfiguration() != null
-                        && listener.getConfiguration().getBrokerCertChainAndKey() != null)  {
-                    volumeMountList.add(VolumeUtils.createVolumeMount("custom-" + identifier + "-certs", "/opt/kafka/certificates/custom-" + identifier + "-certs"));
-                }
 
                 if (ListenersUtils.isListenerWithOAuth(listener))   {
                     KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
@@ -1621,6 +1590,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED,
                 String.valueOf(metrics instanceof JmxPrometheusExporterModel)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(pool.gcLoggingEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CLUSTER_NAME, cluster));
 
         JvmOptionUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, pool.jvmOptions, pool.resources);
         JvmOptionUtils.jvmPerformanceOptions(varList, pool.jvmOptions);
@@ -1692,6 +1662,61 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         } else {
             return null;
         }
+    }
+
+    /**
+     * Creates a Role for reading TLS certificate secrets in the same namespace as the resource.
+     * This is used for loading certificates from secrets directly.
+     **
+     * @return role for the Kafka Cluster
+     */
+    public Role generateRole() {
+        Set<String> certSecretNames = new HashSet<>();
+        certSecretNames.add(KafkaResources.clusterCaCertificateSecretName(cluster));
+        certSecretNames.addAll(nodes().stream().map(NodeRef::podName).toList());
+
+        for (GenericKafkaListener listener : listeners) {
+            if (listener.isTls()) {
+                if (listener.getConfiguration() != null && listener.getConfiguration().getBrokerCertChainAndKey() != null) {
+                    certSecretNames.add(listener.getConfiguration().getBrokerCertChainAndKey().getSecretName());
+                }
+            }
+
+            if (listener.getAuth() instanceof KafkaListenerAuthenticationTls) {
+                certSecretNames.add(KafkaResources.clientsCaCertificateSecretName(cluster));
+            }
+        }
+
+        List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
+                .withApiGroups("")
+                .withResources("secrets")
+                .withVerbs("get")
+                .withResourceNames(certSecretNames.stream().toList())
+                .build());
+
+        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
+    }
+
+    /**
+     * Generates the Kafka Cluster Role Binding
+     *
+     * @return  Role Binding for the Kafka Cluster
+     */
+    public RoleBinding generateRoleBindingForRole() {
+        Subject subject = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(componentName)
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName(componentName)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("Role")
+                .build();
+
+        return RbacUtils
+                .createRoleBinding(KafkaResources.kafkaRoleBindingName(cluster), namespace, roleRef, List.of(subject), labels, ownerReference, null);
     }
 
     /**
@@ -1823,7 +1848,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withKRaftMetadataLogDir(VolumeUtils.kraftMetadataPath(pool.storage))
                 .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, false))
                 .withListeners(cluster,
-                        kafkaVersion,
                         namespace,
                         listeners,
                         listenerId -> advertisedHostnames.get(node.nodeId()).get(listenerId),
@@ -1879,6 +1903,18 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         return configMaps;
+    }
+
+    /**
+     * Generates a Secret with the given name and data in Kafka Cluster's namespace
+     *
+     * @param secretData    Secret data
+     * @param secretName    Secret name
+     *
+     * @return Secret that is generated
+     */
+    public Secret generateSecret(Map<String, String> secretData, String secretName) {
+        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.of(), Map.of());
     }
 
     /**
