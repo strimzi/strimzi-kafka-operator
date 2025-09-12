@@ -42,3 +42,5 @@ ignore:
   - "packaging"
   - "helm-charts"
   - "tools"
+  - "systemtest"
+  - "test"
