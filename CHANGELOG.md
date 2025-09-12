@@ -16,6 +16,10 @@
 * Extend the EntityOperator, Cruise Control and KafkaExporter deployment to support PDB via the template section in the CR spec.
 * Added support for [KIP-1073](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1073:+Return+fenced+brokers+in+DescribeCluster+response)
   to get the list of the registered brokers by using the Kafka Admin API. It replaces the usage of the `.status.registeredNodeIds` field in Kafka.
+* Update OAuth library to 0.17.0.
+* Additional OAuth configuration options have been added for 'oauth' authentication on the listener and the client.
+  On the listener `clientGrantType` has been added.
+  On the client `grantType` has been added.
 
 ### Major changes, deprecations and removals
 

@@ -1725,6 +1725,7 @@ public class KafkaConnectClusterTest {
                                 .withTokenEndpointUri("http://my-oauth-server")
                                 .withAudience("kafka")
                                 .withScope("all")
+                                .withGrantType("custom-client-credentials")
                                 .withNewClientSecret()
                                     .withSecretName("my-secret-secret")
                                     .withKey("my-secret-key")
@@ -1740,7 +1741,7 @@ public class KafkaConnectClusterTest {
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAINTEXT"));
         assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.client.id=\"my-client-id\" oauth.token.endpoint.uri=\"http://my-oauth-server\" oauth.scope=\"all\" oauth.audience=\"kafka\" oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\";"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.client.id=\"my-client-id\" oauth.token.endpoint.uri=\"http://my-oauth-server\" oauth.client.credentials.grant.type=\"custom-client-credentials\" oauth.scope=\"all\" oauth.audience=\"kafka\" oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\";"));
         assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 

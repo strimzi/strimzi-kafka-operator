@@ -53,7 +53,7 @@
 :keycloak-server-install-doc: link:https://www.keycloak.org/operator/installation[Installing the Keycloak Operator^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Keycloak Authorization Services^]
 :keycloak-admin-guide: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Keycloak Server Administration^]
-:OAuthVersion: 0.16.2
+:OAuthVersion: 0.17.0
 :oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{OAuthVersion}/examples[Using Keycloak as the OAuth 2.0 authorization server^]
 :oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{OAuthVersion}/examples/docker#running-with-hydra-using-ssl-and-opaque-tokens[Using Hydra as the OAuth 2.0 authorization server^]
 
