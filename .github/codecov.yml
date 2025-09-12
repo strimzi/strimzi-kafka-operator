@@ -1,0 +1,44 @@
+# Validate changes with curl -X POST --data-binary @.github/codecov.yaml https://codecov.io/validate
+coverage:
+  precision: 2
+  round: down
+  status:
+    # Used for validation against whole codebase
+    project:
+      default:
+        # Compare to base commit coverage
+        target: auto
+        # Allow up to 3% drop without failing the check
+        threshold: 3%
+        # Block merge if the coverage drops
+        informational: false
+    # Used for validation only of added changes
+    patch:
+      default:
+        target: auto
+        # Allow 50% to be untested
+        threshold: 50%
+        # Block merge if the coverage is less than 50%
+        informational: false
+
+# Hide promo/footer bits in the PR comment and only post when there is a real drop.
+comment:
+  # Choose exactly which blocks appear (omit footer/feedback to remove marketing lines)
+  layout: "header, diff, files"
+  hide_project_coverage: false
+  behavior: default
+  # Only post when project coverage changes
+  require_changes: true
+
+# Ignore generated or irrelevant paths from coverage
+ignore:
+  - ".azure"
+  - ".github"
+  - "development-docs"
+  - "docker-images"
+  - "documentation"
+  - "examples"
+  - "install"
+  - "packaging"
+  - "helm-charts"
+  - "tools"
