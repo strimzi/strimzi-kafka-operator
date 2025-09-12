@@ -22,6 +22,10 @@ spec:
     matchLabels:
       name: strimzi-cluster-operator
       strimzi.io/kind: cluster-operator
+  {{- with .Values.deploymentStrategy }}
+  strategy:
+    {{- toYaml . | trim | nindent 4 }}
+  {{- end }}
   template:
     metadata:
       labels:
