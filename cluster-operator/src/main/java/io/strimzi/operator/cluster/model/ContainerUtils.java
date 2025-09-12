@@ -11,29 +11,43 @@ import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.ExecAction;
+import io.fabric8.kubernetes.api.model.ExecActionBuilder;
+import io.fabric8.kubernetes.api.model.HTTPGetActionBuilder;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Lifecycle;
 import io.fabric8.kubernetes.api.model.Probe;
+import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.TCPSocketActionBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.common.SidecarContainer;
+import io.strimzi.api.kafka.model.common.SidecarProbe;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Shared methods for working with Containers
+ * Shared methods for working with Containers.
  */
 public class ContainerUtils {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ContainerUtils.class);
+    private static final ReconciliationLogger LOGGER = 
+            ReconciliationLogger.create(ContainerUtils.class);
+
+    private ContainerUtils() {
+        // Utility class, no instantiation
+    }
 
     /**
-     * Creates a container
+     * Creates a container.
      *
      * @param name              Name of the container
      * @param containerImage    Container image
@@ -50,17 +64,17 @@ public class ContainerUtils {
      * @return  New container
      */
     public static Container createContainer(
-            String name,
-            String containerImage,
-            List<String> args,
-            SecurityContext securityContext,
-            ResourceRequirements resources,
-            List<EnvVar> envVars,
-            List<ContainerPort> ports,
-            List<VolumeMount> volumeMounts,
-            Probe livenessProbe,
-            Probe readinessProbe,
-            ImagePullPolicy imagePullPolicy
+            final String name,
+            final String containerImage,
+            final List<String> args,
+            final SecurityContext securityContext,
+            final ResourceRequirements resources,
+            final List<EnvVar> envVars,
+            final List<ContainerPort> ports,
+            final List<VolumeMount> volumeMounts,
+            final Probe livenessProbe,
+            final Probe readinessProbe,
+            final ImagePullPolicy imagePullPolicy
     )   {
         return createContainer(
                 name,
@@ -183,6 +197,27 @@ public class ContainerUtils {
     }
 
     /**
+     * Build an environment variable which will use a value from a config map
+     *
+     * @param name      The name of the environment variable
+     * @param configMap The name of the config map where the value is stored
+     * @param key       The key under which the value is stored in the config map
+     *
+     * @return  The environment variable object
+     */
+    public static EnvVar createEnvVarFromConfigMap(String name, String configMap, String key) {
+        return new EnvVarBuilder()
+                .withName(name)
+                .withNewValueFrom()
+                    .withNewConfigMapKeyRef()
+                        .withName(configMap)
+                        .withKey(key)
+                    .endConfigMapKeyRef()
+                .endValueFrom()
+                .build();
+    }
+
+    /**
      * Build an environment variable instance with the provided name from a field reference
      * using the Downward API.
      *
@@ -226,9 +261,13 @@ public class ContainerUtils {
                 } else if (containerEnvVar.getValue() != null) {
                     existingEnvs.add(createEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
                 } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getSecretKeyRef() != null) {
-                    existingEnvs.add(new EnvVarBuilder().withName(containerEnvVar.getName()).withNewValueFrom().withSecretKeyRef(containerEnvVar.getValueFrom().getSecretKeyRef()).endValueFrom().build());
+                    existingEnvs.add(createEnvVarFromSecret(containerEnvVar.getName(), 
+                            containerEnvVar.getValueFrom().getSecretKeyRef().getName(), 
+                            containerEnvVar.getValueFrom().getSecretKeyRef().getKey()));
                 } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getConfigMapKeyRef() != null) {
-                    existingEnvs.add(new EnvVarBuilder().withName(containerEnvVar.getName()).withNewValueFrom().withConfigMapKeyRef(containerEnvVar.getValueFrom().getConfigMapKeyRef()).endValueFrom().build());
+                    existingEnvs.add(createEnvVarFromConfigMap(containerEnvVar.getName(), 
+                            containerEnvVar.getValueFrom().getConfigMapKeyRef().getName(), 
+                            containerEnvVar.getValueFrom().getConfigMapKeyRef().getKey()));
                 } else {
                     LOGGER.warnCr(reconciliation, "User defined container template environment variable {} doesn't have any value defined and will be ignored",  containerEnvVar.getName());
                 }
@@ -277,5 +316,266 @@ public class ContainerUtils {
      */
     public static List<Container> listOrNull(Container container)   {
         return container != null ? List.of(container) : null;
+    }
+
+    /**
+     * Converts a list of SidecarContainers to a list of Fabric8 Containers
+     *
+     * @param sidecarContainers the list of SidecarContainers to convert
+     * @return the converted list of Containers
+     */
+    public static List<Container> convertSidecarContainers(List<SidecarContainer> sidecarContainers) {
+        if (sidecarContainers == null) {
+            return new ArrayList<>();
+        }
+
+        return sidecarContainers.stream()
+                .map(ContainerUtils::convertSidecarContainer)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Converts a list of SidecarContainers to a list of Fabric8 Containers with image pull policy
+     *
+     * @param sidecarContainers the list of SidecarContainers to convert
+     * @param imagePullPolicy the image pull policy to apply if not set on individual containers
+     * @return the converted list of Containers
+     */
+    public static List<Container> convertSidecarContainers(List<SidecarContainer> sidecarContainers, ImagePullPolicy imagePullPolicy) {
+        if (sidecarContainers == null) {
+            return new ArrayList<>();
+        }
+
+        return sidecarContainers.stream()
+                .map(sidecar -> convertSidecarContainer(sidecar, imagePullPolicy))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Converts a SidecarContainer to a Fabric8 Container
+     *
+     * @param sidecarContainer the SidecarContainer to convert
+     * @return the converted Container
+     */
+    public static Container convertSidecarContainer(SidecarContainer sidecarContainer) {
+        if (sidecarContainer == null) {
+            return null;
+        }
+
+        // Convert ports - can use directly since ContainerPort doesn't have IntOrString issues
+        List<ContainerPort> ports = sidecarContainer.getPorts();
+
+        // Convert environment variables
+        List<EnvVar> envVars = new ArrayList<>();
+        if (sidecarContainer.getEnv() != null) {
+            for (ContainerEnvVar containerEnvVar : sidecarContainer.getEnv()) {
+                if (containerEnvVar.getValue() != null) {
+                    envVars.add(createEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
+                } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getSecretKeyRef() != null) {
+                    envVars.add(createEnvVarFromSecret(containerEnvVar.getName(), 
+                            containerEnvVar.getValueFrom().getSecretKeyRef().getName(), 
+                            containerEnvVar.getValueFrom().getSecretKeyRef().getKey()));
+                } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getConfigMapKeyRef() != null) {
+                    envVars.add(createEnvVarFromConfigMap(containerEnvVar.getName(), 
+                            containerEnvVar.getValueFrom().getConfigMapKeyRef().getName(), 
+                            containerEnvVar.getValueFrom().getConfigMapKeyRef().getKey()));
+                }
+            }
+        }
+
+        // Convert probes
+        Probe livenessProbe = convertSidecarProbe(sidecarContainer.getLivenessProbe());
+        Probe readinessProbe = convertSidecarProbe(sidecarContainer.getReadinessProbe());
+
+        // Handle image pull policy - convert string to enum
+        ImagePullPolicy imagePullPolicyEnum = null;
+        if (sidecarContainer.getImagePullPolicy() != null) {
+            String policy = sidecarContainer.getImagePullPolicy();
+            switch (policy) {
+                case "Always":
+                    imagePullPolicyEnum = ImagePullPolicy.ALWAYS;
+                    break;
+                case "IfNotPresent":
+                    imagePullPolicyEnum = ImagePullPolicy.IFNOTPRESENT;
+                    break;
+                case "Never":
+                    imagePullPolicyEnum = ImagePullPolicy.NEVER;
+                    break;
+                default:
+                    // Leave as null for invalid values
+                    break;
+            }
+        }
+        
+        return new ContainerBuilder()
+                .withName(sidecarContainer.getName())
+                .withImage(sidecarContainer.getImage())
+                .withCommand(sidecarContainer.getCommand())
+                .withArgs(sidecarContainer.getArgs())
+                .withSecurityContext(sidecarContainer.getSecurityContext())
+                .withResources(sidecarContainer.getResources())
+                .withEnv(envVars)
+                .withPorts(ports)
+                .withVolumeMounts(sidecarContainer.getVolumeMounts())
+                .withLivenessProbe(livenessProbe)
+                .withReadinessProbe(readinessProbe)
+                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicyEnum, sidecarContainer.getImage()))
+                .build();
+    }
+
+    /**
+     * Converts a SidecarContainer to a Fabric8 Container with image pull policy
+     *
+     * @param sidecarContainer the SidecarContainer to convert
+     * @param defaultImagePullPolicy the default image pull policy to apply if not set
+     * @return the converted Container
+     */
+    public static Container convertSidecarContainer(SidecarContainer sidecarContainer, ImagePullPolicy defaultImagePullPolicy) {
+        if (sidecarContainer == null) {
+            return null;
+        }
+
+        // Convert ports - can use directly since ContainerPort doesn't have IntOrString issues
+        List<ContainerPort> ports = sidecarContainer.getPorts();
+
+        // Convert environment variables
+        List<EnvVar> envVars = new ArrayList<>();
+        if (sidecarContainer.getEnv() != null) {
+            for (ContainerEnvVar containerEnvVar : sidecarContainer.getEnv()) {
+                if (containerEnvVar.getValue() != null) {
+                    envVars.add(createEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
+                } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getSecretKeyRef() != null) {
+                    envVars.add(createEnvVarFromSecret(containerEnvVar.getName(), 
+                            containerEnvVar.getValueFrom().getSecretKeyRef().getName(), 
+                            containerEnvVar.getValueFrom().getSecretKeyRef().getKey()));
+                } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getConfigMapKeyRef() != null) {
+                    envVars.add(createEnvVarFromConfigMap(containerEnvVar.getName(), 
+                            containerEnvVar.getValueFrom().getConfigMapKeyRef().getName(), 
+                            containerEnvVar.getValueFrom().getConfigMapKeyRef().getKey()));
+                }
+            }
+        }
+
+        // Convert probes
+        Probe livenessProbe = convertSidecarProbe(sidecarContainer.getLivenessProbe());
+        Probe readinessProbe = convertSidecarProbe(sidecarContainer.getReadinessProbe());
+
+        // Handle image pull policy - prefer sidecar-specific setting, fall back to default
+        ImagePullPolicy imagePullPolicyEnum = null;
+        if (sidecarContainer.getImagePullPolicy() != null) {
+            String policy = sidecarContainer.getImagePullPolicy();
+            switch (policy) {
+                case "Always":
+                    imagePullPolicyEnum = ImagePullPolicy.ALWAYS;
+                    break;
+                case "IfNotPresent":
+                    imagePullPolicyEnum = ImagePullPolicy.IFNOTPRESENT;
+                    break;
+                case "Never":
+                    imagePullPolicyEnum = ImagePullPolicy.NEVER;
+                    break;
+                default:
+                    // Leave as null for invalid values
+                    break;
+            }
+        }
+
+        // Use default if no specific policy set
+        if (imagePullPolicyEnum == null && defaultImagePullPolicy != null) {
+            String policyString = determineImagePullPolicy(defaultImagePullPolicy, sidecarContainer.getImage());
+            // Convert string back to enum
+            switch (policyString) {
+                case "Always":
+                    imagePullPolicyEnum = ImagePullPolicy.ALWAYS;
+                    break;
+                case "IfNotPresent":
+                    imagePullPolicyEnum = ImagePullPolicy.IFNOTPRESENT;
+                    break;
+                case "Never":
+                    imagePullPolicyEnum = ImagePullPolicy.NEVER;
+                    break;
+                default:
+                    // Leave as null for invalid values
+                    break;
+            }
+        }
+        
+        return new ContainerBuilder()
+                .withName(sidecarContainer.getName())
+                .withImage(sidecarContainer.getImage())
+                .withCommand(sidecarContainer.getCommand())
+                .withArgs(sidecarContainer.getArgs())
+                .withSecurityContext(sidecarContainer.getSecurityContext())
+                .withResources(sidecarContainer.getResources())
+                .withEnv(envVars)
+                .withPorts(ports)
+                .withVolumeMounts(sidecarContainer.getVolumeMounts())
+                .withLivenessProbe(livenessProbe)
+                .withReadinessProbe(readinessProbe)
+                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicyEnum, sidecarContainer.getImage()))
+                .build();
+    }
+
+    /**
+     * Converts a SidecarProbe to a Fabric8 Probe
+     *
+     * @param sidecarProbe the SidecarProbe to convert
+     * @return the converted Probe
+     */
+    private static Probe convertSidecarProbe(SidecarProbe sidecarProbe) {
+        if (sidecarProbe == null) {
+            return null;
+        }
+
+        ProbeBuilder builder = new ProbeBuilder()
+                .withInitialDelaySeconds(sidecarProbe.getInitialDelaySeconds())
+                .withTimeoutSeconds(sidecarProbe.getTimeoutSeconds())
+                .withPeriodSeconds(sidecarProbe.getPeriodSeconds())
+                .withSuccessThreshold(sidecarProbe.getSuccessThreshold())
+                .withFailureThreshold(sidecarProbe.getFailureThreshold());
+
+        // Convert exec action
+        if (sidecarProbe.getExecCommand() != null && !sidecarProbe.getExecCommand().isEmpty()) {
+            ExecAction execAction = new ExecActionBuilder()
+                    .withCommand(sidecarProbe.getExecCommand())
+                    .build();
+            builder.withExec(execAction);
+        }
+
+        // Convert HTTP GET action
+        if (sidecarProbe.getHttpGetPath() != null || sidecarProbe.getHttpGetPort() != null) {
+            HTTPGetActionBuilder httpBuilder = new HTTPGetActionBuilder()
+                    .withPath(sidecarProbe.getHttpGetPath())
+                    .withScheme(sidecarProbe.getHttpGetScheme());
+
+            if (sidecarProbe.getHttpGetPort() != null) {
+                try {
+                    int port = Integer.parseInt(sidecarProbe.getHttpGetPort());
+                    httpBuilder.withPort(new IntOrString(port));
+                } catch (NumberFormatException e) {
+                    // Named port
+                    httpBuilder.withPort(new IntOrString(sidecarProbe.getHttpGetPort()));
+                }
+            }
+
+            builder.withHttpGet(httpBuilder.build());
+        }
+
+        // Convert TCP socket action
+        if (sidecarProbe.getTcpSocketPort() != null) {
+            TCPSocketActionBuilder tcpBuilder = new TCPSocketActionBuilder();
+
+            try {
+                int port = Integer.parseInt(sidecarProbe.getTcpSocketPort());
+                tcpBuilder.withPort(new IntOrString(port));
+            } catch (NumberFormatException e) {
+                // Named port
+                tcpBuilder.withPort(new IntOrString(sidecarProbe.getTcpSocketPort()));
+            }
+
+            builder.withTcpSocket(tcpBuilder.build());
+        }
+
+        return builder.build();
     }
 }

@@ -1194,6 +1194,297 @@ spec:
                               csi: {}
                               image: {}
                         description: Additional volumes that can be mounted to the pod.
+                      sidecarContainers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: The name of the sidecar container.
+                            image:
+                              type: string
+                              description: The container image.
+                            imagePullPolicy:
+                              type: string
+                              description: "The image pull policy for the container image. More info: https://kubernetes.io/docs/concepts/containers/images#image-pull-policy."
+                            command:
+                              type: array
+                              items:
+                                type: string
+                              description: Command to execute in the container.
+                            args:
+                              type: array
+                              items:
+                                type: string
+                              description: Arguments to the entrypoint.
+                            env:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                    description: The environment variable key.
+                                  value:
+                                    type: string
+                                    description: The environment variable value.
+                                  valueFrom:
+                                    type: object
+                                    properties:
+                                      secretKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                        description: Reference to a key in a secret.
+                                      configMapKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                        description: Reference to a key in a config map.
+                                    oneOf:
+                                    - properties:
+                                        secretKeyRef: {}
+                                      required:
+                                      - secretKeyRef
+                                    - properties:
+                                        configMapKeyRef: {}
+                                      required:
+                                      - configMapKeyRef
+                                    description: Reference to the secret or config map property to which the environment variable is set.
+                                oneOf:
+                                - properties:
+                                    value: {}
+                                  required:
+                                  - value
+                                - properties:
+                                    valueFrom: {}
+                                  required:
+                                  - valueFrom
+                              description: Environment variables to set in the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Volume mounts to add to the container.
+                            ports:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  containerPort:
+                                    type: integer
+                                  hostIP:
+                                    type: string
+                                  hostPort:
+                                    type: integer
+                                  name:
+                                    type: string
+                                  protocol:
+                                    type: string
+                              description: List of ports to expose from the sidecar container.
+                            resources:
+                              type: object
+                              properties:
+                                claims:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      request:
+                                        type: string
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                              description: Resource requirements for the sidecar container.
+                            securityContext:
+                              type: object
+                              properties:
+                                allowPrivilegeEscalation:
+                                  type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                capabilities:
+                                  type: object
+                                  properties:
+                                    add:
+                                      type: array
+                                      items:
+                                        type: string
+                                    drop:
+                                      type: array
+                                      items:
+                                        type: string
+                                privileged:
+                                  type: boolean
+                                procMount:
+                                  type: string
+                                readOnlyRootFilesystem:
+                                  type: boolean
+                                runAsGroup:
+                                  type: integer
+                                runAsNonRoot:
+                                  type: boolean
+                                runAsUser:
+                                  type: integer
+                                seLinuxOptions:
+                                  type: object
+                                  properties:
+                                    level:
+                                      type: string
+                                    role:
+                                      type: string
+                                    type:
+                                      type: string
+                                    user:
+                                      type: string
+                                seccompProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                windowsOptions:
+                                  type: object
+                                  properties:
+                                    gmsaCredentialSpec:
+                                      type: string
+                                    gmsaCredentialSpecName:
+                                      type: string
+                                    hostProcess:
+                                      type: boolean
+                                    runAsUserName:
+                                      type: string
+                              description: Security context for the sidecar container.
+                            livenessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: Command to execute for exec probe.
+                                httpGetPath:
+                                  type: string
+                                  description: Path for HTTP GET probe.
+                                httpGetPort:
+                                  type: string
+                                  description: Port for HTTP GET probe (can be port number or named port).
+                                httpGetScheme:
+                                  type: string
+                                  description: Scheme for HTTP GET probe (HTTP or HTTPS).
+                                tcpSocketPort:
+                                  type: string
+                                  description: Port for TCP socket probe (can be port number or named port).
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                  description: Number of seconds after the container has started before liveness or readiness probes are initiated. Minimum value is 0.
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                  description: Number of seconds after which the probe times out. Minimum value is 1.
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                  description: How often (in seconds) to perform the probe. Minimum value is 1.
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                  description: Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1.
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
+                                  description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
+                              description: Liveness probe for the sidecar container.
+                            readinessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: Command to execute for exec probe.
+                                httpGetPath:
+                                  type: string
+                                  description: Path for HTTP GET probe.
+                                httpGetPort:
+                                  type: string
+                                  description: Port for HTTP GET probe (can be port number or named port).
+                                httpGetScheme:
+                                  type: string
+                                  description: Scheme for HTTP GET probe (HTTP or HTTPS).
+                                tcpSocketPort:
+                                  type: string
+                                  description: Port for TCP socket probe (can be port number or named port).
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                  description: Number of seconds after the container has started before liveness or readiness probes are initiated. Minimum value is 0.
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                  description: Number of seconds after which the probe times out. Minimum value is 1.
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                  description: How often (in seconds) to perform the probe. Minimum value is 1.
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                  description: Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1.
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
+                                  description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
+                              description: Readiness probe for the sidecar container.
+                        description: Additional sidecar containers that can be added to the pod.
                     description: Template for Kafka Connect `Pods`.
                   apiService:
                     type: object
@@ -2249,6 +2540,297 @@ spec:
                               csi: {}
                               image: {}
                         description: Additional volumes that can be mounted to the pod.
+                      sidecarContainers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: The name of the sidecar container.
+                            image:
+                              type: string
+                              description: The container image.
+                            imagePullPolicy:
+                              type: string
+                              description: "The image pull policy for the container image. More info: https://kubernetes.io/docs/concepts/containers/images#image-pull-policy."
+                            command:
+                              type: array
+                              items:
+                                type: string
+                              description: Command to execute in the container.
+                            args:
+                              type: array
+                              items:
+                                type: string
+                              description: Arguments to the entrypoint.
+                            env:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                    description: The environment variable key.
+                                  value:
+                                    type: string
+                                    description: The environment variable value.
+                                  valueFrom:
+                                    type: object
+                                    properties:
+                                      secretKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                        description: Reference to a key in a secret.
+                                      configMapKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                        description: Reference to a key in a config map.
+                                    oneOf:
+                                    - properties:
+                                        secretKeyRef: {}
+                                      required:
+                                      - secretKeyRef
+                                    - properties:
+                                        configMapKeyRef: {}
+                                      required:
+                                      - configMapKeyRef
+                                    description: Reference to the secret or config map property to which the environment variable is set.
+                                oneOf:
+                                - properties:
+                                    value: {}
+                                  required:
+                                  - value
+                                - properties:
+                                    valueFrom: {}
+                                  required:
+                                  - valueFrom
+                              description: Environment variables to set in the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Volume mounts to add to the container.
+                            ports:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  containerPort:
+                                    type: integer
+                                  hostIP:
+                                    type: string
+                                  hostPort:
+                                    type: integer
+                                  name:
+                                    type: string
+                                  protocol:
+                                    type: string
+                              description: List of ports to expose from the sidecar container.
+                            resources:
+                              type: object
+                              properties:
+                                claims:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      request:
+                                        type: string
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                              description: Resource requirements for the sidecar container.
+                            securityContext:
+                              type: object
+                              properties:
+                                allowPrivilegeEscalation:
+                                  type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                capabilities:
+                                  type: object
+                                  properties:
+                                    add:
+                                      type: array
+                                      items:
+                                        type: string
+                                    drop:
+                                      type: array
+                                      items:
+                                        type: string
+                                privileged:
+                                  type: boolean
+                                procMount:
+                                  type: string
+                                readOnlyRootFilesystem:
+                                  type: boolean
+                                runAsGroup:
+                                  type: integer
+                                runAsNonRoot:
+                                  type: boolean
+                                runAsUser:
+                                  type: integer
+                                seLinuxOptions:
+                                  type: object
+                                  properties:
+                                    level:
+                                      type: string
+                                    role:
+                                      type: string
+                                    type:
+                                      type: string
+                                    user:
+                                      type: string
+                                seccompProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                windowsOptions:
+                                  type: object
+                                  properties:
+                                    gmsaCredentialSpec:
+                                      type: string
+                                    gmsaCredentialSpecName:
+                                      type: string
+                                    hostProcess:
+                                      type: boolean
+                                    runAsUserName:
+                                      type: string
+                              description: Security context for the sidecar container.
+                            livenessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: Command to execute for exec probe.
+                                httpGetPath:
+                                  type: string
+                                  description: Path for HTTP GET probe.
+                                httpGetPort:
+                                  type: string
+                                  description: Port for HTTP GET probe (can be port number or named port).
+                                httpGetScheme:
+                                  type: string
+                                  description: Scheme for HTTP GET probe (HTTP or HTTPS).
+                                tcpSocketPort:
+                                  type: string
+                                  description: Port for TCP socket probe (can be port number or named port).
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                  description: Number of seconds after the container has started before liveness or readiness probes are initiated. Minimum value is 0.
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                  description: Number of seconds after which the probe times out. Minimum value is 1.
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                  description: How often (in seconds) to perform the probe. Minimum value is 1.
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                  description: Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1.
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
+                                  description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
+                              description: Liveness probe for the sidecar container.
+                            readinessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: Command to execute for exec probe.
+                                httpGetPath:
+                                  type: string
+                                  description: Path for HTTP GET probe.
+                                httpGetPort:
+                                  type: string
+                                  description: Port for HTTP GET probe (can be port number or named port).
+                                httpGetScheme:
+                                  type: string
+                                  description: Scheme for HTTP GET probe (HTTP or HTTPS).
+                                tcpSocketPort:
+                                  type: string
+                                  description: Port for TCP socket probe (can be port number or named port).
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                  description: Number of seconds after the container has started before liveness or readiness probes are initiated. Minimum value is 0.
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                  description: Number of seconds after which the probe times out. Minimum value is 1.
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                  description: How often (in seconds) to perform the probe. Minimum value is 1.
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                  description: Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1.
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
+                                  description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
+                              description: Readiness probe for the sidecar container.
+                        description: Additional sidecar containers that can be added to the pod.
                     description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                   buildContainer:
                     type: object

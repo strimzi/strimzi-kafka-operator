@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.strimzi.api.kafka.model.common.SidecarContainer;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -47,12 +47,12 @@ public class SidecarUtils {
      * Validates a list of sidecar containers for conflicts with Strimzi internal definitions
      *
      * @param reconciliation      Reconciliation context
-     * @param sidecarContainers  List of Kubernetes Container objects to validate
+     * @param sidecarContainers  List of SidecarContainer objects to validate
      * @param userDefinedPorts   Set of user-defined listener ports to avoid conflicts
      * @throws InvalidResourceException if validation fails
      */
     public static void validateSidecarContainers(Reconciliation reconciliation, 
-                                                List<Container> sidecarContainers,
+                                                List<SidecarContainer> sidecarContainers,
                                                 Set<Integer> userDefinedPorts) {
         if (sidecarContainers == null || sidecarContainers.isEmpty()) {
             return;
@@ -68,8 +68,8 @@ public class SidecarUtils {
         }
 
         for (int i = 0; i < sidecarContainers.size(); i++) {
-            Container container = sidecarContainers.get(i);
-            String path = String.format(".spec.kafka.template.pod.additionalContainers[%d]", i);
+            SidecarContainer container = sidecarContainers.get(i);
+            String path = String.format(".spec.kafka.template.pod.sidecarContainers[%d]", i);
 
             // Validate container basics
             validateContainerBasics(container, path, errors);
@@ -103,7 +103,7 @@ public class SidecarUtils {
      * @throws InvalidResourceException if validation fails
      */
     public static void validateVolumeReferences(Reconciliation reconciliation, 
-                                               List<Container> sidecarContainers,
+                                               List<SidecarContainer> sidecarContainers,
                                                List<AdditionalVolume> podVolumes) {
         if (sidecarContainers == null || sidecarContainers.isEmpty()) {
             return;
@@ -117,8 +117,8 @@ public class SidecarUtils {
         List<String> errors = new ArrayList<>();
 
         for (int i = 0; i < sidecarContainers.size(); i++) {
-            Container container = sidecarContainers.get(i);
-            String path = String.format(".spec.kafka.template.pod.additionalContainers[%d]", i);
+            SidecarContainer container = sidecarContainers.get(i);
+            String path = String.format(".spec.kafka.template.pod.sidecarContainers[%d]", i);
 
             if (container.getVolumeMounts() != null) {
                 for (int j = 0; j < container.getVolumeMounts().size(); j++) {
@@ -140,7 +140,7 @@ public class SidecarUtils {
         }
     }
 
-    private static void validateContainerBasics(Container container, String path, List<String> errors) {
+    private static void validateContainerBasics(SidecarContainer container, String path, List<String> errors) {
         if (container.getName() == null || container.getName().trim().isEmpty()) {
             errors.add(path + ".name is required and cannot be empty");
         }
@@ -150,7 +150,7 @@ public class SidecarUtils {
         }
     }
 
-    private static void validateContainerName(Container container, String path, 
+    private static void validateContainerName(SidecarContainer container, String path, 
                                             Set<String> containerNames, List<String> errors) {
         String name = container.getName();
         if (name != null) {
@@ -173,7 +173,7 @@ public class SidecarUtils {
         }
     }
 
-    private static void validateContainerPorts(Container container, String path, 
+    private static void validateContainerPorts(SidecarContainer container, String path, 
                                              Set<Integer> usedPorts, List<String> errors) {
         if (container.getPorts() != null) {
             for (int j = 0; j < container.getPorts().size(); j++) {
@@ -209,7 +209,7 @@ public class SidecarUtils {
         }
     }
 
-    private static void validateVolumeMounts(Container container, String path, List<String> errors) {
+    private static void validateVolumeMounts(SidecarContainer container, String path, List<String> errors) {
         if (container.getVolumeMounts() != null) {
             Set<String> mountPaths = new HashSet<>();
             
@@ -241,7 +241,7 @@ public class SidecarUtils {
         }
     }
 
-    private static void validateResources(Container container, String path, List<String> errors) {
+    private static void validateResources(SidecarContainer container, String path, List<String> errors) {
         if (container.getResources() != null) {
             try {
                 ModelUtils.validateComputeResources(container.getResources(), path + ".resources");

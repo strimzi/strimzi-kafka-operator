@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodDNSConfig;
@@ -16,6 +15,7 @@ import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.strimzi.api.kafka.model.common.Constants;
+import io.strimzi.api.kafka.model.common.SidecarContainer;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
@@ -40,7 +40,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
     "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig",
-    "enableServiceLinks", "tmpDirSizeLimit", "volumes", "additionalContainers"})
+    "enableServiceLinks", "tmpDirSizeLimit", "volumes", "sidecarContainers"})
 @EqualsAndHashCode
 @ToString
 @DescriptionFile
@@ -61,7 +61,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private String tmpDirSizeLimit;
     private List<AdditionalVolume> volumes;
     private Map<String, Object> additionalProperties;
-    private List<Container> additionalContainers;
+    private List<SidecarContainer> sidecarContainers;
 
     @Description("Metadata applied to the resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -238,14 +238,13 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     }
 
     @Description("Additional sidecar containers that can be added to the pod.")
-    @KubeLink(group = "core", version = "v1", kind = "container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public List<Container> getAdditionalContainers() {
-        return additionalContainers;
+    public List<SidecarContainer> getSidecarContainers() {
+        return sidecarContainers;
     }
 
-    public void setAdditionalContainers(List<Container> additionalContainers) {
-        this.additionalContainers = additionalContainers;
+    public void setSidecarContainers(List<SidecarContainer> sidecarContainers) {
+        this.sidecarContainers = sidecarContainers;
     }
 
     @Override

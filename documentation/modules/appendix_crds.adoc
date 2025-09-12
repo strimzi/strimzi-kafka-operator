@@ -1291,6 +1291,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 |volumes
 |xref:type-AdditionalVolume-{context}[`AdditionalVolume`] array
 |Additional volumes that can be mounted to the pod.
+|sidecarContainers
+|xref:type-SidecarContainer-{context}[`SidecarContainer`] array
+|Additional sidecar containers that can be added to the pod.
 |====
 
 [id='type-AdditionalVolume-{context}']
@@ -1323,6 +1326,94 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |image
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#imagevolumesource-v1-core[ImageVolumeSource]
 |`ImageVolumeSource` object to use to populate the volume.
+|====
+
+[id='type-SidecarContainer-{context}']
+= `SidecarContainer` schema reference
+
+Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|name
+|string
+|The name of the sidecar container.
+|image
+|string
+|The container image.
+|imagePullPolicy
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#container-v1-core[String]
+|The image pull policy for the container image. More info: https://kubernetes.io/docs/concepts/containers/images#image-pull-policy.
+|command
+|string array
+|Command to execute in the container.
+|args
+|string array
+|Arguments to the entrypoint.
+|env
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core[ContainerEnvVar] array
+|Environment variables to set in the container.
+|volumeMounts
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#volumemount-v1-core[VolumeMount] array
+|Volume mounts to add to the container.
+|ports
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#containerport-v1-core[ContainerPort] array
+|List of ports to expose from the sidecar container.
+|resources
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
+|Resource requirements for the sidecar container.
+|securityContext
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#securitycontext-v1-core[SecurityContext]
+|Security context for the sidecar container.
+|livenessProbe
+|xref:type-SidecarProbe-{context}[`SidecarProbe`]
+|Liveness probe for the sidecar container.
+|readinessProbe
+|xref:type-SidecarProbe-{context}[`SidecarProbe`]
+|Readiness probe for the sidecar container.
+|====
+
+[id='type-SidecarProbe-{context}']
+= `SidecarProbe` schema reference
+
+Used in: xref:type-SidecarContainer-{context}[`SidecarContainer`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|execCommand
+|string array
+|Command to execute for exec probe.
+|httpGetPath
+|string
+|Path for HTTP GET probe.
+|httpGetPort
+|string
+|Port for HTTP GET probe (can be port number or named port).
+|httpGetScheme
+|string
+|Scheme for HTTP GET probe (HTTP or HTTPS).
+|tcpSocketPort
+|string
+|Port for TCP socket probe (can be port number or named port).
+|initialDelaySeconds
+|integer
+|Number of seconds after the container has started before liveness or readiness probes are initiated. Minimum value is 0.
+|timeoutSeconds
+|integer
+|Number of seconds after which the probe times out. Minimum value is 1.
+|periodSeconds
+|integer
+|How often (in seconds) to perform the probe. Minimum value is 1.
+|successThreshold
+|integer
+|Minimum consecutive successes for the probe to be considered successful after having failed. Minimum value is 1.
+|failureThreshold
+|integer
+|Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
 |====
 
 [id='type-InternalServiceTemplate-{context}']

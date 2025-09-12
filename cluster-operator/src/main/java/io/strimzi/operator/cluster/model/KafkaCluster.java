@@ -92,13 +92,12 @@ import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.server.common.MetadataVersion;
-import io.strimzi.operator.cluster.model.SidecarUtils;
-import io.strimzi.operator.cluster.model.SecurityContextUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -350,9 +349,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 result.ownerReference,
                 kafkaClusterSpec
         );
-        
-        // Validate sidecar containers - this will throw InvalidResourceException if validation fails
-        validateSidecarContainers(reconciliation, kafkaClusterSpec, listeners, result.jmx, result.metrics);
 
         // Handle Kafka broker configuration
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
@@ -375,6 +371,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners();
         ListenersValidator.validate(reconciliation, result.brokerNodes(), listeners);
         result.listeners = listeners;
+
+        // Validate sidecar containers - this will throw InvalidResourceException if validation fails
+        validateSidecarContainers(reconciliation, kafkaClusterSpec, listeners, result.jmx, result.metrics);
 
         // Set authorization
         if (kafkaClusterSpec.getAuthorization() instanceof KafkaAuthorizationKeycloak) {
@@ -1623,28 +1622,12 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return List of sidecar containers
      */
     private List<Container> createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy) {
-    if (templatePod == null || templatePod.getAdditionalContainers() == null) {
-        return new ArrayList<>();
-    }
-    
-    List<Container> sidecarContainers = new ArrayList<>();
-    
-    for (Container sidecar : templatePod.getAdditionalContainers()) {
-        // Apply image pull policy if not set
-        if (sidecar.getImagePullPolicy() == null && imagePullPolicy != null) {
-            sidecar.setImagePullPolicy(ContainerUtils.determineImagePullPolicy(imagePullPolicy, sidecar.getImage()));
+        if (templatePod == null || templatePod.getSidecarContainers() == null) {
+            return new ArrayList<>();
         }
         
-        // Apply security context inheritance if needed
-        if (sidecar.getSecurityContext() == null && templatePod.getSecurityContext() != null) {
-            sidecar.setSecurityContext(SecurityContextUtils.inheritFromPod(templatePod));
-        }
-        
-        sidecarContainers.add(sidecar);
+        return ContainerUtils.convertSidecarContainers(templatePod.getSidecarContainers(), imagePullPolicy);
     }
-    
-    return sidecarContainers;
-}
 
     /**
      * Validates sidecar container configurations against Strimzi internal definitions
@@ -1662,7 +1645,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                                 MetricsModel metrics) {
         if (kafkaClusterSpec.getTemplate() == null 
                 || kafkaClusterSpec.getTemplate().getPod() == null
-                || kafkaClusterSpec.getTemplate().getPod().getAdditionalContainers() == null) {
+                || kafkaClusterSpec.getTemplate().getPod().getSidecarContainers() == null) {
             return;
         }
 
@@ -1689,14 +1672,14 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Validate sidecar containers
         SidecarUtils.validateSidecarContainers(
                 reconciliation,
-                kafkaClusterSpec.getTemplate().getPod().getAdditionalContainers(),
+                kafkaClusterSpec.getTemplate().getPod().getSidecarContainers(),
                 usedPorts
         );
         
         // Validate volume references
         SidecarUtils.validateVolumeReferences(
                 reconciliation,
-                kafkaClusterSpec.getTemplate().getPod().getAdditionalContainers(),
+                kafkaClusterSpec.getTemplate().getPod().getSidecarContainers(),
                 kafkaClusterSpec.getTemplate().getPod().getVolumes()
         );
     }
