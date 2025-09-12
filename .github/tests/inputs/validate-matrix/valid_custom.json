@@ -1,0 +1,30 @@
+[
+  {
+    "agent": "oracle-4cpu-16gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "custom",
+    "profile": "all",
+    "timeout": 720,
+    "strimzi_feature_gates": "",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "parallel": "1",
+    "groups": "",
+    "tests": "",
+    "jobName": "custom-all-amd64"
+  },
+  {
+    "agent": "oracle-4cpu-16gb-arm64",
+    "arch": "arm64",
+    "pipeline": "custom",
+    "profile": "all",
+    "timeout": 720,
+    "strimzi_feature_gates": "",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "bundle",
+    "parallel": "1",
+    "groups": "",
+    "tests": "",
+    "jobName": "custom-all-arm64"
+  }
+]
