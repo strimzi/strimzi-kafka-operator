@@ -28,7 +28,8 @@ kubectl get KafkaConnector
 kubectl annotate KafkaConnector <kafka_connector_name> strimzi.io/restart="true"
 ----
 +
-The `restart` annotation is set to `true`. 
+The `restart` annotation is set to `true`. You can also use arguments like `includeTasks` and `onlyFailed`, to customize the restart behavior, the default is `false` for both arguments.
+Here is a valid example: `strimzi.io/restart="includeTasks,onlyFailed"`, attention no needed for `true` boolean value anymore.
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 +
