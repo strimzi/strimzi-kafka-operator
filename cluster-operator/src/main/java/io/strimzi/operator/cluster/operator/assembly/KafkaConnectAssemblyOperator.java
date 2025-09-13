@@ -612,10 +612,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      *
      * @return  True if the KafkaConnector resource has the strimzi.io/restart annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
-        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, null) != null;
+    protected boolean hasRestartAnnotation(HasMetadata resource, String connectorName) {
+        String annoValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, null);
+        return annoValue != null && !annoValue.isBlank() && !annoValue.contains(Boolean.FALSE.toString());
     }
 
     /**
@@ -633,15 +633,14 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      *
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
-    @SuppressWarnings({ "rawtypes" })
-    protected boolean restartAnnotationIsValid(CustomResource resource, String connectorName) {
+    protected boolean restartAnnotationIsValid(HasMetadata resource, String connectorName) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "");
         String[] values = restartValue.split(",");
         boolean hasBooleanValue = false;
         boolean hasCustomArgsValue = false;
 
         for (String value : values) {
-            if (Boolean.TRUE.toString().equalsIgnoreCase(value.trim()) || Boolean.FALSE.toString().equalsIgnoreCase(value.trim())) {
+            if (Boolean.TRUE.toString().equalsIgnoreCase(value.trim())) {
                 hasBooleanValue = true;
             } else if (STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG.equalsIgnoreCase(value.trim()) || STRIMZI_IO_RESTART_ONLY_FAILED_ARG.equalsIgnoreCase(value.trim())) {
                 hasCustomArgsValue = true;

@@ -1078,8 +1078,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return True if the provided resource has the restart annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
-    abstract boolean hasRestartAnnotation(CustomResource resource, String connectorName);
+    abstract boolean hasRestartAnnotation(HasMetadata resource, String connectorName);
 
     /**
      * Checks if restart annotation value is valid
@@ -1089,8 +1088,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
-    @SuppressWarnings({ "rawtypes" })
-    abstract boolean restartAnnotationIsValid(CustomResource resource, String connectorName);
+    abstract boolean restartAnnotationIsValid(HasMetadata resource, String connectorName);
 
     /**
      * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument includeTasks in restart annotation.

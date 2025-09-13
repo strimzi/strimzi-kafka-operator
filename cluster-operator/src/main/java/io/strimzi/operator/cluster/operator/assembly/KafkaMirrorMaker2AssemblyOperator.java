@@ -308,9 +308,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @return  True if the provided resource instance has the strimzi.io/restart-connector annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
+    protected boolean hasRestartAnnotation(HasMetadata resource, String connectorName) {
         String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
         return restartAnnotationConnectorName != null && restartAnnotationConnectorName.contains(connectorName);
     }
@@ -327,8 +326,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @return True if the provided resource has valid restart annotation. False otherwise.
      * */
-    @SuppressWarnings({ "rawtypes" })
-    protected boolean restartAnnotationIsValid(CustomResource resource, String connectorName) {
+    protected boolean restartAnnotationIsValid(HasMetadata resource, String connectorName) {
         String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "");
         String[] values = restartValue.split(":");
 
