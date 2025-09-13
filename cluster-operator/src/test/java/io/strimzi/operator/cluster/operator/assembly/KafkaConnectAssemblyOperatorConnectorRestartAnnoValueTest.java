@@ -27,8 +27,7 @@ public class KafkaConnectAssemblyOperatorConnectorRestartAnnoValueTest {
      * @param shouldRestart Whether the operator should interpret the annotation as a restart request
      * @param shouldBeValid Whether the operator should interpret the annotation as a valid value
      * */
-    record AnnotationValueRequest (String annotationValue, boolean shouldRestart, boolean shouldBeValid) {}
-
+    record AnnotationValueRequest(String annotationValue, boolean shouldRestart, boolean shouldBeValid) { }
 
     @Test
     public void testRestartAnnotationValuesIsValid() {
@@ -42,12 +41,12 @@ public class KafkaConnectAssemblyOperatorConnectorRestartAnnoValueTest {
                     .build();
             boolean isValid = op.restartAnnotationIsValid(resource, null);
             boolean shouldBeValid = annoValue.shouldBeValid;
-            assertThat(String.format("value '%s' is expected to %s", annoValue, shouldBeValid ? "be valid" : "NOT be valid" ),isValid, equalTo(shouldBeValid));
+            assertThat(String.format("value '%s' is expected to %s", annoValue, shouldBeValid ? "be valid" : "NOT be valid"), isValid, equalTo(shouldBeValid));
         }
     }
 
     @Test
-    public void testRestartAnnotationValueHasRestart(){
+    public void testRestartAnnotationValueHasRestart() {
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(null, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 ResourceUtils.supplierWithMocks(false), ResourceUtils.dummyClusterOperatorConfig());
         for (AnnotationValueRequest annoValue : generateAnnotationValues()) {
@@ -58,11 +57,11 @@ public class KafkaConnectAssemblyOperatorConnectorRestartAnnoValueTest {
                     .build();
             boolean hasRestart = op.hasRestartAnnotation(resource, null);
             boolean shouldRestart = annoValue.shouldRestart;
-            assertThat(String.format("value '%s' is expected to %s", annoValue, shouldRestart ? "restart" : "NOT restart" ),hasRestart, equalTo(shouldRestart));
+            assertThat(String.format("value '%s' is expected to %s", annoValue, shouldRestart ? "restart" : "NOT restart"), hasRestart, equalTo(shouldRestart));
         }
     }
 
-    private List<AnnotationValueRequest> generateAnnotationValues(){
+    private List<AnnotationValueRequest> generateAnnotationValues() {
         return List.of(
                 new AnnotationValueRequest("true", true, true),
                 new AnnotationValueRequest("includeTasks,onlyFailed", true, true),

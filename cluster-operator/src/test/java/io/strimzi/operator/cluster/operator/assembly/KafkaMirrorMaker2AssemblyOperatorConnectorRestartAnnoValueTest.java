@@ -5,8 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -31,8 +29,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartAnnoValueTest {
      * @param shouldRestart Whether the operator should interpret the annotation as a restart request
      * @param shouldBeValid Whether the operator should interpret the annotation as a valid value
      * */
-    record AnnotationValueRequest (String annotationValue, String connectorName,  boolean shouldRestart, boolean shouldBeValid) {}
-
+    record AnnotationValueRequest(String annotationValue, String connectorName,  boolean shouldRestart, boolean shouldBeValid) { }
 
     @Test
     public void testRestartAnnotationValuesIsValid() {
@@ -46,7 +43,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartAnnoValueTest {
                     .build();
             boolean isValid = op.restartAnnotationIsValid(resource, annoValue.connectorName);
             boolean shouldBeValid = annoValue.shouldBeValid;
-            assertThat(String.format("value '%s' is expected to %s", annoValue, shouldBeValid ? "be valid" : "NOT be valid" ),isValid, equalTo(shouldBeValid));
+            assertThat(String.format("value '%s' is expected to %s", annoValue, shouldBeValid ? "be valid" : "NOT be valid"), isValid, equalTo(shouldBeValid));
         }
     }
 
@@ -62,25 +59,25 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartAnnoValueTest {
                     .build();
             boolean hasRestart = op.hasRestartAnnotation(resource, annoValue.connectorName);
             boolean shouldRestart = annoValue.shouldRestart;
-            assertThat(String.format("value '%s' is expected to %s", annoValue, shouldRestart ? "restart" : "NOT restart" ),hasRestart, equalTo(shouldRestart));
+            assertThat(String.format("value '%s' is expected to %s", annoValue, shouldRestart ? "restart" : "NOT restart"), hasRestart, equalTo(shouldRestart));
         }
     }
 
     private List<AnnotationValueRequest> generateAnnotationValues() {
         String connectorName = "my-connector";
         return List.of(
-                new AnnotationValueRequest(connectorName, connectorName,true, true),
-                new AnnotationValueRequest(connectorName + ":includeTasks,onlyFailed", connectorName,true, true),
-                new AnnotationValueRequest(connectorName + ":onlyFailed,includeTasks", connectorName,true, true),
-                new AnnotationValueRequest(connectorName + ":    onlyFailed   ,   includeTasks   ",connectorName, true, true),
-                new AnnotationValueRequest(connectorName + ":includeTasks", connectorName,true, true),
-                new AnnotationValueRequest(connectorName + ":onlyFailed", connectorName,true, true),
-                new AnnotationValueRequest(connectorName + ":   onlyFailed   ", connectorName,true, true),
-                new AnnotationValueRequest(connectorName + ":    includeTasks   ", connectorName,true, true),
-                new AnnotationValueRequest("    " + connectorName + ":    includeTasks   ", connectorName,true, false),
-                new AnnotationValueRequest("", connectorName,false, false),
-                new AnnotationValueRequest("     ", connectorName,false, false),
-                new AnnotationValueRequest("   b  ", connectorName,false, false)
+                new AnnotationValueRequest(connectorName, connectorName, true, true),
+                new AnnotationValueRequest(connectorName + ":includeTasks,onlyFailed", connectorName, true, true),
+                new AnnotationValueRequest(connectorName + ":onlyFailed,includeTasks", connectorName, true, true),
+                new AnnotationValueRequest(connectorName + ":    onlyFailed   ,   includeTasks   ", connectorName, true, true),
+                new AnnotationValueRequest(connectorName + ":includeTasks", connectorName, true, true),
+                new AnnotationValueRequest(connectorName + ":onlyFailed", connectorName, true, true),
+                new AnnotationValueRequest(connectorName + ":   onlyFailed   ", connectorName, true, true),
+                new AnnotationValueRequest(connectorName + ":    includeTasks   ", connectorName, true, true),
+                new AnnotationValueRequest("    " + connectorName + ":    includeTasks   ", connectorName, true, false),
+                new AnnotationValueRequest("", connectorName, false, false),
+                new AnnotationValueRequest("     ", connectorName, false, false),
+                new AnnotationValueRequest("   b  ", connectorName, false, false)
         );
     }
 
