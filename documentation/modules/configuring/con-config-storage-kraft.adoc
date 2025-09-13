@@ -3,7 +3,7 @@
 // assembly-storage.adoc
 
 [id='con-config-storage-kraft-{context}']
-= Configuring Kafka storage in KRaft mode
+= Configuring storage types
 
 [role="_abstract"]
 Use the `storage` properties of the `KafkaNodePool` custom resource to configure storage for a deployment of Kafka in KRaft mode.
@@ -209,42 +209,3 @@ When adding a new volume to the to the `volumes` array under an `id` which was a
 
 Use Cruise Control to reassign partitions when adding or removing volumes. 
 For information on intra-broker disk balancing, see xref:con-rebalance-{context}[].
-
-[id='con-storing-metadata-log-{context}']
-== Configuring KRaft metadata log storage
-
-In KRaft mode, each node (including brokers and controllers) stores a copy of the Kafka cluster's metadata log on one of its data volumes. 
-By default, the log is stored on the volume with the lowest ID, but you can specify a different volume using the `kraftMetadata` property.
-
-For controller-only nodes, storage is exclusively for the metadata log. 
-Since the log is always stored on a single volume, using JBOD storage with multiple volumes does not improve performance or increase available disk space.
-
-In contrast, broker nodes or nodes that combine broker and controller roles can share the same volume for both the metadata log and partition replica data, optimizing disk utilization. 
-They can also use JBOD storage, where one volume is shared for the metadata log and partition replica data, while additional volumes are used solely for partition replica data.
-
-Changing the volume that stores the metadata log triggers a rolling update of the cluster nodes, involving the deletion of the old log and the creation of a new one in the specified location. 
-If `kraftMetadata` isn't specified, adding a new volume with a lower ID also prompts an update and relocation of the metadata log.
-
-.Example JBOD storage configuration using volume with ID 1 to store the KRaft metadata
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaApiVersion}
-kind: KafkaNodePool
-metadata:
-  name: pool-a
-  # ...
-spec:
-  storage:
-    type: jbod
-    volumes:
-    - id: 0
-      type: persistent-claim
-      size: 100Gi
-      deleteClaim: false
-    - id: 1
-      type: persistent-claim
-      size: 100Gi
-      kraftMetadata: shared
-      deleteClaim: false
-  # ...
-----
