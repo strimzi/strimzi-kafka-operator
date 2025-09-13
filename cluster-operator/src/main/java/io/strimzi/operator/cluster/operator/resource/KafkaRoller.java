@@ -670,19 +670,6 @@ public class KafkaRoller {
         );
     }
 
-    /**
-     * Returns logging of the given broker.
-     * @param brokerId The id of the broker.
-     * @return the logging config of the given broker.
-     */
-    /* test */ Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
-        ConfigResource resource = getBrokersLogging(brokerId);
-        return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
-                30, TimeUnit.SECONDS,
-            error -> new ForceableProblem("Error getting broker logging", error)
-        );
-    }
-
     /* test */ void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff)
             throws ForceableProblem, InterruptedException {
         Map<ConfigResource, Collection<AlterConfigOp>> updatedPerBrokerConfig = new HashMap<>(2);

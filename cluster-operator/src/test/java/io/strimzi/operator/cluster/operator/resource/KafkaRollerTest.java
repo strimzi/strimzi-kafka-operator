@@ -1035,11 +1035,6 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerLogging(int brokerId) {
-            return new Config(emptyList());
-        }
-
-        @Override
         protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff) throws ForceableProblem {
             ForceableProblem problem = alterConfigsException.apply(nodeRef.nodeId());
             if (problem != null) {
