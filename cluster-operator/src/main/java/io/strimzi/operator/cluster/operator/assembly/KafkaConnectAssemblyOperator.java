@@ -673,6 +673,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART, "")
                 .contains(STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
     }
+    
     /**
      * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument onlyFailedTasks in restart annotation.
      *
