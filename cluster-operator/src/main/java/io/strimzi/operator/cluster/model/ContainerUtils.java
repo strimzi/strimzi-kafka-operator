@@ -113,19 +113,19 @@ public class ContainerUtils {
      * @return  New container
      */
     public static Container createContainer(
-            String name,
-            String containerImage,
-            List<String> args,
-            SecurityContext securityContext,
-            ResourceRequirements resources,
-            List<EnvVar> envVars,
-            List<ContainerPort> ports,
-            List<VolumeMount> volumeMounts,
-            Probe livenessProbe,
-            Probe readinessProbe,
-            Probe startupProbe,
-            ImagePullPolicy imagePullPolicy,
-            Lifecycle lifecycle
+            final String name,
+            final String containerImage,
+            final List<String> args,
+            final SecurityContext securityContext,
+            final ResourceRequirements resources,
+            final List<EnvVar> envVars,
+            final List<ContainerPort> ports,
+            final List<VolumeMount> volumeMounts,
+            final Probe livenessProbe,
+            final Probe readinessProbe,
+            final Probe startupProbe,
+            final ImagePullPolicy imagePullPolicy,
+            final Lifecycle lifecycle
     )   {
         return new ContainerBuilder()
                 .withName(name)
@@ -335,23 +335,6 @@ public class ContainerUtils {
     }
 
     /**
-     * Converts a list of SidecarContainers to a list of Fabric8 Containers with image pull policy
-     *
-     * @param sidecarContainers the list of SidecarContainers to convert
-     * @param imagePullPolicy the image pull policy to apply if not set on individual containers
-     * @return the converted list of Containers
-     */
-    public static List<Container> convertSidecarContainers(List<SidecarContainer> sidecarContainers, ImagePullPolicy imagePullPolicy) {
-        if (sidecarContainers == null) {
-            return new ArrayList<>();
-        }
-
-        return sidecarContainers.stream()
-                .map(sidecar -> convertSidecarContainer(sidecar, imagePullPolicy))
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Converts a SidecarContainer to a Fabric8 Container
      *
      * @param sidecarContainer the SidecarContainer to convert
@@ -392,99 +375,6 @@ public class ContainerUtils {
         if (sidecarContainer.getImagePullPolicy() != null) {
             String policy = sidecarContainer.getImagePullPolicy();
             switch (policy) {
-                case "Always":
-                    imagePullPolicyEnum = ImagePullPolicy.ALWAYS;
-                    break;
-                case "IfNotPresent":
-                    imagePullPolicyEnum = ImagePullPolicy.IFNOTPRESENT;
-                    break;
-                case "Never":
-                    imagePullPolicyEnum = ImagePullPolicy.NEVER;
-                    break;
-                default:
-                    // Leave as null for invalid values
-                    break;
-            }
-        }
-        
-        return new ContainerBuilder()
-                .withName(sidecarContainer.getName())
-                .withImage(sidecarContainer.getImage())
-                .withCommand(sidecarContainer.getCommand())
-                .withArgs(sidecarContainer.getArgs())
-                .withSecurityContext(sidecarContainer.getSecurityContext())
-                .withResources(sidecarContainer.getResources())
-                .withEnv(envVars)
-                .withPorts(ports)
-                .withVolumeMounts(sidecarContainer.getVolumeMounts())
-                .withLivenessProbe(livenessProbe)
-                .withReadinessProbe(readinessProbe)
-                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicyEnum, sidecarContainer.getImage()))
-                .build();
-    }
-
-    /**
-     * Converts a SidecarContainer to a Fabric8 Container with image pull policy
-     *
-     * @param sidecarContainer the SidecarContainer to convert
-     * @param defaultImagePullPolicy the default image pull policy to apply if not set
-     * @return the converted Container
-     */
-    public static Container convertSidecarContainer(SidecarContainer sidecarContainer, ImagePullPolicy defaultImagePullPolicy) {
-        if (sidecarContainer == null) {
-            return null;
-        }
-
-        // Convert ports - can use directly since ContainerPort doesn't have IntOrString issues
-        List<ContainerPort> ports = sidecarContainer.getPorts();
-
-        // Convert environment variables
-        List<EnvVar> envVars = new ArrayList<>();
-        if (sidecarContainer.getEnv() != null) {
-            for (ContainerEnvVar containerEnvVar : sidecarContainer.getEnv()) {
-                if (containerEnvVar.getValue() != null) {
-                    envVars.add(createEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
-                } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getSecretKeyRef() != null) {
-                    envVars.add(createEnvVarFromSecret(containerEnvVar.getName(), 
-                            containerEnvVar.getValueFrom().getSecretKeyRef().getName(), 
-                            containerEnvVar.getValueFrom().getSecretKeyRef().getKey()));
-                } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getConfigMapKeyRef() != null) {
-                    envVars.add(createEnvVarFromConfigMap(containerEnvVar.getName(), 
-                            containerEnvVar.getValueFrom().getConfigMapKeyRef().getName(), 
-                            containerEnvVar.getValueFrom().getConfigMapKeyRef().getKey()));
-                }
-            }
-        }
-
-        // Convert probes
-        Probe livenessProbe = convertSidecarProbe(sidecarContainer.getLivenessProbe());
-        Probe readinessProbe = convertSidecarProbe(sidecarContainer.getReadinessProbe());
-
-        // Handle image pull policy - prefer sidecar-specific setting, fall back to default
-        ImagePullPolicy imagePullPolicyEnum = null;
-        if (sidecarContainer.getImagePullPolicy() != null) {
-            String policy = sidecarContainer.getImagePullPolicy();
-            switch (policy) {
-                case "Always":
-                    imagePullPolicyEnum = ImagePullPolicy.ALWAYS;
-                    break;
-                case "IfNotPresent":
-                    imagePullPolicyEnum = ImagePullPolicy.IFNOTPRESENT;
-                    break;
-                case "Never":
-                    imagePullPolicyEnum = ImagePullPolicy.NEVER;
-                    break;
-                default:
-                    // Leave as null for invalid values
-                    break;
-            }
-        }
-
-        // Use default if no specific policy set
-        if (imagePullPolicyEnum == null && defaultImagePullPolicy != null) {
-            String policyString = determineImagePullPolicy(defaultImagePullPolicy, sidecarContainer.getImage());
-            // Convert string back to enum
-            switch (policyString) {
                 case "Always":
                     imagePullPolicyEnum = ImagePullPolicy.ALWAYS;
                     break;
