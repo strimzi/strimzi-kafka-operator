@@ -1036,11 +1036,11 @@ public class KafkaRollerTest {
 
             Map<String, SupportedVersionRange> supportedVersionRanges = Map.of(
                     "eligible.leader.replicas.version",
-                    new SupportedVersionRange((short)0, (short)1)
+                    new SupportedVersionRange((short) 0, (short) 1)
             );
             Map<String, FinalizedVersionRange> finalizedVersionRanges = Map.of(
                     "eligible.leader.replicas.version",
-                    new FinalizedVersionRange((short)0, (short)1)
+                    new FinalizedVersionRange((short) 0, (short) 1)
             );
             when(mockFeatureMetadata.supportedFeatures()).thenReturn(supportedVersionRanges);
             when(mockFeatureMetadata.finalizedFeatures()).thenReturn(finalizedVersionRanges);
