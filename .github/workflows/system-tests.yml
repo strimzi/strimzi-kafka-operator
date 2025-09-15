@@ -20,6 +20,12 @@ on:
   # Automated trigger for issue comment
   issue_comment:
     types: [created]
+  # Testing trigger for PRs - tests workflow changes
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '.github/workflows/run-system-tests.yml'
+      - '.github/workflows/system-tests.yml'
 
 permissions:
   contents: read
@@ -52,14 +58,10 @@ jobs:
     steps:
       - name: Determine checkout ref
         id: determine_ref
-        uses: strimzi/strimzi-kafka-operator/.github/actions/determine-ref@main
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ steps.determine_ref.outputs.ref }}
-      # TODO - think about this how to handle it after check-rights
+        uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
       - name: Parse Comment
         id: parse
-        uses: ./.github/actions/systemtests/parse-comment
+        uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
         with:
           # Parameters from manual trigger via UI
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
@@ -69,14 +71,14 @@ jobs:
   check-rights:
     needs:
       - parse-params
-    if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
+    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
       statuses: write
     steps:
-      - uses: strimzi/strimzi-kafka-operator/.github/actions/check-permissions@main
+      - uses: strimzi/strimzi-kafka-operator/.github/actions/utils/check-permissions@main
       # In case the user has proper rights, print comment with build link and set status
       - uses: actions/checkout@v5
         with:
@@ -99,7 +101,7 @@ jobs:
       - parse-params
       - check-rights
     # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
-    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.parse-params.outputs.releaseVersion == 'latest' }}
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.parse-params.outputs.releaseVersion == 'latest' }}
     runs-on: oracle-2cpu-8gb-arm64
     steps:
       - uses: actions/checkout@v5
@@ -117,7 +119,7 @@ jobs:
       - check-rights
       - build-artifacts
     # Run only if properly triggered, permissions check passed, and the run is not for release (already built images)
-    if: ${{ needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.parse-params.outputs.releaseVersion == 'latest' && needs.build-artifacts.result != 'failure'}}
     strategy:
       matrix:
         architecture: [amd64, arm64]
@@ -139,7 +141,7 @@ jobs:
       - build-artifacts
       - build-images
     # Run if properly triggered, permissions check passed, and build jobs succeeded or were skipped
-    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && needs.build-images.result != 'failure' &&  needs.build-artifacts.result != 'failure' }}
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && needs.build-images.result != 'failure' &&  needs.build-artifacts.result != 'failure' }}
     # Job needs write rights for setting statuses on pull-requests
     permissions:
       contents: read
@@ -166,7 +168,7 @@ jobs:
       - parse-params
       - check-rights
       - run-tests
-    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' }}
+    if: ${{ always() && needs.parse-params.outputs.shouldRun == 'true' && needs.check-rights.result == 'success' && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

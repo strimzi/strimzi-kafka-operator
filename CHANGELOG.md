@@ -18,6 +18,11 @@
   to get the list of the registered brokers by using the Kafka Admin API. It replaces the usage of the `.status.registeredNodeIds` field in Kafka.
 * Added support for [KIP-745](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=181308623) in Kafka Connector and Mirror Maker 2, allowing the usage of 
   `includeTasks` and `onlyFailed` arguments in kafka connectors restart.
+* Update OAuth library to 0.17.0.
+* Additional OAuth configuration options have been added for 'oauth' authentication on the listener and the client.
+  On the listener `clientGrantType` has been added.
+  On the client `grantType` has been added.
+
 
 ### Major changes, deprecations and removals
 

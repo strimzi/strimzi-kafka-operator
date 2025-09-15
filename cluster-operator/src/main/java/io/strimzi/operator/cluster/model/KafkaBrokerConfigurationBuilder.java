@@ -530,6 +530,7 @@ public class KafkaBrokerConfigurationBuilder {
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ISSUER, oauth.isCheckIssuer());
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_CHECK_AUDIENCE, oauth.isCheckAudience());
         addOptionIfNotNull(options, ServerConfig.OAUTH_CUSTOM_CLAIM_CHECK, oauth.getCustomClaimCheck());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_CLIENT_CREDENTIALS_GRANT_TYPE, oauth.getClientGrantType());
         addOptionIfNotNull(options, ServerConfig.OAUTH_SCOPE, oauth.getClientScope());
         addOptionIfNotNull(options, ServerConfig.OAUTH_AUDIENCE, oauth.getClientAudience());
         addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri());

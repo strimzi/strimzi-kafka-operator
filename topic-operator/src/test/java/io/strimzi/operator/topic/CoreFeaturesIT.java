@@ -143,7 +143,8 @@ class CoreFeaturesIT implements TestSeparator {
 
     @AfterEach
     public void afterEach() {
-        if (operator != null) {
+        // Only check operator state if it wasn't intentionally shut down
+        if (operator != null && operator.shutdownHook != null) {
             assertTrue(operator.queue.isAlive());
             assertTrue(operator.queue.isReady());
         }
@@ -156,6 +157,11 @@ class CoreFeaturesIT implements TestSeparator {
         if (kafkaAdminClient != null) {
             kafkaAdminClient.close();
             kafkaAdminClient = null;
+        }
+
+        if (kafkaAdminClientOp != null) {
+            kafkaAdminClientOp.close();
+            kafkaAdminClientOp = null;
         }
 
         if (kafkaCluster != null) {
@@ -2095,9 +2101,11 @@ class CoreFeaturesIT implements TestSeparator {
         // then
         assertNull(operator.shutdownHook, "Expect the operator to shutdown");
 
-        // finally, because the @After method of this class asserts that the operator is running
-        // we start a new operator
-        kafkaAdminClientOp = null;
+        // clean up the shutdown operator and start a new one
+        if (kafkaAdminClientOp != null) {
+            kafkaAdminClientOp.close();
+            kafkaAdminClientOp = null;
+        }
         operator = null;
         maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster));
     }

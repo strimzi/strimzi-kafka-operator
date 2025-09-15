@@ -89,9 +89,9 @@
         <lombok.version>1.18.32</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>7.3.1</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>7.3.1</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>7.3.1</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>7.4.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>7.4.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>7.4.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.18.3</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.18.3</fasterxml.jackson-databind.version>
@@ -115,7 +115,7 @@
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>12.0.22</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <strimzi-oauth.version>0.16.2</strimzi-oauth.version>
+        <strimzi-oauth.version>0.17.0</strimzi-oauth.version>
         <netty.version>4.2.5.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
@@ -128,7 +128,7 @@
         <junit.platform.version>1.9.3</junit.platform.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>5.9.3</jupiter.version>
-        <strimzi-test-container.version>0.111.0</strimzi-test-container.version>
+        <strimzi-test-container.version>0.112.0</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <valid4j.version>1.1</valid4j.version>
         <javax.json.version>1.1.4</javax.json.version>

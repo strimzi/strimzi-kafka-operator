@@ -13,7 +13,7 @@ inputs:
   profile:
     description: "Comma-separated or single profile name(s)"
     required: false
-    default: ""
+    default: "smoke"
 
 outputs:
   pipelineList:
@@ -73,8 +73,18 @@ runs:
 
           if (ev === 'workflow_dispatch') {
             shouldRun = true;
+          } else if (ev === 'pull_request') {
+            // Auto-run smoke tests on PR workflow changes
+            shouldRun = true;
           } else if (ev === 'issue_comment' && context.payload?.issue?.pull_request) {
-            shouldRun = /^\s*\/gha\s+run\b/i.test(body || '');
+            // For issue comments on PRs, check if PR is closed first
+            const issueState = context.payload?.issue?.state;
+            if (issueState === 'closed') {
+              core.info(`PR #${context.payload.issue.number} is closed, skipping execution`);
+              shouldRun = false;
+            } else {
+              shouldRun = /^\s*\/gha\s+run\b/i.test(body || '');
+            }
           }
 
           core.setOutput('shouldRun', String(shouldRun));
@@ -89,7 +99,8 @@ runs:
       with:
         script: |
           const body = context.payload?.comment?.body ?? '';
-          const fallback = `/gha run profile=${process.env.INPUT_PROFILE} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
+          const profile = process.env.INPUT_PROFILE || 'smoke';
+          const fallback = `/gha run profile=${profile} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
           const builtComment = (body && body.trim().length) ? body : fallback;
           
           core.setOutput('builtComment', builtComment);
@@ -130,8 +141,8 @@ runs:
           };
 
           const DEFAULTS = {
-            pipelines:    'regression,upgrade',
-            profiles:     'operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade',
+            pipelines:    '',
+            profiles:     '',
             featureGate:  '+DummyFeatureGate',
             rbacScope:    'CLUSTER',
             installType:  'yaml',

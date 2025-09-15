@@ -148,7 +148,7 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     @JsonPropertyOrder({"foo", "bar"})
     @CelValidation(rules = {
         @CelValidation.CelValidationRule(rule = "size(self.foo) >= 5", message = "foo needs to be at least 5 characters long", fieldPath = ".foo", reason = "FieldValueInvalid"),
-        @CelValidation.CelValidationRule(rule = "size(self.bar) >= 5", message = "bar needs to be at least 5 characters long", fieldPath = ".bar", reason = "FieldValueInvalid")
+        @CelValidation.CelValidationRule(rule = "size(self.bar) >= 5", message = "bar needs to be at least 5 characters long", fieldPath = ".bar", reason = "FieldValueInvalid", versions = "v1beta1")
     })
     public static class ObjectProperty {
         private String foo;
@@ -285,6 +285,9 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     @Description("An example long property")
     @Example("42")
     @Minimum(42)
+    @CelValidation(rules = {
+        @CelValidation.CelValidationRule(rule = "self >= 1874", message = "long property needs to be 1874 or higher", versions = "v1beta1")
+    })
     public long getLongProperty() {
         return longProperty;
     }

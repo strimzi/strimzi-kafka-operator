@@ -80,10 +80,6 @@ spec:
               message: foo needs to be at least 5 characters long
               fieldPath: .foo
               reason: FieldValueInvalid
-            - rule: size(self.bar) >= 5
-              message: bar needs to be at least 5 characters long
-              fieldPath: .bar
-              reason: FieldValueInvalid
           mapStringObject:
             x-kubernetes-preserve-unknown-fields: true
             type: object
@@ -662,6 +658,9 @@ spec:
             type: integer
             example: 42
             minimum: 42
+            x-kubernetes-validations:
+            - rule: self >= 1874
+              message: long property needs to be 1874 or higher
           booleanProperty:
             type: boolean
           normalEnum:

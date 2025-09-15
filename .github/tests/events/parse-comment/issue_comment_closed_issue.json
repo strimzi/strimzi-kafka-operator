@@ -1,0 +1,15 @@
+{
+  "event_name": "issue_comment",
+  "action": "created",
+  "comment": {
+    "body": "/gha run profile=operators,operands"
+  },
+  "issue": {
+    "number": 123,
+    "state": "closed"
+  },
+  "repository": {
+    "name": "test-repo",
+    "owner": { "login": "batman" }
+  }
+}
