@@ -55,6 +55,8 @@ Additionally, it handles login credentials for clients using the OAuth 2.0 passw
 Configure the client to use credentials or access tokens for OAuth 2.0 authentication. 
 
 Using client credentials:: Using client credentials involves configuring the client with the necessary credentials (client ID and secret, or client ID and client assertion) to obtain a valid access token from an authorization server. This is the simplest mechanism.
+When you configure a client ID and secret or assertion to authenticate against the authorization server, you can specify a `grantType`.
+The property defaults to `client_credentials`.
 Using access tokens:: Using access tokens, the client is configured with a valid long-lived access token or refresh token obtained from an authorization server. 
 Using access tokens adds more complexity because there is an additional dependency on authorization server tools.
 If you are using long-lived access tokens, you may need to configure the client in the authorization server to increase the maximum lifetime of the token.
@@ -94,12 +96,13 @@ ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.token.endpoint.uri="<token_endpoint_url>" \ # <4>
   oauth.client.id="<client_id>" \ # <5>
-  oauth.client.secret="<client_secret>" \ # <6> 
-  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \ # <7>
-  oauth.ssl.truststore.password="$STOREPASS" \ # <8>
-  oauth.ssl.truststore.type="PKCS12" \ # <9>
-  oauth.scope="<scope>" \ # <10> 
-  oauth.audience="<audience>" ; # <11>
+  oauth.client.secret="<client_secret>" \ # <6>
+  oauth.grant.type="client_credentials" \ # <7> 
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \ # <8>
+  oauth.ssl.truststore.password="$STOREPASS" \ # <9>
+  oauth.ssl.truststore.type="PKCS12" \ # <10>
+  oauth.scope="<scope>" \ # <11> 
+  oauth.audience="<audience>" ; # <12>
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
 ----
 <1> `SASL_SSL` security protocol for TLS-encrypted connections. Use `SASL_PLAINTEXT` over unencrypted connections for local development only.
@@ -108,12 +111,13 @@ sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthL
 <4> URI of the authorization server token endpoint.
 <5> Client ID, which is the name used when creating the _client_ in the authorization server.
 <6> Client secret created when creating the _client_ in the authorization server.
-<7> The location of the public key certificate for the authorization server.
-<8> The password for accessing the truststore.
-<9> The truststore type.
-<10> (Optional) The `scope` for requesting the token from the token endpoint.
+<7> (Optional) Grant type when using `clientId` and `clientSecret` or `clientAssertion`. Sets the grant type parameter sent to the token endpoint. Defaults to `client_credentials` with this configuration.
+<8> The location of the truststore for the authorization server.
+<9> The password for accessing the truststore.
+<10> The truststore type.
+<11> (Optional) The `scope` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the scope.
-<11> (Optional) The `audience` for requesting the token from the token endpoint.
+<12> (Optional) The `audience` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the audience.
 
 [id='con-oauth-authentication-client-assertion-{context}']
@@ -237,4 +241,3 @@ Pass SASL extension values using `oauth.sasl.extension.` as a key prefix.
 oauth.sasl.extension.key1="value1"
 oauth.sasl.extension.key2="value2"  
 ----
-
