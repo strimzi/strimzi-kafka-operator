@@ -141,8 +141,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * This optional argument can be used to restart connector only failed tasks.
      **/
     protected static final String STRIMZI_IO_RESTART_ONLY_FAILED_ARG = "onlyFailed";
-
-
     /**
      * Constructor
      *
