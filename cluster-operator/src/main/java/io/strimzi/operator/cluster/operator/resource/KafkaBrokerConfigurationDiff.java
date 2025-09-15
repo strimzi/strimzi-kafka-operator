@@ -83,11 +83,6 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         this.brokerConfigDiff = diff(brokerNodeRef, desired, brokerConfigs, configModel);
     }
 
-    // TODO: to be removed. Having this ctor to avoid changes in all tests for now, until the solution is approved
-    protected KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, NodeRef brokerNodeRef) {
-        this(reconciliation, brokerConfigs, desired, kafkaVersion, brokerNodeRef, (short) 0);
-    }
-
     /**
      * @return  Returns true if the configuration can be updated dynamically
      */
@@ -223,7 +218,6 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         } else {
             // entry is in current, is not in desired, is not default -> it was using non-default value and was removed
             // if the entry was custom, it should be deleted
-            // TODO: to evaluate if we want a list of such properties or leaving the single one involved
             if ("min.insync.replicas".equals(entry.name()) && elrVersion >= 1) {
                 LOGGER.infoCr(reconciliation, "min.insync.replicas cannot be deleted when ELR is enabled");
             } else if (!isIgnorableProperty(pathValueWithoutSlash, nodeIsController)) {
