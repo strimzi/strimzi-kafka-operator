@@ -1618,7 +1618,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Creates sidecar containers from the pod template
      *
      * @param templatePod Pod template containing sidecar container definitions
-     * @param imagePullPolicy Image pull policy to apply to sidecar containers
+     * @param imagePullPolicy Image pull policy to apply to sidecar containers (unused - kept for compatibility)
      * @return List of sidecar containers
      */
     private List<Container> createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy) {
@@ -1626,7 +1626,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             return new ArrayList<>();
         }
         
-        return ContainerUtils.convertSidecarContainers(templatePod.getSidecarContainers(), imagePullPolicy);
+        return ContainerUtils.convertSidecarContainers(templatePod.getSidecarContainers());
     }
 
     /**
