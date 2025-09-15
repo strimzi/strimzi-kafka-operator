@@ -1673,14 +1673,16 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         SidecarUtils.validateSidecarContainers(
                 reconciliation,
                 kafkaClusterSpec.getTemplate().getPod().getSidecarContainers(),
-                usedPorts
+                usedPorts,
+                COMPONENT_TYPE
         );
         
         // Validate volume references
         SidecarUtils.validateVolumeReferences(
                 reconciliation,
                 kafkaClusterSpec.getTemplate().getPod().getSidecarContainers(),
-                kafkaClusterSpec.getTemplate().getPod().getVolumes()
+                kafkaClusterSpec.getTemplate().getPod().getVolumes(),
+                COMPONENT_TYPE
         );
     }
 

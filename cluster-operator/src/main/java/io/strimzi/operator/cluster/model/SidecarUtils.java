@@ -49,11 +49,13 @@ public class SidecarUtils {
      * @param reconciliation      Reconciliation context
      * @param sidecarContainers  List of SidecarContainer objects to validate
      * @param userDefinedPorts   Set of user-defined listener ports to avoid conflicts
+     * @param componentType      Component type for path generation (e.g., "kafka", "connect", "bridge")
      * @throws InvalidResourceException if validation fails
      */
     public static void validateSidecarContainers(Reconciliation reconciliation, 
                                                 List<SidecarContainer> sidecarContainers,
-                                                Set<Integer> userDefinedPorts) {
+                                                Set<Integer> userDefinedPorts,
+                                                String componentType) {
         if (sidecarContainers == null || sidecarContainers.isEmpty()) {
             return;
         }
@@ -69,7 +71,7 @@ public class SidecarUtils {
 
         for (int i = 0; i < sidecarContainers.size(); i++) {
             SidecarContainer container = sidecarContainers.get(i);
-            String path = String.format(".spec.kafka.template.pod.sidecarContainers[%d]", i);
+            String path = String.format(".spec.%s.template.pod.sidecarContainers[%d]", componentType, i);
 
             // Validate container basics
             validateContainerBasics(container, path, errors);
@@ -95,16 +97,33 @@ public class SidecarUtils {
     }
 
     /**
+     * Validates a list of sidecar containers for conflicts with Strimzi internal definitions
+     * Backward compatibility method - defaults to "kafka" component type
+     *
+     * @param reconciliation      Reconciliation context
+     * @param sidecarContainers  List of SidecarContainer objects to validate
+     * @param userDefinedPorts   Set of user-defined listener ports to avoid conflicts
+     * @throws InvalidResourceException if validation fails
+     */
+    public static void validateSidecarContainers(Reconciliation reconciliation, 
+                                                List<SidecarContainer> sidecarContainers,
+                                                Set<Integer> userDefinedPorts) {
+        validateSidecarContainers(reconciliation, sidecarContainers, userDefinedPorts, "kafka");
+    }
+
+    /**
      * Validates that volume mount references exist in the provided pod volumes
      *
      * @param reconciliation      Reconciliation context
      * @param sidecarContainers  List of sidecar containers to validate
      * @param podVolumes         List of volumes defined in the pod template
+     * @param componentType      Component type for path generation (e.g., "kafka", "connect", "bridge")
      * @throws InvalidResourceException if validation fails
      */
     public static void validateVolumeReferences(Reconciliation reconciliation, 
                                                List<SidecarContainer> sidecarContainers,
-                                               List<AdditionalVolume> podVolumes) {
+                                               List<AdditionalVolume> podVolumes,
+                                               String componentType) {
         if (sidecarContainers == null || sidecarContainers.isEmpty()) {
             return;
         }
@@ -118,7 +137,7 @@ public class SidecarUtils {
 
         for (int i = 0; i < sidecarContainers.size(); i++) {
             SidecarContainer container = sidecarContainers.get(i);
-            String path = String.format(".spec.kafka.template.pod.sidecarContainers[%d]", i);
+            String path = String.format(".spec.%s.template.pod.sidecarContainers[%d]", componentType, i);
 
             if (container.getVolumeMounts() != null) {
                 for (int j = 0; j < container.getVolumeMounts().size(); j++) {
@@ -138,6 +157,21 @@ public class SidecarUtils {
             LOGGER.errorCr(reconciliation, errorMessage);
             throw new InvalidResourceException(errorMessage);
         }
+    }
+
+    /**
+     * Validates that volume mount references exist in the provided pod volumes
+     * Backward compatibility method - defaults to "kafka" component type
+     *
+     * @param reconciliation      Reconciliation context
+     * @param sidecarContainers  List of sidecar containers to validate
+     * @param podVolumes         List of volumes defined in the pod template
+     * @throws InvalidResourceException if validation fails
+     */
+    public static void validateVolumeReferences(Reconciliation reconciliation, 
+                                               List<SidecarContainer> sidecarContainers,
+                                               List<AdditionalVolume> podVolumes) {
+        validateVolumeReferences(reconciliation, sidecarContainers, podVolumes, "kafka");
     }
 
     private static void validateContainerBasics(SidecarContainer container, String path, List<String> errors) {
