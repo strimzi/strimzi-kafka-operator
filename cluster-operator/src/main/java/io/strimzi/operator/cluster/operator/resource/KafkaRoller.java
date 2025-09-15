@@ -666,7 +666,7 @@ public class KafkaRoller {
      * Returns the information about the features within the Kafka Cluster
      * @return information about the features
      */
-    FeatureMetadata featureMetadata() throws ForceableProblem, InterruptedException {
+    /* test */ FeatureMetadata featureMetadata() throws ForceableProblem, InterruptedException {
         return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeFeatures().featureMetadata()),
                 30, TimeUnit.SECONDS,
                 error -> new ForceableProblem("Error getting feature metadata", error)

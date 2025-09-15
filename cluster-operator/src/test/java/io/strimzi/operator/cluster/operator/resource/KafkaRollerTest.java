@@ -28,7 +28,10 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
+import org.apache.kafka.clients.admin.FeatureMetadata;
+import org.apache.kafka.clients.admin.FinalizedVersionRange;
 import org.apache.kafka.clients.admin.QuorumInfo;
+import org.apache.kafka.clients.admin.SupportedVersionRange;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.junit.jupiter.api.AfterAll;
@@ -46,6 +49,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
@@ -1024,6 +1028,26 @@ public class KafkaRollerTest {
             } else {
                 return super.deferController(nodeRef, restartContext);
             }
+        }
+
+        @Override
+        FeatureMetadata featureMetadata() throws ForceableProblem, InterruptedException {
+            FeatureMetadata mockFeatureMetadata = mock(FeatureMetadata.class);
+
+            Map<String, SupportedVersionRange> supportedVersionRanges = Map.of(
+                    "eligible.leader.replicas.version",
+                    new SupportedVersionRange((short)0, (short)1)
+            );
+            Map<String, FinalizedVersionRange> finalizedVersionRanges = Map.of(
+                    "eligible.leader.replicas.version",
+                    new FinalizedVersionRange((short)0, (short)1)
+            );
+            when(mockFeatureMetadata.supportedFeatures()).thenReturn(supportedVersionRanges);
+            when(mockFeatureMetadata.finalizedFeatures()).thenReturn(finalizedVersionRanges);
+            when(mockFeatureMetadata.finalizedFeaturesEpoch()).thenReturn(Optional.of(1L));
+
+            return mockFeatureMetadata;
+
         }
 
         @Override
