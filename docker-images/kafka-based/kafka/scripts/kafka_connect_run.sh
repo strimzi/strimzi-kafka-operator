@@ -31,6 +31,10 @@ export CERTS_STORE_PASSWORD
 # Create dir where keystores and truststores will be stored
 mkdir -p /tmp/kafka
 
+# Clean-up /tmp directory from files which might have remained from previous container restart
+# We ignore any errors which might be caused by files injected by different agents which we do not have the rights to delete
+rm -rfv /tmp/* || true
+
 # Import certificates into keystore and truststore
 ./kafka_connect_tls_prepare_certificates.sh
 
