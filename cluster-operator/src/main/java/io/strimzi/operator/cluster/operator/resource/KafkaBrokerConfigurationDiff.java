@@ -219,7 +219,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
             // entry is in current, is not in desired, is not default -> it was using non-default value and was removed
             // if the entry was custom, it should be deleted
             if ("min.insync.replicas".equals(entry.name()) && elrVersion >= 1) {
-                LOGGER.infoCr(reconciliation, "min.insync.replicas cannot be deleted when ELR is enabled");
+                LOGGER.traceCr(reconciliation, "min.insync.replicas cannot be deleted when ELR is enabled");
             } else if (!isIgnorableProperty(pathValueWithoutSlash, nodeIsController)) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
                 LOGGER.infoCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
