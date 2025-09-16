@@ -325,6 +325,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return  Future which completes when the reconciliation is done
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         KafkaClientAuthentication authentication = connect.getAuthentication();
         Set<String> secretsToCopy = new HashSet<>();

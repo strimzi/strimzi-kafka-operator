@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
@@ -38,6 +39,9 @@ import java.util.List;
     "clientGrantType", "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation", "userNamePrefix"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@Deprecated
+@DeprecatedType(replacedWithType = KafkaListenerAuthenticationCustom.class)
+@PresentInVersions("v1beta2")
 public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthentication {
     public static final String TYPE_OAUTH = "oauth";
     public static final int DEFAULT_JWKS_EXPIRY_SECONDS = 360;

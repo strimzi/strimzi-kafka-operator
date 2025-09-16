@@ -49,6 +49,7 @@ public class ListenersUtils {
      *
      * @return  True if the listener is configured to use OAuth authentication. False otherwise.
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static boolean isListenerWithOAuth(GenericKafkaListener listener) {
         if (listener.getAuth() == null || listener.getAuth().getType() == null)
             return false;

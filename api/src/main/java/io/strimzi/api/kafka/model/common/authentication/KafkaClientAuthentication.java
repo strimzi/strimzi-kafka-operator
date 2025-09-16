@@ -41,7 +41,9 @@ public abstract class KafkaClientAuthentication implements UnknownPropertyPreser
             "`scram-sha-256` and `scram-sha-512` use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 authentication, respectively. " +
             "`plain` uses SASL PLAIN authentication. " +
             "`oauth` uses SASL OAUTHBEARER authentication. " +
-            "`custom` allows you to configure a custom authentication mechanism.")
+            "`custom` allows you to configure a custom authentication mechanism. " +
+            "As of Strimzi 0.49.0, `oauth` type is deprecated and will be removed in the `v1` API version. " +
+            "Please use `custom` type instead.")
     public abstract String getType();
 
     @Override

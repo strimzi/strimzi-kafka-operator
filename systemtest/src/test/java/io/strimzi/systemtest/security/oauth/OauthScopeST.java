@@ -46,6 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
+@SuppressWarnings("deprecation") // OAuth authentication is deprecated
 public class OauthScopeST extends OauthAbstractST {
     
     private final String oauthClusterName = "oauth-cluster-scope-name";

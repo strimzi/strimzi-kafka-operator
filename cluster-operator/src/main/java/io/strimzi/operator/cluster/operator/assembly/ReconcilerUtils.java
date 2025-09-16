@@ -483,6 +483,7 @@ public class ReconcilerUtils {
      * @param certSecretSources TLS trusted certificates whose hashes are joined to result
      * @return Future computing hash from TLS + Auth
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<CertSecretSource> certSecretSources) {
         Future<Integer> tlsFuture;
         if (certSecretSources == null || certSecretSources.isEmpty()) {

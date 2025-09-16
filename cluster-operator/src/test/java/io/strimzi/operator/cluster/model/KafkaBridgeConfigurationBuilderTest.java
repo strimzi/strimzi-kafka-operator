@@ -264,6 +264,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         ));
 
         // test oauth authentication
+        @SuppressWarnings("deprecation") // OAuth authentication is deprecated
         KafkaClientAuthenticationOAuth authOAuth = new KafkaClientAuthenticationOAuthBuilder()
                 .withClientId("oauth-client-id")
                 .withTokenEndpointUri("http://token-endpoint-uri")
