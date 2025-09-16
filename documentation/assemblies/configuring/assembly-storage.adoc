@@ -37,7 +37,8 @@ include::../../modules/configuring/con-considerations-for-data-storage.adoc[leve
 
 //KRaft storage
 include::../../modules/configuring/con-config-storage-kraft.adoc[leveloffset=+1]
-include::../../modules/configuring/proc-managing-storage-node-pools.adoc[leveloffset=+2]
-include::../../modules/configuring/proc-managing-storage-affinity-node-pools.adoc[leveloffset=+2]
+include::../../modules/configuring/con-config-storage-kraft-metadata.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-managing-storage-node-pools.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-managing-storage-affinity-node-pools.adoc[leveloffset=+1]
 //tiered storage
 include::../../modules/configuring/ref-storage-tiered.adoc[leveloffset=+1]

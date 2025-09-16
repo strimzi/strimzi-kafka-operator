@@ -6,8 +6,12 @@
 = Configuring pod scheduling
 
 [role="_abstract"]
-To avoid performance degradation caused by resource conflicts between applications scheduled on the same Kubernetes node, you can schedule Kafka pods separately from critical workloads. 
-This can be achieved by either selecting specific nodes or dedicating a set of nodes exclusively for Kafka.
+To optimize the resilience and performance of your Kafka cluster, you can control how its pods are scheduled across Kubernetes nodes.
+Pod scheduling strategies can help you to achieve the following:
+
+* Increase fault tolerance by spreading Kafka pods across different nodes.
+* Avoid resource contention by separating pods from critical workloads.
+* Maintain resource availability by assigning Kafka pods to nodes with sufficient capacity.
 
 include::../../modules/configuring/ref-affinity.adoc[leveloffset=+1]
 

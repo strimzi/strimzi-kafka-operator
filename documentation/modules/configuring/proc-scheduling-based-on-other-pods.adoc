@@ -3,27 +3,43 @@
 // assembly-scheduling.adoc
 
 [id='configuring-pod-anti-affinity-in-kafka-components-{context}']
-= Configuring pod anti-affinity in Kafka components
+= Configuring pod anti-affinity against other workloads
 
-Pod anti-affinity configuration helps with the stability and performance of Kafka brokers. By using `podAntiAffinity`, Kubernetes will not schedule Kafka brokers on the same nodes as other workloads. 
-Typically, you want to avoid Kafka running on the same worker node as other network or storage intensive applications such as databases, storage or other messaging platforms.
+[role="_abstract"]
+To improve stability and performance, you can prevent Kafka pods from running on the same worker nodes as other resource-intensive applications, such as databases. 
+Configure `podAntiAffinity` so that these workloads are scheduled on separate nodes.
+
+This procedure provides configuration examples for the cluster-wide `Kafka` resource and the pool-specific `KafkaNodePool` resource.
+
+NOTE: If you configure `KafkaNodePool.spec.template`, its settings replace `Kafka.spec.kafka.template` for that node pool.
+Properties are not merged. 
+For more information, see xref:affinity-{context}[Scheduling strategies].
 
 .Prerequisites
 
-* A Kubernetes cluster
-* A running Cluster Operator
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.] 
+* The other workloads in your cluster use consistent labels.
 
 .Procedure
 
-. Edit the `affinity` property in the resource specifying the cluster deployment.
-Use labels to specify the pods which should not be scheduled on the same nodes.
-The `topologyKey` should be set to `kubernetes.io/hostname` to specify that the selected pods should not be scheduled on nodes with the same hostname.
-For example:
+. Configure `podAntiAffinity` in either the `Kafka` or `KafkaNodePool` resource.
 +
-[source,yaml,subs=attributes+]
+--
+* To set a cluster-wide rule, edit the `affinity` property in `spec.kafka.template.pod` of your `Kafka` resource. 
+* To set a pool-specific rule, edit the `affinity` property in `spec.template.pod` of your `KafkaNodePool` resource. 
+--
++
+In both cases, use a `labelSelector` to identify the application pods you want to keep separate from your Kafka pods and set the `topologyKey` to `"kubernetes.io/hostname"` to prevent pods from being placed on the same host.
++
+This example applies a rule to a `Kafka` resource named `my-cluster` that prevents any of its broker pods from running on the same node as pods labeled `postgresql` and `mongodb`.
++
+.Example cluster-wide anti-affinity configuration
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
+metadata:
+  name: my-cluster
 spec:
   kafka:
     # ...
@@ -37,14 +53,41 @@ spec:
                     - key: application
                       operator: In
                       values:
-                        - postgresql
-                        - mongodb
+                      - postgresql
+                      - mongodb
                 topologyKey: "kubernetes.io/hostname"
-    # ...
+  # ...
+----
++
+This example applies a rule to a `KafkaNodePool` resource named `broker` that prevents pods from that pool from running on the same node as pods labeled `postgresql` and `mongodb`.
++
+.Example node pool-specific anti-affinity configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: broker
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  template:
+    pod:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: application
+                    operator: In
+                    values:
+                      - postgresql
+                      - mongodb
+              topologyKey: "kubernetes.io/hostname"
+  # ...
 ----
 
-. Create or update the resource.
-+
-This can be done using `kubectl apply`:
-[source,shell,subs=+quotes]
-kubectl apply -f _<kafka_configuration_file>_
+. Apply the changes to your custom resource configuration.
