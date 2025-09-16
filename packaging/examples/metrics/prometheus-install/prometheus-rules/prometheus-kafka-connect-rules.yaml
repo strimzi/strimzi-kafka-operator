@@ -18,18 +18,18 @@ spec:
         summary: 'All Kafka Connect containers down or in CrashLookBackOff status'
         description: 'All Kafka Connect containers have been down or in CrashLookBackOff status for 3 minutes'
     - alert: ConnectFailedConnector
-      expr: sum(kafka_connect_connector_status{status="failed"}) by (namespace) > 0
+      expr: sum(kafka_connect_connector_status{status="failed"}) by (namespace, pod) > 0
       for: 5m
       labels:
         severity: major
       annotations:
         summary: 'Kafka Connect Connector Failure'
-        description: 'One or more connectors have been in failed state for 5 minutes,'
+        description: 'Kafka instance on pod {{ $labels.namespace }}/{{ $labels.pod }} has {{ $value }} connector(s) in failed state during last 5 minutes'
     - alert: ConnectFailedTask
-      expr: sum(kafka_connect_worker_connector_failed_task_count) by (namespace) > 0
+      expr: sum(kafka_connect_worker_connector_failed_task_count) by (namespace, pod) > 0
       for: 5m
       labels:
         severity: major
       annotations:
         summary: 'Kafka Connect Task Failure'
-        description: 'One or more tasks have been in failed state for 5 minutes.'
+        description: 'Kafka instance on pod {{ $labels.namespace }}/{{ $labels.pod }} has {{ $value }} task(s) in failed state during last 5 minutes'
