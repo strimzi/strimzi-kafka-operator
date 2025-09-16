@@ -335,7 +335,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             return false;
         }
 
-        //check if connector name is present and valid
+        // check if connector name is present and valid
         if (!values[0].equalsIgnoreCase(connectorName)) {
             return false;
         }
