@@ -16,8 +16,8 @@ active/passive cluster configuration:: An active/passive configuration has an ac
 The expectation is that producers and consumers connect to active clusters only.
 A MirrorMaker 2 cluster is required at each target destination.
 
-NOTE: In most deployments, write operations should be made only to local topics. 
-Write operations on remote topics are not prevented, but they can cause conflicts and should be avoided.
+NOTE: In most deployments, write operations should be made only to source topics. 
+Write operations on target topics are not prevented, but they can cause conflicts and should be avoided.
 
 == Bidirectional replication (active/active)
 
