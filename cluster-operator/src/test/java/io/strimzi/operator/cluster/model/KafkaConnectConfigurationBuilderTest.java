@@ -320,6 +320,7 @@ class KafkaConnectConfigurationBuilderTest {
         ));
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testWithAuthOauth() {
         KafkaClientAuthenticationOAuth authOAuth = new KafkaClientAuthenticationOAuthBuilder()

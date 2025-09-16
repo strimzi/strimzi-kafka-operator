@@ -331,6 +331,7 @@ public class KafkaBrokerConfigurationBuilder {
         return this;
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private void configureOAuthPrincipalBuilderIfNeeded(PrintWriter writer, List<GenericKafkaListener> kafkaListeners) {
         for (GenericKafkaListener listener : kafkaListeners) {
             if (listener.getAuth() instanceof KafkaListenerAuthenticationOAuth) {
@@ -426,6 +427,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param tls   Flag whether this protocol is using TLS or not
      * @param auth  The authentication configuration from the Kafka CR
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private void configureAuthentication(String listenerName, List<String> securityProtocol, boolean tls, KafkaListenerAuthentication auth)    {
         final String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
         final String listenerNameInEnvVar = listenerName.replace("-", "_");
@@ -522,6 +524,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param oauth     OAuth type authentication object
      * @return  Returns the builder instance
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     /*test*/ static Map<String, String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
         Map<String, String> options = new LinkedHashMap<>();
 
@@ -712,6 +715,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param authorization     Custom authorization configuration
      * @param superUsers        Super-users list who have all the rights on the cluster
      */
+    @SuppressWarnings("deprecation") // Keycloak Authorization is deprecated
     private void configureKeycloakAuthorization(String clusterName, KafkaAuthorizationKeycloak authorization, List<String> superUsers) {
         writer.println("authorizer.class.name=" + KafkaAuthorizationKeycloak.AUTHORIZER_CLASS_NAME);
         writer.println("strimzi.authorization.token.endpoint.uri=" + authorization.getTokenEndpointUri());

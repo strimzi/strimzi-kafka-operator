@@ -903,6 +903,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      **
      * @return role for the Kafka Connect
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public Role generateRole() {
         List<String> certSecretNames = new ArrayList<>();
         if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
