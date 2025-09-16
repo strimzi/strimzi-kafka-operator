@@ -340,7 +340,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             return false;
         }
 
-        // we expect that second item in array contains a lis of arguments to be used
+        // we expect that second item in array contains a list of arguments to be used
         if (values.length == 2) {
             String[] argValues = values[1].split(",");
 
