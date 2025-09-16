@@ -16,7 +16,7 @@ In Kafka deployments, configure pod anti-affinity to ensure that Kafka brokers d
 
 Use node affinity to schedule workloads onto specific nodes::
 Kubernetes clusters often include nodes optimized for different workloads, such as CPU, memory, storage, or network.  
-Node affinity enables scheduling Kafka components onto nodes that match specific labels, such as `beta.kubernetes.io/instance-type` or custom labels, to optimize performance and cost.
+Node affinity enables scheduling Kafka components onto nodes that match specific labels, such as `node.kubernetes.io/instance-type` or custom labels, to optimize performance and cost.
 
 Use node affinity, taints, and tolerations for dedicated nodes::
 To reserve nodes for Kafka, you can taint them to exclude them from general workloads. 
