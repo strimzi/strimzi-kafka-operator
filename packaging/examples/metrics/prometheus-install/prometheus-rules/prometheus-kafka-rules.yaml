@@ -26,13 +26,13 @@ spec:
         summary: 'Kafka under replicated partitions'
         description: 'There are {{ $value }} under replicated partitions on {{ $labels.kubernetes_pod_name }}'
     - alert: AbnormalControllerState
-      expr: sum(kafka_controller_kafkacontroller_activecontrollercount) by (strimzi_io_name, namespace, pod) != 1
+      expr: sum(kafka_controller_kafkacontroller_activecontrollercount) by (strimzi_io_name, namespace) != 1
       for: 10s
       labels:
         severity: warning
       annotations:
         summary: 'Kafka abnormal controller state'
-        description: 'Kafka instance on pod {{ $labels.namespace }}/{{ $labels.pod }} has {{ $value }} active controllers'
+        description: 'Kafka instance {{ $labels.strimzi_io_name }} on namespace {{ $labels.namespace }} has {{ $value }} active controllers'
     - alert: OfflinePartitions
       expr: sum(kafka_controller_kafkacontroller_offlinepartitionscount) by (namespace, pod) > 0
       for: 10s
