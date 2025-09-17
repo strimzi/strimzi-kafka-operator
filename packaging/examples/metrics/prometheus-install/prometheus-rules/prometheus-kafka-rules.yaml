@@ -26,21 +26,21 @@ spec:
         summary: 'Kafka under replicated partitions'
         description: 'There are {{ $value }} under replicated partitions on {{ $labels.kubernetes_pod_name }}'
     - alert: AbnormalControllerState
-      expr: sum(kafka_controller_kafkacontroller_activecontrollercount) by (strimzi_io_name) != 1
+      expr: sum(kafka_controller_kafkacontroller_activecontrollercount) by (strimzi_io_name, namespace, pod) != 1
       for: 10s
       labels:
         severity: warning
       annotations:
         summary: 'Kafka abnormal controller state'
-        description: 'There are {{ $value }} active controllers in the cluster'
+        description: 'Kafka instance on pod {{ $labels.namespace }}/{{ $labels.pod }} has {{ $value }} active controllers'
     - alert: OfflinePartitions
-      expr: sum(kafka_controller_kafkacontroller_offlinepartitionscount) > 0
+      expr: sum(kafka_controller_kafkacontroller_offlinepartitionscount) by (namespace, pod) > 0
       for: 10s
       labels:
         severity: warning
       annotations:
         summary: 'Kafka offline partitions'
-        description: 'One or more partitions have no leader'
+        description: 'Kafka instance on pod {{ $labels.namespace }}/{{ $labels.pod }} has {{ $value }} partition(s) with no leader'
     - alert: UnderMinIsrPartitionCount
       expr: kafka_server_replicamanager_underminisrpartitioncount > 0
       for: 10s
