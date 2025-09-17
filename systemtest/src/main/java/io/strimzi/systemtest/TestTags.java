@@ -157,6 +157,11 @@ public interface TestTags {
     String PERFORMANCE = "performance";
 
     /**
+     * Tag for tests focusing on users - this one is especially for UserST in order to create `test-suite-namespace`.
+     */
+    String USER = "user";
+
+    /**
      * Tag for tests that covers Tiered Storage integration
      */
     String TIERED_STORAGE = "tieredstorage";
