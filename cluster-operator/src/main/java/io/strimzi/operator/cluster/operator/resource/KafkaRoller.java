@@ -34,6 +34,7 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.FeatureMetadata;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigException;
@@ -623,8 +624,12 @@ public class KafkaRoller {
             // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
             // connect to the broker and that it's capable of responding.
             Config brokerConfig;
+            short elrVersion = 0;
             try {
                 brokerConfig = brokerConfig(nodeRef);
+                FeatureMetadata featureMetadata = featureMetadata();
+                elrVersion = featureMetadata.finalizedFeatures().get("eligible.leader.replicas.version") == null ?
+                        0 : featureMetadata.finalizedFeatures().get("eligible.leader.replicas.version").maxVersionLevel();
             } catch (ForceableProblem e) {
                 if (restartContext.backOff.done()) {
                     needsRestart = true;
@@ -636,7 +641,7 @@ public class KafkaRoller {
 
             if (!needsRestart && allowReconfiguration) {
                 LOGGER.traceCr(reconciliation, "Pod {}: description {}", nodeRef, brokerConfig);
-                brokerConfigDiff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(nodeRef.nodeId()), kafkaVersion, nodeRef);
+                brokerConfigDiff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(nodeRef.nodeId()), kafkaVersion, nodeRef, elrVersion);
 
                 if (brokerConfigDiff.getDiffSize() > 0) {
                     if (brokerConfigDiff.canBeUpdatedDynamically()) {
@@ -655,6 +660,17 @@ public class KafkaRoller {
         restartContext.needsReconfig = needsReconfig;
         restartContext.forceRestart = false;
         restartContext.brokerConfigDiff = brokerConfigDiff;
+    }
+
+    /**
+     * Returns the information about the features within the Kafka Cluster
+     * @return information about the features
+     */
+    /* test */ FeatureMetadata featureMetadata() throws ForceableProblem, InterruptedException {
+        return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeFeatures().featureMetadata()),
+                30, TimeUnit.SECONDS,
+                error -> new ForceableProblem("Error getting feature metadata", error)
+        );
     }
 
     /**
