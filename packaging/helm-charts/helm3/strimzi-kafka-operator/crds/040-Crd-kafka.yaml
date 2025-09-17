@@ -767,7 +767,7 @@ spec:
                             - opa
                             - keycloak
                             - custom
-                          description: "Authorization type. Currently, the supported types are `simple`, `keycloak`, `opa` and `custom`. `simple` authorization type uses Kafka's built-in authorizer for authorization. `keycloak` authorization type uses Keycloak Authorization Services for authorization. `opa` authorization type uses Open Policy Agent based authorization. `custom` authorization type uses user-provided implementation for authorization. As of Strimzi 0.49.0, `opa` and `keycloak` types are deprecated and will be removed in the `v1` API version. Please use `custom` type instead."
+                          description: "Authorization type. Currently, the supported types are `simple`, `keycloak`, `opa` and `custom`. `simple` authorization type uses Kafka's built-in authorizer for authorization. `keycloak` authorization type uses Keycloak Authorization Services for authorization. `opa` authorization type uses Open Policy Agent based authorization. `custom` authorization type uses user-provided implementation for authorization. `opa` (as of Strimzi 0.46.0) and `keycloak` (as of Strimzi 0.49.0) types are deprecated and will be removed in the `v1` API version. Please use `custom` type instead."
                         url:
                           type: string
                           example: http://opa:8181/v1/data/kafka/authz/allow

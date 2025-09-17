@@ -33,32 +33,45 @@ spec:
         type: internal
         tls: true
         authentication:
-          type: oauth
-          validIssuerUri: https://${SSO_HOST}/realms/kafka-authz
-          jwksEndpointUri: https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/certs
-          userNameClaim: preferred_username
-          maxSecondsWithoutReauthentication: 3600
-          enableMetrics: true
-          tlsTrustedCertificates:
-            - secretName: oauth-server-cert
-              certificate: sso.crt
+          type: custom
+          sasl: true
+          listenerConfig:
+            sasl.enabled.mechanisms: OAUTHBEARER
+            oauthbearer.sasl.server.callback.handler.class: io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
+            oauthbearer.sasl.jaas.config: |
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="thePrincipalName" oauth.valid.issuer.uri="https://${SSO_HOST}/realms/kafka-authz" oauth.jwks.endpoint.uri="https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/certs" oauth.username.claim="preferred_username" oauth.enable.metrics="true" oauth.ssl.truststore.location="/mnt/oauth-certs/tls.crt" oauth.ssl.truststore.type="PEM";
+            connections.max.reauth.ms: 3600
     authorization:
-      type: keycloak
-      clientId: kafka
-      tokenEndpointUri: https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/token
-      tlsTrustedCertificates:
-        - secretName: oauth-server-cert
-          certificate: sso.crt
-      delegateToKafkaAcls: true
-      enableMetrics: true
+      type: custom
+      authorizerClass: io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer
       superUsers:
         - service-account-kafka
     config:
+      # Needed for Oauth authentication and Keycloak authroization
+      principal.builder.class: io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder
+      # Needed for Keycloak authorization
+      strimzi.authorization.client.id: kafka
+      strimzi.authorization.token.endpoint.uri: https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/token
+      strimzi.authorization.ssl.endpoint.identification.algorithm: ""
+      strimzi.authorization.delegate.to.kafka.acl: "false"
+      strimzi.authorization.ssl.truststore.location: /mnt/oauth-certs/tls.crt
+      strimzi.authorization.ssl.truststore.type: PEM
+      # Other Kafka configuration options
       offsets.topic.replication.factor: 1
       transaction.state.log.replication.factor: 1
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
+    template:
+      pod:
+        volumes:
+          - name: oauth-certs
+            secret:
+              name: oauth-server-cert
+      kafkaContainer:
+        volumeMounts:
+          - name: oauth-certs
+            mountPath: /mnt/oauth-certs
     metricsConfig:
       type: jmxPrometheusExporter
       valueFrom:
