@@ -508,12 +508,18 @@ class UserST extends AbstractST {
         }
         );
 
+        // Change the producer name in order to sure that we will not pick old Pod (race condition)
+        String newProducerName = testStorage.getProducerName() + "-authz";
+        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+            .withProducerName(newProducerName)
+            .build();
+
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
 
         PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(),
-            PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getProducerName()), "authorization failed");
+            PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), newProducerName), "authorization failed");
 
-        ClientUtils.waitForInstantProducerClientTimeout(testStorage);
+        ClientUtils.waitForClientTimeout(testStorage.getNamespaceName(), newProducerName, testStorage.getMessageCount());
     }
 
     @BeforeAll
