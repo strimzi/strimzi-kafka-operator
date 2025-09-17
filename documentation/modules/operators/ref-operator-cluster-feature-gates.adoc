@@ -137,7 +137,7 @@ If a conflict occurs in a managed field, the update is retried with `force = tru
 The conflict and the switch to forced apply are logged by the Cluster Operator.
 
 Ownership of individual fields is tracked through the `.metadata.managedFields` property of the resource being updated.
-.Enabling the `ServerSideApplyPhase1` feature gate
+
 To enable the `ServerSideApplyPhase1` feature gate, specify `+ServerSideApplyPhase1` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 == Enabling feature gates
