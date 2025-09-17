@@ -8,6 +8,14 @@
 ### Major changes, deprecations, and removals
 
 * The `.status.kafkaMetadataState` field in the `Kafka` custom resource is deprecated and not used anymore.
+* The `type: oauth` authentication in Kafka brokers and Kafka clients (Kafka Connect, MirrorMaker 2, and Strimzi HTTP Bridge) has been deprecated.
+  Please use the `type: custom` authentication instead.
+  The Strimzi OAuth library continues to be packaged with the Strimzi container images.
+  Follow the documentation for the examples and migration details.
+* The Keycloak authorization (`type: keycloak`) has been deprecated and will be removed in the future.
+  To use the Keycloak authorizer, you can use the `type: custom` authorization.
+  The Strimzi OAuth library with the Keycloak authorizer continues to be packaged with the Strimzi container images.
+  Follow the documentation for the examples and migration details.
 
 ## 0.48.0
 

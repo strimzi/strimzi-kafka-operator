@@ -40,7 +40,7 @@ public abstract class KafkaAuthorization implements UnknownPropertyPreserving {
             "`keycloak` authorization type uses Keycloak Authorization Services for authorization. " +
             "`opa` authorization type uses Open Policy Agent based authorization. " +
             "`custom` authorization type uses user-provided implementation for authorization. " +
-            "As of Strimzi 0.49.0, `opa` and `keycloak` types are deprecated and will be removed in the `v1` API version. " +
+            "`opa` (as of Strimzi 0.46.0) and `keycloak` (as of Strimzi 0.49.0) types are deprecated and will be removed in the `v1` API version. " +
             "Please use `custom` type instead.")
     public abstract String getType();
 
