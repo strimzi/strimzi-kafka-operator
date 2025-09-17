@@ -6,26 +6,28 @@
 = Configuring Kafka
 
 [role="_abstract"]
-Update the `spec` properties of the `Kafka` custom resource to configure your deployment of Kafka.
+Configure your Kafka deployment by updating the `spec` properties of the `Kafka` custom resource.
 
-As well as configuring Kafka, you can add configuration for Strimzi operators.
+You can also configure Strimzi components and features that support the deployment:
 
-The KRaft metadata version (`.spec.kafka.metadataVersion`) must be a version supported by the Kafka version (`spec.kafka.version`).
-If the metadata version is not set in the configuration, the Cluster Operator updates the version to the default for the Kafka version used.  
+* Topic Operator and User Operator for managing topics and clients
+* Cruise Control for cluster rebalancing
+* Kafka Exporter for lag metrics
+* Listeners for authenticated client access
+* Data storage
+* Rack awareness
 
-NOTE: The oldest supported metadata version is 3.3. 
-Using a metadata version that is older than the Kafka version might cause some features to be disabled.
+Specify the metadata version for KRaft using `.spec.kafka.metadataVersion`. 
+It must be compatible with `.spec.kafka.version`. 
+If not set, the Cluster Operator applies the default for the Kafka version.  
 
-Kafka clusters use node pools.
-The following must be specified in the xref:config-node-pools-{context}[node pool configuration]:
-
-* Roles assigned to each node within the Kafka cluster 
-* Number of replica nodes used 
-* Storage specification for the nodes 
-
-Other optional properties may also be set in node pools.
+Kafka clusters use node pools. 
+Use `KafkaNodePool` resources to configure distinct groups of nodes within a Kafka cluster.
 
 For a deeper understanding of the Kafka cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+
+NOTE: The oldest supported metadata version is 3.3. 
+Older versions may disable certain features.
 
 .Example `Kafka` custom resource configuration
 [source,yaml,subs="+attributes"]

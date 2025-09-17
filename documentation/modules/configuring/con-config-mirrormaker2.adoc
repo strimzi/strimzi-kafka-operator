@@ -3,257 +3,82 @@
 // assembly-config.adoc
 
 [id='con-config-mirrormaker2-{context}']
-= Configuring Kafka MirrorMaker 2
+= Configuring MirrorMaker 2
 
 [role="_abstract"]
-Update the `spec` properties of the `KafkaMirrorMaker2` custom resource to configure your MirrorMaker 2 deployment.
-MirrorMaker 2 uses source cluster configuration for data consumption and target cluster configuration for data output.
+Configure your MirrorMaker 2 deployment by updating the `spec` properties of the `KafkaMirrorMaker2` custom resource.
 
-MirrorMaker 2 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
+Start with a minimal configuration that defines the core requirements.
+Extend it with optional settings to support the following:
 
-You configure MirrorMaker 2 to define the Kafka Connect deployment, including the connection details of the source and target clusters, and then run a set of MirrorMaker 2 connectors to make the connection.
+* Securing connections (TLS and authentication)
+* Managing of replicated topic names
+* Synchronizing consumer group offsets
+* Synchronizing ACL rules
+* Tuning Kafka Connect worker settings
+* xref:con-common-config-{context}[common configuration] +
+Common configuration includes setting resource limits and requests (recommended), JVM tuning, and metrics.
 
-MirrorMaker 2 supports topic configuration synchronization between the source and target clusters. 
-You specify source topics in the MirrorMaker 2 configuration.
-MirrorMaker 2 monitors the source topics.
-MirrorMaker 2 detects and propagates changes to the source topics to the remote topics.
-Changes might include automatically creating missing topics and partitions.
+Certain settings, though optional, are recommended for production deployments, such as security and resource allocation.
 
-NOTE: In most cases you write to local topics and read from remote topics. Though write operations are not prevented on remote topics, they should be avoided. 
+For details of all configuration options, see the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^]. 
 
-The configuration must specify:
+== Minimal configuration for MirrorMaker 2
 
-* Each Kafka cluster
-* Connection information for each cluster, including authentication
-* The replication flow and direction
-** Cluster to cluster
-** Topic to topic
+A minimal `KafkaMirrorMaker2` resource requires the following in its spec:
 
-For a deeper understanding of the Kafka MirrorMaker 2 cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+* `clusters`: The connection details for source and target Kafka clusters. Each requires a unique alias.
+* `connectCluster`: The alias of the target cluster. MirrorMaker 2 runs on the Kafka Connect framework, and its configuration and status are stored on this cluster.
+* `replicas`: The number of Kafka Connect worker pods to deploy.
+* `mirrors`: The replication flow from a source cluster to a target cluster. 
 
-.Default configuration 
-MirrorMaker 2 provides default configuration values for properties such as replication factors.
-A minimal configuration, with defaults left unchanged, would be something like this example:
+By default, MirrorMaker 2 replicates all topics and consumer groups.  
+To reduce load on the cluster and avoid replicating unnecessary data, specify which topics and groups to include using filters:
+
+* `topicsPattern`: A regex to select topics for replication.
+* `groupsPattern`: A regex to select consumer groups for offset synchronization.
 
 .Minimal configuration for MirrorMaker 2
 [source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: {KafkaMirrorMaker2ApiVersion}
-kind: KafkaMirrorMaker2
-metadata:
-  name: my-mirror-maker2
-spec:
-  version: {DefaultKafkaVersion}
-  connectCluster: "my-cluster-target"
-  clusters:
-  - alias: "my-cluster-source"
-    bootstrapServers: my-cluster-source-kafka-bootstrap:9092
-  - alias: "my-cluster-target"
-    bootstrapServers: my-cluster-target-kafka-bootstrap:9092
-  mirrors:
-  - sourceCluster: "my-cluster-source"
-    targetCluster: "my-cluster-target"
-    sourceConnector: {}
-----
-
-You can configure access control for source and target clusters using mTLS or SASL authentication.
-This procedure shows a configuration that uses TLS encryption and mTLS authentication for the source and target cluster.
-
-You can specify the topics and consumer groups you wish to replicate from a source cluster in the `KafkaMirrorMaker2` resource.
-You use the `topicsPattern` and `groupsPattern` properties to do this.
-You can provide a list of names or use a regular expression.
-By default, all topics and consumer groups are replicated if you do not set the `topicsPattern` and `groupsPattern` properties.
-You can also replicate all topics and consumer groups by using `".*"` as a regular expression.
-However, try to specify only the topics and consumer groups you need to avoid causing any unnecessary extra load on the cluster.
-
-.Handling high volumes of messages
-You can tune the configuration to handle high volumes of messages.
-For more information, see xref:con-high-volume-config-properties-{context}[Handling high volumes of messages].
-
-.Example `KafkaMirrorMaker2` custom resource configuration
-[source,yaml,subs="+attributes"]
 ----
 # Basic configuration (required)
 apiVersion: {KafkaMirrorMaker2ApiVersion}
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker2
-# Deployment specifications
 spec:
+  # Kafka version (recommended)
+  version: {DefaultKafkaVersion}
   # Replicas (required)
   replicas: 3 # <1>
   # Connect cluster name (required)
   connectCluster: "my-cluster-target" # <2>
   # Cluster configurations (required)
-  clusters: # <3>
-    - alias: "my-cluster-source" # <4>
-      # Authentication (optional)
-      authentication: # <5>
-        certificateAndKey:
-          certificate: source.crt
-          key: source.key
-          secretName: my-user-source
-        type: tls
-      bootstrapServers: my-cluster-source-kafka-bootstrap:9092 # <6>
-      # TLS configuration (optional)
-      tls: # <7>
-        trustedCertificates:
-          - pattern: "*.crt"
-            secretName: my-cluster-source-cluster-ca-cert
-    - alias: "my-cluster-target" # <8>
-      # Authentication (optional)
-      authentication: # <9>
-        certificateAndKey:
-          certificate: target.crt
-          key: target.key
-          secretName: my-user-target
-        type: tls
-      bootstrapServers: my-cluster-target-kafka-bootstrap:9092 # <10>
-      # Kafka Connect configuration (optional)
-      config: # <11>
-        config.storage.replication.factor: 1
-        offset.storage.replication.factor: 1
-        status.storage.replication.factor: 1
-      # TLS configuration (optional)
-      tls: # <12>
-        trustedCertificates:
-          - pattern: "*.crt"
-            secretName: my-cluster-target-cluster-ca-cert
-  # Mirroring configurations (required)
-  mirrors: # <13>
-    - sourceCluster: "my-cluster-source" # <14>
-      targetCluster: "my-cluster-target" # <15>
-      # Topic and group patterns (required)
-      topicsPattern: "topic1|topic2|topic3" # <16>
-      groupsPattern: "group1|group2|group3" # <17>
-      # Source connector configuration (required)
-      sourceConnector: # <18>
-        tasksMax: 10 # <19>
-        autoRestart: # <20>
-          enabled: true
-        config:
-          replication.factor: 1 # <21>
-          offset-syncs.topic.replication.factor: 1 # <22>
-          sync.topic.acls.enabled: "false" # <23>
-          refresh.topics.interval.seconds: 60 # <24>
-          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" # <25>
-      # Heartbeat connector configuration (optional)
-      heartbeatConnector: # <26>
-        autoRestart:
-          enabled: true
-        config:
-          heartbeats.topic.replication.factor: 1 # <27>
-          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
-      # Checkpoint connector configuration (optional)
-      checkpointConnector: # <28>
-        autoRestart:
-          enabled: true
-        config:
-          checkpoints.topic.replication.factor: 1 # <29>
-          refresh.groups.interval.seconds: 600 # <30>
-          sync.group.offsets.enabled: true # <31>
-          sync.group.offsets.interval.seconds: 60 # <32>
-          emit.checkpoints.interval.seconds: 60 # <33>
-          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
-  # Kafka version (recommended)
-  version: {DefaultKafkaVersion} # <34>
-  # Resources requests and limits (recommended)
-  resources: # <35>
-    requests:
-      cpu: "1"
-      memory: 2Gi
-    limits:
-      cpu: "2"
-      memory: 2Gi
-  # Logging configuration (optional)
-  logging: # <36>
-    type: inline
-    loggers:
-      # Kafka 4.0+ uses Log4j2
-      rootLogger.level: INFO
-  # Readiness probe (optional)
-  readinessProbe: # <37>
-    initialDelaySeconds: 15
-    timeoutSeconds: 5
-  # Liveness probe (optional)
-  livenessProbe:
-    initialDelaySeconds: 15
-    timeoutSeconds: 5
-  # JVM options (optional)
-  jvmOptions: # <38>
-    "-Xmx": "1g"
-    "-Xms": "1g"
-  # Custom image (optional)
-  image: my-org/my-image:latest # <39>
-  # Rack awareness (optional)
-  rack:
-    topologyKey: topology.kubernetes.io/zone # <40>
-  # Pod template (optional)
-  template: # <41>
-    pod:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: application
-                    operator: In
-                    values:
-                      - postgresql
-                      - mongodb
-              topologyKey: "kubernetes.io/hostname"
-    connectContainer: # <42>
-      env:
-        - name: OTEL_SERVICE_NAME
-          value: my-otel-service
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: "http://otlp-host:4317"
-  # Tracing configuration (optional)
-  tracing:
-    type: opentelemetry # <43>
+  clusters:
+  - alias: "my-cluster-source" # <3>
+    bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+  - alias: "my-cluster-target"
+    bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+  # Mirroring configurations (required)  
+  mirrors: # <4>
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    # Source connector configuration (required) # <5>
+    sourceConnector: {}
+    # Topic and group patterns (required)
+      topicsPattern: "topic1.*|topic2.*" # <6>
+      groupsPattern: "group1.*|group2-[0-9]{2}" # <7>
 ----
-<1> The number of replica nodes for the workers that run tasks.
-<2> Kafka cluster alias for Kafka Connect, which must specify the *target* Kafka cluster. The Kafka cluster is used by Kafka Connect for its internal topics.
-<3> Specification for the Kafka clusters being synchronized.
-<4> Cluster alias for the source Kafka cluster.
-<5> Authentication for the source cluster, specified as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`.
-For details on configuring authentication, see the link:{BookURLConfiguring}#type-KafkaMirrorMaker2ClusterSpec-schema-reference[`KafkaMirrorMaker2Spec` schema properties^]
-<6> Bootstrap address for connection to the source Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
-<7> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
-<8> Cluster alias for the target Kafka cluster.
-<9> Authentication for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
-<10> Bootstrap address for connection to the target Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
-<11> Kafka Connect configuration.
-Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
-<12> TLS encryption for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
-<13> MirrorMaker 2 connectors.
-<14> Cluster alias for the source cluster used by the MirrorMaker 2 connectors.
-<15> Cluster alias for the target cluster used by the MirrorMaker 2 connectors.
-<16> Topic replication from the source cluster defined as a comma-separated list or regular expression pattern. The source connector replicates the specified topics. The checkpoint connector tracks offsets for the specified topics. Here we request three topics by name.
-<17> Consumer group replication from the source cluster defined as a comma-separated list or regular expression pattern. The checkpoint connector replicates the specified consumer groups. Here we request three consumer groups by name.
-<18> Configuration for the `MirrorSourceConnector` that creates remote topics. The `config` overrides the default configuration options.
-<19> The maximum number of tasks that the connector may create. Tasks handle the data replication and run in parallel. If the infrastructure supports the processing overhead, increasing this value can improve throughput. Kafka Connect distributes the tasks between members of the cluster. If there are more tasks than workers, workers are assigned multiple tasks. For sink connectors, aim to have one task for each topic partition consumed. For source connectors, the number of tasks that can run in parallel may also depend on the external system. The connector creates fewer than the maximum number of tasks if it cannot achieve the parallelism.
-<20> Enables automatic restarts of failed connectors and tasks. By default, the number of restarts is indefinite, but you can set a maximum on the number of automatic restarts using the `maxRestarts` property.
-<21> Replication factor for mirrored topics created at the target cluster.
-<22> Replication factor for the `MirrorSourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
-<23> When ACL rules synchronization is enabled, ACLs are applied to synchronized topics. The default is `true`. This feature is not compatible with the User Operator. If you are using the User Operator, set this property to `false`.
-<24> Optional setting to change the frequency of checks for new topics. The default is for a check every 10 minutes.
-<25> Adds a policy that overrides the automatic renaming of remote topics. Instead of prepending the name with the name of the source cluster, the topic retains its original name. This optional setting is useful for active/passive backups and data migration. The property must be specified for all connectors. For bidirectional (active/active) replication, use the `DefaultReplicationPolicy` class to automatically rename remote topics and specify the `replication.policy.separator` property for all connectors to add a custom separator.
-<26> Configuration for the `MirrorHeartbeatConnector` that performs connectivity checks. The `config` overrides the default configuration options.
-<27> Replication factor for the heartbeat topic created at the target cluster.
-<28> Configuration for the `MirrorCheckpointConnector` that tracks offsets. The `config` overrides the default configuration options.
-<29> Replication factor for the checkpoints topic created at the target cluster.
-<30> Optional setting to change the frequency of checks for new consumer groups. The default is for a check every 10 minutes.
-<31> Optional setting to synchronize consumer group offsets, which is useful for recovery in an active/passive configuration. Synchronization is not enabled by default.
-<32> If the synchronization of consumer group offsets is enabled, you can adjust the frequency of the synchronization.
-<33> Adjusts the frequency of checks for offset tracking. If you change the frequency of offset synchronization, you might also need to adjust the frequency of these checks.
-<34> The Kafka Connect and MirrorMaker 2 version, which will always be the same.
-<35> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<36> Specified Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a `ConfigMap`. Custom Log4j configuration must be placed under the `log4j2.properties` key in the `ConfigMap`. You can set log levels to `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
-<37> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
-<38> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
-<39> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
-<40> SPECIALIZED OPTION: Rack awareness configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
-<41> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<42> Environment variables are set for distributed tracing.
-<43> Distributed tracing is enabled by using OpenTelemetry.
+<1> Number of Kafka Connect worker replicas to run.
+<2> Alias of the Kafka cluster used by Kafka Connect to store internal topics. This must be the alias of the target cluster.
+<3> Each Kafka cluster (source and target) must define a unique alias and a bootstrap address. The bootstrap address takes the format `<cluster_name>-kafka-bootstrap:<port>`.
+<4> Defines replication between the source and target clusters. 
+<5> Configuration for the source connector that replicates topics. At a minimum, you can add an empty `sourceConnector` property to use the default configuration.
+<6> Replicates only topics starting with `topic1` or `topic2`.
+<7> Replicates consumer groups starting with `group1` or `group2` followed by two digits. 
+
+NOTE: The Kafka clusters do not need to be managed by Strimzi or run on Kubernetes.
+
+
+
+

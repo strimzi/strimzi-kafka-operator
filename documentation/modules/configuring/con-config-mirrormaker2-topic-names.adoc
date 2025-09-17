@@ -1,0 +1,46 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-mirrormaker2-topic-names-{context}']
+= Configuring replicated topic naming
+
+[role="_abstract"]
+By default, MirrorMaker 2 renames replicated topics by prepending the source cluster's alias.
+For example, a topic named `topic1` from a cluster called `my-cluster-source` is replicated as `my-cluster-source.topic1`.
+This allows MirrorMaker 2 to detect mirroring cycles and is especially useful when deploying complex topologies or performing bidirectional replication.
+
+You can change this behavior using the `replication.policy.class` property in the connector configuration.
+There are two built-in policies available:
+
+* `org.apache.kafka.connect.mirror.IdentityReplicationPolicy` keeps original topic names. +
+This approach is suitable for unidirectional replication, migration, or failover scenarios.
+* `org.apache.kafka.connect.mirror.DefaultReplicationPolicy` (default) prefixes topic names. +
+This is recommended for bidirectional replication. 
+Use `replication.policy.separator` to specify the character that separates the cluster name from the topic name in the replicated topic.
+
+.Example configuration to keep topic names (IdentityReplicationPolicy)
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  # ...  
+  mirrors:
+    - sourceCluster: "my-cluster-source"
+      targetCluster: "my-cluster-target"
+      sourceConnector:
+        config: 
+          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" # <1>
+      heartbeatConnector:
+        config:
+          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"    
+      checkpointConnector:
+        config:
+          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"    
+----
+<1> Replicates topics without prefixing the source cluster name.
+
+IMPORTANT: Values for `replication.policy.class` and `replication.policy.separator` must be the same across all MirrorMaker 2 connectors (`sourceConnector`, `heartbeatConnector`, and `checkpointConnector`).  

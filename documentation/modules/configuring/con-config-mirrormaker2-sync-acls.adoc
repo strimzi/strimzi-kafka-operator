@@ -1,0 +1,38 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-mirrormaker2-sync-acls-{context}']
+= Synchronizing ACL rules
+
+[role="_abstract"]
+MirrorMaker 2 can synchronize topic ACL rules from source to target clusters. 
+Enable this feature by configuring the `MirrorSourceConnector`.
+
+With `simple` authorization:
+
+* ACL rules apply to both source and target topics
+* Users with source topic access automatically get equivalent target topic access
+
+[IMPORTANT]
+====
+* This feature is not compatible with the User Operator, so disable by setting `sync.topic.acls.enabled` to `false`.
+* When using OAuth 2.0 authorization, the setting has no effect.
+====
+
+.Example configuration to enable offset synchronization
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+  # ...
+  mirrors:
+    - sourceCluster: "my-cluster-source"
+      targetCluster: "my-cluster-target"
+      sourceConnector:
+        config:
+          sync.topic.acls.enabled: "true" # <1>
+----
+<1> Replicates all source topic ACLs to the target cluster.

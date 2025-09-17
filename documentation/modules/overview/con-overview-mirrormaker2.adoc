@@ -3,9 +3,11 @@
 // assembly-config.adoc
 
 [id="con-overview-mm2-{context}"]
-= Configuring active/active or active/passive modes 
+= About MirrorMaker 2
 
 [role="_abstract"]
+Kafka MirrorMaker 2 replicates data (topics, consumer groups, and offsets) between Kafka clusters. 
+Through configuration, you define source and target cluster connections.
 You can use MirrorMaker 2 in _active/passive_ or _active/active_ cluster configurations.
 
 active/active cluster configuration:: An active/active configuration has two active clusters replicating data bidirectionally. Applications can use either cluster. Each cluster can provide the same data. In this way,  you can make the same data available in different geographical locations. As consumer groups are active in both clusters, consumer offsets for replicated topics are not synchronized back to the source cluster. 
@@ -14,21 +16,27 @@ active/passive cluster configuration:: An active/passive configuration has an ac
 The expectation is that producers and consumers connect to active clusters only.
 A MirrorMaker 2 cluster is required at each target destination.
 
+NOTE: In most deployments, write operations should be made only to source topics. 
+Write operations on target topics are not prevented, but they can cause conflicts and should be avoided.
+
 == Bidirectional replication (active/active)
 
 The MirrorMaker 2 architecture supports bidirectional replication in an _active/active_ cluster configuration.
 
-Each cluster replicates the data of the other cluster using the concept of _source_ and _remote_ topics.
-As the same topics are stored in each cluster, remote topics are automatically renamed by MirrorMaker 2 to represent the source cluster.
-The name of the originating cluster is prepended to the name of the topic.
+Each cluster replicates the other's data using the concept of _source_ and _remote_ topics.
+In this context, _remote_ refers to the target cluster receiving replicated data from the perspective of the source MirrorMaker instance.
+Each cluster simultaneously acts as both source and remote, depending on the direction of the replication flow.
+
+As the same topics are stored in each cluster, remote topics are automatically renamed by MirrorMaker 2 to indicate their origin.
+The name of the source cluster is prepended to the topic name.
 
 .Topic renaming
 image::mirrormaker-renaming.png[MirrorMaker 2 bidirectional architecture]
 
-By flagging the originating cluster, topics are not replicated back to that cluster.
+This renaming prevents topics from being replicated back to their originating cluster.
 
-The concept of replication through _remote_ topics is useful when configuring an architecture that requires data aggregation.
-Consumers can subscribe to source and remote topics within the same cluster, without the need for a separate aggregation cluster.
+This replication structure also supports data aggregation in active/active setups: 
+Consumers can subscribe to both source and remote topics within the same cluster, eliminating the need for a separate aggregation cluster.
 
 [id=unidirectional_replication_activepassive]
 == Unidirectional replication (active/passive)
