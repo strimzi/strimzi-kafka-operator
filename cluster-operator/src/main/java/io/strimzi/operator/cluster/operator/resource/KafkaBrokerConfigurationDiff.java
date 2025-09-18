@@ -42,7 +42,6 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     private final Reconciliation reconciliation;
     private final Collection<AlterConfigOp> brokerConfigDiff;
     private final Map<String, ConfigModel> configModel;
-    private final short elrVersion;
 
     /**
      * These options are skipped because they contain placeholders
@@ -74,11 +73,9 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
      * @param desired           Desired configuration
      * @param kafkaVersion      Kafka version
      * @param brokerNodeRef     Broker node reference
-     * @param elrVersion        If Eligible Leader Replicas (ELR) is enabled on the Kafka cluster
      */
-    protected KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, NodeRef brokerNodeRef, short elrVersion) {
+    protected KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, NodeRef brokerNodeRef) {
         this.reconciliation = reconciliation;
-        this.elrVersion = elrVersion;
         this.configModel = KafkaConfiguration.readConfigModel(kafkaVersion);
         this.brokerConfigDiff = diff(brokerNodeRef, desired, brokerConfigs, configModel);
     }
@@ -218,9 +215,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         } else {
             // entry is in current, is not in desired, is not default -> it was using non-default value and was removed
             // if the entry was custom, it should be deleted
-            if ("min.insync.replicas".equals(entry.name()) && elrVersion >= 1) {
-                LOGGER.traceCr(reconciliation, "min.insync.replicas cannot be deleted when ELR is enabled");
-            } else if (!isIgnorableProperty(pathValueWithoutSlash, nodeIsController)) {
+            if (!isIgnorableProperty(pathValueWithoutSlash, nodeIsController)) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
                 LOGGER.infoCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
             } else {

@@ -844,11 +844,6 @@ public class KafkaBrokerConfigurationBuilder {
                 ? new KafkaConfiguration(userConfig)
                 : new KafkaConfiguration(reconciliation, new ArrayList<>());
 
-        // Set default min.insync.replicas=1 if not specified by the user
-        if (userConfig.getConfigOption("min.insync.replicas") == null) {
-            userConfig.setConfigOption("min.insync.replicas", "1");
-        }
-
         printConfigProviders(userConfig);
 
         printMetricReporters(userConfig, injectCcMetricsReporter, injectKafkaJmxReporter, injectStrimziMetricsReporter);
