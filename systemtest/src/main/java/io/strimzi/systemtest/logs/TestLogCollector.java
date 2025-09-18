@@ -142,6 +142,7 @@ public class TestLogCollector {
             TestConstants.CONFIG_MAP.toLowerCase(Locale.ROOT),
             TestConstants.SERVICE.toLowerCase(Locale.ROOT),
             TestConstants.CERTIFICATE.toLowerCase(Locale.ROOT),
+            TestConstants.JOB.toLowerCase(Locale.ROOT),
             Kafka.RESOURCE_SINGULAR,
             KafkaNodePool.RESOURCE_SINGULAR,
             KafkaConnect.RESOURCE_SINGULAR,
@@ -190,21 +191,24 @@ public class TestLogCollector {
             String[] filesInLogsDir = logsForTestCase.list();
 
             if (filesInLogsDir != null && filesInLogsDir.length > 0) {
-                index = Integer.parseInt(
-                    Arrays
-                        .stream(filesInLogsDir)
-                        .filter(file -> {
-                            try {
-                                Integer.parseInt(file);
-                                return true;
-                            } catch (NumberFormatException e) {
-                                return false;
-                            }
-                        })
-                        .sorted()
-                        .toList()
-                        .get(filesInLogsDir.length - 1)
-                ) + 1;
+                List<String> indexes = Arrays
+                    .stream(filesInLogsDir)
+                    .filter(file -> {
+                        try {
+                            Integer.parseInt(file);
+                            return true;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    })
+                    .sorted()
+                    .toList();
+
+                // check if there is actually something in the list of folders
+                if (!indexes.isEmpty()) {
+                    // take the highest index and increase it by one for a new directory
+                    index = Integer.parseInt(indexes.get(indexes.size() - 1)) + 1;
+                }
             }
         }
 

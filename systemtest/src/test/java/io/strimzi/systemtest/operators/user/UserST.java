@@ -55,6 +55,7 @@ import org.junit.jupiter.api.Tag;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.systemtest.TestTags.USER;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -66,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
+@Tag(USER)
 @SuiteDoc(
     description = @Desc("Test suite for various Kafka User operations and configurations."),
     beforeTestSteps = {
@@ -506,12 +508,18 @@ class UserST extends AbstractST {
         }
         );
 
+        // Change the producer name in order to sure that we will not pick old Pod (race condition)
+        String newProducerName = testStorage.getProducerName() + "-authz";
+        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+            .withProducerName(newProducerName)
+            .build();
+
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
 
         PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(),
-            PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getProducerName()), "authorization failed");
+            PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), newProducerName), "authorization failed");
 
-        ClientUtils.waitForInstantProducerClientTimeout(testStorage);
+        ClientUtils.waitForClientTimeout(testStorage.getNamespaceName(), newProducerName, testStorage.getMessageCount());
     }
 
     @BeforeAll
