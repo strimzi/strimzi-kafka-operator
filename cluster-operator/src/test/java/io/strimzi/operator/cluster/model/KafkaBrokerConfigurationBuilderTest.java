@@ -499,7 +499,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "min.insync.replicas=1"));
     }
 
     @Test
@@ -516,7 +517,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
+                "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter",
+                "min.insync.replicas=1"));
     }
 
     @Test
@@ -535,7 +537,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "min.insync.replicas=1"));
     }
 
     @Test
@@ -563,7 +566,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "auto.create.topics.enable=false",
                 "offsets.topic.replication.factor=3",
                 "transaction.state.log.replication.factor=3",
-                "transaction.state.log.min.isr=2"));
+                "transaction.state.log.min.isr=2",
+                "min.insync.replicas=1"));
     }
 
     @Test
@@ -587,7 +591,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
+                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "min.insync.replicas=1"));
 
         // Controller
         configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-3", 3, "kafka", true, false))
@@ -598,7 +603,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers=env,strimzienv",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
-                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
+                "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "min.insync.replicas=1"));
     }
     
     @Test
@@ -631,7 +637,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "metric.reporters=org.apache.kafka.common.metrics.JmxReporter"));
+                "metric.reporters=org.apache.kafka.common.metrics.JmxReporter",
+                "min.insync.replicas=1"));
     }
 
     @Test
@@ -647,6 +654,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "min.insync.replicas=1",
                 "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS,
                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
     }
@@ -666,6 +674,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "min.insync.replicas=1",
                 "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
                         + "," + StrimziMetricsReporterConfig.KAFKA_CLASS,
                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
@@ -688,7 +697,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
                         + ",org.apache.kafka.common.metrics.JmxReporter"
                         + "," + StrimziMetricsReporterConfig.KAFKA_CLASS,
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
+                "min.insync.replicas=1"));
     }
 
     static Stream<Arguments> sourceUserConfigWithMetricsReporters() {
@@ -704,7 +714,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 + "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider\n"
                 + "config.providers.strimzifile.param.allowed.paths=/opt/kafka\n"
                 + "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider\n"
-                + "config.providers.strimzidir.param.allowed.paths=/opt/kafka\n";
+                + "config.providers.strimzidir.param.allowed.paths=/opt/kafka\n"
+                + "min.insync.replicas=1\n";
 
         // testing 8 combinations of 3 boolean values
         return Stream.of(
@@ -778,7 +789,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS,
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
+                "min.insync.replicas=1"));
     }
 
     @Test
@@ -2616,5 +2628,30 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "metadata.log.dir=/my/kraft/metadata/kafka-log2"
         ));
+    }
+
+    @Test
+    public void testDefaultMinInSyncReplicasWhenNotSpecified() {
+        Map<String, Object> userConfiguration = new HashMap<>();
+        userConfiguration.put("auto.create.topics.enable", "false");
+        userConfiguration.put("offsets.topic.replication.factor", 3);
+
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withUserConfiguration(kafkaConfiguration, false, false, false)
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "config.providers.strimzienv.param.allowlist.pattern=.*",
+                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "min.insync.replicas=1",
+                "auto.create.topics.enable=false",
+                "offsets.topic.replication.factor=3"));
     }
 }
