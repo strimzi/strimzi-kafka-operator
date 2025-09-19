@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -131,6 +132,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final SharedEnvironmentProvider sharedEnvironmentProvider;
     protected final int port;
 
+    /**
+     * This optional argument can be used to include tasks in the restart connector operation.
+     * */
+    protected static final String STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG = "includeTasks";
+
+    /**
+     * This optional argument can be used to restart connector only failed tasks.
+     **/
+    protected static final String STRIMZI_IO_RESTART_ONLY_FAILED_ARG = "onlyFailed";
     /**
      * Constructor
      *
@@ -746,8 +756,18 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     @SuppressWarnings({ "rawtypes" })
     private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         if (hasRestartAnnotation(resource, connectorName)) {
-            LOGGER.debugCr(reconciliation, "Restarting connector {}", connectorName);
-            return VertxUtil.completableFutureToVertxFuture(apiClient.restart(host, port, connectorName, false, false))
+
+            if (!restartAnnotationIsValid(resource, connectorName)) {
+                LOGGER.warnCr(reconciliation, "Invalid annotation format");
+                conditions.add(StatusUtils.buildWarningCondition("RestartConnector", "Invalid annotation format"));
+                return Future.succeededFuture(conditions);
+            }
+
+            boolean restartIncludeTasks = restartAnnotationHasIncludeTasksArg(resource);
+            boolean restartOnlyFailedTasks = restartAnnotationHasOnlyFailedTasksArg(resource);
+            LOGGER.infoCr(reconciliation, "Restarting connector {}, IncludeTasks {}, OnlyFailedTasks {}", connectorName, restartIncludeTasks, restartOnlyFailedTasks);
+
+            return VertxUtil.completableFutureToVertxFuture(apiClient.restart(host, port, connectorName, restartIncludeTasks, restartOnlyFailedTasks))
                     .compose(ignored -> removeRestartAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
                         throwable -> {
@@ -1056,8 +1076,35 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return True if the provided resource has the restart annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
-    abstract boolean hasRestartAnnotation(CustomResource resource, String connectorName);
+    abstract boolean hasRestartAnnotation(HasMetadata resource, String connectorName);
+
+    /**
+     * Checks if restart annotation value is valid
+     *
+     * @param resource          Resource instance to check
+     * @param connectorName     Connector name of the connector to check
+     *
+     * @return True if the provided resource has valid restart annotation. False otherwise.
+     * */
+    abstract boolean restartAnnotationIsValid(HasMetadata resource, String connectorName);
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument includeTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
+     */
+    abstract boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource);
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument onlyFailedTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
+     */
+    abstract boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource);
 
     /**
      * Returns the ID of the connector task to be restarted from the (a KafkaConnector or KafkaMirrorMaker2) custom resource.
