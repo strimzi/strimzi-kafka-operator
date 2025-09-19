@@ -38,7 +38,9 @@ public class KafkaConfiguration extends AbstractConfiguration {
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaClusterSpec.FORBIDDEN_PREFIXES);
         FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
-        DEFAULTS = new HashMap<>(6);
+        DEFAULTS = new HashMap<>(1);
+        // when users remove "min.insync.replicas" from the Kafka custom resource, the operator is going to force the
+        // default value (1) regardless of whether ELR (Eligible Leader Replicas) is enabled or disabled
         DEFAULTS.put("min.insync.replicas", "1");
     }
 

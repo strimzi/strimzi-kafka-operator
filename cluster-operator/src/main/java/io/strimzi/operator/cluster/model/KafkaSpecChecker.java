@@ -84,8 +84,10 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkKafkaReplicationConfig(List<Condition> warnings) {
-        Object defaultReplicationFactor = kafkaSpec.getKafka().getConfig().get(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR);
-        Object minInsyncReplicas = kafkaSpec.getKafka().getConfig().get(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
+        Object defaultReplicationFactor = kafkaSpec.getKafka().getConfig() != null ?
+                kafkaSpec.getKafka().getConfig().get(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR) : null;
+        Object minInsyncReplicas = kafkaSpec.getKafka().getConfig() != null ?
+                kafkaSpec.getKafka().getConfig().get(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG) : null;
 
         if (defaultReplicationFactor == null && kafkaCluster.brokerNodes().size() > 1)   {
             warnings.add(StatusUtils.buildWarningCondition("KafkaDefaultReplicationFactor",
