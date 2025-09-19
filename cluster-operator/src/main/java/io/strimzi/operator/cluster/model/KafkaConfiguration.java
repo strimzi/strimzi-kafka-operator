@@ -13,6 +13,7 @@ import io.strimzi.operator.common.Reconciliation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +32,16 @@ public class KafkaConfiguration extends AbstractConfiguration {
 
     private static final List<String> FORBIDDEN_PREFIXES;
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
+    private static final Map<String, String> DEFAULTS;
 
     static {
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaClusterSpec.FORBIDDEN_PREFIXES);
         FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
+
+        DEFAULTS = new HashMap<>(1);
+        // when users remove "min.insync.replicas" from the Kafka custom resource, the operator is going to force the
+        // default value (1) regardless of whether ELR (Eligible Leader Replicas) is enabled or disabled
+        DEFAULTS.put("min.insync.replicas", "1");
     }
 
     /**
@@ -198,11 +205,11 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), Map.of());
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), DEFAULTS);
     }
 
     private KafkaConfiguration(Reconciliation reconciliation, String configuration, List<String> forbiddenPrefixes) {
-        super(reconciliation, configuration, forbiddenPrefixes, List.of(), List.of(), Map.of());
+        super(reconciliation, configuration, forbiddenPrefixes, List.of(), List.of(), DEFAULTS);
     }
 
 

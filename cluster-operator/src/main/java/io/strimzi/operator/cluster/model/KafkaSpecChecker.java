@@ -33,6 +33,7 @@ public class KafkaSpecChecker {
 
     private final KafkaCluster kafkaCluster;
     private final String kafkaBrokerVersion;
+    private final KafkaSpec kafkaSpec;
 
     // This pattern is used to extract the MAJOR.MINOR version from the protocol or format version fields
     private final static Pattern MAJOR_MINOR_REGEX = Pattern.compile("(\\d+\\.\\d+).*");
@@ -47,6 +48,7 @@ public class KafkaSpecChecker {
      *                      this class to include awareness of what defaults are applied.
      */
     public KafkaSpecChecker(KafkaSpec spec, KafkaVersion.Lookup versions, KafkaCluster kafkaCluster) {
+        this.kafkaSpec = spec;
         this.kafkaCluster = kafkaCluster;
 
         if (spec.getKafka().getVersion() != null) {
@@ -82,8 +84,10 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkKafkaReplicationConfig(List<Condition> warnings) {
-        String defaultReplicationFactor = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR);
-        String minInsyncReplicas = kafkaCluster.getConfiguration().getConfigOption(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
+        Object defaultReplicationFactor = kafkaSpec.getKafka().getConfig() != null ?
+                kafkaSpec.getKafka().getConfig().get(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR) : null;
+        Object minInsyncReplicas = kafkaSpec.getKafka().getConfig() != null ?
+                kafkaSpec.getKafka().getConfig().get(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG) : null;
 
         if (defaultReplicationFactor == null && kafkaCluster.brokerNodes().size() > 1)   {
             warnings.add(StatusUtils.buildWarningCondition("KafkaDefaultReplicationFactor",

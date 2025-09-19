@@ -184,7 +184,6 @@ spec:
 <25> Kafka Exporter configuration. Kafka Exporter is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data. For Kafka Exporter to be able to work properly, consumer groups need to be in use.
 <26> Optional configuration for Cruise Control, which is used to rebalance the Kafka cluster.
 
-WARNING: If you remove the `min.insync.replicas` property from `.spec.kafka.config` within the `Kafka` resource, behavior depends on the ELR (Eligible Leader Replicas) setting.
-When ELR is enabled (default from Kafka 4.1.0), Kafka retains the last known value of `min.insync.replicas` defined in the `Kafka` resource.
-When ELR is disabled, Kafka falls back to the `min.insync.replicas` default (`1`).
-To ensure durability of the cluster, define `min.insync.replicas` explicitly.
+WARNING: If you remove the `min.insync.replicas` property from `.spec.kafka.config` in the `Kafka` resource, the Cluster Operator
+forces Kafka to fall back to the default value (`1`), regardless of whether ELR (Eligible Leader Replicas) is enabled or disabled.
+To ensure durability of the cluster, explicitly define `min.insync.replicas` with a value higher than 1.
