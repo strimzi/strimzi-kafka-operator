@@ -121,8 +121,9 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that {} Pod is not present", testStorage.getClusterName() + "-cruise-control-");
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cruise-control-", 0);
 
+        String brokerPodName = brokerPods.keySet().stream().iterator().next();
         LOGGER.info("Verifying that there is no configuration to CruiseControl metric reporter in Kafka ConfigMap");
-        assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName())));
+        assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(testStorage.getClusterName(), testStorage.getNamespaceName(), brokerPodName));
 
         KubeResourceManager.get().createResourceWithWait(
             AdminClientTemplates.plainAdminClient(
@@ -144,7 +145,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), defaultBrokerReplicaCount, brokerPods);
 
         LOGGER.info("Verifying that configuration of CruiseControl metric reporter is present in Kafka ConfigMap");
-        CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName()));
+        CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(testStorage.getClusterName(), testStorage.getNamespaceName(), brokerPodName);
 
         LOGGER.info("Verifying that {} Topics are created after CC is instantiated", TestConstants.CRUISE_CONTROL_NAME);
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(adminClient, defaultBrokerReplicaCount);

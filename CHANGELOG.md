@@ -20,6 +20,7 @@
 * Additional OAuth configuration options have been added for 'oauth' authentication on the listener and the client.
   On the listener `clientGrantType` has been added.
   On the client `grantType` has been added.
+* Kafka nodes are now configured with PEM certificates instead of P12/JKS for keystore and truststore.
 
 ### Major changes, deprecations and removals
 
