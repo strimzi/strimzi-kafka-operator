@@ -6,6 +6,7 @@
 
 = Stopping rebalances
 
+[role="_abstract"]
 Once started, a cluster rebalance operation might take some time to complete and affect the overall performance of the Kafka cluster.
 
 If you want to stop a cluster rebalance operation that is in progress, apply the `stop` annotation to the `KafkaRebalance` custom resource.

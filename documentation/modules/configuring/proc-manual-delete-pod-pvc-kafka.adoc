@@ -5,6 +5,7 @@
 [id='proc-manual-delete-pod-pvc-kafka-{context}']
 = Deleting Kafka nodes using annotations
 
+[role="_abstract"]
 This procedure describes how to delete an existing Kafka node by using a Kubernetes annotation.
 Deleting a Kafka node consists of deleting both the `Pod` on which the Kafka broker is running and the related `PersistentVolumeClaim` (if the cluster was deployed with persistent storage).
 After deletion, the `Pod` and its related `PersistentVolumeClaim` are recreated automatically.

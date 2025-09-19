@@ -5,6 +5,7 @@
 [id='ref-list-of-kafka-cluster-resources-{context}']
 = List of Kafka cluster resources
 
+[role="_abstract"]
 The following resources are created by the Cluster Operator in the Kubernetes cluster.
 
 .Shared resources

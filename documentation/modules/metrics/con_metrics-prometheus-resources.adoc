@@ -6,6 +6,7 @@
 
 = Prometheus resources
 
+[role="_abstract"]
 When you apply the Prometheus configuration, the following resources are created in your Kubernetes cluster and managed by the Prometheus Operator:
 
 * A `ClusterRole` granting Prometheus permissions to read Kafka pod health endpoints and container metrics from cAdvisor and the kubelet.

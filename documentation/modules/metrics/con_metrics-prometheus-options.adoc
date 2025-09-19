@@ -6,6 +6,7 @@
 
 = Prometheus configuration
 
+[role="_abstract"]
 Strimzi provides xref:assembly-metrics-config-files-{context}[example configuration files for the Prometheus server].
 
 A Prometheus YAML file is provided for deployment:

@@ -5,6 +5,7 @@
 [id='ref-list-of-kafka-connect-resources-{context}']
 = List of Kafka Connect cluster resources
 
+[role="_abstract"]
 The following resources are created by the Cluster Operator in the Kubernetes cluster:
 
 <connect_cluster_name>-connect:: Name given to the following Kafka Connect resources:

@@ -4,6 +4,8 @@
 
 [id='con-common-config-{context}']
 = Applying optional common configuration
+
+[role="_abstract"]
 You can further configure Strimzi components by applying any of the following optional common configuration settings. 
 Common configuration is configured independently for each component, such as the following:
 

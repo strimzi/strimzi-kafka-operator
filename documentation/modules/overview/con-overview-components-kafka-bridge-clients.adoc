@@ -7,6 +7,7 @@
 
 = Supported clients for the Kafka Bridge
 
+[role="_abstract"]
 You can use the Kafka Bridge to integrate both _internal_ and _external_ HTTP client applications with your Kafka cluster.
 
 Internal clients:: Internal clients are container-based HTTP clients running in _the same_ Kubernetes cluster as the Kafka Bridge itself.

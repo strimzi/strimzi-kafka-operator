@@ -5,6 +5,7 @@
 [id='disable-pod-disruption-budget-generation_{context}']
 = Disabling PodDisruptionBudget generation
 
+[role="_abstract"]
 Strimzi automatically generates a `PodDisruptionBudget` resource for each of the following components:
 
 * Kafka cluster

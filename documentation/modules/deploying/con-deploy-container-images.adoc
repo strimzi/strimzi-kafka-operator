@@ -6,6 +6,7 @@
 
 = Pushing container images to your own registry
 
+[role="_abstract"]
 Container images for Strimzi are available in the {DockerRepository}.
 The installation YAML files provided by Strimzi will pull the images directly from the {DockerRepository}.
 

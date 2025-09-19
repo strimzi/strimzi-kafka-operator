@@ -5,6 +5,7 @@
 [id='con-securing-client-acls-{context}']
 = Defining ACL rules
 
+[role="_abstract"]
 The `simple` authorization mechanism uses ACL rules to manage access to Kafka brokers.
 Enabling `simple` authorization for a Kafka cluster means access is denied unless explicit ACL rules are configured in the `KafkaUser` resource.
 ACL rules define access rights for users, which you specify using the `acls` property.

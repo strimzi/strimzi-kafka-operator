@@ -5,6 +5,7 @@
 [id='ref-list-of-kafka-mirrormaker2-resources-{context}']
 = List of Kafka MirrorMaker 2 cluster resources
 
+[role="_abstract"]
 The following resources are created by the Cluster Operator in the Kubernetes cluster:
 
 <mirrormaker2_cluster_name>-mirrormaker2:: Name given to the following MirrorMaker 2 resources:

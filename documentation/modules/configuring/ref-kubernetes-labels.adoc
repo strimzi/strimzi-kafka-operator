@@ -5,6 +5,7 @@
 [id='ref-kubernetes-labels-{context}']
 = Restrictions on Kubernetes labels
 
+[role="_abstract"]
 https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/[Kubernetes labels] make it easier to organize, manage, and discover Kubernetes resources within your applications.
 The Cluster Operator is responsible for applying the following Kubernetes labels to the operands it deploys.
 These labels cannot be overridden through `template` configuration of Strimzi resources:

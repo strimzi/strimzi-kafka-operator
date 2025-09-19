@@ -6,6 +6,7 @@
 
 = Pausing reconciliation of custom resources using annotations
 
+[role="_abstract"]
 Sometimes it is useful to pause the reconciliation of custom resources managed by Strimzi operators,
 so that you can perform fixes or make updates.
 If reconciliations are paused, any changes made to custom resources are ignored by the operators until the pause ends.

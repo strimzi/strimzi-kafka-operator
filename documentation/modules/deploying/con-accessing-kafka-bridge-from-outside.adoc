@@ -6,6 +6,7 @@
 
 = Accessing the Kafka Bridge outside of Kubernetes
 
+[role="_abstract"]
 After deployment, the Kafka Bridge can only be accessed by applications running in the same Kubernetes cluster.
 These applications use the `_<kafka_bridge_name>_-bridge-service` service to access the API.
 

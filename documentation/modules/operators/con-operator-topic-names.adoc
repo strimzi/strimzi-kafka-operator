@@ -5,6 +5,7 @@
 [id='con-operator-topic-names-{context}']
 = Topic naming conventions
 
+[role="_abstract"]
 A `KafkaTopic` resource includes a name for the topic and a label that identifies the name of the Kafka cluster it belongs to. 
 
 .Label identifying a Kafka cluster for topic handling

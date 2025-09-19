@@ -5,6 +5,7 @@
 [id="kafka-concepts-producers-consumers_{context}"]
 = Producers and consumers
 
+[role="_abstract"]
 Producers and consumers send and receive messages (publish and subscribe) through brokers.
 Messages comprise an optional _key_ and a _value_ that contains the message data, plus headers and related metadata.
 The key is used to identify the subject of the message, or a property of the message.

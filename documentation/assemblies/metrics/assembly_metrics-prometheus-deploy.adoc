@@ -6,6 +6,7 @@
 
 = Setting up Prometheus
 
+[role="_abstract"]
 link:https://prometheus.io/[Prometheus^] provides an open source set of components for systems monitoring and alert notification.
 
 We describe here how you can use the link:https://github.com/coreos/prometheus-operator[CoreOS Prometheus Operator^] to run and manage a Prometheus server that is suitable for use in production environments, but with the correct configuration you can run any Prometheus server.

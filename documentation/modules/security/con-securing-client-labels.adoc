@@ -5,6 +5,7 @@
 [id='con-securing-client-labels-{context}']
 = Associating users with Kafka clusters
 
+[role="_abstract"]
 A `KafkaUser` resource includes a label that defines the appropriate name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
 
 [source,yaml,subs="attributes+"]
