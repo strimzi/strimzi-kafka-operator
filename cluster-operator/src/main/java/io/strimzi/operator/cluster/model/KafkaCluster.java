@@ -41,8 +41,10 @@ import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.SidecarContainer;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
@@ -112,7 +114,7 @@ import static java.util.Collections.singletonMap;
  * Kafka cluster model
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
-public class KafkaCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
+public class KafkaCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx, SidecarInterface {
     /**
      * Default Strimzi Metrics Reporter allow list.
      * If modifying this list, make sure example dashboards are compatible with the regexes.
@@ -373,7 +375,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         result.listeners = listeners;
 
         // Validate sidecar containers - this will throw InvalidResourceException if validation fails
-        validateSidecarContainers(reconciliation, kafkaClusterSpec, listeners, result.jmx, result.metrics);
+        // For KafkaCluster, we need to validate each pool's template individually
+        for (KafkaPool pool : result.nodePools) {
+            if (pool.templatePod != null && pool.templatePod.getSidecarContainers() != null) {
+                Set<Integer> kafkaPorts = collectKafkaPorts(result.listeners, result.jmx, result.metrics);
+                result.validateSidecarContainers(reconciliation, pool.templatePod, kafkaPorts, COMPONENT_TYPE);
+            }
+        }
 
         // Set authorization
         if (kafkaClusterSpec.getAuthorization() instanceof KafkaAuthorizationKeycloak) {
@@ -1615,75 +1623,34 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Creates sidecar containers from the pod template
+     * Collects all ports used by Kafka component for sidecar validation.
+     * This method gathers ports from listeners, JMX, and metrics.
      *
-     * @param templatePod Pod template containing sidecar container definitions
-     * @param imagePullPolicy Image pull policy to apply to sidecar containers (unused - kept for compatibility)
-     * @return List of sidecar containers
+     * @param listeners List of configured listeners
+     * @param jmx       JMX model (can be null)
+     * @param metrics   Metrics model (can be null)
+     * @return Set of all ports used by Kafka component
      */
-    private List<Container> createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy) {
-        if (templatePod == null || templatePod.getSidecarContainers() == null) {
-            return new ArrayList<>();
-        }
+    private static Set<Integer> collectKafkaPorts(List<GenericKafkaListener> listeners,
+                                                 JmxModel jmx,
+                                                 MetricsModel metrics) {
+        // Extract listener ports
+        Set<Integer> listenerPorts = listeners.stream()
+                .map(GenericKafkaListener::getPort)
+                .collect(Collectors.toSet());
         
-        return ContainerUtils.convertSidecarContainers(templatePod.getSidecarContainers());
-    }
-
-    /**
-     * Validates sidecar container configurations against Strimzi internal definitions
-     * Called during CR processing in fromCrd()
-     *
-     * @param kafkaClusterSpec KafkaClusterSpec containing the template with sidecar containers
-     * @param listeners List of configured listeners (needed for port validation)
-     * @param jmx JMX model (needed for port validation)  
-     * @param metrics Metrics model (needed for port validation)
-     */
-    private static void validateSidecarContainers(Reconciliation reconciliation,
-                                                KafkaClusterSpec kafkaClusterSpec,
-                                                List<GenericKafkaListener> listeners,
-                                                JmxModel jmx,
-                                                MetricsModel metrics) {
-        if (kafkaClusterSpec.getTemplate() == null 
-                || kafkaClusterSpec.getTemplate().getPod() == null
-                || kafkaClusterSpec.getTemplate().getPod().getSidecarContainers() == null) {
-            return;
-        }
-
-        // Collect all ports that will be used by the main Kafka container
-        Set<Integer> usedPorts = new HashSet<>();
+        // Extract JMX ports if enabled
+        Set<Integer> jmxPorts = (jmx != null) ? 
+                SidecarUtils.extractPortNumbers(jmx.containerPorts()) : 
+                Set.of();
         
-        // Add listener ports
-        for (GenericKafkaListener listener : listeners) {
-            usedPorts.add(listener.getPort());
-        }
+        // Extract metrics port if enabled
+        Set<Integer> metricsPorts = (metrics != null) ? 
+                Set.of(MetricsModel.METRICS_PORT) : 
+                Set.of();
         
-        // Add JMX ports if enabled
-        if (jmx != null) {
-            usedPorts.addAll(jmx.containerPorts().stream()
-                    .map(ContainerPort::getContainerPort)
-                    .collect(Collectors.toSet()));
-        }
-        
-        // Add metrics port if enabled
-        if (metrics != null) {
-            usedPorts.add(MetricsModel.METRICS_PORT);
-        }
-        
-        // Validate sidecar containers
-        SidecarUtils.validateSidecarContainers(
-                reconciliation,
-                kafkaClusterSpec.getTemplate().getPod().getSidecarContainers(),
-                usedPorts,
-                COMPONENT_TYPE
-        );
-        
-        // Validate volume references
-        SidecarUtils.validateVolumeReferences(
-                reconciliation,
-                kafkaClusterSpec.getTemplate().getPod().getSidecarContainers(),
-                kafkaClusterSpec.getTemplate().getPod().getVolumes(),
-                COMPONENT_TYPE
-        );
+        // Combine all ports using the helper utility
+        return SidecarUtils.collectPorts(listenerPorts, jmxPorts, metricsPorts);
     }
 
     /**
@@ -1699,8 +1666,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Add main Kafka container
         allContainers.add(createContainer(imagePullPolicy, pool));
         
-        // Add sidecar containers - no conversion needed!
-        allContainers.addAll(createSidecarContainers(pool.templatePod, imagePullPolicy));
+        // Create sidecar containers (validation already done during KafkaCluster creation)
+        allContainers.addAll(this.createSidecarContainers(pool.templatePod, imagePullPolicy));
 
         return allContainers;
     }
@@ -1834,7 +1801,19 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // The JMX port (if enabled) is opened to all by default
         rules.addAll(jmx.networkPolicyIngresRules());
 
-        // Build the final network policy with all rules covering all the ports
+        // Add ingress rules for sidecar container ports
+        Set<Integer> sidecarPorts = SidecarUtils.extractSidecarContainerPorts(
+            nodePools.stream()
+                .map(pool -> (SidecarUtils.HasPodTemplate) () -> pool.templatePod)
+                .toList()
+        );
+        for (Integer port : sidecarPorts) {
+            // Allow sidecar container ports to receive traffic from anywhere by default
+            // Users can customize this behavior by defining specific network policy peers
+            rules.add(NetworkPolicyUtils.createIngressRule(port, List.of()));
+        }
+
+        // Build the final network policy with ingress rules only
         return NetworkPolicyUtils.createNetworkPolicy(
                 KafkaResources.kafkaNetworkPolicyName(cluster),
                 namespace,
@@ -2096,13 +2075,51 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Exception used to indicate that a matching Node Pool was not found
      */
     public static final class NodePoolNotFoundException extends RuntimeException {
-        /**
-         * Creates new exception
-         *
-         * @param message   Error message
-         */
-        public NodePoolNotFoundException(String message) {
-            super(message);
-        }
+    /**
+     * Creates new exception
+     *
+     * @param message   Error message
+     */
+    public NodePoolNotFoundException(String message) {
+        super(message);
     }
+}
+
+// Implementation of SidecarInterface
+
+/**
+ * Validates sidecar containers for the Kafka cluster.
+ * This method is mandatory as part of the SidecarSupport interface.
+ *
+ * @param reconciliation Reconciliation context for logging and error reporting
+ * @param templatePod    Pod template containing sidecar container definitions
+ * @param componentPorts Set of ports used by the component that sidecars cannot use
+ * @param componentType  Component type for error reporting (e.g., "kafka", "connect", "bridge")
+ */
+@Override
+public void validateSidecarContainers(Reconciliation reconciliation, PodTemplate templatePod, Set<Integer> componentPorts, String componentType) {
+    // Delegate to helper utility method
+    SidecarUtils.validateSidecarContainersWithTemplate(
+            reconciliation,
+            templatePod,
+            componentPorts,
+            componentType
+    );
+}
+
+/**
+ * Creates sidecar containers for the Kafka cluster.
+ * This method is mandatory as part of the SidecarSupport interface.
+ * Since KafkaCluster has per-pool templates, this creates containers for a specific pool.
+ * Note: This method creates containers for the first pool with sidecar containers.
+ *
+ * @param templatePod     Pod template containing sidecar container definitions
+ * @param imagePullPolicy Image pull policy to apply to sidecar containers
+ * @return List of sidecar containers from the first pool that has them
+ */
+@Override
+public List<Container> createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy) {
+    // Delegate to helper utility method
+    return SidecarUtils.convertSidecarContainers(templatePod, imagePullPolicy);
+}
 }
