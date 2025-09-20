@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
@@ -17,6 +15,7 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
@@ -30,14 +29,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class RbacUtilsTest {
     private final static String NAME = "my-name";
     private final static String NAMESPACE = "my-namespace";
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("my-kind")
-            .withName("my-cluster")
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-name")
@@ -59,11 +50,11 @@ public class RbacUtilsTest {
                 .withVerbs("get", "list", "watch", "create", "patch", "update", "delete")
                 .build();
 
-        Role role = RbacUtils.createRole(NAME, NAMESPACE, List.of(rule), LABELS, OWNER_REFERENCE, null);
+        Role role = RbacUtils.createRole(NAME, NAMESPACE, List.of(rule), LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(role.getMetadata().getName(), is(NAME));
         assertThat(role.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(role.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(role.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(role.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(role.getMetadata().getAnnotations(), is(nullValue()));
 
@@ -78,11 +69,11 @@ public class RbacUtilsTest {
                 .withVerbs("get", "list", "watch", "create", "patch", "update", "delete")
                 .build();
 
-        Role role = RbacUtils.createRole(NAME, NAMESPACE, List.of(rule), LABELS, OWNER_REFERENCE, TEMPLATE);
+        Role role = RbacUtils.createRole(NAME, NAMESPACE, List.of(rule), LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, TEMPLATE);
 
         assertThat(role.getMetadata().getName(), is(NAME));
         assertThat(role.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(role.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(role.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(role.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(role.getMetadata().getAnnotations(), is(Map.of("anno-1", "value-1", "anno-2", "value-2")));
 
@@ -103,11 +94,11 @@ public class RbacUtilsTest {
                 .withKind("Role")
                 .build();
 
-        RoleBinding roleBinding = RbacUtils.createRoleBinding(NAME, NAMESPACE, roleRef, List.of(subject), LABELS, OWNER_REFERENCE, null);
+        RoleBinding roleBinding = RbacUtils.createRoleBinding(NAME, NAMESPACE, roleRef, List.of(subject), LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(roleBinding.getMetadata().getName(), is(NAME));
         assertThat(roleBinding.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(roleBinding.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(roleBinding.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(roleBinding.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(roleBinding.getMetadata().getAnnotations(), is(nullValue()));
 
@@ -129,11 +120,11 @@ public class RbacUtilsTest {
                 .withKind("Role")
                 .build();
 
-        RoleBinding roleBinding = RbacUtils.createRoleBinding(NAME, NAMESPACE, roleRef, List.of(subject), LABELS, OWNER_REFERENCE, TEMPLATE);
+        RoleBinding roleBinding = RbacUtils.createRoleBinding(NAME, NAMESPACE, roleRef, List.of(subject), LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, TEMPLATE);
 
         assertThat(roleBinding.getMetadata().getName(), is(NAME));
         assertThat(roleBinding.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(roleBinding.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(roleBinding.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(roleBinding.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(roleBinding.getMetadata().getAnnotations(), is(Map.of("anno-1", "value-1", "anno-2", "value-2")));
 

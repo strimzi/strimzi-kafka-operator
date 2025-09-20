@@ -79,7 +79,7 @@ metadata:
   # ...
   ownerReferences: # <1>
   - apiVersion: {KafkaConnectApiVersion}
-    blockOwnerDeletion: false
+    blockOwnerDeletion: true
     controller: false
     kind: KafkaConnector
     name: my-source-connector
@@ -115,7 +115,7 @@ metadata:
   # ...
   ownerReferences: # <1>
   - apiVersion: {KafkaConnectApiVersion}
-    blockOwnerDeletion: false
+    blockOwnerDeletion: true
     controller: false
     kind: KafkaConnector
     name: my-sink-connector

@@ -2,7 +2,7 @@
 
 ## 0.49.0
 
-* n/a
+* Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources
 
 ## 0.48.0
 
