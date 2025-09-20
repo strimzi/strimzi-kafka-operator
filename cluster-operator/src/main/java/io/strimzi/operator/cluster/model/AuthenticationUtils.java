@@ -55,7 +55,7 @@ public class AuthenticationUtils {
      *
      * @return  A warning message
      */
-    @SuppressWarnings("BooleanExpressionComplexity")
+    @SuppressWarnings({"BooleanExpressionComplexity", "deprecation"}) // OAuth authentication is deprecated
     public static String validateClientAuthentication(KafkaClientAuthentication authentication, boolean tls) {
         String warnMsg = "";
         if (authentication != null)   {
@@ -82,6 +82,7 @@ public class AuthenticationUtils {
         return warnMsg;
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private static void validateClientAuthenticationOAuth(KafkaClientAuthenticationOAuth auth) {
         boolean accessTokenCase = auth.getAccessToken() != null || auth.getAccessTokenLocation() != null;
         boolean accessTokenLocationCase = auth.getAccessTokenLocation() != null;
@@ -129,6 +130,7 @@ public class AuthenticationUtils {
      * @param volumeNamePrefix Prefix used for volume names
      * @param createOAuthSecretVolumes   Indicates whether OAuth secret volumes will be added to the list
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static void configurePKCS12ClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift, String volumeNamePrefix, boolean createOAuthSecretVolumes)   {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
@@ -171,6 +173,7 @@ public class AuthenticationUtils {
      * @param volumeNamePrefix Prefix used for volume names
      * @param createOAuthSecretVolumes   Indicates whether OAuth secret volumes will be added to the list
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static void configureClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthCertsSecretName, boolean isOpenShift, String volumeNamePrefix, boolean createOAuthSecretVolumes)   {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
@@ -228,6 +231,7 @@ public class AuthenticationUtils {
      * @param mountOAuthSecretVolumes Indicates whether OAuth secret volume mounts will be added to the list
      * @param oauthSecretsVolumeMount Path where the OAuth secrets would be mounted
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static void configurePKCS12ClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthCertsVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthSecretsVolumeMount) {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
@@ -277,6 +281,7 @@ public class AuthenticationUtils {
      * @param mountOAuthSecretVolumes Indicates whether OAuth secret volume mounts will be added to the list
      * @param oauthSecretsVolumeMount Path where the OAuth secrets would be mounted
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthCertsVolumeMount, String oauthCertsSecretName, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthSecretsVolumeMount) {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
@@ -323,6 +328,7 @@ public class AuthenticationUtils {
      * @param varList   List where the new environment variables should be added
      * @param envVarNamer   Function for naming the environment variables (ech components is using different names)
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static void configureClientAuthenticationEnvVars(KafkaClientAuthentication authentication, List<EnvVar> varList, Function<String, String> envVarNamer)   {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
@@ -369,6 +375,7 @@ public class AuthenticationUtils {
      * @param oauth The client OAuth authentication configuration.
      * @return The OAuth JAAS configuration options.
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static Map<String, String> oauthJaasOptions(KafkaClientAuthenticationOAuth oauth) {
         Map<String, String> options = new LinkedHashMap<>();
         addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());

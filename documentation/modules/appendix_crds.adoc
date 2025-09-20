@@ -214,8 +214,13 @@ It must have the value `scram-sha-512` for the type `KafkaListenerAuthentication
 [id='type-KafkaListenerAuthenticationOAuth-{context}']
 = `KafkaListenerAuthenticationOAuth` schema reference
 
+*The type `KafkaListenerAuthenticationOAuth` has been deprecated.*
+Please use xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`] instead.
+
 Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
+
+The type KafkaListenerAuthenticationOAuth is supported only in the Strimzi API version(s) v1beta2.
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationOAuth` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`].
 It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
@@ -800,8 +805,13 @@ It must have the value `opa` for the type `KafkaAuthorizationOpa`.
 [id='type-KafkaAuthorizationKeycloak-{context}']
 = `KafkaAuthorizationKeycloak` schema reference
 
+*The type `KafkaAuthorizationKeycloak` has been deprecated.*
+Please use xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`] instead.
+
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
+
+The type KafkaAuthorizationKeycloak is supported only in the Strimzi API version(s) v1beta2.
 
 The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationKeycloak` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
 It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
@@ -2710,6 +2720,9 @@ It must have the value `plain` for the type `KafkaClientAuthenticationPlain`.
 [id='type-KafkaClientAuthenticationOAuth-{context}']
 = `KafkaClientAuthenticationOAuth` schema reference
 
+*The type `KafkaClientAuthenticationOAuth` has been deprecated.*
+Please use xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`] instead.
+
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`]
 
 xref:type-KafkaClientAuthenticationOAuth-schema-{context}[Full list of `KafkaClientAuthenticationOAuth` schema properties]
@@ -2719,6 +2732,8 @@ include::../api/io.strimzi.api.kafka.model.common.authentication.KafkaClientAuth
 [id='type-KafkaClientAuthenticationOAuth-schema-{context}']
 == `KafkaClientAuthenticationOAuth` schema properties
 
+
+The type KafkaClientAuthenticationOAuth is supported only in the Strimzi API version(s) v1beta2.
 
 The `type` property is a discriminator that distinguishes use of the `KafkaClientAuthenticationOAuth` type from xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`].
 It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.

@@ -2234,6 +2234,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder"));
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthOptions()  {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -2498,6 +2499,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthDefaultOptions()  {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
