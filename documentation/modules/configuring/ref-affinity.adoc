@@ -5,6 +5,7 @@
 [id='affinity-{context}']
 = Scheduling strategies
 
+[role="_abstract"]
 Kafka components can be scheduled onto Kubernetes nodes using affinity rules, tolerations, and topology constraints.  
 These strategies help isolate workloads, optimize resource usage, and improve overall cluster performance.
 

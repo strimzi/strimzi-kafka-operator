@@ -5,6 +5,7 @@
 [id='con-storing-metadata-log-{context}']
 = Configuring KRaft metadata log storage
 
+[role="_abstract"]
 In KRaft mode, each node (including brokers and controllers) stores a copy of the Kafka cluster's metadata log on one of its data volumes. 
 By default, the log is stored on the volume with the lowest ID, but you can specify a different volume using the `kraftMetadata` property.
 

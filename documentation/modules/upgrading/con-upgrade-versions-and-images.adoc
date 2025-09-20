@@ -5,6 +5,7 @@
 [id='con-versions-and-images-{context}']
 = Kafka version and image mappings
 
+[role="_abstract"]
 When upgrading Kafka, consider your settings for the `STRIMZI_KAFKA_IMAGES` environment variable and the `Kafka.spec.kafka.version` property.
 
 * Each `Kafka` resource can be configured with a `Kafka.spec.kafka.version`, which defaults to the latest supported Kafka version ({DefaultKafkaVersion}) if not specified.

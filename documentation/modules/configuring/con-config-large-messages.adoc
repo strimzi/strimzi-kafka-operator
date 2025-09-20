@@ -5,6 +5,7 @@
 [id='con-config-large-messages-{context}']
 = Handling large message sizes
 
+[role="_abstract"]
 Kafka's default batch size for messages is 1MB, which is optimal for maximum throughput in most use cases.
 Kafka can accommodate larger batches at a reduced throughput, assuming adequate disk capacity.
 

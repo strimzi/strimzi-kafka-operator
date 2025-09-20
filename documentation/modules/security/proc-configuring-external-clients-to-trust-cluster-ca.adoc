@@ -5,6 +5,7 @@
 [id='configuring-external-clients-to-trust-cluster-ca-{context}']
 = Configuring external clients to trust the cluster CA
 
+[role="_abstract"]
 This procedure describes how to configure a Kafka client that resides outside the Kubernetes cluster – connecting to an `external` listener – to trust the cluster CA certificate.
 Follow this procedure when setting up the client and during the renewal period, when the old clients CA certificate is replaced.
 

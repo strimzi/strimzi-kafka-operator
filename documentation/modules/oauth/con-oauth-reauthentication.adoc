@@ -5,6 +5,7 @@
 [id='{context}']
 = Re-authenticating sessions
 
+[role="_abstract"]
 Configure `oauth` listeners to use Kafka _session re-authentication_ for OAuth 2.0 sessions between Kafka clients and Kafka.
 This mechanism enforces the expiry of an authenticated session between the client and the broker after a defined period of time.
 When a session expires, the client immediately starts a new session by reusing the existing connection rather than dropping it.

@@ -5,6 +5,7 @@
 [id='adding-users-the-strimzi-admin-role-{context}']
 = Designating Strimzi administrators
 
+[role="_abstract"]
 Strimzi provides custom resources for configuration of your deployment.
 By default, permission to view, create, edit, and delete these resources is limited to Kubernetes cluster administrators.
 Strimzi provides two cluster roles that you can use to assign these rights to other users:

@@ -6,6 +6,7 @@
 
 = Tracking rebalances
 
+[role="_abstract"]
 You can track the progress of a partition rebalance using status information in the `KafkaRebalance` resource.
 Tracking an active partition rebalance supports planning of cluster operations, including worker node maintenance, scaling, and broker upgrades. 
 Understanding key details, such as duration and the remaining data to transfer, helps with scheduling maintenance windows and assessing the impact of proceeding or canceling the rebalance.

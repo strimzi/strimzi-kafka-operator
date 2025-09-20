@@ -5,6 +5,7 @@
 [id='configuring-internal-clients-to-trust-cluster-ca-{context}']
 = Configuring internal clients to trust the cluster CA
 
+[role="_abstract"]
 This procedure describes how to configure a Kafka client that resides inside the Kubernetes cluster — connecting to a TLS listener — to trust the cluster CA certificate.
 
 The easiest way to achieve this for an internal client is to use a volume mount to access the `Secrets` containing the necessary certificates and keys.

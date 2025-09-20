@@ -4,6 +4,8 @@
 
 [id='assembly-rolling-updates-{context}']
 = Managing rolling updates 
+
+[role="_abstract"]
 Use annotations to manually trigger a rolling update of Kafka and other operands through the Cluster Operator.
 Initiate rolling updates of Kafka, Kafka Connect, and MirrorMaker 2 clusters.
 

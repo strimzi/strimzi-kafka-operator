@@ -5,6 +5,7 @@
 [id='deploy-prereqs-{context}']
 = Deployment prerequisites
 
+[role="_abstract"]
 To deploy Strimzi, you will need the following:
 
 ifdef::Section[]

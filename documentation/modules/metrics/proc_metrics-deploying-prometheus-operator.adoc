@@ -6,6 +6,7 @@
 
 = Deploying the CoreOS Prometheus Operator
 
+[role="_abstract"]
 To deploy the Prometheus Operator to your Kafka cluster, apply the YAML bundle resources file from the https://github.com/coreos/prometheus-operator[Prometheus CoreOS repository].
 
 .Procedure
