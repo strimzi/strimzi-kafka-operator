@@ -41,10 +41,8 @@ import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Rack;
-import io.strimzi.api.kafka.model.common.SidecarContainer;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
-import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
@@ -99,7 +97,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -2072,54 +2069,50 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Validates sidecar containers for the Kafka cluster.
+     * This method is mandatory as part of the SidecarSupport interface.
+     *
+     * @param reconciliation Reconciliation context for logging and error reporting
+     * @param templatePod    Pod template containing sidecar container definitions
+     * @param componentPorts Set of ports used by the component that sidecars cannot use
+     * @param componentType  Component type for error reporting (e.g., "kafka", "connect", "bridge")
+     */
+    @Override
+    public void validateSidecarContainers(Reconciliation reconciliation, PodTemplate templatePod, Set<Integer> componentPorts, String componentType) {
+        // Delegate to helper utility method
+        SidecarUtils.validateSidecarContainersWithTemplate(
+                reconciliation,
+                templatePod,
+                componentPorts,
+                componentType
+        );
+    }
+
+    /**
+     * Creates sidecar containers for the Kafka cluster.
+     * This method is mandatory as part of the SidecarSupport interface.
+     * Since KafkaCluster has per-pool templates, this creates containers for a specific pool.
+     *
+     * @param templatePod     Pod template containing sidecar container definitions
+     * @param imagePullPolicy Image pull policy to apply to the containers
+     * @return List of converted sidecar containers
+     */
+    @Override
+    public List<Container> createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy) {
+        return SidecarUtils.convertSidecarContainers(templatePod, imagePullPolicy);
+    }
+
+    /**
      * Exception used to indicate that a matching Node Pool was not found
      */
     public static final class NodePoolNotFoundException extends RuntimeException {
-    /**
-     * Creates new exception
-     *
-     * @param message   Error message
-     */
-    public NodePoolNotFoundException(String message) {
-        super(message);
+        /**
+         * Creates new exception
+         *
+         * @param message   Error message
+         */
+        public NodePoolNotFoundException(String message) {
+            super(message);
+        }
     }
-}
-
-// Implementation of SidecarInterface
-
-/**
- * Validates sidecar containers for the Kafka cluster.
- * This method is mandatory as part of the SidecarSupport interface.
- *
- * @param reconciliation Reconciliation context for logging and error reporting
- * @param templatePod    Pod template containing sidecar container definitions
- * @param componentPorts Set of ports used by the component that sidecars cannot use
- * @param componentType  Component type for error reporting (e.g., "kafka", "connect", "bridge")
- */
-@Override
-public void validateSidecarContainers(Reconciliation reconciliation, PodTemplate templatePod, Set<Integer> componentPorts, String componentType) {
-    // Delegate to helper utility method
-    SidecarUtils.validateSidecarContainersWithTemplate(
-            reconciliation,
-            templatePod,
-            componentPorts,
-            componentType
-    );
-}
-
-/**
- * Creates sidecar containers for the Kafka cluster.
- * This method is mandatory as part of the SidecarSupport interface.
- * Since KafkaCluster has per-pool templates, this creates containers for a specific pool.
- * Note: This method creates containers for the first pool with sidecar containers.
- *
- * @param templatePod     Pod template containing sidecar container definitions
- * @param imagePullPolicy Image pull policy to apply to sidecar containers
- * @return List of sidecar containers from the first pool that has them
- */
-@Override
-public List<Container> createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy) {
-    // Delegate to helper utility method
-    return SidecarUtils.convertSidecarContainers(templatePod, imagePullPolicy);
-}
 }

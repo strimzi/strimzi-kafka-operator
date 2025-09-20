@@ -417,6 +417,11 @@ public class SidecarUtils {
      * This allows the helper to work with different types of objects that have pod templates.
      */
     public interface HasPodTemplate {
+        /**
+         * Gets the pod template from the implementing object.
+         *
+         * @return The pod template associated with this object
+         */
         PodTemplate getPodTemplate();
     }
 
