@@ -390,6 +390,7 @@ public class ReconcilerUtils {
      *
      * @return      True ZooKeeper metadata are in use or when the cluster is in migration. False otherwise.
      */
+    @SuppressWarnings("deprecation") // KafkaMetadataState is deprecated, but we still use it to check for clusters not migrated to KRaft
     public static boolean nonMigratedCluster(Kafka kafka) {
         // When the Kafka status or the metadata state are null, we cannot decide anything about KRaft (it can be a new
         // cluster or a cluster that is still doing the first deployment). Only when it is set to one of the non-KRaft

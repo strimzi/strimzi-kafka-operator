@@ -8677,7 +8677,7 @@ spec:
                     - KRaftPostMigration
                     - PreKRaft
                     - KRaft
-                  description: "Defines where cluster metadata are stored. Since Kafka KRaft has been fully adopted, the only applicable value is `KRaft`."
+                  description: Defines where cluster metadata are stored. This property is deprecated and not used anymore.
                 autoRebalance:
                   type: object
                   properties:
