@@ -14,6 +14,8 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.SidecarContainer;
+import io.strimzi.api.kafka.model.common.SidecarContainerBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplateBuilder;
@@ -255,5 +257,19 @@ public class ContainerUtilsTest {
     public void testListOrNull()    {
         assertThat(ContainerUtils.listOrNull(null), is(nullValue()));
         assertThat(ContainerUtils.listOrNull(new ContainerBuilder().withName("my-container").build()).size(), is(1));
+    }
+
+    // Keep one representative sidecar conversion test as ContainerUtils provides the conversion method
+    @Test
+    public void testConvertSidecarContainerBasic() {
+        SidecarContainer sidecarContainer = new SidecarContainerBuilder()
+                .withName("test-sidecar")
+                .withImage("test-image:latest")
+                .build();
+        
+        Container container = ContainerUtils.convertSidecarContainer(sidecarContainer);
+        
+        assertThat(container.getName(), is("test-sidecar"));
+        assertThat(container.getImage(), is("test-image:latest"));
     }
 }

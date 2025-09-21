@@ -57,7 +57,10 @@ import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBui
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
+import io.strimzi.api.kafka.model.common.SidecarContainer;
+import io.strimzi.api.kafka.model.common.SidecarContainerBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpaBuilder;
@@ -125,6 +128,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -1673,6 +1677,157 @@ public class KafkaClusterTest {
         rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(9094))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
         assertThat(rules.get(0).getFrom(), is(nullValue()));
+    }
+
+    @Test
+    public void testSidecarContainerNetworkPolicyGeneration() {
+        SidecarContainer sidecarContainer1 = new SidecarContainerBuilder()
+                .withName("metrics-sidecar")
+                .withImage("metrics:latest")
+                .withPorts(ContainerUtils.createContainerPort("metrics", 8080))
+                .build();
+
+        SidecarContainer sidecarContainer2 = new SidecarContainerBuilder()
+                .withName("logging-sidecar") 
+                .withImage("logging:latest")
+                .withPorts(ContainerUtils.createContainerPort("logs", 8081))
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .editOrNewTemplate()
+                            .editOrNewPod()
+                                .withSidecarContainers(List.of(sidecarContainer1, sidecarContainer2))
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(null, null);
+
+        // Verify sidecar container ports are included in network policy
+        List<NetworkPolicyIngressRule> sidecarPort8080Rules = np.getSpec().getIngress().stream()
+            .filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(8080)))
+            .collect(Collectors.toList());
+        assertThat(sidecarPort8080Rules.size(), is(1));
+        assertThat(sidecarPort8080Rules.get(0).getFrom(), is(empty())); // Open to all by default
+
+        List<NetworkPolicyIngressRule> sidecarPort8081Rules = np.getSpec().getIngress().stream()
+            .filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(8081)))
+            .collect(Collectors.toList());
+        assertThat(sidecarPort8081Rules.size(), is(1));
+        assertThat(sidecarPort8081Rules.get(0).getFrom(), is(empty())); // Open to all by default
+    }
+
+    @Test
+    public void testSidecarContainerNetworkPolicyWithDuplicatePorts() {
+        // Test that network policy generation handles the case where multiple node pools
+        // or different areas of the configuration use the same sidecar port
+        SidecarContainer sidecarContainer1 = new SidecarContainerBuilder()
+                .withName("metrics-sidecar-1")
+                .withImage("metrics:v1")
+                .withPorts(ContainerUtils.createContainerPort("metrics", 8080))
+                .build();
+
+        // Create separate node pools with the same sidecar port to simulate the scenario
+        KafkaNodePool nodePool1 = new KafkaNodePoolBuilder(POOL_CONTROLLERS)
+                .editSpec()
+                    .editOrNewTemplate()
+                        .editOrNewPod()
+                            .withSidecarContainers(List.of(sidecarContainer1))
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        KafkaNodePool nodePool2 = new KafkaNodePoolBuilder(POOL_BROKERS)
+                .editSpec()
+                    .editOrNewTemplate()
+                        .editOrNewPod()
+                            .withSidecarContainers(List.of(sidecarContainer1)) // Same sidecar with same port
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(nodePool1, nodePool2, POOL_MIXED), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(null, null);
+
+        // Verify only one rule is created for duplicate port across multiple node pools
+        List<NetworkPolicyIngressRule> sidecarPortRules = np.getSpec().getIngress().stream()
+            .filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(8080)))
+            .collect(Collectors.toList());
+        assertThat(sidecarPortRules.size(), is(1)); // Only one rule should exist for the duplicate port
+    }
+
+    @Test
+    public void testSidecarContainerNetworkPolicyFromNodePools() {
+        // Create NodePool with sidecar containers
+        SidecarContainer poolSidecar = new SidecarContainerBuilder()
+                .withName("pool-sidecar")
+                .withImage("pool-sidecar:latest")
+                .withPorts(ContainerUtils.createContainerPort("pool-metrics", 8082))
+                .build();
+
+        KafkaNodePool nodePool = new KafkaNodePoolBuilder(POOL_BROKERS)
+                .editSpec()
+                    .editOrNewTemplate()
+                        .editOrNewPod()
+                            .withSidecarContainers(List.of(poolSidecar))
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, nodePool), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(null, null);
+
+        // Verify NodePool sidecar container ports are included in network policy
+        List<NetworkPolicyIngressRule> poolSidecarRules = np.getSpec().getIngress().stream()
+            .filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(8082)))
+            .collect(Collectors.toList());
+        assertThat(poolSidecarRules.size(), is(1));
+        assertThat(poolSidecarRules.get(0).getFrom(), is(empty())); // Open to all by default
+    }
+
+    @Test
+    public void testNetworkPolicyWithoutSidecarContainers() {
+        // Test that network policy generation works normally when no sidecar containers are present
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(null, null);
+
+        // Verify basic Kafka ports are still present
+        List<NetworkPolicyIngressRule> controlPlaneRules = np.getSpec().getIngress().stream()
+            .filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CONTROLPLANE_PORT)))
+            .collect(Collectors.toList());
+        assertThat(controlPlaneRules.size(), is(1));
+
+        List<NetworkPolicyIngressRule> replicationRules = np.getSpec().getIngress().stream()
+            .filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT)))
+            .collect(Collectors.toList());
+        assertThat(replicationRules.size(), is(1));
+
+        // Verify no sidecar ports are present
+        List<NetworkPolicyIngressRule> allRules = np.getSpec().getIngress();
+        Set<Integer> allPorts = allRules.stream()
+            .map(rule -> rule.getPorts().get(0).getPort().getIntVal())
+            .collect(Collectors.toSet());
+        
+        // Should not contain any custom sidecar ports like 8080, 8081, etc.
+        assertThat(allPorts.contains(8080), is(false));
+        assertThat(allPorts.contains(8081), is(false));
+        assertThat(allPorts.contains(8082), is(false));
     }
 
     @Test
@@ -4593,5 +4748,255 @@ public class KafkaClusterTest {
         assertThat(statuses.get("brokers").getNodeIds(), hasItems(5, 6, 7));
         assertThat(statuses.get("brokers").getRoles().size(), is(1));
         assertThat(statuses.get("brokers").getRoles(), hasItems(ProcessRoles.BROKER));
+    }
+
+    @Test
+    public void testSidecarContainersBasic() {
+        SidecarContainer sidecarContainer = new SidecarContainerBuilder()
+                .withName("test-sidecar")
+                .withImage("test-image:latest")
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .editOrNewTemplate()
+                            .editOrNewPod()
+                                .withSidecarContainers(List.of(sidecarContainer))
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Verify sidecar container is present
+            List<Container> containers = pod.getSpec().getContainers();
+            Optional<Container> sidecarOpt = containers.stream()
+                    .filter(container -> "test-sidecar".equals(container.getName()))
+                    .findFirst();
+            
+            assertThat(sidecarOpt.isPresent(), is(true));
+            Container actualSidecar = sidecarOpt.get();
+            assertThat(actualSidecar.getImage(), is("test-image:latest"));
+        }));
+    }
+
+    @Test
+    public void testSidecarContainersWithPorts() {
+        SidecarContainer sidecarContainer = new SidecarContainerBuilder()
+                .withName("metrics-sidecar")
+                .withImage("metrics-image:v1.0")
+                .withPorts(List.of(
+                    ContainerUtils.createContainerPort("metrics", 8092),
+                    ContainerUtils.createContainerPort("health", 8080)
+                ))
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .editOrNewTemplate()
+                            .editOrNewPod()
+                                .withSidecarContainers(List.of(sidecarContainer))
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Verify sidecar container with ports
+            List<Container> containers = pod.getSpec().getContainers();
+            Optional<Container> sidecarOpt = containers.stream()
+                    .filter(container -> "metrics-sidecar".equals(container.getName()))
+                    .findFirst();
+            
+            assertThat(sidecarOpt.isPresent(), is(true));
+            Container actualSidecar = sidecarOpt.get();
+            assertThat(actualSidecar.getImage(), is("metrics-image:v1.0"));
+            assertThat(actualSidecar.getPorts().size(), is(2));
+            assertThat(actualSidecar.getPorts().get(0).getName(), is("metrics"));
+            assertThat(actualSidecar.getPorts().get(0).getContainerPort(), is(8092));
+            assertThat(actualSidecar.getPorts().get(1).getName(), is("health"));
+            assertThat(actualSidecar.getPorts().get(1).getContainerPort(), is(8080));
+        }));
+    }
+
+    @Test
+    public void testSidecarContainersWithReservedPortConflictValidation() {
+        // Test with reserved port 9404 (should fail validation)
+        SidecarContainer sidecarContainer = new SidecarContainerBuilder()
+                .withName("invalid-sidecar")
+                .withImage("invalid-image:latest")
+                .withPorts(List.of(ContainerUtils.createContainerPort("metrics", 9404)))
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .editOrNewTemplate()
+                            .editOrNewPod()
+                                .withSidecarContainers(List.of(sidecarContainer))
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        // Test should pass when validation correctly detects the port conflict
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+        });
+        
+        assertThat(ex.getMessage(), containsString("9404 is reserved or already in use"));
+    }
+
+    @Test
+    public void testSidecarContainersWithKafkaListenerPortConflictValidation() {
+        // Test with Kafka listener port 9092 (should fail validation)
+        SidecarContainer sidecarContainer = new SidecarContainerBuilder()
+                .withName("conflicting-sidecar")
+                .withImage("conflicting-image:latest")
+                .withPorts(List.of(ContainerUtils.createContainerPort("http", 9092)))
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .editOrNewTemplate()
+                            .editOrNewPod()
+                                .withSidecarContainers(List.of(sidecarContainer))
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        // Test should pass when validation correctly detects the port conflict
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+        });
+        
+        assertThat(ex.getMessage(), containsString("9092 is reserved or already in use"));
+    }
+
+    @Test
+    public void testMultipleSidecarContainers() {
+        List<SidecarContainer> sidecarContainers = List.of(
+            new SidecarContainerBuilder()
+                .withName("logging-sidecar")
+                .withImage("logging-image:latest")
+                .build(),
+            new SidecarContainerBuilder()
+                .withName("monitoring-sidecar")  
+                .withImage("monitoring-image:latest")
+                .withPorts(List.of(ContainerUtils.createContainerPort("metrics", 9093)))
+                .build()
+        );
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .editOrNewTemplate()
+                            .editOrNewPod()
+                                .withSidecarContainers(sidecarContainers)
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Verify both sidecar containers are present
+            List<Container> containers = pod.getSpec().getContainers();
+            
+            Optional<Container> loggingSidecarOpt = containers.stream()
+                    .filter(container -> "logging-sidecar".equals(container.getName()))
+                    .findFirst();
+            assertThat(loggingSidecarOpt.isPresent(), is(true));
+            assertThat(loggingSidecarOpt.get().getImage(), is("logging-image:latest"));
+            
+            Optional<Container> monitoringSidecarOpt = containers.stream()
+                    .filter(container -> "monitoring-sidecar".equals(container.getName()))
+                    .findFirst();
+            assertThat(monitoringSidecarOpt.isPresent(), is(true));
+            assertThat(monitoringSidecarOpt.get().getImage(), is("monitoring-image:latest"));
+            assertThat(monitoringSidecarOpt.get().getPorts().size(), is(1));
+            assertThat(monitoringSidecarOpt.get().getPorts().get(0).getName(), is("metrics"));
+        }));
+    }
+
+    @Test
+    public void testSidecarContainersWithEnvironmentVariables() {
+        SidecarContainer sidecarContainer = new SidecarContainerBuilder()
+                .withName("env-sidecar")
+                .withImage("env-image:latest")
+                .withEnv(List.of(
+                    new ContainerEnvVarBuilder()
+                        .withName("SIDECAR_MODE")
+                        .withValue("production")
+                        .build(),
+                    new ContainerEnvVarBuilder()
+                        .withName("LOG_LEVEL")
+                        .withValue("debug")
+                        .build()
+                ))
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .editOrNewTemplate()
+                            .editOrNewPod()
+                                .withSidecarContainers(List.of(sidecarContainer))
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Verify sidecar container with environment variables
+            List<Container> containers = pod.getSpec().getContainers();
+            Optional<Container> sidecarOpt = containers.stream()
+                    .filter(container -> "env-sidecar".equals(container.getName()))
+                    .findFirst();
+            
+            assertThat(sidecarOpt.isPresent(), is(true));
+            Container actualSidecar = sidecarOpt.get();
+            assertThat(actualSidecar.getImage(), is("env-image:latest"));
+            assertThat(actualSidecar.getEnv().size(), is(2));
+            
+            Optional<EnvVar> sidecarModeVar = actualSidecar.getEnv().stream()
+                    .filter(env -> "SIDECAR_MODE".equals(env.getName()))
+                    .findFirst();
+            assertThat(sidecarModeVar.isPresent(), is(true));
+            assertThat(sidecarModeVar.get().getValue(), is("production"));
+            
+            Optional<EnvVar> logLevelVar = actualSidecar.getEnv().stream()
+                    .filter(env -> "LOG_LEVEL".equals(env.getName()))
+                    .findFirst();
+            assertThat(logLevelVar.isPresent(), is(true));
+            assertThat(logLevelVar.get().getValue(), is("debug"));
+        }));
     }
 }
