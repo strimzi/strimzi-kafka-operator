@@ -6,28 +6,35 @@
 = Downgrading Kafka clusters and client applications
 
 [role="_abstract"]
-Downgrade a Kafka cluster to an earlier version.
-When downgrading a Kafka cluster to a lower version, like moving from {KafkaVersionHigher} to {KafkaVersionLower}, ensure that the metadata version used by the Kafka cluster is a version supported by the Kafka version you want to downgrade to. 
-The metadata version for the Kafka version you are downgrading from must not be higher than the version you are downgrading to.
+You can downgrade a Kafka cluster to an earlier version only when the metadata format is compatible. 
+Kafka permits downgrades only if there are no metadata changes between your current Kafka version and the target version. 
+In practice, this means the cluster’s metadata version must be set to a value that the target Kafka version supports, and there must be no intervening metadata changes between the two versions.
 
-NOTE: Consult the Apache Kafka documentation for information regarding the support and limitations associated with downgrades.
+IMPORTANT: If the cluster is already using the latest metadata version for the current release, you cannot downgrade. 
+The downgrade is only possible if there is a metadata format that is valid in both the current and target Kafka versions.
+Consult the Apache Kafka documentation for information on supported metadata version values and downgrade limitations.
 
 .Prerequisites
 
 * The Cluster Operator is up and running.
 * Before you downgrade the Kafka cluster, check the following for the `Kafka` resource:
 
-** The `Kafka` custom resource does not contain options that are not supported by the Kafka version being downgraded to.
-** `spec.kafka.metadataVersion` is set to a version that is supported by the Kafka version being downgraded to.   
+** The `Kafka` custom resource does not include options that are unsupported by the target Kafka version.
+** The target Kafka version supports the metadata version (`spec.kafka.metadataVersion`) you plan to use. 
+
+You can verify the current Kafka and metadata version by checking the status of the `Kafka` custom resource.
 
 .Procedure
 
-. Update the Kafka cluster configuration.
+. Update the Kafka cluster configuration:
 +
-[source,shell,subs=+quotes]
+[source,shell]
 kubectl edit kafka <kafka_configuration_file>
 
-. Change the `metadataVersion` version to a version supported by the Kafka version you are downgrading to; leave the `Kafka.spec.kafka.version` unchanged at the _current_ Kafka version.
+. Change the `metadataVersion` version to a value that is supported by both the current Kafka version and the target version.
+The Kafka version must be able to operate with this metadata format.
++
+Leave the `Kafka.spec.kafka.version` unchanged at the _current_ Kafka version.
 +
 For example, if downgrading from Kafka {KafkaVersionHigher} to {KafkaVersionLower}:
 +
