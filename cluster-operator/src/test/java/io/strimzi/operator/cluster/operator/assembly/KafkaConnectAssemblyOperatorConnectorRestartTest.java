@@ -222,14 +222,14 @@ public class KafkaConnectAssemblyOperatorConnectorRestartTest {
     private KafkaConnector buildKafkaConnector(String restartAnnotationValue) {
         return new KafkaConnectorBuilder()
                 .withNewMetadata()
-                .withName("my-connector")
-                .withNamespace("my-namespace")
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_RESTART, restartAnnotationValue))
+                    .withName("my-connector")
+                    .withNamespace("my-namespace")
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_RESTART, restartAnnotationValue))
                 .endMetadata()
                 .withNewSpec()
-                .withClassName("MyClass")
-                .withTasksMax(3)
-                .withConfig(Map.of("topic", "my-topic"))
+                    .withClassName("MyClass")
+                    .withTasksMax(3)
+                    .withConfig(Map.of("topic", "my-topic"))
                 .endSpec()
                 .build();
     }
