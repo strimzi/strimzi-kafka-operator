@@ -168,7 +168,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorRestartTest {
 
         op.maybeCreateOrUpdateConnector(Reconciliation.DUMMY_RECONCILIATION, "my-connect-host", mockConnectApi, "my-connector", connector.getSpec(), kafkaMirrorMaker2)
                 .onComplete(context.succeeding(r -> context.verify(() -> {
-                    verify(mockConnectApi, never()).restart(any(), anyInt(), any(), eq(false), eq(false));
+                    verify(mockConnectApi, never()).restart(any(), anyInt(), any(), anyBoolean(), anyBoolean());
                     checkpoint.flag();
                 })));
 
