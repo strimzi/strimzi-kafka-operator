@@ -139,7 +139,7 @@ public class KafkaConnectAssemblyOperatorConnectorRestartTest {
 
         op.maybeCreateOrUpdateConnector(Reconciliation.DUMMY_RECONCILIATION, "my-connect-host", mockConnectApi, "my-connector", connector.getSpec(), connector)
                 .onComplete(context.succeeding(r -> context.verify(() -> {
-                    verify(mockConnectApi, never()).restart(any(), anyInt(), any(), eq(false), eq(false));
+                    verify(mockConnectApi, never()).restart(any(), anyInt(), any(), anyBoolean(), anyBoolean());
                     checkpoint.flag();
                 })));
 
