@@ -115,7 +115,6 @@
         <netty.version>4.2.5.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
-        <registry.version>1.3.2.Final</registry.version>
         <commons-codec.version>1.13</commons-codec.version>
 
         <!-- Test only dependencies -->
@@ -630,21 +629,6 @@
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.apicurio</groupId>
-                <artifactId>apicurio-registry-utils-streams</artifactId>
-                <version>${registry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.apicurio</groupId>
-                <artifactId>apicurio-registry-utils-kafka</artifactId>
-                <version>${registry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.apicurio</groupId>
-                <artifactId>apicurio-registry-common</artifactId>
-                <version>${registry.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
