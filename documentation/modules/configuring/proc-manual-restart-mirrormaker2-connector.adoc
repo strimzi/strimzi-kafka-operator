@@ -40,6 +40,21 @@ In this example, connector `source-cluster->target-cluster.MirrorCheckpointConne
 ----
 kubectl annotate KafkaMirrorMaker2 my-mirror-maker-2 "strimzi.io/restart-connector=source-cluster->target-cluster.MirrorCheckpointConnector"
 ----
++
+You can also refine the restart behavior with the `includeTasks` and `onlyFailed` parameters, which both default to `false`.  
++
+--
+* `includeTasks` restarts both the connector instance and its task instances.  
+* `onlyFailed` restarts only instances with a `FAILED` status when set to `true`.  
+--
++
+Separate the connector name and the parameters with a colon (`:`). 
+For example: 
++
+[source,shell]
+----
+kubectl annotate KafkaMirrorMaker2 my-mirror-maker-2 "strimzi.io/restart-connector=source-cluster->target-cluster.MirrorCheckpointConnector:includeTasks,onlyFailed"
+----
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 +

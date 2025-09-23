@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -307,11 +308,79 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @return  True if the provided resource instance has the strimzi.io/restart-connector annotation. False otherwise.
      */
+    @Override
+    protected boolean hasRestartAnnotation(HasMetadata resource, String connectorName) {
+        String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
+        return restartAnnotationConnectorName != null && restartAnnotationConnectorName.contains(connectorName);
+    }
+
+    /**
+     * Checks if restart annotation value has valid combination of values. These are valid and not valid combinations:
+     * strimzi.io/restart-connector=mirrormaker_connector_name:includeTasks,onlyFailed # restart with args: includeTasks=true and onlyFailed=true
+     * strimzi.io/restart-connector=mirrormaker_connector_name:includeTasks # restart with args: includeTasks=true and onlyFailed=false
+     * strimzi.io/restart-connector=mirrormaker_connector_name:onlyFailed # restart with args: includeTasks=false and onlyFailed=true
+     * strimzi.io/restart-connector=mirrormaker_connector_name # restart with args: includeTasks=false and onlyFailed=false
+     * strimzi.io/restart-connector=includeTasks,onlyFailed # do not restart, fail and log error because connector name is required
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has valid restart annotation. False otherwise.
+     * */
+    protected boolean restartAnnotationIsValid(HasMetadata resource, String connectorName) {
+        String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "");
+        String[] values = restartValue.split(":");
+
+        // invalid format, more than one ':' character
+        if (values.length != 1 && values.length != 2) {
+            return false;
+        }
+
+        // check if connector name is present and valid
+        if (!values[0].equalsIgnoreCase(connectorName)) {
+            return false;
+        }
+
+        // we expect that second item in array contains a list of arguments to be used
+        if (values.length == 2) {
+            String[] argValues = values[1].split(",");
+
+            for (String arg : argValues) {
+                if (!STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG.equalsIgnoreCase(arg.trim()) && !STRIMZI_IO_RESTART_ONLY_FAILED_ARG.equalsIgnoreCase(arg.trim())) {
+                    // invalid argument found
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument includeTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
+     */
+    @Override
+    protected boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource) {
+        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
+                .contains(STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
+    }
+
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument onlyFailedTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
+     */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
-        String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
-        return connectorName.equals(restartAnnotationConnectorName);
+    protected boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource) {
+        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
+                .contains(STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }
 
     /**
