@@ -13,7 +13,8 @@ The release process should normally look like this:
 1. Create a release branch starting from the `main` one. The new release branch has to be named like `release-<Major>.<minor>.x`, for example `release-0.45.x` to be used for all patch releases for the 0.45.
 2. On the `main` git branch of the repository:
    * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. For example to update the next version to `0.46.0-SNAPSHOT` run: `NEXT_VERSION=0.46.0-SNAPSHOT make next_version`.
-   * Update the product version in the `documentation/shared/attributes.adoc` file to the next version by setting the `ProductVersion` variable and also the previous version the to one you are releasing by setting the `ProductVersionPrevious` variable.
+   * Update the product version in the `documentation/shared/attributes.adoc` file to the next version by setting the `ProductVersion` variable and also the previous version to the one you are releasing by setting the `ProductVersionPrevious` variable.
+     Also check that the `BridgeVersion` and `OAuthVersion` variables have the correct values with the HTTP bridge and OAuth library currently in use.
    * Add a header for the next release to the `CHANGELOG.md` file
 3. Move to the release branch and run `make clean`
 4. Run `RELEASE_VERSION=<desired version> make release`, for example `RELEASE_VERSION=0.45.0 make release`
