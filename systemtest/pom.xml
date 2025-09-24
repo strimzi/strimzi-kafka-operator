@@ -14,6 +14,12 @@
     <properties>
         <skipTests>true</skipTests>
         <failsafe.forkCount>0</failsafe.forkCount>
+        <!--
+            Currently, there are no released versions in Maven repository of this module,
+            using SNAPSHOT for having the `api` module available and usable in the STs.
+            Tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/11207.
+        -->
+        <access-operator.version>0.2.0-SNAPSHOT</access-operator.version>
 
         <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
         <strimziRootDirectory>${basedir}${file.separator}..</strimziRootDirectory>
@@ -260,6 +266,7 @@
         <dependency>
             <groupId>io.strimzi.access-operator</groupId>
             <artifactId>api</artifactId>
+            <version>${access-operator.version}</version>
         </dependency>
         <dependency>
             <groupId>com.marcnuri.helm-java</groupId>
