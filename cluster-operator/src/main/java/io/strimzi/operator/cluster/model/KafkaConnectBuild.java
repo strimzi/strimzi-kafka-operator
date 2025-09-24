@@ -52,7 +52,7 @@ public class KafkaConnectBuild extends AbstractModel {
     protected static final String COMPONENT_TYPE = "kafka-connect-build";
 
     private static final String DEFAULT_KANIKO_EXECUTOR_IMAGE = "gcr.io/kaniko-project/executor:latest";
-    private static final String DEFAULT_BUILDAH_IMAGE = "quay.io/containers/buildah:v1.40.1";
+    private static final String DEFAULT_BUILDAH_IMAGE = "quay.io/containers/buildah:v1.41.4";
 
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_BUILD_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_BUILD_LABELS";
 
@@ -62,8 +62,8 @@ public class KafkaConnectBuild extends AbstractModel {
     private PodTemplate templatePod;
     /*test*/ String baseImage;
     private List<String> additionalKanikoOptions;
-    private List<String> additionalBuildahBuildOptions;
-    private List<String> additionalBuildahPushOptions;
+    private List<String> additionalBuildOptions;
+    private List<String> additionalPushOptions;
 
     private String pullSecret;
 
@@ -125,7 +125,7 @@ public class KafkaConnectBuild extends AbstractModel {
      * @param useConnectBuildWithBuildah    determines if Buildah should be used for the Connect Build
      * @return              Instance of KafkaConnectBuild class
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "deprecation"})
     public static KafkaConnectBuild fromCrd(Reconciliation reconciliation,
                                             KafkaConnect kafkaConnect,
                                             KafkaVersion.Lookup versions,
@@ -150,20 +150,26 @@ public class KafkaConnectBuild extends AbstractModel {
                     throw new InvalidResourceException("KafkaConnect .spec.image cannot be the same as .spec.build.output.image");
                 }
                 if (useConnectBuildWithBuildah) {
-                    if (dockerOutput.getAdditionalBuildahBuildOptions() != null
-                        && !dockerOutput.getAdditionalBuildahBuildOptions().isEmpty()) {
-                        validateAdditionalBuildahOptions(DockerOutput.ALLOWED_BUILDAH_BUILD_OPTIONS, dockerOutput.getAdditionalBuildahBuildOptions());
-                        result.additionalBuildahBuildOptions = dockerOutput.getAdditionalBuildahBuildOptions();
+                    if (dockerOutput.getAdditionalBuildOptions() != null
+                        && !dockerOutput.getAdditionalBuildOptions().isEmpty()) {
+                        validateAdditionalOptions(DockerOutput.ALLOWED_BUILDAH_BUILD_OPTIONS, dockerOutput.getAdditionalBuildOptions());
+                        result.additionalBuildOptions = dockerOutput.getAdditionalBuildOptions();
                     }
-                    if (dockerOutput.getAdditionalBuildahPushOptions() != null
-                        && !dockerOutput.getAdditionalBuildahPushOptions().isEmpty()) {
-                        validateAdditionalBuildahOptions(DockerOutput.ALLOWED_BUILDAH_PUSH_OPTIONS, dockerOutput.getAdditionalBuildahPushOptions());
-                        result.additionalBuildahPushOptions = dockerOutput.getAdditionalBuildahPushOptions();
+                    if (dockerOutput.getAdditionalPushOptions() != null
+                        && !dockerOutput.getAdditionalPushOptions().isEmpty()) {
+                        validateAdditionalOptions(DockerOutput.ALLOWED_BUILDAH_PUSH_OPTIONS, dockerOutput.getAdditionalPushOptions());
+                        result.additionalPushOptions = dockerOutput.getAdditionalPushOptions();
                     }
                 } else if (dockerOutput.getAdditionalKanikoOptions() != null
                         && !dockerOutput.getAdditionalKanikoOptions().isEmpty()) {
                     validateAdditionalKanikoOptions(dockerOutput.getAdditionalKanikoOptions());
                     result.additionalKanikoOptions = dockerOutput.getAdditionalKanikoOptions();
+                } else if (dockerOutput.getAdditionalBuildOptions() != null
+                    && !dockerOutput.getAdditionalBuildOptions().isEmpty()) {
+                    // in case that we are using Kaniko and `.additionalBuildOptions` field contains some options, we want to check them
+                    // because `.additionalKanikoOptions` is deprecated and `.additionalBuildOptions` is replacement
+                    validateAdditionalOptions(DockerOutput.ALLOWED_KANIKO_OPTIONS, dockerOutput.getAdditionalBuildOptions());
+                    result.additionalBuildOptions = dockerOutput.getAdditionalBuildOptions();
                 }
             }
 
@@ -244,10 +250,10 @@ public class KafkaConnectBuild extends AbstractModel {
      * Validates the additional Buildah options configured by the user against the list of allowed options.
      * If there is a not allowed option found, it raises and InvalidResourceException exception.
      *
-     * @param allowedBuildahOptions placeholder
-     * @param desiredOptions placeholder
+     * @param allowedBuildahOptions  allowed Buildah options for particular operation - build/push.
+     * @param desiredOptions         list of desired options by the user.
      */
-    private static void validateAdditionalBuildahOptions(String allowedBuildahOptions, List<String> desiredOptions)    {
+    private static void validateAdditionalOptions(String allowedBuildahOptions, List<String> desiredOptions)    {
         List<String> allowedOptions = Arrays.asList(allowedBuildahOptions.split("\\s*,+\\s*"));
         List<String> forbiddenOptions = desiredOptions.stream()
             .map(option -> option.contains("=") ? option.substring(0, option.indexOf("=")) : option)
@@ -255,7 +261,7 @@ public class KafkaConnectBuild extends AbstractModel {
             .toList();
 
         if (!forbiddenOptions.isEmpty())    {
-            throw new InvalidResourceException(".spec.build.additionalBuildahBuildOptions contains forbidden options: " + forbiddenOptions);
+            throw new InvalidResourceException(".spec.build.additionalBuildOptions contains forbidden options: " + forbiddenOptions);
         }
     }
 
@@ -411,12 +417,23 @@ public class KafkaConnectBuild extends AbstractModel {
      * @return  Builder container definition which will be used in the Pod
      */
     /* test */ Container createContainer(ImagePullPolicy imagePullPolicy) {
-        List<String> args = additionalKanikoOptions != null ? new ArrayList<>(4 + additionalKanikoOptions.size()) : new ArrayList<>(4);
+        List<String> args;
+
+        // `additionalBuildOptions` takes precedence, so we are firstly checking if it is configured or not
+        if (additionalBuildOptions != null) {
+            args = new ArrayList<>(4 + additionalBuildOptions.size());
+        } else {
+            // if not, we check the `additionalKanikoOptions` if it is empty or not, if yes, then we just initialize it with size 4
+            args = additionalKanikoOptions != null ? new ArrayList<>(4 + additionalKanikoOptions.size()) : new ArrayList<>(4);
+        }
+
         args.add("--dockerfile=/dockerfile/Dockerfile");
         args.add("--image-name-with-digest-file=/dev/termination-log");
         args.add("--destination=" + build.getOutput().getImage());
 
-        if (additionalKanikoOptions != null) {
+        if (additionalBuildOptions != null) {
+            args.addAll(additionalBuildOptions);
+        } else if (additionalKanikoOptions != null) {
             args.addAll(additionalKanikoOptions);
         }
 
@@ -436,9 +453,11 @@ public class KafkaConnectBuild extends AbstractModel {
     }
 
     /**
-     * placeholder
-     * @param imagePullPolicy  placeholder
-     * @return placeholder
+     * Generates the builder container using Buildah.
+     *
+     * @param imagePullPolicy   Image pull policy.
+     *
+     * @return  Builder container definition which will be used in the Pod.
      */
     Container createBuildahContainer(ImagePullPolicy imagePullPolicy) {
         List<String> args = new ArrayList<>(3);
@@ -447,12 +466,12 @@ public class KafkaConnectBuild extends AbstractModel {
         // --storage-driver=vfs is needed for rootless build
         args.add(
             """
-            buildah build --file=/dockerfile/Dockerfile --tag=__IMAGE__ --storage-driver=vfs __ADDITIONAL_BUILD_OPTS__
-            buildah push --storage-driver=vfs --digestfile=/tmp/digest __ADDITIONAL_PUSH_OPTS__ __IMAGE__
+            buildah build --file=/dockerfile/Dockerfile --tag=<IMAGE> --storage-driver=vfs <ADDITIONAL_BUILD_OPTS>
+            buildah push --storage-driver=vfs --digestfile=/tmp/digest <ADDITIONAL_PUSH_OPTS> <IMAGE>
             buildah images --digests --filter=digest=sha256:$(cat /tmp/digest) --format='{{.Name}}@{{.Digest}}' > /dev/termination-log
-            """.replaceAll("__IMAGE__", build.getOutput().getImage())
-                .replace("__ADDITIONAL_BUILD_OPTS__", additionalBuildahBuildOptions != null ? String.join(" ", additionalBuildahBuildOptions) : "")
-                .replace("__ADDITIONAL_PUSH_OPTS__", additionalBuildahPushOptions != null ? String.join(" ", additionalBuildahPushOptions) : "")
+            """.replaceAll("<IMAGE>", build.getOutput().getImage())
+                .replace("<ADDITIONAL_BUILD_OPTS>", additionalBuildOptions != null ? String.join(" ", additionalBuildOptions) : "")
+                .replace("<ADDITIONAL_PUSH_OPTS>", additionalPushOptions != null ? String.join(" ", additionalPushOptions) : "")
         );
 
         return ContainerUtils.createContainer(
