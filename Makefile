@@ -36,6 +36,7 @@ bridge_version:
 	CHART_PATH=./packaging/helm-charts/helm3/strimzi-kafka-operator; \
 	$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml; \
 	$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md
+	$(SED) -i 's/\(:BridgeVersion: \).*/\1$(BRIDGE_VERSION)/g' ./documentation/shared/attributes.adoc
 
 release_prepare:
 	echo $(shell echo $(RELEASE_VERSION) | tr a-z A-Z) > release.version
