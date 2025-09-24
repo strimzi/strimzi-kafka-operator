@@ -5,7 +5,7 @@ metadata:
   labels:
     app: my-mm2-cluster
 spec:
-  version: 4.0.0
+  version: 4.1.0
   replicas: 1
   connectCluster: "my-cluster-target"
   clusters:
@@ -27,10 +27,6 @@ spec:
           replication.factor: -1
           offset-syncs.topic.replication.factor: -1
           sync.topic.acls.enabled: "false"
-      heartbeatConnector:
-        config:
-          # -1 means it will use the default replication factor configured in the broker
-          heartbeats.topic.replication.factor: -1
       checkpointConnector:
         config:
           # -1 means it will use the default replication factor configured in the broker

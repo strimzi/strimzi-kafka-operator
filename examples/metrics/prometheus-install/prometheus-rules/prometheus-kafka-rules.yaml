@@ -1,0 +1,83 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+    app: strimzi
+  name: kafka-rules
+spec:
+  groups:
+  - name: kafka
+    rules:
+    - alert: KafkaRunningOutOfSpace
+      expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"data(-[0-9]+)?-(.+)-kafka-[0-9]+"} * 100 / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"data(-[0-9]+)?-(.+)-kafka-[0-9]+"} < 15
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka is running out of free disk space'
+        description: 'There are only {{ $value }} percent available at {{ $labels.persistentvolumeclaim }} PVC'
+    - alert: UnderReplicatedPartitions
+      expr: kafka_server_replicamanager_underreplicatedpartitions > 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka under replicated partitions'
+        description: 'There are {{ $value }} under replicated partitions on {{ $labels.kubernetes_pod_name }}'
+    - alert: AbnormalControllerState
+      expr: sum(kafka_controller_kafkacontroller_activecontrollercount) by (strimzi_io_name, namespace) != 1
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka abnormal controller state'
+        description: 'Kafka instance {{ $labels.strimzi_io_name }} on namespace {{ $labels.namespace }} has {{ $value }} active controllers'
+    - alert: OfflinePartitions
+      expr: sum(kafka_controller_kafkacontroller_offlinepartitionscount) by (namespace, pod) > 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka offline partitions'
+        description: 'Kafka instance on pod {{ $labels.namespace }}/{{ $labels.pod }} has {{ $value }} partition(s) with no leader'
+    - alert: UnderMinIsrPartitionCount
+      expr: kafka_server_replicamanager_underminisrpartitioncount > 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka under min ISR partitions'
+        description: 'There are {{ $value }} partitions under the min ISR on {{ $labels.kubernetes_pod_name }}'
+    - alert: OfflineLogDirectoryCount
+      expr: kafka_log_logmanager_offlinelogdirectorycount > 0
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Kafka offline log directories'
+        description: 'There are {{ $value }} offline log directories on {{ $labels.kubernetes_pod_name }}'
+    - alert: ScrapeProblem
+      expr: up{kubernetes_namespace!~"openshift-.+",kubernetes_pod_name=~".+-kafka-[0-9]+"} == 0
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Prometheus unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }}'
+        description: 'Prometheus was unable to scrape metrics from {{ $labels.kubernetes_pod_name }}/{{ $labels.instance }} for more than 3 minutes'
+    - alert: KafkaBrokerContainersDown
+      expr: absent(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'All `kafka` containers down or in CrashLookBackOff status'
+        description: 'All `kafka` containers have been down or in CrashLookBackOff status for 3 minutes'
+    - alert: KafkaContainerRestartedInTheLast5Minutes
+      expr: count(count_over_time(container_last_seen{container="kafka"}[5m])) > 2 * count(container_last_seen{container="kafka",pod=~".+-kafka-[0-9]+"})
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'One or more Kafka containers restarted too often'
+        description: 'One or more Kafka containers were restarted too often within the last 5 minutes'
