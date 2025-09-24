@@ -14,8 +14,8 @@
 :toclevels: 3
 
 //Latest Strimzi version
-:ProductVersion: 0.48.0
-:ProductVersionPrevious: 0.47.0
+:ProductVersion: 0.49.0
+:ProductVersionPrevious: 0.48.0
 
 // Kubernetes versions
 :KubernetesVersion: 1.27 and later
@@ -30,7 +30,7 @@
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
 // Bridge version
-:BridgeVersion: 0.32.0
+:BridgeVersion: 0.33.1
 
 // Drain Cleaner Version
 :DrainCleanerVersion: 1.4.0
