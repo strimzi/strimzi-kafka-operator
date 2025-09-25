@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
-import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -172,9 +171,6 @@ public class KafkaReconcilerStatusTest {
 
             // Check kafka version
             assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
-
-            // Check Kafka metadata state
-            assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.KRaft));
 
             // Check model warning conditions
             assertThat(status.getConditions().size(), is(2));

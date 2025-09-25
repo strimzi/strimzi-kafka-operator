@@ -5,6 +5,10 @@
 * Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
   Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
 
+### Major changes, deprecations, and removals
+
+* The `.status.kafkaMetadataState` field in the `Kafka` custom resource is deprecated and not used anymore.
+
 ## 0.48.0
 
 * Add support for Kafka 4.1.0.

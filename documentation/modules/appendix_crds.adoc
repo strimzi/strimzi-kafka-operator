@@ -2325,7 +2325,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |The KRaft metadata.version currently used by the Kafka cluster.
 |kafkaMetadataState
 |string (one of [PreKRaft, ZooKeeper, KRaftMigration, KRaftDualWriting, KRaftPostMigration, KRaft])
-|Defines where cluster metadata are stored. Since Kafka KRaft has been fully adopted, the only applicable value is `KRaft`.
+|**The `kafkaMetadataState` property has been deprecated.** The `kafkaMetadataState` property is deprecated and will be removed in the future. Defines where cluster metadata are stored. This property is deprecated and not used anymore.
 |autoRebalance
 |xref:type-KafkaAutoRebalanceStatus-{context}[`KafkaAutoRebalanceStatus`]
 |The status of an auto-rebalancing triggered by a cluster scaling request.

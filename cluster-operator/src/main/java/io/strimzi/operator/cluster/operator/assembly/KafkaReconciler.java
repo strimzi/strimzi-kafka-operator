@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
@@ -1181,7 +1180,6 @@ public class KafkaReconciler {
     /* test */ Future<Void> updateKafkaStatus(KafkaStatus kafkaStatus) {
         kafkaStatus.setListeners(listenerReconciliationResults.listenerStatuses);
         kafkaStatus.setKafkaVersion(kafka.getKafkaVersion().version());
-        kafkaStatus.setKafkaMetadataState(KafkaMetadataState.KRaft);
 
         return Future.succeededFuture();
     }
