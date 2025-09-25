@@ -152,24 +152,27 @@ public class KafkaConnectBuild extends AbstractModel {
                 if (useConnectBuildWithBuildah) {
                     if (dockerOutput.getAdditionalBuildOptions() != null
                         && !dockerOutput.getAdditionalBuildOptions().isEmpty()) {
-                        validateAdditionalOptions(DockerOutput.ALLOWED_BUILDAH_BUILD_OPTIONS, dockerOutput.getAdditionalBuildOptions());
+                        validateAdditionalOptions(DockerOutput.ALLOWED_BUILDAH_BUILD_OPTIONS, dockerOutput.getAdditionalBuildOptions(), ".spec.build.additionalBuildOptions");
                         result.additionalBuildOptions = dockerOutput.getAdditionalBuildOptions();
                     }
                     if (dockerOutput.getAdditionalPushOptions() != null
                         && !dockerOutput.getAdditionalPushOptions().isEmpty()) {
-                        validateAdditionalOptions(DockerOutput.ALLOWED_BUILDAH_PUSH_OPTIONS, dockerOutput.getAdditionalPushOptions());
+                        validateAdditionalOptions(DockerOutput.ALLOWED_BUILDAH_PUSH_OPTIONS, dockerOutput.getAdditionalPushOptions(), ".spec.build.additionalPushOptions");
                         result.additionalPushOptions = dockerOutput.getAdditionalPushOptions();
                     }
-                } else if (dockerOutput.getAdditionalKanikoOptions() != null
+                } else {
+                    if (dockerOutput.getAdditionalKanikoOptions() != null
                         && !dockerOutput.getAdditionalKanikoOptions().isEmpty()) {
-                    validateAdditionalKanikoOptions(dockerOutput.getAdditionalKanikoOptions());
-                    result.additionalKanikoOptions = dockerOutput.getAdditionalKanikoOptions();
-                } else if (dockerOutput.getAdditionalBuildOptions() != null
-                    && !dockerOutput.getAdditionalBuildOptions().isEmpty()) {
-                    // in case that we are using Kaniko and `.additionalBuildOptions` field contains some options, we want to check them
-                    // because `.additionalKanikoOptions` is deprecated and `.additionalBuildOptions` is replacement
-                    validateAdditionalOptions(DockerOutput.ALLOWED_KANIKO_OPTIONS, dockerOutput.getAdditionalBuildOptions());
-                    result.additionalBuildOptions = dockerOutput.getAdditionalBuildOptions();
+                        validateAdditionalKanikoOptions(dockerOutput.getAdditionalKanikoOptions());
+                        result.additionalKanikoOptions = dockerOutput.getAdditionalKanikoOptions();
+                    }
+                    if (dockerOutput.getAdditionalBuildOptions() != null
+                        && !dockerOutput.getAdditionalBuildOptions().isEmpty()) {
+                        // in case that we are using Kaniko and `.additionalBuildOptions` field contains some options, we want to check them
+                        // because `.additionalKanikoOptions` is deprecated and `.additionalBuildOptions` is replacement
+                        validateAdditionalOptions(DockerOutput.ALLOWED_KANIKO_OPTIONS, dockerOutput.getAdditionalBuildOptions(), ".spec.build.additionalBuildOptions");
+                        result.additionalBuildOptions = dockerOutput.getAdditionalBuildOptions();
+                    }
                 }
             }
 
@@ -253,7 +256,7 @@ public class KafkaConnectBuild extends AbstractModel {
      * @param allowedBuildahOptions  allowed Buildah options for particular operation - build/push.
      * @param desiredOptions         list of desired options by the user.
      */
-    private static void validateAdditionalOptions(String allowedBuildahOptions, List<String> desiredOptions)    {
+    private static void validateAdditionalOptions(String allowedBuildahOptions, List<String> desiredOptions, String specPath)    {
         List<String> allowedOptions = Arrays.asList(allowedBuildahOptions.split("\\s*,+\\s*"));
         List<String> forbiddenOptions = desiredOptions.stream()
             .map(option -> option.contains("=") ? option.substring(0, option.indexOf("=")) : option)
@@ -261,7 +264,7 @@ public class KafkaConnectBuild extends AbstractModel {
             .toList();
 
         if (!forbiddenOptions.isEmpty())    {
-            throw new InvalidResourceException(".spec.build.additionalBuildOptions contains forbidden options: " + forbiddenOptions);
+            throw new InvalidResourceException(specPath + " contains forbidden options: " + forbiddenOptions);
         }
     }
 

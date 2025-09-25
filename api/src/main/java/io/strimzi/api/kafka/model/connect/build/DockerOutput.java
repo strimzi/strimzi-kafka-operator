@@ -118,7 +118,7 @@ public class DockerOutput extends Output {
         return additionalPushOptions;
     }
 
-    public void setAdditionalBuildahPushOptions(List<String> additionalPushOptions) {
+    public void setAdditionalPushOptions(List<String> additionalPushOptions) {
         this.additionalPushOptions = additionalPushOptions;
     }
 }
