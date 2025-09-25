@@ -1,0 +1,26 @@
+// Module included in the following assemblies:
+//
+// assembly-logging-configuration.adoc
+
+:_mod-docs-content-type: CONCEPT
+[id='con-inline-logging-option_{context}']
+= Configuring inline logging
+
+[role="_abstract"]
+Use inline logging when you only need to adjust log levels for Strimzi components.
+
+Inline logging is defined directly in the `spec.logging` property of the custom resource.
+Use the loggers property to set the root logger level and levels for specific classes or loggers.
+
+.Example inline logging configuration
+[source,yaml]
+----
+# ...
+logging:
+  type: inline
+  loggers:
+    rootLogger.level: INFO
+# ...
+----
+
+When a resource managed by the Cluster Operator is updated, changes to inline logging are applied dynamically.

@@ -1,0 +1,88 @@
+// Module included in the following assemblies:
+//
+// assembly-logging-configuration.adoc
+
+:_mod-docs-content-type: PROCEDURE
+[id='proc-entity-operator-logging-filters_{context}']
+= Configuring logging filters for the Topic or User Operator
+
+[role="_abstract"]
+To add logging filters to the Topic or User Operator, create or edit a logging `ConfigMap` and reference it in the `Kafka` resource.
+
+.Procedure
+
+. Create or edit a logging `ConfigMap`.
++
+For example, adding filter properties for `my-topic` topic:
++
+[source,yaml]
+----
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: logging-configmap
+data:
+  log4j2.properties: |
+    rootLogger.level = "INFO"
+    rootLogger.appenderRefs = console
+    rootLogger.appenderRef.console.ref = STDOUT
+
+    appender.console.type = Console
+    appender.console.name = STDOUT
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+
+    appender.console.filter.filter1.type = MarkerFilter
+    appender.console.filter.filter1.onMatch = ACCEPT
+    appender.console.filter.filter1.onMismatch = DENY
+    appender.console.filter.filter1.marker = KafkaTopic(my-namespace/my-topic)
+----
++
+Or define the configuration in a properties file and specify the file when creating the `ConfigMap`:
++
+For example, in a properties file:
++
+[source,properties]
+----
+# Define the logger
+rootLogger.level = "INFO"
+rootLogger.appenderRefs = console
+rootLogger.appenderRef.console.ref = STDOUT
+# Define the appenders
+appender.console.type = Console
+appender.console.name = STDOUT
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+# Set the filters
+appender.console.filter.filter1.type = MarkerFilter
+appender.console.filter.filter1.onMatch = ACCEPT
+appender.console.filter.filter1.onMismatch = DENY
+appender.console.filter.filter1.marker = KafkaTopic(my-namespace/my-topic)
+# ...
+----
++
+Then create the `ConfigMap`:
++
+[source,shell]
+----
+kubectl create configmap logging-configmap --from-file=log4j2.properties
+----
+
+. Add `external` logging to the `spec` of the `Kafka` resource, specifying the `name` and `key` of the `ConfigMap` under the `topicOperator` or `userOperator` configuration:
++
+[source,yaml]
+----
+spec:
+  # ...
+  entityOperator:
+    topicOperator:
+      logging:
+        type: external
+        valueFrom:
+          configMapKeyRef:
+            name: logging-configmap
+            key: log4j2.properties
+----
+
+
+. Apply the changes to the `Kafka` configuration.

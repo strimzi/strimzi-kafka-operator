@@ -4,88 +4,40 @@
 //
 // assembly-config.adoc
 
+:_mod-docs-content-type: ASSEMBLY
 [id='external-logging_{context}']
-= Configuring logging levels
+= Configuring logging
 
 [role="_abstract"]
+Strimzi operators and Kafka components use log4j2 for logging.
 
-WARNING: Strimzi operators and Kafka components use log4j2 for logging.
-However, Kafka 3.9 and earlier versions rely on log4j1.
+NOTE: Kafka versions 3.9 and earlier use log4j1.
 For log4j1-based configuration examples, refer to the link:{DocArchive}[Strimzi 0.45 documentation^].
 
 You can set log levels to `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
-Configure the logging levels of Kafka components and Strimzi operators through their custom resources.
-You can use either of these options:
 
-* Specify logging levels directly in the `spec.logging` property of the custom resource.
-* Define logging properties in a custom `ConfigMap` and reference it using the `configMapKeyRef` property.
+By default, logs are produced at predefined levels.
+Loggers that are not explicitly configured inherit their configuration from parent loggers.
 
-Advantages of using a `ConfigMap`:
+WARNING: Setting log levels to `DEBUG` or `TRACE` can produce large volumes of output and impact performance.
 
-* Centralized maintenance
-* Reusable with multiple resources
-* Flexibility to append logging specifications to add filters
-
-Specify a logging `type` in your logging specification:
-
-* `inline` when specifying logging levels directly
-* `external` when referencing a `ConfigMap`
-
-For `inline` configuration, use the `loggers` property to set the root logger level and levels for specific classes or loggers.
-
-.Example inline logging configuration
-[source,shell,subs="+quotes,attributes"]
-----
-# ...
-logging:
-  type: inline
-  loggers:
-    rootLogger.level: INFO
-# ...
-----
-
-For `external` configuration, use a `ConfigMap` to define logging configurations using a full `log4j2.properties` file. 
-Set the logging `name` and `key` properties to reference the `ConfigMap`. 
-Both properties are mandatory. 
-
-.Example external logging configuration
-[source,shell,subs="+quotes,attributes"]
-----
-# ...
-logging:
-  type: external
-  valueFrom:
-    configMapKeyRef:
-      name: my-config-map
-      key: log4j2.properties
-# ...
-----
-
-Default logging is used if logging is not specified in the resource using either method.
-Loggers that haven't been explicitly configured inherit settings from their parent loggers. 
-
-When a resource managed by the Cluster Operator is created, a `ConfigMap` with the specified logging configuration is also created. 
-For components managed by the Strimzi operators, changes to logging levels are applied dynamically.
-
-WARNING: Setting a log level to `DEBUG` or `TRACE` may result in a large amount of log output and may have performance implications.
-
-== Configurable loggers
-
-The following Kafka components and operators have specific loggers available for configuration:
-
-* link:{BookURLConfiguring}#property-kafka-logging-reference[Kafka loggers^]
-* link:{BookURLConfiguring}#property-kafka-connect-logging-reference[Kafka Connect and MirrorMaker 2 loggers^]
-* link:{BookURLConfiguring}#property-kafka-bridge-logging-reference[Kafka Bridge loggers^]
-* link:{BookURLConfiguring}#property-cruise-control-logging-reference[Cruise Control loggers^]
-* xref:ref-operator-cluster-logging-configmap-str[Cluster Operator loggers]
-* link:{BookURLConfiguring}#property-topic-operator-logging-reference[Topic Operator loggers^]
-* link:{BookURLConfiguring}#property-user-operator-logging-reference[User Operator loggers^]
-
-For information about log levels, see {ApacheLoggers}.
-
+//choosing a logging method
+include::../../modules/configuring/con-logging-options.adoc[leveloffset=+1]
+//configuring inline logging
+include::../../modules/configuring/con-inline-logging-option.adoc[leveloffset=+1]
+//configuring external logging
+include::../../modules/configuring/con-external-logging-option.adoc[leveloffset=+1]
 //creating a configmap for logging
 include::../../modules/configuring/proc-creating-configmap.adoc[leveloffset=+1]
 //cluster operator logging config
 include::../../modules/operators/ref-operator-cluster-logging-configmap.adoc[leveloffset=+1]
 //adding logging filters to operators
-include::../../modules/configuring/proc-creating-logging-filters.adoc[leveloffset=+1]
+include::../../modules/configuring/con-creating-logging-filters.adoc[leveloffset=+1]
+//configuring logging filters for the Cluster Operator
+include::../../modules/configuring/proc-cluster-operator-logging-filters.adoc[leveloffset=+1]
+//configuring logging filters for the Topic or User Operator
+include::../../modules/configuring/proc-entity-operator-logging-filters.adoc[leveloffset=+1]
+//ref for configurable loggers
+include::../../modules/configuring/ref-configurable-loggers.adoc[leveloffset=+1]
+//using loggers
+include::../../modules/configuring/con-using-loggers.adoc[leveloffset=+1]

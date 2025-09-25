@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-logging-configuration.adoc
+
+:_mod-docs-content-type: CONCEPT
+[id='con-using-loggers_{context}']
+= Accessing and using logs
+
+[role="_abstract"]
+You can view logs for Strimzi operators and Kafka components without any configuration.
+If you configure logging, you can control the volume and type of information shown. 
+Logging filters further narrow output to specific resources.
+
+Logs can help you:
+
+* Confirm successful component startup
+* Monitor cluster activity
+* Diagnose issues such as connection failures, authorization errors, or replication problems
+
+View logs with `kubectl` commands.
+For example:
+
+* View logs from a pod:
+
+[source,shell]
+----
+kubectl logs my-cluster-kafka-0
+----
+
+* Follow logs in real time:
+
+[source,shell]
+----
+kubectl logs -f my-cluster-kafka-0
+----
+
+* View logs from a specific container in a pod:
+
+[source,shell]
+----
+kubectl logs my-cluster-entity-operator-0 -c topic-operator
+----
+
+

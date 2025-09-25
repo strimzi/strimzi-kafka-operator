@@ -1,0 +1,29 @@
+// Module included in the following assemblies:
+//
+// assembly-logging-configuration.adoc
+
+:_mod-docs-content-type: CONCEPT
+[id='con-logging-options_{context}']
+= Choosing a logging method
+
+[role="_abstract"]
+You configure logging in custom resources by setting the `spec.logging` property.
+
+Two methods are available:
+
+Inline logging::
+* Define loggers and log levels directly in the resource.
+* Suitable when you only need to adjust log levels.
+* Quick to set up, but limited in flexibility.
+
+External logging::
+* Reference a `ConfigMap` that contains a complete `log4j2.properties` file.
+* Suitable when you need advanced options, such as the following:
+** Centralized, reusable configuration across resources
+** Logging filters to target logs for a specific Kafka cluster, topic, or operator 
+** Custom appenders and layouts
+
+Which method should you use?
+
+* Use inline logging for simple changes to log levels.
+* Use external logging for complex, reusable, or filtered configurations.
