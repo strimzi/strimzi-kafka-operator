@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-logging-configuration.adoc
+
+:_mod-docs-content-type: PROCEDURE
+[id='proc-cluster-operator-logging-filters_{context}']
+= Configuring logging filters for the Cluster Operator
+
+[role="_abstract"]
+To add logging filters to the Cluster Operator, update its logging `ConfigMap`.
+
+.Procedure
+
+. Edit the `ConfigMap` used by the Cluster Operator.
++
+* Update the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`.
+* Or edit the `ConfigMap` directly in the cluster and save the changes: `kubectl edit configmap strimzi-cluster-operator`.
++
+For example, adding a filter to the ConfigMap:
++
+[source,yaml,subs="+attributes"]
+----
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: strimzi-cluster-operator
+data:
+  log4j2.properties: |
+    rootLogger.level = "INFO"
+    rootLogger.appenderRefs = console
+    rootLogger.appenderRef.console.ref = STDOUT
+
+    appender.console.type = Console
+    appender.console.name = STDOUT
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+    
+    appender.console.filter.filter1.type=MarkerFilter
+    appender.console.filter.filter1.onMatch=ACCEPT
+    appender.console.filter.filter1.onMismatch=DENY
+    appender.console.filter.filter1.marker=Kafka(my-namespace/my-kafka-cluster)
+----
+
+. If you edited the YAML file, apply the changes to the `ConfigMap` configuration.

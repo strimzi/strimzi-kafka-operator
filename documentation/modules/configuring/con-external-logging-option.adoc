@@ -1,0 +1,32 @@
+// Module included in the following assemblies:
+//
+// assembly-logging-configuration.adoc
+
+:_mod-docs-content-type: CONCEPT
+[id='con-external-logging-option_{context}']
+= Configuring external logging
+
+[role="_abstract"]
+Use external logging when you need a reusable or advanced configuration.
+
+External logging requires two steps:
+
+. Create a `ConfigMap` that contains a complete `log4j2.properties` file.
+. Reference the `ConfigMap` in the `spec.logging` property of the custom resource.
+
+.Example external logging configuration
+[source,yaml]
+----
+# ...
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      # name and key are mandatory     
+      name: my-config-map
+      key: log4j2.properties
+# ...
+----
+
+When a resource managed by the Cluster Operator is updated, changes to external logging are applied dynamically.
+When a resource is created, the Cluster Operator also creates a `ConfigMap` containing the specified logging configuration.
