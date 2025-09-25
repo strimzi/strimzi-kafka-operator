@@ -465,13 +465,13 @@ public class KafkaConnectBuild extends AbstractModel {
     Container createBuildahContainer(ImagePullPolicy imagePullPolicy) {
         List<String> args = new ArrayList<>(3);
         args.add("/bin/bash");
-        args.add("-c");
+        args.add("-ec");
         // --storage-driver=vfs is needed for rootless build
         args.add(
             """
             buildah build --file=/dockerfile/Dockerfile --tag=<IMAGE> --storage-driver=vfs <ADDITIONAL_BUILD_OPTS>
             buildah push --storage-driver=vfs --digestfile=/tmp/digest <ADDITIONAL_PUSH_OPTS> <IMAGE>
-            buildah images --digests --filter=digest=sha256:$(cat /tmp/digest) --format='{{.Name}}@{{.Digest}}' > /dev/termination-log
+            echo "$(buildah images --storage-driver=vfs --format '{{.Name}}' <IMAGE>)@$(cat /tmp/digest)" > /dev/termination-log
             """.replaceAll("<IMAGE>", build.getOutput().getImage())
                 .replace("<ADDITIONAL_BUILD_OPTS>", additionalBuildOptions != null ? String.join(" ", additionalBuildOptions) : "")
                 .replace("<ADDITIONAL_PUSH_OPTS>", additionalPushOptions != null ? String.join(" ", additionalPushOptions) : "")
