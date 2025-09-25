@@ -171,8 +171,8 @@ runs:
             strimzi_rbac_scope:            getParameter('strimzi_rbac_scope',  sanitized),  // keep case
             cluster_operator_install_type: getParameter('cluster_operator_install_type', lower) || DEFAULTS.installType,
             parallel:                      getParameter('parallel', lower) || DEFAULTS.parallel,
-            groups:                        getParameter('groups', lower),
-            tests:                         getParameter('tests', lower),
+            groups:                        getParameter('groups', sanitized),
+            tests:                         getParameter('tests', sanitized),
             kafkaVersion:                  getParameter('kafkaversion', lower) || DEFAULTS.kafkaVersion,
             kubeVersion:                   getParameter('kubeversion',  lower) || DEFAULTS.kubeVersion,
             releaseVersion:                process.env.INPUT_RELEASE_VERSION || 'latest',

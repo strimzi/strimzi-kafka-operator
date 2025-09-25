@@ -5,7 +5,7 @@ scenarios:
     matrix_file: .github/tests/inputs/validate-matrix/valid_multiple.json
     expectations:
       isValid: "true"
-      message_contains: "✅ **System test validation passed**"
+      message_contains: "will be executed"
 
   - id: valid-single-job
     description: "Validate matrix with single valid job"
@@ -13,7 +13,7 @@ scenarios:
     matrix_file: .github/tests/inputs/validate-matrix/valid_single.json
     expectations:
       isValid: "true"
-      message_contains: "✅ **System test validation passed**"
+      message_contains: "will be executed"
 
   - id: empty-matrix
     description: "Validate empty matrix (should fail validation)"
@@ -37,4 +37,4 @@ scenarios:
     matrix_file: .github/tests/inputs/validate-matrix/valid_custom.json
     expectations:
       isValid: "true"
-      message_contains: "✅ **System test validation passed**"
+      message_contains: "will be executed"

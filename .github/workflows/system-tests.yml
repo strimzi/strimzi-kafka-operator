@@ -61,7 +61,8 @@ jobs:
         uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
       - name: Parse Comment
         id: parse
-        uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
+        #uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
+        uses: frawless/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@gha-trigger-docs-improvements
         with:
           # Parameters from manual trigger via UI
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
@@ -119,6 +120,8 @@ jobs:
           default_strimzi_rbac_scope: ${{ needs.parse-params.outputs.strimzi_rbac_scope }}
           default_cluster_operator_install_type: ${{ needs.parse-params.outputs.cluster_operator_install_type }}
           default_parallel: ${{ needs.parse-params.outputs.parallel }}
+          default_tests: ${{ needs.parse-params.outputs.tests }}
+          default_groups: ${{ needs.parse-params.outputs.groups }}
           runnerArch: "amd64"
       - name: Validate Matrix
         id: validate
@@ -223,14 +226,6 @@ jobs:
       statuses: write
     uses: ./.github/workflows/run-system-tests.yml
     with:
-      pipelineList: ${{ needs.parse-params.outputs.pipelineList }}
-      profileList: ${{ needs.parse-params.outputs.profileList }}
-      agent: ${{ needs.parse-params.outputs.agent }}
-      architecture: ${{ needs.parse-params.outputs.architecture }}
-      strimzi_feature_gates: ${{ needs.parse-params.outputs.strimzi_feature_gates }}
-      strimzi_rbac_scope: ${{ needs.parse-params.outputs.strimzi_rbac_scope }}
-      cluster_operator_install_type: ${{ needs.parse-params.outputs.cluster_operator_install_type }}
-      parallel: ${{ needs.parse-params.outputs.parallel }}
       releaseVersion: ${{ needs.parse-params.outputs.releaseVersion }}
       kafkaVersion: ${{ needs.parse-params.outputs.kafkaVersion }}
       kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
