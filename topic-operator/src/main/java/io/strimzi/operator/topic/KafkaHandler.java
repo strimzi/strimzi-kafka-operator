@@ -142,20 +142,20 @@ public class KafkaHandler {
         var values = ctr.values();
         return TopicOperatorUtil.partitionedByError(reconcilableTopics.stream().map(reconcilableTopic -> {
             if (newTopicsErrors.containsKey(reconcilableTopic)) {
-                return new Pair<>(reconcilableTopic, Either.ofLeft(newTopicsErrors.get(reconcilableTopic)));
+                return new Pair<>(reconcilableTopic, Either.<TopicOperatorException, TopicState>ofLeft(newTopicsErrors.get(reconcilableTopic)));
             }
             try {
                 values.get(reconcilableTopic.topicName()).get();
-                return new Pair<>(reconcilableTopic, Either.ofRight(
-                    new TopicState(new TopicDescription(reconcilableTopic.topicName(), 
+                return new Pair<>(reconcilableTopic, Either.<TopicOperatorException, TopicState>ofRight(
+                    new TopicState(new TopicDescription(reconcilableTopic.topicName(),
                         false, List.of(), Set.of(), ctr.topicId(reconcilableTopic.topicName()).get()), null)
                 ));
             } catch (ExecutionException e) {
                 if (e.getCause() != null && e.getCause() instanceof TopicExistsException) {
                     // we treat this as a success, the next reconciliation checks the configuration
-                    return new Pair<>(reconcilableTopic, Either.ofRight(null));
+                    return new Pair<>(reconcilableTopic, Either.<TopicOperatorException, TopicState>ofRight(null));
                 } else {
-                    return new Pair<>(reconcilableTopic, Either.ofLeft(handleAdminException(e)));
+                    return new Pair<>(reconcilableTopic, Either.<TopicOperatorException, TopicState>ofLeft(handleAdminException(e)));
                 }
             } catch (InterruptedException e) {
                 throw new UncheckedInterruptedException(e);
@@ -247,9 +247,9 @@ public class KafkaHandler {
         var alterConfigsResult = acr.values();
         Stream<Pair<ReconcilableTopic, Either<TopicOperatorException, Void>>> entryStream = someAlterConfigs.stream().map(entry -> {
             try {
-                return new Pair<>(entry.getKey(), Either.ofRight(alterConfigsResult.get(buildTopicConfigResource(entry.getKey().topicName())).get()));
+                return new Pair<>(entry.getKey(), Either.<TopicOperatorException, Void>ofRight(alterConfigsResult.get(buildTopicConfigResource(entry.getKey().topicName())).get()));
             } catch (ExecutionException e) {
-                return new Pair<>(entry.getKey(), Either.ofLeft(handleAdminException(e)));
+                return new Pair<>(entry.getKey(), Either.<TopicOperatorException, Void>ofLeft(handleAdminException(e)));
             } catch (InterruptedException e) {
                 throw new UncheckedInterruptedException(e);
             }
@@ -359,9 +359,9 @@ public class KafkaHandler {
                 throw new UncheckedInterruptedException(e);
             }
             if (exception != null) {
-                return new Pair<>(reconcilableTopic, Either.ofLeft(handleAdminException(exception)));
+                return new Pair<>(reconcilableTopic, Either.<TopicOperatorException, TopicState>ofLeft(handleAdminException(exception)));
             } else {
-                return new Pair<>(reconcilableTopic, Either.ofRight(new TopicState(description, configs)));
+                return new Pair<>(reconcilableTopic, Either.<TopicOperatorException, TopicState>ofRight(new TopicState(description, configs)));
             }
         }));
     }
@@ -398,12 +398,12 @@ public class KafkaHandler {
             .map(reconcilableTopic -> {
                 try {
                     futuresMap.get(reconcilableTopic.topicName()).get();
-                    return new Pair<>(reconcilableTopic, Either.ofRight(null));
+                    return new Pair<>(reconcilableTopic, Either.<TopicOperatorException, Object>ofRight(null));
                 } catch (ExecutionException e) {
                     if (e.getCause() instanceof UnknownTopicOrPartitionException) {
-                        return new Pair<>(reconcilableTopic, Either.ofRight(null));
+                        return new Pair<>(reconcilableTopic, Either.<TopicOperatorException, Object>ofRight(null));
                     } else {
-                        return new Pair<>(reconcilableTopic, Either.ofLeft(handleAdminException(e)));
+                        return new Pair<>(reconcilableTopic, Either.<TopicOperatorException, Object>ofLeft(handleAdminException(e)));
                     }
                 } catch (InterruptedException e) {
                     throw new UncheckedInterruptedException(e);
