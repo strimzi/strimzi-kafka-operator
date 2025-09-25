@@ -144,11 +144,11 @@ In order to provide the bundle for a new release, you can use the previous one a
 Create a folder for the new release by copying the previous one and make the following changes:
 
 * if releasing a new minor or major version (rather than fix), change the `metadata/annotations.yaml` to update the second channel listed next to `operators.operatorframework.io.bundle.channels.v1` to the new release version range (e.g. `strimzi-0.45.x`).
-* copy the CRDs and the Cluster Roles YAML to the `manifests` folder by taking them from the `install/cluster-operator` folder (within the Strimzi repo).
+* copy the CRDs, the Cluster Roles YAML (excluding the `strimzi-cluster-operator` roles) and the operator `ConfigMap` to the `manifests` folder by taking them from the `install/cluster-operator` folder (within the Strimzi repo).
 * take the `strimzi-cluster-operator.v<VERSION>.clusterserviceversion.yaml` CSV file (by using the new release as `<VERSION>`) in order to update the following:
-  * `createAt` field with date/time creation of the current CSV file.
-  * `metadata.annotations.alm-examples-metadata` section by using the examples from the `examples` folder (within the Strimzi repo).
+  * `alm-examples-metadata` and `alm-examples` sections by using the examples from the `examples` folder (within the Strimzi repo).
   * `containerImage` field with the new operator image (using the SHA).
+  * `createdAt` field with date/time creation of the current CSV file.
   * `name` field by setting the new version in the operator name.
   * `customresourcedefinitions.owned` section with the CRDs descriptions, from the `install/cluster-operator` folder (within the Strimzi repo).
   * `description` section with all the Strimzi operator information already used for the release on GitHub.
@@ -180,7 +180,7 @@ In this section, the following steps show how to:
 Prerequisites:
 
 * [opm](https://github.com/operator-framework/operator-registry/releases) tool.
-* docker, podman or buildah (the following steps will use docker as an example)
+* docker, podman or buildah (the following steps allow you to configure the one to use via the `DOCKER_CMD` env var)
 
 *Note*
 For further details about the following steps, you can also refer to the official [Operator Lifecycle Manager documentation](https://olm.operatorframework.io/docs/tasks/).
@@ -193,7 +193,8 @@ Inside the bundle directory (i.e. `operators/strimzi-kafka-operator/0.45.0`), ex
 ```shell
 export OPERATOR_VERSION=0.45.0
 export DOCKER_REGISTRY=quay.io
-export DOCKER_USER=ppatierno
+export DOCKER_ORG=ppatierno
+export DOCKER_CMD=docker
 ```
 
 Run the following command in order to generate a `bundle.Dockerfile` representing the operator bundle image.
@@ -224,14 +225,14 @@ COPY metadata /metadata/
 Run the following command to build the operator bundle image and push it to a repository:
 
 ```shell
-docker build -t $DOCKER_REGISTRY/$DOCKER_USER/strimzi-kafka-operator-bundle:$OPERATOR_VERSION -f bundle.Dockerfile .
-docker push $DOCKER_REGISTRY/$DOCKER_USER/strimzi-kafka-operator-bundle:$OPERATOR_VERSION
+$DOCKER_CMD build -t $DOCKER_REGISTRY/$DOCKER_ORG/strimzi-kafka-operator-bundle:$OPERATOR_VERSION -f bundle.Dockerfile .
+$DOCKER_CMD push $DOCKER_REGISTRY/$DOCKER_ORG/strimzi-kafka-operator-bundle:$OPERATOR_VERSION
 ```
 
 You can also run some validations to ensure that your bundle is valid and in the correct format.:
 
 ```shell
-opm alpha bundle validate --tag $DOCKER_REGISTRY/$DOCKER_USER/strimzi-kafka-operator-bundle:$OPERATOR_VERSION --image-builder docker
+opm alpha bundle validate --tag $DOCKER_REGISTRY/$DOCKER_ORG/strimzi-kafka-operator-bundle:$OPERATOR_VERSION --image-builder $DOCKER_CMD
 ```
 
 #### Create the catalog image
@@ -258,7 +259,7 @@ opm init strimzi-kafka-operator --default-channel=stable --output yaml > strimzi
 Add the bundle to the catalog (repeat for each operator version/bundle you want to add in order to be able to test operator upgrades):
 
 ```shell
-opm render $DOCKER_REGISTRY/$DOCKER_USER/strimzi-kafka-operator-bundle:$OPERATOR_VERSION --output=yaml >> strimzi-catalog/index.yaml
+opm render $DOCKER_REGISTRY/$DOCKER_ORG/strimzi-kafka-operator-bundle:$OPERATOR_VERSION --output=yaml >> strimzi-catalog/index.yaml
 ```
 
 Edit the `index.yaml` to add the bundle to a channel (i.e. using the stable one):
@@ -290,8 +291,8 @@ entries:
 Build and push the catalog image:
 
 ```shell
-docker build -f strimzi-catalog.Dockerfile -t $DOCKER_REGISTRY/$DOCKER_USER/olm-catalog:latest .
-docker push $DOCKER_REGISTRY/$DOCKER_USER/olm-catalog:latest
+$DOCKER_CMD build -f strimzi-catalog.Dockerfile -t $DOCKER_REGISTRY/$DOCKER_ORG/olm-catalog:latest .
+$DOCKER_CMD push $DOCKER_REGISTRY/$DOCKER_ORG/olm-catalog:latest
 ```
 
 ### Make the catalog available on cluster
@@ -320,7 +321,7 @@ kubectl get packagemanifest -n olm | grep strimzi-kafka-operator
 
 You can test operator upgrades by starting from an existing catalog and then building a new catalog with a new operator version/bundle.
 In this case, the new catalog image is pulled by Kubernetes/OpenShift.
-It happens automatically if you are using a specific tag for the catalog image, for example going from `$DOCKER_REGISTRY/$DOCKER_USER/olm-catalog:1.0` to `$DOCKER_REGISTRY/$DOCKER_USER/olm-catalog:1.1`.
+It happens automatically if you are using a specific tag for the catalog image, for example going from `$DOCKER_REGISTRY/$DOCKER_ORG/olm-catalog:1.0` to `$DOCKER_REGISTRY/$DOCKER_ORG/olm-catalog:1.1`.
 If you are using the `latest` tag instead, you have to force pulling the new catalog image and one way is to kill the pod running the catalog.
 
 ```shell
