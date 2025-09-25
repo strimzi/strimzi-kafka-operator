@@ -8,6 +8,7 @@ This document gives a detailed breakdown of the various build processes and opti
 - [Build Pre-Requisites](#build-pre-requisites)
 - [Using an IDE](#using-an-ide)
    - [IntelliJ IDEA](#intellij-idea)
+   - [Eclipse](#eclipse)
    - [IDE build problems](#ide-build-problems)
 - [Build and deploy Strimzi from source](#build-and-deploy-from-source)
 - [Build details](#build-details)
@@ -21,7 +22,7 @@ This document gives a detailed breakdown of the various build processes and opti
 - [Helm Chart](#helm-chart)
 - [Running system tests](#running-system-tests)
 - [DCO Signoff](#dco-signoff)
-- [Building container images for other platforms with Docker `buildx`](#building-container-images-for-other-platforms-with-docker-buildx)
+- [Building container images for other platforms](#building-container-images-for-other-platforms)
 
 <!-- /TOC -->
 
@@ -58,7 +59,7 @@ In order to use `make` these all need to be available on your `$PATH`.
 
 The `make` build uses GNU versions of `find`, `sed` and other utilities and is not compatible with the BSD versions
 available on macOS. When using macOS, you have to install the GNU versions of `find` and `sed`. When using `brew`, you
-can do `brew install gnu-sed findutils grep coreutils`. 
+can do `brew install gnu-sed findutils grep coreutils`.
 This command will install the GNU versions as `gcp`, `ggrep`, `gsed` and `gfind` and our `make` build will automatically pick them up and use them.
 
 The build requires `bash` version 4+ which is not shipped with macOS but can be installed via homebrew. You can
@@ -78,7 +79,7 @@ structure after everything is said and done should look like `/Library/Java/Java
 doing that run the command at the beginning again and this should link the file and allow you to use maven with OpenJDK
 version 21.
 
-When running the tests, you may encounter `OpenSSL` related errors for parts that you may not have even worked on, in 
+When running the tests, you may encounter `OpenSSL` related errors for parts that you may not have even worked on, in
 which case you need to make sure you are using `OpenSSL` and not LibreSSL which comes by default with macOS.
 
 ### Kubernetes or OpenShift Cluster
@@ -110,15 +111,94 @@ Afterwards IntelliJ should no longer have any `Cannot resolve symbol` errors.
 
 Note: After running the Maven build in the terminal you might need to [reload the project](https://www.jetbrains.com/help/idea/delegate-build-and-run-actions-to-maven.html#maven_reimport) from the Maven tool window.
 
+### Eclipse
+Eclipse users may find the [m2e-apt plugin](https://marketplace.eclipse.org/content/m2e-apt) useful for the automatic
+configuration of Eclipse projects for annotation processing.
+
+If you are using M2E and encounter the bug ["Path must include project and resource name: /"](https://github.com/eclipse-m2e/m2e-core/issues/1790) when importing or updating the Strimzi projects in Eclipse, you may have success working around the error/bug by making _local_ modifications to the `cluster-operator/pom.xml` and `systemtest/pom.xml`. These changes should not be committed or made a part of any PR you may open to the Strimzi project.
+  1. In `cluster-operator/pom.xml` remove the following resource
+        ```xml
+        <resource>
+            <directory>..</directory>
+            <includes>
+                <include>kafka-versions.yaml</include>
+            </includes>
+        </resource>
+        ```
+  2. In `cluster-operator/pom.xml` add executions to the `maven-resources-plugin`:
+        ```xml
+        <executions>
+            <execution>
+                <id>copy-kafka-versions</id>
+                <phase>generate-resources</phase>
+                <goals>
+                    <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                    <resources>
+                        <resource>
+                            <directory>${strimziRootDirectory}</directory>
+                            <includes>
+                                <include>kafka-versions.yaml</include>
+                            </includes>
+                        </resource>
+                    </resources>
+                </configuration>
+            </execution>
+        </executions>
+        ```
+  3. In `systemtest/pom.xml` remove the resource section
+        ```xml
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>..</directory>
+                <includes>
+                    <include>kafka-versions.yaml</include>
+                    <include>bridge.version</include>
+                </includes>
+            </resource>
+        </resources>
+        ```
+  4. In `systemtest/pom.xml` add `maven-resources-plugin` configured as below:
+        ```xml
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <version>${maven.resources.version}</version>
+            <executions>
+                <execution>
+                    <id>copy-kafka-versions</id>
+                    <phase>generate-resources</phase>
+                    <goals>
+                        <goal>copy-resources</goal>
+                    </goals>
+                    <configuration>
+                        <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                        <resources>
+                            <resource>
+                                <directory>${strimziRootDirectory}</directory>
+                                <includes>
+                                    <include>kafka-versions.yaml</include>
+                                    <include>bridge.version</include>
+                                </includes>
+                            </resource>
+                        </resources>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+        ```
+
 ### IDE build problems
 
 The build also uses a Java annotation processor. Some IDEs (such as IntelliJ's IDEA) by default don't run the annotation
 processor in their build process. You can run `mvn clean install -DskipTests` to run the annotation processor
 as part of the `maven` build, and the IDE should then be able to use the generated classes. It is also possible to
 configure the IDE to run the annotation processor directly.
-
-Eclipse users may find the [m2e-apt plugin](https://marketplace.eclipse.org/content/m2e-apt) useful for the automatic
-configuration of Eclipse projects for annotation processing.
 
 ## Build and deploy from source
 
@@ -225,10 +305,10 @@ make command:
 7. Finally, you can deploy the cluster custom resource running:
 
         # Running against Kubernetes
-        kubectl -n myproject create -f packaging/examples/kafka/kafka-ephemeral.yaml         
+        kubectl -n myproject create -f packaging/examples/kafka/kafka-ephemeral.yaml
 
         # Running against OpenShift
-        oc -n myproject create -f packaging/examples/kafka/kafka-ephemeral.yaml 
+        oc -n myproject create -f packaging/examples/kafka/kafka-ephemeral.yaml
 
 ## Build details
 
