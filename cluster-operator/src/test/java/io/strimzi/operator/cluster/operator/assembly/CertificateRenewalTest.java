@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.common.Reconciliation;
@@ -43,10 +43,9 @@ public class CertificateRenewalTest {
         String commonName = "deployment";
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
-        OwnerReference ownerReference = new OwnerReference();
 
         Secret newSecret = CertUtils.buildTrustedCertificateSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, null, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, true);
+                keyCertName, labels, ResourceUtils.DUMMY_OWNER_REFERENCE, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
         assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
@@ -73,10 +72,9 @@ public class CertificateRenewalTest {
         String commonName = "deployment";
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
-        OwnerReference ownerReference = new OwnerReference();
 
         Secret newSecret = CertUtils.buildTrustedCertificateSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, true);
+                keyCertName, labels, ResourceUtils.DUMMY_OWNER_REFERENCE, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
         assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
@@ -103,10 +101,9 @@ public class CertificateRenewalTest {
         String commonName = "deployment";
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
-        OwnerReference ownerReference = new OwnerReference();
 
         Secret newSecret = CertUtils.buildTrustedCertificateSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, true);
+                keyCertName, labels, ResourceUtils.DUMMY_OWNER_REFERENCE, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
         assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
@@ -133,10 +130,9 @@ public class CertificateRenewalTest {
         String commonName = "deployment";
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
-        OwnerReference ownerReference = new OwnerReference();
 
         Secret newSecret = CertUtils.buildTrustedCertificateSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, false);
+                keyCertName, labels, ResourceUtils.DUMMY_OWNER_REFERENCE, false);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes())));
         assertThat(newSecret.getData(), hasEntry("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes())));
@@ -165,10 +161,9 @@ public class CertificateRenewalTest {
         String commonName = "deployment";
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
-        OwnerReference ownerReference = new OwnerReference();
 
         Secret newSecret = CertUtils.buildTrustedCertificateSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, true);
+                keyCertName, labels, ResourceUtils.DUMMY_OWNER_REFERENCE, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes())));
         assertThat(newSecret.getData(), hasEntry("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes())));

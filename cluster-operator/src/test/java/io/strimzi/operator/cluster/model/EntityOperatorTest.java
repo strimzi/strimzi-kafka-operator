@@ -44,9 +44,9 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -125,7 +125,7 @@ public class EntityOperatorTest {
         assertThat(dep.getMetadata().getName(), is(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(dep.getSpec().getReplicas(), is(1));
-        TestUtils.checkOwnerReference(dep, KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(dep, KAFKA);
 
         assertThat(containers.size(), is(2));
         // just check names of topic and user operators (their containers are tested in the related unit test classes)

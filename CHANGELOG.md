@@ -2,7 +2,8 @@
 
 ## 0.49.0
 
-* n/a
+* Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
+  Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
 
 ## 0.48.0
 

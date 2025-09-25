@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
@@ -112,6 +114,15 @@ import static org.mockito.Mockito.when;
     "checkstyle:ClassFanOutComplexity"
 })
 public class ResourceUtils {
+    public static final OwnerReference DUMMY_OWNER_REFERENCE = new OwnerReferenceBuilder()
+            .withApiVersion("v1")
+            .withKind("my-kind")
+            .withName("my-name")
+            .withUid("my-uid")
+            .withBlockOwnerDeletion(true)
+            .withController(false)
+            .build();
+
     private ResourceUtils() { }
 
     public static Secret createInitialCaCertSecret(String clusterNamespace, String clusterName, String secretName,

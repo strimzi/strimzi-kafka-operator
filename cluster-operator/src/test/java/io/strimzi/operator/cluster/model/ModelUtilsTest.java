@@ -95,7 +95,7 @@ public class ModelUtilsTest {
         assertThat(ref.getKind(), is(owner.getKind()));
         assertThat(ref.getName(), is(owner.getMetadata().getName()));
         assertThat(ref.getUid(), is(owner.getMetadata().getUid()));
-        assertThat(ref.getBlockOwnerDeletion(), is(false));
+        assertThat(ref.getBlockOwnerDeletion(), is(true));
         assertThat(ref.getController(), is(false));
     }
 
@@ -114,7 +114,7 @@ public class ModelUtilsTest {
         assertThat(ref.getKind(), is(owner.getKind()));
         assertThat(ref.getName(), is(owner.getMetadata().getName()));
         assertThat(ref.getUid(), is(owner.getMetadata().getUid()));
-        assertThat(ref.getBlockOwnerDeletion(), is(false));
+        assertThat(ref.getBlockOwnerDeletion(), is(true));
         assertThat(ref.getController(), is(true));
     }
 
@@ -125,7 +125,7 @@ public class ModelUtilsTest {
                 .withKind("my-kind")
                 .withName("my-owner")
                 .withUid("a02c09d8-a04f-469d-97ba-920720abe9b3")
-                .withBlockOwnerDeletion(false)
+                .withBlockOwnerDeletion(true)
                 .withController(false)
                 .build();
 
@@ -134,7 +134,7 @@ public class ModelUtilsTest {
                 .withKind("my-other-kind")
                 .withName("my-other-owner")
                 .withUid("3dfcd6b9-ad05-4277-8d13-147346fe1f70")
-                .withBlockOwnerDeletion(false)
+                .withBlockOwnerDeletion(true)
                 .withController(false)
                 .build();
 

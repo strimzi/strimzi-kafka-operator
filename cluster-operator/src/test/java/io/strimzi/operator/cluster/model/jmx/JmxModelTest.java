@@ -4,12 +4,11 @@
  */
 package io.strimzi.operator.cluster.model.jmx;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
@@ -24,14 +23,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class JmxModelTest {
     private final static String NAME = "my-jmx-secret";
     private final static String NAMESPACE = "my-namespace";
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("my-kind")
-            .withName("my-name")
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-name")
@@ -47,7 +38,7 @@ public class JmxModelTest {
     @Test
     public void testDisabledJmx() {
         KafkaClusterSpec spec = new KafkaClusterSpecBuilder().build();
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         assertThat(jmx.secretName(), is(NAME));
         assertThat(jmx.servicePorts(), is(List.of()));
@@ -64,7 +55,7 @@ public class JmxModelTest {
                 .endJmxOptions()
                 .build();
 
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         assertThat(jmx.secretName(), is(NAME));
 
@@ -99,7 +90,7 @@ public class JmxModelTest {
                 .endJmxOptions()
                 .build();
 
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         assertThat(jmx.secretName(), is(NAME));
 
@@ -131,7 +122,7 @@ public class JmxModelTest {
         Secret newSecret = jmx.jmxSecret(null);
         assertThat(newSecret.getMetadata().getName(), is(NAME));
         assertThat(newSecret.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(newSecret.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(newSecret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(newSecret.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(newSecret.getMetadata().getAnnotations(), is(nullValue()));
         assertThat(newSecret.getData().size(), is(2));
@@ -141,7 +132,7 @@ public class JmxModelTest {
         Secret existingSecret = jmx.jmxSecret(EXISTING_JMX_SECRET);
         assertThat(existingSecret.getMetadata().getName(), is(NAME));
         assertThat(existingSecret.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(existingSecret.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(existingSecret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(existingSecret.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(existingSecret.getMetadata().getAnnotations(), is(nullValue()));
         assertThat(existingSecret.getData().size(), is(2));
@@ -166,12 +157,12 @@ public class JmxModelTest {
                 .endTemplate()
                 .build();
 
-        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
+        JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, spec);
 
         Secret newSecret = jmx.jmxSecret(null);
         assertThat(newSecret.getMetadata().getName(), is(NAME));
         assertThat(newSecret.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(newSecret.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(newSecret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(newSecret.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label1", "value1")).toMap()));
         assertThat(newSecret.getMetadata().getAnnotations(), is(Map.of("anno1", "value1")));
         assertThat(newSecret.getData().size(), is(2));
@@ -181,7 +172,7 @@ public class JmxModelTest {
         Secret existingSecret = jmx.jmxSecret(EXISTING_JMX_SECRET);
         assertThat(existingSecret.getMetadata().getName(), is(NAME));
         assertThat(existingSecret.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(existingSecret.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(existingSecret.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(existingSecret.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label1", "value1")).toMap()));
         assertThat(existingSecret.getMetadata().getAnnotations(), is(Map.of("anno1", "value1")));
         assertThat(existingSecret.getData().size(), is(2));

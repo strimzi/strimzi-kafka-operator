@@ -268,7 +268,7 @@ public class ModelUtils {
                 .withKind(owner.getKind())
                 .withName(owner.getMetadata().getName())
                 .withUid(owner.getMetadata().getUid())
-                .withBlockOwnerDeletion(false)
+                .withBlockOwnerDeletion(true)
                 .withController(isController)
                 .build();
     }

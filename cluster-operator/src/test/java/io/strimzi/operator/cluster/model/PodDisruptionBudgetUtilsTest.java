@@ -5,11 +5,10 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplateBuilder;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
@@ -24,14 +23,6 @@ public class PodDisruptionBudgetUtilsTest {
     private final static String NAME = "my-pdb";
     private final static String NAMESPACE = "my-namespace";
     private final static int REPLICAS = 5;
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("my-kind")
-            .withName("my-name")
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-name")
@@ -48,11 +39,11 @@ public class PodDisruptionBudgetUtilsTest {
 
     @Test
     public void testPdbWithoutTemplate() {
-        PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createPodDisruptionBudget(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null);
+        PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createPodDisruptionBudget(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(pdb.getMetadata().getName(), is(NAME));
         assertThat(pdb.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(pdb.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(pdb.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(pdb.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(pdb.getMetadata().getAnnotations(), is(nullValue()));
 
@@ -66,11 +57,11 @@ public class PodDisruptionBudgetUtilsTest {
 
     @Test
     public void testPdbWithTemplate() {
-        PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createPodDisruptionBudget(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE);
+        PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createPodDisruptionBudget(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, TEMPLATE);
 
         assertThat(pdb.getMetadata().getName(), is(NAME));
         assertThat(pdb.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(pdb.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(pdb.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(pdb.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(pdb.getMetadata().getAnnotations(), is(Map.of("anno-1", "value-1", "anno-2", "value-2")));
 
@@ -84,11 +75,11 @@ public class PodDisruptionBudgetUtilsTest {
 
     @Test
     public void testCustomControllerPdbWithoutTemplate() {
-        PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, REPLICAS);
+        PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null, REPLICAS);
 
         assertThat(pdb.getMetadata().getName(), is(NAME));
         assertThat(pdb.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(pdb.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(pdb.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(pdb.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(pdb.getMetadata().getAnnotations(), is(nullValue()));
 
@@ -102,11 +93,11 @@ public class PodDisruptionBudgetUtilsTest {
 
     @Test
     public void testCustomControllerPdbWithTemplate() {
-        PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, REPLICAS);
+        PodDisruptionBudget pdb = PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, TEMPLATE, REPLICAS);
 
         assertThat(pdb.getMetadata().getName(), is(NAME));
         assertThat(pdb.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(pdb.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(pdb.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(pdb.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(pdb.getMetadata().getAnnotations(), is(Map.of("anno-1", "value-1", "anno-2", "value-2")));
 

@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -27,6 +29,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TestUtils {
     public static JmxPrometheusExporterMetrics getJmxPrometheusExporterMetrics(String key, String name) {
@@ -64,6 +68,25 @@ public class TestUtils {
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue,
                         // On duplicates, last-in wins
                         (u, v) -> v));
+    }
+
+    /**
+     * Checks that the resource has the owner reference pointing to the parent resource
+     *
+     * @param resource  The resource where the owner reference should be checked
+     * @param owner     The resource which should be the owner
+     */
+    public static void checkOwnerReference(HasMetadata resource, HasMetadata owner)  {
+        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
+
+        OwnerReference or = resource.getMetadata().getOwnerReferences().get(0);
+
+        assertThat(or.getApiVersion(), is(owner.getApiVersion()));
+        assertThat(or.getKind(), is(owner.getKind()));
+        assertThat(or.getName(), is(owner.getMetadata().getName()));
+        assertThat(or.getUid(), is(owner.getMetadata().getUid()));
+        assertThat(or.getBlockOwnerDeletion(), is(true));
+        assertThat(or.getController(), is(false));
     }
 
     /**
