@@ -818,6 +818,9 @@ spec:
                         pause:
                           type: boolean
                           description: Whether the connector should be paused. Defaults to false.
+                        version:
+                          type: string
+                          description: Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
@@ -874,6 +877,9 @@ spec:
                         pause:
                           type: boolean
                           description: Whether the connector should be paused. Defaults to false.
+                        version:
+                          type: string
+                          description: Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
@@ -930,6 +936,9 @@ spec:
                         pause:
                           type: boolean
                           description: Whether the connector should be paused. Defaults to false.
+                        version:
+                          type: string
+                          description: Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object

@@ -29,7 +29,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"pause", "tasksMax", "config", "state", "listOffsets", "alterOffsets"})
+@JsonPropertyOrder({"pause", "tasksMax", "version", "config", "state", "listOffsets", "alterOffsets"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public abstract class AbstractConnectorSpec extends Spec {
@@ -40,6 +40,7 @@ public abstract class AbstractConnectorSpec extends Spec {
 
     private Integer tasksMax;
     private Boolean pause;
+    private String version;
     private Map<String, Object> config = new HashMap<>(0);
     private ConnectorState state;
 
@@ -64,6 +65,24 @@ public abstract class AbstractConnectorSpec extends Spec {
      */
     public void setTasksMax(Integer tasksMax) {
         this.tasksMax = tasksMax;
+    }
+
+    /**
+     * @return Version or version range for the Kafka Connector
+     */
+    @Description("Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getVersion() {
+        return version;
+    }
+
+    /**
+     * Sets the plugin version string for the Kafka Connector
+     *
+     * @param version Version or version range
+     */
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     /**

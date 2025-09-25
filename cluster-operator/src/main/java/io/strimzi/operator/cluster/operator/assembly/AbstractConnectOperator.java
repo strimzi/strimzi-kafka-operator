@@ -435,13 +435,21 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected Future<ConnectorStatusAndConditions> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                                 String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
         KafkaConnectorConfiguration desiredConfig = new KafkaConnectorConfiguration(reconciliation, connectorSpec.getConfig().entrySet());
+        // In future connector.plugin.version will be added to forbidden list, for now add warning to conditions if specified
+        List<Condition> initialConditions = new ArrayList<>();
+        if (desiredConfig.getConfigOption("connector.plugin.version") != null) {
+            String message = "Config option connector.plugin.version has been set under the config field. This is deprecated and will be forbidden in future. " +
+                    "Use version field instead.";
+            LOGGER.warnCr(reconciliation, message);
+            initialConditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", message));
+        }
 
         return VertxUtil.completableFutureToVertxFuture(apiClient.getConnectorConfig(reconciliation, new BackOff(200L, 2, 6), host, port, connectorName)).compose(
             currentConfig -> {
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, desiredConfig.asOrderedProperties().asMap(), currentConfig)) {
                     LOGGER.debugCr(reconciliation, "Connector {} exists and has desired config, {}=={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
                     return VertxUtil.completableFutureToVertxFuture(apiClient.status(reconciliation, host, port, connectorName))
-                        .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, new ArrayList<>()))
+                        .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, initialConditions))
                         .compose(conditions -> manageConnectorOffsets(reconciliation, host, apiClient, connectorName, resource, connectorSpec, conditions))
                         .compose(conditions -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, conditions))
@@ -452,7 +460,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 } else {
                     LOGGER.debugCr(reconciliation, "Connector {} exists but does not have desired config, {}!={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
-                        .compose(createConnectorStatusAndConditions())
+                        .compose(createConnectorStatusAndConditions(initialConditions))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 }
             },
@@ -461,7 +469,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         && ((ConnectRestException) error).getStatusCode() == 404) {
                     LOGGER.debugCr(reconciliation, "Connector {} does not exist", connectorName);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
-                        .compose(createConnectorStatusAndConditions())
+                        .compose(createConnectorStatusAndConditions(initialConditions))
                         .compose(status -> autoRestartFailedConnectorAndTasks(reconciliation, host, apiClient, connectorName, connectorSpec, status, resource))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
@@ -474,10 +482,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                        KafkaConnectorSpec connectorSpec,
                                        Map<String, String> desiredConfig,
                                        Map<String, String> actualConfig) {
-        // The actual which comes from Connect API includes tasks.max, connector.class and name,
+        // The actual which comes from Connect API includes tasks.max, connector.class, connector.plugin.version (if set) and name,
         // which connectorSpec.getConfig() does not
         if (connectorSpec.getTasksMax() != null) {
             desiredConfig.put("tasks.max", connectorSpec.getTasksMax().toString());
+        }
+        if (connectorSpec.getVersion() != null) {
+            desiredConfig.put("connector.plugin.version", connectorSpec.getVersion());
         }
         desiredConfig.put("name", connectorName);
         desiredConfig.put("connector.class", connectorSpec.getClassName());
@@ -1176,6 +1187,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
         if (spec.getTasksMax() != null) {
             connectorConfigJson.put("tasks.max", spec.getTasksMax());
+        }
+
+        if (spec.getVersion() != null) {
+            connectorConfigJson.put("connector.plugin.version", spec.getVersion());
         }
 
         return connectorConfigJson.put("connector.class", spec.getClassName());

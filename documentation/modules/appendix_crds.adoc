@@ -4082,6 +4082,9 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |autoRestart
 |xref:type-AutoRestart-{context}[`AutoRestart`]
 |Automatic restart of connector and tasks configuration.
+|version
+|string
+|Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
 |config
 |map
 |The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max.
@@ -4423,6 +4426,9 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 |pause
 |boolean
 |**The `pause` property has been deprecated.** Deprecated in Strimzi 0.38.0, use state instead. Whether the connector should be paused. Defaults to false.
+|version
+|string
+|Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
 |config
 |map
 |The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max.
