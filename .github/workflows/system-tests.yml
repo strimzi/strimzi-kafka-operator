@@ -243,13 +243,15 @@ jobs:
     needs:
       - parse-params
       - check-rights
+      - generate-matrix
       - run-tests
     if: |-
       ${{ 
         always() && 
         needs.parse-params.outputs.shouldRun == 'true' && 
         needs.check-rights.result == 'success' && 
-        github.event_name != 'pull_request'
+        github.event_name != 'pull_request' &&
+        needs.generate-matrix.outputs.isValid == 'true'
       }}
     runs-on: ubuntu-latest
     permissions:
