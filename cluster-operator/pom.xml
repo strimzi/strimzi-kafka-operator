@@ -283,6 +283,26 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>${maven.resources.version}</version>
+                <executions>
+                    <execution>
+                        <id>copy-kafka-versions</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${strimziRootDirectory}</directory>
+                                    <includes>
+                                        <include>kafka-versions.yaml</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -301,7 +321,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>${maven.dependency.version}</version>
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
@@ -364,12 +383,6 @@
                 <!-- separate folder for filtered resources so that non-filtered files don't have their ${} replaced -->
                 <directory>src/main/resources-filtered</directory>
                 <filtering>true</filtering>
-            </resource>
-            <resource>
-                <directory>..</directory>
-                <includes>
-                    <include>kafka-versions.yaml</include>
-                </includes>
             </resource>
         </resources>
     </build>
