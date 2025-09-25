@@ -39,23 +39,6 @@
         </developer>
     </developers>
 
-    <repositories>
-        <repository>
-            <!--
-            Until there is a new release of Kafka Access Operator we are using the Sonatype repository with its SNAPSHOT.
-            Tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/11207.
-            -->
-            <id>oss-sonatype</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
@@ -135,12 +118,6 @@
         <skodjob.test-frame.version>1.1.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.4.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
-        <!--
-            Currently, there are no released versions in Maven repository of this module,
-            using SNAPSHOT for having the `api` module available and usable in the STs.
-            Tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/11207.
-        -->
-        <access-operator.version>0.2.0-SNAPSHOT</access-operator.version>
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
@@ -823,11 +800,6 @@
                 <groupId> com.github.docker-java</groupId>
                 <artifactId>docker-java-api</artifactId>
                 <version>${docker-java.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.strimzi.access-operator</groupId>
-                <artifactId>api</artifactId>
-                <version>${access-operator.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
