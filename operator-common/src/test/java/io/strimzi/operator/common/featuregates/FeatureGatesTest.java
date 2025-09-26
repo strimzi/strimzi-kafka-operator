@@ -54,6 +54,17 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("+ServerSideApplyPhase1").serverSideApplyPhase1Enabled(), is(true));
         assertThat(new FeatureGates("-ServerSideApplyPhase1").serverSideApplyPhase1Enabled(), is(false));
         assertThat(new FeatureGates("   -ServerSideApplyPhase1   ").serverSideApplyPhase1Enabled(), is(false));
+
+        assertThat(new FeatureGates("+UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(true));
+        assertThat(new FeatureGates("-UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(false));
+        assertThat(new FeatureGates("   -UseConnectBuildWithBuildah   ").useConnectBuildWithBuildahEnabled(), is(false));
+
+        assertThat(new FeatureGates("-ServerSideApplyPhase1,-UseConnectBuildWithBuildah").serverSideApplyPhase1Enabled(), is(false));
+        assertThat(new FeatureGates("-ServerSideApplyPhase1,-UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(false));
+        assertThat(new FeatureGates("  +ServerSideApplyPhase1    ,    +UseConnectBuildWithBuildah").serverSideApplyPhase1Enabled(), is(true));
+        assertThat(new FeatureGates("  +ServerSideApplyPhase1    ,    +UseConnectBuildWithBuildah").useConnectBuildWithBuildahEnabled(), is(true));
+        assertThat(new FeatureGates("+UseConnectBuildWithBuildah,-ServerSideApplyPhase1").serverSideApplyPhase1Enabled(), is(false));
+        assertThat(new FeatureGates("+UseConnectBuildWithBuildah,-ServerSideApplyPhase1").useConnectBuildWithBuildahEnabled(), is(true));
         // TODO: Add more tests with various feature gate combinations once we have multiple feature gates again.
         //       The commented out code below shows the tests we used to have with multiple feature gates.
         //assertThat(new FeatureGates("-UseKRaft,-DummyFeatureGate").useKRaftEnabled(), is(false));

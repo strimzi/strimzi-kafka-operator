@@ -72,7 +72,7 @@ public class DockerOutput extends Output {
     }
 
     @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.build.output.additionalBuildOptions",
+    @DeprecatedProperty(movedToPath = ".spec.build.additionalBuildOptions",
         description = "The `additionalKanikoOptions` configuration is deprecated and will be removed in the future.")
     @PresentInVersions("v1beta2")
     @Description("Configures additional options which will be passed to the Kaniko executor when building the new Connect image. " +

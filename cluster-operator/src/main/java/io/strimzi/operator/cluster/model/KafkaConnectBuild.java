@@ -263,7 +263,7 @@ public class KafkaConnectBuild extends AbstractModel {
             .filter(option -> allowedOptions.stream().noneMatch(option::equals))
             .toList();
 
-        if (!forbiddenOptions.isEmpty())    {
+        if (!forbiddenOptions.isEmpty()) {
             throw new InvalidResourceException(specPath + " contains forbidden options: " + forbiddenOptions);
         }
     }
