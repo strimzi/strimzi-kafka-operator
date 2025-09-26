@@ -166,10 +166,10 @@ tests:
           path: spec.template.spec.imagePullSecrets[0].name
           value: test-secret
       - equal:
-          path: spec.template.spec.containers[0].env[15].name
+          path: spec.template.spec.containers[0].env[16].name
           value: STRIMZI_IMAGE_PULL_SECRETS
       - equal:
-          path: spec.template.spec.containers[0].env[15].value
+          path: spec.template.spec.containers[0].env[16].value
           value: test-secret
 
   - it: should set IMAGE_PULL_SECRETS as comma separated list if provided as array
@@ -188,10 +188,10 @@ tests:
           path: spec.template.spec.imagePullSecrets[1].name
           value: test-secret2
       - equal:
-          path: spec.template.spec.containers[0].env[15].name
+          path: spec.template.spec.containers[0].env[16].name
           value: STRIMZI_IMAGE_PULL_SECRETS
       - equal:
-          path: spec.template.spec.containers[0].env[15].value
+          path: spec.template.spec.containers[0].env[16].value
           value: test-secret,test-secret2
 
   - it: should fail if imagePullSecrets is not correctly formatted

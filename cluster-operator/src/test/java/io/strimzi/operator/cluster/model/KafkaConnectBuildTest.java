@@ -29,11 +29,16 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -42,6 +47,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KafkaConnectBuildTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
@@ -58,12 +64,23 @@ public class KafkaConnectBuildTest {
             .withSha512sum("sha-512-checksum")
             .build();
 
-    private final List<String> defaultArgs = List.of("--dockerfile=/dockerfile/Dockerfile",
+    private final List<String> defaultKanikoArgs = List.of("--dockerfile=/dockerfile/Dockerfile",
             "--image-name-with-digest-file=/dev/termination-log",
             "--destination=my-image:latest");
 
-    @Test
-    public void testFromCrd()   {
+    private final String defaultBuildahBuildArgs = "--file=/dockerfile/Dockerfile --tag=my-image:latest --storage-driver=vfs";
+    private final String defaultBuildahPushArgs = "--storage-driver=vfs --digestfile=/tmp/digest";
+
+    protected Stream<Arguments> kanikoAndBuildahCombinations() {
+        return Stream.of(
+            Arguments.of(false),
+            Arguments.of(true)
+        );
+    }
+
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testFromCrd(boolean useBuildah)   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -82,11 +99,12 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER);
+        KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah);
     }
 
-    @Test
-    public void testValidationPluginsExist()   {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testValidationPluginsExist(boolean useBuildah)   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -104,12 +122,13 @@ public class KafkaConnectBuildTest {
                 .build();
 
         assertThrows(InvalidResourceException.class, () ->
-            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER)
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah)
         );
     }
 
-    @Test
-    public void testValidationArtifactsExist()   {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testValidationArtifactsExist(boolean useBuildah)   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -128,12 +147,13 @@ public class KafkaConnectBuildTest {
                 .build();
 
         assertThrows(InvalidResourceException.class, () ->
-            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER)
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah)
         );
     }
 
-    @Test
-    public void testValidationUniqueNames()   {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testValidationUniqueNames(boolean useBuildah)   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -153,12 +173,13 @@ public class KafkaConnectBuildTest {
                 .build();
 
         assertThrows(InvalidResourceException.class, () ->
-            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER)
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah)
         );
     }
 
-    @Test
-    public void testDeployment()   {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testDeployment(boolean useBuildah)   {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
         limit.put("memory", new Quantity("512Mi"));
@@ -187,11 +208,11 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah);
 
         assertThat(build.baseImage, is("my-source-image:latest"));
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(true, useBuildah, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         assertThat(pod.getMetadata().getName(), is(KafkaConnectResources.buildPodName(cluster)));
         assertThat(pod.getMetadata().getNamespace(), is(namespace));
 
@@ -206,7 +227,13 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(pod.getSpec().getServiceAccountName(), is(KafkaConnectResources.buildServiceAccountName(cluster)));
         assertThat(pod.getSpec().getContainers().size(), is(1));
-        assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultArgs));
+        if (useBuildah) {
+            String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
+            assertThat(commands[0], containsString(defaultBuildahBuildArgs));
+            assertThat(commands[1], containsString(defaultBuildahPushArgs));
+        } else {
+            assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultKanikoArgs));
+        }
         assertThat(pod.getSpec().getContainers().get(0).getName(), is(KafkaConnectResources.buildPodName(this.cluster)));
         assertThat(pod.getSpec().getContainers().get(0).getImage(), is(build.image));
         assertThat(pod.getSpec().getContainers().get(0).getPorts(), is(nullValue()));
@@ -225,8 +252,9 @@ public class KafkaConnectBuildTest {
         io.strimzi.operator.cluster.TestUtils.checkOwnerReference(pod, kc);
     }
 
-    @Test
-    public void testDeploymentWithoutPushSecret()   {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testDeploymentWithoutPushSecret(boolean useBuildah)   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -244,11 +272,17 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(true, useBuildah, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         assertThat(pod.getSpec().getVolumes().size(), is(1));
-        assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultArgs));
+        if (useBuildah) {
+            String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
+            assertThat(commands[0], containsString(defaultBuildahBuildArgs));
+            assertThat(commands[1], containsString(defaultBuildahPushArgs));
+        } else {
+            assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultKanikoArgs));
+        }
         assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(1));
@@ -256,8 +290,9 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
     }
 
-    @Test
-    public void testConfigMap()   {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testConfigMap(boolean useBuildah)   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -276,7 +311,7 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah);
 
         KafkaConnectDockerfile dockerfile = new KafkaConnectDockerfile("my-image:latest", kc.getSpec().getBuild(), SHARED_ENV_PROVIDER);
         ConfigMap cm = build.generateDockerfileConfigMap(dockerfile);
@@ -343,8 +378,9 @@ public class KafkaConnectBuildTest {
     }
 
     // Test to validate that .spec.image and spec.build.output.image in Kafka Connect are not pointing to the same image
-    @Test
-    public void testKafkaConnectBuildWithSpecImageSameAsDockerOutput() {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testKafkaConnectBuildWithSpecImageSameAsDockerOutput(boolean useBuildah) {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
         limit.put("memory", new Quantity("512Mi"));
@@ -374,7 +410,7 @@ public class KafkaConnectBuildTest {
                 .build();
 
         InvalidResourceException thrown = assertThrows(InvalidResourceException.class, () -> {
-            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER);
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah);
         }, "InvalidResourceException was expected");
         assertThat(thrown.getMessage(), is("KafkaConnect .spec.image cannot be the same as .spec.build.output.image"));
     }
@@ -421,8 +457,9 @@ public class KafkaConnectBuildTest {
         TestUtils.checkOwnerReference(bc, kc);
     }
 
-    @Test
-    public void testTemplate()   {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testTemplate(boolean useBuildah)   {
         Map<String, String> buildPodLabels = Map.of("l1", "v1", "l2", "v2");
         Map<String, String> buildPodAnnos = Map.of("a1", "v1", "a2", "v2");
 
@@ -494,9 +531,9 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(true, useBuildah, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         assertThat(pod.getMetadata().getLabels().entrySet().containsAll(buildPodLabels.entrySet()), is(true));
         assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(buildPodAnnos.entrySet()), is(true));
         assertThat(pod.getSpec().getPriorityClassName(), is("top-priority"));
@@ -520,7 +557,7 @@ public class KafkaConnectBuildTest {
 
     @Test
     public void testValidKanikoOptions()   {
-        List<String> expectedArgs = new ArrayList<>(defaultArgs);
+        List<String> expectedArgs = new ArrayList<>(defaultKanikoArgs);
         expectedArgs.add("--reproducible");
         expectedArgs.add("--single-snapshot");
         expectedArgs.add("--log-format=json");
@@ -576,5 +613,157 @@ public class KafkaConnectBuildTest {
         );
 
         assertThat(e.getMessage(), containsString(".spec.build.additionalKanikoOptions contains forbidden options: [--reproducible-something, --build-arg, --digest-file]"));
+    }
+
+    @Test
+    public void testValidBuildahBuildOptions() {
+        String expectedBuildOptions = defaultBuildahBuildArgs + " --retry=3";
+        String expectedPushOptions = defaultBuildahPushArgs + " --quiet";
+
+        KafkaConnect kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                        .withPushSecret("my-docker-credentials")
+                        .withAdditionalBuildOptions("--retry=3")
+                        .withAdditionalPushOptions("--quiet")
+                    .endDockerOutput()
+                    .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                .endBuild()
+            .endSpec()
+            .build();
+
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, true);
+
+        Pod pod = build.generateBuilderPod(true, true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
+        assertThat(commands[0], containsString(expectedBuildOptions));
+        assertThat(commands[1], containsString(expectedPushOptions));
+    }
+
+    @Test
+    public void testInvalidBuildahBuildOptions() {
+        KafkaConnect kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                        .withPushSecret("my-docker-credentials")
+                        .withAdditionalBuildOptions("--logfile=my-file", "--file=/docker/Another", "--storage-driver=random")
+                        .withAdditionalPushOptions("--quiet")
+                    .endDockerOutput()
+                    .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                .endBuild()
+            .endSpec()
+            .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () ->
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, true)
+        );
+
+        assertThat(e.getMessage(), containsString(".spec.build.additionalBuildOptions contains forbidden options: [--logfile, --file, --storage-driver]"));
+    }
+
+    @Test
+    public void testInvalidBuildahPushOptions() {
+        KafkaConnect kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                        .withPushSecret("my-docker-credentials")
+                        .withAdditionalBuildOptions("--retry=3")
+                        .withAdditionalPushOptions("--digestfile=/tmp/random", "--sign-by=different", "--format=xy")
+                    .endDockerOutput()
+                    .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                .endBuild()
+            .endSpec()
+            .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () ->
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, true)
+        );
+
+        assertThat(e.getMessage(), containsString(".spec.build.additionalPushOptions contains forbidden options: [--digestfile, --sign-by, --format]"));
+    }
+
+    @Test
+    public void testKanikoAdditionalOptionsConfiguredOnBothPlaces() {
+        List<String> expectedArgs = new ArrayList<>(defaultKanikoArgs);
+        expectedArgs.add("--single-snapshot");
+        expectedArgs.add("--log-format=json");
+
+        KafkaConnect kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                        .withPushSecret("my-docker-credentials")
+                        .withAdditionalKanikoOptions("--reproducible")
+                        .withAdditionalBuildOptions("--single-snapshot", "--log-format=json")
+                    .endDockerOutput()
+                    .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                .endBuild()
+            .endSpec()
+            .build();
+
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER);
+
+        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(expectedArgs));
+        assertThat(pod.getSpec().getContainers().get(0).getArgs().contains("--reproducible"), is(false));
+    }
+
+    @Test
+    public void testInvalidKanikoOptionsInAdditionalBuildOptions() {
+        KafkaConnect kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                        .withPushSecret("my-docker-credentials")
+                        .withAdditionalBuildOptions("--reproducible", "--reproducible-something", "--build-arg", "--single-snapshot", "--digest-file=/dev/null", "--log-format=json")
+                    .endDockerOutput()
+                    .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                .endBuild()
+            .endSpec()
+            .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () ->
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER)
+        );
+
+        assertThat(e.getMessage(), containsString(".spec.build.additionalBuildOptions contains forbidden options: [--reproducible-something, --build-arg, --digest-file]"));
     }
 }

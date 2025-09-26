@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -57,8 +58,11 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
@@ -66,6 +70,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
@@ -80,7 +85,9 @@ import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(VertxExtension.class)
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectBuildAssemblyOperatorKubeTest {
     private static final String NAMESPACE = "my-ns";
     private static final String NAME = "my-connect";
@@ -105,9 +112,25 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         vertx.close();
     }
 
+    protected Stream<Arguments> kanikoAndBuildahCombinations() {
+        return Stream.of(
+            Arguments.of(false),
+            Arguments.of(true)
+        );
+    }
+
+    private ClusterOperatorConfig clusterOperatorConfigBasedOnBuildahUsage(boolean useBuildah) {
+        if (useBuildah) {
+            return ClusterOperatorConfig.buildFromMap(Map.of("STRIMZI_FEATURE_GATES", "+UseConnectBuildWithBuildah"), VERSIONS);
+        }
+
+        return ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+    }
+
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
-    public void testBuildOnKube(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testBuildOnKube(boolean useBuildah, VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
                 .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
@@ -131,7 +154,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -225,7 +248,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, clusterOperatorConfigBasedOnBuildahUsage(useBuildah), x -> mockConnectClient);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -274,8 +297,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
             })));
     }
 
-    @Test
-    public void testBuildFailureOnKube(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testBuildFailureOnKube(boolean useBuildah, VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
                 .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
@@ -379,7 +403,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, clusterOperatorConfigBasedOnBuildahUsage(useBuildah), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
@@ -394,8 +418,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
-    public void testUpdateWithPluginChangeOnKube(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testUpdateWithPluginChangeOnKube(boolean useBuildah, VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
                 .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
@@ -425,7 +450,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -435,7 +460,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -536,7 +561,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, clusterOperatorConfigBasedOnBuildahUsage(useBuildah), x -> mockConnectClient);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -578,8 +603,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
-    public void testUpdateWithBuildImageChangeOnKube(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testUpdateWithBuildImageChangeOnKube(boolean useBuildah, VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
                 .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
@@ -604,7 +630,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -618,7 +644,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -720,7 +746,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, clusterOperatorConfigBasedOnBuildahUsage(useBuildah), x -> mockConnectClient);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -762,8 +788,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
-    public void testContinueWithPreviousBuildOnKube(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testContinueWithPreviousBuildOnKube(boolean useBuildah, VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
                 .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
@@ -793,7 +820,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -915,7 +942,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, clusterOperatorConfigBasedOnBuildahUsage(useBuildah), x -> mockConnectClient);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -954,8 +981,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
-    public void testRestartPreviousBuildOnKube(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testRestartPreviousBuildOnKube(boolean useBuildah, VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
                 .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
@@ -985,7 +1013,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -995,7 +1023,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -1108,7 +1136,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, clusterOperatorConfigBasedOnBuildahUsage(useBuildah), x -> mockConnectClient);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -1150,8 +1178,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
-    public void testRestartPreviousBuildDueToFailureOnKube(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testRestartPreviousBuildDueToFailureOnKube(boolean useBuildah, VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
                 .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
@@ -1181,7 +1210,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -1191,7 +1220,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -1306,7 +1335,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, clusterOperatorConfigBasedOnBuildahUsage(useBuildah), x -> mockConnectClient);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -1347,8 +1376,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
             })));
     }
 
-    @Test
-    public void testUpdateWithoutRebuildOnKube(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testUpdateWithoutRebuildOnKube(boolean useBuildah, VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
                 .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
@@ -1373,7 +1403,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -1452,7 +1482,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, clusterOperatorConfigBasedOnBuildahUsage(useBuildah), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
@@ -1487,9 +1517,10 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
             })));
     }
 
-    @Test
     @SuppressWarnings({"checkstyle:MethodLength"})
-    public void testUpdateWithForcedRebuildOnKube(VertxTestContext context) {
+    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
+    @MethodSource("kanikoAndBuildahCombinations")
+    public void testUpdateWithForcedRebuildOnKube(boolean useBuildah, VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
                 .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
@@ -1514,7 +1545,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, useBuildah);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -1615,7 +1646,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, clusterOperatorConfigBasedOnBuildahUsage(useBuildah), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
