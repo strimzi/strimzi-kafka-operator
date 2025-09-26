@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures access control rules for a `KafkaUser` when brokers are using `simple` authorization.
 
 .Example `KafkaUser` configuration with simple authorization

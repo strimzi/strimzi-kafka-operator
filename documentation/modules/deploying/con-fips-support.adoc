@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // This assembly is included in the following assemblies:
 //
 // assembly-deploy-intro.adoc

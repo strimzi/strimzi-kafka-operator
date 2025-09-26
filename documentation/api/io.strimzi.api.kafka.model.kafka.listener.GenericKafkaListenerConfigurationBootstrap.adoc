@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures bootstrap service settings for listeners.
 
 Example configuration for the `host`, `nodePort`, `loadBalancerIP`, and `annotations` properties is shown in the xref:type-GenericKafkaListenerConfiguration-reference[`GenericKafkaListenerConfiguration` schema] section.

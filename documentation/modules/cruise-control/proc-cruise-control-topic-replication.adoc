@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 [id='proc-cruise-control-topic-replication-{context}']
 
 = Using Cruise Control to modify topic replication factor

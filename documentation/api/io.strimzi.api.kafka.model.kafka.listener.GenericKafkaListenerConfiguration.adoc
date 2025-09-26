@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures Kafka listeners.
 
 [id='property-listener-config-brokerCertChainAndKey-{context}']

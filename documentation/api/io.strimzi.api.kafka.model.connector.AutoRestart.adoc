@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures automatic restarts for connectors and tasks that are in a `FAILED` state.
 
 When enabled, a back-off algorithm applies the automatic restart to each failed connector and its tasks.

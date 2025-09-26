@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 [id="con-kafka-keycloak-authz-models_{context}"]
 = Kafka and Keycloak authorization models
 

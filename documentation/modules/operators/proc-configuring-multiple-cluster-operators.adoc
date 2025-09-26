@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 // This assembly is included in the following assemblies:
 //
 // assembly-using-multiple-cluster-operators.adoc
