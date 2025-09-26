@@ -4,10 +4,13 @@
 
 * Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
   Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
+* Add new feature gate `UseConnectBuildWithBuildah` (disabled by default) for running the Connect Build feature with Buildah instead of Kaniko on Kubernetes - according to [Strimzi Proposal #114](https://github.com/strimzi/proposals/blob/main/114-use-buildah-instead-of-kaniko.md).
 
 ### Major changes, deprecations, and removals
 
 * The `.status.kafkaMetadataState` field in the `Kafka` custom resource is deprecated and not used anymore.
+* The `.spec.build.additionalKanikoOptions` field in the `KafkaConnect` custom resource is deprecated and will be removed in the future. 
+  * Use `.spec.build.additionalBuildOptions` field instead.
 
 ## 0.48.0
 
