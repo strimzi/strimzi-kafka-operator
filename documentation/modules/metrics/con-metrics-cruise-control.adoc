@@ -16,7 +16,7 @@ The metrics are used to xref:proc-generating-optimization-proposals-str[generate
 Cruise Control metrics are available for real-time monitoring of Cruise Control operations.
 For example, you can use Cruise Control metrics to monitor the status of rebalancing operations that are running or provide alerts on any anomalies that are detected in an operation's performance.
 
-You expose Cruise Control metrics by xref:assembly-metrics-setup-{context}[enabling the {JMXExporter} in the Cruise Control configuration].
+For more information on exposing Cruise Control metrics, see xref:assembly-metrics-setup-str[Using Prometheus with Strimzi].
 
 NOTE: For a full list of available Cruise Control metrics, which are known as _sensors_, see the {CruiseControlSensorsDocs}
 
