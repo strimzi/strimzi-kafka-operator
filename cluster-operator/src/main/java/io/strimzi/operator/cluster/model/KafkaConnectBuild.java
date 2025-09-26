@@ -255,8 +255,9 @@ public class KafkaConnectBuild extends AbstractModel {
      *
      * @param allowedBuildahOptions  allowed Buildah options for particular operation - build/push.
      * @param desiredOptions         list of desired options by the user.
+     * @param specPath               path to options in `.spec` section - used when throwing exception.
      */
-    private static void validateAdditionalOptions(String allowedBuildahOptions, List<String> desiredOptions, String specPath)    {
+    private static void validateAdditionalOptions(String allowedBuildahOptions, List<String> desiredOptions, String specPath) {
         List<String> allowedOptions = Arrays.asList(allowedBuildahOptions.split("\\s*,+\\s*"));
         List<String> forbiddenOptions = desiredOptions.stream()
             .map(option -> option.contains("=") ? option.substring(0, option.indexOf("=")) : option)
