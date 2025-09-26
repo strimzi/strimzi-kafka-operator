@@ -61,8 +61,7 @@ jobs:
         uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
       - name: Parse Comment
         id: parse
-        #uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
-        uses: frawless/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@gha-trigger-docs-improvements
+        uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
         with:
           # Parameters from manual trigger via UI
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
