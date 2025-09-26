@@ -99,7 +99,7 @@ However, the Cluster Operator regenerates them to align their validity period wi
 
 . Restarts the components to trust the new Cluster CA certificate and use the renewed internal certificates.
 
-=== Clients CA renewal
+== Clients CA renewal
 
 To renew the Clients CA certificate, the Cluster Operator and User Operator each perform part of the process:
 

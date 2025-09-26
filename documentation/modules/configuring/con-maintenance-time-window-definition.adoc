@@ -62,7 +62,7 @@ spec:
   #...
 ----
 
-NOTE: The Cluster Operator doesn't adhere strictly to the time windows 
+NOTE: The Cluster Operator doesn't adhere strictly to the time windows. 
 Maintenance operations are triggered by the first reconciliation that occurs within the specified time window. 
 If the time window is shorter than the interval between reconciliations, there's a risk that the reconciliation may happen outside of the time window, 
 Therefore, maintenance time windows must be at least as long as the interval between reconciliations.
