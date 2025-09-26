@@ -5,44 +5,36 @@ inputs:
   pipelines:
     description: "Comma-separated list of pipelines (if provided, takes precedence)"
     required: false
-    default: ""
   profiles:
     description: "Comma-separated list of profiles (used if pipelines is empty)"
     required: false
-    default: ""
   default_agent:
     description: "Default agent value"
-    required: true
-    default: "oracle-4cpu-16gb-x86-64"
+    required: false
   default_arch:
     description: "Default architecture value"
-    required: true
-    default: "amd64"
+    required: false
   default_strimzi_feature_gates:
     description: "Default value for strimzi_feature_gates"
-    required: true
-    default: ""
+    required: false
   default_strimzi_rbac_scope:
     description: "Default value for strimzi_rbac_scope"
-    required: true
-    default: "CLUSTER"
+    required: false
   default_cluster_operator_install_type:
     description: "Default value for cluster_operator_install_type"
-    required: true
-    default: "bundle"
+    required: false
   default_parallel:
     description: "Number of tests executed in parallel"
-    default: "1"
+    required: false
   default_groups:
     description: "Default JUnit5 test groups that will be executed"
-    default: ""
+    required: false
   default_tests:
     description: "Default JUnit5 tests that will be executed"
-    default: ""
+    required: false
   runnerArch:
     description: "Architecture of GitHub runner"
     required: false
-    default: "amd64"
 
 outputs:
   matrix:
@@ -121,12 +113,12 @@ runs:
       env:
         INPUT_PIPELINES: "${{ inputs.pipelines }}"
         INPUT_PROFILES: "${{ inputs.profiles }}"
-        INPUT_DEFAULT_AGENT: "${{ inputs.default_agent }}"
-        INPUT_DEFAULT_ARCH: "${{ inputs.default_arch }}"
+        INPUT_DEFAULT_AGENT: "${{ inputs.default_agent != '' && inputs.default_agent || 'ubuntu-latest' }}"
+        INPUT_DEFAULT_ARCH: "${{ inputs.default_arch != '' && inputs.default_arch || 'amd64' }}"
         INPUT_DEFAULT_JDK_VERSION: "${{ inputs.default_jdk_version }}"
         INPUT_DEFAULT_STRIMZI_USE_FEATURE_GATES: "${{ inputs.default_strimzi_feature_gates }}"
-        INPUT_DEFAULT_STRIMZI_RBAC_SCOPE: "${{ inputs.default_strimzi_rbac_scope }}"
-        INPUT_DEFAULT_CLUSTER_OPERATOR_INSTALL_TYPE: "${{ inputs.default_cluster_operator_install_type }}"
-        INPUT_DEFAULT_PARALLEL: "${{ inputs.default_parallel }}"
+        INPUT_DEFAULT_STRIMZI_RBAC_SCOPE: "${{ inputs.default_strimzi_rbac_scope != '' && inputs.default_strimzi_rbac_scope || 'CLUSTER' }}"
+        INPUT_DEFAULT_CLUSTER_OPERATOR_INSTALL_TYPE: "${{ inputs.default_cluster_operator_install_type != '' && inputs.default_cluster_operator_install_type || 'bundle' }}"
+        INPUT_DEFAULT_PARALLEL: "${{ inputs.default_parallel != '' && inputs.default_parallel || '1' }}"
         INPUT_DEFAULT_GROUPS: "${{ inputs.default_groups }}"
         INPUT_DEFAULT_TESTS: "${{ inputs.default_tests }}"

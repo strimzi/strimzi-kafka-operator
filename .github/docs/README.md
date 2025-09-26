@@ -62,14 +62,13 @@ Build process actions:
 - [build-strimzi-binaries](../actions/build/build-strimzi-binaries)
 - [containers-build](../actions/build/containers-build)
 - [containers-load](../actions/build/containers-load)
-- [containers-push-manifest](../actions/build/containers-push-manifest)
 
 System tests execution actions:
 - [generate-matrix](../actions/systemtests/generate-matrix)
 - [set-defaults](../actions/utils/set-defaults)
 - [log-variables](../actions/utils/log-variables)
 - [parse-comment](../actions/systemtests/parse-comment)
-- [determine-ref](../actions/determine-ref)
+- [determine-ref](../actions/utils/determine-ref)
 
 Utils actions:
 - [check-permissions](../actions/utils/check-permissions)
@@ -99,24 +98,24 @@ Comment for triggering the workflow has to starts with string `/gha run` and the
 The whole script that parse the trigger even is part of [parse-comment](../actions/systemtests/parse-comment) action.
 Currently, we have these parameters that can be passed through the comment:
 
-| Name                          | Info                                                                                                                                     | Default                                                                  |
-|-------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
-| pipeline                      | Name of the pipeline from [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) that wil be executed                               | regression,upgrade                                                       |
-| profile                       | Testing profile from [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) that will be executed, it has to be defined in pom file | smoke                                                                    |
-| agent                         | Agent that will be used for a specific pipeline (see list of runners in Strimzi org config for more info)                                | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| strimzi_feature_gates         | Which Strimzi Feature Gates will be used                                                                                                 | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| strimzi_rbac_scope            | RBAC scope for Strimzi                                                                                                                   | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| cluster_operator_install_type | How Strimzi will be installed during the tests                                                                                           | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| parallel                      | Number of tests that will be executed in parallel                                                                                        | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| architecture                  | Which architecture will be used (should match with agent arch)                                                                           | Value set in [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) |
-| groups                        | Which Junit5 groups will be executed                                                                                                     | all                                                                      |
-| tests                         | Which Junit5 tests will be executed                                                                                                      | all                                                                      |
-| kubeVersion                   | Used Kubernetes version as part of Kind/Minikube setup                                                                                   | The one set as default in setup scripts                                  |
-| kafkaVersion                  | Which Kafka version will be used in the tests                                                                                            | Default one from STs config                                              |
+| Name                          | Info                                                                                                                                                 | Default                                                                              |
+|-------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| pipeline                      | Name of the pipeline from [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) that wil be executed                               | regression,upgrade                                                                   |
+| profile                       | Testing profile from [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) that will be executed, it has to be defined in pom file | smoke                                                                                |
+| agent                         | Agent that will be used for a specific pipeline (see list of runners in Strimzi org config for more info)                                            | Value set in [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) |
+| strimzi_feature_gates         | Which Strimzi Feature Gates will be used                                                                                                             | Value set in [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) |
+| strimzi_rbac_scope            | RBAC scope for Strimzi                                                                                                                               | Value set in [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) |
+| cluster_operator_install_type | How Strimzi will be installed during the tests                                                                                                       | Value set in [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) |
+| parallel                      | Number of tests that will be executed in parallel                                                                                                    | Value set in [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) |
+| architecture                  | Which architecture will be used (should match with agent arch)                                                                                       | Value set in [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) |
+| groups                        | Which Junit5 groups will be executed                                                                                                                 | all                                                                                  |
+| tests                         | Which Junit5 tests will be executed                                                                                                                  | all                                                                                  |
+| kubeVersion                   | Used Kubernetes version as part of Kind/Minikube setup                                                                                               | The one set as default in setup scripts                                              |
+| kafkaVersion                  | Which Kafka version will be used in the tests                                                                                                        | Default one from STs config                                                          |
 
 The process of parameter usage is as follows:
-- `pipeline` has the highest priority. If `pipeline` is defined, the jobs will be loaded with data from [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) that match specific _pipeline_.
-- `profile` has the second-highest priority. If `profile` is defined, the jobs will be loaded with data from [pipelines.yaml](../actions/generate-matrix/pipelines.yaml) that match specific _profile_.
+- `pipeline` has the highest priority. If `pipeline` is defined, the jobs will be loaded with data from [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) that match specific _pipeline_.
+- `profile` has the second-highest priority. If `profile` is defined, the jobs will be loaded with data from [pipelines.yaml](../actions/systemtests/generate-matrix/pipelines.yaml) that match specific _profile_.
 - `agent` is used only for a `custom` pipeline when either `pipeline` or `profile` are not specified via comment.
 - `strimzi_feature_gates` is used only for a `custom` pipeline when either `pipeline` or `profile` are not specified via comment.
 - `strimzi_rbac_scope` is used only for a `custom` pipeline when either `pipeline` or `profile` are not specified via comment.
