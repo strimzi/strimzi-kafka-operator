@@ -1,0 +1,40 @@
+// Module included in the following assemblies:
+//
+// assembly-logging-configuration.adoc
+
+:_mod-docs-content-type: CONCEPT
+[id='con-creating-logging-filters_{context}']
+= Adding logging filters to Strimzi operators
+
+[role="_abstract"]
+You can add logging filters to Strimzi operators by providing a complete `log4j2.properties` file in a `ConfigMap`.
+
+Filters are useful when logging output is too verbose. 
+For example, if `rootLogger.level="DEBUG"`, you can use filters to reduce noise and focus on a specific resource.
+
+Filters use *markers* to include or exclude logs. 
+A marker identifies a resource by kind, namespace, and name.
+For example, a marker might isolate logs for a failing Kafka cluster: `Kafka(my-namespace/my-kafka-cluster)`.
+
+The following example defines a single logging filter (`filter1`):
+
+[source,properties]
+----
+appender.console.filter.filter1.type = MarkerFilter <1>
+appender.console.filter.filter1.onMatch = ACCEPT <2>
+appender.console.filter.filter1.onMismatch = DENY <3>
+appender.console.filter.filter1.marker = Kafka(my-namespace/my-kafka-cluster) <4>
+----
+<1> The `MarkerFilter` compares a specified marker.
+<2> `onMatch` accepts logs if the marker matches.
+<3> `onMismatch` rejects logs if the marker does not match.
+<4> Marker format: `kind(namespace/resource_name)`.
+
+To define multiple filters, configure each one separately with a unique filter name (for example, `filter1`, `filter2`).
+
+[role="_additional-resources"]
+.Additional resources
+* xref:con-config-kafka-kraft-str[Configuring Kafka]
+* xref:ref-operator-cluster-logging-configmap-str[Cluster Operator logging]
+* link:{BookURLConfiguring}#property-topic-operator-logging-reference[Topic Operator logging^]
+* link:{BookURLConfiguring}#property-user-operator-logging-reference[User Operator logging^]
