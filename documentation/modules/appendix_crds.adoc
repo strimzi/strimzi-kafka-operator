@@ -2519,6 +2519,18 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |bootstrapServers
 |string
 |Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.
+|groupId
+|string
+|A unique string that identifies the Connect cluster group this worker belongs to.
+|configStorageTopic
+|string
+|The name of the Kafka topic where connector configurations are stored.
+|statusStorageTopic
+|string
+|The name of the Kafka topic where connector and task status are stored.
+|offsetStorageTopic
+|string
+|The name of the Kafka topic where source connector offsets are stored.
 |tls
 |xref:type-ClientTls-{context}[`ClientTls`]
 |TLS configuration.

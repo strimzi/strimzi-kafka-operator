@@ -13,38 +13,38 @@ spec:
     # Kafka Connects internal topics used to store configuration, offsets or status
     - resource:
         type: group
-        name: connect-cluster
+        name: my-connect-group
       operations:
         - Read
     - resource:
         type: topic
-        name: connect-cluster-configs
+        name: my-connect-configs
       operations:
-        - Create
-        - Describe
         - Read
+        - Describe
         - Write
+        - Create
     - resource:
         type: topic
-        name: connect-cluster-status
+        name: my-connect-status
       operations:
-        - Create
-        - Describe
         - Read
+        - Describe
         - Write
+        - Create
     - resource:
         type: topic
-        name: connect-cluster-offsets
+        name: my-connect-offsets
       operations:
-        - Create
-        - Describe
         - Read
+        - Describe
         - Write
+        - Create
     # Additional topics and groups used by connectors
     # Change to match the topics used by your connectors
     - resource:
         type: group
-        name: connect-cluster
+        name: my-connect-group
       operations:
        - Read
     - resource:
@@ -69,6 +69,10 @@ spec:
   version: 4.1.0
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9093
+  groupId: my-connect-group
+  configStorageTopic: my-connect-configs
+  statusStorageTopic: my-connect-status
+  offsetStorageTopic: my-connect-offsets
   tls:
     trustedCertificates:
       - secretName: my-cluster-cluster-ca-cert
@@ -80,7 +84,7 @@ spec:
       secretName: my-connect
       password: password
   config:
-    group.id: connect-cluster
-    offset.storage.topic: connect-cluster-offsets
-    config.storage.topic: connect-cluster-configs
-    status.storage.topic: connect-cluster-status
+    # -1 means it will use the default replication factor configured in the broker
+    config.storage.replication.factor: -1
+    offset.storage.replication.factor: -1
+    status.storage.replication.factor: -1
