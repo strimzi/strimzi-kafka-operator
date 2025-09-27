@@ -139,12 +139,8 @@ public class KafkaConnectClusterTest {
     private final String kafkaHeapOpts = "-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS;
 
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
-            .addPair("offset.storage.topic", "connect-cluster-offsets")
-            .addPair("value.converter", "org.apache.kafka.connect.json.JsonConverter")
-            .addPair("config.storage.topic", "connect-cluster-configs")
             .addPair("key.converter", "org.apache.kafka.connect.json.JsonConverter")
-            .addPair("group.id", "connect-cluster")
-            .addPair("status.storage.topic", "connect-cluster-status");
+            .addPair("value.converter", "org.apache.kafka.connect.json.JsonConverter");
 
     private final OrderedProperties expectedConfiguration = new OrderedProperties()
             .addMapPairs(defaultConfiguration.asMap())
@@ -158,6 +154,10 @@ public class KafkaConnectClusterTest {
                 .withReadinessProbe(new Probe(healthDelay, healthTimeout))
                 .withLivenessProbe(new Probe(healthDelay, healthTimeout))
                 .withBootstrapServers(bootstrapServers)
+                .withGroupId("my-group")
+                .withConfigStorageTopic("my-config-topic")
+                .withOffsetStorageTopic("my-offset-topic")
+                .withStatusStorageTopic("my-status-topic")
             .endSpec()
             .build();
 
@@ -170,12 +170,126 @@ public class KafkaConnectClusterTest {
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS, SHARED_ENV_PROVIDER);
 
     @Test
-    public void testConnectConfigMap() {
-        ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
-        assertThat(configMap.getData().get(JmxPrometheusExporterModel.CONFIG_MAP_KEY), is(metricsCmJson));
+    public void testConnectConfiguration() {
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
-        String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
+        assertThat(kc.groupId, is("my-group"));
+        assertThat(kc.configStorageTopic, is("my-config-topic"));
+        assertThat(kc.offsetStorageTopic, is("my-offset-topic"));
+        assertThat(kc.statusStorageTopic, is("my-status-topic"));
+        assertThat(kc.configuration.getConfigOption("group.id"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("config.storage.topic"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("offset.storage.topic"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("status.storage.topic"), is(nullValue()));
+
+        String connectConfigurations = kc.generateConnectConfigMap(new MetricsAndLogging(null, null)).getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("bootstrap.servers=" + bootstrapServers));
+        assertThat(connectConfigurations, containsString("group.id=my-group"));
+        assertThat(connectConfigurations, containsString("config.storage.topic=my-config-topic"));
+        assertThat(connectConfigurations, containsString("offset.storage.topic=my-offset-topic"));
+        assertThat(connectConfigurations, containsString("status.storage.topic=my-status-topic"));
+        assertThat(connectConfigurations, containsString(expectedConfiguration.asPairs()));
+    }
+
+    // This should stop working after we use v1 API only and the new options in `.spec` are required
+    @Test
+    public void testConnectConfigurationOldStyle() {
+        KafkaConnect oldStyleConnect = new KafkaConnectBuilder(resource)
+                .editSpec()
+                    .withGroupId(null)
+                    .withConfigStorageTopic(null)
+                    .withOffsetStorageTopic(null)
+                    .withStatusStorageTopic(null)
+                    .withConfig(Map.of(
+                            "group.id", "my-other-group",
+                            "config.storage.topic", "my-other-config-topic",
+                            "offset.storage.topic", "my-other-offset-topic",
+                            "status.storage.topic", "my-other-status-topic",
+                            "foo", "bar"))
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldStyleConnect, VERSIONS, SHARED_ENV_PROVIDER);
+
+        assertThat(kc.groupId, is("my-other-group"));
+        assertThat(kc.configStorageTopic, is("my-other-config-topic"));
+        assertThat(kc.offsetStorageTopic, is("my-other-offset-topic"));
+        assertThat(kc.statusStorageTopic, is("my-other-status-topic"));
+        assertThat(kc.configuration.getConfigOption("group.id"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("config.storage.topic"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("offset.storage.topic"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("status.storage.topic"), is(nullValue()));
+
+        String connectConfigurations = kc.generateConnectConfigMap(new MetricsAndLogging(null, null)).getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
+        assertThat(connectConfigurations, containsString("bootstrap.servers=" + bootstrapServers));
+        assertThat(connectConfigurations, containsString("group.id=my-other-group"));
+        assertThat(connectConfigurations, containsString("config.storage.topic=my-other-config-topic"));
+        assertThat(connectConfigurations, containsString("offset.storage.topic=my-other-offset-topic"));
+        assertThat(connectConfigurations, containsString("status.storage.topic=my-other-status-topic"));
+        assertThat(connectConfigurations, containsString(expectedConfiguration.asPairs()));
+    }
+
+    // This should stop working after we use v1 API only and the new options in `.spec` are required
+    @Test
+    public void testConnectConfigurationOldStylePriority() {
+        KafkaConnect oldStyleConnect = new KafkaConnectBuilder(resource)
+                .editSpec()
+                    .withConfig(Map.of(
+                            "group.id", "my-other-group",
+                            "config.storage.topic", "my-other-config-topic",
+                            "offset.storage.topic", "my-other-offset-topic",
+                            "status.storage.topic", "my-other-status-topic",
+                            "foo", "bar"))
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldStyleConnect, VERSIONS, SHARED_ENV_PROVIDER);
+
+        assertThat(kc.groupId, is("my-group"));
+        assertThat(kc.configStorageTopic, is("my-config-topic"));
+        assertThat(kc.offsetStorageTopic, is("my-offset-topic"));
+        assertThat(kc.statusStorageTopic, is("my-status-topic"));
+        assertThat(kc.configuration.getConfigOption("group.id"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("config.storage.topic"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("offset.storage.topic"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("status.storage.topic"), is(nullValue()));
+
+        String connectConfigurations = kc.generateConnectConfigMap(new MetricsAndLogging(null, null)).getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
+        assertThat(connectConfigurations, containsString("bootstrap.servers=" + bootstrapServers));
+        assertThat(connectConfigurations, containsString("group.id=my-group"));
+        assertThat(connectConfigurations, containsString("config.storage.topic=my-config-topic"));
+        assertThat(connectConfigurations, containsString("offset.storage.topic=my-offset-topic"));
+        assertThat(connectConfigurations, containsString("status.storage.topic=my-status-topic"));
+        assertThat(connectConfigurations, containsString(expectedConfiguration.asPairs()));
+    }
+
+    // This should stop working after we use v1 API only and the new options in `.spec` are required
+    @Test
+    public void testConnectConfigurationOldDefaultConfiguration() {
+        KafkaConnect oldStyleConnect = new KafkaConnectBuilder(resource)
+                .editSpec()
+                    .withGroupId(null)
+                    .withConfigStorageTopic(null)
+                    .withOffsetStorageTopic(null)
+                    .withStatusStorageTopic(null)
+                    .withConfig(Map.of("foo", "bar"))
+                .endSpec()
+                .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldStyleConnect, VERSIONS, SHARED_ENV_PROVIDER);
+
+        assertThat(kc.groupId, is("connect-cluster"));
+        assertThat(kc.configStorageTopic, is("connect-cluster-configs"));
+        assertThat(kc.offsetStorageTopic, is("connect-cluster-offsets"));
+        assertThat(kc.statusStorageTopic, is("connect-cluster-status"));
+        assertThat(kc.configuration.getConfigOption("group.id"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("config.storage.topic"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("offset.storage.topic"), is(nullValue()));
+        assertThat(kc.configuration.getConfigOption("status.storage.topic"), is(nullValue()));
+
+        String connectConfigurations = kc.generateConnectConfigMap(new MetricsAndLogging(null, null)).getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
+        assertThat(connectConfigurations, containsString("bootstrap.servers=" + bootstrapServers));
+        assertThat(connectConfigurations, containsString("group.id=connect-cluster"));
+        assertThat(connectConfigurations, containsString("config.storage.topic=connect-cluster-configs"));
+        assertThat(connectConfigurations, containsString("offset.storage.topic=connect-cluster-offsets"));
+        assertThat(connectConfigurations, containsString("status.storage.topic=connect-cluster-status"));
         assertThat(connectConfigurations, containsString(expectedConfiguration.asPairs()));
     }
 
