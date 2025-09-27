@@ -1,3 +1,5 @@
+:_mod-docs-content-type: ASSEMBLY
+
 // This assembly is included in the following assemblies:
 //
 // assembly-oauth-security.adoc

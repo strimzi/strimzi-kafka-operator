@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures the `Kafka` custom resource to use simple authorization and define Access Control Lists (ACLs).
 
 ACLs allow you to define which users have access to which resources at a granular level.

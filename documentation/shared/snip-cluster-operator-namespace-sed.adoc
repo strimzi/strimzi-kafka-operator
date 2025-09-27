@@ -1,3 +1,5 @@
+:_mod-docs-content-type: SNIPPET
+
 On Linux, use:
 +
 [source, subs="+quotes"]

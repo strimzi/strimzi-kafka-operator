@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 To configure OAuth client authentication, set the `type` property to `oauth`.
 
 OAuth authentication can be configured using one of the following options:

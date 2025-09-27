@@ -1,3 +1,5 @@
+:_mod-docs-content-type: REFERENCE
+
 [id="ref-example-permissions-for-kafka-operations_{context}"]
 = Permissions for common Kafka operations
 

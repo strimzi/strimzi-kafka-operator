@@ -1,3 +1,5 @@
+:_mod-docs-content-type: ASSEMBLY
+
 [id='assembly-oauth-security-{context}']
 = Enabling OAuth 2.0 token-based access
 

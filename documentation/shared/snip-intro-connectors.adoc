@@ -1,3 +1,5 @@
+:_mod-docs-content-type: SNIPPET
+
 //standard connector intro text
 Kafka Connect uses a plugin architecture to provide the implementation artifacts for connectors.
 Plugins allow connections to other systems and provide additional configuration to manipulate data.

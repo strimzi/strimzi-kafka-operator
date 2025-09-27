@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 [id="con-mapping-keycloak-authz-services-to-kafka-model_{context}"]
 = Mapping authorization models
 

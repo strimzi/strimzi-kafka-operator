@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures custom authentication for listeners.
 
 To configure custom authentication, set the `type` property to `custom`.

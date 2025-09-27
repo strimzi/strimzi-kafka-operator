@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 To configure custom client authentication, set the `type` property to `custom`.
 Custom client authentication allows you to use any type of Kafka-supported authentication mechanism.
 This authentication option is especially useful with third-party Apache Kafka services, such as Amazon MSK, that require their own authentication mechanisms.

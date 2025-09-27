@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 The `rack` option configures rack awareness.
 A _rack_ can represent an availability zone, data center, or an actual rack in your data center.
 The _rack_ is configured through a `topologyKey`.

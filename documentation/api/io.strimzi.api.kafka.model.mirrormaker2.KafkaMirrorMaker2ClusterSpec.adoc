@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures Kafka clusters for mirroring.
 
 Use the `config` properties to configure Kafka options, restricted to those properties not managed directly by Strimzi.

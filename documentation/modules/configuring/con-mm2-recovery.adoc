@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // This module is included in:
 //
 // assembly-config.adoc

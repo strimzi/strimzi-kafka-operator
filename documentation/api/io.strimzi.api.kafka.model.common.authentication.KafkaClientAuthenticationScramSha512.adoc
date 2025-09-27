@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 To configure SASL-based SCRAM-SHA-512 authentication, set the `type` property to `scram-sha-512`.
 The SCRAM-SHA-512 authentication mechanism requires a username and password.
 
