@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -27,7 +28,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "version", "replicas", "image", "bootstrapServers", "tls", "authentication", "config", "resources",
+@JsonPropertyOrder({ "version", "replicas", "image", "bootstrapServers", "groupId", "configStorageTopic",
+    "statusStorageTopic", "offsetStorageTopic", "tls", "authentication", "config", "resources",
     "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "logging", "clientRackInitImage", "rack",
     "metricsConfig", "tracing", "template", "externalConfiguration", "build", "plugins" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
@@ -38,6 +40,10 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
     private Map<String, Object> config = new HashMap<>(0);
     private String bootstrapServers;
+    private String groupId;
+    private String configStorageTopic;
+    private String statusStorageTopic;
+    private String offsetStorageTopic;
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private Build build;
@@ -61,6 +67,46 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
     public void setBootstrapServers(String bootstrapServers) {
         this.bootstrapServers = bootstrapServers;
+    }
+
+    @Description("A unique string that identifies the Connect cluster group this worker belongs to.")
+    @RequiredInVersions("v1+")
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    @Description("The name of the Kafka topic where connector configurations are stored.")
+    @RequiredInVersions("v1+")
+    public String getConfigStorageTopic() {
+        return configStorageTopic;
+    }
+
+    public void setConfigStorageTopic(String configStorageTopic) {
+        this.configStorageTopic = configStorageTopic;
+    }
+
+    @Description("The name of the Kafka topic where connector and task status are stored")
+    @RequiredInVersions("v1+")
+    public String getStatusStorageTopic() {
+        return statusStorageTopic;
+    }
+
+    public void setStatusStorageTopic(String statusStorageTopic) {
+        this.statusStorageTopic = statusStorageTopic;
+    }
+
+    @Description("The name of the Kafka topic where source connector offsets are stored.")
+    @RequiredInVersions("v1+")
+    public String getOffsetStorageTopic() {
+        return offsetStorageTopic;
+    }
+
+    public void setOffsetStorageTopic(String offsetStorageTopic) {
+        this.offsetStorageTopic = offsetStorageTopic;
     }
 
     @Description("TLS configuration")

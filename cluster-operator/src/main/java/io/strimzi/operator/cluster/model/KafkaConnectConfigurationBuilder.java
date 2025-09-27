@@ -397,6 +397,27 @@ public class KafkaConnectConfigurationBuilder {
     }
 
     /**
+     * Configures Connect's internal topics and group ID
+     *
+     * @param groupId               Connect's group ID
+     * @param configStorageTopic    Connect's configuration topic
+     * @param statusStorageTopic    Connect's statuses topic
+     * @param offsetStorageTopic    Connect's offsets topic
+     *
+     * @return  Returns the builder instance
+     */
+    public KafkaConnectConfigurationBuilder withInternalTopicsAndGroupId(String groupId, String configStorageTopic, String statusStorageTopic, String offsetStorageTopic)  {
+        printSectionHeader("Internal topics and group ID");
+        writer.println("group.id=" + groupId);
+        writer.println("config.storage.topic=" + configStorageTopic);
+        writer.println("status.storage.topic=" + statusStorageTopic);
+        writer.println("offset.storage.topic=" + offsetStorageTopic);
+        writer.println();
+
+        return this;
+    }
+
+    /**
      * Configures plugins.
      *
      * @return Returns the builder instance
