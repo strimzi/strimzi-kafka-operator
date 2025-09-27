@@ -584,7 +584,7 @@ public class ListenersValidator {
      * @param errors    List where any found errors will be added
      * @param listener  The listener where OAuth authentication should be validated
      */
-    @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity", "deprecation"}) // OAuth authentication is deprecated
     private static void validateOauth(Set<String> errors, GenericKafkaListener listener) {
         if (isListenerWithOAuth(listener)) {
             KafkaListenerAuthenticationOAuth oAuth = (KafkaListenerAuthenticationOAuth) listener.getAuth();

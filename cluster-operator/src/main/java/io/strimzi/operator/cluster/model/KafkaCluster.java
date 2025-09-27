@@ -288,7 +288,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return Kafka cluster instance
      */
-    @SuppressWarnings("NPathComplexity")
+    @SuppressWarnings({"NPathComplexity", "deprecation"}) // Keycloak Authorization is deprecated
     public static KafkaCluster fromCrd(Reconciliation reconciliation,
                                        Kafka kafka,
                                        List<KafkaPool> pools,
@@ -1360,7 +1360,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return List of non-data volumes used by the Kafka pods
      */
-    @SuppressWarnings("deprecation") // OPA authorization and Secrets in custom authentication are deprecated
+    @SuppressWarnings("deprecation") // OPA and Keycloak authorization, OAuth authentication, and Secrets in custom authentication are deprecated
     private List<Volume> getNonDataVolumes(boolean isOpenShift, NodeRef node, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
@@ -1453,7 +1453,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of volume mounts
      */
-    @SuppressWarnings("deprecation") // OPA Authorization and Secrets in custom authentication are deprecated
+    @SuppressWarnings("deprecation") // OPA and Keycloak Authorization, OAuth authentication, and Secrets in custom authentication are deprecated
     private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate, boolean isBroker) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
@@ -1617,7 +1617,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of environment variables
      */
-    @SuppressWarnings("deprecation") // OPA Authorization is deprecated
+    @SuppressWarnings("deprecation") // OPA and Keycloak Authorization and OAuth authentication are deprecated
     private  List<EnvVar> getEnvVars(KafkaPool pool) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED,

@@ -128,6 +128,7 @@ public class KafkaConnectConfigurationBuilder {
      * @param clusterName name of the cluster
      * @return  the builder instance
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public KafkaConnectConfigurationBuilder withAuthentication(KafkaClientAuthentication authentication, String clusterName) {
         if (authentication != null) {
             printSectionHeader("Authentication configuration");
