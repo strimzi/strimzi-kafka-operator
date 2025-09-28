@@ -4,7 +4,6 @@
 
 * Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
   Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
-* Update quartz dependency to version 2.5.0 in order to fix [CVE-2023-39017](https://nvd.nist.gov/vuln/detail/cve-2023-39017)
 
 ### Major changes, deprecations, and removals
 
