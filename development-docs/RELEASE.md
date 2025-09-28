@@ -85,8 +85,7 @@ If you need to update the Kafka bridge to newer version, you should do it with f
 
 1. Edit the `bridge.version` file and update it to contain the new Bridge version
 2. Run `make bridge_version` to update the related files to the new version
-3. Update the `BridgeVersion` variable in the `documentation/shared/attributes.adoc` file.
-4. Commit all modified files to Git and open a PR.
+3. Commit all modified files to Git and open a PR.
 
 ## Running Azure System Tests pipelines
 
