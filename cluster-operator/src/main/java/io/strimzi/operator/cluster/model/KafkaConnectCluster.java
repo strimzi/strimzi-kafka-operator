@@ -613,7 +613,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         componentName,
                         componentName,
                         templatePod,
-                        DEFAULT_POD_LABELS,
+                        defaultPodLabels(),
                         podAnnotations,
                         componentName,
                         getMergedAffinity(),
