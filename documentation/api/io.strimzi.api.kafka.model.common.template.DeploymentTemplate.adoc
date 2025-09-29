@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Use `deploymentStrategy` to specify the strategy used to replace old pods with new ones when deployment configuration changes.
 
 Use one of the following values:

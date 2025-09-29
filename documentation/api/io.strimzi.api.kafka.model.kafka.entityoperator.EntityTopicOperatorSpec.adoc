@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures the Topic Operator.
 
 [id='property-topic-operator-logging-{context}']

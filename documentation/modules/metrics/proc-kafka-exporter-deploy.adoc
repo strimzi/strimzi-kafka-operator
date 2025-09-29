@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 // This assembly is included in the following assemblies:
 //
 // metrics/assembly-metrics.adoc

@@ -1,3 +1,5 @@
+:_mod-docs-content-type: SNIPPET
+
 . If you haven't done so, xref:proc-generating-reassignment-json-files-{context}[run an interactive pod container to generate a reassignment JSON file] named `reassignment.json`.
 
 . Copy the `reassignment.json` file to the interactive pod container.

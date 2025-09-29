@@ -1,3 +1,5 @@
+:_mod-docs-content-type: REFERENCE
+
 // Module included in the following assemblies:
 //
 // assembly-deploy-kafka-mirror-maker.adoc

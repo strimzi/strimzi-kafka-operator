@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures a Cruise Control cluster.
 
 Configuration options relate to:

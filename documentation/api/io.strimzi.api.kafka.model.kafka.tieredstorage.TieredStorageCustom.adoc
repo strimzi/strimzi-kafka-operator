@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Enables custom tiered storage for Kafka.
 
 If you want to use custom tiered storage, you must first add a tiered storage for Kafka plugin to the Strimzi image by building a custom container image.

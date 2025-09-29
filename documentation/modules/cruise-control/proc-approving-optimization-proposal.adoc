@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 // Module included in the following assemblies:
 //
 // assembly-cruise-control-concepts.adoc

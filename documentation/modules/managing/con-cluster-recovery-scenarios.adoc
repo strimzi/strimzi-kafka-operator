@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assembly:
 //
 // assembly-cluster-recovery-volume.adoc
