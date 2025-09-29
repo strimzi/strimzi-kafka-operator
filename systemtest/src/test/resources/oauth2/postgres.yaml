@@ -6,7 +6,7 @@ data:
   POSTGRES_DB: keycloak
   POSTGRES_USER: arnost
   POSTGRES_PASSWORD: changeme
-  PGDATA: /var/lib/postgresql/data/pgdata
+  PGDATA: /var/lib/postgresql/18/docker/pgdata
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -32,7 +32,7 @@ spec:
             - containerPort: 5432
           volumeMounts:
             - name: postgres-tmp-storage
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql/18/docker
               subPath: postgresql
               readOnly: false
       volumes:
