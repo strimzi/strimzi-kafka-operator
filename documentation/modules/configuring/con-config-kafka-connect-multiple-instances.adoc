@@ -24,7 +24,7 @@ spec:
   # ...
 ----
 <1> The Kafka Connect cluster group ID within Kafka.
-<2> Kafka topic that stores connector and task status configurations.
+<2> Kafka topic that stores connector and task configurations.
 <3> Kafka topic that stores connector offsets.
 <4> Kafka topic that stores connector and task status updates.
 

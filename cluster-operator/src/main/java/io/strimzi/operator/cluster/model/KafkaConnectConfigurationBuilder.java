@@ -406,7 +406,7 @@ public class KafkaConnectConfigurationBuilder {
      *
      * @return  Returns the builder instance
      */
-    public KafkaConnectConfigurationBuilder withInternalTopicsAndGroupId(String groupId, String configStorageTopic, String statusStorageTopic, String offsetStorageTopic)  {
+    public KafkaConnectConfigurationBuilder withGroupIdAndInternalTopics(String groupId, String configStorageTopic, String statusStorageTopic, String offsetStorageTopic)  {
         printSectionHeader("Internal topics and group ID");
         writer.println("group.id=" + groupId);
         writer.println("config.storage.topic=" + configStorageTopic);

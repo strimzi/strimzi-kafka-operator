@@ -43,7 +43,9 @@ spec:
   replicas: 3 # <3>
   # Bootstrap servers (required)
   bootstrapServers: my-cluster-kafka-bootstrap:9092 # <4>
+  # Connect cluster group ID (required in v1 CRD API)
   groupId: my-connect-cluster # <5>
+  # Connect cluster storage topics (required in v1 CRD API)
   configStorageTopic: my-connect-cluster-configs # <6>
   offsetStorageTopic: my-connect-cluster-offsets # <7>
   statusStorageTopic: my-connect-cluster-status # <8>

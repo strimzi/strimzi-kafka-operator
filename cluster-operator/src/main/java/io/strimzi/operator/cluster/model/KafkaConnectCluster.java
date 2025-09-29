@@ -1052,7 +1052,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         data.put(
                 KAFKA_CONNECT_CONFIGURATION_FILENAME,
                 new KafkaConnectConfigurationBuilder(reconciliation, bootstrapServers)
-                        .withInternalTopicsAndGroupId(groupId, configStorageTopic, statusStorageTopic, offsetStorageTopic)
+                        .withGroupIdAndInternalTopics(groupId, configStorageTopic, statusStorageTopic, offsetStorageTopic)
                         .withRestListeners(REST_API_PORT)
                         .withPluginPath()
                         .withTls(tls, cluster)

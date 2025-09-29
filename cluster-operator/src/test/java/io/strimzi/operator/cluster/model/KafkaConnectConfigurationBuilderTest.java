@@ -55,7 +55,7 @@ class KafkaConnectConfigurationBuilderTest {
     @Test
     public void testInternalTopicsAndGroupId()  {
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
-                .withInternalTopicsAndGroupId("my-group", "my-config-topic", "my-status-topic", "my-offset-topic")
+                .withGroupIdAndInternalTopics("my-group", "my-config-topic", "my-status-topic", "my-offset-topic")
                 .build();
 
         assertThat(configuration, isEquivalent(
