@@ -17,7 +17,7 @@
   To use the Keycloak authorizer, you can use the `type: custom` authorization.
   The Strimzi OAuth library with the Keycloak authorizer continues to be packaged with the Strimzi container images.
   Follow the documentation for the examples and migration details.
-* The `group.id`, `config.storage.topic`, `offset.storage.topic`, and `status.storage.topic` fields in `.spec.config` section of the `KafkaConnect` resource are deprecated and will not be supported in the `v1` CRD API.
+* The `group.id`, `config.storage.topic`, `offset.storage.topic`, and `status.storage.topic` fields in `.spec.config` section of the `KafkaConnect` resource are deprecated and will be forbidden in the `v1` CRD API.
   Please use the new `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` fields instead.
 
 ## 0.48.0
