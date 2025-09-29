@@ -206,7 +206,7 @@ public class Environment {
     public static final String KAFKA_TIERED_STORAGE_CLASSPATH_DEFAULT = "/opt/kafka/plugins/tiered-storage/*";
     public static final String KANIKO_IMAGE_DEFAULT = "gcr.io/kaniko-project/executor:v1.23.2";
 
-    public static final String POSTGRES_IMAGE_DEFAULT = "docker.io/library/postgres:17.6";
+    public static final String POSTGRES_IMAGE_DEFAULT = "docker.io/library/postgres:18.0";
 
     /**
      * Set values
