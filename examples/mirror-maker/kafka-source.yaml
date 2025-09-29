@@ -23,13 +23,10 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: cluster-a
-  annotations:
-    strimzi.io/node-pools: enabled
-    strimzi.io/kraft: enabled
 spec:
   kafka:
-    version: 4.0.0
-    metadataVersion: 4.0-IV3
+    version: 4.1.0
+    metadataVersion: 4.1-IV1
     listeners:
       - name: plain
         port: 9092
