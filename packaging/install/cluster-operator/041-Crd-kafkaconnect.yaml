@@ -68,7 +68,7 @@ spec:
                 description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.
               groupId:
                 type: string
-                description: A unique string that identifies the Connect cluster group this worker belongs to.
+                description: A unique ID that identifies the Connect cluster group.
               configStorageTopic:
                 type: string
                 description: The name of the Kafka topic where connector configurations are stored.

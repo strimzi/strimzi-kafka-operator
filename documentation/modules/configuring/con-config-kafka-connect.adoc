@@ -163,7 +163,7 @@ spec:
 <2> Enables the use of `KafkaConnector` resources to start, stop, and manage connector instances.
 <3> The number of replica nodes for the workers that run tasks.
 <4> Bootstrap address for connection to the Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
-<5> Group ID that identifies the Connect cluster group this worker belongs to. Required in `v1` CRD API.
+<5> A unique ID that identifies the Connect cluster group. Required in `v1` CRD API.
 <6> Name of the Kafka topic where connector configurations are stored. Required in `v1` CRD API.
 <7> Name of the Kafka topic where source connector offsets are stored. Required in `v1` CRD API.
 <8> Name of the Kafka topic where connector and task statuses are stored. Required in `v1` CRD API.

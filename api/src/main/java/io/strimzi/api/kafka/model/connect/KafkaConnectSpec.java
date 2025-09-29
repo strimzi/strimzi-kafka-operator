@@ -69,7 +69,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
         this.bootstrapServers = bootstrapServers;
     }
 
-    @Description("A unique string that identifies the Connect cluster group this worker belongs to.")
+    @Description("A unique ID that identifies the Connect cluster group.")
     @RequiredInVersions("v1+")
     public String getGroupId() {
         return groupId;

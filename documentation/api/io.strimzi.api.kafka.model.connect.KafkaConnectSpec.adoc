@@ -24,7 +24,8 @@ spec:
 ----
 
 These fields are required in the `v1` CRD API version.
-They are optional in the `v1beta2` version and if not set, the following default values will be used:
+In the `v1beta2` version, these properties are optional.
+If not set, the following default values apply:
 
 * `groupId` will default value `connect-cluster`
 * `configStorageTopic` will default to `connect-cluster-configs`
