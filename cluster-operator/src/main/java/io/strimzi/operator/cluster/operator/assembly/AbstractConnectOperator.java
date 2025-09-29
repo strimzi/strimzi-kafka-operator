@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.connect.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.connector.AlterOffsets;
+import io.strimzi.api.kafka.model.connector.AutoRestart;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -628,10 +629,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             return previousAutoRestartStatus(reconciliation, connectorName, resource)
                  .compose(previousAutoRestartStatus -> {
                      boolean needsRestart = connectorHasFailed(statusResultJson) || !failedTaskIds(statusResultJson).isEmpty();
+                     AutoRestart autoRestart =  connectorSpec.getAutoRestart();
 
                      if (needsRestart)    {
                          // Connector or task failed, and we should check it for auto-restart
-                         if (shouldAutoRestart(previousAutoRestartStatus, connectorSpec.getAutoRestart().getMaxRestarts()))    {
+                         if (shouldAutoRestart(previousAutoRestartStatus, autoRestart.getMaxRestarts(), autoRestart.getMaxBackoffMinutes()))    {
                              // There are failures, and it is a time to restart the connector now
                              metrics().connectorsAutoRestartsCounter(reconciliation.namespace()).increment();
                              return autoRestartConnector(reconciliation, host, apiClient, connectorName, status, previousAutoRestartStatus);
@@ -643,7 +645,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                      } else {
                          // Connector and tasks are not failed
                          if (previousAutoRestartStatus != null) {
-                             if (shouldResetAutoRestartStatus(previousAutoRestartStatus))    {
+                             if (shouldResetAutoRestartStatus(previousAutoRestartStatus, autoRestart.getMaxBackoffMinutes()))    {
                                  // The connector is not failing now for some time => time to reset the auto-restart status
                                  LOGGER.infoCr(reconciliation, "Resetting the auto-restart status of connector {} ", connectorName);
                                  status.autoRestart = null;
@@ -700,10 +702,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @param autoRestartStatus     Status field with auto-restart status
      * @param maxRestarts           Maximum number of restarts (or null for unlimited restarts)
+     * @param maxBackoffMinutes     Maximum backoff time in minutes between restarts                              
      *
      * @return True if the connector should be auto-restarted right now. False otherwise.
      */
-    /* test */ static boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, Integer maxRestarts) {
+    /* test */ static boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, Integer maxRestarts, Integer maxBackoffMinutes) {
         if (autoRestartStatus == null
                 || autoRestartStatus.getLastRestartTimestamp() == null) {
             // If there is no previous auto.restart status or timestamp, we always restart it
@@ -714,21 +717,23 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             var minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
 
             return (maxRestarts == null || count < maxRestarts)
-                    && minutesSinceLastRestart >= nextAutoRestartBackOffIntervalInMinutes(count);
+                    && minutesSinceLastRestart >= nextAutoRestartBackOffIntervalInMinutes(count, maxBackoffMinutes);
         }
     }
 
     /**
      * Calculates the back-off interval for auto-restarting the connectors. It is calculated as (n^2 + n) where n is the
-     * number of previous restarts, but is capped at max 60 minutes. As a result, the restarts should be done after 0,
-     * 2, 6, 12, 20, 30, 42, and 56 minutes and then every 60 minutes.
+     * number of previous restarts, but is capped at max maxBackoffMinutes minutes. As a result, the restarts should be done after 0,
+     * 2, 6, 12, 20, 30, 42, 56 minutes or after maxBackoffMinutes is reached. Then,
+     * every maxBackoffMinutes minutes.
      *
-     * @param restartCount  Number of restarts already applied to the connector
+     * @param restartCount       Number of restarts already applied to the connector
+     * @param maxBackoffMinutes  Maximum backoff time in minutes between restarts
      *
      * @return  Number of minutes after which the next restart should happen
      */
-    private static int nextAutoRestartBackOffIntervalInMinutes(int restartCount)    {
-        return Math.min(restartCount * restartCount + restartCount, 60);
+    private static int nextAutoRestartBackOffIntervalInMinutes(int restartCount, int maxBackoffMinutes)    {
+        return Math.min(restartCount * restartCount + restartCount, maxBackoffMinutes);
     }
 
     /**
@@ -740,14 +745,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return  True if the previous auto-restart status of the connector should be reset to 0. False otherwise.
      */
-    /* test */ static boolean shouldResetAutoRestartStatus(AutoRestartStatus autoRestartStatus) {
+    /* test */ static boolean shouldResetAutoRestartStatus(AutoRestartStatus autoRestartStatus, int maxBackoffMinutes) {
         if (autoRestartStatus != null
                 && autoRestartStatus.getLastRestartTimestamp() != null
                 && autoRestartStatus.getCount() > 0) {
             // There are previous auto-restarts => we check if it is time to reset the status
             long minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
 
-            return minutesSinceLastRestart > nextAutoRestartBackOffIntervalInMinutes(autoRestartStatus.getCount());
+            return minutesSinceLastRestart > nextAutoRestartBackOffIntervalInMinutes(autoRestartStatus.getCount(), maxBackoffMinutes);
         } else {
             // There are no previous restarts => nothing to reset
             return false;

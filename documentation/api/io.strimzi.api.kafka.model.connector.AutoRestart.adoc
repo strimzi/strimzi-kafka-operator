@@ -2,9 +2,9 @@ Configures automatic restarts for connectors and tasks that are in a `FAILED` st
 
 When enabled, a back-off algorithm applies the automatic restart to each failed connector and its tasks.
 An incremental back-off interval is calculated using the formula `n * n + n` where `n` represents the number of previous restarts.
-This interval is capped at a maximum of 60 minutes.
-Consequently, a restart occurs immediately, followed by restarts after 2, 6, 12, 20, 30, 42, 56 minutes, and then at 60-minute intervals.
-The restart counter is automatically reset once the connector has been running continuously for longer than the next backoff interval. 
+This interval is capped at a default maximum backoff time of 60 minutes. You can configure it using the `maxBackoffMinutes` property.
+Consequently, a restart occurs immediately, followed by restarts after 2, 6, 12, 20, 30, 42, 56 minutes, up to `maxBackoffMinutes`, and then at `maxBackoffMinutes` intervals.
+The restart counter is automatically reset once the connector has been running continuously for longer than the next backoff interval.
 For example, if the connector has restarted 4 times, it must run without errors for 20 minutes before the restart count resets to 0.
 By default, Strimzi initiates restarts of the connector and its tasks indefinitely.
 However, you can use the `maxRestarts` property to set a maximum on the number of restarts.
@@ -39,6 +39,21 @@ spec:
     maxRestarts: 10
 ----
 
+Additionally, you could set a maximum limit on the backoff time.
+
+.Enabling automatic restarts of failed connectors with custom backoff limit
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+spec:
+  autoRestart:
+    enabled: true
+    maxBackoffMinutes: 30
+----
+
 For MirrorMaker 2, use the `autoRestart` property of connectors in the `KafkaMirrorMaker2` resource to enable automatic restarts of failed connectors and tasks.
 
 .Enabling automatic restarts of failed connectors for MirrorMaker 2
@@ -63,3 +78,5 @@ spec:
         enabled: true
       # ...
 ----
+
+You could also configure limits on the number of restarts or the backoff time.

@@ -4097,6 +4097,9 @@ include::../api/io.strimzi.api.kafka.model.connector.AutoRestart.adoc[leveloffse
 |maxRestarts
 |integer
 |The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts.
+|maxBackoffMinutes
+|integer
+|The maximum backoff time in minutes between restarts. Defaults 60 minutes.
 |====
 
 [id='type-ListOffsets-{context}']

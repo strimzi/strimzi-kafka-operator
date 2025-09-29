@@ -347,6 +347,9 @@ spec:
                             maxRestarts:
                               type: integer
                               description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
+                            maxBackoffMinutes:
+                              type: integer
+                              description: The maximum backoff time in minutes between restarts. Defaults 60 minutes.
                           description: Automatic restart of connector and tasks configuration.
                         listOffsets:
                           type: object
@@ -403,6 +406,9 @@ spec:
                             maxRestarts:
                               type: integer
                               description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
+                            maxBackoffMinutes:
+                              type: integer
+                              description: The maximum backoff time in minutes between restarts. Defaults 60 minutes.
                           description: Automatic restart of connector and tasks configuration.
                         listOffsets:
                           type: object
@@ -459,6 +465,9 @@ spec:
                             maxRestarts:
                               type: integer
                               description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
+                            maxBackoffMinutes:
+                              type: integer
+                              description: The maximum backoff time in minutes between restarts. Defaults 60 minutes.
                           description: Automatic restart of connector and tasks configuration.
                         listOffsets:
                           type: object
