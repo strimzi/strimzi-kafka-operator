@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+    app: strimzi
+  name: strimzi-cluster-operator-rules
+spec:
+  groups:
+  - name: cluster-operator
+    rules:
+    - alert: ClusterOperatorContainerDown
+      expr: count((container_last_seen{container="strimzi-cluster-operator"} > (time() - 90))) < 1 or absent(container_last_seen{container="strimzi-cluster-operator"})
+      for: 1m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Cluster Operator down'
+        description: 'The Cluster Operator has been down for longer than 90 seconds'
