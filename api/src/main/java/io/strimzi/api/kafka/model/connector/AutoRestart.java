@@ -26,12 +26,15 @@ import java.util.Map;
     builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"enabled", "maxRestarts"})
+@JsonPropertyOrder({"enabled", "maxRestarts", "maxBackoffMinutes"})
 @EqualsAndHashCode
 @ToString
 public class AutoRestart implements UnknownPropertyPreserving {
+    public static final int DEFAULT_MAX_BACKOFF_MINUTES = 60;
+    
     private boolean enabled = true;
     private Integer maxRestarts;
+    private Integer maxBackoffMinutes = DEFAULT_MAX_BACKOFF_MINUTES;
 
     private Map<String, Object> additionalProperties;
 
@@ -53,6 +56,15 @@ public class AutoRestart implements UnknownPropertyPreserving {
 
     public void setMaxRestarts(Integer maxRestarts) {
         this.maxRestarts = maxRestarts;
+    }
+    
+    @Description("The maximum backoff time in minutes between restarts. Defaults 60 minutes.")
+    public Integer getMaxBackoffMinutes() { 
+        return maxBackoffMinutes; 
+    }
+
+    public void setMaxBackoffMinutes(Integer maxBackoffMinutes) { 
+        this.maxBackoffMinutes = maxBackoffMinutes; 
     }
 
     @Override

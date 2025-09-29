@@ -4,6 +4,7 @@
 
 * Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
   Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
+*  Introduce `maxBackoffMinutes` property to configure the maximum backoff cap for automatic restarts of failed Kafka Connect connectors. Default remains 60 minutes if not set.
 
 ### Major changes, deprecations, and removals
 
