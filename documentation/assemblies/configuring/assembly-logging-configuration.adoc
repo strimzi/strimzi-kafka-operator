@@ -11,9 +11,6 @@
 [role="_abstract"]
 Strimzi operators and Kafka components use log4j2 for logging.
 
-NOTE: Kafka versions 3.9 and earlier use log4j1.
-For log4j1-based configuration examples, refer to the link:{DocArchive}[Strimzi 0.45 documentation^].
-
 You can set log levels to `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
 
 By default, logs are produced at predefined levels.

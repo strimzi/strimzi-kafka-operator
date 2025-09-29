@@ -119,9 +119,6 @@ Be aware that if the configured image is not compatible with Strimzi images, it 
 [id='property-kafka-logging-{context}']
 = Logging
 
-WARNING: Kafka 3.9 and earlier versions use log4j1 for logging.
-For log4j1-based configuration examples, refer to the link:{DocArchive}[Strimzi 0.45 documentation^]. 
-
 Kafka has its own preconfigured loggers:
 
 [cols="1m,2,1",options="header"]

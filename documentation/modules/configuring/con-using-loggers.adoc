@@ -41,4 +41,7 @@ kubectl logs -f my-cluster-kafka-0
 kubectl logs my-cluster-entity-operator-0 -c topic-operator
 ----
 
+NOTE: Use the `kubectl logs` command for direct, real-time debugging of recent pod logs.
+For production environments, implement a persistent, Kubernetes-supported cluster-level logging architecture to capture logs from all components and support monitoring and troubleshooting.
+
 

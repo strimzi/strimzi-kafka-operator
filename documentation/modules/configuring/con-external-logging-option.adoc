@@ -28,5 +28,4 @@ logging:
 # ...
 ----
 
-When a resource managed by the Cluster Operator is updated, changes to external logging are applied dynamically.
-When a resource is created, the Cluster Operator also creates a `ConfigMap` containing the specified logging configuration.
+The Cluster Operator detects changes to the referenced `ConfigMap` and applies them dynamically without requiring a pod restart.
