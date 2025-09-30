@@ -29,10 +29,10 @@ For details of all configuration options, see the link:{BookURLConfiguring}[Stri
 
 A minimal `KafkaMirrorMaker2` resource requires the following in its spec:
 
-* `clusters`: The connection details for source and target Kafka clusters. Each requires a unique alias.
-* `connectCluster`: The alias of the target cluster. MirrorMaker 2 runs on the Kafka Connect framework, and its configuration and status are stored on this cluster.
-* `replicas`: The number of Kafka Connect worker pods to deploy.
-* `mirrors`: The replication flow from a source cluster to a target cluster. 
+* `.spec.target`: The connection details for the target Kafka cluster. Requires a unique alias. MirrorMaker 2 runs on the Kafka Connect framework, and its configuration and status are stored on this cluster.
+* `.spec.mirrors`: The replication flow from a source cluster to a target cluster. 
+* `.spec.mirrors[].source`: The connection details for the source Kafka cluster. Requires a unique alias.
+* `.spec.replicas`: The number of Kafka Connect worker pods to deploy.
 
 By default, MirrorMaker 2 replicates all topics and consumer groups.  
 To reduce load on the cluster and avoid replicating unnecessary data, specify which topics and groups to include using filters:
@@ -53,18 +53,19 @@ spec:
   version: {DefaultKafkaVersion}
   # Replicas (required)
   replicas: 3 # <1>
-  # Connect cluster name (required)
-  connectCluster: "my-cluster-target" # <2>
-  # Cluster configurations (required)
-  clusters:
-  - alias: "my-cluster-source" # <3>
-    bootstrapServers: my-cluster-source-kafka-bootstrap:9092
-  - alias: "my-cluster-target"
+  # Target / Connect cluster configuration (required)
+  target: # <2>
+    alias: "my-cluster-target"
     bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+    groupId: my-mirror-maker2-group
+    configStorageTopic: my-mirror-maker2-config
+    offsetStorageTopic: my-mirror-maker2-offset
+    statusStorageTopic: my-mirror-maker2-status
   # Mirroring configurations (required)  
-  mirrors: # <4>
-  - sourceCluster: "my-cluster-source"
-    targetCluster: "my-cluster-target"
+  mirrors: # <3>
+  - source:
+      alias: "my-cluster-source" # <4>
+      bootstrapServers: my-cluster-source-kafka-bootstrap:9092
     # Source connector configuration (required) # <5>
     sourceConnector: {}
     # Topic and group patterns (required)
@@ -72,9 +73,9 @@ spec:
       groupsPattern: "group1.*|group2-[0-9]{2}" # <7>
 ----
 <1> Number of Kafka Connect worker replicas to run.
-<2> Alias of the Kafka cluster used by Kafka Connect to store internal topics. This must be the alias of the target cluster.
-<3> Each Kafka cluster (source and target) must define a unique alias and a bootstrap address. The bootstrap address takes the format `<cluster_name>-kafka-bootstrap:<port>`.
-<4> Defines replication between the source and target clusters. 
+<2> Configuration of the Kafka cluster used as the target cluster. This cluster will be also used by Kafka Connect to store internal topics.
+<3> Defines replication between the source and target clusters. 
+<4> Source cluster configuration must define a unique alias and a bootstrap address. The bootstrap address takes the format `<cluster_name>-kafka-bootstrap:<port>`.
 <5> Configuration for the source connector that replicates topics. At a minimum, you can add an empty `sourceConnector` property to use the default configuration.
 <6> Replicates only topics starting with `topic1` or `topic2`.
 <7> Replicates consumer groups starting with `group1` or `group2` followed by two digits. 

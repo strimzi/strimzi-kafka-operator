@@ -5,6 +5,7 @@
 * Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
   Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
 * New fields `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` in the `KafkaConnect` custom resource for configuring Connect's group ID and internal topics.
+* New way of defining the target (`.spec.target`) and source clusters (`.spec.mirrors[].source`) in the `KafkaMirrorMaker2` custom resources.
 * Strimzi Access Operator installation files updated to version 0.2.0
 
 ### Major changes, deprecations, and removals
@@ -20,6 +21,9 @@
   Follow the documentation for the examples and migration details.
 * The `group.id`, `config.storage.topic`, `offset.storage.topic`, and `status.storage.topic` fields in `.spec.config` section of the `KafkaConnect` resource are deprecated and will be forbidden in the `v1` CRD API.
   Please use the new `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` fields instead.
+* The `.spec.connectCluster`, `.spec.clusters`, `.spec.mirrors[].sourceCluster`, `.spec.mirrors[].targetCluster`, and `.spec.mirrors[].heartbeatConnector` are deprecated and will be removed in the `v1` CRD API.
+  Please use the new fields `.spec.target` and `.spec.mirrors[].source` instead to configure the source and target clusters.
+  If you want to deploy and tun the Heartbeat connector, you can use a separate `KafkaConnect` and `KafkaConnector` custom resources.
 
 ## 0.48.0
 
