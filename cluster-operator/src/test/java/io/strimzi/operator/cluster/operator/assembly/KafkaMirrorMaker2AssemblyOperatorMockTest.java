@@ -229,7 +229,10 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     .withConnectCluster("target")
                     .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
                             new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
-                    .withMirrors(List.of())
+                    .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withSourceCluster("source")
+                                    .withTargetCluster("target")
+                                    .build())
                 .endSpec()
             .build()).create();
 

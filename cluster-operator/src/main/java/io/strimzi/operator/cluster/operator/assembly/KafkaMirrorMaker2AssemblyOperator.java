@@ -37,7 +37,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,7 +138,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, mirrorMaker2Cluster))
                 .compose(i -> connectPodDisruptionBudget(reconciliation, namespace, mirrorMaker2Cluster))
-                .compose(i -> generateAuthHash(namespace, kafkaMirrorMaker2.getSpec()))
+                .compose(i -> generateAuthHash(namespace, mirrorMaker2Cluster))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     return Future.succeededFuture();
@@ -187,29 +186,29 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * Generates a hash from the trusted TLS certificates that can be used to spot if it has changed.
      *
      * @param namespace               Namespace of the MirrorMaker2 cluster
-     * @param kafkaMirrorMaker2Spec   KafkaMirrorMaker2Spec object
+     * @param mirrorMaker2Cluster     KafkaMirrorMaker2 cluster model
+     *
      * @return                        Future for tracking the asynchronous result of generating the TLS auth hash
      */
-    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Spec kafkaMirrorMaker2Spec) {
+    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
         Promise<Integer> authHash = Promise.promise();
-        if (kafkaMirrorMaker2Spec.getClusters() == null) {
-            authHash.complete(0);
-        } else {
-            Future.join(kafkaMirrorMaker2Spec.getClusters()
-                            .stream()
-                            .map(cluster -> {
-                                List<CertSecretSource> trustedCertificates = cluster.getTls() == null ? Collections.emptyList() : cluster.getTls().getTrustedCertificates();
-                                return ReconcilerUtils.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), trustedCertificates);
-                            }).collect(Collectors.toList())
-                    )
-                    .onSuccess(hashes -> {
-                        int hash = hashes.<Integer>list()
-                            .stream()
-                            .mapToInt(i -> i)
-                            .sum();
-                        authHash.complete(hash);
-                    }).onFailure(authHash::fail);
-        }
+
+        Future.join(mirrorMaker2Cluster
+                        .clusters()
+                        .stream()
+                        .map(cluster -> {
+                            List<CertSecretSource> trustedCertificates = cluster.getTls() == null ? List.of() : cluster.getTls().getTrustedCertificates();
+                            return ReconcilerUtils.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), trustedCertificates);
+                        }).collect(Collectors.toList())
+                )
+                .onSuccess(hashes -> {
+                    int hash = hashes.<Integer>list()
+                        .stream()
+                        .mapToInt(i -> i)
+                        .sum();
+                    authHash.complete(hash);
+                }).onFailure(authHash::fail);
+
         return authHash.future();
     }
 

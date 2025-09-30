@@ -41,12 +41,11 @@ metadata:
 spec:
   version: {DefaultKafkaVersion}
   replicas: 3
-  connectCluster: "my-cluster-target"
-  clusters:
+  target:
     # ...
   mirrors:
-  - sourceCluster: "my-cluster-source"
-    targetCluster: "my-cluster-target"
+  - source:
+      # ...
     sourceConnector:
       tasksMax: 10
       autoRestart:

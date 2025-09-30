@@ -36,7 +36,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving {
 
     private String alias;
     private String bootstrapServers;
-    protected Map<String, Object> config = new HashMap<>(0);
+    private Map<String, Object> config = new HashMap<>(0);
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private Map<String, Object> additionalProperties;

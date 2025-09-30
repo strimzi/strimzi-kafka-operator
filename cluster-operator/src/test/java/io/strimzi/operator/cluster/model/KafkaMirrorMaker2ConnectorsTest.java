@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpecBuilder;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.login.AppConfigurationEntry;
@@ -31,8 +30,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("deprecation") // Uses deprecated getPause() field in tests
 public class KafkaMirrorMaker2ConnectorsTest {
@@ -44,169 +41,38 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .withNamespace("my-namespace")
             .endMetadata()
             .withNewSpec()
-            .withReplicas(3)
-            .withConnectCluster("target")
-            .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
-                    .withAlias("source")
-                    .withBootstrapServers("source:9092")
-                    .build(),
-                    new KafkaMirrorMaker2ClusterSpecBuilder()
-                            .withAlias("target")
-                            .withBootstrapServers("target:9092")
-                            .build())
-            .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
-                    .withSourceCluster("source")
-                    .withTargetCluster("target")
-                    .withNewSourceConnector()
-                        .withTasksMax(5)
-                        .withConfig(Map.of("sync.topic.acls.enabled", "false"))
-                    .endSourceConnector()
-                    .withNewCheckpointConnector()
-                        .withTasksMax(3)
-                        .withConfig(Map.of("sync.group.offsets.enabled", "true"))
-                    .endCheckpointConnector()
-                    .withNewHeartbeatConnector()
-                        .withTasksMax(1)
-                    .endHeartbeatConnector()
-                    .withTopicsPattern("my-topic-.*")
-                    .withTopicsExcludePattern("exclude-topic-.*")
-                    .withGroupsPattern("my-group-.*")
-                    .withGroupsExcludePattern("exclude-group-.*")
-                    .build())
+                .withReplicas(3)
+                .withNewTarget()
+                    .withAlias("target")
+                    .withGroupId("my-mm2-group")
+                    .withConfigStorageTopic("my-mm2-config")
+                    .withOffsetStorageTopic("my-mm2-offset")
+                    .withStatusStorageTopic("my-mm2-status")
+                    .withBootstrapServers("target:9092")
+                .endTarget()
+                .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withNewSource()
+                            .withAlias("source")
+                            .withBootstrapServers("source:9092")
+                        .endSource()
+                        .withNewSourceConnector()
+                            .withTasksMax(5)
+                            .withConfig(Map.of("sync.topic.acls.enabled", "false"))
+                        .endSourceConnector()
+                        .withNewCheckpointConnector()
+                            .withTasksMax(3)
+                            .withConfig(Map.of("sync.group.offsets.enabled", "true"))
+                        .endCheckpointConnector()
+                        .withNewHeartbeatConnector()
+                            .withTasksMax(1)
+                        .endHeartbeatConnector()
+                        .withTopicsPattern("my-topic-.*")
+                        .withTopicsExcludePattern("exclude-topic-.*")
+                        .withGroupsPattern("my-group-.*")
+                        .withGroupsExcludePattern("exclude-group-.*")
+                        .build())
             .endSpec()
             .build();
-
-    @Test
-    public void testValidation()    {
-        assertDoesNotThrow(() -> KafkaMirrorMaker2Connectors.validateConnectors(KMM2));
-    }
-
-    @Test
-    public void testFailingValidation()    {
-        // Missing spec
-        KafkaMirrorMaker2 kmm2WithoutSpec = new KafkaMirrorMaker2Builder(KMM2)
-                .withSpec(null)
-                .build();
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2WithoutSpec));
-        assertThat(ex.getMessage(), is(".spec section is required for KafkaMirrorMaker2 resource"));
-
-        // Missing clusters
-        KafkaMirrorMaker2 kmm2WithoutClusters = new KafkaMirrorMaker2Builder(KMM2)
-                .withNewSpec()
-                    .withMirrors(List.of())
-                .endSpec()
-                .build();
-        ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2WithoutClusters));
-        assertThat(ex.getMessage(), is(".spec.clusters and .spec.mirrors sections are required in KafkaMirrorMaker2 resource"));
-
-        // Missing mirrors
-        KafkaMirrorMaker2 kmm2WithoutMirrors = new KafkaMirrorMaker2Builder(KMM2)
-                .withNewSpec()
-                    .withClusters(List.of())
-                .endSpec()
-                .build();
-        ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2WithoutMirrors));
-        assertThat(ex.getMessage(), is(".spec.clusters and .spec.mirrors sections are required in KafkaMirrorMaker2 resource"));
-
-        // Missing alias
-        KafkaMirrorMaker2 kmm2WrongAlias = new KafkaMirrorMaker2Builder(KMM2)
-                .editSpec()
-                    .editMirror(0)
-                        .withSourceCluster(null)
-                        .withTargetCluster("wrong-target")
-                    .endMirror()
-                .endSpec()
-                .build();
-        ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2WrongAlias));
-        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
-                "[Each MirrorMaker 2 mirror definition has to specify the source cluster alias, " +
-                "Target cluster alias wrong-target is used in a mirror definition, but cluster with this alias does not exist in cluster definitions, " +
-                "Connect cluster alias (currently set to target) must match the target cluster alias wrong-target or both clusters must have the same bootstrap servers.]"));
-    }
-
-    @Test
-    public void testMirrorTargetClusterNotSameAsConnectCluster() {
-        // The most obvious error case, where connect cluster is set to the source cluster instead of target
-        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
-                .editSpec()
-                    .withConnectCluster("source")
-                .endSpec()
-                .build();
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
-        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
-                "[Connect cluster alias (currently set to source) must match the target cluster alias target or both clusters must have the same bootstrap servers.]"));
-
-        // A case where one mirror has the correct target cluster, but the other does not
-        KafkaMirrorMaker2 kmm2CorrectAndIncorrectMirror = new KafkaMirrorMaker2Builder(KMM2)
-                .editSpec()
-                .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
-                                .withAlias("third")
-                                .withBootstrapServers("third:9092")
-                                .build())
-                .addToMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
-                        .withSourceCluster("source")
-                        .withTargetCluster("third").build())
-                .endSpec()
-                .build();
-        ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2CorrectAndIncorrectMirror));
-        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
-                "[Connect cluster alias (currently set to target) must match the target cluster alias third or both clusters must have the same bootstrap servers.]"));
-    }
-
-    @Test
-    public void testClusterNotSameButBootstrapUrlSame() {
-        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
-                .editSpec()
-                    .withConnectCluster("source")
-                        .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
-                            .withAlias("third")
-                            .withBootstrapServers("source:9092")
-                            .build())
-                    .editMirror(0)
-                        .withTargetCluster("third")
-                    .endMirror()
-                .endSpec()
-                .build();
-
-        assertDoesNotThrow(() -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
-    }
-
-    @Test
-    public void testSourceClusterNotConnectCluster() {
-        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
-                .editSpec()
-                    .withConnectCluster("target")
-                        .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
-                            .withAlias("third")
-                            .withBootstrapServers("source:9092")
-                            .build())
-                    .editMirror(0)
-                        .withTargetCluster("third")
-                    .endMirror()
-                .endSpec()
-                .build();
-
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
-        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
-                "[Connect cluster alias (currently set to target) must match the target cluster alias third or both clusters must have the same bootstrap servers.]"));
-    }
-
-    @Test
-    public void testMultipleMirrors() {
-        KafkaMirrorMaker2 kmm2CorrectAndIncorrectMirror = new KafkaMirrorMaker2Builder(KMM2)
-                .editSpec()
-                    .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
-                        .withAlias("fourth")
-                        .withBootstrapServers("target:9092")
-                        .build())
-                    .addToMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
-                        .withSourceCluster("source")
-                        .withTargetCluster("fourth").build())
-                .endSpec()
-                .build();
-
-        assertDoesNotThrow(() -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2CorrectAndIncorrectMirror));
-    }
 
     @Test
     public void testConnectors() {
@@ -259,6 +125,47 @@ public class KafkaMirrorMaker2ConnectorsTest {
     }
 
     @Test
+    public void testOverridingSourceAndTargetConfiguration() {
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                    .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withNewSource()
+                            .withAlias("source")
+                            .withBootstrapServers("source:9092")
+                        .endSource()
+                        .withNewSourceConnector()
+                            .withConfig(Map.of(
+                                    "target.cluster.security.protocol", "XXX",
+                                    "source.cluster.security.protocol", "YYY"
+                            ))
+                        .endSourceConnector()
+                        .build())
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
+        List<KafkaConnector> kcs = connectors.generateConnectorDefinitions();
+
+        Map<String, Object> expectedSource = new TreeMap<>();
+        expectedSource.put("target.cluster.alias", "target");
+        expectedSource.put("target.cluster.bootstrap.servers", "target:9092");
+        expectedSource.put("target.cluster.security.protocol", "XXX");
+        expectedSource.put("source.cluster.alias", "source");
+        expectedSource.put("source.cluster.bootstrap.servers", "source:9092");
+        expectedSource.put("source.cluster.security.protocol", "YYY");
+
+        assertThat(kcs.size(), is(1));
+
+        KafkaConnector kc = kcs.stream().filter(k -> k.getMetadata().getName().contains("source->target.MirrorSourceConnector")).findFirst().orElseThrow();
+        assertThat(kc.getMetadata().getName(), is("source->target.MirrorSourceConnector"));
+        assertThat(kc.getSpec().getClassName(), is("org.apache.kafka.connect.mirror.MirrorSourceConnector"));
+        assertThat(kc.getSpec().getTasksMax(), is(nullValue()));
+        assertThat(kc.getSpec().getPause(), is(nullValue()));
+        assertThat(kc.getSpec().getState(), is(nullValue()));
+        assertThat(kc.getSpec().getConfig(), is(expectedSource));
+    }
+
+    @Test
     public void testConnectorsWithMultipleSources() {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
@@ -267,8 +174,10 @@ public class KafkaMirrorMaker2ConnectorsTest {
                             .withBootstrapServers("other-source:9092")
                             .build())
                     .addToMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
-                            .withSourceCluster("other-source")
-                            .withTargetCluster("target")
+                            .withNewSource()
+                                .withAlias("other-source")
+                                .withBootstrapServers("other-source:9092")
+                            .endSource()
                             .withNewSourceConnector()
                                 .withTasksMax(15)
                                 .withConfig(Map.of("sync.topic.acls.enabled", "true"))
@@ -485,9 +394,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
     public void testConnectorConfiguration() {
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KMM2);
         Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(KMM2.getSpec().getMirrors().get(0),
-                KMM2.getSpec().getMirrors().get(0).getSourceConnector(),
-                KMM2.getSpec().getClusters().get(0),
-                KMM2.getSpec().getClusters().get(1));
+                KMM2.getSpec().getMirrors().get(0).getSourceConnector());
 
         Map<String, Object> expected = new TreeMap<>();
         expected.put("source.cluster.alias", "source");
@@ -515,9 +422,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
 
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KMM2);
         Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(mirror,
-                KMM2.getSpec().getMirrors().get(0).getSourceConnector(),
-                KMM2.getSpec().getClusters().get(0),
-                KMM2.getSpec().getClusters().get(1));
+                KMM2.getSpec().getMirrors().get(0).getSourceConnector());
 
         Map<String, Object> expected = new TreeMap<>();
         expected.put("source.cluster.alias", "source");
@@ -546,9 +451,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
 
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KMM2);
         Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(mirror,
-                KMM2.getSpec().getMirrors().get(0).getSourceConnector(),
-                KMM2.getSpec().getClusters().get(0),
-                KMM2.getSpec().getClusters().get(1));
+                KMM2.getSpec().getMirrors().get(0).getSourceConnector());
 
         Map<String, Object> expected = new TreeMap<>();
         expected.put("source.cluster.alias", "source");
@@ -580,9 +483,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
 
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
         Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(KMM2.getSpec().getMirrors().get(0),
-                KMM2.getSpec().getMirrors().get(0).getSourceConnector(),
-                KMM2.getSpec().getClusters().get(0),
-                KMM2.getSpec().getClusters().get(1));
+                KMM2.getSpec().getMirrors().get(0).getSourceConnector());
 
         Map<String, Object> expected = new TreeMap<>();
         expected.put("source.cluster.alias", "source");
@@ -900,21 +801,19 @@ public class KafkaMirrorMaker2ConnectorsTest {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
                     .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
-                        .withSourceCluster("source")
-                        .withTargetCluster("target")
-                        .withNewSourceConnector()
-                        .endSourceConnector()
-                        .build())
-                    .withMetricsConfig(new StrimziMetricsReporterBuilder()
-                        .build())
+                            .withNewSource()
+                                .withAlias("source")
+                                .withBootstrapServers("source:9092")
+                            .endSource()
+                            .withNewSourceConnector()
+                            .endSourceConnector()
+                            .build())
+                    .withMetricsConfig(new StrimziMetricsReporterBuilder().build())
                 .endSpec()
                 .build();
 
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
-        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(kmm2.getSpec().getMirrors().get(0),
-                kmm2.getSpec().getMirrors().get(0).getSourceConnector(),
-                kmm2.getSpec().getClusters().get(0),
-                kmm2.getSpec().getClusters().get(1));
+        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(kmm2.getSpec().getMirrors().get(0), kmm2.getSpec().getMirrors().get(0).getSourceConnector());
 
         Map<String, Object> expected = new TreeMap<>();
         expected.put("source.cluster.alias", "source");
@@ -933,22 +832,20 @@ public class KafkaMirrorMaker2ConnectorsTest {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
                     .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
-                        .withSourceCluster("source")
-                        .withTargetCluster("target")
-                        .withNewSourceConnector()
-                            .addToConfig(Map.of("metric.reporters", "com.example.ExistingReporter"))
-                        .endSourceConnector()
-                        .build())
-                    .withMetricsConfig(new StrimziMetricsReporterBuilder()
-                        .build())
+                            .withNewSource()
+                                .withAlias("source")
+                                .withBootstrapServers("source:9092")
+                            .endSource()
+                            .withNewSourceConnector()
+                                .addToConfig(Map.of("metric.reporters", "com.example.ExistingReporter"))
+                            .endSourceConnector()
+                            .build())
+                    .withMetricsConfig(new StrimziMetricsReporterBuilder().build())
                 .endSpec()
                 .build();
 
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
-        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(kmm2.getSpec().getMirrors().get(0),
-                kmm2.getSpec().getMirrors().get(0).getSourceConnector(),
-                kmm2.getSpec().getClusters().get(0),
-                kmm2.getSpec().getClusters().get(1));
+        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(kmm2.getSpec().getMirrors().get(0), kmm2.getSpec().getMirrors().get(0).getSourceConnector());
 
         Map<String, Object> expected = new TreeMap<>();
         expected.put("source.cluster.alias", "source");
@@ -967,22 +864,20 @@ public class KafkaMirrorMaker2ConnectorsTest {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
                     .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
-                        .withSourceCluster("source")
-                        .withTargetCluster("target")
-                        .withNewSourceConnector()
-                            .addToConfig(Map.of("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS))
-                        .endSourceConnector()
-                        .build())
-                    .withMetricsConfig(new StrimziMetricsReporterBuilder()
-                        .build())
+                            .withNewSource()
+                                .withAlias("source")
+                                .withBootstrapServers("source:9092")
+                            .endSource()
+                            .withNewSourceConnector()
+                                .addToConfig(Map.of("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS))
+                            .endSourceConnector()
+                            .build())
+                    .withMetricsConfig(new StrimziMetricsReporterBuilder().build())
                 .endSpec()
                 .build();
 
         KafkaMirrorMaker2Connectors connectors = KafkaMirrorMaker2Connectors.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2);
-        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(kmm2.getSpec().getMirrors().get(0),
-                kmm2.getSpec().getMirrors().get(0).getSourceConnector(),
-                kmm2.getSpec().getClusters().get(0),
-                kmm2.getSpec().getClusters().get(1));
+        Map<String, Object> config = connectors.prepareMirrorMaker2ConnectorConfig(kmm2.getSpec().getMirrors().get(0), kmm2.getSpec().getMirrors().get(0).getSourceConnector());
 
         Map<String, Object> expected = new TreeMap<>();
         expected.put("source.cluster.alias", "source");

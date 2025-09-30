@@ -31,8 +31,8 @@ metadata:
   name: my-mirror-maker2
   # ...
   mirrors:
-    - sourceCluster: "my-cluster-source"
-      targetCluster: "my-cluster-target"
+    - source:
+        # ...
       sourceConnector:
         config:
           sync.topic.acls.enabled: "true" # <1>
