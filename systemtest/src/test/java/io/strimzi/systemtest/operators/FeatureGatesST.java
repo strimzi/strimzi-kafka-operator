@@ -7,7 +7,8 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.connect.build.MavenArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.DockerOutputBuilder;
+import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
@@ -92,9 +93,8 @@ public class FeatureGatesST extends AbstractST {
         assumeFalse(KubeClusterResource.getInstance().isOpenShiftLikeCluster());
 
         TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final String camelConnectorGroupId = "org.apache.camel.kafkaconnector";
-        final String camelConnectorArtifactId = "camel-timer-kafka-connector";
-        final String camelConnectorVersion = "0.9.0";
+        final String camelChecksum = "6d1f9311fe10521a5de3262574ad7c21073cd45089fc67245f04a303562b0ea54869c8cd0375ee76de8b5c24d454a0545688018ccdae0563bd5f254aceb98b5e";
+        final String camelConnectorUrl = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-timer-kafka-connector/0.9.0/camel-timer-kafka-connector-0.9.0-package.tar.gz";
         int randomNum = new Random().nextInt(Integer.MAX_VALUE);
         final String imageName = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), testStorage.getNamespaceName(), String.valueOf(randomNum));
 
@@ -122,14 +122,17 @@ public class FeatureGatesST extends AbstractST {
                         .addNewPlugin()
                             .withName("camel-connector")
                             .withArtifacts(
-                                new MavenArtifactBuilder()
-                                    .withVersion(camelConnectorVersion)
-                                    .withArtifact(camelConnectorArtifactId)
-                                    .withGroup(camelConnectorGroupId)
+                                new TgzArtifactBuilder()
+                                    .withUrl(camelConnectorUrl)
+                                    .withSha512sum(camelChecksum)
                                     .build()
                             )
                         .endPlugin()
-                        .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
+                        .withOutput(
+                            new DockerOutputBuilder(KafkaConnectTemplates.dockerOutput(imageName))
+                            .addToAdditionalPushOptions("--tls-verify=false")
+                            .build()
+                        )
                     .endBuild()
                 .endSpec()
                 .build());
