@@ -159,6 +159,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected String connectConfigMapName;
 
     protected String bootstrapServers;
+    protected String groupId;
+    protected String configStorageTopic;
+    protected String statusStorageTopic;
+    protected String offsetStorageTopic;
     @SuppressWarnings("deprecation") // External Configuration environment variables are deprecated
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
 
@@ -254,7 +258,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                                                 KafkaVersion.Lookup versions,
                                                                 C result) {
         result.replicas = spec.getReplicas();
-        result.tracing = spec.getTracing();
 
         // Might already contain configuration from Mirror Maker 2 which extends Connect
         // We have to check it and either use the Mirror Maker 2 configs or get the Connect configs
@@ -263,6 +266,15 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             config = new KafkaConnectConfiguration(reconciliation, spec.getConfig().entrySet());
             result.configuration = config;
         }
+
+        // Internal Connect configurations
+        result.groupId = extractAndRemoveValueFromConfig(result.configuration, "group.id", spec.getGroupId(), "connect-cluster");
+        result.configStorageTopic = extractAndRemoveValueFromConfig(result.configuration, "config.storage.topic", spec.getConfigStorageTopic(), "connect-cluster-configs");
+        result.statusStorageTopic = extractAndRemoveValueFromConfig(result.configuration, "status.storage.topic", spec.getStatusStorageTopic(), "connect-cluster-status");
+        result.offsetStorageTopic = extractAndRemoveValueFromConfig(result.configuration, "offset.storage.topic", spec.getOffsetStorageTopic(), "connect-cluster-offsets");
+
+        // Tracing configuration
+        result.tracing = spec.getTracing();
         if (result.tracing != null)   {
             if (JaegerTracing.TYPE_JAEGER.equals(result.tracing.getType())) {
                 LOGGER.warnCr(reconciliation, "Tracing type \"{}\" is not supported anymore and will be ignored", JaegerTracing.TYPE_JAEGER);
@@ -346,6 +358,36 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         result.mountedPlugins = spec.getPlugins();
 
         return result;
+    }
+
+    /**
+     * Utility method to help with backward compatibility between the old Connect configuration and a new Connect
+     * configuration. This should be removed once v1beta2 API is dropped and we use only v1.
+     *      - We always use the new dedicated field if set (newConfig)
+     *      - If the new field is not set, we try to use the user values from .spec.config
+     *      - And if those are not set either, we use the defaults that were used from Strimzi beginnings.
+     *
+     * @param configuration     Kafka Connect configuration
+     * @param configKey         Kafka Connect configuration key
+     * @param newConfig         Configuration value from the new field or null if not set
+     * @param defaultConfig     Default configuration value
+     *
+     * @return  String with the value that should be used.
+     */
+    protected static String extractAndRemoveValueFromConfig(AbstractConfiguration configuration, String configKey, String newConfig, String defaultConfig) {
+        if (newConfig != null) {
+            configuration.removeConfigOption(configKey);
+            return newConfig;
+        } else {
+            String oldConfig = configuration.getConfigOption(configKey);
+
+            if (oldConfig != null) {
+                configuration.removeConfigOption(configKey);
+                return oldConfig;
+            } else {
+                return defaultConfig;
+            }
+        }
     }
 
     /**
@@ -1010,6 +1052,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         data.put(
                 KAFKA_CONNECT_CONFIGURATION_FILENAME,
                 new KafkaConnectConfigurationBuilder(reconciliation, bootstrapServers)
+                        .withGroupIdAndInternalTopics(groupId, configStorageTopic, statusStorageTopic, offsetStorageTopic)
                         .withRestListeners(REST_API_PORT)
                         .withPluginPath()
                         .withTls(tls, cluster)

@@ -24,17 +24,13 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaConnectSpec.FORBIDDEN_PREFIXES);
         FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaConnectSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
-        DEFAULTS = new HashMap<>(6);
-        DEFAULTS.put("group.id", "connect-cluster");
-        DEFAULTS.put("offset.storage.topic", "connect-cluster-offsets");
-        DEFAULTS.put("config.storage.topic", "connect-cluster-configs");
-        DEFAULTS.put("status.storage.topic", "connect-cluster-status");
+        DEFAULTS = new HashMap<>(2);
         DEFAULTS.put("key.converter", "org.apache.kafka.connect.json.JsonConverter");
         DEFAULTS.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
     }
 
     /**
-     * Copy constructor which creates new instance of the Kafka Connect configuration from existing configuration.
+     * Copy constructor which creates a new instance of the Kafka Connect configuration from an existing configuration.
      * It is useful when you need to modify an instance of the configuration without permanently changing the original.
      *
      * @param configuration User provided Kafka Connect configuration
@@ -49,7 +45,7 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
      * ConfigMap / CRD.
      *
      * @param reconciliation  The reconciliation
-     * @param jsonOptions     Json object with configuration options as key ad value pairs.
+     * @param jsonOptions     JSON object with configuration options as key ad value pairs.
      */
     public KafkaConnectConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), DEFAULTS);

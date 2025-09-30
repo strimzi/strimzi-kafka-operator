@@ -38,7 +38,6 @@ import static io.strimzi.operator.cluster.TestUtils.IsEquivalent.isEquivalent;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class KafkaConnectConfigurationBuilderTest {
-
     private static final String BOOTSTRAP_SERVERS = "my-cluster-kafka-bootstrap:9092";
 
     @Test
@@ -46,6 +45,25 @@ class KafkaConnectConfigurationBuilderTest {
         String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS).build();
         assertThat(configuration, isEquivalent(
                 "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "security.protocol=PLAINTEXT",
+                "producer.security.protocol=PLAINTEXT",
+                "consumer.security.protocol=PLAINTEXT",
+                "admin.security.protocol=PLAINTEXT"
+        ));
+    }
+
+    @Test
+    public void testInternalTopicsAndGroupId()  {
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
+                .withGroupIdAndInternalTopics("my-group", "my-config-topic", "my-status-topic", "my-offset-topic")
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "group.id=my-group",
+                "offset.storage.topic=my-offset-topic",
+                "config.storage.topic=my-config-topic",
+                "status.storage.topic=my-status-topic",
                 "security.protocol=PLAINTEXT",
                 "producer.security.protocol=PLAINTEXT",
                 "consumer.security.protocol=PLAINTEXT",
@@ -514,10 +532,6 @@ class KafkaConnectConfigurationBuilderTest {
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
-                "group.id=connect-cluster",
-                "offset.storage.topic=connect-cluster-offsets",
-                "config.storage.topic=connect-cluster-configs",
-                "status.storage.topic=connect-cluster-status",
                 "key.converter=org.apache.kafka.connect.json.JsonConverter",
                 "value.converter=org.apache.kafka.connect.json.JsonConverter")
         );
@@ -549,10 +563,6 @@ class KafkaConnectConfigurationBuilderTest {
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "myconfig=abc",
                 "myconfig2=123",
-                "group.id=connect-cluster",
-                "offset.storage.topic=connect-cluster-offsets",
-                "config.storage.topic=connect-cluster-configs",
-                "status.storage.topic=connect-cluster-status",
                 "key.converter=org.apache.kafka.connect.json.JsonConverter",
                 "value.converter=org.apache.kafka.connect.json.JsonConverter")
         );
@@ -583,10 +593,6 @@ class KafkaConnectConfigurationBuilderTest {
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "config.providers.userenv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
-                "group.id=connect-cluster",
-                "offset.storage.topic=connect-cluster-offsets",
-                "config.storage.topic=connect-cluster-configs",
-                "status.storage.topic=connect-cluster-status",
                 "key.converter=org.apache.kafka.connect.json.JsonConverter",
                 "value.converter=org.apache.kafka.connect.json.JsonConverter")
         );
@@ -675,13 +681,9 @@ class KafkaConnectConfigurationBuilderTest {
                 + "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider\n"
                 + "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets\n"
                 + "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider\n"
-                + "config.storage.topic=connect-cluster-configs\n"
                 + "key.converter=org.apache.kafka.connect.json.JsonConverter\n"
-                + "offset.storage.topic=connect-cluster-offsets\n"
                 + "producer.security.protocol=PLAINTEXT\n"
                 + "security.protocol=PLAINTEXT\n"
-                + "status.storage.topic=connect-cluster-status\n"
-                + "group.id=connect-cluster\n"
                 + "value.converter=org.apache.kafka.connect.json.JsonConverter\n";
 
         // testing 4 combinations of 2 boolean values
@@ -754,12 +756,8 @@ class KafkaConnectConfigurationBuilderTest {
                 + "admin.metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter\n"
                 + "producer.metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter\n"
                 + "consumer.metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter\n"
-                + "offset.storage.topic=connect-cluster-offsets\n"
                 + "value.converter=org.apache.kafka.connect.json.JsonConverter\n"
-                + "config.storage.topic=connect-cluster-configs\n"
                 + "key.converter=org.apache.kafka.connect.json.JsonConverter\n"
-                + "group.id=connect-cluster\n"
-                + "status.storage.topic=connect-cluster-status\n"
                 + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true\n"
                 + StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT + "\n"
                 + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_connect_connector_metrics.*,kafka_connect_connector_task_metrics.*\n"

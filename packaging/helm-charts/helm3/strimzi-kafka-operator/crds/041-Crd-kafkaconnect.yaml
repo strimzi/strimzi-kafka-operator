@@ -67,6 +67,18 @@ spec:
                 bootstrapServers:
                   type: string
                   description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.
+                groupId:
+                  type: string
+                  description: A unique ID that identifies the Connect cluster group.
+                configStorageTopic:
+                  type: string
+                  description: The name of the Kafka topic where connector configurations are stored.
+                statusStorageTopic:
+                  type: string
+                  description: The name of the Kafka topic where connector and task status are stored.
+                offsetStorageTopic:
+                  type: string
+                  description: The name of the Kafka topic where source connector offsets are stored.
                 tls:
                   type: object
                   properties:
