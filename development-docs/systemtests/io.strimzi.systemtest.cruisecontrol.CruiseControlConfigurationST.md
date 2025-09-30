@@ -2,7 +2,7 @@
 
 **Description:** This test suite, verify configuration of the Cruise Control component.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

@@ -2,7 +2,7 @@
 
 **Description:** This test suite verifies KafkaConnect using ConfigMap and EnvVar configuration.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

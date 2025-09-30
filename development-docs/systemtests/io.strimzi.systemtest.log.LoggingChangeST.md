@@ -2,7 +2,7 @@
 
 **Description:** This suite verifies logging behavior under various configurations and scenarios.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
