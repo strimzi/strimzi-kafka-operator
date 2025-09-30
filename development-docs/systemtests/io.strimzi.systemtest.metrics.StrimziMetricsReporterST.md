@@ -2,7 +2,7 @@
 
 **Description:** This test suite is designed for testing metrics exposed by the Strimzi Metrics Reporter.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
@@ -13,7 +13,7 @@
 | 5. | Create KafkaTopic resource. | KafkaTopic resource is Ready. |
 | 6. | Create collector for Kafka. | Metrics collected in collectors structs. |
 
-**After tests execution steps:**
+**After test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

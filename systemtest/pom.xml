@@ -330,15 +330,6 @@
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -358,6 +349,7 @@
                     <docsPath>${strimziRootDirectory}/development-docs/systemtests/</docsPath>
                     <generateFmf>false</generateFmf>
                     <generateDirs>false</generateDirs>
+                    <includeDependencies>true</includeDependencies>
                 </configuration>
             </plugin>
         </plugins>

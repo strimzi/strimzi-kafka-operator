@@ -2,7 +2,7 @@
 
 **Description:** Test suite for validating Kafka Bridge functionality with TLS and SCRAM-SHA authentication
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
