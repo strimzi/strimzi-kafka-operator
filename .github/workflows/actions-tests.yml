@@ -282,3 +282,98 @@ jobs:
           echo "───────────────────────────────────────"
           echo "🎉 All $TOTAL generate-matrix scenarios passed!"
           echo "   Matrix generation logic validated ✅"
+
+  test-validate-matrix:
+    needs:
+      - lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Install dependencies
+      - name: Install act
+        run: |
+          # Install act for workflow testing
+          curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+          sudo install -m 0755 ./bin/act /usr/local/bin/act
+
+      - name: Install yq
+        uses: ./.github/actions/dependencies/install-yq
+
+      # Test all validate-matrix scenarios
+      - name: Test validate-matrix action scenarios
+        run: |
+          set -e
+          
+          SCENARIOS_FILE=".github/tests/scenarios/validate-matrix.yaml"
+          WORKFLOW=".github/tests/workflows/validate-matrix-template.yaml"
+          
+          echo "✅ Running validate-matrix action tests..."
+          echo "📁 Loading scenarios from: $SCENARIOS_FILE"
+          
+          # Get total number of scenarios
+          TOTAL=$(yq eval '.scenarios | length' "$SCENARIOS_FILE")
+          echo "📊 Found $TOTAL test scenarios"
+          echo
+          
+          # Initialize overall result tracker
+          overall_result=true
+          
+          # Loop through each scenario
+          for i in $(seq 0 $((TOTAL - 1))); do
+            # Extract scenario details using yq
+            id=$(yq eval ".scenarios[$i].id" "$SCENARIOS_FILE")
+            description=$(yq eval ".scenarios[$i].description" "$SCENARIOS_FILE")
+            event=$(yq eval ".scenarios[$i].event" "$SCENARIOS_FILE")
+            matrix_file=$(yq eval ".scenarios[$i].matrix_file" "$SCENARIOS_FILE")
+            
+            echo "───────────────────────────────────────"
+            echo "🔍 Scenario $((i + 1))/$TOTAL: $id"
+            echo "   Description: $description"
+            echo "   Event: $event"
+            echo "   Matrix file: $matrix_file"
+            
+            # Load matrix content from file and compact to single line
+            if [[ -f "$matrix_file" ]]; then
+              TEST_MATRIX=$(jq -c . "$matrix_file")
+              echo "   ✅ Matrix loaded and compacted from file"
+            else
+              echo "   ❌ Matrix file not found: $matrix_file"
+              overall_result=false
+              continue
+            fi
+            
+            # Build environment variables from expectations
+            env_args="--env TEST_MATRIX='$TEST_MATRIX'"
+            
+            # Get all expectation keys and build env vars
+            expectation_keys=$(yq eval ".scenarios[$i].expectations | keys | .[]" "$SCENARIOS_FILE")
+            for key in $expectation_keys; do
+              value=$(yq eval ".scenarios[$i].expectations.$key" "$SCENARIOS_FILE")
+              env_key="EXPECT_$(echo "$key" | tr '[:lower:]' '[:upper:]')"
+              env_args="$env_args --env $env_key=\"$value\""
+            done
+            
+            # Run act with the scenario
+            echo "▶️  Running test..."
+            
+            token_args="-s GITHUB_TOKEN=\"${{ secrets.GITHUB_TOKEN }}\""
+            
+            if eval "act '$event' -W '$WORKFLOW' -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false $env_args $token_args"; then
+              echo "✅ $id completed"
+            else
+              echo "❌ $id failed"
+              overall_result=false
+            fi
+            # Print blank line for better readability
+            echo
+          done
+          
+          if [ "$overall_result" = "false" ]; then
+            echo "There are some test ❌. Please check the logs for more details." 
+            exit 1
+          fi
+          
+          echo "───────────────────────────────────────"
+          echo "🎉 All $TOTAL validate-matrix scenarios passed!"
+          echo "   Matrix validation logic validated ✅"
