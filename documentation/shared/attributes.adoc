@@ -11,7 +11,7 @@
 :source-highlighter: highlightjs
 :toc: left
 :linkattrs:
-:toclevels: 3
+:toclevels: 2
 
 //Latest Strimzi version
 :ProductVersion: 0.49.0
