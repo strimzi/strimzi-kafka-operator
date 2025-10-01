@@ -34,7 +34,7 @@ Using this `ConfigMap`, you can control:
 The `monitorInterval` setting determines how often, in seconds, the logging configuration is dynamically reloaded.
 The default is 30 seconds.
 
-If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging logging configuration is used.
+If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging configuration is used.
 
 If the `ConfigMap` is deleted after deployment, the most recently loaded logging configuration remains in effect.
 Create a new `ConfigMap` to load a new logging configuration.
