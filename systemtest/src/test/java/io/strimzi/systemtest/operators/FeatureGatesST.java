@@ -7,7 +7,7 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.connect.build.DockerOutputBuilder;
+import io.strimzi.api.kafka.model.connect.build.DockerOutput;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -128,11 +129,7 @@ public class FeatureGatesST extends AbstractST {
                                     .build()
                             )
                         .endPlugin()
-                        .withOutput(
-                            new DockerOutputBuilder(KafkaConnectTemplates.dockerOutput(imageName))
-                            .addToAdditionalPushOptions("--tls-verify=false")
-                            .build()
-                        )
+                        .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                     .endBuild()
                 .endSpec()
                 .build());
@@ -157,9 +154,11 @@ public class FeatureGatesST extends AbstractST {
         changeFeatureGatesAndWaitForCoRollingUpdate(USE_CONNECT_BUILD_WITH_BUILDAH_ENABLED);
 
         // change the name of the plugin to trigger rolling update and new build (now with Buildah)
-        KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
-            connect -> connect.getSpec().getBuild().getPlugins().get(0).setName("different")
-        );
+        KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), connect -> {
+            connect.getSpec().getBuild().getPlugins().get(0).setName("different");
+            ((DockerOutput) connect.getSpec().getBuild().getOutput()).setAdditionalBuildOptions(List.of("--tls-verify=false"));
+            ((DockerOutput) connect.getSpec().getBuild().getOutput()).setAdditionalPushOptions(List.of("--tls-verify=false"));
+        });
         connectPod = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectPod);
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -169,9 +168,11 @@ public class FeatureGatesST extends AbstractST {
         changeFeatureGatesAndWaitForCoRollingUpdate(USE_CONNECT_BUILD_WITH_BUILDAH_DISABLED);
 
         // change the name of the plugin to trigger rolling update and new build (now with Buildah)
-        KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
-            connect -> connect.getSpec().getBuild().getPlugins().get(0).setName("final")
-        );
+        KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), connect -> {
+            connect.getSpec().getBuild().getPlugins().get(0).setName("final");
+            ((DockerOutput) connect.getSpec().getBuild().getOutput()).setAdditionalBuildOptions(null);
+            ((DockerOutput) connect.getSpec().getBuild().getOutput()).setAdditionalPushOptions(null);
+        });
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectPod);
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
