@@ -1,0 +1,259 @@
+:experimental:
+include::shared/attributes.adoc[]
+//turns off numbering
+:sectnums!:
+
+:context: str
+
+[id="glossary-book_{context}"]
+= Strimzi Glossary
+
+[role="_abstract"]
+This glossary explains terminology unique to Strimzi and its components. 
+It supports consistent usage and understanding across Strimzi documentation. 
+Terms from Kafka and Kubernetes are outside its scope.
+
+== A
+
+=== Access Operator
+[id="glossary-access-operator_{context}"]
+An optional operator that simplifies the sharing of Kafka connection information and credentials between namespaces. 
+Connection details are stored centrally in a `Secret` resource.
+
+=== Authentication 
+[id="glossary-authentication_{context}"]
+Defines how clients prove their identity to the Kafka cluster. 
+Strimzi manages authentication as a client-server relationship:
+
+* *Server-Side*: The Kafka cluster's listeners are configured to require a specific authentication type.
+* *Client-Side*: A client (a `KafkaUser` or a Kafka component managed by Strimzi) must be configured to provide matching credentials.
+
+Listener authentication (Server-Side):: 
+Listener authentication is configured per listener in the `spec.kafka.listeners` array of the `Kafka` custom resource. 
+Supported types include `tls`, `scram-sha-512`, and `custom`.
+
+Client authentication (Kafka user)::
+For Kafka users, authentication is managed using the `KafkaUser` custom resource. Supported types are `tls`, `tls-external` (using an external CA), and `scram-sha-512`. 
+Strimzi automatically creates the necessary `Secret` resources for the user.
+
+Client authentication (Kafka components)::
+For internal components, authentication is managed in the custom resource of the component, such as `KafkaConnect`.
+Supported types include `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and `custom`.  
+
+=== Authorization (cluster-wide)
+[id="glossary-authorization_{context}"]
+Defines which actions an authenticated client is permitted to perform on Kafka resources, such as writing to or reading from a topic. 
+Configuration involves setting a cluster-wide mechanism and then, if required, defining user-specific rules.
+
+Cluster-wide authorization::
+This defines the overall mechanism used by the Kafka cluster to control client actions. 
+It's configured in the `spec.kafka.authorization` section of the `Kafka` custom resource. 
+Supported types include `simple` (using the Kafka's built-in authorizer) and `custom` (using custom authorizers).
+
+User authorization (ACLs)::
+This defines specific Access Control Lists (ACLs) for a user, granting permissions to perform actions on `Kafka` resources. 
+The ACLs are defined in the `spec.authorization` section of the `KafkaUser` custom resource.
+If using a custom authorization mechanism, user permissions are typically managed within the external authorization system and not through the `KafkaUser` resource.
+
+== C
+
+=== Clients CA
+[id="glossary-clients-ca_{context}"]
+A Certificate Authority managed by the Strimzi Cluster Operator that issues TLS certificates to secure communication between external clients and Kafka brokers. 
+It can also be used for TLS client authentication.
+Certificates signed by this CA are trusted by Kafka listeners configured for TLS-based client authentication.
+
+=== Cluster CA
+[id="glossary-cluster-ca_{context}"]
+A Certificate Authority managed by the Strimzi Cluster Operator that issues TLS certificates to secure communication between Kafka brokers and other internal components.
+
+=== Cluster Operator
+[id="glossary-cluster-operator_{context}"]
+The central operator responsible for deploying and managing Kafka clusters, Kafka Connect, Kafka MirrorMaker, and related components.
+
+=== Cruise Control
+[id="glossary-cruise-control_{context}"]
+A component that provides support for automated Kafka cluster rebalancing and optimization, configured through the `Kafka` custom resource.
+
+== D
+
+=== Drain Cleaner
+[id="glossary-drain-cleaner_{context}"]
+A utility installed as a separate component that ensures safe pod evictions during rolling updates to prevent data loss or downtime.
+
+== E
+
+=== Encryption
+[id="glossary-encryption_{context}"]
+Strimzi supports Transport Layer Security (TLS) to encrypt communication between Kafka and its clients. TLS is enabled per listener in the `Kafka` custom resource, and communication between internal components is always encrypted.
+
+=== Entity Operator
+[id="glossary-entity-operator_{context}"]
+The Entity Operator runs the Topic Operator and User Operator in separate containers within its pod, allowing them to handle topic and user management.
+
+== F
+
+=== Feature gate
+[id="glossary-feature-gate_{context}"]
+Used to enable or disable specific features and functions managed by Strimzi operators.
+New features may be introduced initially through feature gates.
+
+== K
+
+=== Kafka (custom resource)
+[id="glossary-kafka-cr_{context}"]
+A custom resource for deploying and configuring a Kafka cluster, including settings for nodes, listeners, storage, security, and internal components like Cruise Control and the Entity Operator.
+
+=== Kafka Bridge
+[id="glossary-kafka-bridge_{context}"]
+Provides a RESTful interface that allows HTTP-based clients to interact with a Kafka cluster.
+
+=== KafkaBridge (custom resource)
+[id="glossary-kafkabridge-cr_{context}"]
+A custom resource used to deploy and configure a Kafka Bridge instance, specifying replicas, authentication, and connection details.
+
+=== KafkaConnect (custom resource)
+[id="glossary-kafkaconnect-cr_{context}"]
+A custom resource used to deploy and configure a Kafka Connect cluster for integrating external systems with Kafka.
+
+=== KafkaConnector (custom resource)
+[id="glossary-kafkaconnector-cr_{context}"]
+A custom resource for managing individual Kafka connectors in a Kafka Connect cluster declaratively and independently of the `KafkaConnect` deployment.
+
+=== KafkaExporter (custom resource)
+[id="glossary-kafkaexporter-cr_{context}"]
+A custom resource used to deploy the Kafka Exporter, which exposes Kafka metrics for Prometheus. 
+It is configured as part of the `Kafka` custom resource.
+
+=== KafkaMirrorMaker2 (custom resource)
+[id="glossary-kafkamirrormaker2-cr_{context}"]
+A custom resource for deploying a Kafka MirrorMaker 2 instance to replicate data between Kafka clusters.
+
+=== KafkaNodePool (custom resource)
+[id="glossary-kafkanodepool-cr_{context}"]
+A custom resource used to configure distinct groups of nodes within a Kafka cluster.
+Nodes in a node pool can be configured to operate as Kafka brokers, controllers, or both.
+
+=== KafkaRebalance (custom resource)
+[id="glossary-kafkarebalance-cr_{context}"]
+A custom resource that triggers and manages cluster rebalancing through Cruise Control by setting optimization goals.
+
+Rebalance modes:
+
+full:: Load rebalanced across all brokers  
+add-brokers:: Replicas moved to newly added brokers  
+remove-brokers:: Replicas moved off brokers being removed  
+remove-disks:: Data moved between storage volumes within the same broker  
+
+=== KafkaTopic (custom resource)
+[id="glossary-kafkatopic-cr_{context}"]
+A custom resource for managing Kafka topics (creation, configuration, deletion) through the Topic Operator.
+
+=== KafkaUser (custom resource)
+[id="glossary-kafkauser-cr_{context}"]
+A custom resource for managing Kafka users (creation, configuration, deletion) through the User Operator, including their authentication credentials and access permissions.
+
+== L
+
+=== Listener
+[id="glossary-listener_{context}"]
+Defines how clients connect to the Kafka cluster. Strimzi supports several listener types for exposing Kafka internally or externally.
+
+Listener types:
+
+internal:: Kafka exposed only within the Kubernetes cluster  
+route:: Kafka exposed externally using OpenShift Routes  
+loadbalancer:: Kafka exposed externally using a `LoadBalancer` service  
+nodeport:: Kafka exposed externally using `NodePort` services  
+ingress:: Kafka exposed externally using Kubernetes NGINX Ingress with TLS passthrough  
+cluster-ip:: Kafka exposed using a per-broker `ClusterIP` service
+
+=== Logging (configuration)
+[id="glossary-logging-configuration_{context}"]
+Logging for Kafka components and Strimzi operators is configured through their custom resources.  
+The configuration uses Log4j2 and supports dynamic updates without restarting pods.
+
+Configuration methods:
+
+inline:: Loggers and levels are defined directly in the custom resource.  
+Used for simple changes to log levels.
+
+external:: Loggers and levels are defined in a `ConfigMap` referenced by the custom resource.  
+Used for complex, reusable, or filtered configurations.
+
+== M
+
+=== Metrics
+[id="glossary-metrics_{context}"]
+Strimzi components can expose Prometheus-formatted metrics for monitoring. 
+Metrics for components are enabled through its custom resource.
+
+=== Metrics Reporter
+[id="glossary-metrics-reporter_{context}"]
+A component that exposes Kafka broker metrics directly in Prometheus format, enabled through the `metricsConfig` property in the `Kafka` custom resource.
+
+== N
+
+=== Network policy
+[id="glossary-network-policy_{context}"]
+Strimzi automatically creates a `NetworkPolicy` resource for each listener, allowing connections from all namespaces by default. You can configure the `networkPolicyPeers` property to restrict access to specific applications or namespaces.
+
+== S
+
+=== Storage (configuration)
+[id="glossary-storage-configuration_{context}"]
+Defines disk storage for Kafka nodes within the `KafkaNodePool` custom resource.
+
+Supported storage types:
+
+ephemeral:: Temporary storage tied to the pod lifecycle  
+persistent-claim:: Durable storage using PersistentVolumeClaims (PVCs)  
+jbod:: Multiple disks or volumes (ephemeral or persistent)  
+
+=== Strimzi API schema
+[id="glossary-strimzi-cr-schema_{context}"]
+The formal specification that defines the structure, properties, and validation rules for Strimzi custom resources. 
+Also referred to as the *Strimzi custom resource schema*.
+
+=== Strimzi Operator
+[id="glossary-strimzi-operator_{context}"]
+The primary deployment artifact for Strimzi.
+An operator that installs and configures components for running Kafka on Kubernetes, including the Cluster Operator.
+
+=== Strimzi operators
+[id="glossary-strimzi-operators_{context}"]
+The suite of Kubernetes operators (Cluster Operator, Topic Operator, User Operator) that automate Kafka cluster management.
+
+=== StrimziPodSet (custom resource)
+[id="glossary-strimzipodset-cr_{context}"]
+A custom resource used by the Strimzi Cluster Operator to manage the lifecycle of broker pods, replacing Kubernetes `StatefulSet` resources to provide greater control over pod identity and updates.
+
+=== Super user
+[id="glossary-super-user_{context}"]
+A Kafka user principal with full administrative access that bypasses all ACL checks. Super users are configured via the `superUsers` property in the `Kafka` custom resource when simple authorization is enabled.
+
+== T
+
+=== Tiered storage
+[id="glossary-tiered-storage_{context}"]
+A capability enabling Kafka brokers to store topic log segments across different storage tiers, such as local disk and remote object storage. It is configured through the `Kafka` custom resource.
+
+=== Topic Operator
+[id="glossary-topic-operator_{context}"]
+The operator responsible for managing Kafka topics through `KafkaTopic` custom resources.
+
+== U
+
+=== Upgrade
+[id="glossary-upgrade_{context}"]
+The process of updating the Cluster Operator and the Kafka cluster it manages. 
+Upgrade typically involves upgrading the operator first, then the Kafka version, and finally the metadata version.
+
+Upgrade paths:
+
+incremental upgrade:: Move between consecutive minor versions  
+multi-version upgrade:: Skip one or more minor versions  
+
+=== User Operator
+[id="glossary-user-operator_{context}"]
+The operator responsible for managing Kafka users and ACLs through `KafkaUser` custom resources.
