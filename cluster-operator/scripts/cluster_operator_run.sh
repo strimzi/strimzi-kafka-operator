@@ -9,7 +9,7 @@ export JAVA_CLASSPATH=$JAVA_CLASSPATH:lib/io.strimzi.@project.build.finalName@.@
 export JAVA_MAIN=io.strimzi.operator.cluster.Main
 
 if [ -z "$KUBERNETES_SERVICE_DNS_DOMAIN" ]; then
-  KUBERNETES_SERVICE_DNS_DOMAIN=$(getent hosts kubernetes.default | head -1 | sed "s/.*\skubernetes.default.svc//" | sed "s/\.//")
+  KUBERNETES_SERVICE_DNS_DOMAIN=$(getent hosts kubernetes.default | head -1 | sed "s/.*\skubernetes.default.*.svc//" | sed "s/\.//")
   if [ -n "$KUBERNETES_SERVICE_DNS_DOMAIN" ]; then
     echo "Auto-detected KUBERNETES_SERVICE_DNS_DOMAIN: $KUBERNETES_SERVICE_DNS_DOMAIN"
     export KUBERNETES_SERVICE_DNS_DOMAIN
