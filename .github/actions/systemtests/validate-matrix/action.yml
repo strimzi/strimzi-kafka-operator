@@ -51,14 +51,10 @@ runs:
           core.info(`Matrix validation passed. ${matrix.length} job(s) will be executed.`);
           
           const jobs = matrix.map(job => {
-            const name = job.jobName || `${job.pipeline}-${job.profile || job.pipeline}-${job.arch}`;
-            const agent = job.agent || 'default';
-            const timeout = job.timeout || 'default';
-            return `- **${name}** (${agent}, ${timeout}min)`;
+            return `- **${job.jobName}** (${job.agent})`;
           }).join('\n');
           
-          let successMessage = "✅ **System test validation passed**\n";
-          successMessage += "\n";
+          let successMessage = "\n";
           successMessage += `The following ${matrix.length} job(s) will be executed:\n`;
           successMessage += "\n";
           successMessage += jobs.replace(/\n/g, '\n') + "\n";
