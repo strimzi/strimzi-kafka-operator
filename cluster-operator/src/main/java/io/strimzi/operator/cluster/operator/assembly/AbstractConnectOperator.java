@@ -787,7 +787,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Future<List<Condition>> maybeRestartConnectorTask(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         int taskID = getRestartTaskAnnotationTaskID(resource, connectorName);
         if (taskID >= 0) {
-            LOGGER.debugCr(reconciliation, "Restarting connector task {}:{}", connectorName, taskID);
+            LOGGER.infoCr(reconciliation, "Restarting connector task {}:{}", connectorName, taskID);
             return VertxUtil.completableFutureToVertxFuture(apiClient.restartTask(host, port, connectorName, taskID))
                     .compose(ignored -> removeRestartTaskAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
