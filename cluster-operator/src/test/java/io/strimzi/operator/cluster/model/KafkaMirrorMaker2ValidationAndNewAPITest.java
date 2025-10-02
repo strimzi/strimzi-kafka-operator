@@ -184,7 +184,7 @@ public class KafkaMirrorMaker2ValidationAndNewAPITest {
     }
 
     @Test
-    public void testMissingMissingConnectCluster() {
+    public void testMissingConnectCluster() {
         // Non-existent connect cluster
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(OLD_KMM2)
                 .editSpec()

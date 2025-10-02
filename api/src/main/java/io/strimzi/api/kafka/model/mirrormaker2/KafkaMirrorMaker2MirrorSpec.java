@@ -43,8 +43,8 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     private String groupsExcludePattern;
     private Map<String, Object> additionalProperties;
 
-    @Description("The target Apache Kafka cluster. " +
-            "The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.")
+    @Description("The source Apache Kafka cluster. " +
+            "The source Kafka cluster is used by the Kafka MirrorMaker 2 connectors.")
     @RequiredInVersions("v1+")
     public KafkaMirrorMaker2ClusterSpec getSource() {
         return source;
@@ -116,7 +116,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
 
     @Description("The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
     @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.mirrors.source", description = "The `source` field is deprecated and will be removed in the `v1` CRD API.")
+    @DeprecatedProperty(movedToPath = ".spec.mirrors.source", description = "The `sourceCluster` field is deprecated and will be removed in the `v1` CRD API.")
     @PresentInVersions("v1beta2")
     public String getSourceCluster() {
         return sourceCluster;
@@ -128,7 +128,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
 
     @Description("The alias of the target cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
     @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.target", description = "The `target` field is deprecated and will be removed in the `v1` CRD API.")
+    @DeprecatedProperty(movedToPath = ".spec.target", description = "The `targetCluster` field is deprecated and will be removed in the `v1` CRD API.")
     @PresentInVersions("v1beta2")
     public String getTargetCluster() {
         return targetCluster;
@@ -158,7 +158,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
 
     @Description("The specification of the Kafka MirrorMaker 2 heartbeat connector.")
     @Deprecated
-    @DeprecatedProperty(description = "The `heartbeatConnector` deprecated and will be removed in the `v1` CRD API.")
+    @DeprecatedProperty(description = "The `heartbeatConnector` is deprecated and will be removed in the `v1` CRD API.")
     @PresentInVersions("v1beta2")
     public KafkaMirrorMaker2ConnectorSpec getHeartbeatConnector() {
         return heartbeatConnector;
