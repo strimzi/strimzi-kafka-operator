@@ -318,16 +318,16 @@ spec:
                       description: A comma-separated list of `host:port` pairs for establishing the connection to the Kafka cluster.
                     groupId:
                       type: string
-                      description: A unique ID that identifies the Connect cluster group.
+                      description: A unique ID that identifies the Connect cluster group. Required.
                     configStorageTopic:
                       type: string
-                      description: The name of the Kafka topic where connector configurations are stored.
+                      description: The name of the Kafka topic where connector configurations are stored. Required.
                     statusStorageTopic:
                       type: string
-                      description: The name of the Kafka topic where connector and task status are stored.
+                      description: The name of the Kafka topic where connector and task status are stored. Required.
                     offsetStorageTopic:
                       type: string
-                      description: The name of the Kafka topic where source connector offsets are stored.
+                      description: The name of the Kafka topic where source connector offsets are stored. Required.
                     tls:
                       type: object
                       properties:
@@ -808,7 +808,7 @@ spec:
                         required:
                           - alias
                           - bootstrapServers
-                        description: The target Apache Kafka cluster. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
+                        description: The source Apache Kafka cluster. The source Kafka cluster is used by the Kafka MirrorMaker 2 connectors.
                       sourceConnector:
                         type: object
                         properties:

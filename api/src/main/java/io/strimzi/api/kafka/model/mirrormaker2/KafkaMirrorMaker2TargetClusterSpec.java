@@ -8,12 +8,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-//@DescriptionFile
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -29,7 +30,7 @@ public class KafkaMirrorMaker2TargetClusterSpec extends KafkaMirrorMaker2Cluster
     private String statusStorageTopic;
     private String offsetStorageTopic;
 
-    @Description("A unique ID that identifies the Connect cluster group.")
+    @Description("A unique ID that identifies the Connect cluster group. Required.")
     @RequiredInVersions("v1beta2+")
     public String getGroupId() {
         return groupId;
@@ -39,7 +40,7 @@ public class KafkaMirrorMaker2TargetClusterSpec extends KafkaMirrorMaker2Cluster
         this.groupId = groupId;
     }
 
-    @Description("The name of the Kafka topic where connector configurations are stored.")
+    @Description("The name of the Kafka topic where connector configurations are stored. Required.")
     @RequiredInVersions("v1beta2+")
     public String getConfigStorageTopic() {
         return configStorageTopic;
@@ -49,7 +50,7 @@ public class KafkaMirrorMaker2TargetClusterSpec extends KafkaMirrorMaker2Cluster
         this.configStorageTopic = configStorageTopic;
     }
 
-    @Description("The name of the Kafka topic where connector and task status are stored")
+    @Description("The name of the Kafka topic where connector and task status are stored. Required.")
     @RequiredInVersions("v1beta2+")
     public String getStatusStorageTopic() {
         return statusStorageTopic;
@@ -59,7 +60,7 @@ public class KafkaMirrorMaker2TargetClusterSpec extends KafkaMirrorMaker2Cluster
         this.statusStorageTopic = statusStorageTopic;
     }
 
-    @Description("The name of the Kafka topic where source connector offsets are stored.")
+    @Description("The name of the Kafka topic where source connector offsets are stored. Required.")
     @RequiredInVersions("v1beta2+")
     public String getOffsetStorageTopic() {
         return offsetStorageTopic;

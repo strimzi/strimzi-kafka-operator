@@ -23,7 +23,7 @@
   Please use the new `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` fields instead.
 * The `.spec.connectCluster`, `.spec.clusters`, `.spec.mirrors[].sourceCluster`, `.spec.mirrors[].targetCluster`, and `.spec.mirrors[].heartbeatConnector` are deprecated and will be removed in the `v1` CRD API.
   Please use the new fields `.spec.target` and `.spec.mirrors[].source` instead to configure the source and target clusters.
-  If you want to deploy and tun the Heartbeat connector, you can use a separate `KafkaConnect` and `KafkaConnector` custom resources.
+  If you want to deploy and run the Heartbeat connector, you can use a separate `KafkaConnect` and `KafkaConnector` custom resources.
 
 ## 0.48.0
 
