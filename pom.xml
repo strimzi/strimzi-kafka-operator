@@ -103,9 +103,8 @@
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
         <mockito.version>4.11.0</mockito.version>
-        <junit.platform.version>1.9.3</junit.platform.version>
         <opentest4j.version>1.2.0</opentest4j.version>
-        <jupiter.version>5.9.3</jupiter.version>
+        <jupiter.version>6.0.0</jupiter.version>
         <strimzi-test-container.version>0.112.0</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <valid4j.version>1.1</valid4j.version>
@@ -730,17 +729,17 @@
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-commons</artifactId>
-                <version>${junit.platform.version}</version>
+                <version>${jupiter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-launcher</artifactId>
-                <version>${junit.platform.version}</version>
+                <version>${jupiter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-engine</artifactId>
-                <version>${junit.platform.version}</version>
+                <version>${jupiter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
