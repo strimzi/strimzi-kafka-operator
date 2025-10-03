@@ -6,7 +6,7 @@ inputs:
   # This can be achieved here as well, but after offline discussion we agreed we will try to use just commit sha
   # as each commit should have only one unique passed build. In case we will find it is not sufficient
   # we can easily add another input runId and skip find-build job and directly download artifact.
-  # TODO - this can be removed once we agree it is sufficient for releases
+  # TODO - the comment can be removed once we agree it is sufficient for releases
   sha:
     description: "Commit SHA to find build artifacts for"
     required: true
