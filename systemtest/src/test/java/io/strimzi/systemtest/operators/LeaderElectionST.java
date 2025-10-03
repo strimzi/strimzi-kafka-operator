@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Suite for testing Leader Election feature which allows users to run Cluster Operator in more than one replica. There will always be one leader, other replicas will stay in standby mode."),
+    description = @Desc("Suite for testing Leader Election feature, which allows the Cluster Operator to run with more than one replica. There will always be one leader, while other replicas remain in standby mode."),
     beforeTestSteps = {
         @Step(value = "Verify deployment files contain all needed environment variables for leader election.", expected = "Deployment files contain required leader election environment variables.")
     },
@@ -74,16 +74,16 @@ public class LeaderElectionST extends AbstractST {
 
     @IsolatedTest
     @TestDoc(
-        description = @Desc("This test verifies that leader election works correctly when running Cluster Operator with multiple replicas. It tests leader failover by causing the current leader to crash and verifying that a new leader is elected."),
+        description = @Desc("This test verifies that leader election works correctly when running the Cluster Operator with multiple replicas. It tests leader failover by causing the current leader to crash and verifying that a new leader is elected."),
         steps = {
             @Step(value = "Deploy Cluster Operator with 2 replicas and leader election enabled.", expected = "Cluster Operator is deployed with 2 replicas and leader election is active."),
             @Step(value = "Identify the current leader pod from the lease.", expected = "Current leader pod is identified from the lease holder identity."),
-            @Step(value = "Cause the leader pod to crash by changing its image to invalid one.", expected = "Leader pod enters CrashLoopBackOff state."),
-            @Step(value = "Wait for a new leader to be elected.", expected = "A different pod becomes the new leader and lease is updated."),
+            @Step(value = "Cause the leader pod to crash by changing its image to an invalid one.", expected = "Leader pod enters CrashLoopBackOff state."),
+            @Step(value = "Wait for a new leader to be elected.", expected = "A different pod becomes the new leader and the lease is updated."),
             @Step(value = "Verify new leader election logs.", expected = "New leader pod logs contain leader election message.")
         },
         labels = {
-            @Label(value = TestDocsLabels.KAFKA)
+            @Label(value = TestDocsLabels.MIRROR_MAKER_2)
         }
     )
     void testLeaderElection() {

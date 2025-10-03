@@ -4,7 +4,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 <hr style="border:1px solid">
 
@@ -23,7 +23,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testKafkaMirrorMaker2ConnectorsStateAndOffsetManagement
@@ -41,7 +41,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testKMM2RollAfterSecretsCertsUpdateScramSha
@@ -59,7 +59,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testKMM2RollAfterSecretsCertsUpdateTLS
@@ -77,7 +77,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testMirrorMaker2
@@ -98,7 +98,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testMirrorMaker2CorrectlyMirrorsHeaders
@@ -115,7 +115,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testMirrorMaker2TlsAndScramSha512Auth
@@ -134,7 +134,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testMirrorMaker2TlsAndTlsClientAuth
@@ -154,7 +154,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testRestoreOffsetsInConsumerGroup
@@ -172,7 +172,7 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testScaleMirrorMaker2UpAndDownToZero
@@ -190,5 +190,5 @@
 
 **Labels:**
 
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 

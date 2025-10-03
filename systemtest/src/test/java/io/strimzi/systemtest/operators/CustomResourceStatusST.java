@@ -210,7 +210,7 @@ class CustomResourceStatusST extends AbstractST {
         description = @Desc("This test verifies that KafkaBridge status is correctly reported, including observed generation updates and URL information during ready and not ready states."),
         steps = {
             @Step(value = "Deploy KafkaBridge and verify initial status.", expected = "KafkaBridge is ready with correct status information including URL."),
-            @Step(value = "Modify KafkaBridge resources to cause NotReady state.", expected = "KafkaBridge becomes NotReady due to insufficient CPU resources."),
+            @Step(value = "Modify KafkaBridge resource requests/limits to cause NotReady state.", expected = "KafkaBridge becomes NotReady due to insufficient CPU resources."),
             @Step(value = "Restore KafkaBridge resources to recover.", expected = "KafkaBridge returns to Ready state with updated observed generation.")
         },
         labels = {
@@ -242,12 +242,12 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     @TestDoc(
-        description = @Desc("This test verifies that KafkaConnect and KafkaConnector status are correctly reported during various state transitions including ready, not ready, and configuration changes."),
+        description = @Desc("This test verifies that KafkaConnect and KafkaConnector status is correctly reported during various state transitions including Ready, NotReady, and configuration changes."),
         steps = {
             @Step(value = "Deploy KafkaConnect with file plugin and KafkaConnector.", expected = "KafkaConnect and KafkaConnector are ready with correct status information."),
             @Step(value = "Modify KafkaConnect bootstrap servers to invalid value.", expected = "KafkaConnect becomes NotReady due to invalid bootstrap configuration."),
             @Step(value = "Restore valid KafkaConnect bootstrap servers.", expected = "KafkaConnect returns to Ready state."),
-            @Step(value = "Modify KafkaConnector cluster label to invalid value.", expected = "KafkaConnector becomes NotReady and connector status becomes null."),
+            @Step(value = "Modify KafkaConnector cluster label to invalid value.", expected = "KafkaConnector becomes NotReady and connector status is not reported (i.e., null)."),
             @Step(value = "Restore valid KafkaConnector cluster label.", expected = "KafkaConnector returns to Ready state."),
             @Step(value = "Modify KafkaConnector class name to invalid value.", expected = "KafkaConnector becomes NotReady due to invalid connector class."),
             @Step(value = "Restore valid KafkaConnector configuration.", expected = "KafkaConnector returns to Ready state.")
@@ -316,10 +316,10 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(CONNECTOR_OPERATOR)
     @TestDoc(
-        description = @Desc("This test verifies that KafkaConnector without proper cluster configuration fails gracefully without causing NullPointerException in Cluster Operator logs."),
+        description = @Desc("This test verifies that KafkaConnector without proper cluster configuration fails gracefully without causing NullPointerException (NPE) in Cluster Operator logs."),
         steps = {
             @Step(value = "Create KafkaConnector without cluster configuration in labels.", expected = "KafkaConnector is created but becomes NotReady."),
-            @Step(value = "Verify connector remains in NotReady state.", expected = "KafkaConnector status shows NotReady without causing NPE in CO logs."),
+            @Step(value = "Verify connector remains in NotReady state.", expected = "KafkaConnector status shows NotReady without causing NPE in Cluster Operator logs."),
             @Step(value = "Delete the invalid KafkaConnector.", expected = "KafkaConnector is successfully deleted.")
         },
         labels = {
@@ -345,7 +345,7 @@ class CustomResourceStatusST extends AbstractST {
         description = @Desc("This test verifies that certificates reported in Kafka status match the certificates stored in the cluster CA secret."),
         steps = {
             @Step(value = "Retrieve certificates from Kafka status.", expected = "Certificates are successfully retrieved from Kafka status."),
-            @Step(value = "Retrieve certificates from cluster CA secret.", expected = "Certificates are successfully retrieved from secret."),
+            @Step(value = "Retrieve certificates from cluster CA secret.", expected = "Certificates are successfully retrieved from the cluster CA secret."),
             @Step(value = "Compare status and secret certificates.", expected = "Certificates from status and secret are identical.")
         },
         labels = {
@@ -364,12 +364,12 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     @TestDoc(
-        description = @Desc("This test verifies that KafkaMirrorMaker2 status is correctly reported, including observed generation updates, URL information, and connector status during ready and not ready states."),
+        description = @Desc("This test verifies that KafkaMirrorMaker2 status is correctly reported, including observed generation updates, URL information, and connector status during Ready and NotReady states."),
         steps = {
             @Step(value = "Deploy source Kafka cluster and KafkaMirrorMaker2.", expected = "KafkaMirrorMaker2 is ready with correct status information including URL and connector states."),
             @Step(value = "Modify KafkaMirrorMaker2 resources to cause NotReady state.", expected = "KafkaMirrorMaker2 becomes NotReady due to insufficient CPU resources."),
             @Step(value = "Restore KafkaMirrorMaker2 resources to recover.", expected = "KafkaMirrorMaker2 returns to Ready state with updated observed generation."),
-            @Step(value = "Verify pod stability after recovery.", expected = "KafkaMirrorMaker2 pods remain stable without rolling updates.")
+            @Step(value = "Verify pod stability after recovery.", expected = "KafkaMirrorMaker2 pods remain stable, with no unexpected rolling updates.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
@@ -421,7 +421,7 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     @TestDoc(
-        description = @Desc("This test verifies that KafkaMirrorMaker2 with invalid bootstrap server configuration fails gracefully and can be properly deleted."),
+        description = @Desc("This test verifies that KafkaMirrorMaker2 with invalid bootstrap server configuration fails gracefully and can be deleted."),
         steps = {
             @Step(value = "Create KafkaMirrorMaker2 with non-existing bootstrap servers.", expected = "KafkaMirrorMaker2 is created but becomes NotReady."),
             @Step(value = "Verify KafkaMirrorMaker2 remains in NotReady state.", expected = "KafkaMirrorMaker2 status shows NotReady due to invalid bootstrap configuration."),

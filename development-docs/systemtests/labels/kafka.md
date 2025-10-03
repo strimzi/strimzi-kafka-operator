@@ -66,7 +66,6 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testKafkaUserStatus](../io.strimzi.systemtest.operators.CustomResourceStatusST.md)
 - [testKafkaWithVersion](../io.strimzi.systemtest.kafka.KafkaVersionsST.md)
 - [testLabelsExistenceAndManipulation](../io.strimzi.systemtest.kafka.KafkaST.md)
-- [testLeaderElection](../io.strimzi.systemtest.operators.LeaderElectionST.md)
 - [testLeaderElectionDisabled](../io.strimzi.systemtest.operators.LeaderElectionST.md)
 - [testLoadBalancer](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testLoadBalancerTls](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)

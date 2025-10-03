@@ -54,14 +54,14 @@ public class ClusterOperatorRbacST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @TestDoc(
-        description = @Desc("This test verifies that Cluster Operator can deploy Kafka and KafkaConnect resources even when ClusterRoleBinding permissions are not available, as long as rack awareness is not enabled. The test ensures that forbidden access to CRB resources is properly ignored when not required."),
+        description = @Desc("This test verifies that the Cluster Operator can deploy Kafka and KafkaConnect resources even when ClusterRoleBinding permissions are not available, as long as rack awareness is not enabled. The test ensures that forbidden access to CRB resources is properly ignored when not required."),
         steps = {
-            @Step(value = "Deploy Cluster Operator with namespace-scoped RBAC configuration.", expected = "Cluster Operator is configured with limited ClusterRoleBinding access."),
-            @Step(value = "Create KafkaNodePools for brokers and controllers without rack awareness.", expected = "KafkaNodePools are created successfully."),
+            @Step(value = "Deploy Cluster Operator with namespace-scoped RBAC configuration.", expected = "Cluster Operator is configured with namespace-scoped access."),
+            @Step(value = "Create KafkaNodePools for brokers and controllers (without enabling rack awareness).", expected = "KafkaNodePools are created successfully."),
             @Step(value = "Deploy Kafka cluster without rack awareness configuration.", expected = "Kafka cluster is deployed successfully despite missing CRB permissions."),
-            @Step(value = "Verify Cluster Operator logs contain information about ignoring forbidden CRB access for Kafka.", expected = "Log contains message about ignoring forbidden access to ClusterRoleBindings for Kafka."),
+            @Step(value = "Verify Cluster Operator logs contain information about ignoring forbidden CRB access for Kafka.", expected = "Logs show that forbidden access to ClusterRoleBindings for Kafka is ignored."),
             @Step(value = "Deploy KafkaConnect without rack awareness configuration.", expected = "KafkaConnect is deployed successfully despite missing CRB permissions."),
-            @Step(value = "Verify Cluster Operator logs contain information about ignoring forbidden CRB access for KafkaConnect.", expected = "Log contains message about ignoring forbidden access to ClusterRoleBindings for KafkaConnect.")
+            @Step(value = "Verify Cluster Operator logs contain information about ignoring forbidden CRB access for KafkaConnect.", expected = "Logs show that forbidden access to ClusterRoleBindings for KafkaConnect is ignored.")
         },
         labels = {
             @Label(value = TestDocsLabels.CONNECT)
@@ -107,13 +107,13 @@ public class ClusterOperatorRbacST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @TestDoc(
-        description = @Desc("This test verifies that Cluster Operator fails to deploy Kafka and KafkaConnect resources when ClusterRoleBinding permissions are not available and rack awareness is enabled. The test ensures that proper error conditions are reported when CRB access is required but not available."),
+        description = @Desc("This test verifies that Cluster Operator fails to deploy Kafka and KafkaConnect resources when ClusterRoleBinding permissions are not available and rack awareness is enabled. The test ensures that error conditions are reported when CRB access is required but not available."),
         steps = {
             @Step(value = "Deploy Cluster Operator with namespace-scoped RBAC configuration.", expected = "Cluster Operator is configured with limited ClusterRoleBinding access."),
             @Step(value = "Create KafkaNodePools for brokers and controllers.", expected = "KafkaNodePools are created successfully."),
-            @Step(value = "Deploy Kafka cluster with rack awareness configuration enabled.", expected = "Kafka deployment fails due to missing CRB permissions."),
+            @Step(value = "Deploy Kafka cluster with rack awareness configuration enabled.", expected = "Kafka deployment fails because CRB permissions are missing."),
             @Step(value = "Verify Kafka status condition contains 403 forbidden error message.", expected = "Kafka status shows NotReady condition with code=403 error."),
-            @Step(value = "Deploy KafkaConnect with rack awareness configuration enabled.", expected = "KafkaConnect deployment fails due to missing CRB permissions."),
+            @Step(value = "Deploy KafkaConnect with rack awareness configuration enabled.", expected = "KafkaConnect deployment fails because CRB permissions are missing."),
             @Step(value = "Verify KafkaConnect status condition contains 403 forbidden error message.", expected = "KafkaConnect status shows NotReady condition with code=403 error.")
         },
         labels = {

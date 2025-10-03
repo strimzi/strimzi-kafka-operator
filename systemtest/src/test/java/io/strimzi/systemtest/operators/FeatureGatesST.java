@@ -42,7 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Feature Gates test suite verifying that feature gates provide additional options to control and mature different behaviors in the operators, specifically testing Server Side Apply functionality."),
+    description = @Desc("Feature Gates test suite verifying that feature gates provide additional options to control operator behavior, specifically testing Server Side Apply functionality."),
     beforeTestSteps = {
         @Step(value = "Deploy Cluster Operator with configurable feature gates.", expected = "Cluster Operator is deployed with feature gate support.")
     },
@@ -62,7 +62,7 @@ public class FeatureGatesST extends AbstractST {
             @Step(value = "Deploy Cluster Operator with Server Side Apply Phase 1 disabled.", expected = "Cluster Operator is deployed without SSA feature gate."),
             @Step(value = "Create Kafka cluster with broker and controller node pools.", expected = "Kafka cluster is deployed and ready."),
             @Step(value = "Add manual annotations to Kafka resources and verify they are removed.", expected = "Manual annotations are removed during reconciliation when SSA is disabled."),
-            @Step(value = "Enable Server Side Apply Phase 1 feature gate.", expected = "Cluster Operator is reconfigured with SSA enabled and rolled."),
+            @Step(value = "Enable Server Side Apply Phase 1 feature gate.", expected = "Cluster Operator is reconfigured with SSA enabled and redeployed."),
             @Step(value = "Add manual annotations to Kafka resources and verify they are preserved.", expected = "Manual annotations are preserved during reconciliation when SSA is enabled."),
             @Step(value = "Disable Server Side Apply Phase 1 feature gate.", expected = "Cluster Operator is reconfigured with SSA disabled and rolled."),
             @Step(value = "Add manual annotations to Kafka resources and verify they are removed again.", expected = "Manual annotations are removed during reconciliation when SSA is disabled again.")

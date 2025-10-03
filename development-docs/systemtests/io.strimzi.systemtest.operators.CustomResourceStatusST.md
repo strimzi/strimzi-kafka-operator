@@ -2,7 +2,7 @@
 
 **Description:** Test suite containing Custom Resource status verification scenarios, ensuring proper status reporting for Kafka, KafkaConnect, KafkaBridge, KafkaUser, and KafkaMirrorMaker2 resources.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
@@ -24,7 +24,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy KafkaBridge and verify initial status. | KafkaBridge is ready with correct status information including URL. |
-| 2. | Modify KafkaBridge resources to cause NotReady state. | KafkaBridge becomes NotReady due to insufficient CPU resources. |
+| 2. | Modify KafkaBridge resource requests/limits to cause NotReady state. | KafkaBridge becomes NotReady due to insufficient CPU resources. |
 | 3. | Restore KafkaBridge resources to recover. | KafkaBridge returns to Ready state with updated observed generation. |
 
 **Labels:**
@@ -35,7 +35,7 @@
 
 ## testKafkaConnectAndConnectorStatus
 
-**Description:** This test verifies that KafkaConnect and KafkaConnector status are correctly reported during various state transitions including ready, not ready, and configuration changes.
+**Description:** This test verifies that KafkaConnect and KafkaConnector status is correctly reported during various state transitions including Ready, NotReady, and configuration changes.
 
 **Steps:**
 
@@ -44,7 +44,7 @@
 | 1. | Deploy KafkaConnect with file plugin and KafkaConnector. | KafkaConnect and KafkaConnector are ready with correct status information. |
 | 2. | Modify KafkaConnect bootstrap servers to invalid value. | KafkaConnect becomes NotReady due to invalid bootstrap configuration. |
 | 3. | Restore valid KafkaConnect bootstrap servers. | KafkaConnect returns to Ready state. |
-| 4. | Modify KafkaConnector cluster label to invalid value. | KafkaConnector becomes NotReady and connector status becomes null. |
+| 4. | Modify KafkaConnector cluster label to invalid value. | KafkaConnector becomes NotReady and connector status is not reported (i.e., null). |
 | 5. | Restore valid KafkaConnector cluster label. | KafkaConnector returns to Ready state. |
 | 6. | Modify KafkaConnector class name to invalid value. | KafkaConnector becomes NotReady due to invalid connector class. |
 | 7. | Restore valid KafkaConnector configuration. | KafkaConnector returns to Ready state. |
@@ -57,14 +57,14 @@
 
 ## testKafkaConnectorWithoutClusterConfig
 
-**Description:** This test verifies that KafkaConnector without proper cluster configuration fails gracefully without causing NullPointerException in Cluster Operator logs.
+**Description:** This test verifies that KafkaConnector without proper cluster configuration fails gracefully without causing NullPointerException (NPE) in Cluster Operator logs.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create KafkaConnector without cluster configuration in labels. | KafkaConnector is created but becomes NotReady. |
-| 2. | Verify connector remains in NotReady state. | KafkaConnector status shows NotReady without causing NPE in CO logs. |
+| 2. | Verify connector remains in NotReady state. | KafkaConnector status shows NotReady without causing NPE in Cluster Operator logs. |
 | 3. | Delete the invalid KafkaConnector. | KafkaConnector is successfully deleted. |
 
 **Labels:**
@@ -75,7 +75,7 @@
 
 ## testKafkaMirrorMaker2Status
 
-**Description:** This test verifies that KafkaMirrorMaker2 status is correctly reported, including observed generation updates, URL information, and connector status during ready and not ready states.
+**Description:** This test verifies that KafkaMirrorMaker2 status is correctly reported, including observed generation updates, URL information, and connector status during Ready and NotReady states.
 
 **Steps:**
 
@@ -84,17 +84,17 @@
 | 1. | Deploy source Kafka cluster and KafkaMirrorMaker2. | KafkaMirrorMaker2 is ready with correct status information including URL and connector states. |
 | 2. | Modify KafkaMirrorMaker2 resources to cause NotReady state. | KafkaMirrorMaker2 becomes NotReady due to insufficient CPU resources. |
 | 3. | Restore KafkaMirrorMaker2 resources to recover. | KafkaMirrorMaker2 returns to Ready state with updated observed generation. |
-| 4. | Verify pod stability after recovery. | KafkaMirrorMaker2 pods remain stable without rolling updates. |
+| 4. | Verify pod stability after recovery. | KafkaMirrorMaker2 pods remain stable, with no unexpected rolling updates. |
 
 **Labels:**
 
 * [kafka](labels/kafka.md)
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testKafkaMirrorMaker2WrongBootstrap
 
-**Description:** This test verifies that KafkaMirrorMaker2 with invalid bootstrap server configuration fails gracefully and can be properly deleted.
+**Description:** This test verifies that KafkaMirrorMaker2 with invalid bootstrap server configuration fails gracefully and can be deleted.
 
 **Steps:**
 
@@ -107,7 +107,7 @@
 **Labels:**
 
 * [kafka](labels/kafka.md)
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
 
 ## testKafkaStatus
@@ -137,7 +137,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Retrieve certificates from Kafka status. | Certificates are successfully retrieved from Kafka status. |
-| 2. | Retrieve certificates from cluster CA secret. | Certificates are successfully retrieved from secret. |
+| 2. | Retrieve certificates from cluster CA secret. | Certificates are successfully retrieved from the cluster CA secret. |
 | 3. | Compare status and secret certificates. | Certificates from status and secret are identical. |
 
 **Labels:**
