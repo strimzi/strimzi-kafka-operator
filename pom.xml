@@ -48,8 +48,8 @@
 
         <!-- Maven plugin versions -->
         <maven.compiler.version>3.10.1</maven.compiler.version>
-        <maven.surefire.version>3.1.2</maven.surefire.version>
-        <maven.failsafe.version>3.1.2</maven.failsafe.version>
+        <maven.surefire.version>3.5.4</maven.surefire.version>
+        <maven.failsafe.version>3.5.4</maven.failsafe.version>
         <maven.assembly.version>3.4.2</maven.assembly.version>
         <maven.shade.version>3.4.1</maven.shade.version>
         <maven.javadoc.version>3.10.0</maven.javadoc.version>
@@ -114,7 +114,7 @@
         <testcontainer.version>1.20.1</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.test-frame.version>1.1.0</skodjob.test-frame.version>
+        <skodjob.test-frame.version>1.2.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.5.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
         <!-- properties to skip surefire tests during failsafe execution -->
@@ -709,37 +709,17 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
                 <version>${jupiter.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-params</artifactId>
-                <version>${jupiter.version}</version>
-                <scope>test</scope>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-junit5</artifactId>
                 <version>${vertx-junit5.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.platform</groupId>
-                <artifactId>junit-platform-commons</artifactId>
-                <version>${jupiter.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.platform</groupId>
-                <artifactId>junit-platform-launcher</artifactId>
-                <version>${jupiter.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.platform</groupId>
-                <artifactId>junit-platform-engine</artifactId>
-                <version>${jupiter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -962,18 +942,6 @@
                     <useModulePath>false</useModulePath>
                     <skipTests>${skip.surefire.tests}</skipTests>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.junit.jupiter</groupId>
-                        <artifactId>junit-jupiter-engine</artifactId>
-                        <version>${jupiter.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.vertx</groupId>
-                        <artifactId>vertx-junit5</artifactId>
-                        <version>${vertx-junit5.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
