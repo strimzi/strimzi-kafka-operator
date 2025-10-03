@@ -108,7 +108,7 @@ runs:
                 return;
               }
 
-              core.info(`Build still running... (${elapsed}s elapsed)`);
+              core.info(`Build still running... (${elapsed}s elapsed, max: ${maxWaitSeconds}s)`);
               await new Promise(resolve => setTimeout(resolve, 60000)); // Sleep 60 seconds
 
               buildRun = await findBuildRun();
