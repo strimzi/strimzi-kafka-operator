@@ -106,9 +106,6 @@ In this case, fix the configuration so that the Cluster Operator can roll out th
 [id='property-kafka-connect-logging-{context}']
 = Logging
 
-WARNING: Kafka 3.9 and earlier versions use log4j1 for logging.
-For log4j1-based configuration examples, refer to the link:{DocArchive}[Strimzi 0.45 documentation^].
-
 Kafka Connect has its own preconfigured loggers:
 
 [cols="1m,2,1",options="header"]
