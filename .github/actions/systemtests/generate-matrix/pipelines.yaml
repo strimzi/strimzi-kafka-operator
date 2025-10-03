@@ -78,7 +78,7 @@ pipelines:
   #############
   # Smoke pipelines can use smaller agents as the tests are not running in parallel even if configured
   # x86-64
-  - agent: "ubuntu-latest"
+  - agent: "oracle-vm-2cpu-8gb-x86-64"
     arch: "amd64"
     pipeline: "smoke"
     profile: "smoke"
@@ -88,15 +88,15 @@ pipelines:
     cluster_operator_install_type: "yaml"
     parallel: 1
   # arm64
-#  - agent: "oracle-vm-2cpu-8gb-arm64"
-#    arch: "arm64"
-#    pipeline: "smoke"
-#    profile: "smoke"
-#    timeout: 60
-#    strimzi_feature_gates: "false"
-#    strimzi_rbac_scope: "CLUSTER"
-#    cluster_operator_install_type: "yaml"
-#    parallel: 1
+  - agent: "oracle-vm-2cpu-8gb-arm64"
+    arch: "arm64"
+    pipeline: "smoke"
+    profile: "smoke"
+    timeout: 60
+    strimzi_feature_gates: "false"
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
   ###############
   ### Upgrade ###
   ###############
