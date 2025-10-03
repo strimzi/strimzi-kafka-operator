@@ -390,6 +390,7 @@ public class ReconcilerUtils {
      *
      * @return      True ZooKeeper metadata are in use or when the cluster is in migration. False otherwise.
      */
+    @SuppressWarnings("deprecation") // KafkaMetadataState is deprecated, but we still use it to check for clusters not migrated to KRaft
     public static boolean nonMigratedCluster(Kafka kafka) {
         // When the Kafka status or the metadata state are null, we cannot decide anything about KRaft (it can be a new
         // cluster or a cluster that is still doing the first deployment). Only when it is set to one of the non-KRaft
@@ -482,6 +483,7 @@ public class ReconcilerUtils {
      * @param certSecretSources TLS trusted certificates whose hashes are joined to result
      * @return Future computing hash from TLS + Auth
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<CertSecretSource> certSecretSources) {
         Future<Integer> tlsFuture;
         if (certSecretSources == null || certSecretSources.isEmpty()) {

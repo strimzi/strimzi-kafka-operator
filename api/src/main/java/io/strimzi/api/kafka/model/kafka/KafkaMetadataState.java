@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * Represents where metadata are stored for the current cluster (ZooKeeper or KRaft)
  * or if a migration from ZooKeeper to KRaft is in progress and in which phase
  */
+@Deprecated
 public enum KafkaMetadataState {
     /**
      * The metadata are stored in ZooKeeper.

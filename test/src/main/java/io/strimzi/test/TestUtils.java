@@ -5,9 +5,7 @@
 package io.strimzi.test;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -173,25 +171,6 @@ public final class TestUtils {
 
             return result;
         }
-    }
-
-    /**
-     * Checks that the resource has the owner reference pointing to the parent resource
-     *
-     * @param resource  The resource where the owner reference should be checked
-     * @param owner     The resource which should be the owner
-     */
-    public static void checkOwnerReference(HasMetadata resource, HasMetadata owner)  {
-        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
-
-        OwnerReference or = resource.getMetadata().getOwnerReferences().get(0);
-
-        assertThat(or.getApiVersion(), is(owner.getApiVersion()));
-        assertThat(or.getKind(), is(owner.getKind()));
-        assertThat(or.getName(), is(owner.getMetadata().getName()));
-        assertThat(or.getUid(), is(owner.getMetadata().getUid()));
-        assertThat(or.getBlockOwnerDeletion(), is(false));
-        assertThat(or.getController(), is(false));
     }
 
     /**

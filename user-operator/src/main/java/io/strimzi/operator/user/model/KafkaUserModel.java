@@ -412,7 +412,7 @@ public class KafkaUserModel {
                 .withKind(ownerKind)
                 .withName(name)
                 .withUid(ownerUid)
-                .withBlockOwnerDeletion(false)
+                .withBlockOwnerDeletion(true)
                 .withController(false)
                 .build();
     }

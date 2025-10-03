@@ -24,10 +24,10 @@ import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -222,7 +222,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("docker-credentials"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/kaniko/.docker"));
-        TestUtils.checkOwnerReference(pod, kc);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(pod, kc);
     }
 
     @Test
@@ -284,7 +284,7 @@ public class KafkaConnectBuildTest {
         assertThat(cm.getMetadata().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
         assertThat(cm.getMetadata().getNamespace(), is(namespace));
         assertThat(cm.getData().get("Dockerfile"), is(dockerfile.getDockerfile()));
-        TestUtils.checkOwnerReference(cm, kc);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(cm, kc);
     }
 
     @Test
@@ -339,7 +339,7 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getSpec().getStrategy().getDockerStrategy(), is(notNullValue()));
         assertThat(bc.getSpec().getResources().getLimits(), is(limit));
         assertThat(bc.getSpec().getResources().getRequests(), is(request));
-        TestUtils.checkOwnerReference(bc, kc);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bc, kc);
     }
 
     // Test to validate that .spec.image and spec.build.output.image in Kafka Connect are not pointing to the same image

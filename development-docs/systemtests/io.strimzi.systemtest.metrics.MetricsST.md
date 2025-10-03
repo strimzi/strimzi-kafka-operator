@@ -2,7 +2,7 @@
 
 **Description:** This test suite is designed for testing metrics exposed by operators and operands.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
@@ -15,7 +15,7 @@
 | 7. | Setup NetworkPolicies to grant access to Operator Pods and KafkaExporter. | NetworkPolicies created. |
 | 8. | Create collector for Cluster Operator, Kafka, and KafkaExporter. | Metrics collected in collectors structs. |
 
-**After tests execution steps:**
+**After test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

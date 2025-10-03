@@ -66,6 +66,7 @@ public class KafkaClusterOAuthValidationTest {
             new NodeRef("my-cluster-mixed-1", 1, "mixed", true, true),
             new NodeRef("my-cluster-mixed-2", 2, "mixed", true, true));
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private static List<GenericKafkaListener> getListeners(KafkaListenerAuthenticationOAuth auth)   {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
@@ -77,6 +78,7 @@ public class KafkaClusterOAuthValidationTest {
         return List.of(listener1);
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithIntrospectionMinimalPlain() {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -170,6 +172,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithJwksMinRefreshPauseAndIntrospection() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -188,6 +191,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithJwksExpiryAndIntrospection() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -206,6 +210,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithJwksRefreshAndIntrospection() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -224,6 +229,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithReauthAndIntrospection() {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -240,6 +246,7 @@ public class KafkaClusterOAuthValidationTest {
         ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, getListeners(auth));
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationMissingValidIssuerUri() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -256,6 +263,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationRefreshSecondsRelationWithExpirySeconds() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -270,6 +278,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationRefreshSecondsSetWithExpirySecondsNotSet() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -283,6 +292,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationRefreshSecondsNotSetWithExpirySecondsSet() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -296,6 +306,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationNoUriSpecified() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -305,6 +316,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithMinimumJWKS() {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
@@ -315,6 +327,7 @@ public class KafkaClusterOAuthValidationTest {
         ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, getListeners(auth));
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithConnectTimeout() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -328,6 +341,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithReadTimeout() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -341,6 +355,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithGroupsClaim() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -354,6 +369,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationIntrospectionEndpointUriWithoutClientId() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -369,6 +385,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationIntrospectionEndpointUriWithoutClientSecret() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -381,6 +398,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationExpirySecondsWithoutEndpointUri() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -394,6 +412,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationRefreshSecondsWithoutEndpointUri() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -407,6 +426,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithOAuthWithIntrospectionWithNoTypeCheck() {
         assertThrows(InvalidResourceException.class, () -> {
@@ -425,6 +445,7 @@ public class KafkaClusterOAuthValidationTest {
         });
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     @Test
     public void testOAuthValidationWithOAuthWithJwksWithNotJwt() {
         assertThrows(InvalidResourceException.class, () -> {

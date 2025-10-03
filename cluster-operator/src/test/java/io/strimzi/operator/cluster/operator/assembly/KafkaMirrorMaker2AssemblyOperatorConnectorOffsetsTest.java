@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
@@ -486,9 +485,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 .withName(CONFIGMAP_NAME)
                 .withNamespace(NAMESPACE)
                 .withLabels(existingCMLabels)
-                .withOwnerReferences(new OwnerReferenceBuilder()
-                        .withName("foo")
-                        .build())
+                .withOwnerReferences(ResourceUtils.DUMMY_OWNER_REFERENCE)
                 .endMetadata()
                 .withData(existingData)
                 .build();
@@ -515,7 +512,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
 
                     List<OwnerReference> ownerReferenceList = configMap.getMetadata().getOwnerReferences();
                     assertThat(ownerReferenceList, hasSize(1));
-                    assertThat(ownerReferenceList.get(0).getName(), is("foo"));
+                    assertThat(ownerReferenceList.get(0).getName(), is("my-name"));
                     Map<String, String> configMapData = configMap.getData();
                     assertThat(configMapData, hasEntry(getConfigmapEntryName(connector), OFFSETS_JSON));
                     assertThat(configMapData, hasEntry("data1", "value1"));

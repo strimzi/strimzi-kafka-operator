@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures the template for Kafka pods.
 
 .Example `PodTemplate` configuration

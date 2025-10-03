@@ -4,14 +4,13 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
@@ -25,14 +24,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ServiceUtilsTest {
     private final static String NAME = "my-service";
     private final static String NAMESPACE = "my-namespace";
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("my-kind")
-            .withName("my-name")
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-name")
@@ -74,11 +65,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateHeadlessServiceWithNullTemplate() {
-        Service svc = ServiceUtils.createHeadlessService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT));
+        Service svc = ServiceUtils.createHeadlessService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null, List.of(PORT));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(nullValue()));
 
@@ -97,11 +88,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateHeadlessServiceWithEmptyTemplate() {
-        Service svc = ServiceUtils.createHeadlessService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, new InternalServiceTemplate(), List.of(PORT));
+        Service svc = ServiceUtils.createHeadlessService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, new InternalServiceTemplate(), List.of(PORT));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(nullValue()));
 
@@ -120,11 +111,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateHeadlessServiceWithTemplate() {
-        Service svc = ServiceUtils.createHeadlessService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT));
+        Service svc = ServiceUtils.createHeadlessService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, TEMPLATE, List.of(PORT));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(Map.of("anno-1", "value-1", "anno-2", "value-2")));
 
@@ -143,11 +134,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateClusterIpServiceWithNullTemplate() {
-        Service svc = ServiceUtils.createClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT));
+        Service svc = ServiceUtils.createClusterIpService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null, List.of(PORT));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(Map.of()));
 
@@ -164,11 +155,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateClusterIpServiceWithEmptyTemplate() {
-        Service svc = ServiceUtils.createClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, new InternalServiceTemplate(), List.of(PORT));
+        Service svc = ServiceUtils.createClusterIpService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, new InternalServiceTemplate(), List.of(PORT));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(Map.of()));
 
@@ -185,11 +176,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateClusterIpServiceWithTemplate() {
-        Service svc = ServiceUtils.createClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT));
+        Service svc = ServiceUtils.createClusterIpService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, TEMPLATE, List.of(PORT));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(Map.of("anno-1", "value-1", "anno-2", "value-2")));
 
@@ -206,11 +197,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateDiscoverableServiceWithNullTemplate() {
-        Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT), LABELS.strimziSelectorLabels(), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
+        Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null, List.of(PORT), LABELS.strimziSelectorLabels(), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.withStrimziDiscovery().withAdditionalLabels(Map.of("discovery-label", "label-value")).toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(Map.of("strimzi.io/discovery-anno", "anno-value")));
 
@@ -227,11 +218,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateDiscoverableServiceWithTemplate() {
-        Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT), LABELS.strimziSelectorLabels(), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
+        Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, TEMPLATE, List.of(PORT), LABELS.strimziSelectorLabels(), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.withStrimziDiscovery().withAdditionalLabels(Map.of("discovery-label", "label-value", "label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(Map.of("strimzi.io/discovery-anno", "anno-value", "anno-1", "value-1", "anno-2", "value-2")));
 
@@ -248,11 +239,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateServiceWithNullTemplate() {
-        Service svc = ServiceUtils.createService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT), Labels.fromMap(Map.of("selector-label", "selector-value")), "NodePort", Map.of("label", "label-value"), Map.of("anno", "anno-value"), IpFamilyPolicy.REQUIRE_DUAL_STACK, List.of(IpFamily.IPV6), true);
+        Service svc = ServiceUtils.createService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null, List.of(PORT), Labels.fromMap(Map.of("selector-label", "selector-value")), "NodePort", Map.of("label", "label-value"), Map.of("anno", "anno-value"), IpFamilyPolicy.REQUIRE_DUAL_STACK, List.of(IpFamily.IPV6), true);
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label", "label-value")).toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(Map.of("anno", "anno-value")));
 
@@ -268,11 +259,11 @@ public class ServiceUtilsTest {
 
     @Test
     public void testCreateServiceWithTemplate() {
-        Service svc = ServiceUtils.createService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT), Labels.fromMap(Map.of("selector-label", "selector-value")), "NodePort", Map.of("label", "label-value"), Map.of("anno", "anno-value"), IpFamilyPolicy.REQUIRE_DUAL_STACK, List.of(IpFamily.IPV6), false);
+        Service svc = ServiceUtils.createService(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, TEMPLATE, List.of(PORT), Labels.fromMap(Map.of("selector-label", "selector-value")), "NodePort", Map.of("label", "label-value"), Map.of("anno", "anno-value"), IpFamilyPolicy.REQUIRE_DUAL_STACK, List.of(IpFamily.IPV6), false);
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(svc.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(svc.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label", "label-value", "label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(svc.getMetadata().getAnnotations(), is(Map.of("anno", "anno-value", "anno-1", "value-1", "anno-2", "value-2")));
 

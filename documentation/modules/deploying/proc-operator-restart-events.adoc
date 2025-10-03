@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 // suppress inspection "KubernetesDeprecatedKeys" for whole file
 // suppress inspection "KubernetesNonEditableKeys" for whole file
 // suppress inspection "KubernetesUnknownKeys" for whole file

@@ -15,8 +15,6 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodDNSConfig;
@@ -41,6 +39,7 @@ import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
@@ -67,14 +66,6 @@ public class WorkloadUtilsTest {
             new NodeRef("my-cluster-nodes-11", 11, "nodes", false, true),
             new NodeRef("my-cluster-nodes-12", 12, "nodes", false, true)
     );
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("my-kind")
-            .withName("my-name")
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-workload")
@@ -150,7 +141,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 null,
                 REPLICAS,
                 Map.of("extra", "annotations"),
@@ -160,7 +151,7 @@ public class WorkloadUtilsTest {
 
         assertThat(dep.getMetadata().getName(), is(NAME));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(dep.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(dep.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(dep.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(dep.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
 
@@ -179,7 +170,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 new DeploymentTemplateBuilder()
                         .withNewMetadata()
                             .withLabels(Map.of("label-3", "value-3", "label-4", "value-4"))
@@ -194,7 +185,7 @@ public class WorkloadUtilsTest {
 
         assertThat(dep.getMetadata().getName(), is(NAME));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(dep.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(dep.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(dep.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(dep.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2")));
 
@@ -219,7 +210,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 null,
                 REPLICAS,
                 Map.of("extra", "annotations"),
@@ -236,7 +227,7 @@ public class WorkloadUtilsTest {
 
         assertThat(sps.getMetadata().getName(), is(NAME));
         assertThat(sps.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(sps.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(sps.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
 
@@ -260,7 +251,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 new ResourceTemplateBuilder()
                         .withNewMetadata()
                             .withLabels(Map.of("label-3", "value-3", "label-4", "value-4"))
@@ -282,7 +273,7 @@ public class WorkloadUtilsTest {
 
         assertThat(sps.getMetadata().getName(), is(NAME));
         assertThat(sps.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(sps.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(sps.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2")));
 
@@ -305,7 +296,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 null,
                 NODES,
                 Map.of("extra", "annotations"),
@@ -322,7 +313,7 @@ public class WorkloadUtilsTest {
 
         assertThat(sps.getMetadata().getName(), is(NAME));
         assertThat(sps.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(sps.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(sps.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
 
@@ -346,7 +337,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 new ResourceTemplateBuilder()
                         .withNewMetadata()
                             .withLabels(Map.of("label-3", "value-3", "label-4", "value-4"))
@@ -368,7 +359,7 @@ public class WorkloadUtilsTest {
 
         assertThat(sps.getMetadata().getName(), is(NAME));
         assertThat(sps.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(sps.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(sps.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2")));
 
@@ -833,7 +824,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 null,
                 null,
                 null,
@@ -876,7 +867,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 null,
                 Map.of("default-label", "default-value"),
                 Map.of("extra", "annotations"),
@@ -920,7 +911,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 new PodTemplate(),
                 Map.of("default-label", "default-value"),
                 Map.of("extra", "annotations"),
@@ -964,7 +955,7 @@ public class WorkloadUtilsTest {
                 NAME,
                 NAMESPACE,
                 LABELS,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 new PodTemplateBuilder()
                         .withNewMetadata()
                         .withLabels(Map.of("label-3", "value-3", "label-4", "value-4"))

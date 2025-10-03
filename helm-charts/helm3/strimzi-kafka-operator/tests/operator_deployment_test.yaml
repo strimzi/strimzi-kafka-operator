@@ -203,3 +203,27 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: 'executing "strimzi.listPluck" at <.>: wrong type for value; expected map[string]interface {}; got string'
+
+  - it: large numeric values should be properly formatted without scientific notation
+    set:
+      fullReconciliationIntervalMs: 999999999999
+      operationTimeoutMs: 999999999999
+      connectBuildTimeoutMs: 999999999999
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[1].name
+          value: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: "999999999999"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].name
+          value: STRIMZI_OPERATION_TIMEOUT_MS
+      - equal:
+          path: spec.template.spec.containers[0].env[2].value
+          value: "999999999999"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: STRIMZI_CONNECT_BUILD_TIMEOUT_MS
+            value: "999999999999"

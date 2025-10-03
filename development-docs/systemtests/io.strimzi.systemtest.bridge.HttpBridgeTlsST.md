@@ -2,7 +2,7 @@
 
 **Description:** Test suite for verifying TLS functionalities in the HTTP Bridge.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

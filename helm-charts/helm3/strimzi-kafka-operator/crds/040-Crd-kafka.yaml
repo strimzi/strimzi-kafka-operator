@@ -24,6 +24,7 @@ spec:
     - name: v1beta2
       served: true
       storage: true
+      deprecated: false
       subresources:
         status: {}
       additionalPrinterColumns:
@@ -115,6 +116,9 @@ spec:
                               clientAudience:
                                 type: string
                                 description: The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
+                              clientGrantType:
+                                type: string
+                                description: The grant type to use when making requests to the authorization server's token endpoint. Used for `OAuth over PLAIN` when `username` and `password` passed via SASL_PLAIN client authentication are passed on to the authorization server as `clientId` and `secret`.
                               clientId:
                                 type: string
                                 description: OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
@@ -549,7 +553,7 @@ spec:
                     config:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object
-                      description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list, prometheus.metrics.reporter. (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
+                      description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list, prometheus.metrics.reporter. (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, broker.session.timeout.ms, broker.heartbeat.interval.ms, controller.socket.timeout.ms, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
                     storage:
                       type: object
                       properties:
@@ -5122,6 +5126,28 @@ spec:
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
                           description: Template for the Entity Operator service account.
+                        podDisruptionBudget:
+                          type: object
+                          properties:
+                            metadata:
+                              type: object
+                              properties:
+                                labels:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                  description: Labels added to the Kubernetes resource.
+                                annotations:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                  description: Annotations added to the Kubernetes resource.
+                              description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
+                            maxUnavailable:
+                              type: integer
+                              minimum: 0
+                              description: "Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1."
+                          description: Template for the Entity Operator Pod Disruption Budget.
                         entityOperatorRole:
                           type: object
                           properties:
@@ -8525,6 +8551,28 @@ spec:
                                   description: Annotations added to the Kubernetes resource.
                               description: Metadata applied to the resource.
                           description: Template for the Kafka Exporter service account.
+                        podDisruptionBudget:
+                          type: object
+                          properties:
+                            metadata:
+                              type: object
+                              properties:
+                                labels:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                  description: Labels added to the Kubernetes resource.
+                                annotations:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                                  description: Annotations added to the Kubernetes resource.
+                              description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
+                            maxUnavailable:
+                              type: integer
+                              minimum: 0
+                              description: "Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1."
+                          description: Template for the Pod Disruption Budget for Kafka Exporter pods.
                       description: Customization of deployment templates and pods.
                   description: "Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition."
                 maintenanceTimeWindows:

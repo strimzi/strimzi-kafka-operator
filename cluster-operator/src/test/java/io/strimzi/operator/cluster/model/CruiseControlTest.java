@@ -234,7 +234,7 @@ public class CruiseControlTest {
         assertThat(dep.getMetadata().getName(), is(CruiseControlResources.componentName(CLUSTER_NAME)));
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
-        TestUtils.checkOwnerReference(dep, kafka);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(dep, kafka);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         assertThat(containers.size(), is(1));
@@ -377,7 +377,7 @@ public class CruiseControlTest {
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
 
-        TestUtils.checkOwnerReference(svc, KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, KAFKA);
     }
 
     @SuppressWarnings("MethodLength")

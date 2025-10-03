@@ -1,0 +1,64 @@
+name: Validate-matrix template
+
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Test the validate-matrix action
+      - id: validate-matrix
+        uses: ./.github/actions/systemtests/validate-matrix
+        with:
+          matrix: ${{ env.TEST_MATRIX }}
+
+      # Validate the action outputs
+      - name: Validate action outputs
+        shell: bash
+        env:
+          EXPECT_ISVALID: ${{ env.EXPECT_ISVALID }}
+          EXPECT_MESSAGE_CONTAINS: ${{ env.EXPECT_MESSAGE_CONTAINS }}
+          EXPECT_ERROR_CONTAINS: ${{ env.EXPECT_ERROR_CONTAINS }}
+          EXPECT_JOB_COUNT: ${{ env.EXPECT_JOB_COUNT }}
+        run: |
+          set +e  # Don't exit on first error
+          VALIDATION_ERRORS=0
+          
+          IS_VALID='${{ steps.validate-matrix.outputs.isValid }}'
+          MESSAGE='${{ steps.validate-matrix.outputs.message }}'
+          
+          echo "::group::Action Outputs"
+          echo "isValid: $IS_VALID"
+          echo "message: $MESSAGE"
+          echo "::endgroup::"
+          
+          # Test expected values if provided
+          if [[ -n "$EXPECT_ISVALID" ]]; then
+            if [[ "$IS_VALID" == "$EXPECT_ISVALID" ]]; then
+              echo "✅ isValid matches expectation: $EXPECT_ISVALID"
+            else
+              echo "❌ isValid mismatch. Expected: $EXPECT_ISVALID, Got: $IS_VALID"
+              VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            fi
+          fi
+          
+          if [[ -n "$EXPECT_MESSAGE_CONTAINS" ]]; then
+            if [[ "$MESSAGE" == *"$EXPECT_MESSAGE_CONTAINS"* ]]; then
+              echo "✅ Message contains expected text: $EXPECT_MESSAGE_CONTAINS"
+            else
+              echo "❌ Message does not contain expected text: $EXPECT_MESSAGE_CONTAINS"
+              VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            fi
+          fi
+          
+          # Summary
+          if [[ $VALIDATION_ERRORS -eq 0 ]]; then
+            echo "✅ All validations passed!"
+            exit 0
+          else
+            echo "❌ Validation failed with $VALIDATION_ERRORS error(s)"
+            exit 1
+          fi

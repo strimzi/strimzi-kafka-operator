@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 When exposing Kafka outside of Kubernetes using loadbalancers or node ports, you can use properties, in addition to labels and annotations, to customize how a Service is created.
 
 .An example showing customized external services

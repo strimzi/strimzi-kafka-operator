@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures producer options for the Kafka Bridge.
 
 .Example Kafka Bridge producer configuration

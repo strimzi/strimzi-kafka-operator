@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 IMPORTANT: `StrimziPodSet` is an internal Strimzi resource.
 Information is provided for reference only.
 Do not create, modify or delete `StrimziPodSet` resources as this might cause errors.

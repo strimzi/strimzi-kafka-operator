@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures the User Operator.
 
 [id='property-user-operator-logging-{context}']

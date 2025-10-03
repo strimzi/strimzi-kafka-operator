@@ -18,7 +18,6 @@ Italics (`_`)::
 [cols="50%,50%",options="header"]
 |===
 |Item |Example
-|Guide titles |See the \_Installation Guide_ ...
 |Emphasis for a term _(only emphasize first time)_ |\_High availability_ refers to the ...
 |===
 

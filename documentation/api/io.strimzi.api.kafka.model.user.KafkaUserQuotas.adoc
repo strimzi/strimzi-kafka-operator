@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configure clients to use quotas so that a user does not overload Kafka brokers.
 
 .Example Kafka user quota configuration

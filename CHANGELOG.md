@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 0.49.0
+
+* Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
+  Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
+* New fields `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` in the `KafkaConnect` custom resource for configuring Connect's group ID and internal topics.
+
+### Major changes, deprecations, and removals
+
+* The `.status.kafkaMetadataState` field in the `Kafka` custom resource is deprecated and not used anymore.
+* The `type: oauth` authentication in Kafka brokers and Kafka clients (Kafka Connect, MirrorMaker 2, and Strimzi HTTP Bridge) has been deprecated.
+  Please use the `type: custom` authentication instead.
+  The Strimzi OAuth library continues to be packaged with the Strimzi container images.
+  Follow the documentation for the examples and migration details.
+* The Keycloak authorization (`type: keycloak`) has been deprecated and will be removed in the future.
+  To use the Keycloak authorizer, you can use the `type: custom` authorization.
+  The Strimzi OAuth library with the Keycloak authorizer continues to be packaged with the Strimzi container images.
+  Follow the documentation for the examples and migration details.
+* The `group.id`, `config.storage.topic`, `offset.storage.topic`, and `status.storage.topic` fields in `.spec.config` section of the `KafkaConnect` resource are deprecated and will be forbidden in the `v1` CRD API.
+  Please use the new `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` fields instead.
+
 ## 0.48.0
 
 * Add support for Kafka 4.1.0.

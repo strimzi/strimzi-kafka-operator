@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 [id='assembly-fips-validation-{context}']
 = NIST validation
 

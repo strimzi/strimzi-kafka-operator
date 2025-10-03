@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures consumer options for the Kafka Bridge.
 
 .Example Kafka Bridge consumer configuration

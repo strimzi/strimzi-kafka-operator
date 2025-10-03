@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures JMX connection options.
 
 Get JMX metrics from Kafka brokers, Kafka Connect, and MirrorMaker 2. by connecting to port 9999.

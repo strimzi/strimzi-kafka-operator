@@ -2,7 +2,7 @@
 
 **Description:** This suite verifies JMX metrics behavior under various configurations and scenarios.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

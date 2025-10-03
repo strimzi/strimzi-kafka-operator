@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 To configure SASL-based SCRAM-SHA-256 authentication, set the `type` property to `scram-sha-256`.
 The SCRAM-SHA-256 authentication mechanism requires a username and password.
 

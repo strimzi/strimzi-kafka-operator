@@ -252,6 +252,7 @@ public class KafkaMirrorMaker2Connectors {
         return config;
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     /* test */ static void addClusterToMirrorMaker2ConnectorConfig(Reconciliation reconciliation, Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
         config.put(configPrefix + "alias", cluster.getAlias());
         config.put(configPrefix + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers());
@@ -310,6 +311,7 @@ public class KafkaMirrorMaker2Connectors {
         config.putAll(cluster.getAdditionalProperties());
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private static String oauthJaasConfig(KafkaMirrorMaker2ClusterSpec cluster, KafkaClientAuthenticationOAuth oauth) {
         Map<String, String> jaasOptions = cluster.getAuthentication() instanceof KafkaClientAuthenticationOAuth ? AuthenticationUtils.oauthJaasOptions((KafkaClientAuthenticationOAuth) cluster.getAuthentication()) : new LinkedHashMap<>();
 

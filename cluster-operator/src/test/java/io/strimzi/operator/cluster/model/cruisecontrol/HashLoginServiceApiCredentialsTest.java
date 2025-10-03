@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
@@ -17,6 +15,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
@@ -55,15 +54,6 @@ public class HashLoginServiceApiCredentialsTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final String SECRET_NAME = "secretName";
     private static final String SECRET_KEY = "secretKey";
-
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("my-kind")
-            .withName("my-name")
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-name")
@@ -119,7 +109,7 @@ public class HashLoginServiceApiCredentialsTest {
                 .endValueFrom()
             .endHashLoginServiceApiUsers()
             .build();
-        HashLoginServiceApiCredentials apiCredentials = new HashLoginServiceApiCredentials(NAMESPACE, CLUSTER, LABELS, OWNER_REFERENCE, s1);
+        HashLoginServiceApiCredentials apiCredentials = new HashLoginServiceApiCredentials(NAMESPACE, CLUSTER, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, s1);
         assertThat(apiCredentials.getUserManagedApiSecretName(), is(SECRET_NAME));
         assertThat(apiCredentials.getUserManagedApiSecretKey(), is(SECRET_KEY));
 
@@ -131,7 +121,7 @@ public class HashLoginServiceApiCredentialsTest {
                     .endValueFrom()
             .endHashLoginServiceApiUsers()
             .build();
-        assertThrows(Exception.class, () -> new HashLoginServiceApiCredentials(NAMESPACE, CLUSTER, LABELS, OWNER_REFERENCE, s2));
+        assertThrows(Exception.class, () -> new HashLoginServiceApiCredentials(NAMESPACE, CLUSTER, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, s2));
 
         // Ensure exception is thrown when invalid apiUsers config is provided
         CruiseControlSpec s3 = new CruiseControlSpecBuilder()
@@ -140,14 +130,14 @@ public class HashLoginServiceApiCredentialsTest {
                 .endValueFrom()
             .endHashLoginServiceApiUsers()
             .build();
-        assertThrows(Exception.class, () -> new HashLoginServiceApiCredentials(NAMESPACE, CLUSTER, LABELS, OWNER_REFERENCE, s3));
+        assertThrows(Exception.class, () -> new HashLoginServiceApiCredentials(NAMESPACE, CLUSTER, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, s3));
 
         // Ensure exception is thrown when invalid apiUsers config is provided
         CruiseControlSpec s4 = new CruiseControlSpecBuilder()
             .withNewHashLoginServiceApiUsers()
             .endHashLoginServiceApiUsers()
             .build();
-        assertThrows(Exception.class, () -> new HashLoginServiceApiCredentials(NAMESPACE, CLUSTER, LABELS, OWNER_REFERENCE, s4));
+        assertThrows(Exception.class, () -> new HashLoginServiceApiCredentials(NAMESPACE, CLUSTER, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, s4));
     }
 
     private void assertParseThrows(String illegalConfig) {

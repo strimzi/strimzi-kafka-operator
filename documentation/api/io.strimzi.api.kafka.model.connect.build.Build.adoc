@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures additional connectors for Kafka Connect deployments.
 
 = Configuring container registries

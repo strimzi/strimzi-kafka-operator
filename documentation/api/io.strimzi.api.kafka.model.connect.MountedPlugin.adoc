@@ -1,1 +1,3 @@
+:_mod-docs-content-type: CONCEPT
+
 IMPORTANT: This feature requires Kubernetes support for the Image Volume feature.

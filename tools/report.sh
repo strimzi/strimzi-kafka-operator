@@ -160,22 +160,6 @@ if [[ "$SECRETS_OPT" == "off" ]]; then
   RESOURCES=("${RESOURCES[@]/secrets}") && readonly RESOURCES
 fi
 
-get_masked_secrets() {
-  echo "secrets"
-  mkdir -p "$OUT_DIR"/reports/secrets
-  local resources && resources=$($KUBE_CLIENT get secrets -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE")
-  for res in $resources; do
-    local filename && filename=$(echo "$res" | cut -f 2 -d "/")
-    echo "    $res"
-    local secret && secret=$($KUBE_CLIENT get "$res" -o yaml -n "$NAMESPACE")
-    if [[ "$SECRETS_OPT" == "all" ]]; then
-      echo "$secret" > "$OUT_DIR"/reports/secrets/"$filename".yaml
-    else
-      echo "$secret" | sed "$SE" > "$OUT_DIR"/reports/secrets/"$filename".yaml
-    fi
-  done
-}
-
 get_namespaced_yamls() {
   local type="$1"
   mkdir -p "$OUT_DIR"/reports/"$type"
@@ -228,25 +212,23 @@ get_pod_logs() {
     local names && names=$($KUBE_CLIENT -n "$NAMESPACE" get po "$pod" -o jsonpath='{.spec.containers[*].name}' --ignore-not-found)
     local count && count=$(echo "$names" | wc -w)
     local logs
-    mkdir -p "$OUT_DIR"/reports/logs "$OUT_DIR"/reports/threads
+    mkdir -p "$OUT_DIR"/reports/logs
     if [[ "$count" -eq 1 ]]; then
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"
       if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod".log; fi
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"
       if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod".log.0; fi
       # shellcheck disable=SC2016
-      $KUBE_CLIENT -n "$NAMESPACE" exec -i "$pod" -- \
-        sh -c 'jcmd $(jcmd | grep -v JCmd | cut -f1 -d " ") Thread.print' \
-        > "$OUT_DIR"/reports/threads/"$pod".txt
+      # append the application thread dump to logs (not external dependency needed)
+      $KUBE_CLIENT -n "$NAMESPACE" exec -i "$pod" -- sh -c 'kill -QUIT 1'
     elif [[ "$count" -gt 1 && -n "$con" && "$names" == *"$con"* ]]; then
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" ||true)"
       if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod"-"$con".log; fi
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
       if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod"-"$con".log.0; fi
       # shellcheck disable=SC2016
-      $KUBE_CLIENT -n "$NAMESPACE" exec -i "$pod" -c "$con" -- \
-        sh -c 'jcmd $(jcmd | grep -v JCmd | cut -f1 -d " ") Thread.print' \
-        > "$OUT_DIR"/reports/threads/"$pod"-"$con".txt
+      # append the application thread dump to logs (not external dependency needed)
+      $KUBE_CLIENT -n "$NAMESPACE" exec -i "$pod" -c "$con" -- sh -c 'kill -QUIT 1'
     fi
   fi
 }

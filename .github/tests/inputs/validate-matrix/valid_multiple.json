@@ -1,0 +1,38 @@
+[
+  {
+    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "regression",
+    "profile": "brokers-and-security",
+    "timeout": 480,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 4,
+    "jobName": "regression-brokers-and-security-amd64"
+  },
+  {
+    "agent": "oracle-vm-8cpu-32gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "regression",
+    "profile": "operators",
+    "timeout": 480,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 4,
+    "jobName": "regression-operators-amd64"
+  },
+  {
+    "agent": "oracle-vm-2cpu-8gb-x86-64",
+    "arch": "amd64",
+    "pipeline": "smoke",
+    "profile": "smoke",
+    "timeout": 60,
+    "strimzi_feature_gates": "false",
+    "strimzi_rbac_scope": "CLUSTER",
+    "cluster_operator_install_type": "yaml",
+    "parallel": 1,
+    "jobName": "smoke-amd64"
+  }
+]

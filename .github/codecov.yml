@@ -44,3 +44,5 @@ ignore:
   - "tools"
   - "systemtest"
   - "test"
+  # The API model is just getters and setters that are not tested. Measuring coverage for them adds only a little value.
+  - "api/src/main/java/io/strimzi/api/kafka/model"

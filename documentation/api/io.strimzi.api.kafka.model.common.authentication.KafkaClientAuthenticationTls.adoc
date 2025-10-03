@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 To configure mTLS authentication, set the `type` property to the value `tls`.
 mTLS uses a TLS certificate to authenticate.
 

@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures a Kafka cluster using the `Kafka` custom resource.
 
 The `config` properties are one part of the overall configuration for the resource.

@@ -144,6 +144,7 @@ public class KafkaBridgeConfigurationBuilder {
      * @param authentication authentication configuration
      * @return  the builder instance
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public KafkaBridgeConfigurationBuilder withAuthentication(KafkaClientAuthentication authentication) {
         if (authentication != null) {
             printSectionHeader("Authentication configuration");

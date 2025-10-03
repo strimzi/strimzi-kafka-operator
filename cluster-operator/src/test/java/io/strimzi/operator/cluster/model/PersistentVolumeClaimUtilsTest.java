@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
@@ -17,6 +15,7 @@ import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
@@ -32,14 +31,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class PersistentVolumeClaimUtilsTest {
     private final static String NAME = "my-cluster-kafka";
     private final static String NAMESPACE = "my-namespace";
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("my-kind")
-            .withName("my-cluster")
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-cluster-kafka")
@@ -69,7 +60,7 @@ public class PersistentVolumeClaimUtilsTest {
     public void testEphemeralStorage()  {
         assertThat(
                 PersistentVolumeClaimUtils
-                        .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, new EphemeralStorage(), false, LABELS, OWNER_REFERENCE, null),
+                        .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, new EphemeralStorage(), false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null),
                 is(List.of())
         );
     }
@@ -82,7 +73,7 @@ public class PersistentVolumeClaimUtilsTest {
 
         assertThat(
                 PersistentVolumeClaimUtils
-                        .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, jbod, false, LABELS, OWNER_REFERENCE, null),
+                        .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, jbod, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null),
                 is(List.of())
         );
     }
@@ -90,7 +81,7 @@ public class PersistentVolumeClaimUtilsTest {
     @Test
     public void testPersistentClaimStorage()  {
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, PERSISTENT_CLAIM_STORAGE, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, PERSISTENT_CLAIM_STORAGE, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -115,7 +106,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, storage, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, storage, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -142,7 +133,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -169,7 +160,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, TEMPLATE);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, TEMPLATE);
 
         assertThat(pvcs.size(), is(1));
 
@@ -197,7 +188,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -225,7 +216,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -233,7 +224,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(pvcs.get(0).getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(pvcs.get(0).getMetadata().getAnnotations(), is(Map.of("strimzi.io/delete-claim", "true")));
-        assertThat(pvcs.get(0).getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(pvcs.get(0).getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(pvcs.get(0).getSpec().getVolumeMode(), is("Filesystem"));
         assertThat(pvcs.get(0).getSpec().getAccessModes(), is(List.of("ReadWriteOnce")));
         assertThat(pvcs.get(0).getSpec().getSelector(), is(nullValue()));
@@ -253,7 +244,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -290,7 +281,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, jbod, false, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(6));
 
@@ -312,7 +303,7 @@ public class PersistentVolumeClaimUtilsTest {
             assertThat(pvcs.get(i).getMetadata().getNamespace(), is(NAMESPACE));
             assertThat(pvcs.get(i).getMetadata().getLabels(), is(LABELS.toMap()));
             assertThat(pvcs.get(i).getMetadata().getAnnotations(), is(Map.of("strimzi.io/delete-claim", "true")));
-            assertThat(pvcs.get(i).getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+            assertThat(pvcs.get(i).getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
             assertThat(pvcs.get(i).getSpec().getVolumeMode(), is("Filesystem"));
             assertThat(pvcs.get(i).getSpec().getAccessModes(), is(List.of("ReadWriteOnce")));
             assertThat(pvcs.get(i).getSpec().getSelector(), is(nullValue()));

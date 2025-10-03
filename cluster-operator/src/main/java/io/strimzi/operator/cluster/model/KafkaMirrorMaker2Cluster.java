@@ -205,7 +205,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         return baseVolumeMount + path + "/";
     }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "deprecation"}) // OAuth authentication is deprecated
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = super.getEnvVars();

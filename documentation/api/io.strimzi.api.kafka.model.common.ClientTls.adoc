@@ -1,1 +1,3 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures xref:con-common-configuration-trusted-certificates-reference[TLS trusted certificates] for connecting KafkaConnect, KafkaBridge, KafkaMirrorMaker2 to the cluster.

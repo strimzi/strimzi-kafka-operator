@@ -198,7 +198,7 @@ public class KafkaBridgeClusterTest {
 
         assertThat(svc.getMetadata().getAnnotations(), is(kbc.getDiscoveryAnnotation(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
 
-        TestUtils.checkOwnerReference(svc, resource);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, resource);
     }
 
     @Test
@@ -231,7 +231,7 @@ public class KafkaBridgeClusterTest {
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
             .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
-        TestUtils.checkOwnerReference(dep, resource);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(dep, resource);
     }
 
     @Test
@@ -1350,7 +1350,7 @@ public class KafkaBridgeClusterTest {
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(svc.getMetadata().getAnnotations(), is(kbc.getDiscoveryAnnotation(1874)));
-        TestUtils.checkOwnerReference(svc, resource);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, resource);
     }
 
     @Test

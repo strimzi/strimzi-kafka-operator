@@ -1,3 +1,5 @@
+:_mod-docs-content-type: SNIPPET
+
 //source connector example
 .Example source connector configuration
 [source,yaml,subs="attributes+"]

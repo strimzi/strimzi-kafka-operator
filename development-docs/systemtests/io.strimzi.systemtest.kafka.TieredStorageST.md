@@ -2,7 +2,7 @@
 
 **Description:** This test suite covers scenarios for Tiered Storage integration implemented within Strimzi.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

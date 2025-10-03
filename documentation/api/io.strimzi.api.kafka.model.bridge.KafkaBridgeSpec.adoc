@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures a Kafka Bridge cluster.
 
 Configuration options relate to:

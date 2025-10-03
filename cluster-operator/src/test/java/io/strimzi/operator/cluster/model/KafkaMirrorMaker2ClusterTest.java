@@ -70,6 +70,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
@@ -81,7 +82,6 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.ReadWriteUtils;
-import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -125,10 +125,6 @@ public class KafkaMirrorMaker2ClusterTest {
     private final String kafkaHeapOpts = "-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS;
 
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
-            .addPair("config.storage.topic", "mirrormaker2-cluster-configs")
-            .addPair("group.id", "mirrormaker2-cluster")
-            .addPair("status.storage.topic", "mirrormaker2-cluster-status")
-            .addPair("offset.storage.topic", "mirrormaker2-cluster-offsets")
             .addPair("value.converter", "org.apache.kafka.connect.converters.ByteArrayConverter")
             .addPair("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter")
             .addPair("header.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
@@ -178,6 +174,10 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(configMap.getData().get(JmxPrometheusExporterModel.CONFIG_MAP_KEY), is(metricsCmJson));
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("bootstrap.servers=" + bootstrapServers));
+        assertThat(connectConfigurations, containsString("group.id=mirrormaker2-cluster"));
+        assertThat(connectConfigurations, containsString("config.storage.topic=mirrormaker2-cluster-configs"));
+        assertThat(connectConfigurations, containsString("offset.storage.topic=mirrormaker2-cluster-offsets"));
+        assertThat(connectConfigurations, containsString("status.storage.topic=mirrormaker2-cluster-status"));
         assertThat(connectConfigurations, containsString(expectedConfiguration.asPairs()));
         // MirrorMaker relies on env and file config providers to be configured by default
         assertThat(connectConfigurations, containsString("config.providers=strimzienv,strimzifile"));
@@ -225,6 +225,10 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(kmm2.livenessProbeOptions.getInitialDelaySeconds(), is(60));
         assertThat(kmm2.livenessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(kmm2.configuration.asOrderedProperties(), is(defaultConfiguration));
+        assertThat(kmm2.groupId, is("mirrormaker2-cluster"));
+        assertThat(kmm2.configStorageTopic, is("mirrormaker2-cluster-configs"));
+        assertThat(kmm2.offsetStorageTopic, is("mirrormaker2-cluster-offsets"));
+        assertThat(kmm2.statusStorageTopic, is("mirrormaker2-cluster-status"));
     }
 
     @Test
@@ -237,6 +241,10 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(kmm2.livenessProbeOptions.getTimeoutSeconds(), is(healthTimeout));
         assertThat(kmm2.configuration.asOrderedProperties(), is(expectedConfiguration));
         assertThat(kmm2.bootstrapServers, is(bootstrapServers));
+        assertThat(kmm2.groupId, is("mirrormaker2-cluster"));
+        assertThat(kmm2.configStorageTopic, is("mirrormaker2-cluster-configs"));
+        assertThat(kmm2.offsetStorageTopic, is("mirrormaker2-cluster-offsets"));
+        assertThat(kmm2.statusStorageTopic, is("mirrormaker2-cluster-status"));
     }
 
     @Test
@@ -259,7 +267,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
 
-        TestUtils.checkOwnerReference(svc, resource);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, resource);
     }
 
     @Test
@@ -284,7 +292,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(svc.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"), is(false));
         assertThat(svc.getMetadata().getAnnotations().containsKey("prometheus.io/path"), is(false));
 
-        TestUtils.checkOwnerReference(svc, resource);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(svc, resource);
     }
 
     @Test
