@@ -147,58 +147,59 @@ jobs:
           checkName: "System tests verification"
           checkDescription: "Check for overall system test verification"
 
-  build-artifacts:
-    name: build-artifacts
-    needs:
-      - parse-params
-      - check-rights
-      - generate-matrix
-    # Run only if properly triggered, permissions check passed, matrix is valid, and the run is not for release (already built images)
-    if: |-
-      ${{ 
-        always() &&needs.parse-params.outputs.shouldRun == 'true' && 
-        (needs.check-rights.result == 'success' || github.event_name == 'pull_request') && 
-        needs.generate-matrix.outputs.isValid == 'true' && 
-        needs.parse-params.outputs.releaseVersion == 'latest'
-      }}
-    runs-on: oracle-2cpu-8gb-arm64
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.parse-params.outputs.ref }}
-      - uses: ./.github/actions/build/build-strimzi-binaries
-        with:
-          mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "arm64"
-
-  build-images:
-    name: build-images
-    needs:
-      - parse-params
-      - check-rights
-      - generate-matrix
-      - build-artifacts
-    # Run only if properly triggered, permissions check passed, matrix is valid, and the run is not for release (already built images)
-    if: |-
-      ${{ 
-        always() &&needs.parse-params.outputs.shouldRun == 'true' && 
-        (needs.check-rights.result == 'success' || github.event_name == 'pull_request')&& 
-        needs.generate-matrix.outputs.isValid == 'true' && 
-        needs.parse-params.outputs.releaseVersion == 'latest' && 
-        needs.build-artifacts.result != 'failure'
-      }}
-    strategy:
-      matrix:
-        architecture: [amd64, arm64]
-    runs-on: oracle-vm-2cpu-8gb-arm64
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.parse-params.outputs.ref }}
-      - uses: ./.github/actions/build/containers-build
-        with:
-          architecture: ${{ matrix.architecture }}
-          runnerArch: "arm64"
+# Artifacts are now downloaded from Build workflow instead of building them here
+#  build-artifacts:
+#    name: build-artifacts
+#    needs:
+#      - parse-params
+#      - check-rights
+#      - generate-matrix
+#    # Run only if properly triggered, permissions check passed, matrix is valid, and the run is not for release (already built images)
+#    if: |-
+#      ${{
+#        always() &&needs.parse-params.outputs.shouldRun == 'true' &&
+#        (needs.check-rights.result == 'success' || github.event_name == 'pull_request') &&
+#        needs.generate-matrix.outputs.isValid == 'true' &&
+#        needs.parse-params.outputs.releaseVersion == 'latest'
+#      }}
+#    runs-on: oracle-2cpu-8gb-arm64
+#    steps:
+#      - uses: actions/checkout@v5
+#        with:
+#          ref: ${{ needs.parse-params.outputs.ref }}
+#      - uses: ./.github/actions/build/build-strimzi-binaries
+#        with:
+#          mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
+#          runnerArch: "arm64"
+#
+#  build-images:
+#    name: build-images
+#    needs:
+#      - parse-params
+#      - check-rights
+#      - generate-matrix
+#      - build-artifacts
+#    # Run only if properly triggered, permissions check passed, matrix is valid, and the run is not for release (already built images)
+#    if: |-
+#      ${{
+#        always() &&needs.parse-params.outputs.shouldRun == 'true' &&
+#        (needs.check-rights.result == 'success' || github.event_name == 'pull_request')&&
+#        needs.generate-matrix.outputs.isValid == 'true' &&
+#        needs.parse-params.outputs.releaseVersion == 'latest' &&
+#        needs.build-artifacts.result != 'failure'
+#      }}
+#    strategy:
+#      matrix:
+#        architecture: [amd64, arm64]
+#    runs-on: oracle-vm-2cpu-8gb-arm64
+#    steps:
+#      - uses: actions/checkout@v5
+#        with:
+#          ref: ${{ needs.parse-params.outputs.ref }}
+#      - uses: ./.github/actions/build/containers-build
+#        with:
+#          architecture: ${{ matrix.architecture }}
+#          runnerArch: "arm64"
 
   run-tests:
     name: run-tests
@@ -206,17 +207,17 @@ jobs:
       - parse-params
       - check-rights
       - generate-matrix
-      - build-artifacts
-      - build-images
+#      - build-artifacts
+#      - build-images
     # Run if properly triggered, permissions check passed, matrix is valid, and build jobs succeeded or were skipped
     if: |-
-      ${{ 
-        always() && 
-        needs.parse-params.outputs.shouldRun == 'true' && 
-        (needs.check-rights.result == 'success' || github.event_name == 'pull_request')&& 
-        needs.generate-matrix.outputs.isValid == 'true' && 
-        needs.build-images.result != 'failure' && 
-        needs.build-artifacts.result != 'failure'
+      ${{
+        always() &&
+        needs.parse-params.outputs.shouldRun == 'true' &&
+        (needs.check-rights.result == 'success' || github.event_name == 'pull_request')&&
+        needs.generate-matrix.outputs.isValid == 'true'
+#        needs.build-images.result != 'failure' &&
+#        needs.build-artifacts.result != 'failure'
       }}
     # Job needs write rights for setting statuses on pull-requests
     permissions:
@@ -230,6 +231,7 @@ jobs:
       kubeVersion: ${{ needs.parse-params.outputs.kubeVersion }}
       # Checkout ref params
       ref: ${{ needs.parse-params.outputs.ref }}
+      sha: ${{ needs.parse-params.outputs.sha }}
       # Pass the validated matrix directly
       matrix: ${{ needs.generate-matrix.outputs.matrix }}
 
