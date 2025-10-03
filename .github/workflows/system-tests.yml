@@ -58,7 +58,8 @@ jobs:
     steps:
       - name: Determine checkout ref
         id: determine_ref
-        uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
+        # uses: strimzi/strimzi-kafka-operator/.github/actions/utils/determine-ref@main
+        uses: frawless/strimzi-kafka-operator/.github/actions/utils/determine-ref@use-build-artifacts
       - name: Parse Comment
         id: parse
         uses: strimzi/strimzi-kafka-operator/.github/actions/systemtests/parse-comment@main
