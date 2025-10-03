@@ -1,0 +1,54 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= A
+
+[id="glossary-access-operator_{context}"]
+== Access Operator
+An optional operator that simplifies the sharing of Kafka connection information and credentials between namespaces. 
+Connection details are stored centrally in a `Secret` resource.
+
+[id="glossary-authentication_{context}"]
+== Authentication 
+Defines how clients prove their identity to the Kafka cluster. 
+Strimzi manages authentication as a client-server relationship:
+
+* *Server-Side*: The Kafka cluster's listeners are configured to require a specific authentication type.
+* *Client-Side*: A client (a `KafkaUser` or a Kafka component managed by Strimzi) must be configured to provide matching credentials.
+
+Listener authentication (Server-Side):: 
+Listener authentication is configured per listener in the `spec.kafka.listeners` array of the `Kafka` custom resource. 
+Supported types include `tls`, `scram-sha-512`, and `custom`.
+
+Client authentication (Kafka user)::
+For Kafka users, authentication is managed using the `KafkaUser` custom resource. Supported types are `tls`, `tls-external` (using an external CA), and `scram-sha-512`. 
+Strimzi automatically creates the necessary `Secret` resources for the user.
+
+Client authentication (Kafka components)::
+For internal components, authentication is managed in the custom resource of the component, such as `KafkaConnect`.
+Supported types include `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and `custom`. 
+
+For more information, see the following:
+
+* {BookURLDeploying}#con-securing-kafka-authentication-str[Configuring client authentication on listeners^]
+* {BookURLDeploying}#con-securing-client-authentication-str[Configuring user authentication^]
+
+[id="glossary-authorization_{context}"]
+== Authorization (cluster-wide)
+Defines which actions an authenticated client is permitted to perform on Kafka resources, such as writing to or reading from a topic. 
+Configuration involves setting a cluster-wide mechanism and then, if required, defining user-specific rules.
+
+Cluster-wide authorization::
+This defines the overall mechanism used by the Kafka cluster to control client actions. 
+It's configured in the `spec.kafka.authorization` section of the `Kafka` custom resource. 
+Supported types include `simple` (using the Kafka's built-in authorizer) and `custom` (using custom authorizers).
+
+User authorization (ACLs)::
+This defines specific Access Control Lists (ACLs) for a user, granting permissions to perform actions on `Kafka` resources. 
+The ACLs are defined in the `spec.authorization` section of the `KafkaUser` custom resource.
+If using a custom authorization mechanism, user permissions are typically managed within the external authorization system and not through the `KafkaUser` resource.
+
+For more information, see the following:
+
+* {BookURLDeploying}#con-securing-kafka-authorization-str[Configuring authorized access to Kafka^]
+* {BookURLDeploying}#con-securing-client-authorization-str[Configuring user authorization^]
