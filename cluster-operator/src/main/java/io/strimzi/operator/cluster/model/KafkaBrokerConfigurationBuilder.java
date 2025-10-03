@@ -429,7 +429,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param auth  The authentication configuration from the Kafka CR
      */
     @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    private void configureAuthentication(String listenerName, List<String> securityProtocol, boolean tls, KafkaListenerAuthentication auth)    {
+    private void configureAuthentication(String listenerName, List<String> securityProtocol, boolean tls, KafkaListenerAuthentication auth, String clusterName)    {
         final String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
         final String listenerNameInEnvVar = listenerName.replace("-", "_");
 
