@@ -14,7 +14,7 @@ Defines how clients prove their identity to the Kafka cluster.
 Strimzi manages authentication as a client-server relationship:
 
 * *Server-Side*: The Kafka cluster's listeners are configured to require a specific authentication type.
-* *Client-Side*: A client (a `KafkaUser` or a Kafka component managed by Strimzi) must be configured to provide matching credentials.
+* *Client-Side*: A client (a `KafkaUser` or a client-based Kafka component managed by Strimzi) must be configured to provide matching credentials.
 
 Listener authentication (Server-Side):: 
 Listener authentication is configured per listener in the `spec.kafka.listeners` array of the `Kafka` custom resource. 
@@ -25,7 +25,7 @@ For Kafka users, authentication is managed using the `KafkaUser` custom resource
 Strimzi automatically creates the necessary `Secret` resources for the user.
 
 Client authentication (Kafka components)::
-For internal components, authentication is managed in the custom resource of the component, such as `KafkaConnect`.
+For Strimzi-managed components, authentication is managed in the custom resource of the component, such as `KafkaConnect`.
 Supported types include `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and `custom`. 
 
 For more information, see the following:
