@@ -132,3 +132,22 @@ data:
 . Make the secret available to your application. 
 + 
 Applications can reference the secret directly, or you can inject it into an application's environment using an operator to implement the link:https://servicebinding.io/spec/core/1.0.0/[Service Binding specification].
+
+A user has the option for specifying the secret name if desired. This is achieved by adding `SecretName` field to the `KafkaAccess` spec.
+
+.Example access configuration with secretName
+[source,yaml]
+----
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: my-kafka-access
+spec:
+  kafka:
+    name: my-cluster
+    namespace: kafka
+    listener: tls
+  secretName: my-custom-secret
+----
+
+If no secret name is provided by the user, the secret will fallback to the name of the KafkaAccess.
