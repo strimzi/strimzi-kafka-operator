@@ -160,6 +160,7 @@ this quick start guide.
    Once this completes you should have several new repositories under your Docker Hub account:
     - `docker_registry_name/docker_hub_username/kafka`
     - `docker_registry_name/docker_hub_username/kaniko-executor`
+    - `docker_registry_name/docker_hub_username/buildah`
     - `docker_registry_name/docker_hub_username/maven-builder`
     - `docker_registry_name/docker_hub_username/operator`
 

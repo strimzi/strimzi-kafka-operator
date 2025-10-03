@@ -324,6 +324,10 @@ public class Environment {
         return IP_FAMILY.contains(IP_FAMILY_DUAL_STACK);
     }
 
+    public static boolean isConnectBuildWithBuildahEnabled() {
+        return STRIMZI_FEATURE_GATES.contains("+UseConnectBuildWithBuildah");
+    }
+
     private static String getOrDefault(String varName, String defaultValue) {
         return getOrDefault(varName, String::toString, defaultValue);
     }

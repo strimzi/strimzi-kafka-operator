@@ -185,6 +185,11 @@ the documentation for more details.
 | `kanikoExecutor.image.name`                      | Kaniko Executor image name                                                      | `kaniko-executor`            |
 | `kanikoExecutor.image.tag`                       | Override default Kaniko Executor image tag                                      | `nil`                        |
 | `kanikoExecutor.image.digest`                    | Override Kaniko Executor image tag with digest                                  | `nil`                        |
+| `buildah.image.registry`                         | Override default Buildah image registry                                         | `nil`                        |
+| `buildah.image.repository`                       | Override default Buildah image repository                                       | `nil`                        |
+| `buildah.image.name`                             | Buildah image name                                                              | `buildah`                    |
+| `buildah.image.tag`                              | Override default Buildah image tag                                              | `nil`                        |
+| `buildah.image.digest`                           | Override Buildah image tag with digest                                          | `nil`                        |
 | `resources.limits.memory`                        | Memory constraint for limits                                                    | `384Mi`                      |
 | `resources.limits.cpu`                           | CPU constraint for limits                                                       | `1000m`                      |
 | `resources.requests.memory`                      | Memory constraint for requests                                                  | `384Mi`                      |

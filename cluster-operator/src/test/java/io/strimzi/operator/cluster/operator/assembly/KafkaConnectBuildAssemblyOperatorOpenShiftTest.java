@@ -130,7 +130,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, false);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -403,7 +403,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, false);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -413,7 +413,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, false);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -578,7 +578,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, false);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -591,7 +591,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, false);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -755,7 +755,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .build();
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, false);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -889,7 +889,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .build();
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, false);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -1055,7 +1055,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, false);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -1065,7 +1065,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, false);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -1255,7 +1255,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, false);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -1265,7 +1265,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, false);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -1457,7 +1457,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKc, VERSIONS, sharedEnvironmentProvider, false);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -1467,7 +1467,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider, false);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);

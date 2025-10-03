@@ -95,6 +95,11 @@ The following table shows the maturity of the feature gates introduced across St
 ¦0.51 (planned)
 ¦0.54 (planned)
 
+¦`UseConnectBuildWithBuildah`
+¦0.49
+¦0.52 (planned)
+¦0.55 (planned)
+
 |===
 
 
@@ -141,6 +146,18 @@ The conflict and the switch to forced apply are logged by the Cluster Operator.
 Ownership of individual fields is tracked through the `.metadata.managedFields` property of the resource being updated.
 
 To enable the `ServerSideApplyPhase1` feature gate, specify `+ServerSideApplyPhase1` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+[id='ref-operator-use-connect-build-with-buildah-feature-gate-{context}']
+=== `UseConnectBuildWithBuildah` feature gate
+
+The `UseConnectBuildWithBuildah` feature gate has a default state of _disabled_.
+
+When enabled, the Connect Build feature will use Buildah instead of Kaniko during the image build process.
+Buildah - as Kaniko - will be used only on Kubernetes, on OpenShift the mechanism remains the same.
+When Buildah is used, there is no change in behavior - the only change is in the additional options that users can specify in the `build` section of KafkaConnect's `.spec`.
+These are split into two groups - one for build phase and one for push phase - which you can configure using `additionalBuildOptions` and `additionalPushOptions` fields.
+
+To enable the `UseConnectBuildWithBuildah` feature gate, specify `+UseConnectBuildWithBuildah` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 == Enabling feature gates
 

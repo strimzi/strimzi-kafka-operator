@@ -91,9 +91,9 @@ public class RestrictedPodSecurityProvider extends BaselinePodSecurityProvider {
                 && context.userSuppliedSecurityContext() != null)    {
             return context.userSuppliedSecurityContext();
         } else {
-            // Kaniko does not support running under the restricted Kubernetes profile (needs to run as root and needs some capabilities to build containers)
+            // Kaniko and Buildah do not support running under the restricted Kubernetes profile (needs to run as root and needs some capabilities to build containers)
             //    => if Kafka Connect Build is used, we throw an exception to not deploy it.
-            throw new UnsupportedOperationException("Kafka Connect Build using the Kaniko builder is not available under the restricted security profile");
+            throw new UnsupportedOperationException("Kafka Connect Build using the Kaniko or Buildah builder is not available under the restricted security profile");
         }
     }
 
