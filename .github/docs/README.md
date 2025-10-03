@@ -62,25 +62,28 @@ Build process actions:
 - [build-strimzi-binaries](../actions/build/build-strimzi-binaries)
 - [containers-build](../actions/build/containers-build)
 - [containers-load](../actions/build/containers-load)
+- [download-build-artifacts](../actions/build/download-build-artifacts)
+- [build-docs](../actions/build/build-docs)
+- [publish-docs](../actions/build/publish-docs)
+- [test-strimzi](../actions/build/test-strimzi)
 
 System tests execution actions:
 - [generate-matrix](../actions/systemtests/generate-matrix)
-- [set-defaults](../actions/utils/set-defaults)
-- [log-variables](../actions/utils/log-variables)
 - [parse-comment](../actions/systemtests/parse-comment)
-- [determine-ref](../actions/utils/determine-ref)
+- [validate-matrix](../actions/systemtests/validate-matrix)
 
 Utils actions:
 - [check-permissions](../actions/utils/check-permissions)
 - [add-comment](../actions/utils/add-comment)
 - [check-and-status](../actions/utils/check-and-status)
+- [set-defaults](../actions/utils/set-defaults)
+- [log-variables](../actions/utils/log-variables)
+- [determine-ref](../actions/utils/determine-ref)
 
 To make the build 1:1 to Azure we miss few actions that do the missing steps:
-- Run unit/integration tests
-- Build docs
-- Push docs
-- Push containers
-- Deploy Java artifacts
+- Push docs (uncomment usage & properly test)
+- Push containers (uncomment usage & properly test)
+- Deploy Java artifacts (uncomment usage & properly test)
 
 The actions also had to be put together into workflow as we have in Azure:
 - `build pipeline` -> `build workflow`

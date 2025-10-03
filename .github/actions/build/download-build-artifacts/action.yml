@@ -1,0 +1,140 @@
+name: "Download Build Artifacts"
+description: "Downloads a specific artifact from the Build workflow for the same commit SHA"
+
+inputs:
+  # In Azure we use build ID of build pipeline to retrieve Strimzi artifacts
+  # This can be achieved here as well, but after offline discussion we agreed we will try to use just commit sha
+  # as each commit should have only one unique passed build. In case we will find it is not sufficient
+  # we can easily add another input runId and skip find-build job and directly download artifact.
+  # TODO - the comment can be removed once we agree it is sufficient for releases
+  sha:
+    description: "Commit SHA to find build artifacts for"
+    required: true
+  artifactName:
+    description: "Name of the artifact to download (e.g., 'strimzi-binaries.tar', 'containers-amd64.tar')"
+    required: true
+  waitForBuild:
+    description: "Wait for build to complete if it's still running"
+    required: false
+    default: "true"
+  maxWaitMinutes:
+    description: "Maximum time to wait for build completion (in minutes)"
+    required: false
+    default: "60"
+
+outputs:
+  buildRunId:
+    description: "The ID of the build workflow run"
+    value: ${{ steps.find-build.outputs.run_id }}
+  buildStatus:
+    description: "Status of the build workflow"
+    value: ${{ steps.find-build.outputs.status }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Find Build Workflow Run
+      id: find-build
+      uses: actions/github-script@v7
+      env:
+        INPUT_SHA: ${{ inputs.sha }}
+        WAIT_FOR_BUILD: ${{ inputs.waitForBuild }}
+        MAX_WAIT_MINUTES: ${{ inputs.maxWaitMinutes }}
+      with:
+        script: |
+          const {owner, repo} = context.repo;
+          const sha = process.env.INPUT_SHA;
+          const waitForBuild = process.env.WAIT_FOR_BUILD === 'true';
+          const maxWaitMinutes = parseInt(process.env.MAX_WAIT_MINUTES);
+
+          core.info(`🔍 Looking for Build workflow run for commit: ${sha}`);
+
+          const maxWaitSeconds = maxWaitMinutes * 60;
+          const startTime = Date.now();
+
+          // Function to find build run
+          async function findBuildRun() {
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: 'build.yml',
+              head_sha: sha,
+              per_page: 1
+            });
+            return runs.data.workflow_runs[0];
+          }
+
+          // Initial attempt to find build
+          let buildRun = await findBuildRun();
+
+          if (!buildRun) {
+            if (waitForBuild) {
+              core.info('⏳ No build found yet. Waiting for build workflow to start...');
+
+              // Wait for build to appear
+              while (!buildRun) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+
+                if (elapsed >= maxWaitSeconds) {
+                  core.setFailed(`❌ Timeout: No build workflow found after waiting ${maxWaitMinutes} minutes`);
+                  core.setFailed(`Please ensure the Build workflow has been triggered for commit ${sha}`);
+                  return;
+                }
+
+                core.info(`Waiting... (${elapsed}s elapsed, max: ${maxWaitSeconds}s)`);
+                await new Promise(resolve => setTimeout(resolve, 30000)); // Sleep 30 seconds
+                buildRun = await findBuildRun();
+              }
+            } else {
+              core.setFailed(`❌ No build workflow run found for commit ${sha}`);
+              core.setFailed('Please trigger the Build workflow first or enable waitForBuild');
+              return;
+            }
+          }
+
+          core.info(`✅ Found Build workflow run: #${buildRun.id}`);
+          core.info(`📊 Status: ${buildRun.status}, Conclusion: ${buildRun.conclusion}`);
+
+          // Wait for build to complete if it's still running
+          if (buildRun.status !== 'completed' && waitForBuild) {
+            core.info('⏳ Build is still running. Waiting for completion...');
+
+            while (buildRun.status !== 'completed') {
+              const elapsed = Math.floor((Date.now() - startTime) / 1000);
+
+              if (elapsed >= maxWaitSeconds) {
+                core.setFailed(`❌ Timeout: Build did not complete within ${maxWaitMinutes} minutes`);
+                core.setFailed(`Build run: ${context.serverUrl}/${owner}/${repo}/actions/runs/${buildRun.id}`);
+                return;
+              }
+
+              core.info(`Build still running... (${elapsed}s elapsed, max: ${maxWaitSeconds}s)`);
+              await new Promise(resolve => setTimeout(resolve, 60000)); // Sleep 60 seconds
+
+              buildRun = await findBuildRun();
+            }
+
+            core.info(`✅ Build completed with status: ${buildRun.conclusion}`);
+          }
+
+          // Check if build was successful
+          if (buildRun.status === 'completed' && buildRun.conclusion !== 'success') {
+            core.setFailed(`❌ Build workflow failed with conclusion: ${buildRun.conclusion}`);
+            core.setFailed(`Build run: ${context.serverUrl}/${owner}/${repo}/actions/runs/${buildRun.id}`);
+            return;
+          }
+
+          // Output results
+          core.setOutput('run_id', buildRun.id.toString());
+          core.setOutput('status', buildRun.status);
+          core.setOutput('conclusion', buildRun.conclusion || '');
+
+          core.info(`🎯 Build workflow run #${buildRun.id} is ready for artifact download`);
+          core.info(`Build URL: ${context.serverUrl}/${owner}/${repo}/actions/runs/${buildRun.id}`);
+
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifactName }}
+        run-id: ${{ steps.find-build.outputs.run_id }}
+        github-token: ${{ github.token }}
