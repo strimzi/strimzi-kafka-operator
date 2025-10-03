@@ -892,7 +892,7 @@ public class KafkaRoller {
                 return adminClientProvider.createAdminClient(bootstrapHostnames, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity());
             }
         } catch (RuntimeException e) {
-            throw new ForceableProblem("An error while try to create an admin client with bootstrap brokers " + bootstrapHostnames, e);
+            throw new ForceableProblem("An error while try to create an admin client with bootstrap " + bootstrapHostnames, e);
         }
     }
 
