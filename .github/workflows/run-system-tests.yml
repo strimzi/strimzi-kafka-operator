@@ -140,7 +140,7 @@ jobs:
         uses: ./.github/actions/build/download-build-artifacts
         with:
           sha: ${{ inputs.sha }}
-          artifactName: "containers-${{ inputs.architecture }}.tar"
+          artifactName: "containers-${{ matrix.config.arch }}.tar"
           waitForBuild: "true"
           maxWaitMinutes: "60"
 
