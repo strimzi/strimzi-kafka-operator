@@ -29,10 +29,8 @@ import io.strimzi.operator.common.model.Labels;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * ModelUtils is a utility class that holds generic static helper functions
@@ -167,21 +165,6 @@ public class ModelUtils {
      */
     public static Map<String, String> getCustomLabelsOrAnnotations(String envVarName)   {
         return Util.parseMap(System.getenv().get(envVarName));
-    }
-
-    /**
-     * Checks for the list passed to this method if it is null or not. And either returns the same list, or empty list
-     * if it is null.
-     *
-     * @param list  List which should be checked for null
-     *
-     * @param <T>   Type of the obejcts in the list
-     *
-     * @return  The original list of empty list if it as null.
-     */
-    public static <T> List<T> asListOrEmptyList(List<T> list) {
-        return Optional.ofNullable(list)
-                .orElse(Collections.emptyList());
     }
 
     /**

@@ -31,18 +31,15 @@ metadata:
 spec:
   # ...  
   mirrors:
-    - sourceCluster: "my-cluster-source"
-      targetCluster: "my-cluster-target"
+    - source:
+        # ...
       sourceConnector:
         config: 
           replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" # <1>
-      heartbeatConnector:
-        config:
-          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"    
       checkpointConnector:
         config:
           replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"    
 ----
 <1> Replicates topics without prefixing the source cluster name.
 
-IMPORTANT: Values for `replication.policy.class` and `replication.policy.separator` must be the same across all MirrorMaker 2 connectors (`sourceConnector`, `heartbeatConnector`, and `checkpointConnector`).  
+IMPORTANT: Values for `replication.policy.class` and `replication.policy.separator` must be the same across all MirrorMaker 2 connectors (`sourceConnector` and `checkpointConnector`).

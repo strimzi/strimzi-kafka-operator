@@ -34,11 +34,11 @@ This procedure assumes that the Kafka cluster was deployed using Strimzi.
 + 
 In `examples/mirror-maker/kafka-mirror-maker-2.yaml`, add or update the following properties as needed: 
 +
-* `spec.clusters[].bootstrapServers` to specify the Kafka bootstrap address for the source and target clusters.
-* `spec.clusters[].alias` to specify a unique identifier for each cluster.
-* `spec.clusters[].authentication` to specify the authentication type for each cluster as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`. +
+* `spec.target.bootstrapServers` and `.spec.mirrors[].source.bootstrapServers` to specify the Kafka bootstrap address for the source and target clusters.
+* `spec.target.alias` and `.spec.mirrors[].source.alias` to specify a unique identifier for each cluster.
+* `spec.target.authentication` and `.spec.mirrors[].source.authentication` to specify the authentication type for each cluster as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`. +
 See the link:{BookURLConfiguring}#type-KafkaMirrorMaker2ClusterSpec-schema-reference[`KafkaMirrorMaker2Spec` schema properties^] for configuration details.
-* `spec.clusters[].tls.trustedCertificates` to configure the TLS certificate for each cluster. +
+* `spec.target.tls.trustedCertificates` and `.spec.mirrors[].source.tls.trustedCertificates` to configure the TLS certificate for each cluster. +
 Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates. +
 See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
 
@@ -46,7 +46,7 @@ See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-
 + 
 If you plan to run more than one MirrorMaker 2 cluster in the same environment, each instance must use unique internal topic names and a unique group ID.
 + 
-Update the `spec.clusters[].config` properties in `kafka-mirror-maker-2.yaml` to replace the default values.
+Update the `spec.target` properties in `kafka-mirror-maker-2.yaml` to replace the default values.
 +
 See xref:con-config-mm2-multiple-instances-{context}[Configuring multiple MirrorMaker 2 clusters] for details.
 

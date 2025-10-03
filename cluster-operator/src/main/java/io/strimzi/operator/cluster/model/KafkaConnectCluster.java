@@ -285,6 +285,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
 
         if (result.getImage() == null) {
+            // The image is set only if it was not already set previously (which would mean that we run MM2 rather than Connect)
             result.image = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
         }
 
@@ -374,7 +375,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      *
      * @return  String with the value that should be used.
      */
-    protected static String extractAndRemoveValueFromConfig(AbstractConfiguration configuration, String configKey, String newConfig, String defaultConfig) {
+    private static String extractAndRemoveValueFromConfig(AbstractConfiguration configuration, String configKey, String newConfig, String defaultConfig) {
         if (newConfig != null) {
             configuration.removeConfigOption(configKey);
             return newConfig;
