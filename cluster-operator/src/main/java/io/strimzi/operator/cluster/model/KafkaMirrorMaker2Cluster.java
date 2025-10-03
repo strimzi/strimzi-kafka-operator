@@ -213,7 +213,9 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     /**
-     * Returns a list of target and source clusters. This is used to generate the volumes, volume mounts, and so on.
+     * Returns a list of target and source clusters. The list is later used to generate the volumes, volume mounts, and so on.
+     * These are created the same way for source and target clusters, so we can afford to just mix them all into one
+     * list in this method.
      *
      * @param kafkaMirrorMaker2 The KafkaMirrorMaker2 resource using the new API layout
      *
