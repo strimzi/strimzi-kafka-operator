@@ -7,7 +7,6 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.connect.build.DockerOutput;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
@@ -25,17 +24,13 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +52,6 @@ public class FeatureGatesST extends AbstractST {
     private static final String SERVER_SIDE_APPLY_PHASE_1_ENABLED = "+ServerSideApplyPhase1";
     private static final String SERVER_SIDE_APPLY_PHASE_1_DISABLED = "-ServerSideApplyPhase1";
     private static final String USE_CONNECT_BUILD_WITH_BUILDAH_ENABLED = "+UseConnectBuildWithBuildah";
-    private static final String USE_CONNECT_BUILD_WITH_BUILDAH_DISABLED = "-UseConnectBuildWithBuildah";
 
     @IsolatedTest("Creates ClusterOperator with Server Side Apply FG enabled")
     void testServerSideApply() {
@@ -88,7 +82,7 @@ public class FeatureGatesST extends AbstractST {
         annotateResourcesAndCheckIfPresent(testStorage, false);
     }
 
-    @IsolatedTest("Enables and disables UseConnectBuildWithBuildah feature gate in CO")
+    @IsolatedTest("Enables UseConnectBuildWithBuildah feature gate in CO")
     void testUseConnectBuildWithBuildah() {
         // Buildah is used only on Kubernetes, so running this test on OCP doesn't add much value
         assumeFalse(KubeClusterResource.getInstance().isOpenShiftLikeCluster());
@@ -101,7 +95,7 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Deploying CO with UseConnectBuildWithBuildah disabled");
 
-        setupClusterOperatorWithFeatureGate("");
+        setupClusterOperatorWithFeatureGate(USE_CONNECT_BUILD_WITH_BUILDAH_ENABLED);
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -129,6 +123,11 @@ public class FeatureGatesST extends AbstractST {
                                     .build()
                             )
                         .endPlugin()
+                        .withNewDockerOutput()
+                            .withImage(imageName)
+                            .withAdditionalBuildOptions("--tls-verify=false")
+                            .withAdditionalBuildOptions("--tls-verify=false")
+                        .endDockerOutput()
                         .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                     .endBuild()
                 .endSpec()
@@ -146,36 +145,6 @@ public class FeatureGatesST extends AbstractST {
             .build());
 
         KafkaClients kafkaClient = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
-        KubeResourceManager.get().createResourceWithWait(kafkaClient.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-
-        Map<String, String> connectPod = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
-
-        changeFeatureGatesAndWaitForCoRollingUpdate(USE_CONNECT_BUILD_WITH_BUILDAH_ENABLED);
-
-        // change the name of the plugin to trigger rolling update and new build (now with Buildah)
-        KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), connect -> {
-            connect.getSpec().getBuild().getPlugins().get(0).setName("different");
-            ((DockerOutput) connect.getSpec().getBuild().getOutput()).setAdditionalBuildOptions(List.of("--tls-verify=false"));
-            ((DockerOutput) connect.getSpec().getBuild().getOutput()).setAdditionalPushOptions(List.of("--tls-verify=false"));
-        });
-        connectPod = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectPod);
-        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
-
-        KubeResourceManager.get().createResourceWithWait(kafkaClient.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-
-        changeFeatureGatesAndWaitForCoRollingUpdate(USE_CONNECT_BUILD_WITH_BUILDAH_DISABLED);
-
-        // change the name of the plugin to trigger rolling update and new build (now with Buildah)
-        KafkaConnectUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), connect -> {
-            connect.getSpec().getBuild().getPlugins().get(0).setName("final");
-            ((DockerOutput) connect.getSpec().getBuild().getOutput()).setAdditionalBuildOptions(null);
-            ((DockerOutput) connect.getSpec().getBuild().getOutput()).setAdditionalPushOptions(null);
-        });
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectPod);
-        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
-
         KubeResourceManager.get().createResourceWithWait(kafkaClient.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }

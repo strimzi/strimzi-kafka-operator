@@ -145,7 +145,7 @@ public class KafkaConnectBuild extends AbstractModel {
                         result.additionalBuildOptions = dockerOutput.getAdditionalBuildOptions();
                     } else if (dockerOutput.getAdditionalKanikoOptions() != null
                             && !dockerOutput.getAdditionalKanikoOptions().isEmpty()) {
-                        validateAdditionalKanikoOptions(dockerOutput.getAdditionalKanikoOptions());
+                        validateAdditionalOptions(DockerOutput.ALLOWED_KANIKO_OPTIONS, dockerOutput.getAdditionalKanikoOptions(), ".spec.build.output.additionalKanikoOptions");
                         result.additionalBuildOptions = dockerOutput.getAdditionalKanikoOptions();
                     }
                 }
@@ -207,36 +207,18 @@ public class KafkaConnectBuild extends AbstractModel {
     }
 
     /**
-     * Validates the additional Kaniko options configured by the user against the list of allowed options. If any
-     * options which are not allowed are found, it raises an InvalidResourceException exception.
-     *
-     * @param desiredOptions    List of additional Kaniko options configured by the user
-     */
-    private static void validateAdditionalKanikoOptions(List<String> desiredOptions)    {
-        List<String> allowedOptions = Arrays.asList(DockerOutput.ALLOWED_KANIKO_OPTIONS.split("\\s*,+\\s*"));
-        List<String> forbiddenOptions = desiredOptions.stream()
-                .map(option -> option.contains("=") ? option.substring(0, option.indexOf("=")) : option)
-                .filter(option -> allowedOptions.stream().noneMatch(option::equals))
-                .toList();
-
-        if (!forbiddenOptions.isEmpty())    {
-            throw new InvalidResourceException(".spec.build.output.additionalKanikoOptions contains forbidden options: " + forbiddenOptions);
-        }
-    }
-
-    /**
-     * Validates the additional Buildah options configured by the user against the list of allowed options.
+     * Validates the additional Buildah and Kaniko options configured by the user against the list of allowed options.
      * If there is a not allowed option found, it raises and InvalidResourceException exception.
      *
-     * @param allowedBuildahOptions  allowed Buildah options for particular operation - build/push.
-     * @param desiredOptions         list of desired options by the user.
-     * @param specPath               path to options in `.spec` section - used when throwing exception.
+     * @param allowedOptions    allowed options for particular operation - build/push - for Buildah or Kaniko.
+     * @param desiredOptions    list of desired options by the user.
+     * @param specPath          path to options in `.spec` section - used when throwing exception.
      */
-    private static void validateAdditionalOptions(String allowedBuildahOptions, List<String> desiredOptions, String specPath) {
-        List<String> allowedOptions = Arrays.asList(allowedBuildahOptions.split("\\s*,+\\s*"));
+    private static void validateAdditionalOptions(String allowedOptions, List<String> desiredOptions, String specPath) {
+        List<String> customAllowedOptions = Arrays.asList(allowedOptions.split("\\s*,+\\s*"));
         List<String> forbiddenOptions = desiredOptions.stream()
             .map(option -> option.contains("=") ? option.substring(0, option.indexOf("=")) : option)
-            .filter(option -> allowedOptions.stream().noneMatch(option::equals))
+            .filter(option -> customAllowedOptions.stream().noneMatch(option::equals))
             .toList();
 
         if (!forbiddenOptions.isEmpty()) {
@@ -283,7 +265,7 @@ public class KafkaConnectBuild extends AbstractModel {
      * Generates builder Pod for building a new KafkaConnect container image with additional connector plugins
      *
      * @param isOpenShift       Flag defining whether we are running on OpenShift
-     * @param isBuildahBuild       Flag defining whether we are running on OpenShift
+     * @param isBuildahBuild    Flag defining whether we should use Buildah or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
      * @param newBuildRevision  Revision of the build which will be build used for annotation
@@ -301,7 +283,7 @@ public class KafkaConnectBuild extends AbstractModel {
                 Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, newBuildRevision),
                 templatePod != null ? templatePod.getAffinity() : null,
                 null,
-                List.of(isBuildahBuild ? createBuildahContainer(imagePullPolicy) : createKanikoContainer(imagePullPolicy)),
+                List.of(createContainer(imagePullPolicy, isBuildahBuild)),
                 getVolumes(isOpenShift),
                 imagePullSecrets,
                 securityProvider.kafkaConnectBuildPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
@@ -373,13 +355,35 @@ public class KafkaConnectBuild extends AbstractModel {
     }
 
     /**
-     * Generates the builder container with the Kaniko executor
+     * Generates the builder container for Buildah or Kaniko.
      *
-     * @param imagePullPolicy   Image pull policy
+     * @param imagePullPolicy   Image pull policy.
+     * @param isBuildahBuild    Flag defining whether we should use Buildah or not.
      *
-     * @return  Builder container definition which will be used in the Pod
+     * @return  Builder container definition which will be used in the Pod.
      */
-    /* test */ Container createKanikoContainer(ImagePullPolicy imagePullPolicy) {
+    Container createContainer(ImagePullPolicy imagePullPolicy, boolean isBuildahBuild) {
+        return ContainerUtils.createContainer(
+            componentName,
+            image,
+            isBuildahBuild ? buildahArguments() : kanikoArguments(),
+            securityProvider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
+            resources,
+            getBuildContainerEnvVars(),
+            null,
+            getVolumeMounts(),
+            null,
+            null,
+            imagePullPolicy
+        );
+    }
+
+    /**
+     * Returns Kaniko arguments needed for the build (and push) of the image - used inside the container.
+     *
+     * @return Kaniko arguments needed for the build (and push) of the image - used inside the container.
+     */
+    List<String> kanikoArguments() {
         List<String> args = additionalBuildOptions != null ? new ArrayList<>(4 + additionalBuildOptions.size()) : new ArrayList<>(4);
         args.add("--dockerfile=/dockerfile/Dockerfile");
         args.add("--image-name-with-digest-file=/dev/termination-log");
@@ -389,29 +393,15 @@ public class KafkaConnectBuild extends AbstractModel {
             args.addAll(additionalBuildOptions);
         }
 
-        return ContainerUtils.createContainer(
-                componentName,
-                image,
-                args,
-                securityProvider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
-                resources,
-                getBuildContainerEnvVars(),
-                null,
-                getVolumeMounts(),
-                null,
-                null,
-                imagePullPolicy
-        );
+        return args;
     }
 
     /**
-     * Generates the builder container using Buildah.
+     * Returns Buildah arguments needed for the build and push of the image - used inside the container.
      *
-     * @param imagePullPolicy   Image pull policy.
-     *
-     * @return  Builder container definition which will be used in the Pod.
+     * @return Buildah arguments needed for the build and push of the image - used inside the container.
      */
-    Container createBuildahContainer(ImagePullPolicy imagePullPolicy) {
+    List<String> buildahArguments() {
         List<String> args = new ArrayList<>(3);
         args.add("/bin/bash");
         args.add("-ec");
@@ -426,19 +416,7 @@ public class KafkaConnectBuild extends AbstractModel {
             "echo \"$(buildah images --storage-driver=vfs --format '{{.Name}}' " + outputImage + ")@$(cat /tmp/digest)\" > /dev/termination-log"
         );
 
-        return ContainerUtils.createContainer(
-            componentName,
-            image,
-            args,
-            securityProvider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
-            resources,
-            getBuildContainerEnvVars(),
-            null,
-            getVolumeMounts(),
-            null,
-            null,
-            imagePullPolicy
-        );
+        return args;
     }
 
     /**

@@ -93,7 +93,7 @@ public class DockerOutput extends Output {
     @Description("Configures additional options which will be passed either to Kaniko or Buildah `build` command (depending on feature gate) when building the new Connect image. " +
         "Allowed Kaniko options are: " + ALLOWED_KANIKO_OPTIONS + ". " +
         "Allowed Buildah `build` options are: " + ALLOWED_BUILDAH_BUILD_OPTIONS + ". " +
-        "Those will be used only on Kubernetes, where are Kaniko and Buildah used. " +
+        "Those will be used only on Kubernetes, where Kaniko and Buildah are used. " +
         "They will be ignored on OpenShift. " +
         "The Kaniko options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. " +
         "The Buildah options are described in the link:https://github.com/containers/buildah/blob/main/docs/buildah-build.1.md[Buildah build document^]. " +
@@ -110,7 +110,7 @@ public class DockerOutput extends Output {
 
     @Description("Configures additional options which will be passed to the Buildah `push` when pushing the new Connect image. " +
         "Allowed options are: " + ALLOWED_BUILDAH_PUSH_OPTIONS + ". " +
-        "Those will be used only on Kubernetes, where is Buildah used. " +
+        "Those will be used only on Kubernetes, where Buildah is used. " +
         "They will be ignored on OpenShift. " +
         "The options are described in the link:https://github.com/containers/buildah/blob/main/docs/buildah-push.1.md[Buildah push document^]. " +
         "Changing this field does not trigger new build of the Kafka Connect image."

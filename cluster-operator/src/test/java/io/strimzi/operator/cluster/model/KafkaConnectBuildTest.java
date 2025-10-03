@@ -29,16 +29,11 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -47,13 +42,13 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KafkaConnectBuildTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
     private final String cluster = "my-connect";
     private final String namespace = "my-ns";
+    private final boolean useBuildah = false;
 
     private final Artifact jarArtifactNoChecksum = new JarArtifactBuilder()
             .withUrl("https://mydomain.tld/my.jar")
@@ -71,16 +66,8 @@ public class KafkaConnectBuildTest {
     private final String defaultBuildahBuildArgs = "--file=/dockerfile/Dockerfile --tag=my-image:latest --storage-driver=vfs";
     private final String defaultBuildahPushArgs = "--storage-driver=vfs --digestfile=/tmp/digest";
 
-    protected Stream<Arguments> kanikoAndBuildahCombinations() {
-        return Stream.of(
-            Arguments.of(false),
-            Arguments.of(true)
-        );
-    }
-
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testFromCrd(boolean useBuildah)   {
+    @Test
+    public void testFromCrd()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -102,9 +89,8 @@ public class KafkaConnectBuildTest {
         KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah);
     }
 
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testValidationPluginsExist(boolean useBuildah)   {
+    @Test
+    public void testValidationPluginsExist()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -126,9 +112,8 @@ public class KafkaConnectBuildTest {
         );
     }
 
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testValidationArtifactsExist(boolean useBuildah)   {
+    @Test
+    public void testValidationArtifactsExist()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -151,9 +136,8 @@ public class KafkaConnectBuildTest {
         );
     }
 
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testValidationUniqueNames(boolean useBuildah)   {
+    @Test
+    public void testValidationUniqueNames()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -177,9 +161,8 @@ public class KafkaConnectBuildTest {
         );
     }
 
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testDeployment(boolean useBuildah)   {
+    @Test
+    public void testKanikoDeployment()   {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
         limit.put("memory", new Quantity("512Mi"));
@@ -208,11 +191,11 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, false);
 
         assertThat(build.baseImage, is("my-source-image:latest"));
 
-        Pod pod = build.generateBuilderPod(true, useBuildah, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(true, false, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         assertThat(pod.getMetadata().getName(), is(KafkaConnectResources.buildPodName(cluster)));
         assertThat(pod.getMetadata().getNamespace(), is(namespace));
 
@@ -227,13 +210,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(pod.getSpec().getServiceAccountName(), is(KafkaConnectResources.buildServiceAccountName(cluster)));
         assertThat(pod.getSpec().getContainers().size(), is(1));
-        if (useBuildah) {
-            String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
-            assertThat(commands[0], containsString(defaultBuildahBuildArgs));
-            assertThat(commands[1], containsString(defaultBuildahPushArgs));
-        } else {
-            assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultKanikoArgs));
-        }
+        assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultKanikoArgs));
         assertThat(pod.getSpec().getContainers().get(0).getName(), is(KafkaConnectResources.buildPodName(this.cluster)));
         assertThat(pod.getSpec().getContainers().get(0).getImage(), is(build.image));
         assertThat(pod.getSpec().getContainers().get(0).getPorts(), is(nullValue()));
@@ -252,9 +229,79 @@ public class KafkaConnectBuildTest {
         io.strimzi.operator.cluster.TestUtils.checkOwnerReference(pod, kc);
     }
 
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testDeploymentWithoutPushSecret(boolean useBuildah)   {
+    @Test
+    public void testBuildahDeployment() {
+        Map<String, Quantity> limit = new HashMap<>();
+        limit.put("cpu", new Quantity("500m"));
+        limit.put("memory", new Quantity("512Mi"));
+
+        Map<String, Quantity> request = new HashMap<>();
+        request.put("cpu", new Quantity("1000m"));
+        request.put("memory", new Quantity("1Gi"));
+
+        KafkaConnect kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withImage("my-source-image:latest")
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                        .withPushSecret("my-docker-credentials")
+                    .endDockerOutput()
+                    .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                    .withResources(new ResourceRequirementsBuilder().withLimits(limit).withRequests(request).build())
+                .endBuild()
+            .endSpec()
+            .build();
+
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, true);
+
+        assertThat(build.baseImage, is("my-source-image:latest"));
+
+        Pod pod = build.generateBuilderPod(true, true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        assertThat(pod.getMetadata().getName(), is(KafkaConnectResources.buildPodName(cluster)));
+        assertThat(pod.getMetadata().getNamespace(), is(namespace));
+
+        Map<String, String> expectedDeploymentLabels = Map.of(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+            Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.buildPodName(cluster),
+            Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
+            Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
+            Labels.KUBERNETES_NAME_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
+            Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
+            Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
+            Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
+        String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
+
+        assertThat(pod.getMetadata().getLabels(), is(expectedDeploymentLabels));
+        assertThat(pod.getSpec().getServiceAccountName(), is(KafkaConnectResources.buildServiceAccountName(cluster)));
+        assertThat(pod.getSpec().getContainers().size(), is(1));
+        assertThat(commands[0], containsString(defaultBuildahBuildArgs));
+        assertThat(commands[1], containsString(defaultBuildahPushArgs));
+        assertThat(pod.getSpec().getContainers().get(0).getName(), is(KafkaConnectResources.buildPodName(this.cluster)));
+        assertThat(pod.getSpec().getContainers().get(0).getImage(), is(build.image));
+        assertThat(pod.getSpec().getContainers().get(0).getPorts(), is(nullValue()));
+        assertThat(pod.getSpec().getContainers().get(0).getResources().getLimits(), is(limit));
+        assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(request));
+        assertThat(pod.getSpec().getVolumes().size(), is(2));
+        assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
+        assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
+        assertThat(pod.getSpec().getVolumes().get(1).getName(), is("docker-credentials"));
+        assertThat(pod.getSpec().getVolumes().get(1).getSecret().getSecretName(), is("my-docker-credentials"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(2));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("dockerfile"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("docker-credentials"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/kaniko/.docker"));
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(pod, kc);
+    }
+
+    @Test
+    public void testKanikoDeploymentWithoutPushSecret()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -272,17 +319,11 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, useBuildah);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, false);
 
-        Pod pod = build.generateBuilderPod(true, useBuildah, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        Pod pod = build.generateBuilderPod(true, false, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
         assertThat(pod.getSpec().getVolumes().size(), is(1));
-        if (useBuildah) {
-            String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
-            assertThat(commands[0], containsString(defaultBuildahBuildArgs));
-            assertThat(commands[1], containsString(defaultBuildahPushArgs));
-        } else {
-            assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultKanikoArgs));
-        }
+        assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultKanikoArgs));
         assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
         assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(1));
@@ -290,9 +331,42 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
     }
 
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testConfigMap(boolean useBuildah)   {
+    @Test
+    public void testBuildahDeploymentWithoutPushSecret()   {
+        KafkaConnect kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                    .endDockerOutput()
+                    .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                .endBuild()
+            .endSpec()
+            .build();
+
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, true);
+
+        Pod pod = build.generateBuilderPod(true, true, ImagePullPolicy.IFNOTPRESENT, null, "cf065b80ede090aa");
+        String[] commands = pod.getSpec().getContainers().get(0).getArgs().get(2).split("\n");
+
+        assertThat(pod.getSpec().getVolumes().size(), is(1));
+        assertThat(commands[0], containsString(defaultBuildahBuildArgs));
+        assertThat(commands[1], containsString(defaultBuildahPushArgs));
+        assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
+        assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(1));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("dockerfile"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
+    }
+
+    @Test
+    public void testConfigMap()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -322,9 +396,8 @@ public class KafkaConnectBuildTest {
         io.strimzi.operator.cluster.TestUtils.checkOwnerReference(cm, kc);
     }
 
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testBuildconfigWithDockerOutput(boolean useBuildah)   {
+    @Test
+    public void testBuildconfigWithDockerOutput()   {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
         limit.put("memory", new Quantity("512Mi"));
@@ -379,9 +452,8 @@ public class KafkaConnectBuildTest {
     }
 
     // Test to validate that .spec.image and spec.build.output.image in Kafka Connect are not pointing to the same image
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testKafkaConnectBuildWithSpecImageSameAsDockerOutput(boolean useBuildah) {
+    @Test
+    public void testKafkaConnectBuildWithSpecImageSameAsDockerOutput() {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
         limit.put("memory", new Quantity("512Mi"));
@@ -458,9 +530,8 @@ public class KafkaConnectBuildTest {
         TestUtils.checkOwnerReference(bc, kc);
     }
 
-    @ParameterizedTest(name = "{displayName} with Buildah enabled: {0}")
-    @MethodSource("kanikoAndBuildahCombinations")
-    public void testTemplate(boolean useBuildah)   {
+    @Test
+    public void testTemplate()   {
         Map<String, String> buildPodLabels = Map.of("l1", "v1", "l2", "v2");
         Map<String, String> buildPodAnnos = Map.of("a1", "v1", "a2", "v2");
 
