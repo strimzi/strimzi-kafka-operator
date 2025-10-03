@@ -731,8 +731,8 @@
                 <version>${jupiter.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.junit.platform</groupId>
-                <artifactId>junit-platform-engine</artifactId>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
                 <version>${jupiter.version}</version>
             </dependency>
             <dependency>
