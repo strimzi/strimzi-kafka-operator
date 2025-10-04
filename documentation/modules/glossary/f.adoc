@@ -1,0 +1,11 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= F
+
+== Feature gate
+[id="glossary-feature-gate_{context}"]
+Used to enable or disable specific features and functions managed by Strimzi operators.
+New features may be introduced initially through feature gates.
+
+For more information, see {BookURLDeploying}#ref-operator-cluster-feature-gates-str[Feature gates^].

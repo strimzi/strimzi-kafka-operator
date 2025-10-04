@@ -1,0 +1,15 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= M
+
+== Metrics
+[id="glossary-metrics_{context}"]
+Strimzi components can expose Prometheus-formatted metrics for monitoring. 
+Metrics for components are enabled through its custom resource.
+
+For more information, see {BookURLDeploying}#assembly-metrics-str[Introducing metrics^].
+
+== Metrics Reporter
+[id="glossary-metrics-reporter_{context}"]
+A component that exposes Kafka broker metrics directly in Prometheus format, enabled through the `metricsConfig` property in the `Kafka` custom resource.

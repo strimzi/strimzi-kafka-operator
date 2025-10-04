@@ -1,0 +1,13 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= E
+
+== Encryption
+[id="glossary-encryption_{context}"]
+Strimzi supports Transport Layer Security (TLS) to encrypt communication between Kafka and its clients. 
+TLS is enabled per listener in the `Kafka` custom resource, and communication between internal components is always encrypted.
+
+== Entity Operator
+[id="glossary-entity-operator_{context}"]
+The Entity Operator runs the Topic Operator and User Operator in separate containers within its pod, allowing them to handle topic and user management.
