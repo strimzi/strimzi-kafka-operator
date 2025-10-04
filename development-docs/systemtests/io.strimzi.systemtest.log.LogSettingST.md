@@ -113,5 +113,5 @@
 **Labels:**
 
 * [logging](labels/logging.md)
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 
