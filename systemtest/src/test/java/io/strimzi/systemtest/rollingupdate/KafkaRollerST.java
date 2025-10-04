@@ -160,7 +160,7 @@ public class KafkaRollerST extends AbstractST {
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaledUpBrokerReplicaCount, kafkaPods);
 
         LOGGER.info("Remove Topic, thereby remove all partitions located on broker to be scaled down");
-        KubeResourceManager.get().deleteResource(kafkaTopicWith4Replicas);
+        KubeResourceManager.get().deleteResourceWithWait(kafkaTopicWith4Replicas);
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialBrokerReplicaCount);
 
         //Test that CO doesn't have any exceptions in log

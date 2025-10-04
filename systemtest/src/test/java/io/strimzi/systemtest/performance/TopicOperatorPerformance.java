@@ -197,7 +197,7 @@ public class TopicOperatorPerformance extends AbstractST {
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaTopic
             LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespaceName());
             List<KafkaTopic> kafkaTopics = CrdClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
-            KubeResourceManager.get().deleteResource(kafkaTopics.toArray(new KafkaTopic[0]));
+            KubeResourceManager.get().deleteResourceAsyncWait(kafkaTopics.toArray(new KafkaTopic[0]));
             KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
 
             if (this.topicOperatorMetricsGatherer != null) {

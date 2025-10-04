@@ -276,7 +276,7 @@ public class TopicST extends AbstractST {
         KafkaTopic kafkaTopic = CrdClients.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getTopicName()).get();
         if (kafkaTopic != null) {
             LOGGER.info("Deleting KafkaTopic: {}/{}", testStorage.getNamespaceName(), testStorage.getTopicName());
-            KubeResourceManager.get().deleteResource(kafkaTopic);
+            KubeResourceManager.get().deleteResourceWithWait(kafkaTopic);
         }
     }
 

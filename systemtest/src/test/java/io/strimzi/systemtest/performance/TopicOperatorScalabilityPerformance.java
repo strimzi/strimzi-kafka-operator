@@ -69,7 +69,7 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
                 // safe net if something went wrong during test case and KafkaTopic is not properly deleted
                 LOGGER.info("Cleaning namespace: {}", suiteTestStorage.getNamespaceName());
                 List<KafkaTopic> kafkaTopics = CrdClients.kafkaTopicClient().inNamespace(suiteTestStorage.getNamespaceName()).list().getItems();
-                KubeResourceManager.get().deleteResource(kafkaTopics.toArray(new KafkaTopic[0]));
+                KubeResourceManager.get().deleteResourceAsyncWait(kafkaTopics.toArray(new KafkaTopic[0]));
                 KafkaTopicUtils.waitForTopicWithPrefixDeletion(suiteTestStorage.getNamespaceName(), suiteTestStorage.getTopicName());
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();

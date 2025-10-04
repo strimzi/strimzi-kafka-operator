@@ -207,7 +207,7 @@ public class UserOperatorPerformance extends AbstractST {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaUser
             List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
-            KubeResourceManager.get().deleteResource(kafkaUsers.toArray(new KafkaUser[0]));
+            KubeResourceManager.get().deleteResourceAsyncWait(kafkaUsers.toArray(new KafkaUser[0]));
             KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
 
             if (this.userOperatorMetricsGatherer != null) {
