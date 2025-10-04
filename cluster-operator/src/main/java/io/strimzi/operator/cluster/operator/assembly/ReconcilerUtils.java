@@ -41,7 +41,6 @@ import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 
@@ -53,7 +52,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
@@ -432,23 +430,6 @@ public class ReconcilerUtils {
      */
     static RuntimeException missingSecretException(String namespace, String secretName) {
         return new RuntimeException("Secret " + namespace + "/" + secretName + " does not exist");
-    }
-
-    /**
-     * Method parses all dynamically unchangeable entries from the logging configuration.
-     * @param loggingConfiguration logging configuration to be parsed
-     * @return String containing all unmodifiable entries.
-     */
-    static String getLoggingDynamicallyUnmodifiableEntries(String loggingConfiguration) {
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(loggingConfiguration);
-        StringBuilder result = new StringBuilder();
-        for (Map.Entry<String, String> entry: new TreeMap<>(ops.asMap()).entrySet()) {
-            if (entry.getKey().startsWith("log4j.appender.") && !entry.getKey().equals("monitorInterval")) {
-                result.append(entry.getKey()).append("=").append(entry.getValue());
-            }
-        }
-        return result.toString();
     }
 
     /**
