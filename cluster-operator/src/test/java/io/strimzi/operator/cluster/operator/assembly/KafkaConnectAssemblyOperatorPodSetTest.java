@@ -10,12 +10,15 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
@@ -50,6 +53,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.platform.KubernetesVersion;
@@ -130,9 +134,20 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         vertx.close();
     }
 
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @Test
     public void testCreateCluster(VertxTestContext context)  {
-        KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
+        // We use TLS trusted certificates to test also the creation of their Secret
+        KafkaConnect connect = new KafkaConnectBuilder(CONNECT)
+                .editSpec()
+                    .withNewTls()
+                        .withTrustedCertificates(List.of(
+                                new CertSecretSourceBuilder().withSecretName("cert-secret").withPattern("*.crt").build(),
+                                new CertSecretSourceBuilder().withSecretName("cert-secret2").withCertificate("my-ca.pem").build()
+                        ))
+                    .endTls()
+                .endSpec()
+                .build();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock PodSets
@@ -169,8 +184,21 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock Secrets
+        Secret secret = new SecretBuilder()
+                .withNewMetadata().withName("cert-secret").endMetadata()
+                .withData(Map.of("ca.crt", Util.encodeToBase64("value1"), "ca2.crt", Util.encodeToBase64("value2")))
+                .build();
+        Secret secret2 = new SecretBuilder()
+                .withNewMetadata().withName("cert-secret2").endMetadata()
+                .withData(Map.of("my-ca.crt", Util.encodeToBase64("value3"), "my-ca.pem", Util.encodeToBase64("value4")))
+                .build();
+
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq("cert-secret2"))).thenReturn(Future.succeededFuture(secret2));
+        ArgumentCaptor<Secret> trustedSecretsCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.internalTlsTrustedCertsSecretName(NAME)), trustedSecretsCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock Connect CRs
         CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
@@ -211,9 +239,16 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     for (Pod pod : PodSetUtils.podSetToPods(podSet))  {
                         assertThat(pod.getMetadata().getAnnotations().size(), is(3));
                         assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue())); // We do not check the exact value -> it just describes the exact pod configuration which might change with too many unrelated code or dependency changes
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("413a55a2"));
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("0")); // We do not use any security in this test, so it is set but as 0
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("6d84a3fb"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("1621340526")); // We do not use any security in this test, so it is set but as 0
                     }
+
+                    // Verify Secret with trusted certificates
+                    List<Secret> capturedSecrets = trustedSecretsCaptor.getAllValues();
+                    assertThat(capturedSecrets, hasSize(1));
+                    assertThat(capturedSecrets.get(0).getMetadata().getName(), is(KafkaConnectResources.internalTlsTrustedCertsSecretName(NAME)));
+                    assertThat(capturedSecrets.get(0).getData().size(), is(1));
+                    assertThat(capturedSecrets.get(0).getData().get("ca.crt"), is(Util.encodeToBase64("value1\nvalue2\nvalue4")));
 
                     // Verify services => one regular and one headless
                     List<Service> capturedServices = serviceCaptor.getAllValues();

@@ -106,6 +106,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -600,9 +601,9 @@ class ConnectST extends AbstractST {
         String tlsCertSecretName = KafkaConnectResources.internalTlsTrustedCertsSecretName(testStorage.getClusterName());
         LOGGER.info("Verifying that tls cert secret {} is created for KafkaConnect truststore", tlsCertSecretName);
         Secret tlsCertSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(tlsCertSecretName).get();
-        // The secret should contain certificates from both secrets
-        assertThat(tlsCertSecret.getData().containsKey(testStorage.getClusterName() + "-cluster-ca-cert-ca.crt"), is(true));
-        assertThat(tlsCertSecret.getData().containsKey("my-secret-ca2.crt"), is(true));
+        // The secret should contain the combined ca.crt file with the certificates
+        assertThat(tlsCertSecret.getData().containsKey("ca.crt"), is(true));
+        assertThat(tlsCertSecret.getData().get("ca.crt"), is(notNullValue()));
 
         LOGGER.info("Creating FileStreamSink KafkaConnector via Pod: {}/{} with Topic: {}", testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName());
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
