@@ -9,6 +9,11 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
@@ -35,6 +40,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
@@ -86,6 +92,16 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite containing Custom Resource status verification scenarios, ensuring proper status reporting for Kafka, KafkaConnect, KafkaBridge, KafkaUser, and KafkaMirrorMaker2 resources."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Cluster Operator with custom configuration.", expected = "Cluster Operator is deployed with operation timeout settings."),
+        @Step(value = "Deploy shared Kafka cluster with multiple listeners.", expected = "Kafka cluster is deployed and ready with plain, TLS, and external listeners.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 class CustomResourceStatusST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
     private TestStorage sharedTestStorage;
@@ -93,6 +109,18 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("This test verifies that Kafka cluster status is correctly reported, including observed generation updates and listener status information. The test also verifies recovery from NotReady state."),
+        steps = {
+            @Step(value = "Verify Kafka cluster is ready and functioning.", expected = "Kafka cluster is ready and can produce/consume messages."),
+            @Step(value = "Check initial Kafka status information.", expected = "Kafka status shows correct observed generation and listener details."),
+            @Step(value = "Modify Kafka resources to cause NotReady state.", expected = "Kafka cluster becomes NotReady due to insufficient CPU resources."),
+            @Step(value = "Restore Kafka resources to recover.", expected = "Kafka cluster returns to Ready state with updated observed generation.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKafkaStatus() {
         LOGGER.info("Checking status of deployed Kafka cluster");
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
@@ -134,6 +162,17 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("This test verifies that KafkaUser status is correctly reported during creation, authorization changes, and ready state transitions."),
+        steps = {
+            @Step(value = "Create KafkaUser with ACL authorization rules.", expected = "KafkaUser is created but not ready due to missing topic."),
+            @Step(value = "Remove authorization from KafkaUser specification.", expected = "KafkaUser becomes ready after authorization removal."),
+            @Step(value = "Verify KafkaUser status condition.", expected = "KafkaUser status shows Ready condition type.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKafkaUserStatus() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -167,6 +206,18 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     @Tag(BRIDGE)
+    @TestDoc(
+        description = @Desc("This test verifies that KafkaBridge status is correctly reported, including observed generation updates and URL information during ready and not ready states."),
+        steps = {
+            @Step(value = "Deploy KafkaBridge and verify initial status.", expected = "KafkaBridge is ready with correct status information including URL."),
+            @Step(value = "Modify KafkaBridge resource requests/limits to cause NotReady state.", expected = "KafkaBridge becomes NotReady due to insufficient CPU resources."),
+            @Step(value = "Restore KafkaBridge resources to recover.", expected = "KafkaBridge returns to Ready state with updated observed generation.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.BRIDGE)
+        }
+    )
     void testKafkaBridgeStatus() {
         String bridgeUrl = KafkaBridgeResources.url(sharedTestStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 8080);
 
@@ -190,6 +241,22 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
+    @TestDoc(
+        description = @Desc("This test verifies that KafkaConnect and KafkaConnector status is correctly reported during various state transitions including Ready, NotReady, and configuration changes."),
+        steps = {
+            @Step(value = "Deploy KafkaConnect with file plugin and KafkaConnector.", expected = "KafkaConnect and KafkaConnector are ready with correct status information."),
+            @Step(value = "Modify KafkaConnect bootstrap servers to invalid value.", expected = "KafkaConnect becomes NotReady due to invalid bootstrap configuration."),
+            @Step(value = "Restore valid KafkaConnect bootstrap servers.", expected = "KafkaConnect returns to Ready state."),
+            @Step(value = "Modify KafkaConnector cluster label to invalid value.", expected = "KafkaConnector becomes NotReady and connector status is not reported (i.e., null)."),
+            @Step(value = "Restore valid KafkaConnector cluster label.", expected = "KafkaConnector returns to Ready state."),
+            @Step(value = "Modify KafkaConnector class name to invalid value.", expected = "KafkaConnector becomes NotReady due to invalid connector class."),
+            @Step(value = "Restore valid KafkaConnector configuration.", expected = "KafkaConnector returns to Ready state.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.CONNECT)
+        }
+    )
     void testKafkaConnectAndConnectorStatus() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String connectUrl = KafkaConnectResources.url(sharedTestStorage.getClusterName(), testStorage.getNamespaceName(), 8083);
@@ -248,6 +315,18 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     @Tag(CONNECTOR_OPERATOR)
+    @TestDoc(
+        description = @Desc("This test verifies that KafkaConnector without proper cluster configuration fails gracefully without causing NullPointerException (NPE) in Cluster Operator logs."),
+        steps = {
+            @Step(value = "Create KafkaConnector without cluster configuration in labels.", expected = "KafkaConnector is created but becomes NotReady."),
+            @Step(value = "Verify connector remains in NotReady state.", expected = "KafkaConnector status shows NotReady without causing NPE in Cluster Operator logs."),
+            @Step(value = "Delete the invalid KafkaConnector.", expected = "KafkaConnector is successfully deleted.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.CONNECT)
+        }
+    )
     void testKafkaConnectorWithoutClusterConfig() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -262,6 +341,17 @@ class CustomResourceStatusST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("This test verifies that certificates reported in Kafka status match the certificates stored in the cluster CA secret."),
+        steps = {
+            @Step(value = "Retrieve certificates from Kafka status.", expected = "Certificates are successfully retrieved from Kafka status."),
+            @Step(value = "Retrieve certificates from cluster CA secret.", expected = "Certificates are successfully retrieved from the cluster CA secret."),
+            @Step(value = "Compare status and secret certificates.", expected = "Certificates from status and secret are identical.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKafkaStatusCertificate() {
         String certs = getKafkaStatusCertificates(Environment.TEST_SUITE_NAMESPACE, TestConstants.TLS_LISTENER_DEFAULT_NAME, sharedTestStorage.getClusterName());
         String secretCerts = getKafkaSecretCertificates(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
@@ -273,6 +363,19 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
+    @TestDoc(
+        description = @Desc("This test verifies that KafkaMirrorMaker2 status is correctly reported, including observed generation updates, URL information, and connector status during Ready and NotReady states."),
+        steps = {
+            @Step(value = "Deploy source Kafka cluster and KafkaMirrorMaker2.", expected = "KafkaMirrorMaker2 is ready with correct status information including URL and connector states."),
+            @Step(value = "Modify KafkaMirrorMaker2 resources to cause NotReady state.", expected = "KafkaMirrorMaker2 becomes NotReady due to insufficient CPU resources."),
+            @Step(value = "Restore KafkaMirrorMaker2 resources to recover.", expected = "KafkaMirrorMaker2 returns to Ready state with updated observed generation."),
+            @Step(value = "Verify pod stability after recovery.", expected = "KafkaMirrorMaker2 pods remain stable, with no unexpected rolling updates.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.MIRROR_MAKER_2)
+        }
+    )
     void testKafkaMirrorMaker2Status() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String mm2Url = KafkaMirrorMaker2Resources.url(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 8083);
@@ -317,6 +420,18 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     @Tag(MIRROR_MAKER2)
+    @TestDoc(
+        description = @Desc("This test verifies that KafkaMirrorMaker2 with invalid bootstrap server configuration fails gracefully and can be deleted."),
+        steps = {
+            @Step(value = "Create KafkaMirrorMaker2 with non-existing bootstrap servers.", expected = "KafkaMirrorMaker2 is created but becomes NotReady."),
+            @Step(value = "Verify KafkaMirrorMaker2 remains in NotReady state.", expected = "KafkaMirrorMaker2 status shows NotReady due to invalid bootstrap configuration."),
+            @Step(value = "Delete the KafkaMirrorMaker2 with invalid configuration.", expected = "KafkaMirrorMaker2 and its deployment are successfully deleted.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.MIRROR_MAKER_2)
+        }
+    )
     void testKafkaMirrorMaker2WrongBootstrap() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String mirrorMaker2Name = testStorage.getClusterName() + "-mirror-maker-2";

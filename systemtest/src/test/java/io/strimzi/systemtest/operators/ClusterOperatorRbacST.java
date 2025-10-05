@@ -4,12 +4,18 @@
  */
 package io.strimzi.systemtest.operators;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
@@ -35,12 +41,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite containing Cluster Operator RBAC scenarios related to ClusterRoleBinding (CRB) permissions, ensuring proper functionality when namespace-scoped RBAC is used instead of cluster-wide permissions."),
+    labels = {
+        @Label(value = TestDocsLabels.CONNECT)
+    }
+)
 public class ClusterOperatorRbacST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorRbacST.class);
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
+    @TestDoc(
+        description = @Desc("This test verifies that the Cluster Operator can deploy Kafka and KafkaConnect resources even when ClusterRoleBinding permissions are not available, as long as rack awareness is not enabled. The test ensures that forbidden access to CRB resources is properly ignored when not required."),
+        steps = {
+            @Step(value = "Deploy Cluster Operator with namespace-scoped RBAC configuration.", expected = "Cluster Operator is configured with namespace-scoped access."),
+            @Step(value = "Create KafkaNodePools for brokers and controllers (without enabling rack awareness).", expected = "KafkaNodePools are created successfully."),
+            @Step(value = "Deploy Kafka cluster without rack awareness configuration.", expected = "Kafka cluster is deployed successfully despite missing CRB permissions."),
+            @Step(value = "Verify Cluster Operator logs contain information about ignoring forbidden CRB access for Kafka.", expected = "Logs show that forbidden access to ClusterRoleBindings for Kafka is ignored."),
+            @Step(value = "Deploy KafkaConnect without rack awareness configuration.", expected = "KafkaConnect is deployed successfully despite missing CRB permissions."),
+            @Step(value = "Verify Cluster Operator logs contain information about ignoring forbidden CRB access for KafkaConnect.", expected = "Logs show that forbidden access to ClusterRoleBindings for KafkaConnect is ignored.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.CONNECT)
+        }
+    )
     void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -80,6 +106,20 @@ public class ClusterOperatorRbacST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
+    @TestDoc(
+        description = @Desc("This test verifies that Cluster Operator fails to deploy Kafka and KafkaConnect resources when ClusterRoleBinding permissions are not available and rack awareness is enabled. The test ensures that error conditions are reported when CRB access is required but not available."),
+        steps = {
+            @Step(value = "Deploy Cluster Operator with namespace-scoped RBAC configuration.", expected = "Cluster Operator is configured with limited ClusterRoleBinding access."),
+            @Step(value = "Create KafkaNodePools for brokers and controllers.", expected = "KafkaNodePools are created successfully."),
+            @Step(value = "Deploy Kafka cluster with rack awareness configuration enabled.", expected = "Kafka deployment fails because CRB permissions are missing."),
+            @Step(value = "Verify Kafka status condition contains 403 forbidden error message.", expected = "Kafka status shows NotReady condition with code=403 error."),
+            @Step(value = "Deploy KafkaConnect with rack awareness configuration enabled.", expected = "KafkaConnect deployment fails because CRB permissions are missing."),
+            @Step(value = "Verify KafkaConnect status condition contains 403 forbidden error message.", expected = "KafkaConnect status shows NotReady condition with code=403 error.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.CONNECT)
+        }
+    )
     void testCRBDeletionErrorsWhenRackAwarenessIsEnabled() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         assumeFalse(Environment.isNamespaceRbacScope());

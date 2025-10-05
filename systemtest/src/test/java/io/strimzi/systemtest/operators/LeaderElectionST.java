@@ -8,10 +8,16 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.HelmInstallation;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -46,6 +52,15 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * <a href="https://strimzi.io/docs/operators/in-development/configuring.html#assembly-using-multiple-cluster-operator-replicas-str">the documentation</a>
  */
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Suite for testing Leader Election feature, which allows the Cluster Operator to run with more than one replica. There will always be one leader, while other replicas remain in standby mode."),
+    beforeTestSteps = {
+        @Step(value = "Verify deployment files contain all needed environment variables for leader election.", expected = "Deployment files contain required leader election environment variables.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class LeaderElectionST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(LeaderElectionST.class);
@@ -58,6 +73,19 @@ public class LeaderElectionST extends AbstractST {
     private static final String LEADER_MESSAGE = "I'm the new leader";
 
     @IsolatedTest
+    @TestDoc(
+        description = @Desc("This test verifies that leader election works correctly when running the Cluster Operator with multiple replicas. It tests leader failover by causing the current leader to crash and verifying that a new leader is elected."),
+        steps = {
+            @Step(value = "Deploy Cluster Operator with 2 replicas and leader election enabled.", expected = "Cluster Operator is deployed with 2 replicas and leader election is active."),
+            @Step(value = "Identify the current leader pod from the lease.", expected = "Current leader pod is identified from the lease holder identity."),
+            @Step(value = "Cause the leader pod to crash by changing its image to an invalid one.", expected = "Leader pod enters CrashLoopBackOff state."),
+            @Step(value = "Wait for a new leader to be elected.", expected = "A different pod becomes the new leader and the lease is updated."),
+            @Step(value = "Verify new leader election logs.", expected = "New leader pod logs contain leader election message.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.MIRROR_MAKER_2)
+        }
+    )
     void testLeaderElection() {
         // create CO with 2 replicas, wait for Deployment readiness and leader election
         SetupClusterOperator
@@ -98,6 +126,17 @@ public class LeaderElectionST extends AbstractST {
     }
 
     @IsolatedTest
+    @TestDoc(
+        description = @Desc("This test verifies that when leader election is disabled, no lease is created and no leader election messages appear in the logs."),
+        steps = {
+            @Step(value = "Deploy Cluster Operator with leader election disabled.", expected = "Cluster Operator is deployed with STRIMZI_LEADER_ELECTION_ENABLED=false."),
+            @Step(value = "Verify no lease exists for the Cluster Operator.", expected = "No lease resource is created in the operator namespace."),
+            @Step(value = "Check Cluster Operator logs for absence of leader election messages.", expected = "Logs do not contain leader election messages.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testLeaderElectionDisabled() {
         // Currently there is no way how to disable LeaderElection when deploying CO via Helm (duplicated envs)
         assumeTrue(!Environment.isHelmInstall());
