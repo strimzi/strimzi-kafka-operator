@@ -101,7 +101,7 @@ public class KafkaConnectConfigurationBuilder {
 
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS / SSL");
-                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName), "*.crt");
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName), "ca.crt");
                 writer.println("ssl.truststore.certificates=" + configProviderValue);
                 writer.println("ssl.truststore.type=PEM");
 
@@ -226,7 +226,7 @@ public class KafkaConnectConfigurationBuilder {
 
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
                         String oauthTrustedCertsSecret = KafkaConnectResources.internalOauthTrustedCertsSecretName(clusterName);
-                        String trustStorePath = OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + oauthTrustedCertsSecret + "/" + oauthTrustedCertsSecret + ".crt";
+                        String trustStorePath = OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + oauthTrustedCertsSecret + "/ca.crt";
                         jaasConfig.append(" oauth.ssl.truststore.location=\"" + trustStorePath + "\" oauth.ssl.truststore.type=\"PEM\"");
                     }
 

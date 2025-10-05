@@ -464,7 +464,7 @@ public class KafkaConnectClusterTest {
         // Check config map
         ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":*.crt}"));
+        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":ca.crt}"));
         assertThat(connectConfigurations, containsString("ssl.truststore.type=PEM"));
         assertThat(connectConfigurations, containsString("security.protocol=SSL"));
         assertThat(connectConfigurations, not(containsString("ssl.keystore.")));
@@ -496,7 +496,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("ssl.keystore.certificate.chain=${strimzisecrets:namespace/user-secret:user.crt}"));
         assertThat(connectConfigurations, containsString("ssl.keystore.type=PEM"));
         assertThat(connectConfigurations, containsString("security.protocol=SSL"));
-        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":*.crt}"));
+        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":ca.crt}"));
         assertThat(connectConfigurations, containsString("ssl.truststore.type=PEM"));
     }
 
@@ -592,7 +592,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("sasl.mechanism=SCRAM-SHA-512"));
         assertThat(connectConfigurations, containsString("security.protocol=SASL_SSL"));
         assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-secret:user1.password}\";"));
-        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":*.crt}"));
+        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":ca.crt}"));
         assertThat(connectConfigurations, containsString("ssl.truststore.type=PEM"));
 
         // Check PodSet
@@ -679,7 +679,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("sasl.mechanism=SCRAM-SHA-256"));
         assertThat(connectConfigurations, containsString("security.protocol=SASL_SSL"));
         assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-secret:user1.password}\";"));
-        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":*.crt}"));
+        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":ca.crt}"));
         assertThat(connectConfigurations, containsString("ssl.truststore.type=PEM"));
 
         // Check PodSet
@@ -766,7 +766,7 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("security.protocol=SASL_SSL"));
         assertThat(connectConfigurations, containsString("sasl.mechanism=PLAIN"));
         assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/kafka/connect-password/my-secret:user1.password}\";"));
-        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":*.crt}"));
+        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/" + KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName) + ":ca.crt}"));
         assertThat(connectConfigurations, containsString("ssl.truststore.type=PEM"));
 
         // Check PodSet
@@ -2046,7 +2046,7 @@ public class KafkaConnectClusterTest {
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
                 "oauth.ssl.endpoint.identification.algorithm=\"\" " +
                 "oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\" " +
-                "oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/" + oauthSecret + "/" + oauthSecret + ".crt\" " +
+                "oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/" + oauthSecret + "/ca.crt\" " +
                 "oauth.ssl.truststore.type=\"PEM\";"));
         assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
 

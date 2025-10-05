@@ -489,7 +489,7 @@ public class ReconcilerUtils {
         if (certSecretSources == null || certSecretSources.isEmpty()) {
             tlsFuture = Future.succeededFuture(0);
         } else {
-            // get all TLS trusted certs, compute hash from each of them, sum hashes
+            // get all TLS trusted certs, compute hash from them
             tlsFuture = Future.join(certSecretSources.stream().map(certSecretSource ->
                             getCertificateAsync(secretOperations, namespace, certSecretSource)
                                     .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
@@ -528,6 +528,34 @@ public class ReconcilerUtils {
                 // unknown Auth type
                 return tlsFuture;
             }
+        }
+    }
+
+    /**
+     * Gets trusted certificates from Secrets and merges them into a single String.
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param secretOperations      Secrets operator
+     * @param certificateSources    List of certificate sources
+     *
+     * @return  Certificates extracted from the Secrets
+     */
+    public static Future<String> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
+        if (certificateSources != null && !certificateSources.isEmpty()) {
+            return Future.join(certificateSources
+                            .stream()
+                            .map(certSecretSource -> ReconcilerUtils.getCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource))
+                            .toList())
+                    .compose(certificates -> {
+                        if (certificates.list().isEmpty()) {
+                            return Future.succeededFuture();
+                        } else {
+                            return Future.succeededFuture(String.join("\n", certificates.list()));
+                        }
+                    });
+        } else {
+            // No trusted certificates to extract.
+            return Future.succeededFuture();
         }
     }
 
@@ -598,12 +626,12 @@ public class ReconcilerUtils {
                 .compose(secret -> {
                     if (certSecretSource.getCertificate() != null)  {
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret, certSecretSource.getCertificate())
-                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().get(certSecretSource.getCertificate())));
+                                .compose(validatedSecret -> Future.succeededFuture(Util.decodeFromBase64(validatedSecret.getData().get(certSecretSource.getCertificate()))));
                     } else if (certSecretSource.getPattern() != null)    {
                         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + certSecretSource.getPattern());
 
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret)
-                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().entrySet().stream().filter(e -> matcher.matches(Paths.get(e.getKey()))).map(Map.Entry::getValue).sorted().collect(Collectors.joining())));
+                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().entrySet().stream().filter(e -> matcher.matches(Paths.get(e.getKey()))).map(e -> Util.decodeFromBase64(e.getValue())).sorted().collect(Collectors.joining("\n"))));
                     } else {
                         throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
                     }
