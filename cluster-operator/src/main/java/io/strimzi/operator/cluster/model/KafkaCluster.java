@@ -345,9 +345,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 result.ownerReference,
                 kafkaClusterSpec
         );
+        List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners();
 
         // Handle Kafka broker configuration
-        KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
+        KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet(), listeners);
         validateConfiguration(reconciliation, kafka, result.kafkaVersion, configuration);
 
         if (kafkaClusterSpec.getQuotas() != null) {
@@ -364,7 +365,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             LOGGER.errorCr(reconciliation, "The required field .spec.kafka.listeners is missing");
             throw new InvalidResourceException("The required field .spec.kafka.listeners is missing");
         }
-        List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners();
         ListenersValidator.validate(reconciliation, result.brokerNodes(), listeners);
         result.listeners = listeners;
 
