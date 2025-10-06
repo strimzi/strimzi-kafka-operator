@@ -28,16 +28,16 @@ jobs:
           runnerArch: "amd64"
 
   # Runs Strimzi unit and integration tests
-#  test-strimzi:
-#    name: Strimzi Unit & IT tests
-#    needs:
-#      - build-strimzi
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v5
-#      - uses: ./.github/actions/build/test-strimzi
-#        with:
-#          runnerArch: "amd64"
+  test-strimzi:
+    name: Strimzi Unit & IT tests
+    needs:
+      - build-strimzi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/test-strimzi
+        with:
+          runnerArch: "amd64"
 
   # Builds Strimzi docs
   build-docs:
@@ -73,32 +73,32 @@ jobs:
           runnerArch: "amd64"
 
   # Push Strimzi containers - run only on main branch
-  push-containers:
-    name: Push Containers
-    needs:
-      - build-strimzi
+#  push-containers:
+#    name: Push Containers
+#    needs:
+#      - build-strimzi
 #      - test-strimzi
-      - build-containers
-      - build-docs
-    if: ${{ github.ref == 'refs/heads/keyless-image-sign' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      # Required for keyless signing with GitHub OIDC
-      id-token: write
-    env:
-      DOCKER_REGISTRY: "quay.io"
-      DOCKER_ORG: "jstejska"
-      DOCKER_TAG: "latest"
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/containers-push
-        with:
-          architectures: "amd64,arm64,ppc64le,s390x"
-          runnerArch: "amd64"
-          quayUser: ${{ secrets.QUAY_USER }}
-          quayPass: ${{ secrets.QUAY_PASS }}
+#      - build-containers
+#      - build-docs
+#    if: ${{ github.ref == 'refs/heads/main' }}
+#    runs-on: ubuntu-latest
+#    permissions:
+#      contents: read
+#      packages: write
+#      # Required for keyless signing with GitHub OIDC
+#      id-token: write
+#    env:
+#      DOCKER_REGISTRY: "quay.io"
+#      DOCKER_ORG: "strimzi"
+#      DOCKER_TAG: "latest"
+#    steps:
+#      - uses: actions/checkout@v5
+#      - uses: ./.github/actions/build/containers-push
+#        with:
+#          architectures: "amd64,arm64,ppc64le,s390x"
+#          runnerArch: "amd64"
+#          quayUser: ${{ secrets.QUAY_USER }}
+#          quayPass: ${{ secrets.QUAY_PASS }}
 
 #  # Publish Strimzi docs to the website - run only on main branch
 #  publish-docs:

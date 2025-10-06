@@ -53,11 +53,11 @@ docker_push_sbom:
 
 # TODO - remove gha prefix once migrated fully to gha
 docker_gha_sbom:
-	./build.sh docker_sbom
+	./build.sh docker_gha_sbom
 
 # TODO - remove gha prefix once migrated fully to gha
 docker_gha_push_sbom:
-	./build.sh docker_push_sbom
+	./build.sh docker_gha_push_sbom
 
 all: docker_build docker_push
 

@@ -116,7 +116,7 @@ runs:
         path: sbom.tar.gz
         
     - name: Push SBOMs to registry
-      if: ${{ startsWith(github.ref, 'refs/heads/keyless-image-sign') }}
+      if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
       shell: bash
       run: |
         IFS=',' read -ra ARCH_ARRAY <<< "${{ inputs.architectures }}"
