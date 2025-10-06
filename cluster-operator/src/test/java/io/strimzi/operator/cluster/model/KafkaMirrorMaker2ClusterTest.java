@@ -2068,7 +2068,7 @@ public class KafkaMirrorMaker2ClusterTest {
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
                 "oauth.ssl.endpoint.identification.algorithm=\"\" " +
                 "oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\" " +
-                "oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/foo-connect-oauth-trusted-certs/foo-connect-oauth-trusted-certs.crt\" " +
+                "oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/foo-connect-oauth-trusted-certs/ca.crt\" " +
                 "oauth.ssl.truststore.type=\"PEM\";"));
 
         // Check PodSet

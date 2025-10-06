@@ -15,11 +15,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
-import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.connect.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -78,13 +75,10 @@ import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -284,38 +278,23 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        ClientTls tls = connect.getTls();
-        Set<String> secretsToCopy = new HashSet<>();
-
-        if (tls != null && tls.getTrustedCertificates() != null) {
-            secretsToCopy.addAll(tls.getTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
-        }
-
-        if (secretsToCopy.isEmpty()) {
+        if (connect.getTls() != null) {
+            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates())
+                    .compose(certificates -> {
+                        if (certificates != null) {
+                            return secretOperations.reconcile(
+                                            reconciliation,
+                                            namespace,
+                                            KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
+                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
+                                    .mapEmpty();
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    });
+        } else {
             return Future.succeededFuture();
         }
-
-        ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
-        return Future.join(secretsToCopy.stream()
-                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
-                                .compose(secret -> {
-                                    if (secret == null) {
-                                        return Future.failedFuture("Secret " + secretName + " not found");
-                                    } else {
-                                        secret.getData().entrySet().stream()
-                                                .filter(e -> e.getKey().contains(".crt"))
-                                                // In case secrets contain the same key, append the secret name into the key
-                                                .forEach(e -> secretData.put(secretName + "-" + e.getKey(), e.getValue()));
-                                    }
-                                    return Future.succeededFuture();
-                                }))
-                        .collect(Collectors.toList()))
-                .compose(ignore -> secretOperations.reconcile(
-                                reconciliation,
-                                namespace,
-                                KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                connect.generateTlsTrustedCertsSecret(secretData, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
-                        .mapEmpty());
     }
 
     /**
@@ -327,52 +306,22 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        KafkaClientAuthentication authentication = connect.getAuthentication();
-        Set<String> secretsToCopy = new HashSet<>();
-
-        if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null) {
-            secretsToCopy.addAll(oauth.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
-        }
-
-        if (secretsToCopy.isEmpty()) {
-            return Future.succeededFuture();
-        }
-
-        List<String> certs = new ArrayList<>();
-        String oauthSecret = KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster());
-        return Future.join(secretsToCopy.stream()
-                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
-                                .compose(secret -> {
-                                    if (secret == null) {
-                                        return Future.failedFuture("Secret " + secretName + " not found");
-                                    } else {
-                                        secret.getData().entrySet().stream()
-                                                .filter(e -> e.getKey().contains(".crt"))
-                                                // In case secrets contain the same key, append the secret name into the key
-                                                .forEach(e -> certs.add(e.getValue()));
-                                    }
-                                    return Future.succeededFuture();
-                                }))
-                        .collect(Collectors.toList()))
-                .compose(ignore -> secretOperations.reconcile(
-                                reconciliation,
-                                namespace,
-                                oauthSecret,
-                                connect.generateTlsTrustedCertsSecret(Map.of(oauthSecret + ".crt", mergeAndEncodeCerts(certs)), oauthSecret))
-                        .mapEmpty());
-    }
-
-    private String mergeAndEncodeCerts(List<String> certs) {
-        if (certs.size() > 1) {
-            String decodedAndMergedCerts = certs.stream()
-                    .map(Util::decodeFromBase64)
-                    .collect(Collectors.joining("\n"));
-
-            return Util.encodeToBase64(decodedAndMergedCerts);
-        } else if (certs.size() < 1) {
-            return "";
+        if (connect.getAuthentication() instanceof KafkaClientAuthenticationOAuth oauth) {
+            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, oauth.getTlsTrustedCertificates())
+                    .compose(certificates -> {
+                        if (certificates != null) {
+                            return secretOperations.reconcile(
+                                            reconciliation,
+                                            namespace,
+                                            KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()),
+                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster())))
+                                    .mapEmpty();
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    });
         } else {
-            return certs.get(0);
+            return Future.succeededFuture();
         }
     }
 
