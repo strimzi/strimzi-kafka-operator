@@ -914,7 +914,6 @@ public class KafkaRebalanceAssemblyOperator
                     if (taskStatusJson.has(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey()) &&
                             taskStatusJson.has(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())) {
                         LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is now ready", sessionId);
-                        System.out.println("Status" + taskStatusJson);
                         p.complete(buildRebalanceStatus(kafkaRebalance, sessionId, KafkaRebalanceState.ProposalReady, taskStatusJson, conditions));
                         break;
                     }
