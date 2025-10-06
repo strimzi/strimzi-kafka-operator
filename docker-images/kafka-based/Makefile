@@ -35,6 +35,10 @@ docker_push_manifest:
 docker_sign_manifest:
 	./build.sh docker_sign_manifest
 
+# TODO - remove gha prefix once migrated fully to gha
+docker_gha_sign_manifest:
+	./build.sh docker_gha_sign_manifest
+
 docker_delete_manifest:
 	./build.sh docker_delete_manifest
 
@@ -45,6 +49,14 @@ docker_sbom:
 	./build.sh docker_sbom
 
 docker_push_sbom:
+	./build.sh docker_push_sbom
+
+# TODO - remove gha prefix once migrated fully to gha
+docker_gha_sbom:
+	./build.sh docker_sbom
+
+# TODO - remove gha prefix once migrated fully to gha
+docker_gha_push_sbom:
 	./build.sh docker_push_sbom
 
 all: docker_build docker_push
