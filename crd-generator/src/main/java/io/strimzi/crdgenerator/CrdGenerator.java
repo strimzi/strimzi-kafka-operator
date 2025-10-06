@@ -354,10 +354,12 @@ class CrdGenerator {
             versionNode.put("served", servedVersion != null ? servedVersion.contains(crApiVersion) : version.served());
             versionNode.put("storage", storageVersion != null ? crApiVersion.equals(storageVersion) : version.storage());
 
-            // Deprecation
-            versionNode.put("deprecated", version.deprecated());
-            if (version.deprecationWarning() != null && !version.deprecationWarning().isEmpty()) {
-                versionNode.put("deprecationWarning", version.deprecationWarning());
+            // Deprecation -> we add it only when the version is deprecated to avoid issues in ArgoCD when diffing the CRDs
+            if (version.deprecated()) {
+                versionNode.put("deprecated", true);
+                if (version.deprecationWarning() != null && !version.deprecationWarning().isEmpty()) {
+                    versionNode.put("deprecationWarning", version.deprecationWarning());
+                }
             }
 
             // Subresources

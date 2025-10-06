@@ -628,7 +628,6 @@ spec:
   - name: v1beta1
     served: true
     storage: false
-    deprecated: false
     additionalPrinterColumns:
     - name: Foo
       description: The foo
