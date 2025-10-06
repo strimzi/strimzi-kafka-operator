@@ -1883,7 +1883,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 // script to generate the node configuration.
                 data.put(BROKER_LISTENERS_FILENAME, node.broker() ? listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")) : null);
 
-                // controller and broker both get the Cluster ID and metadata version
                 data.put(BROKER_CLUSTER_ID_FILENAME, clusterId);
                 data.put(BROKER_METADATA_VERSION_FILENAME, metadataVersion);
 
