@@ -44,6 +44,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
@@ -1804,6 +1806,50 @@ public class KafkaClusterTest {
         ClusterRoleBinding crb = KC.generateClusterRoleBinding(testNamespace);
 
         assertThat(crb, is(nullValue()));
+    }
+
+    @Test
+    public void testRoleAndRoleBinding() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                .withNamespace("namespace")
+                .endMetadata()
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("external")
+                        .withPort(9094)
+                        .withType(KafkaListenerType.NODEPORT)
+                        .withTls(true)
+                        .withNewKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerAuthenticationTlsAuth()
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        Role r = kc.generateRole();
+        assertThat(r.getMetadata().getName(), is(kc.componentName));
+        assertThat(r.getRules().get(0).getResources(), is(List.of("secrets")));
+        assertThat(r.getRules().get(0).getResourceNames(), is(List.of("foo-cluster-ca-cert",
+                "foo-clients-ca-cert",
+                "foo-brokers-7",
+                "foo-brokers-6",
+                "foo-controllers-0",
+                "foo-controllers-1",
+                "foo-mixed-3",
+                "foo-controllers-2",
+                "foo-mixed-4",
+                "foo-brokers-5")));
+        assertThat(r.getRules().get(0).getVerbs(), is(List.of("get")));
+
+        RoleBinding rb = kc.generateRoleBindingForRole();
+        assertThat(rb.getMetadata().getName(), is(KafkaResources.kafkaRoleBindingName(CLUSTER)));
+        assertThat(rb.getSubjects().get(0).getName(), is(kc.componentName));
+        assertThat(rb.getRoleRef().getName(), is(kc.componentName));
     }
 
     @Test

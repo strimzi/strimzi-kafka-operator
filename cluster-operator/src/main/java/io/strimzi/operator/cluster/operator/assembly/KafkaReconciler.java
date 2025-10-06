@@ -546,11 +546,11 @@ public class KafkaReconciler {
     }
 
     /**
-     * Manages the Kafka cluster role. When the desired Cluster Role Binding is null, and we get an RBAC error,
-     * we ignore it. This is to allow users to run the operator only inside a namespace when no features requiring
-     * Cluster Role are needed.
+     * Manages the Kafka role. This Role is always created and lives in
+     * the same namespace as the Kafka Cluster resource. This is used to load
+     * certificates from secrets directly.
      *
-     * @return  Completes when the Cluster Role was successfully created or updated
+     * @return  Completes when the Role was successfully created or updated
      */
     protected Future<Void> kafkaRole() {
         return roleOperator
@@ -563,11 +563,10 @@ public class KafkaReconciler {
     }
 
     /**
-     * Manages the Kafka cluster role binding. When the desired Cluster Role Binding is null, and we get an RBAC error,
-     * we ignore it. This is to allow users to run the operator only inside a namespace when no features requiring
-     * Cluster Role Bindings are needed.
+     * Manages the Kafka Role Bindings.
+     * The Role Binding is in the namespace where the Kafka Cluster resource exists.
      *
-     * @return  Completes when the Cluster Role Binding was successfully created or updated
+     * @return  Completes when the Role Binding was successfully created or updated
      */
     protected Future<Void> kafkaRoleBinding() {
         return roleBindingOperator

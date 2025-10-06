@@ -78,9 +78,9 @@ public class KafkaAgent {
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
     private static final byte BROKER_UNKNOWN_STATE = 127;
-    private static final SecureRandom RANDOM = new SecureRandom();
-    private Secret caCertSecret;
-    private Secret nodeCertSecret;
+    static final SecureRandom RANDOM = new SecureRandom();
+    private final Secret caCertSecret;
+    private final Secret nodeCertSecret;
     private MetricName brokerStateName;
     private Gauge brokerState;
     private Gauge remainingLogsToRecover;
@@ -110,7 +110,9 @@ public class KafkaAgent {
      * @param remainingLogsToRecover        Number of remaining logs to recover
      * @param remainingSegmentsToRecover    Number of remaining segments to recover
      */
-    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+    /* test */ KafkaAgent(Secret caCertSecret, Secret nodeCertSecret, Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+        this.caCertSecret = caCertSecret;
+        this.nodeCertSecret = nodeCertSecret;
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
         this.remainingSegmentsToRecover = remainingSegmentsToRecover;
@@ -202,7 +204,7 @@ public class KafkaAgent {
         HttpConfiguration https = new HttpConfiguration();
         https.addCustomizer(new SecureRequestCustomizer());
         ServerConnector httpsConn = new ServerConnector(server,
-                new SslConnectionFactory(getSSLContextFactory(), "http/1.1"),
+                new SslConnectionFactory(getSSLContextFactory(caCertSecret, nodeCertSecret), "http/1.1"),
                 new HttpConnectionFactory(https));
         httpsConn.setHost("0.0.0.0");
         httpsConn.setPort(HTTPS_PORT);
@@ -262,7 +264,7 @@ public class KafkaAgent {
         };
     }
 
-    private SslContextFactory.Server getSSLContextFactory() throws GeneralSecurityException, IOException {
+    static SslContextFactory.Server getSSLContextFactory(Secret caCertSecret, Secret nodeCertSecret) throws GeneralSecurityException, IOException {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setTrustStore(KafkaAgentUtils.jksTrustStore(caCertSecret));
 
