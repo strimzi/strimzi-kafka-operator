@@ -118,6 +118,7 @@
         <skodjob.test-frame.version>1.1.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.5.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
+        <access-operator.version>0.2.0</access-operator.version>
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
@@ -800,6 +801,11 @@
                 <groupId> com.github.docker-java</groupId>
                 <artifactId>docker-java-api</artifactId>
                 <version>${docker-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi.access-operator</groupId>
+                <artifactId>api</artifactId>
+                <version>${access-operator.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
