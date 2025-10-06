@@ -201,11 +201,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final String BROKER_CONFIGURATION_FILENAME = "server.config";
 
     /**
-     * Key under which the listener configuration is stored in Config Map
-     */
-    public static final String BROKER_LISTENERS_FILENAME = "listeners.config";
-
-    /**
      * Key under which the Kafka cluster.id is stored in Config Map
      */
     public static final String BROKER_CLUSTER_ID_FILENAME = "cluster.id";
@@ -1875,14 +1870,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
                 data.put(LoggingModel.LOG4J2_CONFIG_MAP_KEY, parsedLogging);
                 data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerConfiguration(node, pool, advertisedHostnames, advertisedPorts));
-
-                // List of configured listeners => StrimziPodSets still need this because of OAUTH and how the OAUTH secret
-                // environment variables are parsed in the container bash scripts.
-                // The actual content of this file is not used on controller-only nodes as they do not expose any
-                // user-configured listeners. But we still pass there an empty file as that allows us to share the same
-                // script to generate the node configuration.
-                data.put(BROKER_LISTENERS_FILENAME, node.broker() ? listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")) : null);
-
                 data.put(BROKER_CLUSTER_ID_FILENAME, clusterId);
                 data.put(BROKER_METADATA_VERSION_FILENAME, metadataVersion);
 
