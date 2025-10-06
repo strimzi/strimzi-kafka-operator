@@ -12,34 +12,44 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Determine ref
+    - name: Determine ref and SHA
       id: determine
-      shell: bash
-      run: |
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          # For PR events, use merge ref to test the merged state
-          REF="refs/pull/${{ github.event.pull_request.number }}/merge"
-          SHA="${{ github.event.pull_request.merge_commit_sha }}"
-          if [[ "$SHA" == "" || "$SHA" == "null" ]]; then
-            SHA="HEAD"
-          fi
-          echo "PR event detected: Using merge ref for PR #${{ github.event.pull_request.number }}"
-        elif [[ "${{ github.event_name }}" == "issue_comment" ]] && [[ "${{ github.event.issue.pull_request }}" != "" && "${{ github.event.issue.pull_request }}" != "null" ]]; then
-          # For PR comments, use merge ref to test against merge commit
-          REF="refs/pull/${{ github.event.issue.number }}/merge"
-          SHA="HEAD"
-          echo "PR comment detected: Using merge ref for PR #${{ github.event.issue.number }}"
-        else
-          # For workflow_dispatch and other events, use the current branch
-          REF="${{ github.ref }}"
-          SHA="${{ github.sha }}"
-          echo "Standard event: Using current ref $REF"
-        fi
-        
-        echo "ref=$REF" >> $GITHUB_OUTPUT
-        echo "sha=$SHA" >> $GITHUB_OUTPUT
-        echo "REF=$REF" >> $GITHUB_ENV
-        echo "SHA=$SHA" >> $GITHUB_ENV
-        
-        echo "Determined ref: $REF"
-        echo "Determined SHA: $SHA"
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const {owner, repo} = context.repo;
+          let ref, sha;
+
+          if (context.eventName === 'pull_request') {
+            // For PR events, use merge ref to test the merged state
+            const prNumber = context.payload.pull_request.number;
+            ref = `refs/pull/${prNumber}/merge`;
+            sha = context.payload.pull_request.head.sha;
+            core.info(`PR event detected: Using merge ref for PR #${prNumber}`);
+            core.info(`Head SHA: ${sha}`);
+          } else if (context.eventName === 'issue_comment' && context.payload.issue?.pull_request) {
+            // For PR comments, fetch the PR to get head SHA
+            const prNumber = context.payload.issue.number;
+            ref = `refs/pull/${prNumber}/merge`;
+
+            const pr = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: prNumber
+            });
+            sha = pr.data.head.sha;
+
+            core.info(`PR comment detected: Using merge ref for PR #${prNumber}`);
+            core.info(`Head SHA: ${sha}`);
+          } else {
+            // For workflow_dispatch and other events, use the current branch
+            ref = context.ref;
+            sha = context.sha;
+            core.info(`Standard event: Using current ref ${ref}`);
+            core.info(`SHA: ${sha}`);
+          }
+
+          core.setOutput('ref', ref);
+          core.setOutput('sha', sha);
+          core.exportVariable('REF', ref);
+          core.exportVariable('SHA', sha);
