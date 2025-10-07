@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.common.template.StatefulSetTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -65,6 +66,7 @@ public class KafkaClusterTemplate implements HasJmxSecretTemplate, UnknownProper
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Deprecated
     @DeprecatedProperty(description = "Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored.")
+    @PresentInVersions("v1beta2")
     public StatefulSetTemplate getStatefulset() {
         return statefulset;
     }

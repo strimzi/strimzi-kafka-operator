@@ -59,7 +59,7 @@ spec:
                   description: The Kafka Connect version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
                 replicas:
                   type: integer
-                  description: The number of pods in the Kafka Connect group. Defaults to `3`.
+                  description: The number of pods in the Kafka Connect group. Required in the `v1` version of the Strimzi API. Defaults to `3` in the `v1beta2` version of the Strimzi API.
                 image:
                   type: string
                   description: "The container image used for Kafka Connect pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration."

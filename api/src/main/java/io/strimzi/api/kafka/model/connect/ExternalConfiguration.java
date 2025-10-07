@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -32,6 +33,7 @@ import java.util.Map;
 @JsonPropertyOrder({ "env", "volumes" })
 @Deprecated
 @DeprecatedType(replacedWithType = KafkaConnectTemplate.class)
+@PresentInVersions("v1beta2")
 @EqualsAndHashCode
 @ToString
 public class ExternalConfiguration implements UnknownPropertyPreserving {

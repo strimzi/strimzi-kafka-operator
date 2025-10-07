@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -110,6 +111,7 @@ public class KafkaNodePool extends CustomResource<KafkaNodePoolSpec, KafkaNodePo
 
     @Override
     @Description("The specification of the KafkaNodePool.")
+    @RequiredInVersions("v1+")
     public KafkaNodePoolSpec getSpec() {
         return super.getSpec();
     }

@@ -115,7 +115,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     @Description("As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     @DeprecatedProperty(description = "The storage overrides for individual brokers are not supported anymore since Strimzi 0.46.0.")
     public List<PersistentClaimStorageOverride> getOverrides() {

@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.common.CustomResourceConditions;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -104,6 +105,7 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
 
     @Override
     @Description("The specification of the Kafka rebalance.")
+    @RequiredInVersions("v1+")
     public KafkaRebalanceSpec getSpec() {
         return super.getSpec();
     }

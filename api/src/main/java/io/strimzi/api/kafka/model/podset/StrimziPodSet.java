@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -113,6 +114,7 @@ public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodS
 
     @Override
     @Description("The specification of the StrimziPodSet.")
+    @RequiredInVersions("v1+")
     public StrimziPodSetSpec getSpec() {
         return super.getSpec();
     }

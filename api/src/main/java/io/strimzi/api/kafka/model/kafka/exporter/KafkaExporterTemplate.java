@@ -65,7 +65,7 @@ public class KafkaExporterTemplate implements UnknownPropertyPreserving {
 
     @Description("Template for Kafka Exporter `Service`.")
     @DeprecatedProperty(description = "The Kafka Exporter service has been removed.")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getService() {

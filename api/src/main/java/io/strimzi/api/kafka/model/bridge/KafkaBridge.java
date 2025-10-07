@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.common.CustomResourceConditions;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -110,6 +111,7 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
     
     @Override
     @Description("The specification of the Kafka Bridge.")
+    @RequiredInVersions("v1+")
     public KafkaBridgeSpec getSpec() {
         return super.getSpec();
     }

@@ -7,7 +7,6 @@ package io.strimzi.api.kafka.model.common;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -37,7 +36,6 @@ public class ExternalLogging extends Logging {
     }
 
     @Description("`ConfigMap` entry where the logging configuration is stored. ")
-    @PresentInVersions("v1alpha1+")
     public ExternalConfigurationReference getValueFrom() {
         return valueFrom;
     }

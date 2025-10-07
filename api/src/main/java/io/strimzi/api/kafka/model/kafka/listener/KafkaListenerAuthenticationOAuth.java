@@ -431,7 +431,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     @DeprecatedProperty
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     @Description("Enable or disable ECDSA support by installing BouncyCastle crypto provider. " +
             "ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.")

@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Example;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -33,6 +34,7 @@ import java.util.List;
 @ToString(callSuper = true)
 @Deprecated
 @DeprecatedType(replacedWithType = KafkaAuthorizationCustom.class)
+@PresentInVersions("v1beta2")
 public class KafkaAuthorizationOpa extends KafkaAuthorization {
     public static final String TYPE_OPA = "opa";
 

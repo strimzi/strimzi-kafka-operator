@@ -25,6 +25,8 @@ import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -59,8 +61,10 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
     private Rack rack;
 
     @Description("The number of pods in the Kafka Connect group. " +
-            "Defaults to `3`.")
+            "Required in the `v1` version of the Strimzi API. " +
+            "Defaults to `3` in the `v1beta2` version of the Strimzi API.")
     @JsonProperty(defaultValue = "3")
+    @RequiredInVersions("v1+")
     public int getReplicas() {
         return replicas;
     }
@@ -193,6 +197,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
     @Deprecated
     @DeprecatedProperty(description = "The external configuration is deprecated and will be removed in the future. " +
             "Please use the template section instead to configure additional environment variables or volumes.")
+    @PresentInVersions("v1beta2")
     public ExternalConfiguration getExternalConfiguration() {
         return externalConfiguration;
     }
