@@ -33,9 +33,9 @@ A custom resource for managing individual Kafka connectors in a Kafka Connect cl
 
 For more information, see the {BookURLConfiguring}#type-KafkaConnector-reference[`KafkaConnector` schema reference^].
 
-== KafkaExporter (custom resource)
-[id="glossary-kafkaexporter-cr_{context}"]
-A custom resource used to deploy the Kafka Exporter, which exposes Kafka metrics for Prometheus. 
+== KafkaExporter
+[id="glossary-kafkaexporter_{context}"]
+The Kafka Exporter exposes Kafka metrics for Prometheus. 
 It is configured as part of the `Kafka` custom resource.
 
 For more information, see the {BookURLConfiguring}#type-KafkaExporterSpec-reference[`KafkaExporterSpec` schema reference^].
