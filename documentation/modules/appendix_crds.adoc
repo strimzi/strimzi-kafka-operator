@@ -4228,7 +4228,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |**The `connectCluster` property has been deprecated, and should now be configured using `.spec.target`.** The `connectCluster` field is deprecated and will be removed in the `v1` CRD API. The cluster alias used for Kafka Connect. The value must match the alias of the *target* Kafka cluster as specified in the `spec.clusters` configuration. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
 |clusters
 |xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`] array
-|**The `clusters` property has been deprecated.** The `clusters` section is deprecated and will be removed in the `v1` CRD API. Please use the `.spec.target` and `.spec.mirrors.source` sections instead. Kafka clusters for mirroring.
+|**The `clusters` property has been deprecated.** The `clusters` section is deprecated and will be removed in the `v1` CRD API. Please use the `.spec.target` and `.spec.mirrors[].source` sections instead. Kafka clusters for mirroring.
 |target
 |xref:type-KafkaMirrorMaker2TargetClusterSpec-{context}[`KafkaMirrorMaker2TargetClusterSpec`]
 |The target Apache Kafka cluster. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.

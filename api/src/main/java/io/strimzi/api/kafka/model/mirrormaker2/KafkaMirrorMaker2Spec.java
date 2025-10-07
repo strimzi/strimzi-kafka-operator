@@ -38,7 +38,7 @@ public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
     @PresentInVersions("v1beta2")
     @Deprecated
     @DeprecatedProperty(description = "The `clusters` section is deprecated and will be removed in the `v1` CRD API. " +
-            "Please use the `.spec.target` and `.spec.mirrors.source` sections instead.")
+            "Please use the `.spec.target` and `.spec.mirrors[].source` sections instead.")
     public List<KafkaMirrorMaker2ClusterSpec> getClusters() {
         return clusters;
     }
