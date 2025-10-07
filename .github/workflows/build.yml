@@ -18,25 +18,25 @@ jobs:
   # Build Strimzi Java code and does basic checks of the PR
   build-strimzi:
     name: Build Strimzi
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/build/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
   # Runs Strimzi unit and integration tests
   test-strimzi:
     name: Strimzi Unit & IT tests
     needs:
       - build-strimzi
-    runs-on: oracle-vm-4cpu-16gb-arm64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/build/test-strimzi
         with:
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
   # Builds Strimzi docs
   build-docs:
@@ -63,17 +63,15 @@ jobs:
           - arm64
           - s390x
           - ppc64le
-    runs-on: oracle-vm-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/build/containers-build
         with:
           architecture: ${{ matrix.architecture }}
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
-# The following jobs are used to push artifacts into respective services
-# Uncomment them once we want to migrate from Azure to GHA
-#  # Push Strimzi containers - run only on main branch
+  # Push Strimzi containers - run only on main branch
 #  push-containers:
 #    name: Push Containers
 #    needs:
@@ -81,8 +79,13 @@ jobs:
 #      - test-strimzi
 #      - build-containers
 #      - build-docs
-#    if: ${{ github.ref == 'refs/heads/gha-build' }}
+#    if: ${{ github.ref == 'refs/heads/main' }}
 #    runs-on: ubuntu-latest
+#    permissions:
+#      contents: read
+#      packages: write
+#      # Required for keyless signing with GitHub OIDC
+#      id-token: write
 #    env:
 #      DOCKER_REGISTRY: "quay.io"
 #      DOCKER_ORG: "strimzi"
@@ -95,9 +98,7 @@ jobs:
 #          runnerArch: "amd64"
 #          quayUser: ${{ secrets.QUAY_USER }}
 #          quayPass: ${{ secrets.QUAY_PASS }}
-#          cosignPassword: ${{ secrets.COSIGN_PASSWORD }}
-#          cosignPrivateKey: ${{ secrets.COSIGN_PRIVATE_KEY }}
-#
+
 #  # Publish Strimzi docs to the website - run only on main branch
 #  publish-docs:
 #    name: Publish Docs
@@ -107,7 +108,7 @@ jobs:
 #      - build-containers
 #      - build-docs
 #    if: ${{ github.ref == 'refs/heads/main' }}
-#    runs-on: oracle-2cpu-8gb-x86_64
+#    runs-on: ubuntu-latest
 #    steps:
 #      - uses: actions/checkout@v5
 #      - uses: ./.github/actions/build/publish-docs
@@ -124,7 +125,7 @@ jobs:
 #      - build-containers
 #      - build-docs
 #    if: ${{ github.ref == 'refs/heads/main' }}
-#    runs-on: oracle-2cpu-8gb-x86_64
+#    runs-on: ubuntu-latest
 #    steps:
 #      - uses: actions/checkout@v5
 #      - uses: ./.github/actions/build/deploy-java
