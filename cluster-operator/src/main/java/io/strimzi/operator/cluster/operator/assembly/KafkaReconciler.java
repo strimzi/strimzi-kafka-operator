@@ -672,7 +672,6 @@ public class KafkaReconciler {
                                     .map(kv -> kv.getKey() + "://" + kv.getValue())
                                     .sorted()
                                     .collect(Collectors.joining(" "));
-                            nodeConfiguration += cm.getData().getOrDefault(KafkaCluster.BROKER_LISTENERS_FILENAME, "");
                         }
 
                         // Changes to regular Kafka configuration are handled through the KafkaRoller which decides whether to roll the pod or not

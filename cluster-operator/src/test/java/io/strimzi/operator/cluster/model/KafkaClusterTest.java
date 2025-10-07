@@ -1209,25 +1209,22 @@ public class KafkaClusterTest {
             assertThat(cm.getMetadata().getName(), startsWith("foo-"));
 
             if (cm.getMetadata().getName().contains("controllers")) {
-                assertThat(cm.getData().size(), is(5));
+                assertThat(cm.getData().size(), is(4));
                 assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=controller\n"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is(nullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
             } else if (cm.getMetadata().getName().contains("brokers")) {
-                assertThat(cm.getData().size(), is(5));
+                assertThat(cm.getData().size(), is(4));
                 assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=broker\n"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is("PLAIN_9092 TLS_9093"));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
             } else {
-                assertThat(cm.getData().size(), is(5));
+                assertThat(cm.getData().size(), is(4));
                 assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=broker,controller\n"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is("PLAIN_9092 TLS_9093"));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
             }
         }
