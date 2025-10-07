@@ -324,7 +324,7 @@ spec:
                       description: The name of the Kafka topic where connector configurations are stored. Required.
                     statusStorageTopic:
                       type: string
-                      description: The name of the Kafka topic where connector and task status are stored. Required.
+                      description: The name of the Kafka topic where connector and task statuses are stored. Required.
                     offsetStorageTopic:
                       type: string
                       description: The name of the Kafka topic where source connector offsets are stored. Required.

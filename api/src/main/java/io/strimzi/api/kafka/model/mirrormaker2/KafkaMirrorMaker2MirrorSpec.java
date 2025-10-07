@@ -116,7 +116,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
 
     @Description("The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
     @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.mirrors.source", description = "The `sourceCluster` field is deprecated and will be removed in the `v1` CRD API.")
+    @DeprecatedProperty(movedToPath = ".spec.mirrors.source", description = "The `sourceCluster` property is deprecated and will be removed in the `v1` CRD API.")
     @PresentInVersions("v1beta2")
     public String getSourceCluster() {
         return sourceCluster;
@@ -128,7 +128,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
 
     @Description("The alias of the target cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
     @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.target", description = "The `targetCluster` field is deprecated and will be removed in the `v1` CRD API.")
+    @DeprecatedProperty(movedToPath = ".spec.target", description = "The `targetCluster` property is deprecated and will be removed in the `v1` CRD API.")
     @PresentInVersions("v1beta2")
     public String getTargetCluster() {
         return targetCluster;
@@ -158,7 +158,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
 
     @Description("The specification of the Kafka MirrorMaker 2 heartbeat connector.")
     @Deprecated
-    @DeprecatedProperty(description = "The `heartbeatConnector` is deprecated and will be removed in the `v1` CRD API.")
+    @DeprecatedProperty(description = "The `heartbeatConnector` property is deprecated and will be removed in the `v1` CRD API.")
     @PresentInVersions("v1beta2")
     public KafkaMirrorMaker2ConnectorSpec getHeartbeatConnector() {
         return heartbeatConnector;

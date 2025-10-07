@@ -1,13 +1,13 @@
 :_mod-docs-content-type: CONCEPT
 
-Configures the target Apache Kafka cluster.
+Configures the target Apache Kafka cluster for a MirrorMaker 2 deployment.
 The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
 
 [id='property-kafka-mirrormaker2-target-internal-topics-grop-id-{context}']
 = Group ID and internal topics
 
 The group ID and the internal topics used by the Kafka Connect cluster are configured in the `.spec.target` section of the `KafkaMirrorMaker2` resource.
-These fields are required.
+These properties are required.
 
 .Example group ID and internal topics configuration
 [source,yaml,subs="attributes+"]

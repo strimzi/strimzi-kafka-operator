@@ -4225,7 +4225,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |The container image used for Kafka Connect pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.
 |connectCluster
 |string
-|**The `connectCluster` property has been deprecated, and should now be configured using `.spec.target`.** The `connectCluster` field is deprecated and will be removed in the `v1` CRD API. The cluster alias used for Kafka Connect. The value must match the alias of the *target* Kafka cluster as specified in the `spec.clusters` configuration. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
+|**The `connectCluster` property has been deprecated, and should now be configured using `.spec.target`.** The `connectCluster` property is deprecated and will be removed in the `v1` CRD API. The cluster alias used for Kafka Connect. The value must match the alias of the *target* Kafka cluster as specified in the `spec.clusters` configuration. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
 |clusters
 |xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`] array
 |**The `clusters` property has been deprecated.** The `clusters` section is deprecated and will be removed in the `v1` CRD API. Please use the `.spec.target` and `.spec.mirrors[].source` sections instead. Kafka clusters for mirroring.
@@ -4336,7 +4336,7 @@ include::../api/io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetC
 |The name of the Kafka topic where connector configurations are stored. Required.
 |statusStorageTopic
 |string
-|The name of the Kafka topic where connector and task status are stored. Required.
+|The name of the Kafka topic where connector and task statuses are stored. Required.
 |offsetStorageTopic
 |string
 |The name of the Kafka topic where source connector offsets are stored. Required.
@@ -4362,10 +4362,10 @@ Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 |Property |Property type |Description
 |sourceCluster
 |string
-|**The `sourceCluster` property has been deprecated, and should now be configured using `.spec.mirrors.source`.** The `sourceCluster` field is deprecated and will be removed in the `v1` CRD API. The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.
+|**The `sourceCluster` property has been deprecated, and should now be configured using `.spec.mirrors.source`.** The `sourceCluster` property is deprecated and will be removed in the `v1` CRD API. The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.
 |targetCluster
 |string
-|**The `targetCluster` property has been deprecated, and should now be configured using `.spec.target`.** The `targetCluster` field is deprecated and will be removed in the `v1` CRD API. The alias of the target cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.
+|**The `targetCluster` property has been deprecated, and should now be configured using `.spec.target`.** The `targetCluster` property is deprecated and will be removed in the `v1` CRD API. The alias of the target cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.
 |source
 |xref:type-KafkaMirrorMaker2ClusterSpec-{context}[`KafkaMirrorMaker2ClusterSpec`]
 |The source Apache Kafka cluster. The source Kafka cluster is used by the Kafka MirrorMaker 2 connectors.
@@ -4374,7 +4374,7 @@ Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 |The specification of the Kafka MirrorMaker 2 source connector.
 |heartbeatConnector
 |xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
-|**The `heartbeatConnector` property has been deprecated.** The `heartbeatConnector` is deprecated and will be removed in the `v1` CRD API. The specification of the Kafka MirrorMaker 2 heartbeat connector.
+|**The `heartbeatConnector` property has been deprecated.** The `heartbeatConnector` property is deprecated and will be removed in the `v1` CRD API. The specification of the Kafka MirrorMaker 2 heartbeat connector.
 |checkpointConnector
 |xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
 |The specification of the Kafka MirrorMaker 2 checkpoint connector.

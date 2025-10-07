@@ -51,7 +51,7 @@ public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
             "The value must match the alias of the *target* Kafka cluster as specified in the `spec.clusters` configuration. " +
             "The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.")
     @Deprecated
-    @DeprecatedProperty(movedToPath = ".spec.target", description = "The `connectCluster` field is deprecated and will be removed in the `v1` CRD API.")
+    @DeprecatedProperty(movedToPath = ".spec.target", description = "The `connectCluster` property is deprecated and will be removed in the `v1` CRD API.")
     @PresentInVersions("v1beta2")
     public String getConnectCluster() {
         return connectCluster;

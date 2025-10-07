@@ -73,7 +73,7 @@ spec:
       groupsPattern: "group1.*|group2-[0-9]{2}" # <7>
 ----
 <1> Number of Kafka Connect worker replicas to run.
-<2> Configuration of the Kafka cluster used as the target cluster. This cluster will be also used by Kafka Connect to store internal topics.
+<2> Configuration of the Kafka cluster used as the target cluster. The cluster is also used by Kafka Connect to store internal topics.
 <3> Defines replication between the source and target clusters. 
 <4> Source cluster configuration must define a unique alias and a bootstrap address. The bootstrap address takes the format `<cluster_name>-kafka-bootstrap:<port>`.
 <5> Configuration for the source connector that replicates topics. At a minimum, you can add an empty `sourceConnector` property to use the default configuration.

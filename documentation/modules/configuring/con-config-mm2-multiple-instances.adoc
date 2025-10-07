@@ -5,7 +5,7 @@
 // assembly-config.adoc
 
 [id='con-config-mm2-multiple-instances-{context}']
-= Configuring MirrorMaker 2 using a shared target Apache Kafka cluster
+= Configuring MirrorMaker 2 using a shared target Kafka cluster
 
 [role="_abstract"]
 The group ID and names of the internal topics used by the Kafka Connect framework that MirrorMaker 2 runs on are configured in the `.spec.target` section. 

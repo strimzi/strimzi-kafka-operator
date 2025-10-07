@@ -50,7 +50,7 @@ public class KafkaMirrorMaker2TargetClusterSpec extends KafkaMirrorMaker2Cluster
         this.configStorageTopic = configStorageTopic;
     }
 
-    @Description("The name of the Kafka topic where connector and task status are stored. Required.")
+    @Description("The name of the Kafka topic where connector and task statuses are stored. Required.")
     @RequiredInVersions("v1beta2+")
     public String getStatusStorageTopic() {
         return statusStorageTopic;
