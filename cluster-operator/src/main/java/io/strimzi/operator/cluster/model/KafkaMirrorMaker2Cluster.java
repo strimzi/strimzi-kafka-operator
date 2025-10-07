@@ -15,19 +15,27 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Spec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpecBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Kafka Mirror Maker 2 model
@@ -57,9 +65,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         }
     }
 
-    private final KafkaMirrorMaker2Connectors connectors;
-
-    private List<KafkaMirrorMaker2ClusterSpec> clusters;
+    private KafkaMirrorMaker2Connectors connectors;
+    private Collection<KafkaMirrorMaker2ClusterSpec> clusters;
 
     /**
      * Constructor
@@ -71,7 +78,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, KafkaMirrorMaker2 resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
         super(reconciliation, resource, KafkaMirrorMaker2Resources.componentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
-        this.connectors = KafkaMirrorMaker2Connectors.fromCrd(reconciliation, resource);
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.connectConfigMapName = KafkaMirrorMaker2Resources.configMapName(cluster);
     }
@@ -89,45 +95,164 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                                                    KafkaMirrorMaker2 kafkaMirrorMaker2,
                                                    KafkaVersion.Lookup versions,
                                                    SharedEnvironmentProvider sharedEnvironmentProvider) {
-        KafkaMirrorMaker2Cluster result = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2, sharedEnvironmentProvider);
-        KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
+        KafkaMirrorMaker2 updatedMirrorMaker2 = validateAndUpdateToNewAPI(kafkaMirrorMaker2);
 
-        result.image = versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion());
+        KafkaMirrorMaker2Cluster result = new KafkaMirrorMaker2Cluster(reconciliation, updatedMirrorMaker2, sharedEnvironmentProvider);
 
-        List<KafkaMirrorMaker2ClusterSpec> clustersList = ModelUtils.asListOrEmptyList(spec.getClusters());
-        result.setClusters(clustersList);
+        result.clusters = clusters(updatedMirrorMaker2);
+        result.connectors = KafkaMirrorMaker2Connectors.fromCrd(reconciliation, updatedMirrorMaker2);
+        result.configuration = new KafkaMirrorMaker2Configuration(reconciliation, updatedMirrorMaker2.getSpec().getTarget().getConfig().entrySet());
+        // Image needs to be set here to properly use the default MM2 container image if needed
+        result.image = versions.kafkaMirrorMaker2Version(updatedMirrorMaker2.getSpec().getImage(), updatedMirrorMaker2.getSpec().getVersion());
 
-        KafkaMirrorMaker2ClusterSpec connectCluster = new KafkaMirrorMaker2ClusterSpecBuilder().build();
-        String connectClusterAlias = spec.getConnectCluster();        
-        if (connectClusterAlias != null) {
-            connectCluster = clustersList.stream()
-                    .filter(clustersListItem -> spec.getConnectCluster().equals(clustersListItem.getAlias()))
-                    .findFirst()
-                    .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));
-        }        
-        result.configuration = new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet());
-
-        return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, result);
+        return fromSpec(reconciliation, buildKafkaConnectSpec(updatedMirrorMaker2.getSpec()), versions, result);
     }
 
-    @SuppressWarnings("deprecation") // External Configuration is deprecated
-    private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {
+    /**
+     * Validates the KafkaMirrorMaker2 custom resource and converts it into the new API layout. It creates and updates
+     * a copy of the resource to avoid changing the structure of the actual Kubernetes resource.
+     *
+     * @param kafkaMirrorMaker2     The KafkaMirrorMaker2 resource to validate and rebuild
+     *
+     * @return  Updated copy of the KafkaMirrorMaker2 resource with the new API layout
+     */
+    @SuppressWarnings("deprecation") // The clusters, sourceCluster, and targetCluster fields are deprecated
+    /* test */ static KafkaMirrorMaker2 validateAndUpdateToNewAPI(KafkaMirrorMaker2 kafkaMirrorMaker2) {
+        // We have to create a copy of the CR so that we can refactor it to the new API layout
+        // That allows us to have a cleaner code in the model classes without breaking the assembly operator
+        KafkaMirrorMaker2 updated = new KafkaMirrorMaker2Builder(kafkaMirrorMaker2).build();
 
-        ClientTls connectTls = null;
-        ClientTls mirrorMaker2ConnectClusterTls = connectCluster.getTls();
-        if (mirrorMaker2ConnectClusterTls != null) {
-            connectTls = new ClientTls();
-            connectTls.setTrustedCertificates(mirrorMaker2ConnectClusterTls.getTrustedCertificates());
-            for (Entry<String, Object> entry : mirrorMaker2ConnectClusterTls.getAdditionalProperties().entrySet()) {
-                connectTls.setAdditionalProperty(entry.getKey(), entry.getValue());
+        if (updated.getSpec() == null)    {
+            throw new InvalidResourceException(".spec section is required for KafkaMirrorMaker2 resource");
+        } else if (updated.getSpec().getMirrors() == null || updated.getSpec().getMirrors().isEmpty())  {
+            throw new InvalidResourceException(".spec.mirrors section is required in KafkaMirrorMaker2 resource");
+        } else {
+            if (updated.getSpec().getTarget() == null) {
+                // The old .spec.connectCluster and .spec.clusters fields are used -> this path will be removed when we drop v1beta2 API
+                if (updated.getSpec().getConnectCluster() != null
+                        && updated.getSpec().getClusters() != null
+                        && !updated.getSpec().getClusters().isEmpty()) {
+                    KafkaMirrorMaker2ClusterSpec connectCluster = updated.getSpec().getClusters().stream()
+                            .filter(clustersListItem -> updated.getSpec().getConnectCluster().equals(clustersListItem.getAlias()))
+                            .findFirst()
+                            .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + updated.getSpec().getConnectCluster() + " cannot be found in the list of clusters at .spec.clusters"));
+
+                    KafkaMirrorMaker2TargetClusterSpec target = new KafkaMirrorMaker2TargetClusterSpecBuilder()
+                            .withAlias(connectCluster.getAlias())
+                            .withBootstrapServers(connectCluster.getBootstrapServers())
+                            .withGroupId(extractAndRemoveValueFromConfig(connectCluster.getConfig(), "group.id", "mirrormaker2-cluster"))
+                            .withConfigStorageTopic(extractAndRemoveValueFromConfig(connectCluster.getConfig(), "config.storage.topic", "mirrormaker2-cluster-configs"))
+                            .withOffsetStorageTopic(extractAndRemoveValueFromConfig(connectCluster.getConfig(), "offset.storage.topic", "mirrormaker2-cluster-offsets"))
+                            .withStatusStorageTopic(extractAndRemoveValueFromConfig(connectCluster.getConfig(), "status.storage.topic", "mirrormaker2-cluster-status"))
+                            .withTls(connectCluster.getTls())
+                            .withAuthentication(connectCluster.getAuthentication())
+                            .withConfig(connectCluster.getConfig())
+                            .build();
+                    updated.getSpec().setTarget(target);
+                } else {
+                    throw new InvalidResourceException("Either .spec.target or .spec.connectCluster and .spec.clusters have to be specified");
+                }
             }
-        }
 
+            Map<String, KafkaMirrorMaker2ClusterSpec> clusters = updated.getSpec().getClusters() != null ? updated.getSpec().getClusters().stream().collect(Collectors.toMap(KafkaMirrorMaker2ClusterSpec::getAlias, Function.identity())) : Map.of();
+            Set<String> aliases = new HashSet<>();
+            aliases.add(updated.getSpec().getTarget().getAlias()); // We add the target cluster alias to the set of aliases to check for duplicates
+
+            updated.getSpec().getMirrors().forEach(mirror -> {
+                if (mirror.getSource() == null && mirror.getSourceCluster() == null) {
+                    throw new InvalidResourceException("Both .spec.mirrors[].source and .spec.mirrors[].sourceCluster are missing. Cannot determine source cluster.");
+                } else if (mirror.getTargetCluster() != null && !mirror.getTargetCluster().equals(updated.getSpec().getTarget().getAlias()))    {
+                    throw new InvalidResourceException("The .spec.mirrors[].targetCluster alias is not the same as the actual target cluster alias.");
+                } else if (mirror.getSource() == null) {
+                    KafkaMirrorMaker2ClusterSpec source = clusters.get(mirror.getSourceCluster());
+                    if (source == null) {
+                        throw new InvalidResourceException(".spec.mirrors[].sourceCluster is set to an non-existent alias. Cannot determine source cluster.");
+                    } else {
+                        mirror.setSource(source);
+                    }
+                }
+
+                // We check for duplicate aliases here
+                aliases.add(mirror.getSource().getAlias());
+
+                // Reset the old fields
+                mirror.setSourceCluster(null);
+                mirror.setTargetCluster(null);
+            });
+
+            // We check for any duplicate aliases used
+            if (aliases.size() != updated.getSpec().getMirrors().size() + 1)    {
+                throw new InvalidResourceException("The target and source cluster aliases must be unique.");
+            }
+
+            updated.getSpec().setClusters(null);
+            updated.getSpec().setConnectCluster(null);
+
+            return updated;
+        }
+    }
+
+    /**
+     * Utility method to help with backward compatibility between the old configuration and a new configuration. This
+     * should be removed once v1beta2 API is dropped, and we use only v1.
+     *
+     * @param configuration     Configuration
+     * @param configKey         Configuration key
+     * @param defaultConfig     Default configuration value
+     *
+     * @return  String with the value that should be used.
+     */
+    private static String extractAndRemoveValueFromConfig(Map<String, Object> configuration, String configKey, String defaultConfig) {
+        if (configuration != null) {
+            String config = (String) configuration.getOrDefault(configKey, defaultConfig);
+            configuration.remove(configKey);
+            return config;
+        } else {
+            return defaultConfig;
+        }
+    }
+
+    /**
+     * Returns a list of target and source clusters. The list is later used to generate the volumes, volume mounts, and so on.
+     * These are created the same way for source and target clusters, so we can afford to just mix them all into one
+     * list in this method.
+     *
+     * @param kafkaMirrorMaker2 The KafkaMirrorMaker2 resource using the new API layout
+     *
+     * @return  List of source and target clusters
+     */
+    private static List<KafkaMirrorMaker2ClusterSpec> clusters(KafkaMirrorMaker2 kafkaMirrorMaker2)    {
+        // The resource is already converted to the new API, so we do not need to check both APIs
+        List<KafkaMirrorMaker2ClusterSpec> clusters = new ArrayList<>();
+
+        // We add the target cluster
+        clusters.add(kafkaMirrorMaker2.getSpec().getTarget());
+        clusters.addAll(kafkaMirrorMaker2.getSpec().getMirrors().stream().map(KafkaMirrorMaker2MirrorSpec::getSource).toList());
+
+        return clusters;
+    }
+
+    /**
+     * Builds the KafkaConnectSpec instance out of the KafkaMirrorMaker2Spec. This is later used to deploy the
+     * underlying Kafka Connect cluster.
+     *
+     * @param spec              KafkaMirrorMaker2Spec instance
+     *
+     * @return  KafkaConnectSpec built out of the KafkaMirrorMaker2Spec instance
+     */
+    @SuppressWarnings("deprecation") // External Configuration, connectCluster, and clusters are deprecated
+    private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec) {
         return new KafkaConnectSpecBuilder()
-                .withBootstrapServers(connectCluster.getBootstrapServers())
-                .withTls(connectTls)
-                .withAuthentication(connectCluster.getAuthentication())
-                .withConfig(connectCluster.getConfig())
+                // Target cluster defined fields from .spec.target
+                .withBootstrapServers(spec.getTarget().getBootstrapServers())
+                .withGroupId(spec.getTarget().getGroupId())
+                .withConfigStorageTopic(spec.getTarget().getConfigStorageTopic())
+                .withOffsetStorageTopic(spec.getTarget().getOffsetStorageTopic())
+                .withStatusStorageTopic(spec.getTarget().getStatusStorageTopic())
+                .withTls(spec.getTarget().getTls())
+                .withAuthentication(spec.getTarget().getAuthentication())
+                .withConfig(spec.getTarget().getConfig())
+                // Regular KafkaMirrorMaker2 fields fom its .spec
                 .withLogging(spec.getLogging())
                 .withReplicas(spec.getReplicas())
                 .withVersion(spec.getVersion())
@@ -144,7 +269,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 .withTemplate(spec.getTemplate())
                 .withExternalConfiguration(spec.getExternalConfiguration())
                 .build();
-
     }
 
     /**
@@ -201,7 +325,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         return volumeMountList;
     }
 
-    private String buildClusterVolumeMountPath(final String baseVolumeMount,  final String path) {
+    private static String buildClusterVolumeMountPath(final String baseVolumeMount,  final String path) {
         return baseVolumeMount + path + "/";
     }
 
@@ -262,7 +386,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         return varList;
     }
 
-    private void getClusterTrustedCerts(final StringBuilder clustersTrustedCerts, KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster, String clusterAlias) {
+    private static void getClusterTrustedCerts(final StringBuilder clustersTrustedCerts, KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster, String clusterAlias) {
         ClientTls tls = mirrorMaker2Cluster.getTls();
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -278,26 +402,17 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         }
     }
 
-    private void appendClusterOAuthTrustedCerts(final StringBuilder clusters, String clusterAlias, List<CertSecretSource> trustedCerts) {
+    private static void appendClusterOAuthTrustedCerts(final StringBuilder clusters, String clusterAlias, List<CertSecretSource> trustedCerts) {
         appendCluster(clusters, clusterAlias, () -> CertUtils.trustedCertsEnvVar(trustedCerts));
     }
 
-    private void appendCluster(final StringBuilder clusters, String clusterAlias, Supplier<String> function) {
+    private static void appendCluster(final StringBuilder clusters, String clusterAlias, Supplier<String> function) {
         if (clusters.length() > 0) {
             clusters.append("\n");
         }                   
         clusters.append(clusterAlias);
         clusters.append("=");
         clusters.append(function.get());
-    }
-
-    /**
-     * Sets the configured clusters for mirroring
-     *
-     * @param clusters The list of cluster configurations
-     */
-    protected void setClusters(List<KafkaMirrorMaker2ClusterSpec> clusters) {
-        this.clusters = clusters;
     }
 
     /**
@@ -327,5 +442,12 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      */
     public KafkaMirrorMaker2Connectors connectors() {
         return connectors;
+    }
+
+    /**
+     * @return  Returns the Mirror Maker 2 Clusters
+     */
+    public Collection<KafkaMirrorMaker2ClusterSpec> clusters() {
+        return clusters;
     }
 }

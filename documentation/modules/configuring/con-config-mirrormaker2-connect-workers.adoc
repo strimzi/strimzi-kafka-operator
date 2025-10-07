@@ -19,20 +19,21 @@ metadata:
   name: my-mirror-maker2
 spec:
   # ...
-  # Connect cluster name (required)
-  connectCluster: "my-cluster-target" # <1>
-  # Cluster configurations (required)
-  clusters:
-    - alias: "my-cluster-target"
-      bootstrapServers: my-cluster-target-kafka-bootstrap:9092
-      # Kafka Connect configuration (optional)
-      config: # <2>
-        task.shutdown.graceful.timeout.ms: 30000
-        scheduled.rebalance.max.delay.ms: 300000
-        offset.flush.interval.ms: 10000
-        config.storage.replication.factor: 1
-        offset.storage.replication.factor: 1
-        status.storage.replication.factor: 1
+  # Target cluster configurations (required)
+  target: # <1>
+    alias: "my-cluster-target"
+    bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+    groupId: my-mirror-maker2-group
+    configStorageTopic: my-mirror-maker2-config
+    offsetStorageTopic: my-mirror-maker2-offset
+    statusStorageTopic: my-mirror-maker2-status
+    config: # <2>
+      task.shutdown.graceful.timeout.ms: 30000
+      scheduled.rebalance.max.delay.ms: 300000
+      offset.flush.interval.ms: 10000
+      config.storage.replication.factor: 1
+      offset.storage.replication.factor: 1
+      status.storage.replication.factor: 1
 ----
-<1> The Kafka Connect cluster alias (must match the target cluster). Used to store internal topics.
+<1> The target cluster configuration. The target cluster is always used to store Kafka Connect's internal topics.
 <2> These properties configure the Kafka Connect workers in this cluster.

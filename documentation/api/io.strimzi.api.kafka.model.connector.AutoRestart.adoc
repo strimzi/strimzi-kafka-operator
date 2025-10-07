@@ -56,10 +56,6 @@ spec:
       autoRestart:
         enabled: true
       # ...
-    heartbeatConnector:
-      autoRestart:
-        enabled: true
-      # ...
     checkpointConnector:
       autoRestart:
         enabled: true

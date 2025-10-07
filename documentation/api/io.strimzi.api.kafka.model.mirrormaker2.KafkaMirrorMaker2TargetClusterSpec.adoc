@@ -1,0 +1,54 @@
+:_mod-docs-content-type: CONCEPT
+
+Configures the target Apache Kafka cluster for a MirrorMaker 2 deployment.
+The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
+
+[id='property-kafka-mirrormaker2-target-internal-topics-grop-id-{context}']
+= Group ID and internal topics
+
+The group ID and the internal topics used by the Kafka Connect cluster are configured in the `.spec.target` section of the `KafkaMirrorMaker2` resource.
+These properties are required.
+
+.Example group ID and internal topics configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirrormaker-2
+spec:
+  # ...
+  target:
+    # ...
+    groupId: my-connect-group
+    configStorageTopic: my-config-topic
+    offsetStorageTopic: my-offset-topic
+    statusStorageTopic: my-status-topic
+  # ...
+----
+
+[id='property-kafka-mirrormaker2-target-additional-configuration-{context}']
+= Additional configuration
+
+Use the `config` properties to configure Kafka options, restricted to those properties not managed directly by Strimzi.
+
+For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
+You can also xref:con-common-configuration-ssl-reference[configure the `ssl.endpoint.identification.algorithm` property] to enable or disable hostname verification.
+
+.Example target cluster configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirrormaker-2
+spec:
+  # ...
+  target:
+    # ...
+    config:
+      config.storage.replication.factor: -1
+      offset.storage.replication.factor: -1
+      status.storage.replication.factor: -1
+  # ...
+----
