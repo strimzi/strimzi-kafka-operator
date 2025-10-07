@@ -23,7 +23,6 @@ spec:
   - name: v1beta2
     served: true
     storage: true
-    deprecated: false
     subresources:
       status: {}
     additionalPrinterColumns:
