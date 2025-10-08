@@ -24,10 +24,13 @@ public class FeatureGates {
 
     // Enables the usage of Server Side Apply
     private static final String SERVER_SIDE_APPLY_PHASE_1 = "ServerSideApplyPhase1";
+    // Enables the usage of Buildah in Connect Build
+    private static final String USE_CONNECT_BUILD_WITH_BUILDAH = "UseConnectBuildWithBuildah";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
     private final FeatureGate serverSideApplyPhase1 = new FeatureGate(SERVER_SIDE_APPLY_PHASE_1, false);
     // private final FeatureGate dummyFeatureGate = new FeatureGate(DUMMY_FEATURE_GATE, false);
+    private final FeatureGate useConnectBuildWithBuildah = new FeatureGate(USE_CONNECT_BUILD_WITH_BUILDAH, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -55,7 +58,9 @@ public class FeatureGates {
                     case SERVER_SIDE_APPLY_PHASE_1:
                         setValueOnlyOnce(serverSideApplyPhase1, value);
                         break;
-
+                    case USE_CONNECT_BUILD_WITH_BUILDAH:
+                        setValueOnlyOnce(useConnectBuildWithBuildah, value);
+                        break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
                 }
@@ -101,6 +106,13 @@ public class FeatureGates {
     }
 
     /**
+     * @return  Returns if `UseConnectBuildWithBuildah` is enabled or not.
+     */
+    public boolean useConnectBuildWithBuildahEnabled() {
+        return useConnectBuildWithBuildah.isEnabled();
+    }
+
+    /**
      * Returns a list of all Feature gates. Used for testing.
      *
      * @return  List of all Feature Gates
@@ -108,7 +120,8 @@ public class FeatureGates {
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
         //  dummyFeatureGate
-            serverSideApplyPhase1
+            serverSideApplyPhase1,
+            useConnectBuildWithBuildah
         );
     }
 
@@ -116,7 +129,8 @@ public class FeatureGates {
     public String toString() {
         return "FeatureGates(" +
     //      "DummyFeatureGate=" + dummyFeatureGate.isEnabled() +
-            "ServerSideApplyPhase1=" + serverSideApplyPhase1.isEnabled() +
+            "ServerSideApplyPhase1=" + serverSideApplyPhase1.isEnabled() + ", " +
+            "UseConnectBuildWithBuildah=" + useConnectBuildWithBuildah.isEnabled() +
             ")";
     }
 
@@ -148,15 +162,15 @@ public class FeatureGates {
             return false;
         } else {
             FeatureGates other = (FeatureGates) o;
-            // return Objects.equals(dummyFeatureGate, other.dummyFeatureGate);
-            return Objects.equals(serverSideApplyPhase1, other.serverSideApplyPhase1);
+            // return Objects.equals(dummyFeatureGate, other.dummyFeatureGate)
+            return Objects.equals(serverSideApplyPhase1, other.serverSideApplyPhase1)
+                && Objects.equals(useConnectBuildWithBuildah, other.useConnectBuildWithBuildah);
         }
     }
 
     @Override
     public int hashCode() {
-        // return Objects.hashCode(dummyFeatureGate);
-        return Objects.hashCode(serverSideApplyPhase1);
+        return Objects.hash(serverSideApplyPhase1, useConnectBuildWithBuildah);
     }
 
     /**

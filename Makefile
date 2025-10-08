@@ -15,7 +15,7 @@ ifneq ($(RELEASE_VERSION),latest)
 endif
 
 SUBDIRS=kafka-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init systemtest docker-images/artifacts packaging/helm-charts/helm3 packaging/install packaging/examples
-DOCKERDIRS=docker-images/base docker-images/operator docker-images/kafka-based docker-images/maven-builder docker-images/kaniko-executor
+DOCKERDIRS=docker-images/base docker-images/operator docker-images/kafka-based docker-images/maven-builder docker-images/kaniko-executor docker-images/buildah
 DOCKER_TARGETS=docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_sign_manifest docker_delete_manifest docker_delete_archive docker_sbom docker_push_sbom docker_e2e docker_gha_sign_manifest docker_gha_sbom docker_gha_push_sbom
 JAVA_TARGETS=java_build java_install java_clean
 
@@ -59,6 +59,7 @@ release_version:
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/quay.io\/strimzi\/kafka:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=quay.io\/strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kaniko-executor:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kaniko-executor:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kaniko-executor:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/buildah:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/buildah:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/buildah:$(RELEASE_VERSION)/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/maven-builder:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/maven-builder:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/maven-builder:$(RELEASE_VERSION)/g' {} \;
 	# Set Kafka Bridge version to its own version
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;

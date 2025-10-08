@@ -7,6 +7,7 @@
 * New fields `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` in the `KafkaConnect` custom resource for configuring Connect's group ID and internal topics.
 * New way of defining the target (`.spec.target`) and source clusters (`.spec.mirrors[].source`) in the `KafkaMirrorMaker2` custom resources.
 * Strimzi Access Operator installation files updated to version 0.2.0
+* New feature gate `UseConnectBuildWithBuildah` (disabled by default) for running the Connect Build feature with Buildah instead of Kaniko on Kubernetes - according to [Strimzi Proposal #114](https://github.com/strimzi/proposals/blob/main/114-use-buildah-instead-of-kaniko.md).
 
 ### Major changes, deprecations, and removals
 
@@ -24,6 +25,8 @@
 * The `.spec.connectCluster`, `.spec.clusters`, `.spec.mirrors[].sourceCluster`, `.spec.mirrors[].targetCluster`, and `.spec.mirrors[].heartbeatConnector` fields of the `KafkaMirrorMaker2` resource are deprecated and will be removed in the `v1` CRD API.
   Please use the new fields `.spec.target` and `.spec.mirrors[].source` instead to configure the source and target clusters.
   If you want to deploy and run the Heartbeat connector, you can use separate `KafkaConnect` and `KafkaConnector` custom resources.
+* The `.spec.build.output.additionalKanikoOptions` field in the `KafkaConnect` custom resource is deprecated and will be removed in the future. 
+  * Use `.spec.build.output.additionalBuildOptions` field instead.
 
 ## 0.48.0
 

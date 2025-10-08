@@ -150,6 +150,12 @@ kanikoExecutor:
     repository: ""
     name: kaniko-executor
     tag: ""
+buildah:
+  image:
+    registry: ""
+    repository: ""
+    name: buildah
+    tag: ""
 mavenBuilder:
   image:
     registry: ""
