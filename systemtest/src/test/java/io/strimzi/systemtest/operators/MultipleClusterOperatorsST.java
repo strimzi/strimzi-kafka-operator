@@ -119,7 +119,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
-            @Label(value = TestDocsLabels.CONNECT)
+            @Label(value = TestDocsLabels.CONNECT),
+            @Label(value = TestDocsLabels.METRICS)
         }
     )
     void testMultipleCOsInDifferentNamespaces() {
@@ -218,6 +219,36 @@ public class MultipleClusterOperatorsST extends AbstractST {
         MetricsUtils.assertMetricResourcesLowerThanOrEqualTo(firstCoMetricsCollector, Kafka.RESOURCE_KIND, 0);
     }
 
+    /**
+     * @description This test case checks how two Cluster Operators deployed in the same namespace operates operands including KafkaRebalance and transition
+     * of operand from one Cluster Operator to another.
+     *
+     * @steps
+     *  1. - Deploy 2 Cluster Operators in the same namespace, with additional env variable 'STRIMZI_LEADER_ELECTION_LEASE_NAME'.
+     *     - Cluster Operators are successfully deployed.
+     *  2. - Set up scrapers and metric collectors for first Cluster Operators.
+     *  3. - Deploy Kafka Cluster with 3 Kafka replicas and label 'app.kubernetes.io/operator' pointing to the first Cluster Operator.
+     *  4. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to not existing Cluster Operator.
+     *     - Kafka Cluster is no longer controlled by any Cluster Operator.
+     *  5. - Modify Kafka CustomResource, by increasing number of replicas from 3 to 4.
+     *     - Kafka is not scaled to 4 replicas.
+     *  6. - Deploy Kafka Rebalance without 'app.kubernetes.io/operator' label.
+     *     - For a stable period of time, Kafka Rebalance is ignored as well.
+     *  7. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to the second Cluster Operator.
+     *     - Second Cluster Operator now operates Kafka Cluster and increases its replica count to 4.
+     *  8. - Cruise Control Pod is rolled as there is increase in Kafka replica count.
+     *     - Rebalance finally takes place.
+     *  9. - Verify that Operators operate expected operands.
+     *     - Operators operate expected operands.
+     *
+     * @usecase
+     *  - cluster-operator-metrics
+     *  - cluster-operator-watcher
+     *  - kafka
+     *  - labels
+     *  - metrics
+     *  - rebalance
+     */
     @IsolatedTest
     @Tag(CRUISE_CONTROL)
     @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here

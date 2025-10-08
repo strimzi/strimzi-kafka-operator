@@ -37,4 +37,5 @@
 
 * [kafka](labels/kafka.md)
 * [connect](labels/connect.md)
+* [metrics](labels/metrics.md)
 
