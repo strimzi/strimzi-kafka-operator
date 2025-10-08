@@ -6,6 +6,11 @@ package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -19,6 +24,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.CrdClients;
@@ -65,6 +71,15 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for verifying multiple Cluster Operators deployment scenarios, including Cluster Operator resource selectors, leader election, and metrics collection across different namespace configurations."),
+    beforeTestSteps = {
+        @Step(value = "Skip test suite if using Helm or OLM installation.", expected = "Test suite only runs with YAML-based installations.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class MultipleClusterOperatorsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleClusterOperatorsST.class);
@@ -85,43 +100,28 @@ public class MultipleClusterOperatorsST extends AbstractST {
     public static final Map<String, String> FIRST_CO_SELECTOR = Collections.singletonMap("app.kubernetes.io/operator", FIRST_CO_NAME);
     public static final Map<String, String> SECOND_CO_SELECTOR = Collections.singletonMap("app.kubernetes.io/operator", SECOND_CO_NAME);
 
-    /**
-     * @description This test case checks how two Cluster Operators operates operands deployed in namespace watched by both of these operators, and transition
-     * of operand from one Cluster Operator to another.
-     *
-     * @steps
-     *  1. - Deploy two Cluster Operators - first to the first namespace and second to the second namespace - both watching all namespaces.
-     *     - Cluster Operators are successfully deployed.
-     *  2. - Set up scrapers and metric collectors for both of Cluster Operators.
-     *     - Mentioned resources are successfully set up.
-     *  3. - Create and Set namespace 'multiple-co-cluster-test' as default, because all resources from now on will be deployed here.
-     *     - Namespace is created and set as default.
-     *  4. - Deploy Kafka operand in default namespace without label 'app.kubernetes.io/operator'.
-     *     - Kafka is not deployed.
-     *  5. - Verify state of metric 'strimzi_resource' for Kafka, which holds number of operated Kafka operands.
-     *     - Metric 'strimzi_resource' exposed by Cluster Operators is not present indicating no Kafka resource is being operated.
-     *  6. - Modify Kafka CustomResource, by changing its label 'app.kubernetes.io/operator' to point to the first Cluster Operator
-     *     - Kafka is deployed and operated by the first Cluster Operator.
-     *  7. - Deploy Kafka Connect (with label 'app.kubernetes.io/operator' pointing the first Cluster Operator) and  Kafka Connector
-     *     - Both operands are successfully deployed, and managed by the first Cluster Operator.
-     *  8. - Produce messages into the Kafka Topic and consume with Sink Connector.
-     *     - Messages are produced and later handled correctly by the Connector.
-     *  9. - Management of Kafka is switched to the second Cluster Operator by modifying value of label 'app.kubernetes.io/operator'.
-     *     - Management is modified, later confirmed by the expected change in the value of metric 'strimzi_resource' for kind Kafka on both Cluster Operators.
-     *  10. - Verify 'strimzi_resource' of each Cluster Operator for all deployed operands.
-     *      - Metric 'strimzi_resource' indicates expected number of operated resources for both Cluster Operators.
-     *
-     * @usecase
-     *  - cluster-operator-metrics
-     *  - cluster-operator-watcher
-     *  - connect
-     *  - kafka
-     *  - labels
-     *  - metrics
-     */
     @IsolatedTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
+    @TestDoc(
+        description = @Desc("This test verifies how two Cluster Operators operate resources deployed in namespaces watched by both operators, and how operands can be transitioned from one Cluster Operator to another using label selectors."),
+        steps = {
+            @Step(value = "Deploy two Cluster Operators in separate namespaces, both watching all namespaces.", expected = "Both Cluster Operators are successfully deployed."),
+            @Step(value = "Set up scrapers and metric collectors for both Cluster Operators.", expected = "Scraper Pods and metrics collectors are configured and ready."),
+            @Step(value = "Create namespace for test resources.", expected = "Namespace 'multiple-co-cluster-test' is created and set as default."),
+            @Step(value = "Deploy Kafka without operator selector label.", expected = "Kafka is created but no Pods appear as no operator manages it."),
+            @Step(value = "Verify Kafka metrics are absent in both operators.", expected = "Metric 'strimzi_resource' for Kafka is null or zero in both Cluster Operators."),
+            @Step(value = "Add label selector pointing to first Cluster Operator.", expected = "Kafka is deployed and managed by the first Cluster Operator."),
+            @Step(value = "Deploy KafkaConnect and KafkaConnector with first operator label.", expected = "Both resources are successfully deployed and managed by the first Cluster Operator."),
+            @Step(value = "Produce and consume messages using Sink Connector.", expected = "Messages are produced to topic and consumed by the Connector successfully."),
+            @Step(value = "Switch Kafka management to second Cluster Operator by changing label.", expected = "Kafka management transfers to second operator, confirmed by metrics change."),
+            @Step(value = "Verify metrics for all operands on both operators.", expected = "Metric 'strimzi_resource' shows correct counts for each Cluster Operator.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.CONNECT)
+        }
+    )
     void testMultipleCOsInDifferentNamespaces() {
         // Strimzi is deployed with cluster-wide access in this class STRIMZI_RBAC_SCOPE=NAMESPACE won't work
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -218,36 +218,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
         MetricsUtils.assertMetricResourcesLowerThanOrEqualTo(firstCoMetricsCollector, Kafka.RESOURCE_KIND, 0);
     }
 
-    /**
-     * @description This test case checks how two Cluster Operators deployed in the same namespace operates operands including KafkaRebalance and transition
-     * of operand from one Cluster Operator to another.
-     *
-     * @steps
-     *  1. - Deploy 2 Cluster Operators in the same namespace, with additional env variable 'STRIMZI_LEADER_ELECTION_LEASE_NAME'.
-     *     - Cluster Operators are successfully deployed.
-     *  2. - Set up scrapers and metric collectors for first Cluster Operators.
-     *  3. - Deploy Kafka Cluster with 3 Kafka replicas and label 'app.kubernetes.io/operator' pointing to the first Cluster Operator.
-     *  4. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to not existing Cluster Operator.
-     *     - Kafka Cluster is no longer controlled by any Cluster Operator.
-     *  5. - Modify Kafka CustomResource, by increasing number of replicas from 3 to 4.
-     *     - Kafka is not scaled to 4 replicas.
-     *  6. - Deploy Kafka Rebalance without 'app.kubernetes.io/operator' label.
-     *     - For a stable period of time, Kafka Rebalance is ignored as well.
-     *  7. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to the second Cluster Operator.
-     *     - Second Cluster Operator now operates Kafka Cluster and increases its replica count to 4.
-     *  8. - Cruise Control Pod is rolled as there is increase in Kafka replica count.
-     *     - Rebalance finally takes place.
-     *  9. - Verify that Operators operate expected operands.
-     *     - Operators operate expected operands.
-     *
-     * @usecase
-     *  - cluster-operator-metrics
-     *  - cluster-operator-watcher
-     *  - kafka
-     *  - labels
-     *  - metrics
-     *  - rebalance
-     */
     @IsolatedTest
     @Tag(CRUISE_CONTROL)
     @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here

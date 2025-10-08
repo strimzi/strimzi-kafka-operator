@@ -5,11 +5,17 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -30,9 +36,29 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for verifying namespace-scoped RBAC deployment mode for Cluster Operator, ensuring that Roles are created instead of ClusterRoles when operating in namespace-scoped mode."),
+    beforeTestSteps = {
+        @Step(value = "Skip test suite if using OLM or Helm installation.", expected = "Test suite only runs with YAML-based installations.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 class NamespaceRbacScopeOperatorST extends AbstractST {
 
     @IsolatedTest("This test case needs own Cluster Operator")
+    @TestDoc(
+        description = @Desc("This test verifies that when Cluster Operator is deployed with namespace-scoped RBAC, it creates Roles instead of ClusterRoles, ensuring proper isolation and avoiding cluster-wide permissions."),
+        steps = {
+            @Step(value = "Deploy Cluster Operator with namespace-scoped RBAC configuration.", expected = "Cluster Operator is deployed with RBAC type set to NAMESPACE."),
+            @Step(value = "Deploy Kafka cluster with broker and controller node pools.", expected = "Kafka cluster is deployed and becomes ready."),
+            @Step(value = "Verify no ClusterRoles with Strimzi labels exist.", expected = "No ClusterRoles labeled with 'app=strimzi' are found in the cluster.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testNamespacedRbacScopeDeploysRoles() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
