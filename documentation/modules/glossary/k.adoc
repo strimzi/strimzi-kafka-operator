@@ -1,0 +1,79 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= K
+
+== Kafka (custom resource)
+[id="glossary-kafka-cr_{context}"]
+A custom resource for deploying and configuring a Kafka cluster, including settings for nodes, listeners, storage, security, and internal components like Cruise Control and the Entity Operator.
+
+For more information, see the {BookURLConfiguring}#type-Kafka-reference[`Kafka` schema reference^].
+
+== Kafka Bridge
+[id="glossary-kafka-bridge_{context}"]
+Provides a RESTful interface that allows HTTP-based clients to interact with a Kafka cluster.
+
+For more information, see {BookURLBridge}[Using the Kafka Bridge^].
+
+== KafkaBridge (custom resource)
+[id="glossary-kafkabridge-cr_{context}"]
+A custom resource used to deploy and configure a Kafka Bridge instance, specifying replicas, authentication, and connection details.
+
+For more information, see the {BookURLConfiguring}#type-KafkaBridge-reference[`KafkaBridge` schema reference^].
+
+== KafkaConnect (custom resource)
+[id="glossary-kafkaconnect-cr_{context}"]
+A custom resource used to deploy and configure a Kafka Connect cluster for integrating external systems with Kafka.
+
+For more information, see the {BookURLConfiguring}#type-KafkaConnect-reference[`KafkaConnect` schema reference^].
+
+== KafkaConnector (custom resource)
+[id="glossary-kafkaconnector-cr_{context}"]
+A custom resource for managing individual Kafka connectors in a Kafka Connect cluster declaratively and independently of the `KafkaConnect` deployment.
+
+For more information, see the {BookURLConfiguring}#type-KafkaConnector-reference[`KafkaConnector` schema reference^].
+
+== KafkaExporter
+[id="glossary-kafkaexporter_{context}"]
+The Kafka Exporter exposes Kafka metrics for Prometheus. 
+It is configured as part of the `Kafka` custom resource.
+
+For more information, see the {BookURLConfiguring}#type-KafkaExporterSpec-reference[`KafkaExporterSpec` schema reference^].
+
+== KafkaMirrorMaker2 (custom resource)
+[id="glossary-kafkamirrormaker2-cr_{context}"]
+A custom resource for deploying a Kafka MirrorMaker 2 instance to replicate data between Kafka clusters.
+
+For more information, see the {BookURLConfiguring}#type-KafkaMirrorMaker2-reference[`KafkaMirrorMaker2` schema reference^].
+
+== KafkaNodePool (custom resource)
+[id="glossary-kafkanodepool-cr_{context}"]
+A custom resource used to configure distinct groups of nodes within a Kafka cluster.
+Nodes in a node pool can be configured to operate as Kafka brokers, controllers, or both.
+
+For more information, see the {BookURLConfiguring}#type-KafkaNodePool-reference[`KafkaNodePool` schema reference^].
+
+== KafkaRebalance (custom resource)
+[id="glossary-kafkarebalance-cr_{context}"]
+A custom resource that triggers and manages cluster rebalancing through Cruise Control by setting optimization goals.
+
+Rebalance modes:
+
+full:: Load rebalanced across all brokers  
+add-brokers:: Replicas moved to newly added brokers  
+remove-brokers:: Replicas moved off brokers being removed  
+remove-disks:: Data moved between storage volumes within the same broker
+
+For more information, see the {BookURLConfiguring}#type-KafkaRebalance-reference[`KafkaRebalance` schema reference^].
+
+== KafkaTopic (custom resource)
+[id="glossary-kafkatopic-cr_{context}"]
+A custom resource for managing Kafka topics (creation, configuration, deletion) through the Topic Operator.
+
+For more information, see the {BookURLConfiguring}#type-KafkaTopic-reference[`KafkaTopic` schema reference^].
+
+== KafkaUser (custom resource)
+[id="glossary-kafkauser-cr_{context}"]
+A custom resource for managing Kafka users (creation, configuration, deletion) through the User Operator, including their authentication credentials and access permissions.
+
+For more information, see the {BookURLConfiguring}#type-KafkaUser-reference[`KafkaUser` schema reference^].

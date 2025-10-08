@@ -1,0 +1,8 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= N
+
+== Network policy
+[id="glossary-network-policy_{context}"]
+Strimzi automatically creates a `NetworkPolicy` resource for each listener, allowing connections from all namespaces by default. You can configure the `networkPolicyPeers` property to restrict access to specific applications or namespaces.

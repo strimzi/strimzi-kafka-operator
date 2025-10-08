@@ -1,0 +1,38 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= S
+
+== Storage (configuration)
+[id="glossary-storage-configuration_{context}"]
+Defines disk storage for Kafka nodes within the `KafkaNodePool` custom resource.
+
+Supported storage types:
+
+ephemeral:: Temporary storage tied to the pod lifecycle  
+persistent-claim:: Durable storage using PersistentVolumeClaims (PVCs)  
+jbod:: Multiple disks or volumes (ephemeral or persistent)
+
+For more information, see {BookURLDeploying}#assembly-storage-str[Configuring Kafka storage^].
+
+== Strimzi API schema
+[id="glossary-strimzi-cr-schema_{context}"]
+The formal specification that defines the structure, properties, and validation rules for Strimzi custom resources. 
+Also referred to as the *Strimzi custom resource schema*.
+
+== Strimzi Operator
+[id="glossary-strimzi-operator_{context}"]
+The primary deployment artifact for Strimzi.
+An operator that installs and configures components for running Kafka on Kubernetes, including the Cluster Operator.
+
+== Strimzi operators
+[id="glossary-strimzi-operators_{context}"]
+The suite of Kubernetes operators (Cluster Operator, Topic Operator, User Operator) that automate Kafka cluster management.
+
+== StrimziPodSet (custom resource)
+[id="glossary-strimzipodset-cr_{context}"]
+A custom resource used by the Strimzi Cluster Operator to manage the lifecycle of broker pods, replacing Kubernetes `StatefulSet` resources to provide greater control over pod identity and updates.
+
+== Super user
+[id="glossary-super-user_{context}"]
+A Kafka user principal with full administrative access that bypasses all ACL checks. Super users are configured via the `superUsers` property in the `Kafka` custom resource when simple authorization is enabled.
