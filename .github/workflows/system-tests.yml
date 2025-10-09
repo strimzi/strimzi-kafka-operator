@@ -86,6 +86,7 @@ jobs:
 
   check-build:
     needs:
+      - check-rights
       - parse-params
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
     runs-on: ubuntu-latest
