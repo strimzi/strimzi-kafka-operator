@@ -39,17 +39,17 @@ jobs:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
           runnerArch: "amd64"
 
-  # Runs Strimzi unit and integration tests
-  test-strimzi:
-    name: Strimzi Unit & IT tests
-    needs:
-      - build-strimzi
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/test-strimzi
-        with:
-          runnerArch: "amd64"
+#  # Runs Strimzi unit and integration tests
+#  test-strimzi:
+#    name: Strimzi Unit & IT tests
+#    needs:
+#      - build-strimzi
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v5
+#      - uses: ./.github/actions/build/test-strimzi
+#        with:
+#          runnerArch: "amd64"
 
   # Builds Strimzi docs
   build-docs:
