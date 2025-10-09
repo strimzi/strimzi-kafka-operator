@@ -170,15 +170,19 @@ runs:
               core.setOutput('buildRunId', buildRunId);
               core.setOutput('buildMetadataSha', buildMetadataSha);
             } else {
-              core.warning('⚠️  SHA mismatch detected!');
-              core.warning(`Build artifacts were created for commit: ${buildMetadataSha}`);
-              core.warning(`Current merge commit is: ${mergeCommitSha}`);
-              core.warning('Rebuild will be triggered.');
+              const mismatchMessage = [
+                '⚠️  SHA mismatch detected!',
+                `Build artifacts were created for commit: ${buildMetadataSha}`,
+                `Current merge commit is: ${mergeCommitSha}`,
+                'Workflow will build it's own images.'
+              ].join('\n');
+          
+              core.warning(mismatchMessage);
               core.setOutput('buildRunId', '');
               core.setOutput('buildMetadataSha', buildMetadataSha);
             }
           } else {
-            core.warning('⚠️  Build metadata not found. Rebuild will be triggered.');
+            core.warning('⚠️  Build metadata not found. Workflow will build it's own images.');
             core.setOutput('buildRunId', '');
             core.setOutput('buildMetadataSha', '');
           }
