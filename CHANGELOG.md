@@ -27,6 +27,7 @@
   If you want to deploy and run the Heartbeat connector, you can use separate `KafkaConnect` and `KafkaConnector` custom resources.
 * The `.spec.build.output.additionalKanikoOptions` field in the `KafkaConnect` custom resource is deprecated and will be removed in the future. 
   * Use `.spec.build.output.additionalBuildOptions` field instead.
+* Kafka nodes are now configured with PEM certificates instead of P12/JKS for keystore and truststore.
 
 ## 0.48.0
 
@@ -50,6 +51,7 @@
 * Additional OAuth configuration options have been added for 'oauth' authentication on the listener and the client.
   On the listener `clientGrantType` has been added.
   On the client `grantType` has been added.
+
 ### Major changes, deprecations and removals
 
 * Fix RBAC naming for `KafkaMirrorMaker2` to avoid `RoleBinding` collisions when a `KafkaConnect` with the same name exists in the same namespace. `KafkaMirrorMaker2` now uses dedicated `RoleBinding` names.

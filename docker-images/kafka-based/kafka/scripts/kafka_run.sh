@@ -83,11 +83,11 @@ fi
 echo ""
 echo "Preparing Kafka Agent configuration"
 rm -f /tmp/kafka-agent.properties
+NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 cat <<EOF > /tmp/kafka-agent.properties
-sslKeyStorePath=/tmp/kafka/cluster.keystore.p12
-sslKeyStorePass=${CERTS_STORE_PASSWORD}
-sslTrustStorePath=/tmp/kafka/cluster.truststore.p12
-sslTrustStorePass=${CERTS_STORE_PASSWORD}
+sslTrustStoreSecretName=${KAFKA_CLUSTER_NAME}-cluster-ca-cert
+sslKeyStoreSecretName=${HOSTNAME}
+namespace=${NAMESPACE}
 EOF
 echo ""
 

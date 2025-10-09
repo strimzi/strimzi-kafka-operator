@@ -59,6 +59,8 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.NodeOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleBindingOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
@@ -143,6 +145,8 @@ public class KafkaReconciler {
     private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     private final PodOperator podOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
+    private final RoleOperator roleOperator;
+    private final RoleBindingOperator roleBindingOperator;
     private final RouteOperator routeOperator;
     private final IngressOperator ingressOperator;
     private final NodeOperator nodeOperator;
@@ -218,6 +222,8 @@ public class KafkaReconciler {
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
         this.podOperator = supplier.podOperations;
         this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
+        this.roleBindingOperator = supplier.roleBindingOperations;
+        this.roleOperator = supplier.roleOperations;
         this.routeOperator = supplier.routeOperations;
         this.ingressOperator = supplier.ingressOperations;
         this.nodeOperator = supplier.nodeOperator;
@@ -248,6 +254,8 @@ public class KafkaReconciler {
                 .compose(i -> pvcs(kafkaStatus))
                 .compose(i -> serviceAccount())
                 .compose(i -> initClusterRoleBinding())
+                .compose(i -> kafkaRole())
+                .compose(i -> kafkaRoleBinding())
                 .compose(i -> scaleDown())
                 .compose(i -> updateNodePoolStatuses(kafkaStatus))
                 .compose(i -> listeners())
@@ -535,6 +543,39 @@ public class KafkaReconciler {
                         ),
                 desired
         ).mapEmpty();
+    }
+
+    /**
+     * Manages the Kafka role. This Role is always created and lives in
+     * the same namespace as the Kafka Cluster resource. This is used to load
+     * certificates from secrets directly.
+     *
+     * @return  Completes when the Role was successfully created or updated
+     */
+    protected Future<Void> kafkaRole() {
+        return roleOperator
+                .reconcile(
+                        reconciliation,
+                        reconciliation.namespace(),
+                        kafka.getComponentName(),
+                        kafka.generateRole()
+                ).mapEmpty();
+    }
+
+    /**
+     * Manages the Kafka Role Bindings.
+     * The Role Binding is in the namespace where the Kafka Cluster resource exists.
+     *
+     * @return  Completes when the Role Binding was successfully created or updated
+     */
+    protected Future<Void> kafkaRoleBinding() {
+        return roleBindingOperator
+                .reconcile(
+                        reconciliation,
+                        reconciliation.namespace(),
+                        KafkaResources.kafkaRoleBindingName(reconciliation.name()),
+                        kafka.generateRoleBindingForRole())
+                .mapEmpty();
     }
 
     /**
@@ -877,7 +918,7 @@ public class KafkaReconciler {
     }
 
     /**
-     * Roles the Kafka brokers (if needed).
+     * Rolls the Kafka brokers (if needed).
      *
      * @param podSetDiffs   Map with the PodSet reconciliation results
      *
