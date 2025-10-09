@@ -141,6 +141,8 @@ runs:
       with:
         name: commit-sha.txt
         run-id: ${{ steps.find-build.outputs.run_id }}
+        github-token: ${{ github.token }}
+        path: .
 
     - name: Compare commit SHA
       id: compare-sha

@@ -149,6 +149,7 @@ jobs:
         with:
           name: "containers-${{ matrix.config.arch }}.tar"
           run-id: ${{ inputs.buildRunId }}
+          github-token: ${{ github.token }}
 
       - name: Download container images from this build
         id: download-containers-local
