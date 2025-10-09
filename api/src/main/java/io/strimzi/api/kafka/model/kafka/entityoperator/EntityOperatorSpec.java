@@ -10,6 +10,7 @@ import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -58,6 +59,7 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving {
 
     @Deprecated
     @DeprecatedProperty(description = "TLS sidecar was removed in Strimzi 0.41.0. This property is ignored.")
+    @PresentInVersions("v1beta2")
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public TlsSidecar getTlsSidecar() {

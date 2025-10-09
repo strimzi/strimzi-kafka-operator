@@ -13,6 +13,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Maximum;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -44,6 +45,7 @@ public class BrokerCapacity implements UnknownPropertyPreserving {
 
     @Deprecated
     @DeprecatedProperty(description = "The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future")
+    @PresentInVersions("v1beta2")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Pattern("^[0-9]+([.][0-9]*)?([KMGTPE]i?|e[0-9]+)?$")
     @Description("Broker capacity for disk in bytes. " +
@@ -59,6 +61,7 @@ public class BrokerCapacity implements UnknownPropertyPreserving {
 
     @Deprecated
     @DeprecatedProperty(description = "The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future")
+    @PresentInVersions("v1beta2")
     @Minimum(0)
     @Maximum(100)
     @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.common.CustomResourceConditions;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -111,6 +112,7 @@ public class KafkaUser extends CustomResource<KafkaUserSpec, KafkaUserStatus> im
 
     @Override
     @Description("The specification of the user.")
+    @RequiredInVersions("v1+")
     public KafkaUserSpec getSpec() {
         return super.getSpec();
     }

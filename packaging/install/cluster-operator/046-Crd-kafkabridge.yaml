@@ -61,7 +61,7 @@ spec:
               replicas:
                 type: integer
                 minimum: 0
-                description: The number of pods in the `Deployment`.  Defaults to `1`.
+                description: The number of pods in the `Deployment`. Required in the `v1` version of the Strimzi API. Defaults to `1` in the `v1beta2` version of the Strimzi API.
               image:
                 type: string
                 description: "The container image used for Kafka Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."

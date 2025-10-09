@@ -10,6 +10,7 @@ import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -39,8 +40,9 @@ public class ListenerStatus implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties;
 
     @Deprecated
-    @DeprecatedProperty(description = "The `type` property is not used anymore. Use the `name` property with the same value.")
+    @DeprecatedProperty(description = "The `type` property is not used anymore. Use the `name` property with the same value.", movedToPath = ".status.listeners.name")
     @Description("The name of the listener.")
+    @PresentInVersions("v1beta2")
     public String getType() {
         return type;
     }

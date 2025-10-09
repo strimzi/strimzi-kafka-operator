@@ -16,4 +16,3 @@ spec:
     enabled: true
     config:
       foo: "buz"
-  enableMetrics: false

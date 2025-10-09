@@ -64,7 +64,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     }
 
     @DeprecatedProperty(movedToPath = ".spec.mirrors.topicsExcludePattern")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     @Description("A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.")
     public String getTopicsBlacklistPattern() {
@@ -94,7 +94,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     }
 
     @DeprecatedProperty(movedToPath = ".spec.mirrors.groupsExcludePattern")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     @Description("A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.")
     public String getGroupsBlacklistPattern() {

@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.common.CustomResourceConditions;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -111,6 +112,7 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
 
     @Override
     @Description("The specification of the Kafka Connector.")
+    @RequiredInVersions("v1+")
     public KafkaConnectorSpec getSpec() {
         return super.getSpec();
     }

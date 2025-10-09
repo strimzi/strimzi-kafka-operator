@@ -4,6 +4,8 @@
 
 * Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
   Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
+* Make `.spec` sections required in the `v1` version of all Strimzi custom resources.
+* Make `.spec.replicas` properties required in the `v1` of the `KafkaBridge`, `KafkaConnect`, and `KafkaMirrorMaker2` custom resources.
 * New fields `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` in the `KafkaConnect` custom resource for configuring Connect's group ID and internal topics.
 * New way of defining the target (`.spec.target`) and source clusters (`.spec.mirrors[].source`) in the `KafkaMirrorMaker2` custom resources.
 * Strimzi Access Operator installation files updated to version 0.2.0

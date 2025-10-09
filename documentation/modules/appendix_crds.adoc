@@ -770,6 +770,8 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpa.adoc[leve
 == `KafkaAuthorizationOpa` schema properties
 
 
+The type KafkaAuthorizationOpa is supported only in the Strimzi API version(s) v1beta2.
+
 The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationOpa` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
 It must have the value `opa` for the type `KafkaAuthorizationOpa`.
 [cols="2,2,3a",options="header"]
@@ -2380,7 +2382,7 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |Property |Property type |Description
 |type
 |string
-|**The `type` property has been deprecated.** The `type` property is not used anymore. Use the `name` property with the same value. The name of the listener.
+|**The `type` property has been deprecated, and should now be configured using `.status.listeners.name`.** The `type` property is not used anymore. Use the `name` property with the same value. The name of the listener.
 |name
 |string
 |The name of the listener.
@@ -2512,7 +2514,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |The Kafka Connect version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |replicas
 |integer
-|The number of pods in the Kafka Connect group. Defaults to `3`.
+|The number of pods in the Kafka Connect group. Required in the `v1` version of the Strimzi API. Defaults to `3` in the `v1beta2` version of the Strimzi API.
 |image
 |string
 |The container image used for Kafka Connect pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.
@@ -2870,6 +2872,8 @@ It must have the value `custom` for the type `KafkaClientAuthenticationCustom`.
 
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
+
+The type JaegerTracing is supported only in the Strimzi API version(s) v1beta2.
 
 The `type` property is a discriminator that distinguishes use of the `JaegerTracing` type from xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`].
 It must have the value `jaeger` for the type `JaegerTracing`.
@@ -3818,7 +3822,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |Property |Property type |Description
 |replicas
 |integer
-|The number of pods in the `Deployment`.  Defaults to `1`.
+|The number of pods in the `Deployment`. Required in the `v1` version of the Strimzi API. Defaults to `1` in the `v1beta2` version of the Strimzi API.
 |image
 |string
 |The container image used for Kafka Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
@@ -4225,7 +4229,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |The Kafka Connect version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |replicas
 |integer
-|The number of pods in the Kafka Connect group. Defaults to `3`.
+|The number of pods in the Kafka Connect group. Required in the `v1` version of the Strimzi API. Defaults to `3` in the `v1beta2` version of the Strimzi API.
 |image
 |string
 |The container image used for Kafka Connect pods. If no image name is explicitly specified, it is determined based on the `spec.version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration.

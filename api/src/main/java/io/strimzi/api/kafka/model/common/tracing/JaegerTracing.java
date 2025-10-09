@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -26,11 +27,9 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
+@PresentInVersions("v1beta2")
 public class JaegerTracing extends Tracing {
     public static final String TYPE_JAEGER = "jaeger";
-
-    public static final String CONSUMER_INTERCEPTOR_CLASS_NAME = "io.opentracing.contrib.kafka.TracingConsumerInterceptor";
-    public static final String PRODUCER_INTERCEPTOR_CLASS_NAME = "io.opentracing.contrib.kafka.TracingProducerInterceptor";
 
     @Description("Must be `" + TYPE_JAEGER + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)

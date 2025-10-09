@@ -62,7 +62,7 @@ public class KafkaSpec extends Spec {
 
     @Deprecated
     @DeprecatedProperty(description = "ZooKeeper-based Apache Kafka clusters are not supported anymore since Strimzi 0.46.0.")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Description("As of Strimzi 0.46.0, ZooKeeper-based Apache Kafka clusters are not supported anymore and this option is ignored.")
     public ZookeeperClusterSpec getZookeeper() {
         return zookeeper;
@@ -107,7 +107,7 @@ public class KafkaSpec extends Spec {
 
     @Deprecated
     @DeprecatedProperty(description = "JMXTrans is deprecated and related resources removed in Strimzi 0.35.0.")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Description("As of Strimzi 0.35.0, JMXTrans is not supported anymore and this option is ignored.")
     public JmxTransSpec getJmxTrans() {
         return jmxTrans;

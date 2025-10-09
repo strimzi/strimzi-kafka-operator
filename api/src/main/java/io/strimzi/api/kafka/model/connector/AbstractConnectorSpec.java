@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -89,6 +90,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     @Description("Whether the connector should be paused. Defaults to false.")
     @Deprecated
     @DeprecatedProperty(description = "Deprecated in Strimzi 0.38.0, use state instead.")
+    @PresentInVersions("v1beta2")
     public Boolean getPause() {
         return pause;
     }
