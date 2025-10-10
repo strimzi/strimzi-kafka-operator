@@ -147,7 +147,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_CONNECT_JMX_EXPORTER_ENABLED = "KAFKA_CONNECT_JMX_EXPORTER_ENABLED";
-    protected static final String ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS = "KAFKA_CONNECT_TRUSTED_CERTS";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_LABELS";
@@ -456,6 +455,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
+        // TODO: We may not need this method call at all because all client auth configurations will use config provider instead
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), isOpenShift, "", true);
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
         volumeList.addAll(getMountedPluginVolumes());
@@ -544,6 +544,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
+        // TODO: We may not need this method call at all because all client auth configurations will use config provider instead
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, KafkaConnectResources.internalOauthTrustedCertsSecretName(cluster), "", true, OAUTH_SECRETS_BASE_VOLUME_MOUNT);
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
         volumeMountList.addAll(getMountedPluginVolumeMounts());
@@ -1012,9 +1013,9 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @param secretData secret data
      * @param secretName secret name
      *
-     * @return secret for tls certificates
+     * @return secret
      */
-    public Secret generateTlsTrustedCertsSecret(Map<String, String> secretData, String secretName) {
+    public Secret generateSecret(Map<String, String> secretData, String secretName) {
         return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.of(), Map.of());
     }
 

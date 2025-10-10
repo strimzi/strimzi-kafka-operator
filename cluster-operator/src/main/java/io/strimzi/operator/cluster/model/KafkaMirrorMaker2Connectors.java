@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
@@ -38,6 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster.MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT;
+import static io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster.MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster.MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT;
 
 /**
@@ -49,14 +51,12 @@ public class KafkaMirrorMaker2Connectors {
     private static final String CONNECTOR_JAVA_PACKAGE = "org.apache.kafka.connect.mirror";
     private static final String TARGET_CLUSTER_PREFIX = "target.cluster.";
     private static final String SOURCE_CLUSTER_PREFIX = "source.cluster.";
-    private static final String STORE_LOCATION_ROOT = "/tmp/kafka/clusters/";
-    private static final String TRUSTSTORE_SUFFIX = ".truststore.p12";
-    private static final String KEYSTORE_SUFFIX = ".keystore.p12";
     private static final String CONNECT_CONFIG_FILE = "/tmp/strimzi-connect.properties";
     private static final String SOURCE_CONNECTOR_SUFFIX = ".MirrorSourceConnector";
     private static final String CHECKPOINT_CONNECTOR_SUFFIX = ".MirrorCheckpointConnector";
     private static final String HEARTBEAT_CONNECTOR_SUFFIX = ".MirrorHeartbeatConnector";
-    protected static final String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:MIRRORMAKER_2_CERTS_STORE_PASSWORD}";
+    // the secrets file template: <namespace>/<secret_name>:<secret_key>
+    private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
 
     private static final String PLACEHOLDER_MIRRORMAKER2_CONNECTOR_CONFIGS_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s/%s:%s}";
 
@@ -222,13 +222,15 @@ public class KafkaMirrorMaker2Connectors {
         config.put(configPrefix + "alias", cluster.getAlias());
         config.put(configPrefix + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers());
 
-        String securityProtocol = addTLSConfigToMirrorMaker2ConnectorConfig(config, cluster, configPrefix);
+        String securityProtocol = addTLSConfigToMirrorMaker2ConnectorConfig(config, cluster, configPrefix, clusterName, namespace);
 
         if (cluster.getAuthentication() != null) {
-            if (cluster.getAuthentication() instanceof KafkaClientAuthenticationTls) {
-                config.put(configPrefix + SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
-                config.put(configPrefix + SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + cluster.getAlias() + KEYSTORE_SUFFIX);
-                config.put(configPrefix + SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
+            if (cluster.getAuthentication() instanceof KafkaClientAuthenticationTls tlsAuth) {
+                config.put(configPrefix + SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
+                String certConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, namespace, tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate());
+                String keyConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, namespace, tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey());
+                config.put(configPrefix + SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certConfigProviderValue);
+                config.put(configPrefix + SslConfigs.SSL_KEYSTORE_KEY_CONFIG, keyConfigProviderValue);
             } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationPlain plainAuthentication) {
                 securityProtocol = cluster.getTls() != null ? "SASL_SSL" : "SASL_PLAINTEXT";
                 config.put(configPrefix + SaslConfigs.SASL_MECHANISM, "PLAIN");
@@ -249,7 +251,7 @@ public class KafkaMirrorMaker2Connectors {
                 securityProtocol = cluster.getTls() != null ? "SASL_SSL" : "SASL_PLAINTEXT";
                 config.put(configPrefix + SaslConfigs.SASL_MECHANISM, "OAUTHBEARER");
                 config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG,
-                        oauthJaasConfig(cluster, oauthAuthentication));
+                        oauthJaasConfig(cluster, oauthAuthentication, clusterName));
                 config.put(configPrefix + SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS, "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
             } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationCustom customAuth) { // Configure custom authentication
                 if (customAuth.isSasl()) {
@@ -301,9 +303,9 @@ public class KafkaMirrorMaker2Connectors {
         }
 
         if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-            jaasOptions.put("oauth.ssl.truststore.location", "/tmp/kafka/clusters/" + cluster.getAlias() + "-oauth.truststore.p12");
-            jaasOptions.put("oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-            jaasOptions.put("oauth.ssl.truststore.type", "PKCS12");
+            String oauthTrustedCertsSecret = KafkaConnectResources.internalOauthTrustedCertsSecretName(clusterName);
+            jaasOptions.put("oauth." + SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + oauthTrustedCertsSecret + "/" + oauthTrustedCertsSecret + ".crt");
+            jaasOptions.put("oauth." + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
         }
 
         return AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions);
@@ -320,12 +322,12 @@ public class KafkaMirrorMaker2Connectors {
      *
      * @return  String indicating whether the security protocol should be SSL or PLAINTEXT based
      */
-    private static String addTLSConfigToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
+    private static String addTLSConfigToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix, String clusterName, String namespace) {
         if (cluster.getTls() != null) {
             if (cluster.getTls().getTrustedCertificates() != null && !cluster.getTls().getTrustedCertificates().isEmpty()) {
-                config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
-                config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + cluster.getAlias() + TRUSTSTORE_SUFFIX);
-                config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
+                config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, namespace, KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName), "*.crt");
+                config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, configProviderValue);
             }
 
             return "SSL";

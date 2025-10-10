@@ -286,7 +286,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                             reconciliation,
                                             namespace,
                                             KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
+                                            connect.generateSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
                                     .mapEmpty();
                         } else {
                             return Future.succeededFuture();
@@ -314,7 +314,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                             reconciliation,
                                             namespace,
                                             KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()),
-                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster())))
+                                            connect.generateSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster())))
                                     .mapEmpty();
                         } else {
                             return Future.succeededFuture();
@@ -596,16 +596,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                  // The connector is not failing now for some time => time to reset the auto-restart status
                                  LOGGER.infoCr(reconciliation, "Resetting the auto-restart status of connector {} ", connectorName);
                                  status.autoRestart = null;
-                                 return Future.succeededFuture(status);
                              } else {
                                  // The connector is not failing, but it is not sure yet if it is stable => keep the original status
                                  status.autoRestart = new AutoRestartStatusBuilder(previousAutoRestartStatus).build();
-                                 return Future.succeededFuture(status);
                              }
-                         } else {
-                             // No failures and no need to reset the previous auto.restart state => nothing to do
-                             return Future.succeededFuture(status);
                          }
+                         // No failures and no need to reset the previous auto.restart state => nothing to do
+                         return Future.succeededFuture(status);
                      }
                  });
         } else {

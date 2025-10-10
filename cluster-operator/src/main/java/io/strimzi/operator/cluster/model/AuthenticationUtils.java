@@ -285,7 +285,8 @@ public class AuthenticationUtils {
     public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthCertsVolumeMount, String oauthCertsSecretName, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthSecretsVolumeMount) {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
-
+                // TODO: We still need to volume mount this because??? I think we can remove it?
+                // TODO: Can all client authentication be used with Kubernetes secret provider? so this function can be removed entirely?
                 // skipping if a volume mount with same Secret name was already added
                 if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
                     volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),

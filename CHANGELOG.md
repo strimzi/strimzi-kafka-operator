@@ -10,6 +10,7 @@
 * New way of defining the target (`.spec.target`) and source clusters (`.spec.mirrors[].source`) in the `KafkaMirrorMaker2` custom resources.
 * Strimzi Access Operator installation files updated to version 0.2.0
 * New feature gate `UseConnectBuildWithBuildah` (disabled by default) for running the Connect Build feature with Buildah instead of Kaniko on Kubernetes - according to [Strimzi Proposal #114](https://github.com/strimzi/proposals/blob/main/114-use-buildah-instead-of-kaniko.md).
+* MirrorMaker2 connectors are now configured with PEM certificates instead of P12/JKS for keystore and truststore.
 
 ### Major changes, deprecations, and removals
 
