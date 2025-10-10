@@ -173,7 +173,7 @@ runs:
               const mismatchMessage = [
                 `⚠️  SHA mismatch detected!`,
                 `Build artifacts were created for commit: ${buildMetadataSha}.`,
-                `Current merge commit is: ${mergeCommitSha}.-`,
+                `Current merge commit is: ${mergeCommitSha}.`,
                 `Workflow will build it's own images.`
               ].join('\n');
           
