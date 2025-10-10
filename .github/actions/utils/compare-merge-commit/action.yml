@@ -8,10 +8,10 @@ inputs:
   # we can easily add another input runId and skip find-build job and directly download artifact.
   # TODO - the comment can be removed once we agree it is sufficient for releases
   commitSha:
-    description: "???"
+    description: "Commit sha of latest commit pushed to a branch from which merge-commit is created"
     required: true
   mergeCommitSha:
-    description: "???"
+    description: "Commit sha of merge commit used by this workflow run"
     required: true
   waitForBuild:
     description: "Wait for build to complete if it's still running"
@@ -172,8 +172,8 @@ runs:
             } else {
               const mismatchMessage = [
                 `⚠️  SHA mismatch detected!`,
-                `Build artifacts were created for commit: ${buildMetadataSha}`,
-                `Current merge commit is: ${mergeCommitSha}`,
+                `Build artifacts were created for commit: ${buildMetadataSha}.`,
+                `Current merge commit is: ${mergeCommitSha}.-`,
                 `Workflow will build it's own images.`
               ].join('\n');
           
