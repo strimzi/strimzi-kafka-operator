@@ -102,7 +102,7 @@ jobs:
       - name: Get merge commit SHA
         id: get-merge-sha
         run: |
-          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Compare merge-commit sha
         id: verify
         uses: ./.github/actions/utils/compare-merge-commit
