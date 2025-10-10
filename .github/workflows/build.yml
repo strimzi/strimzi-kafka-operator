@@ -21,6 +21,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      # Build workflow trigger via pull_request will have merge commit sha in github.sha
+      - name: Store build commit sha
+        run: |
+          echo "${{ github.sha }}" > commit-sha.txt
+          echo "Stored commit SHA: ${{ github.sha }}"
+
+      - name: Upload build metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: commit-sha.txt
+          path: commit-sha.txt
+
       - uses: ./.github/actions/build/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"

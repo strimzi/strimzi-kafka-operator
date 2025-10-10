@@ -1,5 +1,5 @@
-name: "Download Build Artifacts"
-description: "Downloads a specific artifact from the Build workflow for the same commit SHA"
+name: "Compare Merge Commit"
+description: "Compare current merge commit sha with merge commit sha from build workflow"
 
 inputs:
   # In Azure we use build ID of build pipeline to retrieve Strimzi artifacts
@@ -7,11 +7,11 @@ inputs:
   # as each commit should have only one unique passed build. In case we will find it is not sufficient
   # we can easily add another input runId and skip find-build job and directly download artifact.
   # TODO - the comment can be removed once we agree it is sufficient for releases
-  sha:
-    description: "Commit SHA to find build artifacts for"
+  commitSha:
+    description: "Commit sha of latest commit pushed to a branch from which merge-commit is created"
     required: true
-  artifactName:
-    description: "Name of the artifact to download (e.g., 'strimzi-binaries.tar', 'containers-amd64.tar')"
+  mergeCommitSha:
+    description: "Commit sha of merge commit used by this workflow run"
     required: true
   waitForBuild:
     description: "Wait for build to complete if it's still running"
@@ -24,11 +24,14 @@ inputs:
 
 outputs:
   buildRunId:
-    description: "The ID of the build workflow run"
-    value: ${{ steps.find-build.outputs.run_id }}
+    description: "The ID of the build workflow run (empty string if SHA mismatch)"
+    value: ${{ steps.compare-sha.outputs.buildRunId }}
   buildStatus:
     description: "Status of the build workflow"
     value: ${{ steps.find-build.outputs.status }}
+  buildMetadataSha:
+    description: "The SHA from the build metadata artifact"
+    value: ${{ steps.compare-sha.outputs.buildMetadataSha }}
 
 runs:
   using: "composite"
@@ -37,12 +40,13 @@ runs:
       id: find-build
       uses: actions/github-script@v7
       env:
-        INPUT_SHA: ${{ inputs.sha }}
+        INPUT_SHA: ${{ inputs.commitSha }}
         WAIT_FOR_BUILD: ${{ inputs.waitForBuild }}
         MAX_WAIT_MINUTES: ${{ inputs.maxWaitMinutes }}
       with:
         script: |
           const {owner, repo} = context.repo;
+          const buildWorkflowName = 'build.yml';
           const sha = process.env.INPUT_SHA;
           const waitForBuild = process.env.WAIT_FOR_BUILD === 'true';
           const maxWaitMinutes = parseInt(process.env.MAX_WAIT_MINUTES);
@@ -57,7 +61,7 @@ runs:
             const runs = await github.rest.actions.listWorkflowRuns({
               owner,
               repo,
-              workflow_id: 'build.yml',
+              workflow_id: buildWorkflowName,
               head_sha: sha,
               per_page: 1
             });
@@ -129,12 +133,56 @@ runs:
           core.setOutput('status', buildRun.status);
           core.setOutput('conclusion', buildRun.conclusion || '');
 
-          core.info(`🎯 Build workflow run #${buildRun.id} is ready for artifact download`);
+          core.info(`🎯 Build workflow run #${buildRun.id} is ready`);
           core.info(`Build URL: ${context.serverUrl}/${owner}/${repo}/actions/runs/${buildRun.id}`);
 
-    - name: Download Artifact
+    - name: Download build metadata
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.artifactName }}
+        name: commit-sha.txt
         run-id: ${{ steps.find-build.outputs.run_id }}
         github-token: ${{ github.token }}
+        path: .
+
+    - name: Compare commit SHA
+      id: compare-sha
+      uses: actions/github-script@v7
+      env:
+        BUILD_RUN_ID: ${{ steps.find-build.outputs.run_id }}
+        MERGE_COMMIT_SHA: ${{ inputs.mergeCommitSha }}
+      with:
+        script: |
+          const fs = require('fs');
+          const mergeCommitShaFileName = 'commit-sha.txt';
+          const buildRunId = process.env.BUILD_RUN_ID;
+          const mergeCommitSha = process.env.MERGE_COMMIT_SHA;
+
+          let buildMetadataSha = '';
+
+          // Read build metadata SHA from downloaded file
+          if (fs.existsSync(mergeCommitShaFileName)) {
+            buildMetadataSha = fs.readFileSync(mergeCommitShaFileName, 'utf8').trim();
+            core.info(`Build metadata SHA: ${buildMetadataSha}`);
+            core.info(`Current merge commit SHA: ${mergeCommitSha}`);
+
+            if (buildMetadataSha === mergeCommitSha) {
+              core.info('✅ SHA match! Build artifacts are up to date.');
+              core.setOutput('buildRunId', buildRunId);
+              core.setOutput('buildMetadataSha', buildMetadataSha);
+            } else {
+              const mismatchMessage = [
+                `⚠️  SHA mismatch detected!`,
+                `Build artifacts were created for commit: ${buildMetadataSha}.`,
+                `Current merge commit is: ${mergeCommitSha}.`,
+                `Workflow will build it's own images.`
+              ].join('\n');
+          
+              core.warning(mismatchMessage);
+              core.setOutput('buildRunId', '');
+              core.setOutput('buildMetadataSha', buildMetadataSha);
+            }
+          } else {
+            core.warning(`⚠️  Build metadata not found. Workflow will build it's own images.`);
+            core.setOutput('buildRunId', '');
+            core.setOutput('buildMetadataSha', '');
+          }
