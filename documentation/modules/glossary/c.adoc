@@ -19,8 +19,8 @@ The central operator responsible for deploying and managing Kafka clusters, Kafk
 
 For more information, see the following:
 
-* {BookURLOverview}#overview-components-cluster-operator-str[Cluster Operator^]
-* {BookURLDeploying}#ref-operator-cluster-str[Configuring the Cluster Operator^]
+* link:{BookURLOverview}#overview-components-cluster-operator-str[Cluster Operator^]
+* link:{BookURLDeploying}#ref-operator-cluster-str[Configuring the Cluster Operator^]
 
 == Cruise Control
 [id="glossary-cruise-control_{context}"]
@@ -29,6 +29,6 @@ Cruise Control is configured through the `Kafka` custom resource, while rebalanc
 
 For more information, see the following:
 
-* {BookURLDeploying}#cruise-control-concepts-str[Using Cruise Control for cluster rebalancing^]
-* {BookURLDeploying}#proc-cruise-control-topic-replication-str[Using Cruise Control to modify topic replication factor^]
-* {BookURLDeploying}#proc-cruise-control-moving-data-str[Using Cruise Control to reassign partitions on JBOD disks^]
+* link:{BookURLDeploying}#cruise-control-concepts-str[Using Cruise Control for cluster rebalancing^]
+* link:{BookURLDeploying}#proc-cruise-control-topic-replication-str[Using Cruise Control to modify topic replication factor^]
+* link:{BookURLDeploying}#proc-cruise-control-moving-data-str[Using Cruise Control to reassign partitions on JBOD disks^]

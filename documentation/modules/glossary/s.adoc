@@ -13,7 +13,7 @@ ephemeral:: Temporary storage tied to the pod lifecycle
 persistent-claim:: Durable storage using PersistentVolumeClaims (PVCs)  
 jbod:: Multiple disks or volumes (ephemeral or persistent)
 
-For more information, see {BookURLDeploying}#assembly-storage-str[Configuring Kafka storage^].
+For more information, see link:{BookURLDeploying}#assembly-storage-str[Configuring Kafka storage^].
 
 == Strimzi API schema
 [id="glossary-strimzi-cr-schema_{context}"]

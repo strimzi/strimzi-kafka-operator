@@ -8,4 +8,4 @@
 Used to enable or disable specific features and functions managed by Strimzi operators.
 New features may be introduced initially through feature gates.
 
-For more information, see {BookURLDeploying}#ref-operator-cluster-feature-gates-str[Feature gates^].
+For more information, see link:{BookURLDeploying}#ref-operator-cluster-feature-gates-str[Feature gates^].

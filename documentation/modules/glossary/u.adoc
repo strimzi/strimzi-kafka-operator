@@ -13,11 +13,11 @@ Upgrade paths:
 incremental upgrade:: Move between consecutive minor versions  
 multi-version upgrade:: Skip one or more minor versions
 
-For more information, see {BookURLDeploying}#assembly-upgrade-str[Upgrading Strimzi^].
+For more information, see link:{BookURLDeploying}#assembly-upgrade-str[Upgrading Strimzi^].
 
 == User Operator
 [id="glossary-user-operator_{context}"]
 The operator responsible for managing Kafka users and ACLs through `KafkaUser` custom resources.
 
-* {BookURLOverview}#overview-concepts-user-operator-str[User Operator^]
-* {BookURLDeploying}#assembly-using-the-user-operator-str[Using the User Operator to manage Kafka users^]
+* link:{BookURLOverview}#overview-concepts-user-operator-str[User Operator^]
+* link:{BookURLDeploying}#assembly-using-the-user-operator-str[Using the User Operator to manage Kafka users^]

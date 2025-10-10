@@ -8,7 +8,7 @@
 Strimzi components can expose Prometheus-formatted metrics for monitoring. 
 Metrics for components are enabled through its custom resource.
 
-For more information, see {BookURLDeploying}#assembly-metrics-str[Introducing metrics^].
+For more information, see link:{BookURLDeploying}#assembly-metrics-str[Introducing metrics^].
 
 == Metrics Reporter
 [id="glossary-metrics-reporter_{context}"]
