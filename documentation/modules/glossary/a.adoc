@@ -30,8 +30,8 @@ Supported types include `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and `c
 
 For more information, see the following:
 
-* {BookURLDeploying}#con-securing-kafka-authentication-str[Configuring client authentication on listeners^]
-* {BookURLDeploying}#con-securing-client-authentication-str[Configuring user authentication^]
+* link:{BookURLDeploying}#con-securing-kafka-authentication-str[Configuring client authentication on listeners^]
+* link:{BookURLDeploying}#con-securing-client-authentication-str[Configuring user authentication^]
 
 [id="glossary-authorization_{context}"]
 == Authorization (cluster-wide)
@@ -50,5 +50,5 @@ If using a custom authorization mechanism, user permissions are typically manage
 
 For more information, see the following:
 
-* {BookURLDeploying}#con-securing-kafka-authorization-str[Configuring authorized access to Kafka^]
-* {BookURLDeploying}#con-securing-client-authorization-str[Configuring user authorization^]
+* link:{BookURLDeploying}#con-securing-kafka-authorization-str[Configuring authorized access to Kafka^]
+* link:{BookURLDeploying}#con-securing-client-authorization-str[Configuring user authorization^]

@@ -7,4 +7,4 @@
 [id="glossary-drain-cleaner_{context}"]
 A utility installed as a separate component that ensures safe pod evictions during rolling updates to prevent data loss or downtime.
 
-For more information, see {BookURLDeploying}#assembly-drain-cleaner-str[Evicting pods with the Strimzi Drain Cleaner^].
+For more information, see link:{BookURLDeploying}#assembly-drain-cleaner-str[Evicting pods with the Strimzi Drain Cleaner^].

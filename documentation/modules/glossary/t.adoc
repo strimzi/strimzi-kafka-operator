@@ -10,12 +10,12 @@ It is configured through the `Kafka` custom resource.
 
 For more information, see the following:
 
-* {BookURLDeploying}#ref-tiered-storage-str[Tiered storage^]
-* {BookURLConfiguring}#type-TieredStorageCustom-reference[`TieredStorageCustom` schema reference^]
+* link:{BookURLDeploying}#ref-tiered-storage-str[Tiered storage^]
+* link:{BookURLConfiguring}#type-TieredStorageCustom-reference[`TieredStorageCustom` schema reference^]
 
 == Topic Operator
 [id="glossary-topic-operator_{context}"]
 The operator responsible for managing Kafka topics through `KafkaTopic` custom resources.
 
-* {BookURLOverview}#overview-concepts-topic-operator-str[Topic Operator^]
-* {BookURLDeploying}#using-the-topic-operator-str[Using the Topic Operator to manage Kafka topics^]
+* link:{BookURLOverview}#overview-concepts-topic-operator-str[Topic Operator^]
+* link:{BookURLDeploying}#using-the-topic-operator-str[Using the Topic Operator to manage Kafka topics^]
