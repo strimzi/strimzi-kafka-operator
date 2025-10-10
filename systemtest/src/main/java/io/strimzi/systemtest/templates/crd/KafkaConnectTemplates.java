@@ -182,6 +182,7 @@ public class KafkaConnectTemplates {
 
         if (Environment.isConnectBuildWithBuildahEnabled() && !KubeClusterResource.getInstance().isOpenShiftLikeCluster()) {
             // for Buildah on minikube or Kind, we need to add `--tls-verify=false` in order to push via HTTP
+            dockerOutputBuilder.withAdditionalBuildOptions("--tls-verify=false");
             dockerOutputBuilder.withAdditionalPushOptions("--tls-verify=false");
         } else if (!Environment.isConnectBuildWithBuildahEnabled() && KubeClusterResource.getInstance().isKind()) {
             // if we use Kind we add insecure option
