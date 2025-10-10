@@ -135,14 +135,6 @@ You can change the frequency by adding `refresh.topics.interval.seconds` to the 
 
 |===
 
-[WARNING] 
-====
-The following properties must be *identically configured across both connectors* (source and checkpoint):
-
-* `replication.policy.class`
-* `replication.policy.separator`
-* `offset-syncs.topic.location`
-* `topic.filter.class`
-
+WARNING: The following properties must be *identically configured across both connectors* (source and checkpoint):
+`replication.policy.class`, `replication.policy.separator`, `offset-syncs.topic.location`, and `topic.filter.class`.
 Mismatches cause replication failures or offset sync issues.
-====

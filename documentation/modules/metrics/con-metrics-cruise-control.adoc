@@ -31,8 +31,6 @@ The Cruise Control metric for balancedness score (`balancedness-score`) might di
 Cruise Control calculates each score using `anomaly.detection.goals` which might not be the same as the `default.goals` used in the `KafkaRebalance` resource.
 The `anomaly.detection.goals` are specified in the `spec.cruiseControl.config` of the `Kafka` custom resource.
 
-[NOTE]
-====
 Refreshing the `KafkaRebalance` resource fetches an optimization proposal.
 The latest cached optimization proposal is fetched if one of the following conditions applies:
 
@@ -40,7 +38,6 @@ The latest cached optimization proposal is fetched if one of the following condi
 * KafkaRebalance `goals` are not specified
 
 Otherwise, Cruise Control generates a new optimization proposal based on KafkaRebalance `goals`. If new proposals are generated with each refresh, this can impact performance monitoring.
-====
 
 == Setting up alerts for anomaly detection
 

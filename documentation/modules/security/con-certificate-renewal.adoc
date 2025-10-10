@@ -133,9 +133,6 @@ For an example of configuring secure clients, see xref:proc-configuring-secure-k
 If you provision client certificates manually, generate and distribute new certificates before the current ones expire. 
 Failure to do so can result in clients being unable to connect to the Kafka cluster.
 
-[NOTE]
-====
-For workloads in the same Kubernetes cluster and namespace, you can mount secrets as volumes. 
+NOTE: For workloads in the same Kubernetes cluster and namespace, you can mount secrets as volumes. 
 This allows client pods to construct keystores and truststores dynamically from the current state of the secrets.
 For details, see xref:configuring-internal-clients-to-trust-cluster-ca-{context}[Configuring internal clients to trust the cluster CA].
-====
