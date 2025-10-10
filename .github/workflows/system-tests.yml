@@ -88,7 +88,11 @@ jobs:
     needs:
       - check-rights
       - parse-params
-    if: ${{ needs.parse-params.outputs.shouldRun == 'true' }}
+    if: |-
+      ${{ always() &&
+        (needs.check-rights.result == 'success' || github.event_name == 'pull_request') &&
+        needs.parse-params.outputs.shouldRun == 'true' 
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
