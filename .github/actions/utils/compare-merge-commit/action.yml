@@ -137,6 +137,8 @@ runs:
           core.info(`Build URL: ${context.serverUrl}/${owner}/${repo}/actions/runs/${buildRun.id}`);
 
     - name: Download build metadata
+      id: download-metadata
+      continue-on-error: true
       uses: actions/download-artifact@v4
       with:
         name: commit-sha.txt
