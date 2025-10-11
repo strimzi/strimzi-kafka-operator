@@ -16,11 +16,8 @@ With `simple` authorization:
 * ACL rules apply to both source and target topics
 * Users with source topic access automatically get equivalent target topic access
 
-[IMPORTANT]
-====
-* This feature is not compatible with the User Operator, so disable by setting `sync.topic.acls.enabled` to `false`.
-* When using OAuth 2.0 authorization, the setting has no effect.
-====
+IMPORTANT: This feature is not compatible with the User Operator, so disable by setting `sync.topic.acls.enabled` to `false`.
+When using OAuth 2.0 authorization, the setting has no effect.
 
 .Example configuration to enable offset synchronization
 [source,yaml,subs="+quotes,attributes"]

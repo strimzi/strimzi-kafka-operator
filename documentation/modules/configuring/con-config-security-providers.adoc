@@ -133,8 +133,6 @@ securityContext:
 # ...
 ----
 
-[NOTE]
-====
 Container capabilities and `seccomp` are Linux kernel features that support container security. 
 
 * Capabilities add fine-grained privileges for processes running on a container. The `NET_BIND_SERVICE` capability allows non-root user applications to bind to ports below 1024. 
@@ -142,7 +140,6 @@ Container capabilities and `seccomp` are Linux kernel features that support cont
 The `RuntimeDefault` profile provides a default set of system calls.
 A `LocalHost` profile uses a profile defined in a file on the node.   
 
-====
 
 [role="_additional-resources"]
 .Additional resources

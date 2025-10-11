@@ -51,12 +51,9 @@ NOTE: The value of `metadataVersion` must be a string to prevent it from being i
 
 . Change the `Kafka.spec.kafka.version` to specify the new Kafka version; leave the `metadataVersion` at the default for the _current_ Kafka version.
 +
-[NOTE]
-====
-Changing the `kafka.version` ensures that all brokers in the cluster are upgraded to start using the new broker binaries.
+NOTE: Changing the `kafka.version` ensures that all brokers in the cluster are upgraded to start using the new broker binaries.
 During this process, some brokers are using the old binaries while others have already upgraded to the new ones.
 Leaving the `metadataVersion` unchanged at the current setting ensures that the Kafka brokers and controllers can continue to communicate with each other throughout the upgrade.
-====
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
 +
