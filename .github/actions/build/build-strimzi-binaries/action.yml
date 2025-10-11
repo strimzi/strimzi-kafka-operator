@@ -85,6 +85,7 @@ runs:
     - name: Check docs
       shell: bash
       run: "make docu_check"
+
     - name: Run Shellcheck
       shell: bash
       run: "make shellcheck"
