@@ -22,6 +22,8 @@
   To use the Keycloak authorizer, you can use the `type: custom` authorization.
   The Strimzi OAuth library with the Keycloak authorizer continues to be packaged with the Strimzi container images.
   Follow the documentation for the examples and migration details.
+* CPU and memory configuration for the Kafka nodes in `.spec.kafka.resources` is deprecated and will be removed in the `v1` CRD API.
+  Please use the `KafkaNodePool` resources to configure CPU and memory for Kafka nodes.
 * The `group.id`, `config.storage.topic`, `offset.storage.topic`, and `status.storage.topic` fields in `.spec.config` section of the `KafkaConnect` resource are deprecated and will be forbidden in the `v1` CRD API.
   Please use the new `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` fields instead.
 * The `.spec.connectCluster`, `.spec.clusters`, `.spec.mirrors[].sourceCluster`, `.spec.mirrors[].targetCluster`, and `.spec.mirrors[].heartbeatConnector` fields of the `KafkaMirrorMaker2` resource are deprecated and will be removed in the `v1` CRD API.

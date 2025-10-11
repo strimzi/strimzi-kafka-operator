@@ -286,7 +286,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return Kafka cluster instance
      */
-    @SuppressWarnings({"NPathComplexity", "deprecation"}) // Keycloak Authorization is deprecated
+    @SuppressWarnings({"NPathComplexity", "deprecation"}) // Keycloak Authorization is deprecated; resource configuration in Kafka CR (.spec.kafka.resources) is deprecated
     public static KafkaCluster fromCrd(Reconciliation reconciliation,
                                        Kafka kafka,
                                        List<KafkaPool> pools,

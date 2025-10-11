@@ -204,6 +204,9 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("CPU and memory resources to reserve.")
+    @Deprecated
+    @DeprecatedProperty(description = "Use `KafkaNodePool` custom resources to configure CPU and memory.")
+    @PresentInVersions("v1beta2")
     public ResourceRequirements getResources() {
         return resources;
     }

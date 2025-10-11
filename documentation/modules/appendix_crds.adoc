@@ -116,7 +116,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |JMX Options for Kafka brokers.
 |resources
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core[ResourceRequirements]
-|CPU and memory resources to reserve.
+|**The `resources` property has been deprecated.** Use `KafkaNodePool` custom resources to configure CPU and memory. CPU and memory resources to reserve.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Metrics configuration.
