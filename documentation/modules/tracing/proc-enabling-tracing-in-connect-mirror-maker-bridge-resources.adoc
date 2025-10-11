@@ -8,7 +8,7 @@
 = Enabling tracing in supported Kafka components
 
 [role="_abstract"]
-Distributed tracing is supported for MirrorMaker, MirrorMaker 2, Kafka Connect, and the Kafka Bridge.
+Distributed tracing is supported for MirrorMaker, MirrorMaker 2, Kafka Connect, and the HTTP Bridge.
 Enable tracing using OpenTelemetry by setting the `spec.tracing.type` property to `opentelemetry`. 
 Configure the custom resource of the component to specify and enable a tracing system using `spec.template` properties.
 
@@ -26,7 +26,7 @@ Enabling tracing in a resource triggers the following events:
 
 * For MirrorMaker, MirrorMaker 2, and Kafka Connect, the tracing agent initializes a tracer based on the tracing configuration defined in the resource.
 
-* For the Kafka Bridge, a tracer based on the tracing configuration defined in the resource is initialized by the Kafka Bridge itself.
+* For the HTTP Bridge, a tracer based on the tracing configuration defined in the resource is initialized by the HTTP Bridge itself.
 
 .Tracing in MirrorMaker 2
 
@@ -36,9 +36,9 @@ For MirrorMaker 2, messages are traced from the source cluster to the target clu
 
 For Kafka Connect, only messages produced and consumed by Kafka Connect are traced. To trace messages sent between Kafka Connect and external systems, you must configure tracing in the connectors for those systems.
 
-.Tracing in the Kafka Bridge
+.Tracing in the HTTP Bridge
 
-For the Kafka Bridge, messages produced and consumed by the Kafka Bridge are traced. Incoming HTTP requests from client applications to send and receive messages through the Kafka Bridge are also traced.
+For the HTTP Bridge, messages produced and consumed by the HTTP Bridge are traced. Incoming HTTP requests from client applications to send and receive messages through the HTTP Bridge are also traced.
 To have end-to-end tracing, you must configure tracing in your HTTP clients.
 
 .Procedure
@@ -95,7 +95,7 @@ spec:
 #...
 ----
 
-.Example tracing configuration for the Kafka Bridge using OpenTelemetry
+.Example tracing configuration for the HTTP Bridge using OpenTelemetry
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaBridgeApiVersion}
