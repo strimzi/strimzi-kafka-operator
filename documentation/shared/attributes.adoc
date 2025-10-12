@@ -115,7 +115,7 @@
 :OpenTelemetryInstrumentationVersion: 1.32.0-alpha
 :OpenTelemetrySemConvVersion: 1.21.0-alpha
 :OpenTelemetryKafkaClientVersion: 2.6
-:GRPCVersion: 1.61.0
+:GRPCVersion: 1.75.0
 
 :OpenTelemetry: link:https://opentelemetry.io[OpenTelemetry^]
 :OpenTelemetryDocs: link:https://opentelemetry.io/docs/[OpenTelemetry documentation^]
