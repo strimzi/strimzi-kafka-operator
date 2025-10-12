@@ -61,7 +61,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     private ResourceRequirements resources;
     private JvmOptions jvmOptions;
     private Logging logging;
-    private boolean enableMetrics;
+    private Boolean enableMetrics;
     private MetricsConfig metricsConfig;
     private Probe livenessProbe;
     private Probe readinessProbe;
@@ -90,11 +90,11 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     @PresentInVersions("v1beta2")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Description("Enable the metrics for the Kafka Bridge. Default is false.")
-    public boolean getEnableMetrics() {
+    public Boolean getEnableMetrics() {
         return enableMetrics;
     }
 
-    public void setEnableMetrics(boolean enableMetrics) {
+    public void setEnableMetrics(Boolean enableMetrics) {
         this.enableMetrics = enableMetrics;
     }
 
