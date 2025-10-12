@@ -18,7 +18,7 @@ Affinity:: Apply affinity to Kafka pods to schedule them on specifically labeled
 
 This procedure provides configuration examples for the cluster-wide `Kafka` resource and the pool-specific `KafkaNodePool` resource.
 
-NOTE: If you configure `KafkaNodePool.spec.template`, its settings replace `Kafka.spec.kafka.template` for that node pool.
+NOTE: If a property is defined under `KafkaNodePool.spec.template` and the same property is defined also under `Kafka.spec.kafka.template`, the property from the node pool will be used.
 Properties are not merged. 
 For more information, see xref:affinity-{context}[Scheduling strategies].
 
