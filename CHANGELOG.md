@@ -2,6 +2,7 @@
 
 ## 0.49.0
 
+* Add support for Kafka 4.0.1
 * Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
   Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
 * Make `.spec` sections required in the `v1` version of all Strimzi custom resources.
