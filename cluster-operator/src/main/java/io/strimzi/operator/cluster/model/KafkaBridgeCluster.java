@@ -203,7 +203,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
             result.metrics = new StrimziMetricsReporterModel(spec, DEFAULT_METRICS_ALLOW_LIST);
         } else {
-            result.isLegacyMetricsConfigEnabled = spec.getEnableMetrics();
+            result.isLegacyMetricsConfigEnabled = Boolean.TRUE.equals(spec.getEnableMetrics());
         }
 
         result.setTls(spec.getTls() != null ? spec.getTls() : null);
