@@ -135,6 +135,7 @@ public class KafkaPool extends AbstractModel {
      *
      * @return Kafka pool instance
      */
+    @SuppressWarnings("deprecation") // Resource configuration in Kafka CR (.spec.kafka.resources) is deprecated
     public static KafkaPool fromCrd(
             Reconciliation reconciliation,
             Kafka kafka,
