@@ -16,7 +16,7 @@ A HTTP Bridge instance has its own state which is not shared with another instan
 
 For a deeper understanding of the HTTP Bridge and its cluster configuration options, refer to the link:{BookURLBridge}[Using the Kafka Bridge^] guide and the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
-.Example `HTTPBridge` custom resource configuration
+.Example `KafkaBridge` custom resource configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 # Basic configuration (required)
