@@ -7,3 +7,7 @@ runs:
     - name: Install helm
       shell: bash
       run: ".azure/scripts/setup-helm.sh"
+      env:
+        # TODO - update versions in the upcoming PRs
+        TEST_HELM3_VERSION: v3.15.4
+        TEST_HELM_UNITTEST_VERSION: v0.5.2
