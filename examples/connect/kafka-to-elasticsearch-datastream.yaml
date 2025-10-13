@@ -1,0 +1,33 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+    # This connector is designed to create a data stream instead of a regular index 
+    # and used when we use integration in elastic search(for creating dashboard we just need data-stream) 
+    strimzi.io/cluster: my-connect-cluster
+  name: elasticsearch-auditd-datastream-connector
+  namespace: kafka-infra
+spec:
+  class: io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+  # This connector needs to add the Elasticsearch plugin in Kafka Connect
+  config:
+    key.ignore: true
+    value.converter: org.apache.kafka.connect.json.JsonConverter
+    data.stream.type: logs
+    connection.username: elastic
+    value.converter.schemas.enable: false
+    name: elasticsearch-sink-connector
+    connection.password: ELASTIC_PASSWORD
+    data.stream.dataset: auditd.log # or system.auth, system.syslog,  network_traffic.flow, ...
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    drop.invalid.message: true
+    data.stream.namespace: defualt
+    behavior.on.malformed.documents: ignore
+    retry.backoff.ms: 1000
+    behavior.on.null.values: ignore
+    max.retries: 5
+    topics.regex: .*logs # Create data-stream with logs-auditd.log-defualt name in this example
+    type.name: _doc
+    connection.url: 'http://elasticsearch-es-http.elkinfra.svc:9200' # Elasticsearch service address in cluster
+    schema.ignore: true
+  tasksMax: 2
