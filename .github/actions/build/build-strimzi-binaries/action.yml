@@ -55,19 +55,7 @@ runs:
         MVN_ARGS: ${{ inputs.mvnArgs }}
         CURL_ARGS: "-s"
 
-    - name: Upload containers artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: MirrorMaker2ST.md
-        path: development-docs/systemtests/io.strimzi.systemtest.mirrormaker.MirrorMaker2ST.md
-
-    - name: Upload containers artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: TopicReplicasChangeST.md
-        path: development-docs/systemtests/io.strimzi.systemtest.operators.topic.TopicReplicasChangeST.md
-
-        # Additional checks
+    # Additional checks
     - name: Run Spotbugs
       shell: bash
       run: "make spotbugs"

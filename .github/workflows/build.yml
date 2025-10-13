@@ -18,7 +18,7 @@ jobs:
   # Build Strimzi Java code and does basic checks of the PR
   build-strimzi:
     name: Build Strimzi
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
@@ -37,7 +37,7 @@ jobs:
       - uses: ./.github/actions/build/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
   # Runs Strimzi unit and integration tests
   test-strimzi:
