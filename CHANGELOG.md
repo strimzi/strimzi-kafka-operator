@@ -31,8 +31,8 @@
 * The `.spec.build.output.additionalKanikoOptions` field in the `KafkaConnect` custom resource is deprecated and will be removed in the future. 
   * Use `.spec.build.output.additionalBuildOptions` field instead.
 * Kafka nodes are now configured with PEM certificates instead of P12/JKS for keystore and truststore.
-* Configuring `connector.plugin.version` under `spec.config` in the `KafkaConnector` custom resource, and under `spec.mirrors[].sourceConnector.config`, `spec.mirrors[].checkpointConnector.config`, and `spec.mirrors[].heartbeatConnector.config` in the `KafkaMirrorMaker2` custom resource is deprecated and will be forbidden in the future.
-  * Use `spec.version` in the `KafkaConnecter` custom resource, and `spec.mirrors[].sourceConnector.version`, `spec.mirrors[].checkpointConnector.version`, and `spec.mirrors[].heartbeatConnector.version` in the `KafkaMirrorMaker2` custom resource.
+* Configuring `connector.plugin.version` under `spec.config` in the `KafkaConnector` custom resource, and under `spec.mirrors[].sourceConnector.config`, `spec.mirrors[].checkpointConnector.config`, and `spec.mirrors[].heartbeatConnector.config` in the `KafkaMirrorMaker2` custom resource is deprecated and will be forbidden in Strimzi 0.50.0.
+  Instead, please use `spec.version` in the `KafkaConnecter` custom resource, and the connector specific `version` fields in the `KafkaMirrorMaker2` custom resource.
 
 ## 0.48.0
 

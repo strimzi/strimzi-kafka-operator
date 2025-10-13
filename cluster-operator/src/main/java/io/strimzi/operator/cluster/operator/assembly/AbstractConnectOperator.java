@@ -435,7 +435,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected Future<ConnectorStatusAndConditions> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                                 String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
         KafkaConnectorConfiguration desiredConfig = new KafkaConnectorConfiguration(reconciliation, connectorSpec.getConfig().entrySet());
-        // In future connector.plugin.version will be added to forbidden list, for now add warning to conditions if specified
+        // In Strimzi 0.50.0 connector.plugin.version will be added to forbidden list, for now add warning to conditions if specified
+        // Work for removing this is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/12027
         List<Condition> initialConditions = new ArrayList<>();
         if (desiredConfig.getConfigOption("connector.plugin.version") != null) {
             String message = "Config option connector.plugin.version has been set under the config field. This is deprecated and will be forbidden in future. " +
