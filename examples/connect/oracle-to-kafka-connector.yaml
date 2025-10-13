@@ -1,0 +1,22 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+      # create topic in kafka
+    strimzi.io/cluster: my-connect-cluster
+  name: oracle-jdbc-connector
+  namespace: kafka-infra
+spec:
+  class: io.confluent.connect.jdbc.JdbcSourceConnector
+   # This connector need to add JdbcSourceConnector plugin in kafka connect
+  config:
+    poll.interval.ms: 3600000 # Interval that is used to request from Oracle and fetch data
+    transforms.extractInt.field: EVENT_TIMESTAMP
+    mode: timestamp # This mode is used to fetch new data in each interval, in this example is 1h
+    query: select * from AUDSYS.UNIFIED_AUDIT_TRAIL # Query that need to fetch from oracle in this example I need to fetch AuditLog
+    timestamp.column.name: EVENT_TIMESTAMP
+    connection.password: ORACLE_PASS
+    topic.prefix: TOPIC_NAME
+    connection.user: ORACLE_USERNAME
+    connection.url: 'jdbc:oracle:<driver:thin>:@<oracle_address>:oracle_port/database_name'
+  tasksMax: 2

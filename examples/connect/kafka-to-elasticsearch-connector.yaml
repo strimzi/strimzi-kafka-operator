@@ -1,0 +1,28 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+    # Create a regular index in Elasticsearch with the topic name that is defined in Kafka
+    strimzi.io/cluster: my-connect-cluster
+  name: elasticsearch-connector
+  namespace: kafka-infra
+spec:
+  class: io.confluent.connect.elasticsearch.ElasticsearchSinkConnector 
+        # This connector needs to add the Elasticsearch plugin in Kafka Connect
+  config:
+    key.ignore: true
+    value.converter: org.apache.kafka.connect.json.JsonConverter
+    connection.username: elastic
+    value.converter.schemas.enable: false
+    name: elasticsearch-sink-connector
+    connection.password: ELASTIC_PASSWORD
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    behavior.on.malformed.documents: ignore
+    retry.backoff.ms: 1000
+    behavior.on.null.values: ignore
+    max.retries: 5
+    topics.regex: .*logs # Regex of upcoming topic and create an index with the topic name in Elasticsearch
+    type.name: _doc
+    connection.url: 'http://elasticsearch-es-http.elkinfra.svc:9200' # Elasticsearch service address in cluster
+    schema.ignore: true
+  tasksMax: 2
