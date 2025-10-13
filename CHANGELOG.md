@@ -11,6 +11,7 @@
 * New way of defining the target (`.spec.target`) and source clusters (`.spec.mirrors[].source`) in the `KafkaMirrorMaker2` custom resources.
 * Strimzi Access Operator installation files updated to version 0.2.0
 * New feature gate `UseConnectBuildWithBuildah` (disabled by default) for running the Connect Build feature with Buildah instead of Kaniko on Kubernetes - according to [Strimzi Proposal #114](https://github.com/strimzi/proposals/blob/main/114-use-buildah-instead-of-kaniko.md).
+* New field `spec.version` in the `KafkaConnecter` custom resource, and new `version` fields for each connector under `spec.mirrors[]` in the `KafkaMirrorMaker2` custom resource for configuring the desired version of a connector.
 
 ### Major changes, deprecations, and removals
 
@@ -33,6 +34,8 @@
 * The `.spec.build.output.additionalKanikoOptions` field in the `KafkaConnect` custom resource is deprecated and will be removed in the future. 
   * Use `.spec.build.output.additionalBuildOptions` field instead.
 * Kafka nodes are now configured with PEM certificates instead of P12/JKS for keystore and truststore.
+* Configuring `connector.plugin.version` under `spec.config` in the `KafkaConnector` custom resource, and under `spec.mirrors[].sourceConnector.config`, `spec.mirrors[].checkpointConnector.config`, and `spec.mirrors[].heartbeatConnector.config` in the `KafkaMirrorMaker2` custom resource is deprecated and will be forbidden in Strimzi 0.50.0.
+  Instead, please use `spec.version` in the `KafkaConnecter` custom resource, and the connector specific `version` fields in the `KafkaMirrorMaker2` custom resource.
 
 ## 0.48.0
 

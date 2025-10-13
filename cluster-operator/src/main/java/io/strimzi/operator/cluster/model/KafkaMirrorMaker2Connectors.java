@@ -125,6 +125,7 @@ public class KafkaMirrorMaker2Connectors {
                                 .withState(mm2ConnectorSpec.getState())
                                 .withAutoRestart(mm2ConnectorSpec.getAutoRestart())
                                 .withTasksMax(mm2ConnectorSpec.getTasksMax())
+                                .withVersion(mm2ConnectorSpec.getVersion())
                                 .withListOffsets(mm2ConnectorSpec.getListOffsets())
                                 .withAlterOffsets(mm2ConnectorSpec.getAlterOffsets())
                             .endSpec()
