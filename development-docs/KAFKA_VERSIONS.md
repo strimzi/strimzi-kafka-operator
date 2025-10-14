@@ -26,7 +26,7 @@ But these are some of the tasks you usually have to do.
   You will need to commit also all the files it updates before opening a PR.
 * Add a `CHANGELOG.md` record
 * Run unit tests
-* Run system tests (typically as part of the PR on Azure Pipelines)
+* Run system tests (typically as part of the PR on GitHub Actions)
 
 You can also run unit and systems tests in an early stage on an Apache Kafka RC to validate it and report issues to the community before the GA.
 In order to so so, please follow the above steps but also add the Apache staging repository to the `pom.xml` file as follow:
