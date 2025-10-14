@@ -1,0 +1,42 @@
+name: "Publish Helm Chart"
+description: "Publishes Helm Chart as OCI artifact to registry"
+
+inputs:
+  releaseVersion:
+    description: "Release version (e.g., 0.45.0)"
+    required: true
+  quayHelmUser:
+    description: "Quay.io Helm repository username"
+    required: true
+  quayHelmPass:
+    description: "Quay.io Helm repository password"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Helm
+      uses: ./.github/actions/dependencies/install-helm
+
+    - name: Download release artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release.tar
+        path: ./
+
+    - name: Extract release artifacts
+      shell: bash
+      run: tar -xvf release.tar
+
+    - name: Login to OCI registry
+      shell: bash
+      run: helm registry login -u ${{ inputs.quayHelmUser }} -p ${{ inputs.quayHelmPass }} ${{ DOCKER_REGISTRY }}
+      env:
+        DOCKER_REGISTRY: "quay.io"
+
+    - name: Push Helm Chart to OCI registry
+      shell: bash
+      run: helm push strimzi-kafka-operator-helm-3-chart-${{ inputs.releaseVersion }}.tgz oci://${{ DOCKER_REGISTRY }}/${{ DOCKER_ORG }}
+      env:
+        DOCKER_REGISTRY: "quay.io"
+        DOCKER_ORG: "strimzi-helm"

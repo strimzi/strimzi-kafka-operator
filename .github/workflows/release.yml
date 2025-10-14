@@ -1,0 +1,140 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: 'Release Version (e.g., 0.49.0 for GA or 0.49.0-rc1 for RC)'
+        required: true
+        type: string
+      useSuffix:
+        description: 'Build suffixed images (e.g., 0.49.0-0 before final 0.49.0)'
+        required: true
+        type: boolean
+        default: true
+      releaseSuffix:
+        description: 'Release Suffix (e.g., 0 for 0.49.0-0, used only if useSuffix is true)'
+        required: true
+        type: string
+        default: '0'
+      sourceBuildRunId:
+        description: 'GitHub Actions Run ID of the source build (find in Actions tab URL)'
+        required: true
+        type: string
+
+jobs:
+  # Prepare release artifacts - builds release files, documentation, and pushes to Maven Central
+  prepare-release-artifacts:
+    name: Prepare Release Artifacts
+    if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/release-artifacts
+        with:
+          releaseVersion: ${{ inputs.releaseVersion }}
+          runnerArch: "amd64"
+          gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}
+          gpgSigningKey: ${{ secrets.GPG_SIGNING_KEY }}
+          centralUsername: ${{ secrets.CENTRAL_USERNAME }}
+          centralPassword: ${{ secrets.CENTRAL_PASSWORD }}
+
+  # Build containers using artifacts from the specified source build
+  build-containers:
+    name: Build Containers
+    needs:
+      - prepare-release-artifacts
+    if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
+    strategy:
+      matrix:
+        architecture:
+          - amd64
+          - arm64
+          - s390x
+          - ppc64le
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Download artifacts from the specified source build
+      - name: Download build artifacts from source build
+        uses: actions/download-artifact@v4
+        with:
+          name: strimzi-binaries.tar
+          run-id: ${{ inputs.sourceBuildRunId }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: ./.github/actions/build/containers-build
+        with:
+          architecture: ${{ matrix.architecture }}
+          runnerArch: "amd64"
+
+  # Push containers with suffix (e.g., 0.49.0-0) - optional step
+  push-containers-with-suffix:
+    name: Push Containers (${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }})
+    needs:
+      - build-containers
+    if: ${{ startsWith(github.ref, 'refs/heads/release-') && inputs.useSuffix == true }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    env:
+      DOCKER_REGISTRY: "quay.io"
+      DOCKER_ORG: "strimzi"
+      DOCKER_TAG: "${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }}"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/containers-push
+        with:
+          architectures: "amd64,arm64,ppc64le,s390x"
+          runnerArch: "amd64"
+          quayUser: ${{ secrets.QUAY_USER }}
+          quayPass: ${{ secrets.QUAY_PASS }}
+
+  # Push containers without suffix (e.g., 0.49.0)
+  push-containers:
+    name: Push Containers (${{ inputs.releaseVersion }})
+    needs:
+      - build-containers
+      - push-containers-with-suffix
+    # Run if push-containers-with-suffix succeeded/skipped and we're on a release branch
+    if: |-
+      ${{ startsWith(github.ref, 'refs/heads/release-') && 
+        (needs.push-containers-with-suffix.result == 'success' || 
+        needs.push-containers-with-suffix.result == 'skipped') 
+      }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write  # Required for keyless signing with GitHub OIDC
+    env:
+      DOCKER_REGISTRY: "quay.io"
+      DOCKER_ORG: "strimzi"
+      DOCKER_TAG: "${{ inputs.releaseVersion }}"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/containers-push
+        with:
+          architectures: "amd64,arm64,ppc64le,s390x"
+          runnerArch: "amd64"
+          quayUser: ${{ secrets.QUAY_USER }}
+          quayPass: ${{ secrets.QUAY_PASS }}
+
+  # Publish Helm Chart as OCI artifact
+  publish-helm-chart:
+    name: Publish Helm Chart
+    needs:
+      - prepare-release-artifacts
+      - push-containers
+    if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/publish-helm-chart
+        with:
+          releaseVersion: ${{ inputs.releaseVersion }}
+          quayHelmUser: ${{ secrets.QUAY_HELM_USER }}
+          quayHelmPass: ${{ secrets.QUAY_HELM_PASS }}
