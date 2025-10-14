@@ -112,7 +112,7 @@ jobs:
       id-token: write  # Required for keyless signing with GitHub OIDC
     env:
       DOCKER_REGISTRY: "quay.io"
-      DOCKER_ORG: "strimzi"
+      DOCKER_ORG: "jstejska"
       DOCKER_TAG: "${{ inputs.releaseVersion }}"
     steps:
       - uses: actions/checkout@v5
