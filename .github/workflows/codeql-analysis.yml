@@ -55,16 +55,15 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '17'
-        cache: 'maven'
 
     # Setup Maven cache
-    - name: Cache local Maven repository
-      uses: actions/cache@0c907a75c2c80ebcb7f088228285e798b750cf8f # v4.2.1
+    - name: Restore Maven cache
+      uses: actions/cache/restore@0c907a75c2c80ebcb7f088228285e798b750cf8f # v4.2.1
       with:
         path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        key: maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
-          ${{ runner.os }}-maven-
+          maven-
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL

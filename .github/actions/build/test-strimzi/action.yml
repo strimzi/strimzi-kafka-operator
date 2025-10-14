@@ -11,19 +11,18 @@ runs:
   using: "composite"
   steps:
     - name: Set up JDK
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
-        java-version: "17"
+        java-version: '17'
         distribution: 'temurin'
-        
-    - name: Cache Maven dependencies
-      uses: actions/cache@v4
+
+    - name: Restore Maven cache
+      uses: actions/cache/restore@v4
       with:
         path: ~/.m2/repository
-        key: "maven-cache | **/pom.xml"
+        key: maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
-          maven | ${{ github.job }}
-          maven
+          maven-
 
     - name: Install yq
       uses: ./.github/actions/dependencies/install-yq

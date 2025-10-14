@@ -29,22 +29,22 @@ runs:
       with:
         distribution: "temurin"
         java-version: "17"
-        cache: 'maven'
 
     # Caches for Maven and Kafka
-    - name: Cache local Maven repository
-      uses: actions/cache@v4
+    - name: Restore Maven cache
+      uses: actions/cache/restore@v4
       with:
         path: ~/.m2/repository
-        key: "maven-cache | **/pom.xml"
+        key: maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
-          maven | ${{ github.job }}
-          maven
+          maven-
     - name: Cache Kafka binaries
       uses: actions/cache@v4
       with:
         path: docker-images/artifacts/binaries/kafka/archives
-        key: '"kafka-binaries" | kafka-versions.yaml'
+        key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
+        restore-keys: |
+          kafka-binaries-
 
     # Building the artifacts
     - name: Build artifacts
@@ -108,3 +108,11 @@ runs:
       with:
         name: strimzi-binaries.tar
         path: strimzi-binaries.tar
+
+    # Save maven cache for main branches
+    - name: Save Maven cache
+      if: github.ref == 'refs/heads/main'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.m2/repository
+        key: maven-${{ hashFiles('**/pom.xml') }}
