@@ -39,34 +39,11 @@ jobs:
           centralUsername: ${{ secrets.CENTRAL_USERNAME }}
           centralPassword: ${{ secrets.CENTRAL_PASSWORD }}
 
-  # Build containers using artifacts from the specified source build
-  build-containers:
-    name: Build Containers
-    needs:
-      - prepare-release-artifacts
-    if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
-    strategy:
-      matrix:
-        architecture:
-          - amd64
-          - arm64
-          - s390x
-          - ppc64le
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: ./.github/actions/build/containers-build
-        with:
-          architecture: ${{ matrix.architecture }}
-          runnerArch: "amd64"
-          buildRunId: ${{ inputs.sourceBuildRunId }}
-
   # Push containers with suffix (e.g., 0.49.0-0) - optional step
   push-containers-with-suffix:
     name: Push Containers (${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }})
     needs:
-      - build-containers
+      - prepare-release-artifacts
     if: ${{ startsWith(github.ref, 'refs/heads/release-') && inputs.useSuffix == true }}
     runs-on: ubuntu-latest
     permissions:
@@ -85,12 +62,12 @@ jobs:
           runnerArch: "amd64"
           quayUser: ${{ secrets.QUAY_USER }}
           quayPass: ${{ secrets.QUAY_PASS }}
+          buildRunId: ${{ inputs.sourceBuildRunId }}
 
   # Push containers without suffix (e.g., 0.49.0)
   push-containers:
     name: Push Containers (${{ inputs.releaseVersion }})
     needs:
-      - build-containers
       - push-containers-with-suffix
     # Run if push-containers-with-suffix succeeded/skipped and we're on a release branch
     if: |-

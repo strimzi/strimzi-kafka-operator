@@ -15,6 +15,10 @@ inputs:
   quayPass:
     description: "Quay.io password"
     required: true
+  buildRunId:
+    description: "Build workflow run ID for artifact download"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -37,12 +41,23 @@ runs:
         architecture: ${{ inputs.runnerArch }}
 
     - name: Download container artifact
+      if: ${{ inputs.buildRunId != '' }}
       uses: actions/download-artifact@v4
       with:
         pattern: containers-*
         path: ./
         merge-multiple: true
-        
+        run-id: ${{ inputs.buildRunId }}
+        github-token: ${{ github.token }}
+
+    - name: Download container artifact
+      if: ${{ inputs.buildRunId == '' }}
+      uses: actions/download-artifact@v4
+      with:
+        pattern: containers-*
+        path: ./
+        merge-multiple: true
+
     - name: Extract container archives
       shell: bash
       run: |
