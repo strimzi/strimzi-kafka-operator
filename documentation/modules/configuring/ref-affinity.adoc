@@ -46,8 +46,8 @@ Use this to set a cluster-wide default scheduling policy for all Kafka broker an
 * `KafkaNodePool.spec.template.pod` + 
 For more granular control, if needed, you can override the default policy for specific node pools using the `KafkaNodePool` resource.
 
-IMPORTANT: If a property is defined under `KafkaNodePool.spec.template` and the same property is defined also under `Kafka.spec.kafka.template`, the property from the node pool will be used.
-In other words, node pools using `KafkaNodePool.spec.template.pod` settings do not inherit the Pod settings from the cluster-wide template.
+IMPORTANT: If a property is defined in both `KafkaNodePool.spec.template` and `Kafka.spec.kafka.template`, the property defined in the node pool is used.
+For example, node pools that use `KafkaNodePool.spec.template.pod` settings do not inherit pod settings from the cluster-wide template.
 
 Other Strimzi components have their own template properties for scheduling:
 

@@ -13,7 +13,7 @@ Configure `podAntiAffinity` so that the pods are scheduled on different worker n
 
 This procedure provides configuration examples for the cluster-wide `Kafka` resource and the pool-specific `KafkaNodePool` resource.
 
-NOTE: If you configure any property in `KafkaNodePool.spec.template`, its settings replace any configuration for the same property from `Kafka.spec.kafka.template` for that node pool.
+NOTE: If you configure a property in `KafkaNodePool.spec.template`, the configuration overrides the same property defined in `Kafka.spec.kafka.template` for that node pool.
 For more information, see xref:affinity-{context}[Scheduling strategies].
 
 .Prerequisites
