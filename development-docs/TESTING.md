@@ -386,7 +386,7 @@ However, since system tests use the command line `Executor` for some actions, ma
 
 ## Helper script
 
-The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the same configuration as used in the Azure build.
+The `./systemtest/scripts/run_tests.sh` script can be used to run the `systemtests` using the very similar configuration as we use in the GitHub Actions.
 You can use this script to run the `systemtests` project efficiently.
 
 Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.

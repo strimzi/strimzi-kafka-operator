@@ -63,8 +63,8 @@ jobs:
       STRIMZI_DEFAULT_LOG_LEVEL: DEBUG
       OPERATOR_IMAGE_PULL_POLICY: IfNotPresent
       COMPONENTS_IMAGE_PULL_POLICY: IfNotPresent
-      # Kube version for Kind
-      KIND_NODE_IMAGE: ${{ inputs.kubeVersion }}
+      # Kube version for Kind - use the oldest supported kubernetes version within Kind
+      KIND_NODE_IMAGE: ${{ inputs.kubeVersion || 'oldest' }}
       # Kube version for Minikube
       KUBE_VERSION: ${{ inputs.kubeVersion }}
     # Job steps

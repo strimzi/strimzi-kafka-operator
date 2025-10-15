@@ -50,6 +50,9 @@ jobs:
       - uses: ./.github/actions/build/test-strimzi
         with:
           runnerArch: "amd64"
+        env:
+          # Use the oldest supported kubernetes version within Kind
+          KIND_NODE_IMAGE: "oldest"
 
   # Builds Strimzi docs
   build-docs:
@@ -85,66 +88,66 @@ jobs:
           runnerArch: "amd64"
 
   # Push Strimzi containers - run only on main branch
-#  push-containers:
-#    name: Push Containers
-#    needs:
-#      - build-strimzi
-#      - test-strimzi
-#      - build-containers
-#      - build-docs
-#    if: ${{ github.ref == 'refs/heads/main' }}
-#    runs-on: ubuntu-latest
-#    permissions:
-#      contents: read
-#      packages: write
-#      # Required for keyless signing with GitHub OIDC
-#      id-token: write
-#    env:
-#      DOCKER_REGISTRY: "quay.io"
-#      DOCKER_ORG: "strimzi"
-#      DOCKER_TAG: "latest"
-#    steps:
-#      - uses: actions/checkout@v5
-#      - uses: ./.github/actions/build/containers-push
-#        with:
-#          architectures: "amd64,arm64,ppc64le,s390x"
-#          runnerArch: "amd64"
-#          quayUser: ${{ secrets.QUAY_USER }}
-#          quayPass: ${{ secrets.QUAY_PASS }}
+  push-containers:
+    name: Push Containers
+    needs:
+      - build-strimzi
+      - test-strimzi
+      - build-containers
+      - build-docs
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # Required for keyless signing with GitHub OIDC
+      id-token: write
+    env:
+      DOCKER_REGISTRY: "quay.io"
+      DOCKER_ORG: "strimzi"
+      DOCKER_TAG: "latest"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/containers-push
+        with:
+          architectures: "amd64,arm64,ppc64le,s390x"
+          runnerArch: "amd64"
+          quayUser: ${{ secrets.QUAY_USER }}
+          quayPass: ${{ secrets.QUAY_PASS }}
 
-#  # Publish Strimzi docs to the website - run only on main branch
-#  publish-docs:
-#    name: Publish Docs
-#    needs:
-#      - build-strimzi
-#      - test-strimzi
-#      - build-containers
-#      - build-docs
-#    if: ${{ github.ref == 'refs/heads/main' }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v5
-#      - uses: ./.github/actions/build/publish-docs
-#        with:
-#          artifactName: "documentation.tar"
-#          githubDeployKey: ${{ secrets.GITHUB_DEPLOY_KEY }}
-#
-#  # Deploy Strimzi Java artifacts - run only on main branch
-#  deploy-java:
-#    name: Deploy Java artifacts
-#    needs:
-#      - build-strimzi
-#      - test-strimzi
-#      - build-containers
-#      - build-docs
-#    if: ${{ github.ref == 'refs/heads/main' }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v5
-#      - uses: ./.github/actions/build/deploy-java
-#        with:
-#          runnerArch: "amd64"
-#          gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}
-#          gpgSigningKey: ${{ secrets.GPG_SIGNING_KEY }}
-#          centralUsername: ${{ secrets.CENTRAL_USERNAME }}
-#          centralPassword: ${{ secrets.CENTRAL_PASSWORD }}
+  # Publish Strimzi docs to the website - run only on main branch
+  publish-docs:
+    name: Publish Docs
+    needs:
+      - build-strimzi
+      - test-strimzi
+      - build-containers
+      - build-docs
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/publish-docs
+        with:
+          artifactName: "documentation.tar"
+          websiteDeployKey: ${{ secrets.WEBSITE_DEPLOY_KEY }}
+
+  # Deploy Strimzi Java artifacts - run only on main branch
+  deploy-java:
+    name: Deploy Java artifacts
+    needs:
+      - build-strimzi
+      - test-strimzi
+      - build-containers
+      - build-docs
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/build/deploy-java
+        with:
+          runnerArch: "amd64"
+          gpgPassphrase: ${{ secrets.GPG_PASSPHRASE }}
+          gpgSigningKey: ${{ secrets.GPG_SIGNING_KEY }}
+          centralUsername: ${{ secrets.CENTRAL_USERNAME }}
+          centralPassword: ${{ secrets.CENTRAL_PASSWORD }}

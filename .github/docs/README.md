@@ -1,6 +1,5 @@
 # Build & Test Strimzi in GitHub Actions
 The following lines put together basic information how is Strimzi built and tested via GitHub Actions.
-Currently, our main build system still lives on Azure Pipelines and running builds and tests on GHA is in experimental phase.
 All the steps mentioned bellow re-use scripts from our [azure](../../.azure) directory and thus all the steps are more or less the same on both systems.
 
 ## Build jar artifacts
@@ -79,15 +78,6 @@ Utils actions:
 - [set-defaults](../actions/utils/set-defaults)
 - [log-variables](../actions/utils/log-variables)
 - [determine-ref](../actions/utils/determine-ref)
-
-To make the build 1:1 to Azure we miss few actions that do the missing steps:
-- Push docs (uncomment usage & properly test)
-- Push containers (uncomment usage & properly test)
-- Deploy Java artifacts (uncomment usage & properly test)
-
-The actions also had to be put together into workflow as we have in Azure:
-- `build pipeline` -> `build workflow`
-- `operator-release pipeline` -> `operator-release workflow`
 
 ## Running system tests
 With GitHub Actions we are now able to propagate a specific parameters to our e2e jobs.
