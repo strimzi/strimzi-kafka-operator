@@ -29,18 +29,18 @@ runs:
       with:
         architecture: ${{ inputs.runnerArch }}
 
-    - name: Download Strimzi binaries
+    - name: Download Strimzi binaries from this workflow
       if: ${{ inputs.buildRunId == '' }}
       uses: actions/download-artifact@v4
       with:
         name: strimzi-binaries.tar
 
-    - name: Download Strimzi binaries
+    - name: Download Strimzi binaries from external build
       if: ${{ inputs.buildRunId != '' }}
       uses: actions/download-artifact@v4
       with:
         name: strimzi-binaries.tar
-        run-id: ${{ github.run_id }}
+        run-id: ${{ inputs.buildRunId }}
         github-token: ${{ github.token }}
 
     - name: "Untar strimzi-binaries.tar"
