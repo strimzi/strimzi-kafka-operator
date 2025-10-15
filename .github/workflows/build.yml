@@ -130,7 +130,7 @@ jobs:
       - uses: ./.github/actions/build/publish-docs
         with:
           artifactName: "documentation.tar"
-          githubDeployKey: ${{ secrets.GITHUB_DEPLOY_KEY }}
+          websiteDeployKey: ${{ secrets.WEBSITE_DEPLOY_KEY }}
 
   # Deploy Strimzi Java artifacts - run only on main branch
   deploy-java:
