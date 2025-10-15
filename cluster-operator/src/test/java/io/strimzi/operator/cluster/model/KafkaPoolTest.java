@@ -298,6 +298,9 @@ public class KafkaPoolTest {
                             .withXmx("8192m")
                         .endJvmOptions()
                         .withNewTemplate()
+                            .withNewKafkaContainer()
+                                .addToEnv(new ContainerEnvVarBuilder().withName("MY_OTHER_ENV_VAR").withValue("my-other-env-var-value").build())
+                            .endKafkaContainer()
                             .withNewInitContainer()
                                 .addToEnv(new ContainerEnvVarBuilder().withName("MY_INIT_ENV_VAR").withValue("my-init-env-var-value").build())
                             .endInitContainer()
@@ -323,7 +326,7 @@ public class KafkaPoolTest {
         assertThat(kp.gcLoggingEnabled, is(true));
         assertThat(kp.jvmOptions.getXmx(), is("4096m"));
         assertThat(kp.templateContainer.getEnv(), is(List.of(new ContainerEnvVarBuilder().withName("MY_ENV_VAR").withValue("my-env-var-value").build())));
-        assertThat(kp.templateInitContainer, is(nullValue()));
+        assertThat(kp.templateInitContainer.getEnv(), is(List.of(new ContainerEnvVarBuilder().withName("MY_INIT_ENV_VAR").withValue("my-init-env-var-value").build())));
         assertThat(kp.templatePod, is(nullValue()));
         assertThat(kp.templatePerBrokerIngress, is(nullValue()));
         assertThat(kp.templatePodSet, is(nullValue()));
@@ -378,7 +381,7 @@ public class KafkaPoolTest {
         assertThat(kp.gcLoggingEnabled, is(true));
         assertThat(kp.jvmOptions.getXmx(), is("8192m"));
         assertThat(kp.templateContainer.getEnv(), is(List.of(new ContainerEnvVarBuilder().withName("MY_ENV_VAR").withValue("my-env-var-value").build())));
-        assertThat(kp.templateInitContainer, is(nullValue()));
+        assertThat(kp.templateInitContainer.getEnv(), is(List.of(new ContainerEnvVarBuilder().withName("MY_INIT_ENV_VAR").withValue("my-init-env-var-value").build())));
         assertThat(kp.templatePod, is(nullValue()));
         assertThat(kp.templatePerBrokerIngress, is(nullValue()));
         assertThat(kp.templatePodSet, is(nullValue()));
