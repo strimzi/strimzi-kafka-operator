@@ -50,6 +50,9 @@ jobs:
       - uses: ./.github/actions/build/test-strimzi
         with:
           runnerArch: "amd64"
+        env:
+          # Use the oldest supported kubernetes version within Kind
+          KIND_NODE_IMAGE: "oldest"
 
   # Builds Strimzi docs
   build-docs:
