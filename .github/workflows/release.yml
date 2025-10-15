@@ -92,6 +92,7 @@ jobs:
           runnerArch: "amd64"
           quayUser: ${{ secrets.QUAY_USER }}
           quayPass: ${{ secrets.QUAY_PASS }}
+          buildRunId: ${{ inputs.sourceBuildRunId }}
 
   # Publish Helm Chart as OCI artifact
   publish-helm-chart:
