@@ -21,6 +21,12 @@ cp -v   documentation/htmlnoheader/contributing-book.html   /tmp/website/contrib
 cp -v   documentation/html/contributing.html                /tmp/website/contributing/guide/full.html
 cp -vrL documentation/htmlnoheader/images                   /tmp/website/contributing/guide/images
 
+# Glossary
+rm -rf  /tmp/website/glossary/guide/images
+cp -v   documentation/htmlnoheader/glossary-book.html       /tmp/website/glossary/guide/glossary.html
+cp -v   documentation/html/glossary.html                    /tmp/website/glossary/guide/full.html
+cp -vrL documentation/htmlnoheader/images                   /tmp/website/glossary/guide/images
+
 pushd /tmp/website
 
 if [[ -z $(git status -s) ]]; then
