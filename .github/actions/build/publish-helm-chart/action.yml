@@ -5,10 +5,10 @@ inputs:
   releaseVersion:
     description: "Release version (e.g., 0.45.0)"
     required: true
-  quayHelmUser:
+  quayUser:
     description: "Quay.io Helm repository username"
     required: true
-  quayHelmPass:
+  quayPass:
     description: "Quay.io Helm repository password"
     required: true
 
@@ -30,7 +30,7 @@ runs:
 
     - name: Login to OCI registry
       shell: bash
-      run: helm registry login -u ${{ inputs.quayHelmUser }} -p ${{ inputs.quayHelmPass }} ${{ env.DOCKER_REGISTRY }}
+      run: helm registry login -u ${{ inputs.quayUser }} -p ${{ inputs.quayPass }} ${{ env.DOCKER_REGISTRY }}
       env:
         DOCKER_REGISTRY: "quay.io"
 
