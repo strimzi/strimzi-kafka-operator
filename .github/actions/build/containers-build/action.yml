@@ -10,6 +10,10 @@ inputs:
     description: "Architecture of GitHub runner"
     required: false
     default: "amd64"
+  buildRunId:
+    description: "Build workflow run ID for artifact download"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -26,9 +30,18 @@ runs:
         architecture: ${{ inputs.runnerArch }}
 
     - name: Download Strimzi binaries
+      if: ${{ inputs.buildRunId == '' }}
       uses: actions/download-artifact@v4
       with:
         name: strimzi-binaries.tar
+
+    - name: Download Strimzi binaries
+      if: ${{ inputs.buildRunId != '' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: strimzi-binaries.tar
+        run-id: ${{ github.run_id }}
+        github-token: ${{ github.token }}
 
     - name: "Untar strimzi-binaries.tar"
       shell: bash
