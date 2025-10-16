@@ -195,7 +195,7 @@ public class Environment {
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "4.1.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "latest";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.12.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
