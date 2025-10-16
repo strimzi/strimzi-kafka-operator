@@ -65,9 +65,10 @@ jobs:
 
       - name: Push Java artifacts to GHCR
         run: |
-          TAG="${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }}-${{ inputs.sourceBuildRunId }}"
-          oras push ghcr.io/${{ github.repository }}/strimzi-binaries:${TAG} \
-            strimzi-binaries.tar:application/x-tar
+          oras push ghcr.io/${{ env.REPOSITORY }}/strimzi-binaries:${{ env.TAG }} strimzi-binaries.tar:application/x-tar
+        env:
+          TAG: ${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }}-${{ inputs.sourceBuildRunId }}
+          REPOSITORY: "frawless"
 
   # Push containers with suffix (e.g., 0.49.0-0) - optional step
   push-containers-with-suffix:
