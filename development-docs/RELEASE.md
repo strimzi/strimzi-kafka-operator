@@ -6,7 +6,7 @@
 * Set version of the main Maven projects (`topic-operator` and `cluster-operator`) to `RELEASE_VERSION` 
 * Create TAR.GZ and ZIP archives with the Kubernetes and OpenShift YAML files which can be used for deployment and documentation in HTML format.
  
-The `release` target will not build the Docker images - they should be built and pushed automatically by the Azure Pipelines when the release is tagged in the GitHub repository. It also doesn't deploy the Java artifacts anywhere. They are only used to create the Docker images.
+The `release` target will not build the Docker images - they should be built and pushed automatically by the GitHub Actions when the release is tagged in the GitHub repository. It also doesn't deploy the Java artifacts anywhere. They are only used to create the Docker images.
 
 The release process should normally look like this:
 
@@ -26,27 +26,25 @@ The release process should normally look like this:
 6. Commit the changes to the existing files (do not add the newly created top level tar.gz, zip archives or .yaml files named like `strimzi-*` into Git)
 7. Push the changes to the release branch on GitHub
 8. Wait for the CI to complete the build
-   * Once it completes, mark the build in the Azure Pipelines UI to be retained forever
-   * Copy the build ID (from the URL in Azure Pipelines)
-9. Run the `operators-release` pipeline manually in Azure pipelines
+   * Copy the build ID (from the URL in GitHub Actions)
+9. Run the `release` workflow manually in GitHub Actions UI
    * Select the release branch from the list
    * Set the desired release version (e.g. `0.45.0-rc1` for RCs or `0.45.0` GA releases)
    * Set the release suffix as `0` (but check the "Build suffixed images" checkbox only for GA releases)
    * Set the build ID to the build ID from previous step (For GA, this should be the build ID used for the last RC since there should be no changes)
-   * Set the `CENTRAL_USERNAME` and `CENTRAL_PASSWORD` variables to your Maven Central user token
 10. Once the release build is complete:
     * Download the release artifacts (binary, documentation and sbom)
     * Check the images pushed to Quay.io
-    * Mark the build in the Azure Pipelines UI to be retained forever
     * Go to Maven Central > Publish and publish the release artifacts
-11. Create a GitHub tag and release based on the release branch. Attach the release artifacts and docs as downloaded from the Azure pipelines.
+    * Because GitHub Actions doesn't support retaining builds forever, the workflow push OCI image with Java binaries into GHCR to make them available forever
+11. Create a GitHub tag and release based on the release branch. Attach the release artifacts and docs as downloaded from the GitHub Actions.
     * For GAs, prepare steps 13 and 14 before creating the release in GitHub.
     * For RCs, the tag should be named with the RC suffix, e.g. `0.45.0-rc1`
-12. _(only for RCs, not for GAs) Run system tests pipelines. For more details see [Running Azure System Tests pipelines](#running-azure-system-tests-pipelines) section.
+12. _(only for RCs, not for GAs) Run system tests workflow. For more details see [Running System Tests workflow](#running-system-tests-workflow) section.
 13. _(only for GA, not for RCs)_ Update the website
     * Update the `_redirects` file to make sure the `/install/latest` redirect points to the new release.
     * Update the `_data/releases.yaml` file to add new release
-    * Download the release artifacts from the CI pipeline and unpack them
+    * Download the release artifacts from the CI workflow and unpack them
     * Update the documentation: 
       * Create new directories `docs/operators/<new-version>` and `docs/operators/<new-version>/full` in the website repository
       * Delete the old HTML files and images from `docs/operators/latest` and `docs/operators/latest/full` (keep the `*.md` files)
@@ -54,7 +52,7 @@ The release process should normally look like this:
       * Copy files from the release artifacts under `documentation/html` to `docs/operators/<new-version>/full` and `docs/operators/latest/full` in the website repository
       * Create new files `configuring.md`, `deploying.md` and `overview.md` in `docs/operators/<new-version>` - the content of these files should be the same as for older versions, so you can copy them and update the version number.
     * Add the Helm Chart repository `index.yaml` on our website:
-      * Download the release artifacts from the CI pipeline and unpack them
+      * Download the release artifacts from the CI workflow and unpack them
       * Use the `helm` command to add the new version to the `index.yaml` file:
         ```
         helm repo index <PATH_TO_THE_DIRECTORY_WITH_THE_ARTIFACTS> --merge <PATH_TO_THE_INDEX_YAML> --url <URL_OF_THE_GITHUB_RELEASE_PAGE>
@@ -87,20 +85,24 @@ If you need to update the Kafka bridge to newer version, you should do it with f
 2. Run `make bridge_version` to update the related files to the new version
 3. Commit all modified files to Git and open a PR.
 
-## Running Azure System Tests pipelines
+## Running System Tests workflow
 
-After releasing a RC, we need to run the following System Tests pipelines:
+After releasing RC, we need to run the System tests:
 
 * helm-acceptance (only one time by setting the latest supported Kafka version)
 * upgrade (only one time by setting the latest supported Kafka version)
 * regression (multiple times, one for each supported Kafka version)
 * feature-gates-regression (multiple times, one for each supported Kafka version)
 
-Run them manually in Azure pipelines:
+Run them manually in GitHub Actions UI:
 
 * Select the release branch from the list
 * Set the "Release Version" (i.e. `0.45.0-rc1`)
 * Set the "Kafka Version" (i.e. `3.9.0`)
+* Set the "Profile list" (i.e. `regression,upgrade,helm-acceptance,gh-regression` based on profiles defined in [pipelines.yaml](../.github/actions/systemtests/generate-matrix/pipelines.yaml))
+
+The workflow will generate jobs based on passed profile list and predefined values from the config file.
+The workflow has to be triggered multiple times in case you want to run tests for multiple Kafka versions.
 
 ## Rebuild container image for base image CVEs
 
@@ -109,23 +111,22 @@ Security issues are usually reported by security scanner tools used by the commu
 The Quay.io registry also runs such scans periodically to look for security issues reported on the website.
 Checking the Quay.io website is a way to get the status of security vulnerabilities affecting the operator container image.
 In this case, we might need to rebuild the operator container image.
-This can be done by using the `operators-cve-rebuild` pipeline.
-This pipeline will take a previously built binaries and use them to build a new container image, which is then pushed to the container registry with the suffixed tag (e.g. `0.45.0-2`).
-The suffix can be specified when starting the re-build pipeline.
+This can be done by using the `cve-rebuild` workflow.
+This workflow will take a previously built binaries from GHCR based on passed parameters and use them to build a new container image, which is then pushed to the container registry with the suffixed tag (e.g. `0.45.0-2`).
+The suffix can be specified when starting the re-build workflow.
 You should always check what was the previous suffix and increment it.
 
-When starting the pipeline, it will ask for several parameters which you need to fill:
+When starting the workflow, it will ask for several parameters which you need to fill:
 
 * Release version (for example `0.45.0`)
 * Release suffix (for example `2` - it is used to create the suffixed images such as `strimzi/operator:0.45.0-2` to identify different builds done for different CVEs)
-* Source pipeline ID (Currently, only the build pipeline with ID `16` can be used)
 * Source build ID (the ID of the build from which the artifacts should be used - use the long build ID from the URL and not the shorter build number). 
-  You can also get the build ID by referring to the latest run of the corresponding release pipeline.
+  You can also get the build ID by referring to the latest run of the corresponding release workflow.
 
 After pushing the suffixed tag image, the older images will be still available in the container registry under their own suffixes.
 Only the latest rebuild will be available under the un-suffixed tag (for example, the `0.45.0` tagged image is still the previous one and not up to date with the CVEs respin).
 
-Afterwards, it will wait for a manual approval with a timeout of 3 days (configured in the pipeline YAML).
+Afterwards, it will wait for a manual approval from maintainers (configured in GitHub `cve-validation` environment).
 This gives additional time to manually test the new container image.
 After the manual approval, the image will be also pushed under the tag without suffix (e.g. `0.45.0`).
 

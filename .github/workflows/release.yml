@@ -42,7 +42,6 @@ jobs:
   # Push Java artifacts to GHCR for long-term storage (for CVE rebuilds)
   push-java-artifacts-to-ghcr:
     name: Push Java artifacts to GHCR
-    needs: prepare-release-artifacts
     if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
     runs-on: ubuntu-latest
     permissions:
@@ -67,7 +66,7 @@ jobs:
         run: |
           oras push ghcr.io/${{ env.REPOSITORY }}/strimzi-binaries:${{ env.TAG }} strimzi-binaries.tar:application/x-tar
         env:
-          TAG: ${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }}-${{ inputs.sourceBuildRunId }}
+          TAG: ${{ inputs.releaseVersion }}-${{ inputs.sourceBuildRunId }}
           REPOSITORY: "frawless"
 
   # Push containers with suffix (e.g., 0.49.0-0) - optional step
@@ -75,6 +74,7 @@ jobs:
     name: Push Containers (${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }})
     needs:
       - prepare-release-artifacts
+      - push-java-artifacts-to-ghcr
     if: ${{ startsWith(github.ref, 'refs/heads/release-') && inputs.useSuffix == true }}
     runs-on: ubuntu-latest
     permissions:
