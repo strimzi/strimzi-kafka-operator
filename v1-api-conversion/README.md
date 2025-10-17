@@ -4,7 +4,7 @@ Strimzi’s Custom Resource Definitions (CRDs) have been updated to remove depre
 To support this transition, we've introduced a CLI-based API conversion tool. 
 
 The tool supports two main operations:
-* Converting existing custom resources to the `v1` schema:
+* Converting existing custom resources to the `v1` schema before upgrading the CRDs:
     * From YAML files (`convert-file`)
     * Directly in your Kubernetes cluster (`convert-resource`)
 * Upgrading CRDs by replacing existing Strimzi CRDs with their `v1` equivalents (`crd-upgrade`)
@@ -215,7 +215,7 @@ The following changes can be done manually or using the conversion tool.
 
 The following changes cannot be done by the conversion tool and have to be applied manually.
 
-* The `.spec` section is required and have to be present.
+* The `.spec` section is required and must be present.
 * `type: oauth` authentication is not supported in the `v1` API.
   Use `type: custom` authentication instead.
 * `.spec.externalConfiguration` is not supported in the `v1` API.
@@ -244,7 +244,7 @@ The following changes can be done manually or using the conversion tool.
 
 The following changes cannot be done by the conversion tool and have to be applied manually.
 
-* The `.spec` section is required and have to be present.
+* The `.spec` section is required and must be present.
 * `type: oauth` source or target Kafka cluster authentication is not supported in the `v1` API.
   Use `type: custom` authentication instead.
 * `.spec.externalConfiguration` is not supported in the `v1` API.
@@ -269,7 +269,7 @@ The following changes can be done manually or using the conversion tool.
   * For `.spec.target.configStorageTopic` use the `config.storage.topic` field from the `config` section of the target cluster or set it to `mirrormaker2-cluster-configs`.
   * For `.spec.target.offsetStorageTopic` use the `offset.storage.topic` field from the `config` section of the target cluster or set it to `mirrormaker2-cluster-offsets`.
   * For `.spec.target.statusStorageTopic` use the `status.storage.topic` field from the `config` section of the target cluster or set it to `mirrormaker2-cluster-status`.
-  * Remove the value from the `config` section of the target cluster afterward.
+  * After moving these values to the `.spec.target.*` fields, delete the corresponding entries from the `.spec.target.config` section of the target cluster.
 
 ### `KafkaBridge` CR
 
@@ -277,7 +277,7 @@ The following changes can be done manually or using the conversion tool.
 
 The following changes cannot be done by the conversion tool and have to be applied manually.
 
-* The `.spec` section is required and have to be present.
+* The `.spec` section is required and must be present.
 * `type: oauth` authentication is not supported in the `v1` API.
   Use `type: custom` authentication instead.
 
@@ -298,7 +298,7 @@ The following changes can be done manually or using the conversion tool.
 
 The following changes cannot be done by the conversion tool and have to be applied manually.
 
-* The `.spec` section is required and have to be present.
+* The `.spec` section is required and must be present.
 
 #### Supporting automatic conversion
 
@@ -321,7 +321,7 @@ The following changes cannot be done by the conversion tool and have to be appli
 
 The following changes cannot be done by the conversion tool and have to be applied manually.
 
-* The `.spec` section is required and have to be present.
+* The `.spec` section is required and must be present.
 
 #### Supporting automatic conversion
 
@@ -336,7 +336,7 @@ The following changes can be done manually or using the conversion tool.
 
 The following changes cannot be done by the conversion tool and have to be applied manually.
 
-* The `.spec` section is required and have to be present.
+* The `.spec` section is required and must be present.
 
 ### `KafkaUser` CR
 
@@ -344,7 +344,7 @@ The following changes cannot be done by the conversion tool and have to be appli
 
 The following changes cannot be done by the conversion tool and have to be applied manually.
 
-* The `.spec` section is required and have to be present.
+* The `.spec` section is required and must be present.
 
 #### Supporting automatic conversion
 
@@ -364,4 +364,4 @@ The following changes are listed for completeness.
 
 The following changes cannot be made by the conversion tool and have to be applied manually.
 
-* The `.spec` section is required and have to be present.
+* The `.spec` section is required and must be present.
