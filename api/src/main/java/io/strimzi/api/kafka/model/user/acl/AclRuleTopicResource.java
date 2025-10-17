@@ -20,7 +20,7 @@ import lombok.ToString;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"type", "name", "patternType"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -43,7 +43,7 @@ public class AclRuleTopicResource extends AclRuleResource {
             "With `prefix` pattern type, the resource name will be used only as a prefix. " +
             "Default value is `literal`.")
     @JsonProperty(defaultValue = "literal")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonInclude(value = JsonInclude.Include.NON_DEFAULT)
     public AclResourcePatternType getPatternType() {
         return patternType;
     }

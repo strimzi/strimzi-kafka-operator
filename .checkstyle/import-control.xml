@@ -101,4 +101,24 @@ We also control imports only in production classes and not in tests. This is con
         <allow class="io.strimzi.operator.common.ReconciliationLogger" />
         <allow class="io.strimzi.operator.common.Util" />
     </subpackage>
+
+    <subpackage name="kafka.api.conversion.v1" strategyOnMismatch="disallowed">
+        <!-- This enforces the layering between the Strimzi Model and Operator classes in the User Operator. The Model classes are not allowed
+        to import from Operator classes. They should only use the API classes -->
+
+        <!-- Common libraries and Java classes -->
+        <allow pkg="java" />
+        <allow pkg="javax.naming" />
+        <allow pkg="org.apache.kafka.common" />
+        <allow pkg="io.fabric8.kubernetes" />
+        <allow pkg="com.fasterxml.jackson" />
+        <allow pkg="org.yaml.snakeyaml" />
+        <allow pkg="picocli" />
+        <allow pkg="org.apache.logging.log4j" />
+        <allow pkg="edu.umd.cs.findbugs.annotations" />
+
+        <!-- Strimzi Operators classes -->
+        <allow pkg="io.strimzi.api" />
+        <allow pkg="io.strimzi.kafka.api.conversion" />
+    </subpackage>
 </import-control>

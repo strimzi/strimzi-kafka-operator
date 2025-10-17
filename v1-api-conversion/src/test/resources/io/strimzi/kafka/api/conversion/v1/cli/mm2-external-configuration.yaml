@@ -1,0 +1,67 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker-2
+spec:
+  version: 4.1.0
+  connectCluster: "my-target-cluster"
+  clusters:
+  - alias: "my-source-cluster"
+    bootstrapServers: my-source-cluster-kafka-bootstrap:9093
+    tls:
+      trustedCertificates:
+        - secretName: my-source-cluster-cluster-ca-cert
+          certificate: ca.crt
+  - alias: "my-target-cluster"
+    bootstrapServers: my-target-cluster-kafka-bootstrap:9093
+    tls:
+      trustedCertificates:
+        - secretName: my-target-cluster-cluster-ca-cert
+          certificate: ca.crt
+    config:
+      config.storage.replication.factor: 1
+      offset.storage.replication.factor: 1
+      status.storage.replication.factor: 1
+  mirrors:
+  - sourceCluster: "my-source-cluster"
+    targetCluster: "my-target-cluster"
+    sourceConnector:
+      config:
+        replication.factor: 1
+        offset-syncs.topic.replication.factor: 1
+        sync.topic.acls.enabled: "false"
+    heartbeatConnector:
+      config:
+        heartbeats.topic.replication.factor: 1
+    checkpointConnector:
+      config:
+        checkpoints.topic.replication.factor: 1
+    topicsPattern: ".*"
+    groupsPattern: ".*"
+  externalConfiguration:
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: secret1
+            key: accessKey
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: secret1
+            key: secretAccessKey
+      - name: SOME_LOG_LEVEL
+        valueFrom:
+          configMapKeyRef:
+            name: config1
+            key: log.level
+    volumes:
+      - name: file-sink
+        configMap:
+          name: plugin-configuration
+      - name: my-secret2
+        secret:
+          secretName: secret2
+      - name: my-config2
+        configMap:
+          name: config2

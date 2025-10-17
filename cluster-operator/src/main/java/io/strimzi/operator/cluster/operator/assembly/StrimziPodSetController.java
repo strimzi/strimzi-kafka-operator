@@ -450,13 +450,8 @@ public class StrimziPodSetController implements Runnable {
             } else  {
                 LOGGER.debugCr(reconciliation, "Pod {} in namespace {} is missing owner reference => patching it", currentPod.getMetadata().getName(), reconciliation.namespace());
                 Pod podWithOwnerReference = new PodBuilder(currentPod).build();
-
-                if (podWithOwnerReference.getMetadata().getOwnerReferences() != null)   {
-                    podWithOwnerReference.getMetadata().getOwnerReferences().add(owner);
-                } else {
-                    podWithOwnerReference.getMetadata().setOwnerReferences(List.of(owner));
-                }
-
+                ModelUtils.patchOwnerReferenceThroughDifferentVersions(podWithOwnerReference, owner);
+                
                 podOperator.client().inNamespace(reconciliation.namespace()).withName(pod.getMetadata().getName()).patch(PatchContext.of(PatchType.JSON), podWithOwnerReference);
             }
 

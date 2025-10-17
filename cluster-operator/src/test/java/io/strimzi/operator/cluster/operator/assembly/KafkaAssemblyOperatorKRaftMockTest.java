@@ -210,6 +210,7 @@ public class KafkaAssemblyOperatorKRaftMockTest {
     /**
      * Does a basic check of the resources created / updated by a reconciliation
      */
+    @SuppressWarnings("deprecation") // .status.kafkaMetadataState is deprecated
     private void basicCheck()    {
         // Check pod sets, pods and their resources
         StrimziPodSet controllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
