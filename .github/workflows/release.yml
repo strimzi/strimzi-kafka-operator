@@ -71,7 +71,7 @@ jobs:
 
   # Push containers with suffix (e.g., 0.49.0-0) - optional step
   push-containers-with-suffix:
-    name: Push Containers (${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }})
+    name: Push Containers with suffix
     needs:
       - prepare-release-artifacts
       - push-java-artifacts-to-ghcr
@@ -97,7 +97,7 @@ jobs:
 
   # Push containers without suffix (e.g., 0.49.0)
   push-containers:
-    name: Push Containers (${{ inputs.releaseVersion }})
+    name: Push Containers without suffix (${{ inputs.releaseVersion }})
     needs:
       - push-containers-with-suffix
       - push-java-artifacts-to-ghcr
@@ -133,7 +133,10 @@ jobs:
       - prepare-release-artifacts
       - push-java-artifacts-to-ghcr
       - push-containers
-    if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
+    if: |-
+      ${{ always() && startsWith(github.ref, 'refs/heads/release-') && 
+        needs.push-containers.result == 'success'
+      }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
