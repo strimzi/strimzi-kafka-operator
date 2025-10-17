@@ -5,10 +5,10 @@
 // deploying/assembly_deploy-kafka-bridge.adoc
 
 [id='deploying-kafka-bridge-{context}']
-= Deploying Kafka Bridge
+= Deploying HTTP Bridge
 
 [role="_abstract"]
-This procedure shows how to deploy a Kafka Bridge cluster to your Kubernetes cluster using the Cluster Operator.
+This procedure shows how to deploy a HTTP Bridge cluster to your Kubernetes cluster using the Cluster Operator.
 
 The deployment uses a YAML file to provide the specification to create a `KafkaBridge` resource.
 
@@ -37,7 +37,7 @@ See the link:{BookURLConfiguring}#type-KafkaBridgeSpec-schema-reference[`KafkaBr
 Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates. +
 See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
 
-. Deploy Kafka Bridge to your Kubernetes cluster:
+. Deploy HTTP Bridge to your Kubernetes cluster:
 +
 [source,shell]
 ----
@@ -58,14 +58,14 @@ NAME                       READY  STATUS   RESTARTS
 my-bridge-bridge-<pod_id>  1/1    Running  0
 ----
 +
-In this example, `my-bridge` is the name of the Kafka Bridge cluster.
+In this example, `my-bridge` is the name of the HTTP Bridge cluster.
 A pod ID identifies each created pod.
-By default, the deployment creates a single Kafka Bridge pod.
+By default, the deployment creates a single HTTP Bridge pod.
 `READY` shows the number of ready versus expected replicas. 
 The deployment is successful when the `STATUS` is `Running`.
 
 [role="_additional-resources"]
 .Additional resources
 
-* xref:con-config-kafka-bridge-str[Kafka Bridge cluster configuration]
-* link:{BookURLBridge}[Using the Kafka Bridge^]
+* xref:con-config-kafka-bridge-str[HTTP Bridge cluster configuration]
+* link:{BookURLBridge}[Using the HTTP Bridge^]
