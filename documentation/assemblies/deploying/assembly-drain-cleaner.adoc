@@ -22,20 +22,10 @@ This informs the Cluster Operator to perform a rolling update of an evicted pod.
 
 NOTE: If you are not using the Strimzi Drain Cleaner, you can xref:proc-manual-rolling-update-pods-str[add pod annotations to perform rolling updates manually].
 
-.Webhook configuration
-The Strimzi Drain Cleaner deployment files include a `ValidatingWebhookConfiguration` resource file.
-The resource provides the configuration for registering the webhook with the Kubernetes API.
+== Default webhook configuration
 
-The configuration defines the `rules` for the Kubernetes API to follow in the event of a pod eviction request.
-The rules specify that only `CREATE` operations related to `pods/eviction` sub-resources are intercepted.
-If these rules are met, the API forwards the notification.
+The Strimzi Drain Cleaner deployment includes a `ValidatingWebhookConfiguration` resource that registers the webhook with the Kubernetes API:
 
-The `clientConfig` points to the Strimzi Drain Cleaner service and `/drainer` endpoint that exposes the webhook.
-The webhook uses a secure TLS connection, which requires authentication.
-The `caBundle` property specifies the certificate chain to validate HTTPS communication.
-Certificates are encoded in Base64.
-
-.Webhook configuration for pod eviction notifications
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: admissionregistration.k8s.io/v1
@@ -58,6 +48,19 @@ webhooks:
         caBundle: Cg==
     # ...
 ----
+
+Unless you are using your own TLS certificates, no manual configuration is required.
+
+The webhook intercepts pod eviction requests based on the `rules` defined in the configuration. 
+Only `CREATE` operations targeting the `pods/eviction` sub-resource are evaluated. 
+When these conditions are met, the API forwards the request to the webhook.
+
+The `clientConfig` section specifies the target service and endpoint for the webhook. 
+The webhook listens on the `/drainer` path and requires a secure TLS connection. 
+
+The `caBundle` property provides the Base64-encoded certificate chain used to validate HTTPS communication.
+By default, the TLS certificates are generated and injected into the configuration automatically.
+If you supply your own TLS certificates, you must manually update the `caBundle` value.
 
 //steps for deploying drain cleaner
 include::../../modules/drain-cleaner/proc-drain-cleaner-deploying.adoc[leveloffset=+1]
