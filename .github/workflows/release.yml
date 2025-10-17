@@ -100,9 +100,10 @@ jobs:
     name: Push Containers (${{ inputs.releaseVersion }})
     needs:
       - push-containers-with-suffix
+      - push-java-artifacts-to-ghcr
     # Run if push-containers-with-suffix succeeded/skipped and we're on a release branch
     if: |-
-      ${{ startsWith(github.ref, 'refs/heads/release-') && 
+      ${{ always() && startsWith(github.ref, 'refs/heads/release-') && 
         (needs.push-containers-with-suffix.result == 'success' || 
         needs.push-containers-with-suffix.result == 'skipped') 
       }}
@@ -110,7 +111,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write  # Required for keyless signing with GitHub OIDC
+      id-token: write
     env:
       DOCKER_REGISTRY: "quay.io"
       DOCKER_ORG: "jstejska"
@@ -130,6 +131,7 @@ jobs:
     name: Publish Helm Chart
     needs:
       - prepare-release-artifacts
+      - push-java-artifacts-to-ghcr
       - push-containers
     if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
     runs-on: ubuntu-latest
