@@ -19,4 +19,5 @@ Proper verification of metrics is crucial for observability, debugging, and perf
 - [testKafkaMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testKafkaMetricsSettings](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testMirrorMaker2Metrics](../io.strimzi.systemtest.metrics.MetricsST.md)
+- [testMultipleCOsInDifferentNamespaces](../io.strimzi.systemtest.operators.MultipleClusterOperatorsST.md)
 - [testUserOperatorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)

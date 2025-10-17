@@ -11,6 +11,11 @@ import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpecBuilder;
@@ -20,6 +25,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
@@ -45,24 +51,40 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.RECOVERY;
 
-/**
- * Suite for testing topic recovery in case of namespace deletion.
- * Procedure described in documentation  https://strimzi.io/docs/master/#namespace-deletion_str
- * Note: Suite can be run on minikube only with previously created PVs and StorageClass using local provisioner.
- * Reason why this test class is not part of regression:
- * These tests does not have to be run every time with PRs and so on, the nature of the tests is sufficient for recovery profile only.
- */
 @Tag(RECOVERY)
+@SuiteDoc(
+    description = @Desc("Test suite for verifying Kafka cluster recovery after namespace deletion. Tests cover scenarios with and without KafkaTopic resources available, using persistent volumes with Retain policy. Note: Suite requires StorageClass with local provisioner on Minikube."),
+    beforeTestSteps = {
+        @Step(value = "Create StorageClass with Retain reclaim policy.", expected = "StorageClass is created with WaitForFirstConsumer volume binding mode.")
+    },
+    afterTestSteps = {
+        @Step(value = "Clean up orphaned PersistentVolumes.", expected = "All Kafka-related PersistentVolumes are deleted.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 class NamespaceDeletionRecoveryST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryST.class);
     private final String storageClassName = "retain";
 
-    /**
-     * In case that we have all KafkaTopic resources that existed before cluster loss, including internal topics,
-     * we can simply recreate all KafkaTopic resources and then deploy the Kafka cluster.
-     * At the end we verify that we can receive messages from topic (so data are present).
-     */
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @TestDoc(
+        description = @Desc("This test verifies Kafka cluster recovery when all KafkaTopic resources are available after namespace deletion, including internal topics. The test recreates KafkaTopic resources first, then deploys the Kafka cluster, and validates that existing data is preserved."),
+        steps = {
+            @Step(value = "Prepare test environment with Kafka cluster and KafkaTopic.", expected = "Kafka cluster is deployed with persistent storage and topic contains test data."),
+            @Step(value = "Store list of all KafkaTopic resources and PersistentVolumeClaims.", expected = "All KafkaTopic and PVC resources are captured for recovery."),
+            @Step(value = "Delete and recreate the namespace.", expected = "Namespace is deleted and recreated successfully."),
+            @Step(value = "Recreate PersistentVolumeClaims and update PersistentVolumes.", expected = "PVCs are recreated and bound to existing PVs."),
+            @Step(value = "Recreate Cluster Operator in the namespace.", expected = "Cluster Operator is deployed and ready."),
+            @Step(value = "Recreate all KafkaTopic resources.", expected = "All KafkaTopic resources are recreated successfully."),
+            @Step(value = "Deploy Kafka cluster with persistent storage.", expected = "Kafka cluster is deployed and becomes ready."),
+            @Step(value = "Verify data recovery by producing and consuming messages.", expected = "Messages can be consumed, confirming data was preserved through recovery.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testTopicAvailable() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -116,13 +138,26 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
-    /**
-     * In case we don't have KafkaTopic resources from before the cluster loss, we do these steps:
-     *  1. deploy the Kafka cluster without Topic Operator - otherwise topics will be deleted
-     *  2. enable Topic Operator by redeploying Kafka cluster
-     *
-     **/
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @TestDoc(
+        description = @Desc("This test verifies Kafka cluster recovery when KafkaTopic resources are not available after namespace deletion. The test deploys Kafka without Topic Operator first to preserve existing topics, then enables Topic Operator after cluster is stable."),
+        steps = {
+            @Step(value = "Prepare test environment with Kafka cluster and test data.", expected = "Kafka cluster is deployed with persistent storage and topic contains test data."),
+            @Step(value = "Store cluster ID and list of PersistentVolumeClaims.", expected = "Cluster ID and PVC list are captured for recovery."),
+            @Step(value = "List current topics in Kafka cluster.", expected = "Topic list is logged for verification."),
+            @Step(value = "Delete and recreate the namespace.", expected = "Namespace is deleted and recreated successfully."),
+            @Step(value = "Recreate PersistentVolumeClaims and update PersistentVolumes.", expected = "PVCs are recreated and bound to existing PVs."),
+            @Step(value = "Recreate Cluster Operator in the namespace.", expected = "Cluster Operator is deployed and ready."),
+            @Step(value = "Deploy Kafka without Topic Operator using pause annotation.", expected = "Kafka cluster is created without Topic Operator to prevent topic deletion."),
+            @Step(value = "Patch Kafka status with original cluster ID.", expected = "Cluster ID is restored to match the original cluster."),
+            @Step(value = "Unpause Kafka reconciliation.", expected = "Kafka cluster becomes ready and operational."),
+            @Step(value = "Enable Topic Operator by updating Kafka spec.", expected = "Topic Operator is deployed and starts managing topics."),
+            @Step(value = "Verify data recovery by producing and consuming messages.", expected = "Messages can be consumed, confirming topics and data were preserved.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testTopicNotAvailable() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         prepareEnvironmentForRecovery(testStorage);
