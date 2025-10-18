@@ -31,7 +31,7 @@ The release process should normally look like this:
 9. Run the `operators-release` pipeline manually in Azure pipelines
    * Select the release branch from the list
    * Set the desired release version (e.g. `0.45.0-rc1` for RCs or `0.45.0` GA releases)
-   * Set the release suffix as `0`
+   * Set the release suffix as `0` (but check the "Build suffixed images" checkbox only for GA releases)
    * Set the build ID to the build ID from previous step (For GA, this should be the build ID used for the last RC since there should be no changes)
    * Set the `CENTRAL_USERNAME` and `CENTRAL_PASSWORD` variables to your Maven Central user token
 10. Once the release build is complete:
