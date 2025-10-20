@@ -518,12 +518,12 @@ public class KafkaRoller {
      * Dynamically update the broker config if the plan says we can.
      * Return true if the broker was successfully updated dynamically.
      */
-    private boolean maybeDynamicUpdateBrokerConfig(NodeRef nodeRef, RestartContext restartContext, boolean isPureController) throws InterruptedException {
+    private boolean maybeDynamicUpdateBrokerConfig(NodeRef nodeRef, RestartContext restartContext, boolean isControllerOnly) throws InterruptedException {
         boolean updatedDynamically;
         // needsReconfig is true, if node doesn't need to be restarted but updated configs can be dynamically updated.
         if (restartContext.needsReconfig) {
             try {
-                if (isPureController) {
+                if (isControllerOnly) {
                     dynamicUpdateKafkaConfig(nodeRef, controllerAdminClient, restartContext.configDiff);
                 } else {
                     dynamicUpdateKafkaConfig(nodeRef, brokerAdminClient, restartContext.configDiff);

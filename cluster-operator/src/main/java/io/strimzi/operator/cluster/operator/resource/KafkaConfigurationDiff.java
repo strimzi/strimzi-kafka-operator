@@ -49,7 +49,7 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
      * These options are skipped because they contain placeholders
      * 909[1-4] is for skipping all (internal, plain, secured, external) listeners properties
      */
-    public static final Pattern IGNORABLE_PROPERTIES = Pattern.compile(
+    public static final Pattern IGNORABLE_PROPERTIES_PATTERN = Pattern.compile(
             "^(broker\\.id"
             + "|.*-[0-9]{2,5}\\.ssl\\.keystore\\.location"
             + "|.*-[0-9]{2,5}\\.ssl\\.keystore\\.password"
@@ -64,15 +64,14 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
             + "|broker\\.rack)$");
 
     /**
-     * KRaft controller configuration options are skipped if it is not combined node
+     * Controller configuration options to skip for broker only node
      */
-    private static final Pattern IGNORABLE_CONTROLLER_PROPERTIES = Pattern.compile("controller\\.quorum\\..*");
+    private static final Pattern IGNORABLE_CONTROLLER_PROPERTIES_PATTERN = Pattern.compile("controller\\.quorum\\..*");
 
     /**
-     * List of configuration options that are relevant to controllers and should be considered when deciding whether
-     * a controller-only node needs to be rolled or not.
+     *  Configuration options that are relevant to controllers. This list is mutually exclusive with IGNORABLE_PROPERTIES_PATTERN (no overlap).
      */
-    private static final Set<String> CONTROLLER_RELEVANT_CONFIGS = Set.of(
+    private static final Set<String> CONTROLLER_RELEVANT_PROPERTIES = Set.of(
             "alter.config.policy.class.name",
             "authorizer.class.name",
             "auto.create.topics.enable",
@@ -251,14 +250,14 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
 
     private boolean isIgnorableProperty(final String key) {
         if (isController && !isBroker) {
-            // If this config is not relevant to controllers, ignore it for a pure controller
-            // ignorable properties are not included in the controller relevant configs so no need to check it as well
-            return !CONTROLLER_RELEVANT_CONFIGS.contains(key);
+            // Controller only -> a property is ignorable if it is not relevant to controllers
+            return !CONTROLLER_RELEVANT_PROPERTIES.contains(key);
         } else if (isController) {
-            return IGNORABLE_PROPERTIES.matcher(key).matches();
+            // Combined -> a property is ignorable if it matches the ignorable pattern
+            return IGNORABLE_PROPERTIES_PATTERN.matcher(key).matches();
         } else {
-            // If node is not a KRaft controller, ignore KRaft controller config properties.
-            return IGNORABLE_PROPERTIES.matcher(key).matches() || IGNORABLE_CONTROLLER_PROPERTIES.matcher(key).matches();
+            // Broker only -> a property is ignorable if it matches the ignorable pattern or is a controller property because it's not relevant to brokers
+            return IGNORABLE_PROPERTIES_PATTERN.matcher(key).matches() || IGNORABLE_CONTROLLER_PROPERTIES_PATTERN.matcher(key).matches();
         }
     }
 
