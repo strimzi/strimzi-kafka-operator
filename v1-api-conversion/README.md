@@ -24,6 +24,11 @@ Commands:
   crd-upgrade, crd                         Upgrades the Strimzi CRDs and CRs to use v1 version
 ```
 
+## Downloading
+
+The tool can be downloaded from the [Strimzi releases](https://github.com/strimzi/strimzi-kafka-operator/releases) on GitHub as a ZIP or TAR.GZ archive.
+You can download the archive, unpack it, and run the tool from the unpacked directory.
+
 ## Converting custom resource YAML files
 
 One way to use the tool is to convert custom resource YAML files. 
