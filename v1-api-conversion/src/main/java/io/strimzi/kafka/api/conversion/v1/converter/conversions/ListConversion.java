@@ -11,6 +11,7 @@ import java.util.List;
 
 /**
  * A conversion from one version of an object to another.
+ *
  * @param <T>   The converted type
  * @param <C>   The conversion type
  */

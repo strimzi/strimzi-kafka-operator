@@ -24,7 +24,7 @@ import io.strimzi.kafka.api.conversion.v1.converter.ApiConversionFailedException
 @SuppressWarnings("deprecation")
 public class KafkaConversions {
     /**
-     * Checks for presence of Keycloak authorization and raises an exception if it is used.
+     * Checks for the presence of Keycloak authorization and raises an exception if it is used.
      *
      * @return  The conversion
      */
@@ -51,7 +51,7 @@ public class KafkaConversions {
     }
 
     /**
-     * Checks for presence of OPA authorization and raises an exception if it is used.
+     * Checks for the presence of OPA authorization and raises an exception if it is used.
      *
      * @return  The conversion
      */
@@ -78,7 +78,7 @@ public class KafkaConversions {
     }
 
     /**
-     * Checks for presence of OAuth authentication in the Kafka resource. If OAuth authentication is found, an error
+     * Checks for the presence of OAuth authentication in the Kafka resource. If OAuth authentication is found, an error
      * is raised and the user has to convert it manually.
      *
      * @return  The conversion
@@ -110,8 +110,8 @@ public class KafkaConversions {
     }
 
     /**
-     * Checks for presence of OAuth authentication in the KafkaMirrorMaker2 resource and its clusters. If OAuth
-     * authentication is found, an error is raised and the user has to convert it manually.
+     * Checks for the presence of custom Secrets in custom listener authentication. If any custom Secrets are found,
+     * an error is raised and the user has to convert it manually.
      *
      * @return  The conversion
      */
@@ -144,8 +144,8 @@ public class KafkaConversions {
     }
 
     /**
-     * Checks for presence of OAuth authentication in the KafkaMirrorMaker2 resource and its clusters. If OAuth
-     * authentication is found, an error is raised and the user has to convert it manually.
+     * Checks for the presence of resources in .spec.kafka in the Kafka CR. If found, an error is raised and the user
+     * has to convert it manually.
      *
      * @return  The conversion
      */

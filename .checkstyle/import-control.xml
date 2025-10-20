@@ -103,8 +103,7 @@ We also control imports only in production classes and not in tests. This is con
     </subpackage>
 
     <subpackage name="kafka.api.conversion.v1" strategyOnMismatch="disallowed">
-        <!-- This enforces the layering between the Strimzi Model and Operator classes in the User Operator. The Model classes are not allowed
-        to import from Operator classes. They should only use the API classes -->
+        <!-- This enforces the import comntrol on the v1 CRd APi Conversion tool -->
 
         <!-- Common libraries and Java classes -->
         <allow pkg="java" />
@@ -117,7 +116,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="org.apache.logging.log4j" />
         <allow pkg="edu.umd.cs.findbugs.annotations" />
 
-        <!-- Strimzi Operators classes -->
+        <!-- Strimzi classes  -->
         <allow pkg="io.strimzi.api" />
         <allow pkg="io.strimzi.kafka.api.conversion" />
     </subpackage>

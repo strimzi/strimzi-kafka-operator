@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectSpec;
 import io.strimzi.kafka.api.conversion.v1.converter.ApiConversionFailedException;
 
 /**
- * Class for holding the various conversions specific for the v1 API conversion
+ * Class for holding the various conversions that are not specific to a single custom resource and apply to more of them.
  */
 @SuppressWarnings("deprecation")
 public class SharedConversions {
@@ -99,7 +99,7 @@ public class SharedConversions {
      *
      * @return  The conversion
      *
-     * @param <T> Type of the resource where the conversion should be applied@return  The conversion
+     * @param <T> Type of the resource where the conversion should be applied
      */
     public static <T> Conversion<T> enforceOAuthClientAuthentication() {
         return Conversion.replace("/spec/authentication", new Conversion.ConversionFunction<T>() {

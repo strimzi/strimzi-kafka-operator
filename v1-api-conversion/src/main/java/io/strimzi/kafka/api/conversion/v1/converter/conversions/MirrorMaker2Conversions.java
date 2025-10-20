@@ -18,12 +18,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Class for holding the various conversions specific for the v1 API conversion
+ * Class for holding the various conversions specific for the KafkaMirrorMaker2 API conversion
  */
 @SuppressWarnings("deprecation")
 public class MirrorMaker2Conversions {
     /**
-     * Checks for presence of OAuth authentication in the KafkaMirrorMaker2 resource and its clusters. If OAuth
+     * Checks for the presence of OAuth authentication in the KafkaMirrorMaker2 resource and its clusters. If OAuth
      * authentication is found, an error is raised and the user has to convert it manually.
      *
      * @return  The conversion

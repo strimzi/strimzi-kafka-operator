@@ -12,8 +12,8 @@ The tool supports two main operations:
 You can list the tool's commands using `help`:
 
 ```
-> bin/api-conversion.sh help
-Usage: bin/api-conversion.sh [-hV] [COMMAND]
+> bin/v1-api-conversion.sh help
+Usage: bin/v1-api-conversion.sh [-hV] [COMMAND]
 Conversion tool for Strimzi Custom Resources
   -h, --help      Show this help message and exit.
   -V, --version   Print version information and exit.
@@ -43,13 +43,13 @@ The following example commands show how the tool is used:
 
 ```
 # Convert input.yaml and print the converted resource to standard output
-bin/api-conversion.sh convert-file --file input.yaml
+bin/v1-api-conversion.sh convert-file --file input.yaml
 
 # Read resources from input.yaml, convert, and write back to input.yaml
-bin/api-conversion.sh convert-file --file input.yaml --in-place
+bin/v1-api-conversion.sh convert-file --file input.yaml --in-place
 
 # Read resources from input.yaml, convert it, and store it in output.yaml
-bin/api-conversion.sh convert-file --file input.yaml --output output.yaml
+bin/v1-api-conversion.sh convert-file --file input.yaml --output output.yaml
 ```
 
 The converter supports multi-document YAMLs, converting all Strimzi custom resources while leaving other Kubernetes resources unchanged.
@@ -57,8 +57,8 @@ The converter supports multi-document YAMLs, converting all Strimzi custom resou
 Help for the file conversion command:
 
 ```
-> bin/api-conversion.sh help convert-file
-Usage: bin/api-conversion.sh convert-file [-d] -f=<inputFile> [-ll=<level>]
+> bin/v1-api-conversion.sh help convert-file
+Usage: bin/v1-api-conversion.sh convert-file [-d] -f=<inputFile> [-ll=<level>]
        [-o=<outputFile> | [--in-place]]
 Convert Custom Resources from YAML file
   -d, --debug              Runs the tool in debug mode
@@ -90,29 +90,29 @@ The following example commands show how the tool is used:
 
 ```
 # Converts all Strimzi resources in current namespace
-> bin/api-conversion.sh convert-resource
+> bin/v1-api-conversion.sh convert-resource
 
 # Converts all Strimzi resources in all namespace
-> bin/api-conversion.sh convert-resource --all-namespaces
+> bin/v1-api-conversion.sh convert-resource --all-namespaces
 
 # Converts all Strimzi resources in namespace my-kafka
-> bin/api-conversion.sh convert-resource --namespace my-kafka
+> bin/v1-api-conversion.sh convert-resource --namespace my-kafka
 
 # Convert only Kafka resources in all namespaces
-> bin/api-conversion.sh convert-resource --all-namespaces --kind Kafka
+> bin/v1-api-conversion.sh convert-resource --all-namespaces --kind Kafka
 
 # Convert only Kafka and Kafka Connect resources in all namespaces
-> bin/api-conversion.sh convert-resource --all-namespaces --kind Kafka --kind KafkaConnect
+> bin/v1-api-conversion.sh convert-resource --all-namespaces --kind Kafka --kind KafkaConnect
 
 # Convert Kafka cluster named my-cluster in namespace my-kafka
-> bin/api-conversion.sh convert-resource --kind Kafka --namespace my-kafka --name my-cluster
+> bin/v1-api-conversion.sh convert-resource --kind Kafka --namespace my-kafka --name my-cluster
 ```
 
 Help for the in-cluster resource conversion command:
 
 ```
-> bin/api-conversion.sh help convert-resource
-Usage: bin/api-conversion.sh convert-resource [-d] [-ll=<level>]
+> bin/v1-api-conversion.sh help convert-resource
+Usage: bin/v1-api-conversion.sh convert-resource [-d] [-ll=<level>]
        [--name=<name>] [-k[=<kinds> [<kinds> [<kinds> [<kinds> [<kinds>
        [<kinds> [<kinds> [<kinds> [<kinds> [<kinds>]]]]]]]]]]]...
        [-n=<namespace> | [-a]]
@@ -150,7 +150,7 @@ The following example command shows how the tool is used:
 
 ```
 # Upgrade the Strimzi CRDs to v1
-> bin/api-conversion.sh crd-upgrade
+> bin/v1-api-conversion.sh crd-upgrade
 ```
 
 **After you have upgraded the CRDs to use `v1` as storage version, you must only use the fields available in `v1` in your custom resources.**
