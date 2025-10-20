@@ -31,11 +31,10 @@ import java.util.stream.Collectors;
 /**
  * The algorithm:
  *  1. Create a map from the supplied desired String
- *  2. Fill placeholders (e.g. ${BROKER_ID}) in desired map as the broker's {@code kafka_config_generator.sh} would
- *  3a. Loop over all entries. If the entry is in IGNORABLE_PROPERTIES or entry.value from desired is equal to entry.value from current, do nothing
+ *  2a. Loop over all entries. If the entry is in IGNORABLE_PROPERTIES or entry.value from desired is equal to entry.value from current, do nothing
  *      else add it to the diff
- *  3b. If entry was removed from desired, add it to the diff with null value.
- *  3c. If custom entry was removed, delete property
+ *  2b. If entry was removed from desired, add it to the diff with null value.
+ *  2c. If custom entry was removed, delete property
  */
 public class KafkaConfigurationDiff extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConfigurationDiff.class);
@@ -46,20 +45,10 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
     private final boolean isBroker;
 
     /**
-     * These options are skipped because they contain placeholders
-     * 909[1-4] is for skipping all (internal, plain, secured, external) listeners properties
+     * These options are skipped from getting updated because they contain placeholders
      */
     public static final Pattern IGNORABLE_PROPERTIES_PATTERN = Pattern.compile(
             "^(broker\\.id"
-            + "|.*-[0-9]{2,5}\\.ssl\\.keystore\\.location"
-            + "|.*-[0-9]{2,5}\\.ssl\\.keystore\\.password"
-            + "|.*-[0-9]{2,5}\\.ssl\\.keystore\\.type"
-            + "|.*-[0-9]{2,5}\\.ssl\\.truststore\\.location"
-            + "|.*-[0-9]{2,5}\\.ssl\\.truststore\\.password"
-            + "|.*-[0-9]{2,5}\\.ssl\\.truststore\\.type"
-            + "|.*-[0-9]{2,5}\\.ssl\\.client\\.auth"
-            + "|.*-[0-9]{2,5}\\.scram-sha-512\\.sasl\\.jaas\\.config"
-            + "|.*-[0-9]{2,5}\\.sasl\\.enabled\\.mechanisms"
             + "|advertised\\.listeners"
             + "|broker\\.rack)$");
 
@@ -300,51 +289,57 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
                     .filter(configEntry -> configEntry.name().equals(pathValueWithoutSlash))
                     .findFirst();
 
+            boolean logConfigDiff = false;
             String op = d.get("op").asText();
             if (optEntry.isPresent()) {
                 ConfigEntry entry = optEntry.get();
                 if ("remove".equals(op)) {
-                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry);
+                    logConfigDiff = removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry);
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE);
+                    logConfigDiff = updateOrAdd(entry.name(), configModel, desiredMap, updatedCE);
                 }
             } else {
                 if ("add".equals(op)) {
                     // entry is not in the current, it is added
-                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE);
+                    logConfigDiff = updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE);
                 }
             }
 
-            if ("remove".equals(op)) {
-                // there is a lot of properties set by default - not having them in desired causes very noisy log output
-                LOGGER.traceCr(reconciliation, "Kafka Broker {} Config Differs : {}", nodeRef.nodeId(), d);
-                LOGGER.traceCr(reconciliation, "Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
-                LOGGER.traceCr(reconciliation, "Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
-            } else {
-                LOGGER.debugCr(reconciliation, "Kafka Broker {} Config Differs : {}", nodeRef.nodeId(), d);
-                LOGGER.debugCr(reconciliation, "Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
-                LOGGER.debugCr(reconciliation, "Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+            // Log config difference only if they are not ignorable or custom as they always contain different values and are not dynamically updated, logging them causes very noisy log output.
+            if (logConfigDiff) {
+                if ("remove".equals(op)) {
+                    // there is a lot of properties set by default - not having them in desired causes very noisy log output
+                    LOGGER.traceCr(reconciliation, "Kafka Broker {} Config Differs : {}", nodeRef.nodeId(), d);
+                    LOGGER.traceCr(reconciliation, "Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
+                    LOGGER.traceCr(reconciliation, "Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+                } else {
+                    LOGGER.debugCr(reconciliation, "Kafka Broker {} Config Differs : {}", nodeRef.nodeId(), d);
+                    LOGGER.debugCr(reconciliation, "Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
+                    LOGGER.debugCr(reconciliation, "Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
+                }
             }
         }
 
         return updatedCE;
     }
 
-    private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
+    private boolean updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
         if (!isIgnorableProperty(propertyName)) {
             if (KafkaConfiguration.isCustomConfigurationOption(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
             } else {
                 LOGGER.traceCr(reconciliation, "property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(propertyName, desiredMap.get(propertyName)), AlterConfigOp.OpType.SET));
+                return true;
             }
         } else {
-            LOGGER.traceCr(reconciliation, "{} is ignorable, not considering");
+            LOGGER.traceCr(reconciliation, "{} is ignorable, not considering", propertyName);
         }
+        return false;
     }
 
-    private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry) {
+    private boolean removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry) {
         if (KafkaConfiguration.isCustomConfigurationOption(entry.name(), configModel)) {
             // we are deleting custom option
             LOGGER.traceCr(reconciliation, "removing custom property {}", entry.name());
@@ -360,10 +355,12 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
             if (!isIgnorableProperty(pathValueWithoutSlash)) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
                 LOGGER.infoCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
+                return true;
             } else {
-                LOGGER.traceCr(reconciliation, "{} is ignorable, not considering as removed");
+                LOGGER.traceCr(reconciliation, "{} is ignorable, not considering as removed", entry.name());
             }
         }
+        return false;
     }
 
     /**
