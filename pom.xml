@@ -100,6 +100,7 @@
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
         <commons-codec.version>1.13</commons-codec.version>
         <picocli.version>4.7.7</picocli.version>
+        <snakeyaml.version>2.5</snakeyaml.version>
 
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
@@ -627,7 +628,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>2.5</version>
+                <version>${snakeyaml.version}</version>
             </dependency>
             <!-- The skodjob dependency is required at compile time, not solely in the test scope, due to the creation of custom metrics components. -->
             <dependency>
