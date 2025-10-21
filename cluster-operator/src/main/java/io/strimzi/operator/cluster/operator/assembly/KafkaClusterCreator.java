@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -114,9 +115,11 @@ public class KafkaClusterCreator {
         return createKafkaCluster(kafkaCr, nodePools, oldStorage, versionChange)
                 .compose(kafka -> brokerRemovalCheck(kafkaCr, kafka))
                 .compose(kafka -> {
+                    Set<Integer> removedNodeIds = kafka.removedNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet());
+
                     if (checkFailed() && tryToFixProblems)   {
                         // saving scaling down blocked nodes, before they are reverted back
-                        this.scalingDownBlockedNodes.addAll(kafka.removedNodes());
+                        this.scalingDownBlockedNodes.addAll(removedNodeIds);
                         // We have a failure, and should try to fix issues
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(nodePools)
@@ -127,7 +130,7 @@ public class KafkaClusterCreator {
                         List<String> errors = new ArrayList<>();
 
                         if (scaleDownCheckFailed)   {
-                            errors.add("Cannot scale-down Kafka brokers " + kafka.removedNodes() + " because they have assigned partition-replicas.");
+                            errors.add("Cannot scale-down Kafka brokers " + removedNodeIds + " because they have assigned partition-replicas.");
                         }
 
                         if (usedToBeBrokersCheckFailed) {
@@ -185,10 +188,12 @@ public class KafkaClusterCreator {
             return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
                     .compose(coTlsPemIdentity -> brokerScaleDownOperations.brokersInUse(reconciliation, vertx, coTlsPemIdentity, adminClientProvider))
                     .compose(brokersInUse -> {
+                        Set<Integer> removedNodeIds = kafka.removedNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet());
+
                         // Check nodes that are being scaled down
-                        Set<Integer> scaledDownBrokersInUse = kafka.removedNodes().stream().filter(brokersInUse::contains).collect(Collectors.toSet());
+                        Set<Integer> scaledDownBrokersInUse = removedNodeIds.stream().filter(brokersInUse::contains).collect(Collectors.toSet());
                         if (!scaledDownBrokersInUse.isEmpty()) {
-                            LOGGER.warnCr(reconciliation, "Cannot scale down brokers {} because {} have assigned partition-replicas", kafka.removedNodes(), scaledDownBrokersInUse);
+                            LOGGER.warnCr(reconciliation, "Cannot scale down brokers {} because {} have assigned partition-replicas", removedNodeIds, scaledDownBrokersInUse);
                             scaleDownCheckFailed = true;
                         } else {
                             scaleDownCheckFailed = false;

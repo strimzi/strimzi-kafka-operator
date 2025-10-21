@@ -425,10 +425,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates list of Kafka node IDs that are going to be added to the Kafka cluster as brokers.
+     * Generates list of Kafka nodes that are going to be added to the Kafka cluster as brokers.
      * This reports all broker nodes on cluster creation as well as the newly added ones on scaling up.
      *
-     * @return  Set of Kafka node IDs which are going to be added as brokers.
+     * @return  Set of Kafka nodes which are going to be added as brokers.
      */
     public Set<NodeRef> addedNodes() {
         Set<NodeRef> nodes = new LinkedHashSet<>();
@@ -441,15 +441,15 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates list of Kafka node IDs that are going to be removed from the Kafka cluster.
+     * Generates list of Kafka nodes that are going to be removed from the Kafka cluster.
      *
-     * @return  Set of Kafka node IDs which are going to be removed
+     * @return  Set of Kafka nodes which are going to be removed
      */
-    public Set<Integer> removedNodes() {
-        Set<Integer> nodes = new LinkedHashSet<>();
+    public Set<NodeRef> removedNodes() {
+        Set<NodeRef> nodes = new LinkedHashSet<>();
 
         for (KafkaPool pool : nodePools)    {
-            nodes.addAll(pool.scaledDownNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet()));
+            nodes.addAll(pool.scaledDownNodes());
         }
 
         return nodes;
