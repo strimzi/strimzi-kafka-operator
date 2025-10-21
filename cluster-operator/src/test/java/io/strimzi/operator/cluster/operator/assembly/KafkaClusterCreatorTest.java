@@ -422,7 +422,7 @@ public class KafkaClusterCreatorTest {
                 .onComplete(context.failing(ex -> context.verify(() -> {
                     // Check exception
                     assertThat(ex, instanceOf(InvalidResourceException.class));
-                    assertThat(ex.getMessage(), is("Following errors were found when processing the Kafka custom resource: [Cannot scale-down Kafka brokers [2003, 2004, 3003, 1003, 3004, 1004] because they have assigned partition-replicas.]"));
+                    assertThat(ex.getMessage(), is("Following errors were found when processing the Kafka custom resource: [Cannot scale-down Kafka brokers [3003, 3004, 1003, 1004, 2003, 2004] because they have assigned partition-replicas.]"));
 
                     // Check the status conditions
                     assertThat(kafkaStatus.getConditions(), is(nullValue()));

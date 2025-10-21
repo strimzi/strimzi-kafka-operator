@@ -32,6 +32,7 @@ import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -115,7 +116,7 @@ public class KafkaClusterCreator {
         return createKafkaCluster(kafkaCr, nodePools, oldStorage, versionChange)
                 .compose(kafka -> brokerRemovalCheck(kafkaCr, kafka))
                 .compose(kafka -> {
-                    Set<Integer> removedNodeIds = kafka.removedNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet());
+                    Set<Integer> removedNodeIds = kafka.removedNodes().stream().map(NodeRef::nodeId).collect(Collectors.toCollection(LinkedHashSet::new));
 
                     if (checkFailed() && tryToFixProblems)   {
                         // saving scaling down blocked nodes, before they are reverted back
