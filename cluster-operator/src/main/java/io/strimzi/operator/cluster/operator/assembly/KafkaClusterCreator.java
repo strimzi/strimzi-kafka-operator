@@ -189,7 +189,7 @@ public class KafkaClusterCreator {
             return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
                     .compose(coTlsPemIdentity -> brokerScaleDownOperations.brokersInUse(reconciliation, vertx, coTlsPemIdentity, adminClientProvider))
                     .compose(brokersInUse -> {
-                        Set<Integer> removedNodeIds = kafka.removedNodes().stream().map(NodeRef::nodeId).collect(Collectors.toSet());
+                        Set<Integer> removedNodeIds = kafka.removedNodes().stream().map(NodeRef::nodeId).collect(Collectors.toCollection(LinkedHashSet::new));
 
                         // Check nodes that are being scaled down
                         Set<Integer> scaledDownBrokersInUse = removedNodeIds.stream().filter(brokersInUse::contains).collect(Collectors.toSet());
