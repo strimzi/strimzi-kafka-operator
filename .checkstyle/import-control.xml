@@ -103,7 +103,7 @@ We also control imports only in production classes and not in tests. This is con
     </subpackage>
 
     <subpackage name="kafka.api.conversion.v1" strategyOnMismatch="disallowed">
-        <!-- This enforces the import comntrol on the v1 CRd APi Conversion tool -->
+        <!-- This enforces the import control on the v1 CRD API Conversion tool -->
 
         <!-- Common libraries and Java classes -->
         <allow pkg="java" />
