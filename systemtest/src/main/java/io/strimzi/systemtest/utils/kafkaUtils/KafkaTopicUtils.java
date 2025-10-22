@@ -331,14 +331,14 @@ public class KafkaTopicUtils {
     }
 
     public static void setFinalizersInAllTopicsToNull(String namespaceName) {
-        LOGGER.info("Setting finalizers in all KafkaTopics in Namespace: {} to null", namespaceName);
+        LOGGER.info("Removing finalizers from all KafkaTopics in Namespace: {}", namespaceName);
         kafkaTopicClient().inNamespace(namespaceName).list().getItems().forEach(kafkaTopic ->
             KafkaTopicUtils.replace(namespaceName, kafkaTopic.getMetadata().getName(), kt -> kt.getMetadata().setFinalizers(null))
         );
     }
 
     public static void setFinalizersInAllV1Beta2TopicsToNull(String namespaceName) {
-        LOGGER.info("Setting finalizers in all KafkaTopics in Namespace: {} to null", namespaceName);
+        LOGGER.info("Removing finalizers from all KafkaTopics in Namespace: {}", namespaceName);
         kafkaTopicV1Beta2Client().inNamespace(namespaceName).list().getItems().forEach(kafkaTopic ->
             KubeResourceManager.get().replaceResourceWithRetries(kafkaTopic, kt -> kt.getMetadata().setFinalizers(null))
         );
