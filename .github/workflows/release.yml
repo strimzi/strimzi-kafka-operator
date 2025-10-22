@@ -83,7 +83,7 @@ jobs:
       id-token: write
     env:
       DOCKER_REGISTRY: "quay.io"
-      DOCKER_ORG: "jstejska"
+      DOCKER_ORG: "strimzi"
       DOCKER_TAG: "${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }}"
     steps:
       - uses: actions/checkout@v5
