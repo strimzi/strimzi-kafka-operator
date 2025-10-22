@@ -39,4 +39,4 @@ runs:
       run: helm push strimzi-kafka-operator-helm-3-chart-${{ inputs.releaseVersion }}.tgz oci://${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_ORG }}
       env:
         DOCKER_REGISTRY: "quay.io"
-        DOCKER_ORG: "jstejska"
+        DOCKER_ORG: "strimzi-helm"

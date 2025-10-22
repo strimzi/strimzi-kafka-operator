@@ -61,16 +61,16 @@ runs:
       env:
         RELEASE_VERSION: ${{ inputs.releaseVersion }}
 
-#    - name: Deploy Java artifacts to Maven Central
-#      shell: bash
-#      run: make pushtocentral
-#      env:
-#        BUILD_REASON: "IndividualCI"
-#        BRANCH: ${{ github.ref }}
-#        GPG_PASSPHRASE: ${{ inputs.gpgPassphrase }}
-#        GPG_SIGNING_KEY: ${{ inputs.gpgSigningKey }}
-#        CENTRAL_USERNAME: ${{ inputs.centralUsername }}
-#        CENTRAL_PASSWORD: ${{ inputs.centralPassword }}
+    - name: Deploy Java artifacts to Maven Central
+      shell: bash
+      run: make pushtocentral
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+        GPG_PASSPHRASE: ${{ inputs.gpgPassphrase }}
+        GPG_SIGNING_KEY: ${{ inputs.gpgSigningKey }}
+        CENTRAL_USERNAME: ${{ inputs.centralUsername }}
+        CENTRAL_PASSWORD: ${{ inputs.centralPassword }}
 
     - name: Create release archives
       shell: bash
