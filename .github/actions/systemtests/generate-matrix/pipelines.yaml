@@ -22,7 +22,7 @@ pipelines:
     arch: "amd64"
     pipeline: "regression"
     profile: "brokers-and-security"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -31,7 +31,7 @@ pipelines:
     arch: "amd64"
     pipeline: "regression"
     profile: "operators"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -40,7 +40,7 @@ pipelines:
     arch: "amd64"
     pipeline: "regression"
     profile: "operands"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -50,7 +50,7 @@ pipelines:
     arch: "arm64"
     pipeline: "regression"
     profile: "brokers-and-security"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -59,7 +59,7 @@ pipelines:
     arch: "arm64"
     pipeline: "regression"
     profile: "operators"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -68,7 +68,7 @@ pipelines:
     arch: "arm64"
     pipeline: "regression"
     profile: "operands"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "false"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -341,7 +341,7 @@ pipelines:
     arch: "amd64"
     pipeline: "regression-fg"
     profile: "brokers-and-security"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "+ServerSideApplyPhase1,+UseConnectBuildWithBuildah"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -350,7 +350,7 @@ pipelines:
     arch: "amd64"
     pipeline: "regression-fg"
     profile: "operators"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "+ServerSideApplyPhase1,+UseConnectBuildWithBuildah"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -359,7 +359,7 @@ pipelines:
     arch: "amd64"
     pipeline: "regression-fg"
     profile: "operands"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "+ServerSideApplyPhase1,+UseConnectBuildWithBuildah"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -369,7 +369,7 @@ pipelines:
     arch: "arm64"
     pipeline: "regression-fg"
     profile: "brokers-and-security"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "+ServerSideApplyPhase1,+UseConnectBuildWithBuildah"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -378,7 +378,7 @@ pipelines:
     arch: "arm64"
     pipeline: "regression-fg"
     profile: "operators"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "+ServerSideApplyPhase1,+UseConnectBuildWithBuildah"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
@@ -387,7 +387,7 @@ pipelines:
     arch: "arm64"
     pipeline: "regression-fg"
     profile: "operands"
-    timeout: 480
+    timeout: 360
     strimzi_feature_gates: "+ServerSideApplyPhase1,+UseConnectBuildWithBuildah"
     strimzi_rbac_scope: "CLUSTER"
     cluster_operator_install_type: "yaml"
