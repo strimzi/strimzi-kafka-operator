@@ -128,6 +128,7 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>user-archives</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
@@ -137,6 +138,19 @@
                             <tarLongFileMode>posix</tarLongFileMode>
                             <descriptors>
                                 <descriptor>src/main/assembly/zip.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>make-dist-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>../docker-images/artifacts/binaries</outputDirectory>
+                            <descriptors>
+                                <descriptor>src/main/assembly/dist.xml</descriptor>
                             </descriptors>
                         </configuration>
                     </execution>
