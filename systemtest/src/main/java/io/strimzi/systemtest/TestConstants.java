@@ -351,4 +351,9 @@ public interface TestConstants {
      * Label for Kubernetes worker nodes
      */
     String WORKER_NODE_LABEL = "node-role.kubernetes.io/worker";
+
+    /**
+     * API version
+     */
+    String V1_BETA_2_API_VERSION = "kafka.strimzi.io/v1beta2";
 }

@@ -116,7 +116,6 @@
         <testcontainer.version>1.21.3</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.test-frame.version>1.2.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.6.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
         <access-operator.version>0.2.0</access-operator.version>
@@ -629,33 +628,6 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${snakeyaml.version}</version>
-            </dependency>
-            <!-- The skodjob dependency is required at compile time, not solely in the test scope, due to the creation of custom metrics components. -->
-            <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-metrics-collector</artifactId>
-                <version>${skodjob.test-frame.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-log-collector</artifactId>
-                <version>${skodjob.test-frame.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-common</artifactId>
-                <version>${skodjob.test-frame.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-kubernetes</artifactId>
-                <version>${skodjob.test-frame.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-openshift</artifactId>
-                <version>${skodjob.test-frame.version}</version>
-                <scope>test</scope>
             </dependency>
             <!-- Test dependencies -->
             <dependency>

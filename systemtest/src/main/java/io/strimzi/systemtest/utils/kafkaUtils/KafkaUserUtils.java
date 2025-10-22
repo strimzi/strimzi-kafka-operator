@@ -10,6 +10,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.utils.ResourceUtils;
 import io.strimzi.api.kafka.model.common.PasswordBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserScramSha512ClientAuthenticationBuilder;
@@ -123,6 +124,16 @@ public class KafkaUserUtils {
 
     public static void waitForKafkaUserReady(String namespaceName, String userName) {
         waitForKafkaUserStatus(namespaceName, userName, Ready);
+    }
+
+    public static void waitForKafkaUserReadyForV1Beta2(String namespaceName, String userName) {
+        KafkaUser kafkaUser = ResourceUtils.getGenericResourceReturnSpecific(namespaceName, userName, TestConstants.V1_BETA_2_API_VERSION, KafkaUser.RESOURCE_KIND, KafkaUser.class);
+        KubeResourceManager.get().waitResourceCondition(
+            kafkaUser,
+            ResourceConditions.resourceHasDesiredState(Ready),
+            ResourceOperation.getTimeoutForResourceReadiness(kafkaUser.getKind()),
+            () -> ResourceUtils.getGenericResourceReturnSpecific(namespaceName, userName, TestConstants.V1_BETA_2_API_VERSION, KafkaUser.RESOURCE_KIND, KafkaUser.class)
+        );
     }
 
     public static String removeKafkaUserPart(File kafkaUserFile, String partName) {
