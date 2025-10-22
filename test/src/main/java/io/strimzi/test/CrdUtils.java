@@ -146,7 +146,7 @@ public final class CrdUtils {
      *
      * @return  True if the CRD is established. False otherwise.
      */
-    private static boolean isCrdEstablished(CustomResourceDefinition crd)   {
+    public static boolean isCrdEstablished(CustomResourceDefinition crd)   {
         return crd.getStatus() != null
                 && crd.getStatus().getConditions() != null
                 && crd.getStatus().getConditions().stream().anyMatch(c -> "Established".equals(c.getType()) && "True".equals(c.getStatus()));

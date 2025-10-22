@@ -99,6 +99,8 @@
         <micrometer.version>1.14.5</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
         <commons-codec.version>1.13</commons-codec.version>
+        <picocli.version>4.7.7</picocli.version>
+        <snakeyaml.version>2.5</snakeyaml.version>
 
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
@@ -133,6 +135,7 @@
         <module>crd-generator</module>
         <module>api</module>
         <module>mockkube</module>
+        <module>v1-api-conversion</module>
         <module>config-model</module>
         <module>config-model-generator</module>
         <module>operator-common</module>
@@ -616,6 +619,16 @@
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>${jayway-jsonpath.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${picocli.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
             </dependency>
             <!-- The skodjob dependency is required at compile time, not solely in the test scope, due to the creation of custom metrics components. -->
             <dependency>

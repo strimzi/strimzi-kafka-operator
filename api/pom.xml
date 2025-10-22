@@ -151,8 +151,9 @@
                 <version>${maven.exec.version}</version>
                 <executions>
                     <execution>
-                        <!-- This step generates all CRDs apiextensions/v1 which contain only the v1beta2 version. This
-                             should be all of them apart from KafkaUser and KafkaTopic. -->
+                        <!-- This step generates all CRDs apiextensions/v1 which contain the v1beta2 and v1 versions.
+                             This should be all of them, apart from KafkaUser and KafkaTopic generated separately with
+                             different versions, and Kafka generated without descriptions on v1beta2 due to its size. -->
                         <id>generate-crd-co-install-v1</id>
                         <phase>process-classes</phase>
                         <goals>
@@ -168,10 +169,9 @@
                                 <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
                                 <argument>--target-kube</argument><argument>1.16+</argument>
                                 <argument>--crd-api-version</argument><argument>v1</argument>
-                                <argument>--api-versions</argument><argument>v1beta2</argument>
+                                <argument>--api-versions</argument><argument>v1beta2,v1</argument>
                                 <argument>--storage-version</argument><argument>v1beta2</argument>
                                 <argument>--yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.kafka.Kafka=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.connect.KafkaConnect=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}041-Crd-kafkaconnect.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.bridge.KafkaBridge=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.connector.KafkaConnector=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
@@ -179,6 +179,32 @@
                                 <argument>io.strimzi.api.kafka.model.rebalance.KafkaRebalance=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}049-Crd-kafkarebalance.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.podset.StrimziPodSet=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}042-Crd-strimzipodset.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkanodepool.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- This step generates the Kafka CRD without descriptions due to size limits. -->
+                        <id>generate-crd-co-install-v1-no-desc</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${project.basedir}${file.separator}target${file.separator}classes${path.separator}${project.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--target-kube</argument><argument>1.16+</argument>
+                                <argument>--crd-api-version</argument><argument>v1</argument>
+                                <argument>--api-versions</argument><argument>v1beta2,v1</argument>
+                                <!-- Uses v1alpha1 to actually not get any descriptions - nor for v1 and neither for v1beta2 -->
+                                <argument>--describe-api-versions</argument><argument>v1alpha1</argument>
+                                <argument>--storage-version</argument><argument>v1beta2</argument>
+                                <argument>--yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.kafka.Kafka=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -203,7 +229,7 @@
                                 <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
                                 <argument>--target-kube</argument><argument>1.16+</argument>
                                 <argument>--crd-api-version</argument><argument>v1</argument>
-                                <argument>--api-versions</argument><argument>v1alpha1,v1beta1,v1beta2</argument>
+                                <argument>--api-versions</argument><argument>v1alpha1,v1beta1,v1beta2,v1</argument>
                                 <argument>--storage-version</argument><argument>v1beta2</argument>
                                 <argument>--yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.topic.KafkaTopic=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}043-Crd-kafkatopic.yaml</argument>
@@ -211,6 +237,100 @@
                             </arguments>
                         </configuration>
                     </execution>
+                    <!-- The following executions generate two set of resources for testing purposes. One set with all
+                    APIs, one set with v1 APIs only. These are used for testing purposes, to make sure they are
+                    independent on what we have in the packaging directory. Thanks to that, we do not need to modify
+                    the tests as we change the packaging directory. -->
+                    <execution>
+                        <id>generate-crd-tests-v1</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${project.basedir}${file.separator}target${file.separator}classes${path.separator}${project.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--target-kube</argument><argument>1.16+</argument>
+                                <argument>--crd-api-version</argument><argument>v1</argument>
+                                <argument>--api-versions</argument><argument>v1</argument>
+                                <argument>--storage-version</argument><argument>v1</argument>
+                                <argument>--describe-api-versions</argument><argument>v1</argument>
+                                <argument>--yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.connect.KafkaConnect=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}041-Crd-kafkaconnect.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.bridge.KafkaBridge=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}046-Crd-kafkabridge.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.connector.KafkaConnector=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}047-Crd-kafkaconnector.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.rebalance.KafkaRebalance=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}049-Crd-kafkarebalance.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.podset.StrimziPodSet=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}042-Crd-strimzipodset.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}045-Crd-kafkanodepool.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.kafka.Kafka=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}040-Crd-kafka.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.topic.KafkaTopic=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}043-Crd-kafkatopic.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.user.KafkaUser=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1${file.separator}044-Crd-kafkauser.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-crd-tests-v1beta2</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${project.basedir}${file.separator}target${file.separator}classes${path.separator}${project.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--target-kube</argument><argument>1.16+</argument>
+                                <argument>--crd-api-version</argument><argument>v1</argument>
+                                <argument>--api-versions</argument><argument>v1beta2,v1</argument>
+                                <argument>--storage-version</argument><argument>v1beta2</argument>
+                                <argument>--describe-api-versions</argument><argument>v1alpha1</argument>
+                                <argument>--yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.connect.KafkaConnect=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}041-Crd-kafkaconnect.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.bridge.KafkaBridge=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}046-Crd-kafkabridge.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.connector.KafkaConnector=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}047-Crd-kafkaconnector.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.rebalance.KafkaRebalance=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}049-Crd-kafkarebalance.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.podset.StrimziPodSet=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}042-Crd-strimzipodset.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}045-Crd-kafkanodepool.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.kafka.Kafka=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}040-Crd-kafka.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-crd-tests-v1beta2-topic-user</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${project.basedir}${file.separator}target${file.separator}classes${path.separator}${project.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--target-kube</argument><argument>1.16+</argument>
+                                <argument>--crd-api-version</argument><argument>v1</argument>
+                                <argument>--api-versions</argument><argument>v1alpha1,v1beta1,v1beta2,v1</argument>
+                                <argument>--storage-version</argument><argument>v1beta2</argument>
+                                <argument>--describe-api-versions</argument><argument>v1</argument>
+                                <argument>--yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.topic.KafkaTopic=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}043-Crd-kafkatopic.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.user.KafkaUser=${project.basedir}${file.separator}src${file.separator}test${file.separator}resources${file.separator}crds${file.separator}v1beta2${file.separator}044-Crd-kafkauser.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <!-- Generate the documentation -->
                     <execution>
                         <id>generate-doc</id>
                         <phase>process-classes</phase>

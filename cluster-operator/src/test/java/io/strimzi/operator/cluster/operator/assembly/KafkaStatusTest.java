@@ -307,6 +307,7 @@ public class KafkaStatusTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // .status.kafkaMetadataState is deprecated
     public void testStatusAfterFailedReconciliationWithPreviousSuccess(VertxTestContext context) {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);

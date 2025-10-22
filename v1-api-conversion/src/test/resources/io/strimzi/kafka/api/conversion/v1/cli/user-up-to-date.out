@@ -1,0 +1,42 @@
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Read
+      - Describe
+    - resource:
+        type: group
+        name: my-group
+      operations:
+      - Read
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Write
+      - Create
+      - Describe
+    - resource:
+        type: transactionalId
+        name: schema-registry-
+        patternType: prefix
+      operations:
+      - Describe
+      - Write
+  quotas:
+    producerByteRate: 1048576
+    consumerByteRate: 2097152
+    requestPercentage: 55

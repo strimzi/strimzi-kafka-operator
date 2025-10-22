@@ -1,0 +1,49 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+  # use-connector-resources configures this KafkaConnect
+  # to use KafkaConnector resources to avoid
+  # needing to call the Connect REST API directly
+    strimzi.io/use-connector-resources: "true"
+spec:
+  version: 4.1.0
+  replicas: 2
+  bootstrapServers: my-cluster-kafka-bootstrap:9093
+  groupId: my-connect
+  configStorageTopic: my-connect-configs
+  statusStorageTopic: my-connect-status
+  offsetStorageTopic: my-connect-offsets
+  config:
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    value.converter: org.apache.kafka.connect.storage.StringConverter
+    key.converter.schemas.enable: false
+    value.converter.schemas.enable: false
+  externalConfiguration:
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: secret1
+            key: accessKey
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: secret1
+            key: secretAccessKey
+      - name: SOME_LOG_LEVEL
+        valueFrom:
+          configMapKeyRef:
+            name: config1
+            key: log.level
+    volumes:
+      - name: file-sink
+        configMap:
+          name: plugin-configuration
+      - name: my-secret2
+        secret:
+          secretName: secret2
+      - name: my-config2
+        configMap:
+          name: config2

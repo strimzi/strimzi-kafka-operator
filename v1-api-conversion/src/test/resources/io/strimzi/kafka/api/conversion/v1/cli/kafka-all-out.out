@@ -1,0 +1,141 @@
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: my-cluster
+  labels:
+    app: my-cluster
+spec:
+  kafka:
+    listeners:
+    - name: plain
+      port: 9092
+      type: internal
+      tls: false
+      authentication:
+        type: scram-sha-512
+    - name: tls
+      port: 9093
+      type: internal
+      tls: true
+      authentication:
+        type: tls
+    config:
+      auto.create.topics.enable: "false"
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+    authorization:
+      type: simple
+      superUsers:
+      - CN=my-connect
+      - my-connect
+      - CN=my-bridge
+      - my-bridge
+    template:
+      pod:
+        metadata:
+          labels:
+            key1: label1y
+            key2: label2y
+          annotations:
+            akey1: label1
+            akey2: label2
+  entityOperator:
+    topicOperator:
+      reconciliationIntervalMs: 60000
+      resources:
+        limits:
+          memory: 256Mi
+          cpu: 500m
+        requests:
+          memory: 256Mi
+          cpu: 200m
+    userOperator:
+      reconciliationIntervalMs: 30000
+      resources:
+        limits:
+          memory: 512Mi
+          cpu: 500m
+        requests:
+          memory: 512Mi
+          cpu: 200m
+    template:
+      deployment:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+  kafkaExporter:
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 500m
+    template:
+      deployment:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      pod:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+  cruiseControl:
+    brokerCapacity:
+      inboundNetwork: 1GiB/s
+      outboundNetwork: 1GiB/s
+    template:
+      pod:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+  clusterCa:
+    validityDays: 1000
+  clientsCa:
+    validityDays: 1000
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+    lastTransitionTime: 2023-01-20T17:56:29.396588Z
+  observedGeneration: 3
+  listeners:
+  - name: plain
+    addresses:
+    - host: my-cluster-kafka-bootstrap.myproject.svc
+      port: 9092
+    bootstrapServers: my-cluster-kafka-bootstrap.myproject.svc:9092
+  - name: tls
+    addresses:
+    - host: my-cluster-kafka-bootstrap.myproject.svc
+      port: 9093
+    bootstrapServers: my-cluster-kafka-bootstrap.myproject.svc:9093
+    certificates:
+    - |
+      -----BEGIN CERTIFICATE-----
+
+      -----END CERTIFICATE-----
+  kafkaNodePools:
+  - name: broker
+  - name: controller
+  clusterId: XP9FP2P-RByvEy0W4cOEUA
+  operatorLastSuccessfulVersion: 0.48.0
+  kafkaVersion: 4.1.0
