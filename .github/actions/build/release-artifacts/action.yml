@@ -1,0 +1,99 @@
+name: "Build Release Artifacts"
+description: "Builds release artifacts and documentation"
+
+inputs:
+  releaseVersion:
+    description: "Release version (e.g., 0.49.0)"
+    required: true
+  runnerArch:
+    description: "Runner architecture (amd64, arm64)"
+    required: false
+    default: "amd64"
+  gpgPassphrase:
+    description: "GPG passphrase for signing"
+    required: true
+  gpgSigningKey:
+    description: "GPG signing key"
+    required: true
+  centralUsername:
+    description: "Maven Central username"
+    required: true
+  centralPassword:
+    description: "Maven Central password"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install yq
+      uses: ./.github/actions/dependencies/install-yq
+      with:
+        architecture: ${{ inputs.runnerArch }}
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+
+    - name: Install asciidoctor
+      shell: bash
+      run: |
+        gem install asciidoctor
+        gem install asciidoctor-pdf
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Restore Maven cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.m2/repository
+        key: maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          maven-
+
+    - name: Build release files
+      shell: bash
+      run: make release
+      env:
+        RELEASE_VERSION: ${{ inputs.releaseVersion }}
+
+    - name: Deploy Java artifacts to Maven Central
+      shell: bash
+      run: make pushtocentral
+      env:
+        BUILD_REASON: "IndividualCI"
+        BRANCH: ${{ github.ref }}
+        GPG_PASSPHRASE: ${{ inputs.gpgPassphrase }}
+        GPG_SIGNING_KEY: ${{ inputs.gpgSigningKey }}
+        CENTRAL_USERNAME: ${{ inputs.centralUsername }}
+        CENTRAL_PASSWORD: ${{ inputs.centralPassword }}
+
+    - name: Create release archives
+      shell: bash
+      run: tar -cvpf release.tar ./*${{ inputs.releaseVersion }}*
+
+    - name: Upload release archives
+      uses: actions/upload-artifact@v4
+      with:
+        name: release.tar
+        path: release.tar
+
+    - name: Build documentation
+      shell: bash
+      run: make docu_html docu_htmlnoheader docu_pdf
+      env:
+        RELEASE_VERSION: ${{ inputs.releaseVersion }}
+
+    - name: Create documentation archive
+      shell: bash
+      run: tar -cvpf documentation.tar ./documentation/html ./documentation/htmlnoheader ./documentation/pdf
+
+    - name: Upload documentation
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation.tar
+        path: documentation.tar
