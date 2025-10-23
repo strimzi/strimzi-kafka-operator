@@ -9,7 +9,7 @@
 
 [role="_abstract"]
 Metrics provide insight into the health, performance, and capacity of your Kafka deployment.
-By monitoring metrics, you can detect potential issues early, optimize resource usage, and improve reliability.
+By observing these metrics, you can detect potential issues early, optimize resource usage, and improve reliability.
 
 Metrics from Strimzi components can be collected using Prometheus and visualized in Grafana.
 Prometheus collects metrics from running pods in your cluster, while Grafana provides an intuitive interface for exploring and visualizing these metrics. 
