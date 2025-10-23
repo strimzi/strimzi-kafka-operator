@@ -166,9 +166,10 @@ To upgrade the Strimzi CRDs to `v1`, you must run the tool as a user with RBAC p
 
 ## Running the conversion tool as a Kubernetes Job
 
-You can also run the conversion tool as a Kubernetes Job.
-This is useful if you cannot run it locally, or if you, for example, do not have a direct connection to the Kubernetes cluster.
-To allow the conversion to do its job, you need to grant it the required access rights.
+You can run the conversion tool as a Kubernetes `Job`.
+This approach is useful if you cannot run the tool locally or do not have a direct connection to the Kubernetes cluster.
+Before you run the `Job`, grant the necessary access rights by creating a `ServiceAccount`, `ClusterRole`, and `ClusterRoleBinding`.
+The example also defines the `Job` that runs the conversion script:
 
 ```yaml
 apiVersion: v1
@@ -259,10 +260,10 @@ spec:
       restartPolicy: OnFailure
 ```
 
-Make sure to update the namespace in the `ClusterRoleBinding` to match the namespace where you are deploying the Job.
+Update the namespace in the `ClusterRoleBinding` to match the namespace where you are deploying the `Job`.
 
-You can configure the command to in the `containers[].command` section.
-For example, to upgrade the CRDs, you can set it to:
+To change the API conversion command that the job runs, modify the `containers[].command` section in the `Job` resource.
+For example, to upgrade the CRDs, set the command as follows:
 
 ```yaml
           command:
