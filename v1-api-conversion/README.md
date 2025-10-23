@@ -229,6 +229,17 @@ rules:
       - list
       - patch
       - update
+  - apiGroups:
+      - ""
+    resources:
+      # The conversion tool needs to write a ConfigMaps when converting the KafkaBridge resource metrics configuration
+      - configmaps
+    verbs:
+      - get
+      - list
+      - create
+      - patch
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
