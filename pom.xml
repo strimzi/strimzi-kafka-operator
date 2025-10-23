@@ -107,7 +107,7 @@
         <mockito.version>4.11.0</mockito.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>6.0.0</jupiter.version>
-        <strimzi-test-container.version>0.112.0</strimzi-test-container.version>
+        <strimzi-test-container.version>0.113.0</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <valid4j.version>1.1</valid4j.version>
         <javax.json.version>1.1.4</javax.json.version>
