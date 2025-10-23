@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.CSIVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
-import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
 import io.fabric8.kubernetes.api.model.ImageVolumeSource;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
@@ -46,7 +45,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
     private String name;
     private SecretVolumeSource secret;
     private ConfigMapVolumeSource configMap;
-    private EmptyDirVolumeSource emptyDir;
+    private EmptyDirVolume emptyDir;
     private PersistentVolumeClaimVolumeSource persistentVolumeClaim;
     private CSIVolumeSource csi;
     private ImageVolumeSource image;
@@ -85,13 +84,12 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
     }
 
     @Description("`EmptyDir` to use to populate the volume.")
-    @KubeLink(group = "core", version = "v1", kind = "emptydirvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public EmptyDirVolumeSource getEmptyDir() {
+    public EmptyDirVolume getEmptyDir() {
         return emptyDir;
     }
 
-    public void setEmptyDir(EmptyDirVolumeSource emptyDir) {
+    public void setEmptyDir(EmptyDirVolume emptyDir) {
         this.emptyDir = emptyDir;
     }
 

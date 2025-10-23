@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
-import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HostAlias;
@@ -60,6 +58,9 @@ import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.DnsPolicy;
+import io.strimzi.api.kafka.model.common.template.EmptyDirMedium;
+import io.strimzi.api.kafka.model.common.template.EmptyDirVolume;
+import io.strimzi.api.kafka.model.common.template.EmptyDirVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
@@ -917,8 +918,8 @@ public class KafkaConnectClusterTest {
                 .withSecretName("secret1")
                 .build();
 
-        EmptyDirVolumeSource emptyDir = new EmptyDirVolumeSourceBuilder()
-                .withMedium("Memory")
+        EmptyDirVolume emptyDir = new EmptyDirVolumeBuilder()
+                .withMedium(EmptyDirMedium.MEMORY)
                 .build();
 
         AdditionalVolume additionalVolumeConfigMap = new AdditionalVolumeBuilder()

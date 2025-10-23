@@ -997,13 +997,13 @@ spec:
                                 properties:
                                   medium:
                                     type: string
+                                    enum:
+                                      - Memory
+                                    description: Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
                                   sizeLimit:
-                                    type: object
-                                    properties:
-                                      amount:
-                                        type: string
-                                      format:
-                                        type: string
+                                    type: string
+                                    pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                                    description: The total amount of local storage required for this EmptyDir volume (for example 1Gi).
                                 description: '`EmptyDir` to use to populate the volume.'
                               persistentVolumeClaim:
                                 type: object
@@ -2052,13 +2052,13 @@ spec:
                                 properties:
                                   medium:
                                     type: string
+                                    enum:
+                                      - Memory
+                                    description: Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
                                   sizeLimit:
-                                    type: object
-                                    properties:
-                                      amount:
-                                        type: string
-                                      format:
-                                        type: string
+                                    type: string
+                                    pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                                    description: The total amount of local storage required for this EmptyDir volume (for example 1Gi).
                                 description: '`EmptyDir` to use to populate the volume.'
                               persistentVolumeClaim:
                                 type: object
@@ -3668,13 +3668,13 @@ spec:
                                 properties:
                                   medium:
                                     type: string
+                                    enum:
+                                      - Memory
+                                    description: Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
                                   sizeLimit:
-                                    type: object
-                                    properties:
-                                      amount:
-                                        type: string
-                                      format:
-                                        type: string
+                                    type: string
+                                    pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                                    description: The total amount of local storage required for this EmptyDir volume (for example 1Gi).
                                 description: '`EmptyDir` to use to populate the volume.'
                               persistentVolumeClaim:
                                 type: object
@@ -4723,13 +4723,13 @@ spec:
                                 properties:
                                   medium:
                                     type: string
+                                    enum:
+                                      - Memory
+                                    description: Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
                                   sizeLimit:
-                                    type: object
-                                    properties:
-                                      amount:
-                                        type: string
-                                      format:
-                                        type: string
+                                    type: string
+                                    pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                                    description: The total amount of local storage required for this EmptyDir volume (for example 1Gi).
                                 description: '`EmptyDir` to use to populate the volume.'
                               persistentVolumeClaim:
                                 type: object
