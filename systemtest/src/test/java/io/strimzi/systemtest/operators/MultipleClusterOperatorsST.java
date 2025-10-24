@@ -72,7 +72,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test suite for verifying multiple Cluster Operators deployment scenarios, including Cluster Operator resource selectors, leader election, and metrics collection across different namespace configurations."),
+    description = @Desc("Test suite for verifying multiple Cluster Operator deployment scenarios, including resource selectors, leader election, and metrics collection across different namespace configurations."),
     beforeTestSteps = {
         @Step(value = "Skip test suite if using Helm or OLM installation.", expected = "Test suite only runs with YAML-based installations.")
     },
