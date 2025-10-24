@@ -53,12 +53,12 @@ import static io.strimzi.systemtest.TestTags.RECOVERY;
 
 @Tag(RECOVERY)
 @SuiteDoc(
-    description = @Desc("Test suite for verifying Kafka cluster recovery after namespace deletion. Tests cover scenarios with and without KafkaTopic resources available, using persistent volumes with Retain policy. Note: Suite requires StorageClass with local provisioner on Minikube."),
+    description = @Desc("Test suite for verifying Kafka cluster recovery after namespace deletion. Tests cover scenarios with and without `KafkaTopic` resources available, using persistent volumes with the `Retain` reclaim policy. Note: This suite requires `StorageClass` with a local provisioner on Minikube."),
     beforeTestSteps = {
-        @Step(value = "Create StorageClass with Retain reclaim policy.", expected = "StorageClass is created with WaitForFirstConsumer volume binding mode.")
+        @Step(value = "Create a `StorageClass` with the `Retain` reclaim policy.", expected = "`StorageClass` is created with `WaitForFirstConsumer` volume binding mode.")
     },
     afterTestSteps = {
-        @Step(value = "Clean up orphaned PersistentVolumes.", expected = "All Kafka-related PersistentVolumes are deleted.")
+        @Step(value = "Clean up orphaned persistent volumes.", expected = "All Kafka-related persistent volumes are deleted.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
@@ -70,16 +70,16 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @TestDoc(
-        description = @Desc("This test verifies Kafka cluster recovery when all KafkaTopic resources are available after namespace deletion, including internal topics. The test recreates KafkaTopic resources first, then deploys the Kafka cluster, and validates that existing data is preserved."),
+        description = @Desc("This test verifies Kafka cluster recovery when all `KafkaTopic` resources are available after namespace deletion, including internal topics. The test recreates `KafkaTopic` resources first, then deploys the Kafka cluster and verifies that existing data is preserved."),
         steps = {
-            @Step(value = "Prepare test environment with Kafka cluster and KafkaTopic.", expected = "Kafka cluster is deployed with persistent storage and topic contains test data."),
-            @Step(value = "Store list of all KafkaTopic resources and PersistentVolumeClaims.", expected = "All KafkaTopic and PVC resources are captured for recovery."),
+            @Step(value = "Prepare the test environment with a Kafka cluster and `KafkaTopic`.", expected = "The Kafka cluster is deployed with persistent storage, and the topic contains test data."),
+            @Step(value = "Store the list of all `KafkaTopic` and `PersistentVolumeClaim` resources.", expected = "All `KafkaTopic` and `PersistentVolumeClaim`  resources are captured for recovery."),
             @Step(value = "Delete and recreate the namespace.", expected = "Namespace is deleted and recreated successfully."),
             @Step(value = "Recreate PersistentVolumeClaims and update PersistentVolumes.", expected = "PVCs are recreated and bound to existing PVs."),
-            @Step(value = "Recreate Cluster Operator in the namespace.", expected = "Cluster Operator is deployed and ready."),
-            @Step(value = "Recreate all KafkaTopic resources.", expected = "All KafkaTopic resources are recreated successfully."),
-            @Step(value = "Deploy Kafka cluster with persistent storage.", expected = "Kafka cluster is deployed and becomes ready."),
-            @Step(value = "Verify data recovery by producing and consuming messages.", expected = "Messages can be consumed, confirming data was preserved through recovery.")
+            @Step(value = "Recreate the Cluster Operator in the namespace.", expected = "The Cluster Operator is deployed and ready."),
+            @Step(value = "Recreate all `KafkaTopic` resources.", expected = "All `KafkaTopic` resources are recreated successfully."),
+            @Step(value = "Deploy the Kafka cluster with persistent storage.", expected = "Kafka cluster is deployed and becomes ready."),
+            @Step(value = "Verify data recovery by producing and consuming messages.", expected = "Messages can be consumed, confirming data persisted through the recovery process.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -140,19 +140,19 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @TestDoc(
-        description = @Desc("This test verifies Kafka cluster recovery when KafkaTopic resources are not available after namespace deletion. The test deploys Kafka without Topic Operator first to preserve existing topics, then enables Topic Operator after cluster is stable."),
+        description = @Desc("This test verifies Kafka cluster recovery when `KafkaTopic` resources are not available after namespace deletion. The test deploys Kafka without the Topic Operator first to preserve existing topics, then enables Topic Operator after cluster becomes stable."),
         steps = {
-            @Step(value = "Prepare test environment with Kafka cluster and test data.", expected = "Kafka cluster is deployed with persistent storage and topic contains test data."),
-            @Step(value = "Store cluster ID and list of PersistentVolumeClaims.", expected = "Cluster ID and PVC list are captured for recovery."),
-            @Step(value = "List current topics in Kafka cluster.", expected = "Topic list is logged for verification."),
-            @Step(value = "Delete and recreate the namespace.", expected = "Namespace is deleted and recreated successfully."),
+            @Step(value = "Prepare test environment with a Kafka cluster and test data.", expected = "The Kafka cluster is deployed with persistent storage, and the topic contains test data."),
+            @Step(value = "Store the cluster ID and list of `PersistentVolumeClaim` resources.", expected = "The Cluster ID and `PersistentVolumeClaim` list are captured for recovery."),
+            @Step(value = "List the current topics in Kafka cluster.", expected = "The topic list is logged for verification."),
+            @Step(value = "Delete and recreate the namespace.", expected = "The namespace is deleted and recreated successfully."),
             @Step(value = "Recreate PersistentVolumeClaims and update PersistentVolumes.", expected = "PVCs are recreated and bound to existing PVs."),
-            @Step(value = "Recreate Cluster Operator in the namespace.", expected = "Cluster Operator is deployed and ready."),
-            @Step(value = "Deploy Kafka without Topic Operator using pause annotation.", expected = "Kafka cluster is created without Topic Operator to prevent topic deletion."),
-            @Step(value = "Patch Kafka status with original cluster ID.", expected = "Cluster ID is restored to match the original cluster."),
-            @Step(value = "Unpause Kafka reconciliation.", expected = "Kafka cluster becomes ready and operational."),
-            @Step(value = "Enable Topic Operator by updating Kafka spec.", expected = "Topic Operator is deployed and starts managing topics."),
-            @Step(value = "Verify data recovery by producing and consuming messages.", expected = "Messages can be consumed, confirming topics and data were preserved.")
+            @Step(value = "Recreate the Cluster Operator in the namespace.", expected = "The Cluster Operator is deployed and ready."),
+            @Step(value = "Deploy Kafka without the Topic Operator using the pause annotation.", expected = "The Kafka cluster is created without Topic Operator to prevent topic deletion."),
+            @Step(value = "Patch the Kafka status with original cluster ID.", expected = "The Cluster ID is restored to match the original cluster."),
+            @Step(value = "Unpause Kafka reconciliation.", expected = "The Kafka cluster becomes ready and operational."),
+            @Step(value = "Enable the Topic Operator by updating the `Kafka` resource.", expected = "The Topic Operator is deployed and starts managing topics."),
+            @Step(value = "Verify data recovery by producing and consuming messages.", expected = "Messages can be consumed, confirming that topics and data were preserved.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)

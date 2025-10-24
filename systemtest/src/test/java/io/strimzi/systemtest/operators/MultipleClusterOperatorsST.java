@@ -74,7 +74,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @SuiteDoc(
     description = @Desc("Test suite for verifying multiple Cluster Operator deployment scenarios, including resource selectors, leader election, and metrics collection across different namespace configurations."),
     beforeTestSteps = {
-        @Step(value = "Skip test suite if using Helm or OLM installation.", expected = "Test suite only runs with YAML-based installations.")
+        @Step(value = "Skip this test suite if using Helm or OLM installation.", expected = "The test suite only runs with YAML-based installations.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
@@ -114,8 +114,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
             @Step(value = "Add label selector pointing to first Cluster Operator.", expected = "Kafka is deployed and managed by the first Cluster Operator."),
             @Step(value = "Deploy `KafkaConnect` and `KafkaConnector` with a label selecting the first Cluster Operator.", expected = "Both resources are successfully deployed and managed by the first Cluster Operator."),
             @Step(value = "Produce and consume messages using Sink Connector.", expected = "Messages are produced to topic and consumed by the Connector successfully."),
-            @Step(value = "Switch Kafka management to second Cluster Operator by changing label.", expected = "Kafka management transfers to second operator, confirmed by metrics change."),
-            @Step(value = "Verify metrics for all operands on both operators.", expected = "Metric 'strimzi_resource' shows correct counts for each Cluster Operator.")
+            @Step(value = "Switch Kafka management to the second Cluster Operator by changing the label.", expected = "Kafka management transfers to second operator, as confirmed by updated metrics."),
+            @Step(value = "Verify metrics for all operands on both operators.", expected = "Metric `strimzi_resource` shows correct counts for each Cluster Operator.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),

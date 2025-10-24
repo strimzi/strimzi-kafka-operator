@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @SuiteDoc(
     description = @Desc("Test suite for verifying the namespace-scoped RBAC deployment mode for the Cluster Operator, ensuring that `Role` resources are created instead of `ClusterRole` resources when operating in namespace-scoped mode."),
     beforeTestSteps = {
-        @Step(value = "Skip test suite if using OLM or Helm installation.", expected = "Test suite only runs with YAML-based installations.")
+        @Step(value = "Skip this test suite if using OLM or Helm installation.", expected = "This test suite only runs with YAML-based installations.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
@@ -49,11 +49,11 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
     @IsolatedTest("This test case needs own Cluster Operator")
     @TestDoc(
-        description = @Desc("This test verifies that when Cluster Operator is deployed with namespace-scoped RBAC, it creates Roles instead of ClusterRoles, ensuring proper isolation and avoiding cluster-wide permissions."),
+        description = @Desc("This test verifies that when the Cluster Operator is deployed with namespace-scoped RBAC, it creates `Role` resources instead of `ClusterRole` resources, ensuring proper isolation and avoiding cluster-wide permissions."),
         steps = {
-            @Step(value = "Deploy Cluster Operator with namespace-scoped RBAC configuration.", expected = "Cluster Operator is deployed with RBAC type set to NAMESPACE."),
+            @Step(value = "Deploy the Cluster Operator with namespace-scoped RBAC configuration.", expected = "The Cluster Operator is deployed with RBAC type set to `NAMESPACE`."),
             @Step(value = "Deploy a Kafka cluster with broker and controller node pools.", expected = "The Kafka cluster is deployed and becomes ready."),
-            @Step(value = "Verify no ClusterRoles with Strimzi labels exist.", expected = "No ClusterRoles labeled with 'app=strimzi' are found in the cluster.")
+            @Step(value = "Verify no `ClusterRole` resources with Strimzi labels exist.", expected = "No `ClusterRole` resources labeled with `app=strimzi` are found in the cluster.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
