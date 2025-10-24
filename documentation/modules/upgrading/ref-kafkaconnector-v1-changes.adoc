@@ -1,0 +1,22 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-kafkaconnector-v1-changes-{context}']
+= KafkaConnector
+
+[role="_abstract"]
+Changes required for the `KafkaConnector` custom resource in the `v1` API.
+
+== Manual changes required
+
+The conversion tool does not apply the following updates. 
+You must make these changes manually to ensure compatibility:
+
+* Ensure the `.spec` section is present (required).
+
+== Automatic changes supported
+
+The following updates are applied automatically by the conversion tool during conversion.  
+If the conversion tool is not used, you can apply the same changes manually:
+
+* Removes the `.spec.pause` property.  
+If `pause: true` was set, it is converted to `state: paused`.
