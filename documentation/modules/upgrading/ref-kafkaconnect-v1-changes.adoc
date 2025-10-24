@@ -1,0 +1,34 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-kafkaconnect-v1-changes-{context}']
+= KafkaConnect
+
+[role="_abstract"]
+Changes required for the `KafkaConnect` custom resource in the `v1` API.
+
+== Manual changes required
+
+The conversion tool does not apply the following updates. 
+You must make these changes manually to ensure compatibility:
+
+* Ensure the `.spec` section is present (required).
+* Replace unsupported authentication `type: oauth` with `type: custom`.
+* Remove the `.spec.externalConfiguration` property. Use the `.spec.template` section to add custom volumes or environment variables.
+
+== Automatic changes supported
+
+The following updates are applied automatically by the conversion tool during conversion.  
+If the conversion tool is not used, you can apply the same changes manually:
+
+* Adds the `.spec.replicas` property if missing, defaulting to `3`.
+* Renames `.spec.build.output.additionalKanikoOptions` to `.spec.build.output.additionalBuildOptions`.
+* Removes the `.spec.template.deployment` property.
+* Removes unsupported tracing `type: jaeger`.
+* Adds the following required properties and sets them from existing configuration or default values:
+** `.spec.groupId`: set from `.spec.config.group.id`, or default to `connect-cluster`.
+** `.spec.configStorageTopic`: set from `.spec.config.config.storage.topic`, or default to `connect-cluster-configs`.
+** `.spec.offsetStorageTopic`: set from `.spec.config.offset.storage.topic`, or default to `connect-cluster-offsets`.
+** `.spec.statusStorageTopic`: set from `.spec.config.status.storage.topic`, or default to `connect-cluster-status`.
+
+NOTE: After setting the group ID and internal topic properties, remove the corresponding values from `.spec.config`.
+

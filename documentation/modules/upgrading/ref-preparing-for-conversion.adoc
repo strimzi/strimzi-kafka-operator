@@ -1,0 +1,15 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-preparing-for-conversion-{context}']
+= Preparing for conversion
+
+[role="_abstract"]
+Before running the Strimzi API conversion tool, confirm that the environment meets the prerequisites for converting Strimzi custom resources and CRDs to the `v1` API.
+
+Before running the Strimzi API conversion tool, verify that the following conditions are met:
+
+* The deployed Strimzi version is 0.49 or later.  
+* All Strimzi custom resources and CRDs are backed up.
+* The namespaces that contain Strimzi resources to be converted are identified.  
+* The user or service account running the tool has RBAC permissions to list, get, and replace Strimzi custom resources.  
+* Any deprecated or unsupported fields in the `v1` API are reviewed, and manual changes are planned as needed.  

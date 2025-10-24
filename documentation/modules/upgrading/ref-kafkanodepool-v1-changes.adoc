@@ -1,0 +1,22 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-kafkanodepool-v1-changes-{context}']
+= KafkaNodePool
+[role="_abstract"]
+Changes required for the `KafkaNodePool` custom resource in the `v1` API.
+
+== Manual changes required
+
+The conversion tool does not apply the following updates. 
+You must make these changes manually to ensure compatibility:
+
+* Ensure the `.spec` section is present (required).
+
+== Automatic changes supported
+
+The following updates are applied automatically by the conversion tool during conversion.  
+If the conversion tool is not used, you can apply the same changes manually:
+
+* Removes the `overrides` property from `.spec.storage`.
+
+To configure different storage settings for specific nodes, define separate `KafkaNodePool` resources.

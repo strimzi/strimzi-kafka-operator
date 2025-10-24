@@ -1,0 +1,21 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-kafkauser-v1-changes-{context}']
+= KafkaUser
+[role="_abstract"]
+Changes required for the `KafkaUser` custom resource in the `v1` API.
+
+== Manual changes required
+
+The conversion tool does not apply the following updates. 
+You must make these changes manually to ensure compatibility:
+
+* Ensure the `.spec` section is present (required).
+
+== Automatic changes supported
+
+The following updates are applied automatically by the conversion tool during conversion.  
+If the conversion tool is not used, you can apply the same changes manually:
+
+* Replaces the `operation` property in `.spec.authorization.acls[]` with the `operations` array.  
+*This change must be applied before upgrading to Strimzi versions 0.49-0.51.*
