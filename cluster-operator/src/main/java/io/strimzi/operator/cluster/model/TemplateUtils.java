@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -125,7 +126,11 @@ public class TemplateUtils {
         } else if (volumeConfig.getSecret() != null) {
             volumeBuilder.withSecret(volumeConfig.getSecret());
         } else if (volumeConfig.getEmptyDir() != null) {
-            volumeBuilder.withEmptyDir(volumeConfig.getEmptyDir());
+            volumeBuilder
+                    .withNewEmptyDir()
+                        .withMedium(volumeConfig.getEmptyDir().getMedium() != null ? volumeConfig.getEmptyDir().getMedium().toValue() : null)
+                        .withSizeLimit(volumeConfig.getEmptyDir().getSizeLimit() != null ? new Quantity(volumeConfig.getEmptyDir().getSizeLimit()) : null)
+                    .endEmptyDir();
         } else if (volumeConfig.getPersistentVolumeClaim() != null) {
             volumeBuilder.withPersistentVolumeClaim(volumeConfig.getPersistentVolumeClaim());
         } else if (volumeConfig.getCsi() != null) {

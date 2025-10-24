@@ -1329,7 +1329,7 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#configmapvolumesource-v1-core[ConfigMapVolumeSource]
 |`ConfigMap` to use to populate the volume.
 |emptyDir
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#emptydirvolumesource-v1-core[EmptyDirVolumeSource]
+|xref:type-EmptyDirVolume-{context}[`EmptyDirVolume`]
 |`EmptyDir` to use to populate the volume.
 |persistentVolumeClaim
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#persistentvolumeclaimvolumesource-v1-core[PersistentVolumeClaimVolumeSource]
@@ -1340,6 +1340,23 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |image
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#imagevolumesource-v1-core[ImageVolumeSource]
 |`ImageVolumeSource` object to use to populate the volume.
+|====
+
+[id='type-EmptyDirVolume-{context}']
+= `EmptyDirVolume` schema reference
+
+Used in: xref:type-AdditionalVolume-{context}[`AdditionalVolume`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|medium
+|string (one of [Memory])
+|Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
+|sizeLimit
+|string
+|The total amount of local storage required for this EmptyDir volume (for example 1Gi).
 |====
 
 [id='type-InternalServiceTemplate-{context}']
