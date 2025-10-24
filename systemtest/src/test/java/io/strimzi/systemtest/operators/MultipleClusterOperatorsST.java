@@ -109,7 +109,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
             @Step(value = "Deploy two Cluster Operators in separate namespaces, both watching all namespaces.", expected = "Both Cluster Operators are successfully deployed."),
             @Step(value = "Set up scrapers and metric collectors for both Cluster Operators.", expected = "Scraper Pods and metrics collectors are configured and ready."),
             @Step(value = "Create namespace for test resources.", expected = "Namespace `multiple-co-cluster-test` is created and set as default."),
-            @Step(value = "Deploy Kafka without operator selector label.", expected = "Kafka is created but no Pods appear as no operator manages it."),
+            @Step(value = "Deploy Kafka without operator selector label.", expected = "The `Kafka` resource is created but no pods are deployed because it is not managed by any operator."),
             @Step(value = "Verify Kafka metrics are absent in both operators.", expected = "Metric 'strimzi_resource' for Kafka is null or zero in both Cluster Operators."),
             @Step(value = "Add label selector pointing to first Cluster Operator.", expected = "Kafka is deployed and managed by the first Cluster Operator."),
             @Step(value = "Deploy KafkaConnect and KafkaConnector with first operator label.", expected = "Both resources are successfully deployed and managed by the first Cluster Operator."),
