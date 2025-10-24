@@ -52,7 +52,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
         description = @Desc("This test verifies that when Cluster Operator is deployed with namespace-scoped RBAC, it creates Roles instead of ClusterRoles, ensuring proper isolation and avoiding cluster-wide permissions."),
         steps = {
             @Step(value = "Deploy Cluster Operator with namespace-scoped RBAC configuration.", expected = "Cluster Operator is deployed with RBAC type set to NAMESPACE."),
-            @Step(value = "Deploy Kafka cluster with broker and controller node pools.", expected = "Kafka cluster is deployed and becomes ready."),
+            @Step(value = "Deploy a Kafka cluster with broker and controller node pools.", expected = "The Kafka cluster is deployed and becomes ready."),
             @Step(value = "Verify no ClusterRoles with Strimzi labels exist.", expected = "No ClusterRoles labeled with 'app=strimzi' are found in the cluster.")
         },
         labels = {
