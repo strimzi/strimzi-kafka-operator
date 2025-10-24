@@ -164,6 +164,124 @@ To upgrade the Strimzi CRDs to `v1`, you must run the tool as a user with RBAC p
 * Patch the CRD resources
 * Replace the status of the CRD resources
 
+## Running the conversion tool as a Kubernetes Job
+
+You can run the conversion tool as a Kubernetes `Job`.
+This approach is useful if you cannot run the tool locally or do not have a direct connection to the Kubernetes cluster.
+Before you run the `Job`, grant the necessary access rights by creating a `ServiceAccount`, `ClusterRole`, and `ClusterRoleBinding`.
+The example also defines the `Job` that runs the conversion script:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: strimzi-v1-api-conversion
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-v1-api-conversion
+rules:
+  - apiGroups:
+      - kafka.strimzi.io
+    resources:
+      - kafkas
+      - kafkanodepools
+      - kafkaconnects
+      - kafkaconnectors
+      - kafkabridges
+      - kafkamirrormaker2s
+      - kafkarebalances
+      - kafkatopics
+      - kafkausers
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+  - apiGroups:
+      - core.strimzi.io
+    resources:
+      - strimzipodsets
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+      - customresourcedefinitions/status
+    resourceNames:
+      - kafkabridges.kafka.strimzi.io
+      - kafkaconnectors.kafka.strimzi.io
+      - kafkaconnects.kafka.strimzi.io
+      - kafkamirrormaker2s.kafka.strimzi.io
+      - kafkanodepools.kafka.strimzi.io
+      - kafkarebalances.kafka.strimzi.io
+      - kafkas.kafka.strimzi.io
+      - kafkatopics.kafka.strimzi.io
+      - kafkausers.kafka.strimzi.io
+      - strimzipodsets.core.strimzi.io
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      # The conversion tool needs to write a ConfigMaps when converting the KafkaBridge resource metrics configuration
+      - configmaps
+    verbs:
+      - get
+      - list
+      - create
+      - patch
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: strimzi-v1-api-conversion
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-v1-api-conversion
+    namespace: myproject
+roleRef:
+  kind: ClusterRole
+  name: strimzi-v1-api-conversion
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: strimzi-v1-api-conversion
+spec:
+  template:
+    spec:
+      serviceAccountName: strimzi-v1-api-conversion
+      containers:
+        - name: strimzi-v1-api-conversion
+          image: quay.io/strimzi/operator:0.49.0
+          command:
+            - /opt/v1-api-conversion/bin/v1-api-conversion.sh
+            - convert-resource
+      restartPolicy: OnFailure
+```
+
+Update the namespace in the `ClusterRoleBinding` to match the namespace where you are deploying the `Job`.
+
+To change the API conversion command that the job runs, modify the `containers[].command` section in the `Job` resource.
+For example, to upgrade the CRDs, set the command as follows:
+
+```yaml
+          command:
+            - /opt/v1-api-conversion/bin/v1-api-conversion.sh
+            - crd-upgrade
+```
+
 ## Changes in the `v1` API
 
 ### `Kafka` CR

@@ -4,9 +4,10 @@ topic_operator_dist := ../artifacts/binaries/topic-operator-$(jar_version)-dist.
 user_operator_dist := ../artifacts/binaries/user-operator-$(jar_version)-dist.zip
 cluster_operator_dist := ../artifacts/binaries/cluster-operator-$(jar_version)-dist.zip
 kafka_init_dist := ../artifacts/binaries/kafka-init-$(jar_version)-dist.zip
+v1_api_conversion_dist := ../artifacts/binaries/v1-api-conversion-$(jar_version)-dist.zip
 
 clean: 
-	rm -rf .topic-operator.tmp .user-operator.tmp .kafka-init.tmp .cluster-operator.tmp ./tmp
+	rm -rf .topic-operator.tmp .user-operator.tmp .kafka-init.tmp .cluster-operator.tmp .v1-api-conversion.tmp ./tmp
 
 # We unzip each of the -dist.zip files into tmp which is then
 # COPYed in the Dockerfile, so can delete tmp on exit
@@ -32,7 +33,12 @@ clean:
 	unzip -qo $(cluster_operator_dist) -d tmp
 	touch .cluster-operator.tmp
 
-docker_build: .topic-operator.tmp .user-operator.tmp .kafka-init.tmp .cluster-operator.tmp docker_build_default
+.v1-api-conversion.tmp: $(v1_api_conversion_dist)
+	test -d tmp/v1-api-conversion || mkdir -p tmp/v1-api-conversion
+	unzip -qo $(v1_api_conversion_dist) -d tmp/v1-api-conversion
+	touch .v1-api-conversion.tmp
+
+docker_build: .topic-operator.tmp .user-operator.tmp .kafka-init.tmp .cluster-operator.tmp .v1-api-conversion.tmp docker_build_default
 	# Pull dependencies first
 
 include ../../Makefile.docker
