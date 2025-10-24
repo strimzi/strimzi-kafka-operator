@@ -75,7 +75,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             @Step(value = "Prepare the test environment with a Kafka cluster and `KafkaTopic`.", expected = "The Kafka cluster is deployed with persistent storage, and the topic contains test data."),
             @Step(value = "Store the list of all `KafkaTopic` and `PersistentVolumeClaim` resources.", expected = "All `KafkaTopic` and `PersistentVolumeClaim`  resources are captured for recovery."),
             @Step(value = "Delete and recreate the namespace.", expected = "Namespace is deleted and recreated successfully."),
-            @Step(value = "Recreate PersistentVolumeClaims and update PersistentVolumes.", expected = "PVCs are recreated and bound to existing PVs."),
+            @Step(value = "Recreate `PersistentVolumeClaims` and rebind `PersistentVolumes` resources.", expected = "The `PersistentVolumeClaim` resources are recreated and bound to the existing `PersistentVolumeClaim` resources."),
             @Step(value = "Recreate the Cluster Operator in the namespace.", expected = "The Cluster Operator is deployed and ready."),
             @Step(value = "Recreate all `KafkaTopic` resources.", expected = "All `KafkaTopic` resources are recreated successfully."),
             @Step(value = "Deploy the Kafka cluster with persistent storage.", expected = "Kafka cluster is deployed and becomes ready."),
@@ -95,7 +95,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         List<PersistentVolumeClaim> persistentVolumeClaimList = KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace(testStorage.getNamespaceName());
 
-        recreatePvcAndUpdatePv(testStorage.getNamespaceName(), persistentVolumeClaimList);
+        recreatePvcsAndRebindPvs(testStorage.getNamespaceName(), persistentVolumeClaimList);
         recreateClusterOperator(testStorage.getNamespaceName());
 
         // Recreate all KafkaTopic resources
@@ -146,7 +146,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             @Step(value = "Store the cluster ID and list of `PersistentVolumeClaim` resources.", expected = "The Cluster ID and `PersistentVolumeClaim` list are captured for recovery."),
             @Step(value = "List the current topics in Kafka cluster.", expected = "The topic list is logged for verification."),
             @Step(value = "Delete and recreate the namespace.", expected = "The namespace is deleted and recreated successfully."),
-            @Step(value = "Recreate PersistentVolumeClaims and update PersistentVolumes.", expected = "PVCs are recreated and bound to existing PVs."),
+            @Step(value = "Recreate `PersistentVolumeClaims` and rebind `PersistentVolumes` resources.", expected = "The `PersistentVolumeClaim` resources are recreated and bound to the existing `PersistentVolume` resources."),
             @Step(value = "Recreate the Cluster Operator in the namespace.", expected = "The Cluster Operator is deployed and ready."),
             @Step(value = "Deploy Kafka without the Topic Operator using the pause annotation.", expected = "The Kafka cluster is created without Topic Operator to prevent topic deletion."),
             @Step(value = "Patch the Kafka status with original cluster ID.", expected = "The Cluster ID is restored to match the original cluster."),
@@ -187,8 +187,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         LOGGER.info("Deleting namespace and recreating for recovery");
         deleteAndRecreateNamespace(testStorage.getNamespaceName());
 
-        LOGGER.info("Recreating PVCs and updating PVs for recovery");
-        recreatePvcAndUpdatePv(testStorage.getNamespaceName(), persistentVolumeClaimList);
+        LOGGER.info("Recreating PVCs and rebinding PVs for recovery");
+        recreatePvcsAndRebindPvs(testStorage.getNamespaceName(), persistentVolumeClaimList);
 
         LOGGER.info("Recreating Cluster Operator");
         recreateClusterOperator(testStorage.getNamespaceName());
@@ -317,7 +317,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
 
-    private void recreatePvcAndUpdatePv(String namespaceName, List<PersistentVolumeClaim> persistentVolumeClaimList) {
+    private void recreatePvcsAndRebindPvs(String namespaceName, List<PersistentVolumeClaim> persistentVolumeClaimList) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             pvc.getMetadata().setResourceVersion(null);
             pvc.getMetadata().setNamespace(namespaceName);
