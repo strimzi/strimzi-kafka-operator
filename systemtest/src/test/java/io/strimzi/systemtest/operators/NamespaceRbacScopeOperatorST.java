@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test suite for verifying namespace-scoped RBAC deployment mode for Cluster Operator, ensuring that Roles are created instead of ClusterRoles when operating in namespace-scoped mode."),
+    description = @Desc("Test suite for verifying the namespace-scoped RBAC deployment mode for the Cluster Operator, ensuring that `Role` resources are created instead of `ClusterRole` resources when operating in namespace-scoped mode."),
     beforeTestSteps = {
         @Step(value = "Skip test suite if using OLM or Helm installation.", expected = "Test suite only runs with YAML-based installations.")
     },
