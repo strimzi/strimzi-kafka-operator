@@ -723,12 +723,6 @@ public class KafkaReconciler {
                         // We collect the configuration options related to various plugins
                         nodeConfiguration += kc.unknownConfigsWithValues(kafka.getKafkaVersion()).toString();
 
-                        // We collect the information relevant to controller-only nodes
-                        if (pool.isController() && !pool.isBroker())   {
-                            // For controllers only, we extract the controller-relevant configurations and use it in the configuration annotations
-                            nodeConfiguration = kc.controllerConfigsWithValues().toString();
-                        }
-
                         // We store hash of the broker configurations for later use in Pod and in rolling updates
                         this.brokerConfigurationHash.put(nodeId, Util.hashStub(nodeConfiguration));
 
