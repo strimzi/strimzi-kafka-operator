@@ -8,32 +8,32 @@
 = Introducing metrics
 
 [role="_abstract"]
-Collecting metrics is essential for understanding the health and performance of your Kafka deployment. 
-By monitoring metrics, you can actively identify issues before they become critical and make informed decisions about resource allocation and capacity planning. 
-Without metrics, you may be left with limited visibility into the behavior of your Kafka deployment, which can make troubleshooting more difficult and time-consuming. 
-Setting up metrics can save you time and resources, and help ensure the reliability of your Kafka deployment.
+Metrics provide insight into the health, performance, and capacity of your Kafka deployment.
+By observing these metrics, you can detect potential issues early, optimize resource usage, and improve reliability.
 
-Metrics can be collected from Strimzi components using Prometheus and visualized in Grafana.
-Prometheus collects metrics from running pods in your cluster when configured with appropriate rules. 
-Grafana visualizes these metrics on dashboards, providing an intuitive interface for monitoring. 
+Metrics from Strimzi components can be collected using Prometheus and visualized in Grafana.
+Prometheus collects metrics from running pods in your cluster, while Grafana provides an intuitive interface for exploring and visualizing these metrics. 
 
-While the Strimzi operators expose their own Prometheus metrics by default, such as reconciliation counts and durations, JVM data, and resource processing statistics, other Strimzi components and features that support metrics, including OAuth 2.0 integration, require configuration to expose them.
+The Strimzi operators expose Prometheus metrics by default, including reconciliation counts, durations, JVM data, and resource processing statistics.
+Other components and features require configuration to expose their metrics.
 
-Strimzi provides example Prometheus rules and Grafana dashboards, which you can customize to fit your deployment. 
-These tools help visualize metrics and define alerts based on specific conditions.
-Additionally, you can configure your deployment to track messages end-to-end by xref:assembly-distributed-tracing-str[setting up distributed tracing].
+In addition, you can use kube-state-metrics (KSM) to monitor the state and readiness of Strimzi custom resources, and to raise alerts for warning conditions.
 
-NOTE: Strimzi provides example installation files for Prometheus and Grafana to help get you started.
-For further support, refer to the Prometheus and Grafana developer communities.
+Strimzi provides example Prometheus rules, Grafana dashboards, and kube-state-metrics configuration files that you can adapt to your environment.
+You can also track message flow across components by xref:assembly-distributed-tracing-str[setting up distributed tracing].
 
-.Supporting documentation for metrics and monitoring tools
-For more information on the metrics and monitoring tools, refer to the supporting documentation:
+NOTE: Strimzi provides example installation files for Prometheus, Grafana, and kube-state-metrics to help get you started.
+For further information, refer to the resources of those projects.
+
+[role="_additional-resources"]
+.Additional resources
 
 * {PrometheusHome}
 * {PrometheusConfig}
 * {kafka-exporter-project}
 * {GrafanaHome}
-* link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring^] describes JMX metrics exposed by Apache Kafka
+* link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring^]
+* link:https://github.com/kubernetes/kube-state-metrics/[kube-state-metrics^]
 
 //Example metrics files
 include::assembly-metrics-config-files.adoc[leveloffset=+1]
