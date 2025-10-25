@@ -5396,6 +5396,8 @@ spec:
                         - ephemeral
                         - persistent-claim
                         - jbod
+                      volumeAttributesClass:
+                        type: string
                       volumes:
                         type: array
                         items:
@@ -5435,6 +5437,8 @@ spec:
                               enum:
                               - ephemeral
                               - persistent-claim
+                            volumeAttributesClass:
+                              type: string
                           required:
                           - type
                     required:
@@ -6944,6 +6948,8 @@ spec:
                         enum:
                         - ephemeral
                         - persistent-claim
+                      volumeAttributesClass:
+                        type: string
                     required:
                     - type
                   config:

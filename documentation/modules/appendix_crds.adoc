@@ -681,6 +681,9 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |class
 |string
 |The storage class to use for dynamic volume allocation.
+|volumeAttributesClass
+|string
+|Specifies `VolumeAttributeClass` name for dynamic volume allocation.
 |selector
 |map
 |Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
