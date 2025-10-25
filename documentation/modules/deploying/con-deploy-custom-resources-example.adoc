@@ -28,7 +28,7 @@ To understand the relationship between a CRD and a custom resource, let's look a
 .Kafka topic CRD
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata: <1>
   name: kafkatopics.kafka.strimzi.io

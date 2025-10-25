@@ -51,7 +51,7 @@ This example applies a rule to a `Kafka` resource that assigns all its broker po
 .Example cluster-wide affinity configuration for dedicated nodes
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster

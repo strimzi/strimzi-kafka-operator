@@ -45,7 +45,7 @@ The specification shown here can support loading values from config maps and sec
 .Example Kafka Connect configuration to use config maps and secrets
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect
@@ -119,7 +119,7 @@ The service account name format is `<cluster_name>-connect`, where `<cluster_nam
 .Example connector configuration referencing the config map
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaConnectorApiVersion}
 kind: KafkaConnector
 metadata:
   name: my-connector

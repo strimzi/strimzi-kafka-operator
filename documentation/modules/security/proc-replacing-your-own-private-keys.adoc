@@ -71,7 +71,7 @@ The following example shows a `Kafka` custom resource with both cluster and clie
 .Example `Kafka` configuration using your own CA certificates
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 # ...
 spec:
