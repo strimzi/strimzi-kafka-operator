@@ -20,6 +20,8 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
+import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -186,54 +188,65 @@ public class ModelUtils {
     }
 
     /**
-     * Adds user-configured affinity to the AffinityBuilder
+     * Mixes the user-configured affinity with the rack-awareness node selector affinity
      *
-     * @param builder the builder which is used to populate the node affinity
-     * @param userAffinity the userAffinity which is defined by the user
-     * @param topologyKey  the topology key which is used to select the node
-     * @return the AffinityBuilder which has the node selector with topology key which is needed to make sure
-     * the pods are scheduled only on nodes with the rack label
+     * @param podTemplate   PodTemplate with user affinity configuration
+     * @param rack          Rack awareness configuration
+     *
+     * @return  Affinity which has the node selector with the topology-key needed to make sure the pods are scheduled only
+     *          on nodes with the rack label
      */
-    public static AffinityBuilder populateAffinityBuilderWithRackLabelSelector(AffinityBuilder builder, Affinity userAffinity, String topologyKey) {
-        // We need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
-        NodeSelectorRequirement selector = new NodeSelectorRequirementBuilder()
-                .withOperator("Exists")
-                .withKey(topologyKey)
-                .build();
+    public static Affinity affinityWithRackLabelSelector(PodTemplate podTemplate, Rack rack) {
+        // Extract the user-defined affinity if set
+        Affinity userAffinity = podTemplate != null && podTemplate.getAffinity() != null ? podTemplate.getAffinity() : null;
 
-        if (userAffinity != null
+        if (rack != null) {
+            // When rack-awareness is used, we need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
+            NodeSelectorRequirement rackAwareSelector = new NodeSelectorRequirementBuilder()
+                    .withOperator("Exists")
+                    .withKey(rack.getTopologyKey())
+                    .build();
+
+            AffinityBuilder affinityBuilder = new AffinityBuilder(userAffinity);
+
+            if (userAffinity != null
                 && userAffinity.getNodeAffinity() != null
                 && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution() != null
                 && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms() != null) {
-            // User has specified some Node Selector Terms => we should enhance them
-            List<NodeSelectorTerm> oldTerms = userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms();
-            List<NodeSelectorTerm> enhancedTerms = new ArrayList<>(oldTerms.size());
+                // User has specified some Node Selector Terms => we should enhance them
+                List<NodeSelectorTerm> oldTerms = userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms();
+                List<NodeSelectorTerm> enhancedTerms = new ArrayList<>(oldTerms.size());
 
-            for (NodeSelectorTerm term : oldTerms) {
-                NodeSelectorTerm enhancedTerm = new NodeSelectorTermBuilder(term)
-                        .addToMatchExpressions(selector)
-                        .build();
-                enhancedTerms.add(enhancedTerm);
+                for (NodeSelectorTerm term : oldTerms) {
+                    NodeSelectorTerm enhancedTerm = new NodeSelectorTermBuilder(term)
+                            .addToMatchExpressions(rackAwareSelector)
+                            .build();
+                    enhancedTerms.add(enhancedTerm);
+                }
+
+                affinityBuilder
+                        .editOrNewNodeAffinity()
+                            .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                                .withNodeSelectorTerms(enhancedTerms)
+                            .endRequiredDuringSchedulingIgnoredDuringExecution()
+                        .endNodeAffinity();
+            } else {
+                // User has not specified any selector terms => we add our own
+                affinityBuilder
+                        .editOrNewNodeAffinity()
+                            .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
+                                .addNewNodeSelectorTerm()
+                                    .withMatchExpressions(rackAwareSelector)
+                                .endNodeSelectorTerm()
+                            .endRequiredDuringSchedulingIgnoredDuringExecution()
+                        .endNodeAffinity();
             }
 
-            builder = builder
-                    .editOrNewNodeAffinity()
-                        .withNewRequiredDuringSchedulingIgnoredDuringExecution()
-                            .withNodeSelectorTerms(enhancedTerms)
-                        .endRequiredDuringSchedulingIgnoredDuringExecution()
-                    .endNodeAffinity();
+            return affinityBuilder.build();
         } else {
-            // User has not specified any selector terms => we add our own
-            builder = builder
-                    .editOrNewNodeAffinity()
-                        .editOrNewRequiredDuringSchedulingIgnoredDuringExecution()
-                            .addNewNodeSelectorTerm()
-                                .withMatchExpressions(selector)
-                            .endNodeSelectorTerm()
-                        .endRequiredDuringSchedulingIgnoredDuringExecution()
-                    .endNodeAffinity();
+            // Rack-awareness is not used. We just keep what the user configured.
+            return userAffinity;
         }
-        return builder;
     }
 
     /**

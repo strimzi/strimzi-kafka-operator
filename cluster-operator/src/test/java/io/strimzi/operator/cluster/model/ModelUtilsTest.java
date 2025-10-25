@@ -4,11 +4,20 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
+import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodAffinityTermBuilder;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.PreferredSchedulingTermBuilder;
+import io.strimzi.api.kafka.model.common.RackBuilder;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -26,6 +35,7 @@ import java.util.Map;
 import static io.strimzi.operator.common.Util.parseMap;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ModelUtilsTest {
@@ -177,5 +187,103 @@ public class ModelUtilsTest {
 
         assertThat(dnsNames.size(), is(4));
         assertThat(dnsNames, hasItems("my-service", "my-service.my-namespace", "my-service.my-namespace.svc", "my-service.my-namespace.svc.cluster.local"));
+    }
+
+    @Test
+    public void testNullAffinity() {
+        assertThat(ModelUtils.affinityWithRackLabelSelector(null, null), is(nullValue()));
+        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplate(), null), is(nullValue()));
+        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(null).build(), null), is(nullValue()));
+    }
+
+    @Test
+    public void testAffinityWithRack() {
+        Affinity expectedAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder().withMatchExpressions(new NodeSelectorRequirementBuilder().withOperator("Exists").withKey("topology.key/my").build()).build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        assertThat(ModelUtils.affinityWithRackLabelSelector(null, new RackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
+    }
+
+    @Test
+    public void testCombinedPodAffinityWithRack() {
+        Affinity userAffinity = new AffinityBuilder()
+                .withNewPodAntiAffinity()
+                    .withRequiredDuringSchedulingIgnoredDuringExecution(new PodAffinityTermBuilder().withTopologyKey("kubernetes.io/hostname").withNewLabelSelector().withMatchLabels(Map.of("database", "true")).endLabelSelector().build())
+                .endPodAntiAffinity()
+                .build();
+
+        Affinity expectedAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder().withMatchExpressions(new NodeSelectorRequirementBuilder().withOperator("Exists").withKey("topology.key/my").build()).build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withRequiredDuringSchedulingIgnoredDuringExecution(new PodAffinityTermBuilder().withTopologyKey("kubernetes.io/hostname").withNewLabelSelector().withMatchLabels(Map.of("database", "true")).endLabelSelector().build())
+                .endPodAntiAffinity()
+                .build();
+
+        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new RackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
+    }
+
+    @Test
+    public void testCombinedPreferredNodeAffinityWithRack() {
+        Affinity userAffinity = new AffinityBuilder()
+                .withNewPodAntiAffinity()
+                    .withRequiredDuringSchedulingIgnoredDuringExecution(new PodAffinityTermBuilder().withTopologyKey("kubernetes.io/hostname").withNewLabelSelector().withMatchLabels(Map.of("database", "true")).endLabelSelector().build())
+                .endPodAntiAffinity()
+                .withNewNodeAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(new PreferredSchedulingTermBuilder().withWeight(100).withPreference(new NodeSelectorTermBuilder().withMatchExpressions(new NodeSelectorRequirementBuilder().withOperator("Exists").withKey("topology.key/other").build()).build()).build())
+                .endNodeAffinity()
+                .build();
+
+        Affinity expectedAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(new PreferredSchedulingTermBuilder().withWeight(100).withPreference(new NodeSelectorTermBuilder().withMatchExpressions(new NodeSelectorRequirementBuilder().withOperator("Exists").withKey("topology.key/other").build()).build()).build())
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder().withMatchExpressions(new NodeSelectorRequirementBuilder().withOperator("Exists").withKey("topology.key/my").build()).build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withRequiredDuringSchedulingIgnoredDuringExecution(new PodAffinityTermBuilder().withTopologyKey("kubernetes.io/hostname").withNewLabelSelector().withMatchLabels(Map.of("database", "true")).endLabelSelector().build())
+                .endPodAntiAffinity()
+                .build();
+
+        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new RackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
+    }
+
+    @Test
+    public void testCombinedRequiredNodeAffinityWithRack() {
+        Affinity userAffinity = new AffinityBuilder()
+                .withNewPodAntiAffinity()
+                    .withRequiredDuringSchedulingIgnoredDuringExecution(new PodAffinityTermBuilder().withTopologyKey("kubernetes.io/hostname").withNewLabelSelector().withMatchLabels(Map.of("database", "true")).endLabelSelector().build())
+                .endPodAntiAffinity()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder().withMatchExpressions(new NodeSelectorRequirementBuilder().withOperator("Exists").withKey("topology.key/other").build()).build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+
+        Affinity expectedAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder().withMatchExpressions(
+                                new NodeSelectorRequirementBuilder().withOperator("Exists").withKey("topology.key/other").build(),
+                                new NodeSelectorRequirementBuilder().withOperator("Exists").withKey("topology.key/my").build()
+                        ).build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withRequiredDuringSchedulingIgnoredDuringExecution(new PodAffinityTermBuilder().withTopologyKey("kubernetes.io/hostname").withNewLabelSelector().withMatchLabels(Map.of("database", "true")).endLabelSelector().build())
+                .endPodAntiAffinity()
+                .build();
+
+        assertThat(ModelUtils.affinityWithRackLabelSelector(new PodTemplateBuilder().withAffinity(userAffinity).build(), new RackBuilder().withTopologyKey("topology.key/my").build()), is(expectedAffinity));
     }
 }

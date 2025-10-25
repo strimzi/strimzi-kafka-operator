@@ -1,0 +1,84 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assemblies:
+//
+// assembly-scheduling.adoc
+
+[id='proc-distributing-brokers-across-zones-{context}']
+= Distributing brokers across availability zones
+
+[role="_abstract"]
+To improve fault tolerance, you should distribute your Kafka nodes across multiple different availability zones (racks).
+This is typically combined with the xref:con-common-config-rack-awareness-{context}[Rack awareness] feature.
+
+This procedure provides configuration examples for the `Kafka` resource with enabled rack awareness and the pool-specific `KafkaNodePool` resources with the topology spread constraints configuration to balance pods across zones.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]  
+
+.Procedure
+
+. Configure `rack` in the `Kafka` resource and `topologySpreadConstraints` in the `KafkaNodePool` resources.
++
+Make sure the `strimzi.io/cluster` label in the `topologySpreadConstraint` `labelSelector` field is set to the name of your Kafka cluster.
++
+.Example cluster with rack awareness and topology spread constraints
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    rack:
+      topologyKey: topology.kubernetes.io/zone
+    # ...
+# ...
+---
+apiVersion: {KafkaApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: controllers
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  roles:
+    - controller
+  template:
+    pod:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              strimzi.io/cluster: my-cluster
+              strimzi.io/controller-role: "true"
+  # ...
+---
+apiVersion: {KafkaApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: brokers
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  roles:
+    - broker
+  template:
+    pod:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              strimzi.io/cluster: my-cluster
+              strimzi.io/broker-role: "true"
+  # ...
+----
+
+. Apply the changes to your custom resource configuration.

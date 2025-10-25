@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
-import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -1207,7 +1205,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             DEFAULT_POD_LABELS,
                             podAnnotationsProvider.apply(node),
                             KafkaResources.brokersServiceName(cluster),
-                            getMergedAffinity(pool),
+                            ModelUtils.affinityWithRackLabelSelector(pool.templatePod, rack),
                             ContainerUtils.listOrNull(createInitContainer(imagePullPolicy, pool)),
                             List.of(createContainer(imagePullPolicy, pool)),
                             getPodSetVolumes(node, pool.storage, pool.templatePod, isOpenShift),
@@ -1477,39 +1475,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer);
         return volumeMountList;
-    }
-
-    /**
-     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
-     *
-     * @param pool  Node pool with custom affinity configuration
-     *
-     * @return  Combined affinity
-     */
-    private Affinity getMergedAffinity(KafkaPool pool) {
-        Affinity userAffinity = pool.templatePod != null && pool.templatePod.getAffinity() != null ? pool.templatePod.getAffinity() : new Affinity();
-        AffinityBuilder builder = new AffinityBuilder(userAffinity);
-        if (rack != null) {
-            // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
-            // We add the affinity even for controller only nodes as we prefer them to be spread even if they don't directly use rack awareness
-            builder = builder
-                    .editOrNewPodAntiAffinity()
-                        .addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                            .withWeight(100)
-                            .withNewPodAffinityTerm()
-                                .withTopologyKey(rack.getTopologyKey())
-                                .withNewLabelSelector()
-                                    .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
-                                    .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, componentName)
-                                .endLabelSelector()
-                            .endPodAffinityTerm()
-                        .endPreferredDuringSchedulingIgnoredDuringExecution()
-                    .endPodAntiAffinity();
-
-            builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
-        }
-
-        return builder.build();
     }
 
     private List<EnvVar> getInitContainerEnvVars(KafkaPool pool) {
