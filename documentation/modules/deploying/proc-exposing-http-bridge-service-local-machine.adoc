@@ -2,13 +2,13 @@
 
 // Module included in the following assemblies:
 //
-// assembly-deploy-kafka-bridge.adoc
+// assembly-deploy-http-bridge.adoc
 
-[id='proc-exposing-kafka-bridge-service-local-machine-{context}']
-= Exposing the Kafka Bridge service to your local machine
+[id='proc-exposing-http-bridge-service-local-machine-{context}']
+= Exposing the HTTP Bridge service to your local machine
 
 [role="_abstract"]
-Use port forwarding to expose the Kafka Bridge service to your local machine on http://localhost:8080.
+Use port forwarding to expose the HTTP Bridge service to your local machine on http://localhost:8080.
 
 NOTE: Port forwarding is only suitable for development and testing purposes.
 
@@ -25,7 +25,7 @@ pod/kafka-consumer
 pod/my-bridge-bridge-<pod_id>
 ----
 
-. Connect to the Kafka Bridge pod on port `8080`:
+. Connect to the HTTP Bridge pod on port `8080`:
 +
 [source,shell,subs=attributes+]
 ----
@@ -34,4 +34,4 @@ kubectl port-forward pod/my-bridge-bridge-<pod_id> 8080:8080 &
 +
 NOTE: If port 8080 on your local machine is already in use, use an alternative HTTP port, such as `8008`.
 
-API requests are now forwarded from port 8080 on your local machine to port 8080 in the Kafka Bridge pod.
+API requests are now forwarded from port 8080 on your local machine to port 8080 in the HTTP Bridge pod.

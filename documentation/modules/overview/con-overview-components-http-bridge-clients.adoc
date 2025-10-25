@@ -3,9 +3,9 @@
 // Module included in the following assemblies:
 //
 // overview/overview.adoc
-// assembly-kafka-bridge-overview.adoc
+// assembly-http-bridge-overview.adoc
 
-[id='con-overview-components-kafka-bridge-clients_{context}']
+[id='con-overview-components-http-bridge-clients_{context}']
 
 = Supported clients for the Kafka Bridge
 

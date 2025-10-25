@@ -1,0 +1,16 @@
+:_mod-docs-content-type: REFERENCE
+
+// Module included in the following assemblies:
+//
+// assembly-deploy-http-bridge.adoc
+
+[id='ref-list-of-http-bridge-resources-{context}']
+= List of HTTP Bridge cluster resources
+
+[role="_abstract"]
+The following resources are created by the Cluster Operator in the Kubernetes cluster:
+
+<bridge_cluster_name>-bridge:: Deployment which is in charge to create the HTTP Bridge worker node pods.
+<bridge_cluster_name>-bridge-service:: Service which exposes the HTTP Bridge REST interface.
+<bridge_cluster_name>-bridge-config:: ConfigMap which contains the HTTP Bridge ancillary configuration and is mounted as a volume by the Kafka broker pods.
+<bridge_cluster_name>-bridge:: Pod Disruption Budget configured for the HTTP Bridge worker nodes.

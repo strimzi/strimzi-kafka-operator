@@ -1,0 +1,19 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// books-rhel/using/master.adoc
+
+[id='con-http-bridge-concepts-{context}']
+= Using the HTTP Bridge to connect with a Kafka cluster
+
+[role="_abstract"]
+You can use the HTTP Bridge API to create and manage consumers and send and receive records over HTTP rather than the native Kafka protocol.
+
+When you set up the HTTP Bridge you configure HTTP access to the Kafka cluster.
+You can then use the HTTP Bridge to produce and consume messages from the cluster, as well as performing other operations through its REST interface.
+
+[role="_additional-resources"]
+.Additional resources
+
+* For information on installing and using the HTTP Bridge, see link:{BookURLBridge}[Using the HTTP Bridge^].

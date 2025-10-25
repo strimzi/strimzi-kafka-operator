@@ -29,7 +29,7 @@ The steps to deploy Strimzi using the installation files are as follows:
 . Optionally, deploy the following Kafka components according to your requirements:
 * xref:kafka-connect-{context}[Kafka Connect]
 * xref:kafka-mirror-maker-{context}[Kafka MirrorMaker]
-* xref:kafka-bridge-{context}[Kafka Bridge]
+* xref:http-bridge-{context}[Kafka Bridge]
 
 NOTE: To run the commands in this guide, a Kubernetes user must have the rights to manage role-based access control (RBAC) and CRDs.
 
@@ -44,7 +44,7 @@ include::assembly-deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
 //Procedure to deploy Kafka MirrorMaker
 include::assembly-deploy-kafka-mirror-maker.adoc[leveloffset=+1]
 //Procedure to deploy Kafka Bridge
-include::assembly-deploy-kafka-bridge.adoc[leveloffset=+1]
+include::assembly-deploy-http-bridge.adoc[leveloffset=+1]
 //Alternative standalone deployment of Topic Operator and Cluster Operator
 include::assembly-deploy-standalone-operators.adoc[leveloffset=+1]
 

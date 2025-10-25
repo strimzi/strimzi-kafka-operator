@@ -140,7 +140,7 @@ include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector-ta
 include::../../modules/configuring/con-config-mirrormaker2-producers-consumers.adoc[leveloffset=+2]
 
 //`KafkaBridge` resource config
-include::../../modules/configuring/con-config-kafka-bridge.adoc[leveloffset=+1]
+include::../../modules/configuring/con-config-http-bridge.adoc[leveloffset=+1]
 
 //common config examples
 include::../../modules/configuring/con-common-configuration.adoc[leveloffset=+1]
