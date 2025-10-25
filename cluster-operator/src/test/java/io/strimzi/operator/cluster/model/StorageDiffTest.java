@@ -362,7 +362,7 @@ public class StorageDiffTest {
         assertThat(diff.issuesDetected(), is(true));
     }
 
-    @ParallelTest
+    @Test
     public void testVolumeAttributesChanges() {
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
         Storage persistent2 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").withVolumeAttributesClass("vac-example").build();
