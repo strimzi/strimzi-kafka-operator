@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
-import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.Container;
@@ -605,18 +603,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
-     */
-    protected Affinity getMergedAffinity() {
-        Affinity userAffinity = templatePod != null && templatePod.getAffinity() != null ? templatePod.getAffinity() : new Affinity();
-        AffinityBuilder builder = new AffinityBuilder(userAffinity);
-        if (rack != null) {
-            builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
-        }
-        return builder.build();
-    }
-
-    /**
      * Generates the StrimziPodSet for the Kafka cluster.
      * enabled.
      *
@@ -659,7 +645,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         defaultPodLabels(),
                         podAnnotations,
                         componentName,
-                        getMergedAffinity(),
+                        ModelUtils.affinityWithRackLabelSelector(templatePod, rack),
                         ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
                         List.of(createContainer(imagePullPolicy, customContainerImage)),
                         getVolumes(isOpenShift),
