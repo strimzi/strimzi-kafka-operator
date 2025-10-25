@@ -2,9 +2,9 @@
 
 // Module included in the following assemblies:
 //
-// assembly-deploy-kafka-bridge.adoc
+// assembly-deploy-http-bridge.adoc
 
-[id='ref-list-of-kafka-bridge-resources-{context}']
+[id='ref-list-of-http-bridge-resources-{context}']
 = List of HTTP Bridge cluster resources
 
 [role="_abstract"]

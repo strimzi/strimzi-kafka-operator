@@ -4,7 +4,7 @@
 //
 // // overview/overview.adoc
 
-[id="overview-components-kafka-bridge_{context}"]
+[id="overview-components-http-bridge_{context}"]
 = Kafka Bridge interface
 
 [role="_abstract"]

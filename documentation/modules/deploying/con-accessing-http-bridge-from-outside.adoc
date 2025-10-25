@@ -2,9 +2,9 @@
 
 // This assembly is included in the following assemblies:
 //
-// assembly-kafka-bridge-overview.adoc
+// assembly-http-bridge-overview.adoc
 
-[id='con-accessing-kafka-bridge-from-outside-{context}']
+[id='con-accessing-http-bridge-from-outside-{context}']
 
 = Accessing the HTTP Bridge outside of Kubernetes
 

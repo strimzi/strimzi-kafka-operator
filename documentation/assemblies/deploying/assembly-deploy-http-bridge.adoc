@@ -5,17 +5,17 @@
 // assembly-getting-started.adoc
 // deploying/assembly-deploy-tasks.adoc
 
-[id='kafka-bridge-{context}']
+[id='http-bridge-{context}']
 = Deploying HTTP Bridge
 
 [role="_abstract"]
 HTTP Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 
 //Procedure to deploy a Kafka Bridge cluster
-include::../../modules/deploying/proc-deploy-kafka-bridge.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-http-bridge.adoc[leveloffset=+1]
 //exposing the bridge to a local machine
-include::../../modules/deploying/proc-exposing-kafka-bridge-service-local-machine.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-exposing-http-bridge-service-local-machine.adoc[leveloffset=+1]
 //accessing the bridge outside the cluster
-include::../../modules/deploying/con-accessing-kafka-bridge-from-outside.adoc[leveloffset=+1]
+include::../../modules/deploying/con-accessing-http-bridge-from-outside.adoc[leveloffset=+1]
 //Resources created for Kafka Bridge
-include::../../modules/configuring/ref-list-of-kafka-bridge-resources.adoc[leveloffset=+1]
+include::../../modules/configuring/ref-list-of-http-bridge-resources.adoc[leveloffset=+1]

@@ -4,7 +4,7 @@
 //
 // assembly-config.adoc
 
-[id='con-config-kafka-bridge-{context}']
+[id='con-config-http-bridge-{context}']
 = Configuring the HTTP Bridge
 
 [role="_abstract"]

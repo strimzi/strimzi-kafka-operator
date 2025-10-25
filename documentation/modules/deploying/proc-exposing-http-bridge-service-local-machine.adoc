@@ -2,9 +2,9 @@
 
 // Module included in the following assemblies:
 //
-// assembly-deploy-kafka-bridge.adoc
+// assembly-deploy-http-bridge.adoc
 
-[id='proc-exposing-kafka-bridge-service-local-machine-{context}']
+[id='proc-exposing-http-bridge-service-local-machine-{context}']
 = Exposing the HTTP Bridge service to your local machine
 
 [role="_abstract"]

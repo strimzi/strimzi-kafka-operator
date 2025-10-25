@@ -4,7 +4,7 @@
 //
 // books-rhel/using/master.adoc
 
-[id='con-kafka-bridge-concepts-{context}']
+[id='con-http-bridge-concepts-{context}']
 = Using the HTTP Bridge to connect with a Kafka cluster
 
 [role="_abstract"]

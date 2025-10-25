@@ -2,9 +2,9 @@
 
 // Module included in the following assemblies:
 //
-// deploying/assembly_deploy-kafka-bridge.adoc
+// deploying/assembly_deploy-http-bridge.adoc
 
-[id='deploying-kafka-bridge-{context}']
+[id='deploying-http-bridge-{context}']
 = Deploying HTTP Bridge
 
 [role="_abstract"]
@@ -67,5 +67,5 @@ The deployment is successful when the `STATUS` is `Running`.
 [role="_additional-resources"]
 .Additional resources
 
-* xref:con-config-kafka-bridge-str[HTTP Bridge cluster configuration]
+* xref:con-config-http-bridge-str[HTTP Bridge cluster configuration]
 * link:{BookURLBridge}[Using the HTTP Bridge^]
