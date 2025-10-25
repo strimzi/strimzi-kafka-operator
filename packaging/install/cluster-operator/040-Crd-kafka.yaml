@@ -5396,10 +5396,8 @@ spec:
                         - ephemeral
                         - persistent-claim
                         - jbod
-                        description: "Storage type, must be either 'ephemeral', 'persistent-claim', or 'jbod'."
                       volumeAttributesClass:
                         type: string
-                        description: Specifies `VolumeAttributeClass` name for dynamic volume allocation.
                       volumes:
                         type: array
                         items:
@@ -5439,10 +5437,8 @@ spec:
                               enum:
                               - ephemeral
                               - persistent-claim
-                              description: "Storage type, must be either 'ephemeral' or 'persistent-claim'."
                             volumeAttributesClass:
                               type: string
-                              description: Specifies `VolumeAttributeClass` name for dynamic volume allocation.
                           required:
                           - type
                     required:
@@ -6952,10 +6948,8 @@ spec:
                         enum:
                         - ephemeral
                         - persistent-claim
-                        description: "Storage type, must be either 'ephemeral' or 'persistent-claim'."
                       volumeAttributesClass:
                         type: string
-                        description: Specifies `VolumeAttributeClass` name for dynamic volume allocation.
                     required:
                     - type
                   config:
