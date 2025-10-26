@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: controller
@@ -16,7 +16,7 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: broker
@@ -34,7 +34,7 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: my-cluster
@@ -69,7 +69,7 @@ spec:
         template:
           name: my-remove-brokers-rebalancing-template
 ---
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaRebalance
 metadata:
   name: my-add-brokers-rebalancing-template
@@ -78,7 +78,7 @@ metadata:
 # no goals specified, using the default goals from the Cruise Control configuration
 spec: {}
 ---
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaRebalance
 metadata:
   name: my-remove-brokers-rebalancing-template
