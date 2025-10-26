@@ -39,7 +39,6 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,10 +53,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 @ExtendWith(VertxExtension.class)
 public class JbodStorageMockTest {
@@ -90,6 +93,7 @@ public class JbodStorageMockTest {
                 .withPodController()
                 .withServiceController()
                 .withDeletionController()
+                .withPvcController()
                 .build();
         mockKube.start();
         client = mockKube.client();
@@ -190,7 +194,7 @@ public class JbodStorageMockTest {
                                     .filter(pvc -> pvc.getMetadata().getName().equals(expectedPvcName))
                                     .collect(Collectors.toList());
                             assertThat("Exactly one pvc should have the name " + expectedPvcName + " in :\n" + pvcs,
-                                    matchingPvcs, Matchers.hasSize(1));
+                                    matchingPvcs, hasSize(1));
 
                             PersistentVolumeClaim pvc = matchingPvcs.get(0);
                             boolean isDeleteClaim = ((PersistentClaimStorage) volume).isDeleteClaim();
@@ -318,6 +322,78 @@ public class JbodStorageMockTest {
                 assertThat(pvcsNames, is(expectedPvcsWithUpdatedJbodStorageVolume));
                 async.flag();
             })));
+    }
+
+    @Test
+    public void testReconcileWithUpdateVolumeAttributeClass(VertxTestContext context) {
+        assertThat(volumes.get(0), is(instanceOf(PersistentClaimStorage.class)));
+        PersistentClaimStorage storage = (PersistentClaimStorage) volumes.get(0);
+        storage.setVolumeAttributesClass("vac-example");
+        volumes.set(0, storage);
+
+        KafkaNodePool pool = new KafkaNodePoolBuilder(kafkaNodePool)
+            .editSpec()
+                .withNewJbodStorage()
+                    .withVolumes(volumes)
+                .endJbodStorage()
+            .endSpec()
+            .build();
+
+        Set<String> expectedPvcs = expectedPvcs(kafkaNodePool);
+
+        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    List<PersistentVolumeClaim> pvcs = getPvcs();
+                    Set<String> pvcsNames = pvcs.stream().map(pvc -> pvc.getMetadata().getName())
+                        .collect(Collectors.toSet());
+                    assertThat(pvcsNames, is(expectedPvcs));
+                })))
+                .compose(v -> {
+                    client.persistentVolumeClaims()
+                        .waitUntilCondition(pvc -> "Bound".equals(pvc.getStatus().getPhase()),
+                            5, TimeUnit.SECONDS);
+                    Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName(NODE_POOL_NAME).patch(pool);
+                    return operator.reconcile(new Reconciliation("vac-added-trigger", Kafka.RESOURCE_KIND, namespace, NAME));
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    List<PersistentVolumeClaim> pvcs = getPvcs();
+                    Set<String> vacPvc = pvcs.stream()
+                        .filter(pvc -> "vac-example".equals(pvc.getSpec().getVolumeAttributesClassName()))
+                        .map(pvc -> pvc.getMetadata().getName())
+                        .collect(Collectors.toSet());
+                    assertThat(vacPvc, hasSize(3));
+                    assertThat(vacPvc, hasItem("data-0-my-cluster-mixed-0"));
+                    assertThat(vacPvc, hasItem("data-0-my-cluster-mixed-1"));
+                    assertThat(vacPvc, hasItem("data-0-my-cluster-mixed-2"));
+                })))
+                .compose(v -> {
+                    storage.setVolumeAttributesClass("vac-new");
+                    volumes.set(0, storage);
+                    KafkaNodePool pool1 = new KafkaNodePoolBuilder(pool)
+                        .editSpec()
+                            .withNewJbodStorage()
+                                .withVolumes(volumes)
+                            .endJbodStorage()
+                        .endSpec()
+                        .build();
+                    client.persistentVolumeClaims()
+                        .waitUntilCondition(pvc -> "Bound".equals(pvc.getStatus().getPhase()),
+                            5, TimeUnit.SECONDS);
+                    Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName(NODE_POOL_NAME).patch(pool1);
+                    return operator.reconcile(new Reconciliation("vac-updated-trigger", Kafka.RESOURCE_KIND, namespace, NAME));
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    List<PersistentVolumeClaim> pvcs = getPvcs();
+                    Set<String> vacPvc = pvcs.stream()
+                        .filter(pvc -> "vac-new".equals(pvc.getSpec().getVolumeAttributesClassName()))
+                        .map(pvc -> pvc.getMetadata().getName())
+                        .collect(Collectors.toSet());
+                    assertThat(vacPvc, hasSize(3));
+                    assertThat(vacPvc, hasItem("data-0-my-cluster-mixed-0"));
+                    assertThat(vacPvc, hasItem("data-0-my-cluster-mixed-1"));
+                    assertThat(vacPvc, hasItem("data-0-my-cluster-mixed-2"));
+                    context.completeNow();
+                })));
     }
 
     private Set<String> expectedPvcs(KafkaNodePool nodePool) {
