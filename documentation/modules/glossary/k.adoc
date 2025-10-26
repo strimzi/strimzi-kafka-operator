@@ -9,15 +9,15 @@ A custom resource for deploying and configuring a Kafka cluster, including setti
 
 For more information, see the link:{BookURLConfiguring}#type-Kafka-reference[`Kafka` schema reference^].
 
-== Kafka Bridge
-[id="glossary-kafka-bridge_{context}"]
+== HTTP Bridge
+[id="glossary-http-bridge_{context}"]
 Provides a RESTful interface that allows HTTP-based clients to interact with a Kafka cluster.
 
-For more information, see link:{BookURLBridge}[Using the Kafka Bridge^].
+For more information, see link:{BookURLBridge}[Using the HTTP Bridge^].
 
 == KafkaBridge (custom resource)
 [id="glossary-kafkabridge-cr_{context}"]
-A custom resource used to deploy and configure a Kafka Bridge instance, specifying replicas, authentication, and connection details.
+A custom resource used to deploy and configure a HTTP Bridge instance, specifying replicas, authentication, and connection details.
 
 For more information, see the link:{BookURLConfiguring}#type-KafkaBridge-reference[`KafkaBridge` schema reference^].
 
