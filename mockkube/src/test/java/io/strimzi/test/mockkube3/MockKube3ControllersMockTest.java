@@ -54,6 +54,7 @@ public class MockKube3ControllersMockTest {
                 .withPodController()
                 .withServiceController()
                 .withDeletionController()
+                .withPvcController()
                 .build();
         mockKube.start();
         client = mockKube.client();
@@ -207,6 +208,38 @@ public class MockKube3ControllersMockTest {
 
         PersistentVolumeClaim createdPvc = client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName).get();
         assertThat(createdPvc, is(notNullValue()));
+
+        client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
+        client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName).waitUntilCondition(Objects::isNull, 10_000, TimeUnit.MILLISECONDS);
+        assertThat(client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName).get(), CoreMatchers.is(nullValue()));
+    }
+
+    @Test
+    public void testPvcController() {
+        String pvcName = "my-pvc";
+
+        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
+                .withNewMetadata()
+                    .withNamespace(namespace)
+                    .withName(pvcName)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewResources()
+                        .withRequests(singletonMap("storage", new Quantity("100Gi")))
+                    .endResources()
+                    .withAccessModes("ReadWriteOnce")
+                .endSpec()
+                .build();
+
+        client.persistentVolumeClaims().inNamespace(namespace).resource(pvc).create();
+
+        client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName)
+            .waitUntilCondition(cPvc -> "Bound".equals(cPvc.getStatus().getPhase()), 5, TimeUnit.SECONDS);
+
+        PersistentVolumeClaim createdPvc = client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName).get();
+        assertThat(createdPvc, is(notNullValue()));
+        assertThat(createdPvc.getStatus(), is(notNullValue()));
+        assertThat(createdPvc.getStatus().getPhase(), is("Bound"));
 
         client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
         client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName).waitUntilCondition(Objects::isNull, 10_000, TimeUnit.MILLISECONDS);
