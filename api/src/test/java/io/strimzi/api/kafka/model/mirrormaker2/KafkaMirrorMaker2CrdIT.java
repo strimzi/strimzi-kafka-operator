@@ -33,6 +33,11 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaMirrorMaker2V1() {
+        createDeleteCustomResource("KafkaMirrorMaker2-v1.yaml");
+    }
+
+    @Test
     void testKafkaMirrorMaker2Minimal() {
         createDeleteCustomResource("KafkaMirrorMaker2-minimal.yaml");
     }
@@ -101,6 +106,33 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     @Test
     void testKafkaMirrorMaker2WithDnsConfig() {
         createDeleteCustomResource("KafkaMirrorMaker2-with-dnsConfig.yaml");
+    }
+
+    @Test
+    void testKafkaMirrorMaker2V1NoSpec() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaMirrorMaker2-v1-no-spec.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec");
+    }
+
+    @Test
+    void testKafkaMirrorMaker2V1MissingRequiredTopLevel() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaMirrorMaker2-v1-missing-required-top-level.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "source", "target");
+    }
+
+    @Test
+    void testKafkaMirrorMaker2V1MissingRequiredLowerLevel() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaMirrorMaker2-v1-missing-required-lower-level.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "groupId", "configStorageTopic", "statusStorageTopic", "offsetStorageTopic", "alias");
     }
 
     @BeforeAll

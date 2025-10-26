@@ -1,0 +1,4 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaConnect
+metadata:
+  name: test-kafka-connect

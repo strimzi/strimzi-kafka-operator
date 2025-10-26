@@ -41,8 +41,23 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaTopicV1() {
+        createDeleteCustomResource("KafkaTopic-v1.yaml");
+    }
+
+
+    @Test
     void testKafkaTopicMinimal() {
         createDeleteCustomResource("KafkaTopic-minimal.yaml");
+    }
+
+    @Test
+    void testKafkaTopicV1NoSpec() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaTopic-v1-no-spec.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec");
     }
 
     @BeforeAll

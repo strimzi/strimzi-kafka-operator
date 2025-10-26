@@ -41,8 +41,22 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaUserV1() {
+        createDeleteCustomResource("KafkaUser-v1.yaml");
+    }
+
+    @Test
     void testKafkaUserMinimal() {
         createDeleteCustomResource("KafkaUser-minimal.yaml");
+    }
+
+    @Test
+    void testKafkaUserV1NoSpec() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaUser-v1-no-spec.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec");
     }
 
     @BeforeAll
