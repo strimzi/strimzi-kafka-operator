@@ -101,7 +101,7 @@ spec:
                       description: "Storage type, must be either 'ephemeral', 'persistent-claim', or 'jbod'."
                     volumeAttributesClass:
                       type: string
-                      description: Specifies `VolumeAttributeClass` name for dynamic volume allocation.
+                      description: Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.
                     volumes:
                       type: array
                       items:
@@ -142,7 +142,7 @@ spec:
                             description: "Storage type, must be either 'ephemeral' or 'persistent-claim'."
                           volumeAttributesClass:
                             type: string
-                            description: Specifies `VolumeAttributeClass` name for dynamic volume allocation.
+                            description: Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.
                         required:
                           - type
                       description: List of volumes as Storage objects representing the JBOD disks array.
@@ -1394,7 +1394,7 @@ spec:
                       description: "Storage type, must be either 'ephemeral', 'persistent-claim', or 'jbod'."
                     volumeAttributesClass:
                       type: string
-                      description: Specifies `VolumeAttributeClass` name for dynamic volume allocation.
+                      description: Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.
                     volumes:
                       type: array
                       items:
@@ -1447,7 +1447,7 @@ spec:
                             description: "Storage type, must be either 'ephemeral' or 'persistent-claim'."
                           volumeAttributesClass:
                             type: string
-                            description: Specifies `VolumeAttributeClass` name for dynamic volume allocation.
+                            description: Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.
                         required:
                           - type
                       description: List of volumes as Storage objects representing the JBOD disks array.

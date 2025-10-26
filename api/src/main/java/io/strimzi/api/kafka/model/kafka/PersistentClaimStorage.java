@@ -127,7 +127,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
         this.overrides = overrides;
     }
 
-    @Description("Specifies `VolumeAttributeClass` name for dynamic volume allocation.")
+    @Description("Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.")
     public String getVolumeAttributesClass() {
         return this.volumeAttributesClass;
     }
