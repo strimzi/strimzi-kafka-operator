@@ -148,16 +148,16 @@
 :DockerImageUser: 1001
 
 // API Versions current
-:ApiVersion: v1beta2
-:KafkaApiVersion: kafka.strimzi.io/v1beta2
-:KafkaNodePoolApiVersion: kafka.strimzi.io/v1beta2
-:KafkaConnectApiVersion: kafka.strimzi.io/v1beta2
-:KafkaConnectorApiVersion: kafka.strimzi.io/v1beta2
-:KafkaTopicApiVersion: kafka.strimzi.io/v1beta2
-:KafkaUserApiVersion: kafka.strimzi.io/v1beta2
-:KafkaMirrorMaker2ApiVersion: kafka.strimzi.io/v1beta2
-:KafkaRebalanceApiVersion: kafka.strimzi.io/v1beta2
-:KafkaBridgeApiVersion: kafka.strimzi.io/v1beta2
+:ApiVersion: v1
+:KafkaApiVersion: kafka.strimzi.io/v1
+:KafkaNodePoolApiVersion: kafka.strimzi.io/v1
+:KafkaConnectApiVersion: kafka.strimzi.io/v1
+:KafkaConnectorApiVersion: kafka.strimzi.io/v1
+:KafkaTopicApiVersion: kafka.strimzi.io/v1
+:KafkaUserApiVersion: kafka.strimzi.io/v1
+:KafkaMirrorMaker2ApiVersion: kafka.strimzi.io/v1
+:KafkaRebalanceApiVersion: kafka.strimzi.io/v1
+:KafkaBridgeApiVersion: kafka.strimzi.io/v1
 
 // Section enablers
 :Section:
