@@ -215,7 +215,7 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
         for (AlterConfigOp entry : nodeConfigDiff) {
             if (isScope(entry.configEntry(), Scope.READ_ONLY)) {
                 result = false;
-                LOGGER.infoCr(reconciliation, "Configuration can't be updated dynamically due to: {}", entry);
+                LOGGER.infoCr(reconciliation, "Configuration can't be updated dynamically because its scope is ready only: {}", entry);
                 break;
             }
         }
