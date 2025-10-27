@@ -140,6 +140,18 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         );
     }
 
+    @Test
+    public void testKafkaConnectV1WrongTracing() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnect-v1-wrong-tracing.yaml"));
+
+        assertThat(exception.getMessage(), allOf(
+                CoreMatchers.containsStringIgnoringCase("Unsupported value: \"jaeger\""),
+                CoreMatchers.containsStringIgnoringCase("supported values: \"opentelemetry\""))
+        );
+    }
+
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();

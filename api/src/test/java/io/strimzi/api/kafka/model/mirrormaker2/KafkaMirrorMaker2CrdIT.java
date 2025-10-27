@@ -10,10 +10,12 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -133,6 +135,18 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
                 () -> createDeleteCustomResource("KafkaMirrorMaker2-v1-missing-required-lower-level.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "groupId", "configStorageTopic", "statusStorageTopic", "offsetStorageTopic", "alias");
+    }
+
+    @Test
+    public void testKafkaMirrorMaker2V1WrongTracing() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaMirrorMaker2-v1-wrong-tracing.yaml"));
+
+        assertThat(exception.getMessage(), allOf(
+                CoreMatchers.containsStringIgnoringCase("Unsupported value: \"jaeger\""),
+                CoreMatchers.containsStringIgnoringCase("supported values: \"opentelemetry\""))
+        );
     }
 
     @BeforeAll
