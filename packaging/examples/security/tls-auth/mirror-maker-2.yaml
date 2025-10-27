@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: source
@@ -19,7 +19,7 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: cluster-a
@@ -47,7 +47,7 @@ spec:
     userOperator: {}
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: target
@@ -68,7 +68,7 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: cluster-b
@@ -96,7 +96,7 @@ spec:
     userOperator: {}
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
   name: cluster-a-user
@@ -135,7 +135,7 @@ spec:
           - Describe
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
   name: cluster-b-user
@@ -210,7 +210,7 @@ spec:
           - Describe
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
