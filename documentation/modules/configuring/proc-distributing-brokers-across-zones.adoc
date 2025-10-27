@@ -21,7 +21,7 @@ This procedure provides configuration examples for the `Kafka` resource with ena
 
 . Configure `rack` in the `Kafka` resource and `topologySpreadConstraints` in the `KafkaNodePool` resources.
 +
-Make sure the `strimzi.io/cluster` label in the `topologySpreadConstraint` `labelSelector` field is set to the name of your Kafka cluster.
+Make sure the `strimzi.io/cluster` label in the `topologySpreadConstraint[].labelSelector` fields is set to the name of your Kafka cluster.
 +
 .Example cluster with rack awareness and topology spread constraints
 [source,yaml,subs="+attributes"]
