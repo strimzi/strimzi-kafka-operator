@@ -213,7 +213,7 @@ public class ModelUtils {
                 && userAffinity.getNodeAffinity() != null
                 && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution() != null
                 && userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms() != null) {
-                // User has specified some Node Selector Terms => we should enhance them by injecting out own selector to the matchExpressions
+                // User has specified some Node Selector Terms => we should enhance them by injecting our own selector to the matchExpressions
                 List<NodeSelectorTerm> oldTerms = userAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms();
                 List<NodeSelectorTerm> enhancedTerms = new ArrayList<>(oldTerms.size());
 
