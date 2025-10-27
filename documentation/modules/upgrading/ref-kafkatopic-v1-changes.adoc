@@ -1,0 +1,14 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-kafkatopic-v1-changes-{context}']
+= KafkaTopic
+
+[role="_abstract"]
+Changes required for the `KafkaTopic` custom resource in the `v1` API.
+
+== Manual changes required
+
+The conversion tool does not apply the following updates. 
+You must make these changes manually to ensure compatibility:
+
+* Ensure the `.spec` section is present (required).

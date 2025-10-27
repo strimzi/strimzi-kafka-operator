@@ -1,0 +1,24 @@
+:_mod-docs-content-type: ASSEMBLY
+
+[id='assembly-update-resources-v1-{context}']
+= Updating custom resources for the v1 API
+
+[role="_abstract"]
+Use this section to review the configuration changes introduced in the Strimzi `v1` API and determine which updates are required for your deployment.
+
+The reference information describes updates for each Strimzi custom resource type.  
+Some updates are applied automatically by the API conversion tool, while others require manual editing of custom resources.
+
+The following sections describe the manual and automatic updates required for each Strimzi custom resource type.
+
+include::../../modules/upgrading/con-understanding-v1-api-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-kafka-v1-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-kafkaconnect-v1-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-kafkamirrormaker2-v1-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-kafkabridge-v1-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-kafkaconnector-v1-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-kafkarebalance-v1-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-kafkanodepool-v1-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-kafkatopic-v1-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-kafkauser-v1-changes.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-strimzipodset-v1-changes.adoc[leveloffset=+1]

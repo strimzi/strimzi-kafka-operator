@@ -1,0 +1,42 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-kafkamirrormaker2-v1-changes-{context}']
+= KafkaMirrorMaker2
+
+[role="_abstract"]
+Changes required for the `KafkaMirrorMaker2` custom resource in the `v1` API.
+
+== Manual changes required
+
+The conversion tool does not apply the following updates. 
+You must make these changes manually to ensure compatibility:
+
+* Ensure the `.spec` section is present (required).
+* Replace unsupported authentication `type: oauth` for source or target Kafka clusters with `type: custom`.
+* Remove the `.spec.externalConfiguration` property. Use the `.spec.template` section to add custom volumes or environment variables.
+
+== Automatic changes supported
+
+The following updates are applied automatically by the conversion tool during conversion.  
+If the conversion tool is not used, you can apply the same changes manually:
+
+* Adds the `.spec.replicas` property if missing.
+* Removes the `.spec.template.deployment` property.
+* Removes unsupported tracing `type: jaeger`.
+* Removes the heartbeat connector property: `.spec.mirrors[].heartbeatConnector`.
+* Updates connector pause handling: removes `.spec.mirrors[].connectors[].pause`. 
+If `pause: true` was set, it is converted to `state: paused`.
+* Renames exclude pattern properties:
+** `.spec.mirrors[].topicBlacklistPattern` to `.spec.mirrors[].topicsExcludePattern`
+** `.spec.mirrors[].groupBlacklistPattern` to `.spec.mirrors[].groupsExcludePattern`
+* Replaces cluster properties:
+** Removes `.spec.connectCluster`, `.spec.clusters`, `.spec.mirrors[].sourceCluster`, and `.spec.mirrors[].targetCluster`.
+** Configures the target and sources using `.spec.target` and `.spec.mirrors[].source`.
+* Adds the following required properties and sets them from existing configuration or default values:
+** `.spec.groupId`: set from `.spec.config.group.id`, or default to `connect-cluster`.
+** `.spec.configStorageTopic`: set from `.spec.config.config.storage.topic`, or default to `connect-cluster-configs`.
+** `.spec.offsetStorageTopic`: set from `.spec.config.offset.storage.topic`, or default to `connect-cluster-offsets`.
+** `.spec.statusStorageTopic`: set from `.spec.config.status.storage.topic`, or default to `connect-cluster-status`.
+
+
+NOTE: After setting the target-side properties, remove the corresponding entries from the target `config`.
