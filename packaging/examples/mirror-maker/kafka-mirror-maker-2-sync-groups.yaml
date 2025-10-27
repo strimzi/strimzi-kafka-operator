@@ -3,7 +3,7 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 4.1.0
+  version: 4.1.1
   replicas: 1
   target:
     alias: cluster-b
