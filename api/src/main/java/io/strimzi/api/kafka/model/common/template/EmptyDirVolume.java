@@ -35,7 +35,8 @@ public class EmptyDirVolume implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties;
 
     @Description("Medium represents the type of storage medium should back this volume. " +
-            "Valid values are unset or `Memory`.")
+            "Valid values are unset or `Memory`. " +
+            "When not set, it will use the node's default medium.")
     public EmptyDirMedium getMedium() {
         return medium;
     }

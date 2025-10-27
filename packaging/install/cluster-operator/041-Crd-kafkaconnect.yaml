@@ -998,7 +998,7 @@ spec:
                                   type: string
                                   enum:
                                   - Memory
-                                  description: Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
+                                  description: "Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`. When not set, it will use the node's default medium."
                                 sizeLimit:
                                   type: string
                                   pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
@@ -2053,7 +2053,7 @@ spec:
                                   type: string
                                   enum:
                                   - Memory
-                                  description: Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
+                                  description: "Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`. When not set, it will use the node's default medium."
                                 sizeLimit:
                                   type: string
                                   pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
@@ -3669,7 +3669,7 @@ spec:
                                   type: string
                                   enum:
                                   - Memory
-                                  description: Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
+                                  description: "Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`. When not set, it will use the node's default medium."
                                 sizeLimit:
                                   type: string
                                   pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
@@ -4724,7 +4724,7 @@ spec:
                                   type: string
                                   enum:
                                   - Memory
-                                  description: Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
+                                  description: "Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`. When not set, it will use the node's default medium."
                                 sizeLimit:
                                   type: string
                                   pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"

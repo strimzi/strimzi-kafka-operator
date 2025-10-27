@@ -1353,7 +1353,7 @@ Used in: xref:type-AdditionalVolume-{context}[`AdditionalVolume`]
 |Property |Property type |Description
 |medium
 |string (one of [Memory])
-|Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`.
+|Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`. When not set, it will use the node's default medium.
 |sizeLimit
 |string
 |The total amount of local storage required for this EmptyDir volume (for example 1Gi).
