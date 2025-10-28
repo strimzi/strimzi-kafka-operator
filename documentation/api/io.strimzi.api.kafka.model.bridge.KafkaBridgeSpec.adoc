@@ -10,7 +10,7 @@ Configuration options relate to:
 * Producer configuration
 * HTTP configuration
 
-[id='property-kafka-bridge-logging-{context}']
+[id='property-http-bridge-logging-{context}']
 = Logging
 
 Kafka Bridge has its own preconfigured loggers:

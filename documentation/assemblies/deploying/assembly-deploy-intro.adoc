@@ -31,7 +31,7 @@ include::assembly-deploy-intro-custom-resources.adoc[leveloffset=+1]
 //operators
 include::assembly-deploy-intro-operators.adoc[leveloffset=+1]
 //info on kafka bridge
-include::../../modules/deploying/con-kafka-bridge-concepts.adoc[leveloffset=+1]
+include::../../modules/deploying/con-http-bridge-concepts.adoc[leveloffset=+1]
 //info on FIPS
 include::../../modules/deploying/con-fips-support.adoc[leveloffset=+1]
 //formatting conventions used in guide
