@@ -20,6 +20,7 @@
 * New feature gate `UseConnectBuildWithBuildah` (disabled by default) for running the Connect Build feature with Buildah instead of Kaniko on Kubernetes - according to [Strimzi Proposal #114](https://github.com/strimzi/proposals/blob/main/114-use-buildah-instead-of-kaniko.md).
 * New field `spec.version` in the `KafkaConnecter` custom resource, and new `version` fields for each connector under `spec.mirrors[]` in the `KafkaMirrorMaker2` custom resource for configuring the desired version of a connector.
 * New field `.volumeAttributesClass` for `persistent-claim` type Storage in `Kafka` and `KafkaNodePool` custom resource. Enables configuring `VolumeAttributesClass` for `PersistentVolumeClaim`s available since Kubernetes v1.34.
+* Update OAuth library to 0.17.1 to fix `KeycloakAuthorizer` issue on Kafka 4.1.0
 
 ### Major changes, deprecations, and removals
 
