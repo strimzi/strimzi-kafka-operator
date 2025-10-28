@@ -1,0 +1,18 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaConnect
+metadata:
+  name: test-kafka-connect
+spec:
+  bootstrapServers: kafka:9092
+  tls:
+    trustedCertificates:
+      - secretName: my-secret
+        certificate: ca.crt
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-user-secret
+      key: user.key
+      certificate: user.crt
+  config:
+    name: bar

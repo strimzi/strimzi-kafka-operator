@@ -1,0 +1,4 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaBridge
+metadata:
+  name: test-kafka-bridge

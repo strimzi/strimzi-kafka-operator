@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,11 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaBridgeScaling() {
         createScaleDelete(KafkaBridge.class, "KafkaBridge.yaml");
+    }
+
+    @Test
+    void testKafkaBridgeV1() {
+        createDeleteCustomResource("KafkaBridge-v1.yaml");
     }
 
     @Test
@@ -116,6 +122,48 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaBridgeWithMetrics() {
         createDeleteCustomResource("KafkaBridge-with-metrics.yaml");
+    }
+
+    @Test
+    void testKafkaBridgeV1NoSpec() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaBridge-v1-no-spec.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec");
+    }
+
+    @Test
+    void testKafkaBridgeV1NoReplicas() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaBridge-v1-no-replicas.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "replicas");
+    }
+
+    @Test
+    public void testKafkaBridgeV1WrongAuth() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaBridge-v1-wrong-auth.yaml"));
+
+        assertThat(exception.getMessage(), allOf(
+                CoreMatchers.containsStringIgnoringCase("Unsupported value: \"oauth\""),
+                CoreMatchers.containsStringIgnoringCase("supported values: \"tls\", \"scram-sha-256\", \"scram-sha-512\", \"plain\", \"custom\""))
+        );
+    }
+
+    @Test
+    public void testKafkaBridgeV1WrongTracing() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaBridge-v1-wrong-tracing.yaml"));
+
+        assertThat(exception.getMessage(), allOf(
+                CoreMatchers.containsStringIgnoringCase("Unsupported value: \"jaeger\""),
+                CoreMatchers.containsStringIgnoringCase("supported values: \"opentelemetry\""))
+        );
     }
 
     @BeforeAll
