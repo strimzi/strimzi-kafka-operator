@@ -289,25 +289,25 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
                     .filter(configEntry -> configEntry.name().equals(pathValueWithoutSlash))
                     .findFirst();
 
-            boolean logConfigDiff = false;
+            boolean isConfigUpdated = false;
             String op = d.get("op").asText();
             if (optEntry.isPresent()) {
                 ConfigEntry entry = optEntry.get();
                 if ("remove".equals(op)) {
-                    logConfigDiff = removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry);
+                    isConfigUpdated = removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry);
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    logConfigDiff = updateOrAdd(entry.name(), configModel, desiredMap, updatedCE);
+                    isConfigUpdated = updateOrAdd(entry.name(), configModel, desiredMap, updatedCE);
                 }
             } else {
                 if ("add".equals(op)) {
                     // entry is not in the current, it is added
-                    logConfigDiff = updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE);
+                    isConfigUpdated = updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE);
                 }
             }
 
-            // Log config difference only if they are not ignorable or custom as they always contain different values and are not dynamically updated, logging them causes very noisy log output.
-            if (logConfigDiff) {
+            // Log only if a config is getting updated, otherwise ignorable and custom configs produces very noisy log output as they always have different desired and current values.
+            if (isConfigUpdated) {
                 LOGGER.debugCr(reconciliation, "Kafka Broker {} Config Differs : {}", nodeRef.nodeId(), d);
                 LOGGER.debugCr(reconciliation, "Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
                 LOGGER.debugCr(reconciliation, "Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
