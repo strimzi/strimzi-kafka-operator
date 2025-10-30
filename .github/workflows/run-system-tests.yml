@@ -173,13 +173,6 @@ jobs:
           restore-keys: |
             maven-
 
-      - name: Clone test-frame and build
-        run: |
-          git clone -b handle-exceptions-delete-resources --single-branch https://github.com/skodjob/test-frame.git /tmp
-          cd /tmp/test-frame
-          mvn clean install -DskipTests
-          cd ${{ github.workspace }}
-
       # Build Strimzi without images => used when running the STs against releases or release candidates where the images
       # are already built, and we need only the Java build
       - name: Build Strimzi Java code

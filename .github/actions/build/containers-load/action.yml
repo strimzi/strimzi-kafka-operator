@@ -13,6 +13,14 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Clone test-frame and build
+      shell: bash
+      run: |
+        git clone -b handle-exceptions-delete-resources --single-branch https://github.com/skodjob/test-frame.git /tmp/test-frame
+        cd /tmp/test-frame
+        mvn clean install -DskipTests
+        cd ${{ github.workspace }}
+
     - name: "Untar the ${{ inputs.architecture }} containers"
       shell: bash
       run: tar -xvf containers-${{ inputs.architecture }}.tar
