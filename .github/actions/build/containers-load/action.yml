@@ -18,6 +18,7 @@ runs:
       run: |
         git clone -b handle-exceptions-delete-resources --single-branch https://github.com/skodjob/test-frame.git /tmp/test-frame
         cd /tmp/test-frame
+        mvn versions:set -DnewVersion=9.999.9
         mvn clean install -DskipTests
         cd ${{ github.workspace }}
 
