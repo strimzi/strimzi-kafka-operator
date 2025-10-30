@@ -69,7 +69,7 @@ If you want to get in touch with us first before contributing, you can use:
 ## License
 Strimzi is licensed under the [Apache License](./LICENSE), Version 2.0
 
-## Architecture support
+## Community Testing
 
 ### Linux on IBM Z (s390x) :
 
