@@ -49,7 +49,7 @@ Resources:
 You can contribute by:
 - Raising issues you find while using Strimzi
 - Fixing issues by opening Pull Requests
-- Improving the documentation
+- Improving Strimzi documentation
 - Talking about Strimzi
 
 All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi-kafka-operator/issues). Issues which 
