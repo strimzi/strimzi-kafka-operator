@@ -114,6 +114,7 @@ public class PersistentVolumeClaimUtils {
                         .withRequests(requests)
                     .endResources()
                     .withStorageClassName(storage.getStorageClass())
+                    .withVolumeAttributesClassName(storage.getVolumeAttributesClass())
                     .withSelector(storageSelector)
                     .withVolumeMode("Filesystem")
                 .endSpec()

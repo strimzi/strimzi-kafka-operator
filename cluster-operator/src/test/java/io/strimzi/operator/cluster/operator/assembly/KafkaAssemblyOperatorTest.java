@@ -245,7 +245,13 @@ public class KafkaAssemblyOperatorTest {
                     .withSize("123")
                     .withStorageClass("foo")
                     .withDeleteClaim(true)
-                .build()
+                .build(),
+            new PersistentClaimStorageBuilder()
+                    .withSize("123")
+                    .withStorageClass("foo")
+                    .withVolumeAttributesClass("fooVac")
+                    .withDeleteClaim(true)
+                .build(),
         };
 
         List<Map<String, Object>> configs = asList(

@@ -26,7 +26,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonPropertyOrder({"id", "type", "size", "kraftMetadata", "class", "selector", "deleteClaim", "overrides"})
+@JsonPropertyOrder({"id", "type", "size", "kraftMetadata", "class", "volumeAttributesClass", "selector", "deleteClaim", "overrides"})
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -36,6 +36,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
     private Map<String, String> selector;
     private boolean deleteClaim;
     private List<PersistentClaimStorageOverride> overrides;
+    private String volumeAttributesClass;
 
     @Description("Must be `" + TYPE_PERSISTENT_CLAIM + "`")
     @Override
@@ -124,5 +125,14 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     public void setOverrides(List<PersistentClaimStorageOverride> overrides) {
         this.overrides = overrides;
+    }
+
+    @Description("Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.")
+    public String getVolumeAttributesClass() {
+        return this.volumeAttributesClass;
+    }
+
+    public void setVolumeAttributesClass(String volumeAttributesClass) {
+        this.volumeAttributesClass = volumeAttributesClass;
     }
 }
