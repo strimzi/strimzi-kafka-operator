@@ -20,6 +20,8 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpecBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
@@ -386,10 +388,14 @@ public class CustomOauthPlainST extends OauthAbstractST {
                 "oauth.read.timeout.seconds", Integer.toString(READ_TIMEOUT_S),
                 "oauth.enable.metrics", "true"
         ));
-        KafkaMirrorMaker2ClusterSpec targetClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
+        KafkaMirrorMaker2TargetClusterSpec targetClusterWithOauth = new KafkaMirrorMaker2TargetClusterSpecBuilder()
                 .withAlias(testStorage.getTargetClusterName())
                 .withConfig(connectorConfig)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
+                .withGroupId("mirrormaker2-cluster")
+                .withConfigStorageTopic("mirrormaker2-cluster-configs")
+                .withOffsetStorageTopic("mirrormaker2-cluster-offsets")
+                .withStatusStorageTopic("mirrormaker2-cluster-status")
                 .withNewKafkaClientAuthenticationCustom()
                     .withSasl(true)
                     .withConfig(Map.of(
@@ -405,9 +411,9 @@ public class CustomOauthPlainST extends OauthAbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafkaSourceClusterName, testStorage.getTargetClusterName(), 1, false)
             .editSpec()
                 .withMetricsConfig(OAUTH_METRICS)
-                .withClusters(sourceClusterWithOauth, targetClusterWithOauth)
+                .withTarget(targetClusterWithOauth)
                 .editFirstMirror()
-                    .withSourceCluster(kafkaSourceClusterName)
+                    .withSource(sourceClusterWithOauth)
                 .endMirror()
                 .withNewTemplate()
                     .withNewConnectContainer()

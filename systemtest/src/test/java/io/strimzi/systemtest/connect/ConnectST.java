@@ -956,10 +956,10 @@ class ConnectST extends AbstractST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editSpec()
-                .addToConfig("group.id", connectClusterName)
-                .addToConfig("offset.storage.topic", connectClusterName + "-offsets")
-                .addToConfig("config.storage.topic", connectClusterName + "-config")
-                .addToConfig("status.storage.topic", connectClusterName + "-status")
+                .withGroupId(connectClusterName)
+                .withConfigStorageTopic(connectClusterName + "-config")
+                .withOffsetStorageTopic(connectClusterName + "-offsets")
+                .withStatusStorageTopic(connectClusterName + "-status")
             .endSpec()
             .build());
 
