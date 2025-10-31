@@ -8,6 +8,7 @@ They verify user authentication mechanisms (TLS, SCRAM-SHA-512, external TLS), a
 <!-- generated part -->
 **Tests:**
 - [testCreatingUsersWithSecretPrefix](../io.strimzi.systemtest.operators.user.UserST.md)
+- [testScalability](../io.strimzi.systemtest.performance.UserOperatorScalabilityPerformance.md)
 - [testScramUserWithQuotas](../io.strimzi.systemtest.operators.user.UserST.md)
 - [testTlsExternalUser](../io.strimzi.systemtest.operators.user.UserST.md)
 - [testTlsExternalUserWithQuotas](../io.strimzi.systemtest.operators.user.UserST.md)
