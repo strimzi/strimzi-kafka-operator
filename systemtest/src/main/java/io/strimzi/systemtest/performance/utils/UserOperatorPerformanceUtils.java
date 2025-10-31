@@ -124,7 +124,8 @@ public class UserOperatorPerformanceUtils {
     public static void createAllUsersInListWithWait(final TestStorage testStorage, final List<KafkaUser> listOfUsers, final String usersPrefix) {
         LOGGER.info("Creating {} KafkaUsers", listOfUsers.size());
 
-        // Synchronize resource creation to prevent race condition when multiple threads
+        // TODO: this should be fixed in `test-frame`
+        //  Synchronize resource creation to prevent race condition when multiple threads
         // try to create the same directory for YAML files in KubeResourceManager
         synchronized (RESOURCE_CREATION_LOCK) {
             KubeResourceManager.get().createResourceWithoutWait(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
