@@ -6,22 +6,25 @@
 {{/* Generate the kafka image map */}}
 {{- define "strimzi.kafka.image.map" }}
             - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
-              value: {{ template "strimzi.image" (merge . (dict "key" "kafkaExporter" "tagSuffix" "-kafka-4.1.0")) }}
+              value: {{ template "strimzi.image" (merge . (dict "key" "kafkaExporter" "tagSuffix" "-kafka-4.1.1")) }}
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
-              value: {{ template "strimzi.image" (merge . (dict "key" "cruiseControl" "tagSuffix" "-kafka-4.1.0")) }}
+              value: {{ template "strimzi.image" (merge . (dict "key" "cruiseControl" "tagSuffix" "-kafka-4.1.1")) }}
             - name: STRIMZI_KAFKA_IMAGES
               value: |                 
                 4.0.0={{ template "strimzi.image" (merge . (dict "key" "kafka" "tagSuffix" "-kafka-4.0.0")) }}
                 4.0.1={{ template "strimzi.image" (merge . (dict "key" "kafka" "tagSuffix" "-kafka-4.0.1")) }}
                 4.1.0={{ template "strimzi.image" (merge . (dict "key" "kafka" "tagSuffix" "-kafka-4.1.0")) }}
+                4.1.1={{ template "strimzi.image" (merge . (dict "key" "kafka" "tagSuffix" "-kafka-4.1.1")) }}
             - name: STRIMZI_KAFKA_CONNECT_IMAGES
               value: |                 
                 4.0.0={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-4.0.0")) }}
                 4.0.1={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-4.0.1")) }}
                 4.1.0={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-4.1.0")) }}
+                4.1.1={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-4.1.1")) }}
             - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
               value: |                 
                 4.0.0={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker2" "tagSuffix" "-kafka-4.0.0")) }}
                 4.0.1={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker2" "tagSuffix" "-kafka-4.0.1")) }}
                 4.1.0={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker2" "tagSuffix" "-kafka-4.1.0")) }}
+                4.1.1={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker2" "tagSuffix" "-kafka-4.1.1")) }}
 {{- end -}}
