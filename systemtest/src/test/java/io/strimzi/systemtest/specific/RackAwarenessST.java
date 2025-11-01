@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.NodeAffinity;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodAffinityTerm;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -49,7 +48,6 @@ import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 
 @Tag(REGRESSION)
@@ -108,13 +106,6 @@ class RackAwarenessST extends AbstractST {
         assertThat(podNodeRequirement, is(specNodeRequirement));
         assertThat(specNodeRequirement.getKey(), is(TOPOLOGY_KEY));
         assertThat(specNodeRequirement.getOperator(), is("Exists"));
-
-        PodAffinityTerm specPodAntiAffinityTerm = specAffinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getPodAffinityTerm();
-        PodAffinityTerm podAntiAffinityTerm = pod.getSpec().getAffinity().getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getPodAffinityTerm();
-        assertThat(podAntiAffinityTerm, is(specPodAntiAffinityTerm));
-        assertThat(specPodAntiAffinityTerm.getTopologyKey(), is(TOPOLOGY_KEY));
-        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/cluster", testStorage.getClusterName()));
-        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", KafkaResources.kafkaComponentName(testStorage.getClusterName())));
 
         // check Kafka rack awareness configuration
         String podNodeName = pod.getSpec().getNodeName();
