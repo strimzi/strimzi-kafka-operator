@@ -46,6 +46,15 @@ runs:
         restore-keys: |
           kafka-binaries-
 
+    - name: Clone test-frame and build
+      shell: bash
+      run: |
+        git clone -b handle-exceptions-delete-resources --single-branch https://github.com/skodjob/test-frame.git /tmp/test-frame
+        cd /tmp/test-frame
+        mvn versions:set -DnewVersion=9.999.9
+        mvn clean install -DskipTests
+        cd ${{ github.workspace }}
+
     # Building the artifacts
     - name: Build artifacts
       shell: bash
