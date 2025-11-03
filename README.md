@@ -69,6 +69,14 @@ If you want to get in touch with us first before contributing, you can use:
 ## License
 Strimzi is licensed under the [Apache License](./LICENSE), Version 2.0
 
+## Community Testing
+
+### Linux on IBM Z (s390x)
+
+[![Jenkins](https://ibmz-ci.osuosl.org/job/Strimzi_Kafka_Operator_IBMZ_CI/badge/icon)](https://ibmz-ci.osuosl.org/job/Strimzi_Kafka_Operator_IBMZ_CI/)
+
+_Note: This badge represents a community-led initiative and is not officially endorsed by the Strimzi project maintainers._
+
 ## Container signatures
 
 From the 0.38.0 release, Strimzi containers are signed using the [`cosign` tool](https://github.com/sigstore/cosign).
