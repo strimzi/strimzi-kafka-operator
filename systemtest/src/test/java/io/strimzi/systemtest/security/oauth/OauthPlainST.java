@@ -561,22 +561,25 @@ public class OauthPlainST extends OauthAbstractST {
         InlineLogging ilDebug = new InlineLogging();
         ilDebug.setLoggers(Map.of("rootLogger.level", "DEBUG"));
 
-        KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridgeWithMetrics(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
-            .editSpec()
-                .withNewKafkaClientAuthenticationOAuth()
-                    .withEnableMetrics()
-                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                    .withClientId("kafka-bridge")
-                    .withNewClientSecret()
-                        .withSecretName(BRIDGE_OAUTH_SECRET)
-                        .withKey(OAUTH_KEY)
-                    .endClientSecret()
-                    .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
-                    .withReadTimeoutSeconds(READ_TIMEOUT_S)
-                .endKafkaClientAuthenticationOAuth()
-                .withLogging(ilDebug)
-            .endSpec()
-            .build());
+        KubeResourceManager.get().createResourceWithWait(
+                KafkaBridgeTemplates.bridgeMetricsConfigMap(Environment.TEST_SUITE_NAMESPACE, oauthClusterName),
+                KafkaBridgeTemplates.kafkaBridgeWithMetrics(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
+                        .editSpec()
+                            .withNewKafkaClientAuthenticationOAuth()
+                                .withEnableMetrics()
+                                .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                                .withClientId("kafka-bridge")
+                                .withNewClientSecret()
+                                    .withSecretName(BRIDGE_OAUTH_SECRET)
+                                    .withKey(OAUTH_KEY)
+                                .endClientSecret()
+                                .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                                .withReadTimeoutSeconds(READ_TIMEOUT_S)
+                            .endKafkaClientAuthenticationOAuth()
+                            .withLogging(ilDebug)
+                        .endSpec()
+                        .build()
+        );
 
         // Allow connections from scraper to Bridge pods when NetworkPolicies are set to denied by default
         NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeScraper(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaBridgeResources.componentName(oauthClusterName));

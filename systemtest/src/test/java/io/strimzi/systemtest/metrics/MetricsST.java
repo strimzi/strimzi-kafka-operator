@@ -453,12 +453,13 @@ public class MetricsST extends AbstractST {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaBridgeTemplates.kafkaBridgeWithMetrics(
-                namespaceFirst,
-                bridgeClusterName,
-                KafkaResources.plainBootstrapAddress(kafkaClusterFirstName),
-                1
-                ).build()
+                KafkaBridgeTemplates.bridgeMetricsConfigMap(namespaceFirst, bridgeClusterName),
+                KafkaBridgeTemplates.kafkaBridgeWithMetrics(
+                        namespaceFirst,
+                        bridgeClusterName,
+                        KafkaResources.plainBootstrapAddress(kafkaClusterFirstName),
+                        1
+                        ).build()
         );
 
         // Allow connections from scraper to Bridge pods when NetworkPolicies are set to denied by default
