@@ -400,9 +400,6 @@ public class TieredStorageST extends AbstractST {
 
     @BeforeAll
     void setup() throws IOException {
-        // we skip test case for kind + podman
-        assumeFalse(cluster.isKind() && ContainerRuntimeUtils.getRuntime().equals(TestConstants.PODMAN));
-
         // for RBAC, we are creating everything in co-namespace
         // in order to not delete the Namespace (as in the install() method) we need to install CO first and then
         // do everything else.

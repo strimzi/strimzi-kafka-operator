@@ -57,7 +57,7 @@ public interface KubeCluster {
             if (kc.isAvailable()) {
                 logger.debug("Cluster {} is installed", kc);
                 if (kc.isClusterUp()) {
-                    logger.debug("Cluster {} is running", kc);
+                    logger.info("Cluster {} is running", kc);
                     cluster = kc;
                     break;
                 } else {
