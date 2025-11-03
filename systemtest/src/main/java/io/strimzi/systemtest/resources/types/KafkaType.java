@@ -91,7 +91,7 @@ public class KafkaType implements ResourceType<Kafka> {
         // proceed only if kafka is still present as Kafka is purposefully deleted in some test cases
         if (currentKafka != null) {
             client.inNamespace(namespaceName).withName(
-                kafka.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                kafka.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
         }
     }
 
