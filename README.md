@@ -71,7 +71,7 @@ Strimzi is licensed under the [Apache License](./LICENSE), Version 2.0
 
 ## Community Testing
 
-### Linux on IBM Z (s390x) :
+### Linux on IBM Z (s390x)
 
 [![Jenkins](https://ibmz-ci.osuosl.org/job/Strimzi_Kafka_Operator_IBMZ_CI/badge/icon)](https://ibmz-ci.osuosl.org/job/Strimzi_Kafka_Operator_IBMZ_CI/)
 
