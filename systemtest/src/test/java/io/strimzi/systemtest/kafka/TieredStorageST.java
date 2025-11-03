@@ -24,7 +24,6 @@ import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
-import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.seaweedfs.SetupSeaweedFS;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -373,14 +372,6 @@ public class TieredStorageST extends AbstractST {
             }
         });
         StatefulSetUtils.waitForAllStatefulSetPodsReady(suiteStorage.getNamespaceName(), "test-nfs-server-provisioner", 1);
-    }
-
-    /**
-     * Install Minio instance
-     */
-    private void deployMinioInstance() {
-        SetupMinio.deployMinio(suiteStorage.getNamespaceName());
-        SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
 
     /**

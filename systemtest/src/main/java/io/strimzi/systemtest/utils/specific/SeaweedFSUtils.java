@@ -53,7 +53,7 @@ public class SeaweedFSUtils {
      * @return Chunk count (0 means empty, >0 means has data)
      */
     private static long parseBucketSize(String output) {
-        // Output is in format 'test-bucket	size:306688	chunk:0' where
+        // Output is in format 'test-bucket size:306688 chunk:0' where
         // chunks represents number of files in the bucket (excluding deleted files)
         // Size represents total collection size in bytes with also metedata, indexes, etc. so it won't be 0
         Pattern pattern = Pattern.compile("chunk:(\\d+)");
