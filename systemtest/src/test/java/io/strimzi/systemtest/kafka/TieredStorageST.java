@@ -58,7 +58,6 @@ import static io.strimzi.systemtest.TestConstants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
 import static io.strimzi.systemtest.utils.specific.NfsUtils.NFS_PVC_NAME;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @MicroShiftNotSupported("We are using Kaniko and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
 @Tag(REGRESSION)
