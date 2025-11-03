@@ -26,6 +26,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.resources.seaweedfs.SetupSeaweedFS;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -37,8 +38,8 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.specific.ContainerRuntimeUtils;
-import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.systemtest.utils.specific.NfsUtils;
+import io.strimzi.systemtest.utils.specific.SeaweedFSUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.kafka.common.requests.ListOffsetsRequest;
@@ -68,8 +69,8 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
     beforeTestSteps = {
         @Step(value = "Create test namespace.", expected = "Namespace is created."),
         @Step(value = "Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Kaniko or OpenShift build), and include the Aiven Tiered Storage plugin from (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>).", expected = "Kafka image is built with the Aiven Tiered Storage plugin integrated."),
-        @Step(value = "Deploy Minio in test namespace and init the client inside the Minio pod.", expected = "Minio is deployed and client is initialized."),
-        @Step(value = "Init bucket in Minio for purposes of these tests.", expected = "Bucket is initialized in Minio."),
+        @Step(value = "Deploy SeaweedFS in test namespace and init IAM inside the SeaweedFS pod.", expected = "SeaweedFS is deployed and IAM is initialized."),
+        @Step(value = "Init bucket in SeaweedFS for purposes of these tests.", expected = "Bucket is initialized in SeaweedFS."),
         @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed.")
     },
     labels = {
@@ -96,21 +97,21 @@ public class TieredStorageST extends AbstractST {
         description = @Desc("This testcase is focused on testing of Tiered Storage integration implemented within Strimzi. The tests use the S3 plugin in Aiven Tiered Storage project (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>)."),
         steps = {
             @Step(value = "Deploys KafkaNodePool resource with PV of size 10Gi.", expected = "KafkaNodePool resource is deployed successfully with specified configuration."),
-            @Step(value = "Deploy Kafka CustomResource with Tiered Storage configuration pointing to Minio S3, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions.", expected = "Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions."),
+            @Step(value = "Deploy Kafka CustomResource with Tiered Storage configuration pointing to SeaweedFS S3, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions.", expected = "Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions."),
             @Step(value = "Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync).", expected = "Topic is created successfully with Tiered Storage enabled and segment size of 10mb."),
             @Step(value = "Starts continuous producer to send data to Kafka.", expected = "Continuous producer starts sending data to Kafka."),
-            @Step(value = "Wait until Minio size is not empty (contains data from Kafka).", expected = "Minio contains data from Kafka."),
-            @Step(value = "Wait until the earliest-local offset to be higher than 0.", expected = "The log segments uploaded to Minio are deleted locally."),
-            @Step(value = "Starts a consumer to consume all the produced messages, some of the messages should be located in Minio.", expected = "Consumer can consume all the messages successfully."),
+            @Step(value = "Wait until SeaweedFS size is not empty (contains data from Kafka).", expected = "SeaweedFS contains data from Kafka."),
+            @Step(value = "Wait until the earliest-local offset to be higher than 0.", expected = "The log segments uploaded to SeaweedFS are deleted locally."),
+            @Step(value = "Starts a consumer to consume all the produced messages, some of the messages should be located in SeaweedFS.", expected = "Consumer can consume all the messages successfully."),
             @Step(value = "Alter the topic config to retention.ms=10 sec to test the remote log deletion.", expected = "The topic config is altered successfully."),
-            @Step(value = "Wait until Minio size is 0.", expected = "The data in Minio are deleted.")
+            @Step(value = "Wait until SeaweedFS size is 0.", expected = "The data in SeaweedFS are deleted.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
     void testTieredStorageWithAivenS3Plugin() {
-        deployMinioInstance();
+        deploySeaweedFSInstance();
 
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -138,12 +139,12 @@ public class TieredStorageST extends AbstractST {
                             .addToConfig("chunk.size", "4194304")
                             // s3 config
                             .addToConfig("storage.s3.endpoint.url",
-                                    "http://" + SetupMinio.MINIO + "." + suiteStorage.getNamespaceName() + ".svc.cluster.local:" + SetupMinio.MINIO_PORT)
+                                    "http://" + SetupSeaweedFS.SEAWEEDFS + "." + suiteStorage.getNamespaceName() + ".svc.cluster.local:" + SetupSeaweedFS.SEAWEEDFS_PORT)
                             .addToConfig("storage.s3.bucket.name", BUCKET_NAME)
                             .addToConfig("storage.s3.region", "us-east-1")
                             .addToConfig("storage.s3.path.style.access.enabled", "true")
-                            .addToConfig("storage.aws.access.key.id", SetupMinio.ADMIN_CREDS)
-                            .addToConfig("storage.aws.secret.access.key", SetupMinio.ADMIN_CREDS)
+                            .addToConfig("storage.aws.access.key.id", SetupSeaweedFS.ADMIN_CREDS)
+                            .addToConfig("storage.aws.secret.access.key", SetupSeaweedFS.ADMIN_CREDS)
                         .endRemoteStorageManager()
                     .endTieredStorageCustomTiered()
                     // reduce the interval to speed up the test
@@ -162,7 +163,7 @@ public class TieredStorageST extends AbstractST {
                 // Bytes retention set to 1024mb
                 .addToConfig("retention.bytes", 1073741824)
                 .addToConfig("retention.ms", 86400000)
-                // Segment size is set to 10mb to make it quicker to sync data to Minio
+                // Segment size is set to 10mb to make it quicker to sync data to SeaweedFS
                 .addToConfig("segment.bytes", SEGMENT_BYTE)
             .endSpec()
             .build());
@@ -175,7 +176,7 @@ public class TieredStorageST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
 
-        MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+        SeaweedFSUtils.waitForDataInSeaweedFS(suiteStorage.getNamespaceName(), BUCKET_NAME);
 
         // Create admin-client to check offsets
         KubeResourceManager.get().createResourceWithWait(
@@ -189,7 +190,7 @@ public class TieredStorageST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(clients.consumerStrimzi());
         // Verify we can consume messages from (a) remote storage and (b) local storage. Because we have verified earlier
-        // that the log segments are moved to remote storage (by Minio size check) and deleted locally (by earliest-local offset check),
+        // that the log segments are moved to remote storage (by SeaweedFS size check) and deleted locally (by earliest-local offset check),
         // we can verify (a) and (b) by checking if we can consume all messages successfully.
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
@@ -198,7 +199,7 @@ public class TieredStorageST extends AbstractST {
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
         );
 
-        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+        SeaweedFSUtils.waitForNoDataInSeaweedFS(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
 
     @ParallelTest
@@ -380,6 +381,14 @@ public class TieredStorageST extends AbstractST {
     private void deployMinioInstance() {
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
+    }
+
+    /**
+     * Deploy SeaweedFS instance
+     */
+    private void deploySeaweedFSInstance() {
+        SetupSeaweedFS.deploySeaweedFS(suiteStorage.getNamespaceName());
+        SetupSeaweedFS.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
 
     /**
