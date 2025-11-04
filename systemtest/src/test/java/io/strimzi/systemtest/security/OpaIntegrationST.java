@@ -29,10 +29,12 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 
@@ -99,30 +101,41 @@ public class OpaIntegrationST extends AbstractST {
             .withDefaultConfiguration()
             .install();
 
-        // Install OPA
+        // Install OPA and wait for it to get ready
         KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
+        try {
+            LOGGER.info("Waiting for Open Policy Agent deployment to get ready");
+            KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName("opa").waitUntilReady(120_000L, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            Assertions.fail("OPA deployment is not ready in 120 seconds", e);
+        }
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(CLUSTER_NAME), CLUSTER_NAME, 3).build(),
             KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getControllerPoolName(CLUSTER_NAME), CLUSTER_NAME, 1).build()
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, 3)
-            .editSpec()
-                .editKafka()
-                    .withNewKafkaAuthorizationOpa()
-                        .withUrl("http://opa:8181/v1/data/kafka/simple/authz/allow")
-                        .addToSuperUsers("CN=" + OPA_SUPERUSER)
-                    .endKafkaAuthorizationOpa()
-                    .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationTls())
-                            .build())
-                .endKafka()
-            .endSpec()
-            .build());
+                .editSpec()
+                    .editKafka()
+                        .withNewKafkaAuthorizationCustom()
+                            .withAuthorizerClass("org.openpolicyagent.kafka.OpaAuthorizer")
+                            .withSuperUsers("CN=" + OPA_SUPERUSER)
+                        .endKafkaAuthorizationCustom()
+                        .addToConfig("opa.authorizer.url", "http://opa:8181/v1/data/kafka/simple/authz/allow")
+                        .addToConfig("opa.authorizer.cache.expire.after.seconds", "60")
+                        .addToConfig("opa.authorizer.allow.on.error", "false")
+                        .addToConfig("opa.authorizer.cache.initial.capacity", "1000")
+                        .addToConfig("opa.authorizer.cache.maximum.size", "10000")
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withAuth(new KafkaListenerAuthenticationTls())
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build());
     }
 
     @AfterAll
