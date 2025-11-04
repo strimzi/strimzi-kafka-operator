@@ -83,7 +83,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     /**
-     * Creates instance of KafkaMirrorMaker2Cluster from CRD definition.
+     * Creates an instance of KafkaMirrorMaker2Cluster from CRD definition.
      *
      * @param reconciliation    The reconciliation
      * @param kafkaMirrorMaker2 The Custom Resource based on which the cluster model should be created.
@@ -343,7 +343,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster : clusters) {
             String clusterAlias = mirrorMaker2Cluster.getAlias();
 
-            if (clusterAliases.length() > 0) {
+            if (!clusterAliases.isEmpty()) {
                 clusterAliases.append(";");
             }
             clusterAliases.append(clusterAlias);
@@ -367,17 +367,17 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS, clusterAliases.toString()));
 
-        if (clustersTrustedCerts.length() > 0) {
+        if (!clustersTrustedCerts.isEmpty()) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS, clustersTrustedCerts.toString()));
         }
 
-        if (clustersTlsAuthCerts.length() > 0 || clustersTlsAuthKeys.length() > 0) {
+        if (!clustersTlsAuthCerts.isEmpty() || !clustersTlsAuthKeys.isEmpty()) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CLUSTERS, "true"));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CERTS_CLUSTERS, clustersTlsAuthCerts.toString()));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_KEYS_CLUSTERS, clustersTlsAuthKeys.toString()));
         }
 
-        if (clustersOauthTrustedCerts.length() > 0) {
+        if (!clustersOauthTrustedCerts.isEmpty()) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS, clustersOauthTrustedCerts.toString()));
         }
 
@@ -391,8 +391,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
    
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                if (clustersTrustedCerts.length() > 0) {
+            if (trustedCertificates != null && !trustedCertificates.isEmpty()) {
+                if (!clustersTrustedCerts.isEmpty()) {
                     clustersTrustedCerts.append("\n");
                 }
                 clustersTrustedCerts.append(clusterAlias);
@@ -407,7 +407,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     private static void appendCluster(final StringBuilder clusters, String clusterAlias, Supplier<String> function) {
-        if (clusters.length() > 0) {
+        if (!clusters.isEmpty()) {
             clusters.append("\n");
         }                   
         clusters.append(clusterAlias);
@@ -419,7 +419,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      * The command for running Connect has to be passed through a method so that we can handle different run commands
      * for Connect and Mirror Maker 2 (which inherits from this class) without duplicating the whole container creation.
      *
-     * @return  Command for starting Kafka Mirror Maker 2 container
+     * @return  Command for starting the Kafka Mirror Maker 2 container
      */
     @Override
     protected String getCommand() {
@@ -427,7 +427,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     /**
-     * The default labels Connect pod has to be passed through a method so that we can handle different labels for
+     * The default labels Connect pod uses have to be passed through a method so that we can handle different labels for
      * Connect and Mirror Maker 2 (which inherits from this class) without duplicating the whole pod creation.
      *
      * @return Default Pod Labels for Kafka Mirror Maker 2
