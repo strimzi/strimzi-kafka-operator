@@ -509,24 +509,27 @@ public class CustomOauthPlainST extends OauthAbstractST {
                 "oauth.enable.metrics", "true"
         ));
 
-        KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridgeWithMetrics(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
-            .editSpec()
-                .withNewKafkaClientAuthenticationCustom()
-                    .withSasl(true)
-                    .withConfig(Map.of(
-                            "sasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
-                            "sasl.mechanism", "OAUTHBEARER",
-                            "sasl.jaas.config", bridgeJassConfig
-                    ))
-                .endKafkaClientAuthenticationCustom()
-                .withNewTemplate()
-                    .withNewBridgeContainer()
-                        .withEnv(new ContainerEnvVarBuilder().withName("OAUTH_CLIENT_SECRET").withValueFrom(new ContainerEnvVarSourceBuilder().withNewSecretKeyRef(OAUTH_KEY, BRIDGE_OAUTH_SECRET, false).build()).build())
-                    .endBridgeContainer()
-                .endTemplate()
-                .withLogging(ilDebug)
-            .endSpec()
-            .build());
+        KubeResourceManager.get().createResourceWithWait(
+                KafkaBridgeTemplates.bridgeMetricsConfigMap(Environment.TEST_SUITE_NAMESPACE, oauthClusterName),
+                KafkaBridgeTemplates.kafkaBridgeWithMetrics(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
+                        .editSpec()
+                            .withNewKafkaClientAuthenticationCustom()
+                                .withSasl(true)
+                                .withConfig(Map.of(
+                                        "sasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                                        "sasl.mechanism", "OAUTHBEARER",
+                                        "sasl.jaas.config", bridgeJassConfig
+                                ))
+                            .endKafkaClientAuthenticationCustom()
+                            .withNewTemplate()
+                                .withNewBridgeContainer()
+                                    .withEnv(new ContainerEnvVarBuilder().withName("OAUTH_CLIENT_SECRET").withValueFrom(new ContainerEnvVarSourceBuilder().withNewSecretKeyRef(OAUTH_KEY, BRIDGE_OAUTH_SECRET, false).build()).build())
+                                .endBridgeContainer()
+                            .endTemplate()
+                            .withLogging(ilDebug)
+                        .endSpec()
+                        .build()
+        );
 
         // Allow connections from scraper to Bridge pods when NetworkPolicies are set to denied by default
         NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeScraper(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaBridgeResources.componentName(oauthClusterName));
