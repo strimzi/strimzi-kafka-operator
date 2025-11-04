@@ -47,4 +47,5 @@ If the conversion tool is not used, the same changes can be made manually.
 ** `.status.kafkaMetadataState`
 ** `.status.listeners[].type`
 
-The status removal is not required for any resources that are managed by Strimzi Cluster Operator in a Kubernetes cluster.
+NOTE: Status removal applies only to local YAML files (using the `convert-file` command). 
+The conversion tool does not modify the status of live resources within a Kubernetes cluster, as their status is actively managed by the Cluster Operator.

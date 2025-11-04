@@ -24,6 +24,7 @@ If the conversion tool is not used, you can apply the same changes manually:
 * Removes the `.spec.template.deployment` property.
 * Removes unsupported tracing `type: jaeger`.
 * Removes the heartbeat connector property: `.spec.mirrors[].heartbeatConnector`.
+** If you want to configure the `MirrorHeartbeatConnector`, use the `KafkaConnect` and `KafkaConnector` custom resources directly.
 * Updates connector pause handling: removes `.spec.mirrors[].connectors[].pause`. 
 If `pause: true` was set, it is converted to `state: paused`.
 * Renames exclude pattern properties:
@@ -37,6 +38,5 @@ If `pause: true` was set, it is converted to `state: paused`.
 ** `.spec.configStorageTopic`: set from `.spec.config.config.storage.topic`, or default to `connect-cluster-configs`.
 ** `.spec.offsetStorageTopic`: set from `.spec.config.offset.storage.topic`, or default to `connect-cluster-offsets`.
 ** `.spec.statusStorageTopic`: set from `.spec.config.status.storage.topic`, or default to `connect-cluster-status`.
-
 
 NOTE: After setting the target-side properties, remove the corresponding entries from the target `config`.

@@ -18,4 +18,4 @@ The following updates are applied automatically by the conversion tool during co
 If the conversion tool is not used, you can apply the same changes manually:
 
 * Replaces the `operation` property in `.spec.authorization.acls[]` with the `operations` array.  
-*This change must be applied before upgrading to Strimzi versions 0.49-0.51.*
+*This change must be applied before upgrading to Strimzi version 0.49.0 or later.*
