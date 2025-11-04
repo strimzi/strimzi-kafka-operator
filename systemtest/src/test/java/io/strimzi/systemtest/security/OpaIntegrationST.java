@@ -25,16 +25,15 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 
@@ -103,12 +102,7 @@ public class OpaIntegrationST extends AbstractST {
 
         // Install OPA and wait for it to get ready
         KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
-        try {
-            LOGGER.info("Waiting for Open Policy Agent deployment to get ready");
-            KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName("opa").waitUntilReady(120_000L, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            Assertions.fail("OPA deployment is not ready in 120 seconds", e);
-        }
+        DeploymentUtils.waitForDeploymentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, "opa", 1);
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(CLUSTER_NAME), CLUSTER_NAME, 3).build(),
