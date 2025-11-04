@@ -151,7 +151,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                                 .editOrNewUserOperatorContainer()
                                     .addNewEnv()
                                         .withName("STRIMZI_WORK_QUEUE_SIZE")
-                                        .withValue(String.valueOf(maxQueueSize))
+                                        .withValue(String.valueOf(maxWorkQueueSize))
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE")
