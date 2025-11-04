@@ -16,7 +16,7 @@ Brokers and clients communicate with the authorization server, as necessary, to 
 For a deployment of Strimzi, OAuth 2.0 integration provides the following support:
 
 * Server-side OAuth 2.0 authentication for Kafka brokers
-* Client-side OAuth 2.0 authentication for Kafka MirrorMaker, Kafka Connect, and the Kafka Bridge
+* Client-side OAuth 2.0 authentication for Kafka MirrorMaker, Kafka Connect, and the HTTP Bridge
 
 include::../../modules/oauth/con-oauth-authentication-broker.adoc[leveloffset=+1]
 include::../../modules/oauth/con-oauth-authentication-client.adoc[leveloffset=+1]

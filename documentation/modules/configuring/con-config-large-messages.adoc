@@ -58,16 +58,16 @@ fetch.max.bytes: 10000000
 max.partition.fetch.bytes: 10485760
 ----
 
-It's also possible to configure the producers and consumers used by other Kafka components like Kafka Bridge, Kafka Connect, and MirrorMaker 2 to handle larger messages more effectively.
+It's also possible to configure the producers and consumers used by other Kafka components like HTTP Bridge, Kafka Connect, and MirrorMaker 2 to handle larger messages more effectively.
 
-Kafka Bridge:: Configure the Kafka Bridge using specific producer and consumer configuration properties:
+HTTP Bridge:: Configure the HTTP Bridge using specific producer and consumer configuration properties:
 +
 --
 * `producer.config` for producers
 * `consumer.config` for consumers
 --
 +
-.Example Kafka Bridge configuration
+.Example HTTP Bridge configuration
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaBridgeApiVersion}
