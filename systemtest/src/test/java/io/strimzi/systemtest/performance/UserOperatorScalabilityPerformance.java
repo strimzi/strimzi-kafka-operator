@@ -66,27 +66,23 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
 
     private TestStorage suiteTestStorage;
 
-    // user event batches to test
-    private final List<Integer> eventBatches = List.of(70, 700, 1400, 3500);
+    // number of KafkaUsers to test (each goes through full lifecycle: create, modify, delete)
+    private final List<Integer> numberOfKafkaUsersToTest = List.of(10, 100, 200, 500);
     // default configuration of UO
     private final int maxBatchSize = 100;
     private final int maxBatchLingerMs = 100;
-    private final int maxQueueSize = 10_000;
+    private final int maxQueueSize = 1024;
     private long reconciliationTimeMs;
 
     @TestDoc(
-        description = @Desc("Verifies User Operator scalability by processing concurrent KafkaUser operations with varying event batch sizes " +
-            "(70, 700, 1400, 3500 events), measuring reconciliation time and collecting performance metrics. " +
-            "What is worth of nothing is that KafkaUser operation generates multiple Kubernetes watch events: " +
-            " (i.) CREATE triggers 3 events (KafkaUser ADDED + Secret ADDED + KafkaUser status MODIFIED), " +
-            " (ii.) MODIFY triggers 2 events (KafkaUser MODIFIED + KafkaUser status MODIFIED), " +
-            " (iii.) DELETE triggers 2 events (KafkaUser DELETED + Secret DELETED). " +
-            "With 7 events per task, batch sizes correspond to 10, 100, 200, and 500 KafkaUsers."),
+        description = @Desc("This test measures throughput (time to process N users in parallel), NOT latency (response time for a single user)."),
         steps = {
-            @Step(value = "For each batch size (70, 700, 1400, 3500 events = 10, 100, 200, 500 users), spawn a separate thread for each KafkaUser to perform its full lifecycle (create, modify, delete) concurrently.", expected = "Each thread creates a KafkaUser with TLS authentication and ACL authorization rules, waits for it to be ready, modifies it, waits for reconciliation, then deletes it."),
-            @Step(value = "Wait for all threads to complete their KafkaUser lifecycle operations.", expected = "All KafkaUsers have been created, modified, deleted, and their associated Secrets are removed."),
-            @Step(value = "Measure the total reconciliation time for the batch.", expected = "Reconciliation time is recorded for performance analysis."),
-            @Step(value = "Collect and log performance metrics including work queue size, batch configuration, number of users, and reconciliation time.", expected = "Performance data is persisted to the report directory for analysis.")
+            @Step(value = "For each configured number of users (10, 100, 200, 500), spawn one thread per KafkaUser to perform its full lifecycle concurrently.", expected = "N concurrent threads are created, each responsible for one KafkaUser full lifecycle (create, modify, delete)."),
+            @Step(value = "Each thread performs CREATE: Creates KafkaUser with TLS authentication and ACL authorization.", expected = "KafkaUser is created and ready."),
+            @Step(value = "Each thread performs MODIFY: Updates ACL rules and adds quotas.", expected = "KafkaUser is updated and reconciled."),
+            @Step(value = "Each thread performs DELETE: Deletes the KafkaUser.", expected = "KafkaUser and associated Secret are deleted."),
+            @Step(value = "Wait for all threads to complete their full lifecycle operations and measure total elapsed time.", expected = "All KafkaUsers have completed create-modify-delete lifecycle. Total time represents THROUGHPUT capacity (time for all N users to complete), not individual user LATENCY."),
+            @Step(value = "Clean up any remaining users and collect performance metrics (e.g., total time to complete all user lifecycles) i.e., reconciliation time.", expected = "Namespace is cleaned, performance data is persisted to user-operator report directory for analysis.")
         },
         labels = {
             @Label(TestDocsLabels.USER_OPERATOR)
@@ -94,12 +90,9 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     )
     @IsolatedTest
     void testScalability() {
-        eventBatches.forEach(numEvents -> {
-            final int eventPerTask = 7;
-            final int numberOfTasks = numEvents / eventPerTask;
-            final int numSpareEvents = numEvents % eventPerTask;
+        numberOfKafkaUsersToTest.forEach(numberOfKafkaUsers -> {
             try {
-                this.reconciliationTimeMs = UserOperatorPerformanceUtils.processAllUsersConcurrently(suiteTestStorage, numberOfTasks, numSpareEvents, 0);
+                this.reconciliationTimeMs = UserOperatorPerformanceUtils.processAllUsersConcurrently(suiteTestStorage, numberOfKafkaUsers, 0, 0);
             } finally {
                 LOGGER.info("Cleaning namespace: {}", suiteTestStorage.getNamespaceName());
                 List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient().inNamespace(suiteTestStorage.getNamespaceName()).list().getItems();
@@ -110,7 +103,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
 
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, maxQueueSize);
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_SIZE, maxBatchSize);
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_NUMBER_OF_KAFKA_USERS, numberOfTasks);
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_NUMBER_OF_KAFKA_USERS, numberOfKafkaUsers);
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_TIME_MS, maxBatchLingerMs);
 
                 performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_RECONCILIATION_INTERVAL, reconciliationTimeMs);
@@ -133,8 +126,8 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
         suiteTestStorage = new TestStorage(KubeResourceManager.get().getTestContext(), TestConstants.CO_NAMESPACE);
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPool(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
         );
 
         KubeResourceManager.get().createResourceWithWait(
