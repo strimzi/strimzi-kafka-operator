@@ -13,10 +13,10 @@ To use the tool, extract it and run the conversion script from the `bin` directo
 The migration to the `v1` API has two stages.
 
 * Version 0.49 introduces the `v1` API and deprecates the older `v1beta2` version.
-* A later release (planned for 0.52 or 1.0.0) removes the `v1beta2` API and updates all components to use `v1`.
+* A later release (planned for 0.52.0 or 1.0.0) removes the `v1beta2` API and updates all components to use `v1`.
 
-Complete the conversion of custom resources and CRDs after upgrading to version 0.49 or later, and before upgrading to the later release that removes the `v1beta2` API (Strimzi 0.52 / 1.0.0).  
-Resources converted to `v1` are compatible with Strimzi versions 0.49, 0.50, and 0.51.
+Complete the conversion of custom resources and CRDs after upgrading to version 0.49 or later, and before upgrading to the later release that removes the `v1beta2` API (Strimzi 0.52.0 / 1.0.0).  
+Resources converted to `v1` are compatible with Strimzi versions 0.49 and later.
 
 //tool commands
 include::../../modules/upgrading/con-conversion-tool-commands.adoc[leveloffset=+1]

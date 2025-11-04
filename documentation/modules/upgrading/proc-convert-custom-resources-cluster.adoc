@@ -16,12 +16,14 @@ Use the Strimzi API conversion tool with the `convert-resource` command to conve
 * `--kind <kind>` to convert only resources of a specific kind (for example, `Kafka`, `KafkaConnect`, or `KafkaBridge`)  
 * `--name <name>` with `--kind` to convert a single resource by name  
 +
+To report on the operation, add a `--log-level` flag.
++
 Example commands:
 +
 [source,shell]
 ----
-# Convert all Strimzi resources in the current namespace:
-bin/v1-api-conversion.sh convert-resource
+# Convert all Strimzi resources in the current namespace with INFO logging:
+bin/v1-api-conversion.sh convert-resource --log-level INFO
 
 # Convert all Strimzi resources in all namespaces:
 bin/v1-api-conversion.sh convert-resource --all-namespaces
@@ -39,13 +41,6 @@ bin/v1-api-conversion.sh convert-resource --all-namespaces --kind Kafka --kind K
 bin/v1-api-conversion.sh convert-resource --kind Kafka --namespace my-kafka --name my-cluster
 ----
 
-. Verify that the converted resources now use the `kafka.strimzi.io/v1` API version:
-+  
-[source,shell]
-----
-kubectl get kafkas,kafkaconnects,kafkabridges,kafkamirrormaker2s,kafkarebalances,kafkatopics,kafkausers,kafkanodepools -A \
-  -o custom-columns="VERSION:.apiVersion,KIND:.kind,NAMESPACE:.metadata.namespace,NAME:.metadata.name" \
-  | grep "kafka.strimzi.io/v1"
-----
+. Review the log output to ensure that all custom resources converted successfully and address any errors. 
 
 . Ensure that all conversions complete successfully before proceeding to upgrade the CRDs.

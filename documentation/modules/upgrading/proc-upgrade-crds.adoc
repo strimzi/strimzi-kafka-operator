@@ -8,6 +8,9 @@ Use the Strimzi API conversion tool with the `crd-upgrade` command to upgrade th
 
 If you run this operation from a Kubernetes `Job`, replace `convert-resource` with `crd-upgrade` in the container command.  
 
+IMPORTANT: This command finalizes the API conversion by removing the `v1beta2` version from the CRDs.
+You can run this command any time after converting all your custom resources to `v1`, but it **must** be completed as a *final step just before* upgrading to the release that completely removes the `v1beta2` API (planned for 0.52.0 or 1.0.0).
+
 .Prerequisites
 
 * All Strimzi custom resources have been converted to `v1`.  

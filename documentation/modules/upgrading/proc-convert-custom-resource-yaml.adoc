@@ -19,12 +19,14 @@ Choose one of the following output options:
 * Use `--output <file>` to create a new file.
 * Omit both options to print the converted resource to standard output.
 +
+To report on the operation, add a `--log-level` flag.
++
 Example commands:
 +
 [source,shell]
 ----
-# Convert the input file and print the output:
-bin/v1-api-conversion.sh convert-file --file <input.yaml>
+# Convert the input file and print the output with INFO logging:
+bin/v1-api-conversion.sh convert-file --file <input.yaml> --log-level INFO
 
 # Convert and overwrite the input file:
 bin/v1-api-conversion.sh convert-file --file <input.yaml> --in-place
@@ -36,6 +38,9 @@ bin/v1-api-conversion.sh convert-file --file <input.yaml> --output <output.yaml>
 bin/v1-api-conversion.sh convert-file --file <input1.yaml> --file <input2.yaml>
 ----
 
-. Review the converted YAML to confirm that the `apiVersion` is set to `kafka.strimzi.io/v1`.  
+. Review the log output to ensure that all custom resources converted successfully and address any errors.
+Inspect the output YAML and confirm that the `apiVersion` for Strimzi resources is set to **`kafka.strimzi.io/v1`**.
+
 . Apply the converted files to the cluster using `kubectl apply -f` or `kubectl replace -f`.
+
 . Ensure that all conversions complete successfully before proceeding to upgrade the CRDs.

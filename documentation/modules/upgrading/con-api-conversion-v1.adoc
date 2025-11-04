@@ -1,0 +1,27 @@
+:_mod-docs-content-type: CONCEPT
+
+// This module is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='con-api-conversion-v1-{context}']
+= Converting to v1 API from versions earlier than 0.49
+
+[role="_abstract"]
+When upgrading from a version prior to Strimzi 0.49.0, you **must** convert your custom resources and CRDs to the `v1` API. 
+The `v1beta2` API is deprecated and will be removed in a future release (planned for 0.52.0 or 1.0.0).
+
+IMPORTANT: This conversion applies to KRaft-based clusters. 
+If you are upgrading from a version earlier than 0.39, you must first xref:con-migrate-kraft-pre-0.39-{context}[migrate to KRaft] before proceeding with this conversion and the upgrade.
+
+Follow this specific sequence for the `v1` API conversion:
+
+.  **Before upgrading the Cluster Operator to 0.49.0 or later:**
+* If you have `KafkaUser` resources using the `.spec.authorization.acls[].operation` field (singular), you **must** update them to use `.spec.authorization.acls[].operations` (plural).
+
+.  **After upgrading the Cluster Operator to 0.49.0 or later:**
+* You can now convert all other custom resources and CRDs to the `v1` API.
+* This step **must** be done *after* the Cluster Operator is upgraded, as the new operator version is required to interpret the `v1` format.
+* This conversion can be done any time after the 0.49.0 upgrade but **must** be completed before the future release that removes the `v1beta2` API.
+
+For complete conversion instructions, see xref:assembly-api-conversion-{context}[Converting Strimzi custom resources to the `v1` API].

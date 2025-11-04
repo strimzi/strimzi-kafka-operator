@@ -1,0 +1,19 @@
+:_mod-docs-content-type: CONCEPT
+
+// This module is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='con-migrate-kraft-pre-0.39-{context}']
+= Migrating to KRaft from versions earlier than 0.39
+
+Direct upgrades to Strimzi {ProductVersion} from versions earlier than 0.39 are **not supported**.
+
+Before you can upgrade to {ProductVersion}, you **must** follow this required path:
+
+. Upgrade your cluster to a Strimzi version between 0.39 and 0.45.
+. Migrate your cluster from ZooKeeper to KRaft.
+
+For more information, see xref:assembly-kraft-mode-{context}[Using Kafka in KRaft mode].
+
+After your cluster is running on KRaft, you can proceed with the upgrade to Strimzi {ProductVersion}.

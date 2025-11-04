@@ -16,12 +16,6 @@ For example, if you used the Strimzi installation files, modify those files to p
 After you have upgraded your Cluster Operator to {ProductVersion}, the next step is to upgrade all Kafka nodes to the latest supported version of Kafka. 
 Kafka upgrades are performed by the Cluster Operator through rolling updates of the Kafka nodes.
 
-IMPORTANT: When upgrading to Strimzi version 0.49 or later, convert all custom resources and CRDs to the `v1` API.  
-The `v1beta2` API is deprecated and will be removed in a future release.  
-Conversion must be performed after upgrading the Cluster Operator, so that the Cluster Operator can interpret the resources.  
-Custom resources can be updated before or after the Kafka upgrade.  
-For more information, see xref:assembly-api-conversion-{context}[Converting Strimzi custom resources to the `v1` API].
-
 If you encounter any issues with the new version, Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version.
 
 For topics configured with high availability (replication factor of at least 3 and evenly distributed partitions), the upgrade process should not cause any downtime for consumers and producers.
@@ -32,15 +26,14 @@ During this time, overall cluster availability is temporarily reduced, which may
 //sequence
 include::../../modules/upgrading/con-upgrade-sequence.adoc[leveloffset=+1]
 
-//kafka upgrade concepts
-include::../../modules/upgrading/con-upgrade-paths.adoc[leveloffset=+1]
-include::../../modules/upgrading/con-upgrade-versions-and-images.adoc[leveloffset=+2]
-
-//client upgrade concepts
-include::../../modules/upgrading/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
-
 //upgrading kubernetes
 include::../../modules/upgrading/con-upgrade-cluster.adoc[leveloffset=+1]
+
+//upgrade considerations for pre-0.39 upgrades (non-KRaft)
+include::../../modules/upgrading/con-migrate-kraft-pre-0.39.adoc[leveloffset=+1]
+
+//upgrade considerations for v1 conversion
+include::../../modules/upgrading/con-api-conversion-v1.adoc[leveloffset=+1]
 
 //upgrading cluster operator
 include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
@@ -50,3 +43,10 @@ include::../../modules/upgrading/proc-upgrade-kafka-kraft.adoc[leveloffset=+1]
 
 //checking the status of an upgrade
 include::../../modules/upgrading/con-upgrade-status.adoc[leveloffset=+1]
+
+//kafka upgrade concepts
+include::../../modules/upgrading/con-upgrade-paths.adoc[leveloffset=+1]
+include::../../modules/upgrading/con-upgrade-versions-and-images.adoc[leveloffset=+2]
+
+//client upgrade concepts
+include::../../modules/upgrading/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]

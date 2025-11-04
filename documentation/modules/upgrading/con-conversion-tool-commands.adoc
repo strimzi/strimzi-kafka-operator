@@ -27,10 +27,6 @@ Use this command when applying configuration through GitOps or when direct clust
 Converts existing Strimzi custom resources directly in Kubernetes.  
 Use this command when updating live environments managed by the Cluster Operator.
 
-Kubernetes `Job`::  
-Runs the conversion tool as a Kubernetes job inside the cluster.  
-Use this command when local access to the cluster is unavailable or restricted.
-
 `crd-upgrade`::  
 Upgrades Strimzi CRDs to use the `v1` API as the storage version.  
 Run this command only after all custom resources have been converted.
@@ -45,3 +41,6 @@ bin/v1-api-conversion.sh help <command>
 ----
 +
 For example, run `bin/v1-api-conversion.sh help convert-file` to see the supported options for converting YAML files.
+
+NOTE: As an alternative to running the tool locally from your computer, you can also run it as a Kubernetes `Job`.
+For more information, see the `README.md` file in the conversion tool.
