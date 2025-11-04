@@ -38,7 +38,7 @@ bin/v1-api-conversion.sh convert-resource --all-namespaces --kind Kafka
 bin/v1-api-conversion.sh convert-resource --all-namespaces --kind Kafka --kind KafkaConnect
 
 # Convert a Kafka cluster named `my-cluster` in namespace `my-kafka`: 
-bin/v1-api-conversion.sh convert-resource --kind Kafka --namespace my-kafka --name my-cluster
+bin/v1-api-conversion.sh convert-resource --namespace my-kafka --kind Kafka --name my-cluster
 ----
 
 . Review the log output to ensure that all custom resources converted successfully and address any errors. 

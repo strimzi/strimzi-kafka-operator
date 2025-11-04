@@ -4,7 +4,6 @@
 = Running the conversion tool as a Kubernetes job
 
 [role="_abstract"]
-[role="_abstract"]
 Use the Strimzi API conversion tool with the `convert-resource` command to convert custom resources by running the tool as a Kubernetes `Job` when `kubectl` you cannot access the cluster locally or do not have a direct connection.
 
 .Procedure

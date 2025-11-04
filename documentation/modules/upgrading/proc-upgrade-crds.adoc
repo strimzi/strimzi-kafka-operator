@@ -1,7 +1,7 @@
 :_mod-docs-content-type: PROCEDURE
 
 [id='proc-upgrade-crds-to-v1-{context}']
-= Upgrading CRDs to the v1 API
+= Upgrading CRD storage version to v1
 
 [role="_abstract"]
 Use the Strimzi API conversion tool with the `crd-upgrade` command to upgrade the Strimzi Custom Resource Definitions (CRDs) to use the `v1` API as the storage version.
