@@ -27,7 +27,7 @@ items:
           serviceAccountName: opa
           containers:
             - name: opa
-              image: docker.io/openpolicyagent/opa:1.10.0-static
+              image: mirror.gcr.io/openpolicyagent/opa:1.10.0-static
               ports:
                 - name: http
                   containerPort: 8181
