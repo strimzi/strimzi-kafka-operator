@@ -91,8 +91,8 @@ public class ImageBuild {
                             .withArgs(
                                 "/bin/bash",
                                 "-ec",
-                                "buildah build --file=/workspace/Dockerfile --tag=" + imageName + " --storage-driver=vfs --tls-verify=false --build-arg=BASE_IMAGE=" + baseImage + " \n" +
-                                "buildah push --storage-driver=vfs --tls-verify=false " + imageName + "\n"
+                                "buildah build --file=/workspace/Dockerfile --tag=" + imageName + " --storage-driver=overlay --tls-verify=false --build-arg=BASE_IMAGE=" + baseImage + " \n" +
+                                "buildah push --storage-driver=overlay --tls-verify=false " + imageName + "\n"
                             )
                             .withVolumeMounts(
                                 new VolumeMountBuilder()
