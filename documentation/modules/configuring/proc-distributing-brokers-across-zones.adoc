@@ -8,10 +8,10 @@
 = Distributing brokers across availability zones
 
 [role="_abstract"]
-To improve fault tolerance, you should distribute your Kafka nodes across multiple different availability zones (racks).
+To improve fault tolerance, distribute Kafka nodes across multiple different availability zones (racks).
 This is typically combined with the xref:con-common-config-rack-awareness-{context}[Rack awareness] feature.
 
-This procedure provides configuration examples for the `Kafka` resource with enabled rack awareness and the pool-specific `KafkaNodePool` resources with the topology spread constraints configuration to balance pods across zones.
+This procedure provides configuration examples for the `Kafka` resource with rack awareness enabled, and the pool-specific `KafkaNodePool` resources with the topology spread constraints configuration to balance pods across zones.
 
 .Prerequisites
 
@@ -23,7 +23,8 @@ This procedure provides configuration examples for the `Kafka` resource with ena
 +
 Make sure the `strimzi.io/cluster` label in the `topologySpreadConstraint[].labelSelector` fields is set to the name of your Kafka cluster.
 +
-.Example cluster with rack awareness and topology spread constraints
+The following configuration shows a Kafka cluster with rack awareness enabled and topology spread constraints defined in the `KafkaNodePool` resources:
++
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}

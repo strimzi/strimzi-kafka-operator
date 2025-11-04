@@ -164,10 +164,10 @@ rack:
 # ...
 ----
 
-IMPORTANT: With the rack awareness enabled, Strimzi will automatically set the rack (zone) information from the `topologyKey` label in the Kafka configuration.
-It will also automatically add a node affinity rule to make sure the Pods are scheduled only on the nodes that have the `topologyKey` label.
-But it will not add any anti-affinity or topology spread constraints to spread the Pods across the racks/zones.
-To do so, make sure to add your own rules in the `Kafka` or `KafkaNodePool` custom resources.
+IMPORTANT: When rack awareness is enabled, Strimzi sets the rack (zone) information in the `Kafka` configuration using the `topologyKey` label. 
+It also adds a node affinity rule to schedule Pods only on nodes that include this label. 
+Strimzi does not add anti-affinity rules or topology spread constraints to distribute Pods across racks or zones. 
+To configure distribution, define your own rules in the `Kafka` or `KafkaNodePool` custom resources.
 For more information see xref:proc-distributing-brokers-across-zones-{context}[Distributing brokers across availability zones]
 
 == Distributed tracing configuration
