@@ -71,7 +71,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     // default configuration of UO
     private final int maxBatchSize = 100;
     private final int maxBatchLingerMs = 100;
-    private final int maxQueueSize = 1024;
+    private final int maxWorkQueueSize = 1024;
     private long reconciliationTimeMs;
 
     @TestDoc(
@@ -101,7 +101,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
 
                 final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
 
-                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, maxQueueSize);
+                performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_WORK_QUEUE_SIZE, maxWorkQueueSize);
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_SIZE, maxBatchSize);
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_NUMBER_OF_KAFKA_USERS, numberOfKafkaUsers);
                 performanceAttributes.put(PerformanceConstants.USER_OPERATOR_IN_BATCH_MAXIMUM_BLOCK_TIME_MS, maxBatchLingerMs);
