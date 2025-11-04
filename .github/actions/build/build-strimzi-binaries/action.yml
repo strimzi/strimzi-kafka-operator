@@ -109,6 +109,15 @@ runs:
         name: strimzi-binaries.tar
         path: strimzi-binaries.tar
 
+    # Clean external SNAPSHOT dependencies before caching
+    - name: Clean external SNAPSHOT dependencies from Maven repository
+      if: github.ref == 'refs/heads/main'
+      shell: bash
+      run: |
+        mvn dependency:purge-local-repository \
+        -DsnapshotsOnly=true \
+        -DreResolve=false || true
+
     # Save maven cache for main branches
     - name: Save Maven cache
       if: github.ref == 'refs/heads/main'
