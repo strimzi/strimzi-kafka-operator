@@ -1,0 +1,14 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-strimzipodset-v1-changes-{context}']
+= StrimziPodSet
+
+[role="_abstract"]
+The `StrimziPodSet` is an internal resource managed automatically by the Cluster Operator.  
+Conversion is handled by Strimzi.
+
+Changes required for the `StrimziPodSet` custom resource in the `v1` API (for reference):
+ 
+* The `.spec` section is required.  
+
+

@@ -1,0 +1,30 @@
+:_mod-docs-content-type: CONCEPT
+
+= Manual and automatic v1 API changes
+
+[role="_abstract"]
+The Strimzi `v1` API introduces structural and configuration changes to custom resources.
+Some properties and sections from earlier API versions have been removed or replaced. 
+
+Custom resources can be updated for the `v1` API in two ways:
+
+* By using the Strimzi API conversion tool to apply supported automatic changes.
+* By editing and reapplying resources manually without using the tool.
+
+Even when the conversion tool is used, some changes must still be applied manually because the tool cannot modify or remove the unsupported configuration.  
+The reference information in this section lists which changes the tool can perform automatically and which require manual updates.
+
+.Manual changes
+
+Manual changes are updates that the conversion tool does not apply automatically.  
+
+To apply a manual change:
+
+. Edit the affected custom resource.
+. Update or remove the required properties.
+. Reapply the resource using `kubectl apply -f` or `kubectl replace -f`.
+
+.Automatic changes
+
+Automatic changes are updates that the conversion tool applies during conversion.  
+Even when the conversion tool is used, some manual changes are still required for the custom resources.

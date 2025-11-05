@@ -1,0 +1,40 @@
+:_mod-docs-content-type: PROCEDURE
+
+[id='proc-upgrade-crds-to-v1-{context}']
+= Upgrading CRD storage version to v1
+
+[role="_abstract"]
+Use the Strimzi API conversion tool with the `crd-upgrade` command to upgrade the Strimzi Custom Resource Definitions (CRDs) to use the `v1` API as the storage version.
+
+If you run this operation from a Kubernetes `Job`, replace `convert-resource` with `crd-upgrade` in the container command.  
+
+IMPORTANT: This command finalizes the API conversion by removing the `v1beta2` version from the CRDs.
+You can run this command any time after converting all your custom resources to `v1`, but it **must** be completed as a *final step just before* upgrading to the release that completely removes the `v1beta2` API (planned for 0.52.0 or 1.0.0).
+
+.Prerequisites
+
+* All Strimzi custom resources have been converted to `v1`.  
+* Permissions to patch CRD resources and replace their status.
+
+.Procedure
+
+. Run `crd-upgrade`:
++
+[source,shell]
+----
+bin/v1-api-conversion.sh crd-upgrade
+----
+
+. Verify that all Strimzi CRDs use the `v1` API as the storage version:
++
+[source,shell]
+----
+kubectl get crd -o name | grep kafka.strimzi.io | while read crd; do
+  echo -n "$crd  "
+  kubectl get "$crd" -o jsonpath='{.status.storedVersions}{"\n"}'
+done
+----
++
+Confirm that all CRDs return `[v1]` as the stored version.
+
+. After upgrading the CRDs, use only the properties supported in the `v1` API in all custom resources.

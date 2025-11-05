@@ -34,8 +34,3 @@ Review supported Kafka versions in the link:https://strimzi.io/downloads/[Suppor
 * The *Operators* column lists all released Strimzi versions (the Strimzi version is often called the "Operator version").
 * The *Kafka versions* column lists the supported Kafka versions for each Strimzi version.
 endif::Section[]
-
-== Upgrading from a Strimzi version earlier than 0.39
-
-Strimzi {ProductVersion} supports upgrades only for KRaft-based Apache Kafka clusters managed by Strimzi 0.39 and newer.
-When upgrading from older Strimzi versions, please make sure to first upgrade to a Strimzi version from 0.39 to 0.45 and migrate to KRaft before upgrading to Strimzi {ProductVersion}.

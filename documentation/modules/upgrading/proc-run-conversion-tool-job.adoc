@@ -1,0 +1,155 @@
+:_mod-docs-content-type: PROCEDURE
+
+[id='proc-run-conversion-tool-job-{context}']
+= Running the conversion tool as a Kubernetes job
+
+[role="_abstract"]
+Use the Strimzi API conversion tool with the `convert-resource` command to convert custom resources by running the tool as a Kubernetes `Job` when `kubectl` you cannot access the cluster locally or do not have a direct connection.
+
+.Procedure
+
+. Create a manifest that defines the resources required to run the conversion tool in the cluster.
+Include the following:
++
+* A `ServiceAccount` that runs the job  
+* RBAC permissions (`ClusterRole` and `ClusterRoleBinding`) that allow access to Strimzi custom resources and CRDs  
+* A `Job` resource that runs the conversion tool using those permissions  
++  
+If you are running the job in a specific namespace, ensure that the namespace name is the same in the `ServiceAccount`, `ClusterRoleBinding`, and `Job` definitions. 
+The following example combines all required resources into one YAML file:
++
+[source,yaml,subs="+attributes"]
+----
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: strimzi-v1-api-conversion
+  namespace: <namespace>
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-v1-api-conversion
+rules:
+  - apiGroups:
+      - kafka.strimzi.io
+    resources:
+      - kafkas
+      - kafkanodepools
+      - kafkaconnects
+      - kafkaconnectors
+      - kafkabridges
+      - kafkamirrormaker2s
+      - kafkarebalances
+      - kafkatopics
+      - kafkausers
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+  - apiGroups:
+      - core.strimzi.io
+    resources:
+      - strimzipodsets
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+      - customresourcedefinitions/status
+    resourceNames:
+      - kafkabridges.kafka.strimzi.io
+      - kafkaconnectors.kafka.strimzi.io
+      - kafkaconnects.kafka.strimzi.io
+      - kafkamirrormaker2s.kafka.strimzi.io
+      - kafkanodepools.kafka.strimzi.io
+      - kafkarebalances.kafka.strimzi.io
+      - kafkas.kafka.strimzi.io
+      - kafkatopics.kafka.strimzi.io
+      - kafkausers.kafka.strimzi.io
+      - strimzipodsets.core.strimzi.io
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      # Required when converting KafkaBridge metrics configuration
+      - configmaps
+    verbs:
+      - get
+      - list
+      - create
+      - patch
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: strimzi-v1-api-conversion
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-v1-api-conversion
+    namespace: <namespace>
+roleRef:
+  kind: ClusterRole
+  name: strimzi-v1-api-conversion
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: strimzi-v1-api-conversion
+  # Namespace where the job runs
+  namespace: <namespace>
+spec:
+  template:
+    spec:
+      serviceAccountName: strimzi-v1-api-conversion
+      containers:
+        - name: strimzi-v1-api-conversion
+          # Use an image that includes the conversion tool
+          image: {DockerClusterOperator}
+          command:
+            - /opt/v1-api-conversion/bin/v1-api-conversion.sh
+            - convert-resource
+      restartPolicy: OnFailure
+----
+
+. Apply the manifest to the cluster:
++
+[source,shell]
+----
+kubectl apply -f strimzi-v1-api-conversion-job.yaml
+----
+
+. Check the job is complete:
++
+[source,shell]
+----
+kubectl get jobs -n <namespace>
+kubectl logs job/strimzi-v1-api-conversion -n <namespace>
+----
+
+. Verify that the converted resources now use the `kafka.strimzi.io/v1` API version.
++
+If direct CLI access is unavailable, check the logs or monitoring dashboard to confirm that the job completed successfully.  
+
+. Ensure that all conversions complete successfully before proceeding to upgrade the CRDs.
+
+. (Optional) Switch the job to upgrade CRDs after all conversions complete.  
+Edit the container command to run `crd-upgrade` instead of `convert-resource`:
++
+[source,yaml]
+----
+command:
+  - /opt/v1-api-conversion/bin/v1-api-conversion.sh
+  - crd-upgrade
+----

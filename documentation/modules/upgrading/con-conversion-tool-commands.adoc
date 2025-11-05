@@ -1,0 +1,46 @@
+:_mod-docs-content-type: CONCEPT
+
+[id='con-conversion-tool-commands-{context}']
+= Conversion tool commands
+
+[role="_abstract"]
+The Strimzi API conversion tool provides commands to convert Strimzi custom resources and upgrade Custom Resource Definitions (CRDs) to the `v1` API.
+
+Each command runs through a shell script located in the `bin` directory.
+
+Run the tool using the following command format:
+
+[source,shell]
+----
+bin/v1-api-conversion.sh <command>
+----
+
+If you are using Windows, run `bin/v1-api-conversion.cmd` instead.
+
+The following commands are available for converting custom resources and upgrading CRDs:
+
+`convert-file`::  
+Converts Strimzi custom resources from local YAML files.  
+Use this command when applying configuration through GitOps or when direct cluster access is restricted.
+
+`convert-resource`::  
+Converts existing Strimzi custom resources directly in Kubernetes.  
+Use this command when updating live environments managed by the Cluster Operator.
+
+`crd-upgrade`::  
+Upgrades Strimzi CRDs to use the `v1` API as the storage version.  
+Run this command only after all custom resources have been converted.
+
+`help`::
+Use the `help` command to list available commands and options or to display detailed help for a specific command.
++
+[source,shell]
+----
+bin/v1-api-conversion.sh help
+bin/v1-api-conversion.sh help <command>
+----
++
+For example, run `bin/v1-api-conversion.sh help convert-file` to see the supported options for converting YAML files.
+
+NOTE: As an alternative to running the tool locally from your computer, you can also run it as a Kubernetes `Job`.
+For more information, see the `README.md` file in the conversion tool.

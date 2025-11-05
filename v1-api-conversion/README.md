@@ -143,7 +143,7 @@ To convert the resources directly in your Kubernetes cluster, you must run the t
 ## Upgrading CRDs to `v1`
 
 You can also use the tool to update the Strimzi CRDs to use the new `v1` version as a storage version.
-This is required before upgrading to Strimzi 0.52 / 1.0.0 and newer.
+This is required before upgrading to Strimzi 0.52.0 / 1.0.0 and newer.
 You have to first convert all Strimzi custom resources to `v1` using one of the previous commands.
 Once the custom resources are ready, you can use the `crd-upgrade` subcommand to upgrade the CRDs.
 The following example command shows how the tool is used:
