@@ -67,7 +67,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     private TestStorage suiteTestStorage;
 
     // number of KafkaUsers to test (each goes through full lifecycle: create, modify, delete)
-    private final List<Integer> numberOfKafkaUsersToTest = List.of(500);
+    private final List<Integer> numberOfKafkaUsersToTest = List.of(10, 100, 200, 500);
     // default configuration of UO
     private final int maxBatchSize = 100;
     private final int maxBatchLingerMs = 100;
@@ -126,8 +126,8 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
         suiteTestStorage = new TestStorage(KubeResourceManager.get().getTestContext(), TestConstants.CO_NAMESPACE);
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPool(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
         );
 
         KubeResourceManager.get().createResourceWithWait(
@@ -140,12 +140,12 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                         .editEntityOperator()
                             .editUserOperator()
                                 .withReconciliationIntervalMs(10_000L)
-//                                .withResources(new ResourceRequirementsBuilder()
-//                                    .addToLimits("memory", new Quantity("768Mi"))
-//                                    .addToLimits("cpu", new Quantity("750m"))
-//                                    .addToRequests("memory", new Quantity("768Mi"))
-//                                    .addToRequests("cpu", new Quantity("750m"))
-//                                    .build())
+                                .withResources(new ResourceRequirementsBuilder()
+                                    .addToLimits("memory", new Quantity("768Mi"))
+                                    .addToLimits("cpu", new Quantity("750m"))
+                                    .addToRequests("memory", new Quantity("768Mi"))
+                                    .addToRequests("cpu", new Quantity("750m"))
+                                    .build())
                             .endUserOperator()
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
