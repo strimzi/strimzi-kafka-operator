@@ -70,6 +70,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="io.strimzi.platform" />
         <allow pkg="io.strimzi.certs" />
         <allow pkg="io.strimzi.kafka.config.model" />
+        <allow pkg="io.strimzi.operator.common.auth" />
         <allow pkg="io.strimzi.operator.common.model" />
         <allow pkg="io.strimzi.operator.cluster.model" />
         <allow class="io.strimzi.operator.common.Reconciliation" />

@@ -539,13 +539,21 @@ public abstract class Ca {
      * @return Certificate
      */
     public io.fabric8.certmanager.api.model.v1.Certificate getCertManagerCert(String commonName, String organization) {
-        Subject subject = getSubject(commonName, organization);
+        return getCertManagerCert(getSubject(commonName, organization));
+    }
+
+    /**
+     * Get cert-manager Certificate object
+     * @param subject Subject
+     * @return Certificate
+     */
+    protected io.fabric8.certmanager.api.model.v1.Certificate getCertManagerCert(Subject subject) {
         return new CertificateBuilder()
                 .withNewSpec()
-                    .withCommonName(commonName)
+                    .withCommonName(subject.commonName())
                     .withNewPrivateKey()
                         .withAlgorithm("RSA")
-                        .withEncoding("PKCS1")
+                        .withEncoding("PKCS8")
                         .withSize(2048)
                     .endPrivateKey()
                     .withDuration(new io.fabric8.kubernetes.api.model.Duration(Duration.ofDays(validityDays)))
@@ -626,10 +634,12 @@ public abstract class Ca {
     }
 
     /**
-     * Create the CA {@code Secrets} if they don't exist, otherwise if within the renewal period then either renew
+     * Create or update CA data when Strimzi is managing CA.
+     * <p>
+     * Create the CA data if they don't exist, otherwise if within the renewal period then either renew
      * the CA cert or replace the CA cert and key, according to the configured policy. After calling this method
      * {@link #certRenewed()} and {@link #certsRemoved()} will return whether the certificate was renewed and whether
-     * expired secrets were removed from the Secret.
+     * expired certs were removed from the cert data.
      *
      * @param maintenanceWindowSatisfied Flag indicating whether we are in the maintenance window
      * @param forceReplace Flag indicating whether to do a force replace
@@ -745,14 +755,16 @@ public abstract class Ca {
     }
 
     /**
-     * Maybe update the stored Ca Cert data and related annotations. Used when an external certificate manager is managing the CA.
+     * Create or update CA data when cert-manager is managing CA.
+     * <p>
+     * Store the new data if it doesn't exist already, otherwise check if the certificate has changed
+     * and update the data and generations accordingly.
      *
      * @param newCaCertData         New CA cert data.
      * @param existingCaCertHash    Existing CA cert hash to determine if the cert has changed.
      * @param endEntityCertificate  End entity certificate to use for cert path validation.
      */
     public void createOrUpdateCertManagerCa(String newCaCertData, String existingCaCertHash, X509Certificate endEntityCertificate) {
-        LOGGER.infoCr(reconciliation, "maybeUpdateCertAndGenerations: caCertData size = " + this.caCertData.size() + " new data is null? " + (newCaCertData == null));
         if (this.caCertData.isEmpty()) {
             // No data, so we add it
             Map<String, String> caCertData = new HashMap<>();
@@ -768,18 +780,18 @@ public abstract class Ca {
                 throw new RuntimeException(e);
             }
             if (!existingCaCertHash.equals(newCaCertHash)) {
-                updateCertAndGenerations(newCaCertData, endEntityCertificate);
+                updateCertAndIncrementGenerations(newCaCertData, endEntityCertificate);
             }
         }
     }
 
     /**
-     * Update the stored CA cert data and related annotations. Used when an external certificate manager is managing the CA.
+     * Update the stored CA cert data and related annotations. Used when cert-manager is managing the CA.
      *
      * @param newCaCertData         New CA cert data.
      * @param endEntityCertificate  End entity certificate to use for cert path validation.
      */
-    public abstract void updateCertAndGenerations(String newCaCertData, X509Certificate endEntityCertificate);
+    public abstract void updateCertAndIncrementGenerations(String newCaCertData, X509Certificate endEntityCertificate);
 
     /**
      * @return the CertificateManagerType of this Ca.

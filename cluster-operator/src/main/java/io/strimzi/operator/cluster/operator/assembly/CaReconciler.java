@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.CertManagerUtils;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -395,16 +396,15 @@ public class CaReconciler {
     private Future<Secret> maybeReconcileClusterOperatorCMCertificate() {
         if (CertificateManagerType.CERT_MANAGER_IO.equals(clusterCaCertManagerType)) {
             return certManagerCertificateOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
-                    CertUtils.buildCertManagerCertificate(
-                            clusterCa,
+                    CertManagerUtils.buildCertManagerCertificate(
                             reconciliation.namespace(),
                             KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
-                            "cluster-operator",
+                            clusterCa.getCertManagerCert("cluster-operator", Ca.IO_STRIMZI),
                             clusterOperatorSecretLabels,
                             ownerRef
                     ))
                     .compose(v -> certManagerCertificateOperator.waitForReady(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name())))
-                    .compose(v -> secretOperator.getAsync(reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()) + "-cm"));
+                    .compose(v -> secretOperator.getAsync(reconciliation.namespace(), CertManagerUtils.certManagerSecretName(KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))));
         } else {
             return Future.succeededFuture(null);
         }
@@ -428,15 +428,28 @@ public class CaReconciler {
                     }
 
                     if (clusterCaCertManagerType == CertificateManagerType.CERT_MANAGER_IO) {
-                        coSecret = CertUtils.buildTrustedCertificateSecretFromCertManager(
+                        Secret newCoSecret = CertManagerUtils.buildTrustedCertificateSecretFromCertManager(
                                 clusterCa,
+                                null, //we don't need the Clients CA generation present on this Secret
                                 certManagerSecret,
                                 reconciliation.namespace(),
                                 KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
                                 "cluster-operator",
                                 clusterOperatorSecretLabels,
-                                ownerRef
-                        );
+                                ownerRef);
+                        if (coSecret == null) {
+                            coSecret = newCoSecret;
+                        } else if (CertManagerUtils.certManagerCertUpdated(coSecret, newCoSecret)) {
+                            if (CertUtils.certIsTrusted(reconciliation, cert(newCoSecret, "cluster-operator.crt"), clusterCa.currentCaCertX509())) {
+                                LOGGER.infoCr(reconciliation, "New certificate for cluster operator, updating Secret.");
+                                coSecret = newCoSecret;
+                            } else {
+                                LOGGER.infoCr(reconciliation, "New certificate for cluster operator, but not trusted yet so keeping existing certificate Secret.");
+                            }
+                        } else {
+                            // Certificate has not changed, but use new Secret to make sure labels etc are correct
+                            coSecret = newCoSecret;
+                        }
                     } else {
                         coSecret = CertUtils.buildTrustedCertificateSecret(
                                 reconciliation,

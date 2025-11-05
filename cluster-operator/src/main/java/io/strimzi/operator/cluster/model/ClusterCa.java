@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.certmanager.api.model.v1.Certificate;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
@@ -178,7 +179,43 @@ public class ClusterCa extends Ca {
             Map<Integer, Set<String>> externalAddresses,
             boolean isMaintenanceTimeWindowsSatisfied
     ) throws IOException {
-        Function<NodeRef, Subject> subjectFn = node -> {
+        LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
+        return maybeCopyOrGenerateCerts(
+                reconciliation,
+                nodes,
+                kafkaNodeCertsSubjectFn(namespace, clusterName, externalBootstrapAddresses, externalAddresses),
+                existingCertificates,
+                isMaintenanceTimeWindowsSatisfied
+        );
+    }
+
+    /**
+     * Prepares the Certificate objects for the Kafka nodes.
+     * Only used when cert-manager is issuing certificates.
+     *
+     * @param namespace                     Namespace of the Kafka cluster
+     * @param clusterName                   Name of the Kafka cluster
+     * @param nodes                         Nodes that are part of the Kafka cluster
+     * @param externalBootstrapAddresses    List of external bootstrap addresses (used for certificate SANs)
+     * @param externalAddresses             Map with external listener addresses for the different nodes (used for certificate SANs)
+     *
+     * @return Map of Certificate resources keyed on the node id
+     */
+    public Map<String, Certificate> generateKafkaNodeCertificateResources(String namespace, String clusterName, Set<NodeRef> nodes,
+                                                                          Set<String> externalBootstrapAddresses,
+                                                                          Map<Integer, Set<String>> externalAddresses) {
+        Map<String, Certificate> certificates = new HashMap<>();
+        for (NodeRef node : nodes)  {
+            certificates.put(node.podName(), getCertManagerCert(kafkaNodeCertsSubjectFn(namespace, clusterName, externalBootstrapAddresses, externalAddresses).apply(node)));
+        }
+        return certificates;
+    }
+
+    private Function<NodeRef, Subject> kafkaNodeCertsSubjectFn(String namespace, String clusterName,
+                                                               Set<String> externalBootstrapAddresses,
+                                                               Map<Integer, Set<String>> externalAddresses
+    ) {
+        return node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
                     .withCommonName(KafkaResources.kafkaComponentName(clusterName));
@@ -215,16 +252,6 @@ public class ClusterCa extends Ca {
 
             return subject.build();
         };
-
-        LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
-
-        return maybeCopyOrGenerateCerts(
-            reconciliation,
-            nodes,
-            subjectFn,
-            existingCertificates,
-            isMaintenanceTimeWindowsSatisfied
-        );
     }
 
     @Override
@@ -378,7 +405,7 @@ public class ClusterCa extends Ca {
     }
 
     @Override
-    public void updateCertAndGenerations(String caCert, X509Certificate endEntityCertificate) {
+    public void updateCertAndIncrementGenerations(String caCert, X509Certificate endEntityCertificate) {
         if (endEntityCertificate == null) {
             // Cluster operator certificate is missing, so no cert path validation to perform
             LOGGER.warnCr(reconciliation, "Strimzi CA cert Secret containing custom cert has been created, but operator Secret is missing");

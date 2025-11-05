@@ -254,7 +254,7 @@ public class CaReconcilerCertManagerTest {
     }
 
     private Secret clusterOperatorSecret(Secret certManagerSecret, String certGeneration) {
-        String certHash = CertUtils.getCertificateShortThumbprint(certManagerSecret, "tls.crt");
+        String certHash = CertUtils.getCertificateThumbprint(certManagerSecret, "tls.crt");
         Objects.requireNonNull(certHash);
 
         return ModelUtils.createSecret(KafkaResources.clusterOperatorCertsSecretName(NAME), NAMESPACE, Labels.EMPTY, null,
@@ -318,7 +318,7 @@ public class CaReconcilerCertManagerTest {
                     assertThat(clusterOperatorCertData.get("cluster-operator.key"), is(clusterOperatorCMSecret.getData().get("tls.key")));
 
                     Map<String, String> clusterOperatorCertSecretAnnotations = clusterOperatorCertSecret.getValue().getMetadata().getAnnotations();
-                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, CertUtils.getCertificateShortThumbprint(clusterOperatorCMSecret, "tls.crt")));
+                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, CertUtils.getCertificateThumbprint(clusterOperatorCMSecret, "tls.crt")));
                     assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                     async.flag();
                 })));
@@ -431,7 +431,7 @@ public class CaReconcilerCertManagerTest {
                     assertThat(clusterOperatorCertData.get("cluster-operator.key"), is(renewedClusterOperatorCMSecret.getData().get("tls.key")));
 
                     Map<String, String> clusterOperatorCertSecretAnnotations = clusterOperatorCertSecret.getValue().getMetadata().getAnnotations();
-                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, CertUtils.getCertificateShortThumbprint(renewedClusterOperatorCMSecret, "tls.crt")));
+                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, CertUtils.getCertificateThumbprint(renewedClusterOperatorCMSecret, "tls.crt")));
                     assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                     async.flag();
                 })));
@@ -497,7 +497,7 @@ public class CaReconcilerCertManagerTest {
                     assertThat(clusterOperatorCertData.get("cluster-operator.key"), is(renewedClusterOperatorCMSecret.getData().get("tls.key")));
 
                     Map<String, String> clusterOperatorCertSecretAnnotations = clusterOperatorCertSecret.getValue().getMetadata().getAnnotations();
-                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, CertUtils.getCertificateShortThumbprint(renewedClusterOperatorCMSecret, "tls.crt")));
+                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, CertUtils.getCertificateThumbprint(renewedClusterOperatorCMSecret, "tls.crt")));
                     assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
                     async.flag();
                 })));
@@ -660,7 +660,7 @@ public class CaReconcilerCertManagerTest {
                     assertThat(clusterOperatorCertData.get("cluster-operator.key"), is(renewedClusterOperatorCMSecret.getData().get("tls.key")));
 
                     Map<String, String> clusterOperatorCertSecretAnnotations = clusterOperatorCertSecret.getValue().getMetadata().getAnnotations();
-                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, CertUtils.getCertificateShortThumbprint(renewedClusterOperatorCMSecret, "tls.crt")));
+                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, CertUtils.getCertificateThumbprint(renewedClusterOperatorCMSecret, "tls.crt")));
                     assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
 
                     ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
@@ -754,6 +754,73 @@ public class CaReconcilerCertManagerTest {
                     assertThat(clusterCaCertData, aMapWithSize(1));
                     assertThat(clusterCaCertData.get(CA_CRT), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
 
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testClusterOperatorCertRenewedAndNotTrusted(Vertx vertx, VertxTestContext context) throws IOException {
+        CertificateAuthority clusterCaCertificateAuthority = getCertificateAuthority(USER_PROVIDED_CLUSTER_CA_SECRET_NAME);
+        CertAndKey clusterCaCertAndKey = generateCa(clusterCaCertificateAuthority, "cluster-ca");
+        CertAndKey newClusterCaCertAndKey = generateCa(clusterCaCertificateAuthority, "cluster-ca");
+
+        //User hasn't updated the CA cert they provide to Strimzi
+        Secret userProvidedClusterCaCertSecret = createSecret(USER_PROVIDED_CLUSTER_CA_SECRET_NAME, Map.of(CA_CRT, clusterCaCertAndKey.certAsBase64String()));
+        Secret clusterCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), clusterCaCertAndKey.certAsBase64String(), true);
+
+        Secret initialClusterOperatorCMSecret = clusterOperatorCMSecret(clusterCaCertAndKey);
+        Secret clusterOperatorSecret = clusterOperatorSecret(initialClusterOperatorCMSecret, "0");
+        Secret renewedClusterOperatorCMSecret = clusterOperatorCMSecret(newClusterCaCertAndKey);
+
+        CertificateAuthority clientsCaCertificateAuthority = getCertificateAuthority(USER_PROVIDED_CLIENTS_CA_SECRET_NAME);
+        CertAndKey clientsCaCertAndKey = generateCa(clientsCaCertificateAuthority, "clients-ca");
+
+        Secret userProvidedClientsCaCertSecret = createSecret(USER_PROVIDED_CLIENTS_CA_SECRET_NAME, Map.of(CA_CRT, clientsCaCertAndKey.certAsBase64String()));
+        Secret clientsCaCertSecret = ResourceUtils.createInitialCaCertSecretForCMCa(NAMESPACE, NAME, KafkaResources.clientsCaCertificateSecretName(NAME), clientsCaCertAndKey.certAsBase64String(), false);
+
+        Map<String, String> generationAnnotations =
+                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
+                        Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0",
+                        Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0");
+
+        Pod controllerPod = podWithNameAndAnnotations("my-cluster-controllers-1", false, true, generationAnnotations);
+        Pod brokerPod = podWithNameAndAnnotations("my-cluster-brokers-0", true, false, generationAnnotations);
+
+        initTrustRolloutTestMocks(supplier,
+                userProvidedClusterCaCertSecret,
+                userProvidedClientsCaCertSecret,
+                renewedClusterOperatorCMSecret,
+                clusterOperatorSecret,
+                List.of(clusterCaCertSecret, clientsCaCertSecret, clusterOperatorSecret),
+                List.of(controllerPod),
+                List.of(brokerPod));
+
+        Checkpoint async = context.checkpoint();
+
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(KAFKA, supplier, vertx);
+        mockCaReconciler
+                .reconcile(Clock.systemUTC())
+                .onComplete(context.succeeding(c -> context.verify(() -> {
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
+                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
+
+                    ArgumentCaptor<Certificate> clusterOperatorCertificate =  ArgumentCaptor.forClass(Certificate.class);
+                    verify(supplier.certManagerCertificateOperator).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), clusterOperatorCertificate.capture());
+
+                    CertificateSpec clusterOperatorCertificateSpec = clusterOperatorCertificate.getValue().getSpec();
+                    assertThat(clusterOperatorCertificateSpec.getCommonName(), is("cluster-operator"));
+
+                    ArgumentCaptor<Secret> clusterOperatorCertSecret = ArgumentCaptor.forClass(Secret.class);
+                    verify(supplier.secretOperations).reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), clusterOperatorCertSecret.capture());
+
+                    Map<String, String> clusterOperatorCertData = clusterOperatorCertSecret.getValue().getData();
+                    assertThat(clusterOperatorCertData, aMapWithSize(2));
+                    assertThat(clusterOperatorCertData.get("cluster-operator.crt"), is(initialClusterOperatorCMSecret.getData().get("tls.crt")));
+                    assertThat(clusterOperatorCertData.get("cluster-operator.key"), is(initialClusterOperatorCMSecret.getData().get("tls.key")));
+
+                    Map<String, String> clusterOperatorCertSecretAnnotations = clusterOperatorCertSecret.getValue().getMetadata().getAnnotations();
+                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, CertUtils.getCertificateThumbprint(initialClusterOperatorCMSecret, "tls.crt")));
+                    assertThat(clusterOperatorCertSecretAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                     async.flag();
                 })));
     }

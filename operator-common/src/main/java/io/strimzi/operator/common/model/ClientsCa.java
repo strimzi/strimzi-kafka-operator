@@ -77,7 +77,7 @@ public class ClientsCa extends Ca {
     }
 
     @Override
-    public void updateCertAndGenerations(String caCert, X509Certificate endEntityCertificate) {
+    public void updateCertAndIncrementGenerations(String caCert, X509Certificate endEntityCertificate) {
         Map<String, String> newCaCertData = new HashMap<>();
         newCaCertData.put(CA_CRT, caCert);
         this.caCertData = newCaCertData;

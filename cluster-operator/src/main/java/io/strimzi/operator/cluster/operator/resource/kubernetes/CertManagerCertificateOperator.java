@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource.kubernetes;
 import io.fabric8.certmanager.api.model.v1.Certificate;
 import io.fabric8.certmanager.api.model.v1.CertificateCondition;
 import io.fabric8.certmanager.api.model.v1.CertificateList;
+import io.fabric8.certmanager.api.model.v1.CertificateStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -15,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Operator to manage cert-manager Certificate objects
@@ -47,7 +49,16 @@ public class CertManagerCertificateOperator extends AbstractNamespacedResourceOp
 
     private boolean isReady(String namespace, String name) {
         Certificate certificate = operation().inNamespace(namespace).withName(name).get();
-        List<CertificateCondition> conditions = certificate.getStatus().getConditions();
-        return conditions.stream().anyMatch(condition -> condition.getType().equals("Ready"));
+        CertificateStatus status = certificate.getStatus();
+        boolean certificateReady = false;
+        if (status != null) {
+            List<CertificateCondition> conditions = certificate.getStatus().getConditions();
+            Optional<CertificateCondition> readyCondition = conditions.stream().filter(condition -> condition.getType().equals("Ready"))
+                    .findFirst();
+            if (readyCondition.isPresent() && readyCondition.get().getStatus().equals("True")) {
+                certificateReady = true;
+            }
+        }
+        return certificateReady;
     }
 }

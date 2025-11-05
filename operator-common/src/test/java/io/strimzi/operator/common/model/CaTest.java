@@ -55,7 +55,7 @@ class CaTest {
         }
 
         @Override
-        public void updateCertAndGenerations(String newCaCertData, X509Certificate endEntityCertificate) {
+        public void updateCertAndIncrementGenerations(String newCaCertData, X509Certificate endEntityCertificate) {
         }
     }
 
