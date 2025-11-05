@@ -19,7 +19,7 @@
 
 ## testDynamicConfiguration
 
-**Description:** Parametrized test taking 3 per-broker and 3 cluster-wide configuration that are being tested if dynamic configuration works.For each of the configuration (and its value), it goes through following steps:
+**Description:** Parametrized test taking 3 pre-defined per-broker and 3 pre-defined cluster-wide configurations that are being tested to see if dynamic configuration works.For each of the configuration (and its value), it goes through following steps:
  1. Apply the configuration
  2. Wait for stability of the cluster - no Pods will be rolled.
  3. Verify that configuration is correctly set in CR and either all Pods or for whole cluster (based on scope).
