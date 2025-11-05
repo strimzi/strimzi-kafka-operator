@@ -40,8 +40,6 @@ public class UserOperatorPerformanceUtils {
     // This allows unlimited threads to be created on-demand
     private static ExecutorService executorService = Executors.newCachedThreadPool();
 
-    private static final Object RESOURCE_CREATION_LOCK = new Object();
-
     // ensuring that object can not be created outside of class
     private UserOperatorPerformanceUtils() {}
 
@@ -124,12 +122,7 @@ public class UserOperatorPerformanceUtils {
     public static void createAllUsersInListWithWait(final TestStorage testStorage, final List<KafkaUser> listOfUsers, final String usersPrefix) {
         LOGGER.info("Creating {} KafkaUsers", listOfUsers.size());
 
-        // TODO: this should be fixed in `test-frame`
-        //  Synchronize resource creation to prevent race condition when multiple threads
-        // try to create the same directory for YAML files in KubeResourceManager
-        synchronized (RESOURCE_CREATION_LOCK) {
-            KubeResourceManager.get().createResourceWithoutWait(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
-        }
+        KubeResourceManager.get().createResourceWithoutWait(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
 
         // Wait for each specific user in the list to be ready
         listOfUsers.forEach(kafkaUser ->
