@@ -27,6 +27,8 @@
 * **This version introduces a new API version to our CRDs.**
   **Before upgrading to Strimzi 0.49 or newer, make sure that you update your `KafkaUser` resources to use the `.spec.authorization.acls[]operations` field instead of the deprecated `.spec.authorization.acls[]operation`.**
   **Especially when using Helm, make sure that the CRDs are updated when you upgrade the operator.**
+* **When rack-awareness is enabled in the `Kafka` custom resource (`.spec.kafka.rack`), Strimzi will not automatically add the best-effort-affinity rules for spreading the Kafka Pods between the zones.**
+  **Please make sure to set your own `topologySpreadConstraint` or `affinity` rules instead.**
 * The `.status.kafkaMetadataState` field in the `Kafka` custom resource is deprecated and not used anymore.
 * The `type: oauth` authentication in Kafka brokers and Kafka clients (Kafka Connect, MirrorMaker 2, and Strimzi HTTP Bridge) has been deprecated.
   Please use the `type: custom` authentication instead.

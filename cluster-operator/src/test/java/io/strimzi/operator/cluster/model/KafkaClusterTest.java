@@ -2413,19 +2413,6 @@ public class KafkaClusterTest {
                                 .build())
                     .endRequiredDuringSchedulingIgnoredDuringExecution()
                 .endNodeAffinity()
-                .withNewPodAntiAffinity()
-                    .withPreferredDuringSchedulingIgnoredDuringExecution(
-                            new WeightedPodAffinityTermBuilder()
-                                    .withWeight(100)
-                                    .withNewPodAffinityTerm()
-                                        .withNewLabelSelector()
-                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
-                                        .endLabelSelector()
-                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
-                                    .endPodAffinityTerm()
-                                    .build()
-                    )
-                .endPodAntiAffinity()
                 .build();
 
         Kafka kafka = new KafkaBuilder(KAFKA)
@@ -2643,7 +2630,7 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getAffinity(), is(poolAffinity));
                     assertThat(pod.getSpec().getTolerations(), is(poolToleration));
                 } else {
-                    assertThat(pod.getSpec().getAffinity(), is(new Affinity()));
+                    assertThat(pod.getSpec().getAffinity(), is(nullValue()));
                     assertThat(pod.getSpec().getTolerations(), is(List.of()));
                 }
             }
@@ -2679,15 +2666,6 @@ public class KafkaClusterTest {
                                             .withMatchLabels(Map.of("storage", "true"))
                                         .endLabelSelector()
                                         .withTopologyKey("kubernetes.io/hostname")
-                                    .endPodAffinityTerm()
-                                    .build(),
-                            new WeightedPodAffinityTermBuilder()
-                                    .withWeight(100)
-                                    .withNewPodAffinityTerm()
-                                        .withNewLabelSelector()
-                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
-                                        .endLabelSelector()
-                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
                                     .endPodAffinityTerm()
                                     .build()
                     )
@@ -2783,15 +2761,6 @@ public class KafkaClusterTest {
                                         .endLabelSelector()
                                         .withTopologyKey("kubernetes.io/hostname")
                                     .endPodAffinityTerm()
-                                    .build(),
-                            new WeightedPodAffinityTermBuilder()
-                                    .withWeight(100)
-                                    .withNewPodAffinityTerm()
-                                        .withNewLabelSelector()
-                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
-                                        .endLabelSelector()
-                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
-                                    .endPodAffinityTerm()
                                     .build()
                     )
                 .endPodAntiAffinity()
@@ -2824,15 +2793,6 @@ public class KafkaClusterTest {
                                             .withMatchLabels(Map.of("database", "true"))
                                         .endLabelSelector()
                                         .withTopologyKey("kubernetes.io/hostname")
-                                    .endPodAffinityTerm()
-                                    .build(),
-                            new WeightedPodAffinityTermBuilder()
-                                    .withWeight(100)
-                                    .withNewPodAffinityTerm()
-                                        .withNewLabelSelector()
-                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
-                                        .endLabelSelector()
-                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
                                     .endPodAffinityTerm()
                                     .build()
                     )
@@ -2949,19 +2909,6 @@ public class KafkaClusterTest {
                                 .build())
                     .endRequiredDuringSchedulingIgnoredDuringExecution()
                 .endNodeAffinity()
-                .withNewPodAntiAffinity()
-                    .withPreferredDuringSchedulingIgnoredDuringExecution(
-                            new WeightedPodAffinityTermBuilder()
-                                    .withWeight(100)
-                                    .withNewPodAffinityTerm()
-                                        .withNewLabelSelector()
-                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
-                                        .endLabelSelector()
-                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
-                                    .endPodAffinityTerm()
-                                    .build()
-                    )
-                .endPodAntiAffinity()
                 .build();
 
         Affinity mergedRackAffinity = new AffinityBuilder()
@@ -2991,15 +2938,6 @@ public class KafkaClusterTest {
                                             .withMatchLabels(Map.of("database", "true"))
                                         .endLabelSelector()
                                         .withTopologyKey("kubernetes.io/hostname")
-                                    .endPodAffinityTerm()
-                                    .build(),
-                            new WeightedPodAffinityTermBuilder()
-                                    .withWeight(100)
-                                    .withNewPodAffinityTerm()
-                                        .withNewLabelSelector()
-                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
-                                        .endLabelSelector()
-                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
                                     .endPodAffinityTerm()
                                     .build()
                     )
@@ -4467,7 +4405,7 @@ public class KafkaClusterTest {
                     assertThat(pod.getSpec().getTerminationGracePeriodSeconds(), is(30L));
                     assertThat(pod.getSpec().getImagePullSecrets().size(), is(0));
                     assertThat(pod.getSpec().getSecurityContext().getFsGroup(), is(0L));
-                    assertThat(pod.getSpec().getAffinity(), is(new Affinity()));
+                    assertThat(pod.getSpec().getAffinity(), is(nullValue()));
                     assertThat(pod.getSpec().getTolerations(), is(List.of()));
 
                     assertThat(pod.getSpec().getVolumes().size(), is(4));

@@ -149,6 +149,7 @@ spec:
   # ...
 ----
 
+[id='con-common-config-rack-awareness-{context}']
 == Rack awareness
 
 Enable rack-aware broker assignment to improve fault tolerance.
@@ -158,11 +159,16 @@ Enable rack-aware broker assignment to improve fault tolerance.
 [source,yaml]
 ----
 # ...
-spec:
-  rack:
-    topologyKey: topology.kubernetes.io/zone
-  # ...  
+rack:
+  topologyKey: topology.kubernetes.io/zone
+# ...
 ----
+
+IMPORTANT: When rack awareness is enabled, Strimzi sets the rack (zone) information in the `Kafka` configuration using the `topologyKey` label. 
+It also adds a node affinity rule to schedule Pods only on nodes that include this label. 
+Strimzi does not add anti-affinity rules or topology spread constraints to distribute Pods across racks or zones. 
+To configure distribution, define your own rules in the `Kafka` or `KafkaNodePool` custom resources.
+For more information see xref:proc-distributing-brokers-across-zones-{context}[Distributing brokers across availability zones]
 
 == Distributed tracing configuration
 
