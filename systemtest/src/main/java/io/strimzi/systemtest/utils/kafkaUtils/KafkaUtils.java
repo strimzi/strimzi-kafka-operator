@@ -285,7 +285,7 @@ public class KafkaUtils {
             TestUtils.waitFor("cluster-wide dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(), () -> {
                 String result = KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(namespaceName, scraperPodName, bootstrapServer);
 
-                LOGGER.debug("This cluster-wide dyn.configuration {}", result);
+                LOGGER.debug("This is cluster-wide dyn.configuration {}", result);
 
                 if (!result.contains(configName + "=" + value)) {
                     LOGGER.error("Cluster-wide configuration doesn't contain {} with value {}", configName, value);
@@ -299,7 +299,7 @@ public class KafkaUtils {
                 TestUtils.waitFor("dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(), () -> {
                     String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
 
-                    LOGGER.debug("This dyn.configuration {} inside the Kafka Pod: {}/{}", result, namespaceName, pod.getMetadata().getName());
+                    LOGGER.debug("This is dyn.configuration {} inside the Kafka Pod: {}/{}", result, namespaceName, pod.getMetadata().getName());
 
                     if (!result.contains(configName + "=" + value)) {
                         LOGGER.error("Kafka Pod: {}/{} doesn't contain {} with value {}", namespaceName, pod.getMetadata().getName(), configName, value);

@@ -86,7 +86,7 @@ public class DynamicConfSharedST extends AbstractST {
 
     @TestDoc(
         description = @Desc(
-            "Parametrized test taking 3 per-broker and 3 cluster-wide configuration that are being tested if dynamic configuration works." +
+            "Parametrized test taking 3 pre-defined per-broker and 3 pre-defined cluster-wide configurations that are being tested to see if dynamic configuration works." +
             "For each of the configuration (and its value), it goes through following steps:" +
             "\n 1. Apply the configuration" +
             "\n 2. Wait for stability of the cluster - no Pods will be rolled." +
