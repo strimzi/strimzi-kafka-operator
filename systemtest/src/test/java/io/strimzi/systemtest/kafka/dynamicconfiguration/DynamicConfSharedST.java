@@ -62,6 +62,13 @@ public class DynamicConfSharedST extends AbstractST {
     private TestStorage suiteTestStorage;
     private String scraperPodName;
 
+    /**
+     * Method returning {@link Stream} of {@link Arguments} containing test cases for the dynamic configuration tests.
+     * We decided to pick 3 per-broker and 3 cluster-wide configuration properties, which we are testing regularly.
+     * Aim of these tests is to check that our internal mechanism for applying dynamic changes to Kafka Pods works.
+     *
+     * @return  {@link Stream} of {@link Arguments} containing test cases for the dynamic configuration tests.
+     */
     private Stream<Arguments> dynamicConfiguration() {
         List<Arguments> testCases = new ArrayList<>();
 
