@@ -10,35 +10,30 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.kafka.config.model.ConfigModel;
-import io.strimzi.kafka.config.model.Type;
+import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
-import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestTags.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
@@ -67,11 +62,39 @@ public class DynamicConfSharedST extends AbstractST {
     private TestStorage suiteTestStorage;
     private String scraperPodName;
 
+    private Stream<Arguments> dynamicConfiguration() {
+        List<Arguments> testCases = new ArrayList<>();
+
+        // per-broker config
+        Map<String, String> perBrokerDynConfig = new HashMap<>();
+        perBrokerDynConfig.put("ssl.protocol", "TLSv1.1");
+        perBrokerDynConfig.put("ssl.enabled.protocols", "TLSv1.1");
+        perBrokerDynConfig.put("principal.builder.class", "io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder");
+
+        perBrokerDynConfig.forEach((key, value) -> testCases.add(Arguments.of(Scope.PER_BROKER.toString(), key, value)));
+
+        // cluster-wide config
+        Map<String, String> clusterWideDynConfig = new HashMap<>();
+        clusterWideDynConfig.put("log.cleanup.policy", "compact");
+        clusterWideDynConfig.put("log.message.timestamp.type", "LogAppendTime");
+        clusterWideDynConfig.put("log.preallocate", "true");
+
+        clusterWideDynConfig.forEach((key, value) -> testCases.add(Arguments.of(Scope.CLUSTER_WIDE.toString(), key, value)));
+
+        return testCases.stream();
+    }
+
     @TestDoc(
-        description = @Desc("This test dynamically selects and applies three Kafka dynamic configuration properties to verify that the changes do not trigger a rolling update in the Kafka cluster. It applies the configurations, waits for stability, and then verifies that the new configuration is applied both to the CustomResource (CR) and the running Kafka pods."),
+        description = @Desc(
+            "Parametrized test taking 3 per-broker and 3 cluster-wide configuration that are being tested if dynamic configuration works." +
+            "For each of the configuration (and its value), it goes through following steps:" +
+            "\n 1. Apply the configuration" +
+            "\n 2. Wait for stability of the cluster - no Pods will be rolled." +
+            "\n 3. Verify that configuration is correctly set in CR and either all Pods or for whole cluster (based on scope)."
+        ),
         steps = {
-            @Step(value = "Randomly choose three configuration properties for dynamic update.", expected = "Three configurations are selected without duplication."),
-            @Step(value = "Apply the chosen configuration properties to the Kafka CustomResource.", expected = "The configurations are applied successfully without triggering a rolling update."),
+            @Step(value = "Update configuration (with value) in Kafka.", expected = "Configuration is successfully updated."),
+            @Step(value = "For one minute, periodically check that there is no rolling update of Kafka Pods.", expected = "No Kafka Pods will be rolled."),
             @Step(value = "Verify the applied configuration on both the Kafka CustomResource and the Kafka pods.", expected = "The applied configurations are correctly reflected in the Kafka CustomResource and the kafka pods.")
         },
         labels = {
@@ -79,117 +102,24 @@ public class DynamicConfSharedST extends AbstractST {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
-    @TestFactory
-    Iterator<DynamicTest> testDynConfiguration() {
+    @ParameterizedTest(name = "scope: {0}, configuration: {1} with value {2}")
+    @MethodSource("dynamicConfiguration")
+    void testDynamicConfiguration(String scope, String config, String value) {
+        KafkaUtils.updateConfigurationWithStabilityWait(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), config, value);
 
-        List<DynamicTest> dynamicTests = new ArrayList<>(40);
-
-        Map<String, Object> testCases = generateTestCases(TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).version());
-        List<String> chosenTestCases = stochasticSelection(testCases);
-
-        for (String key : chosenTestCases) {
-            final Object value = testCases.get(key);
-
-            dynamicTests.add(DynamicTest.dynamicTest("Test " + key + "->" + value, () -> {
-                // exercise phase
-                KafkaUtils.updateConfigurationWithStabilityWait(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), key, value);
-
-                // verify phase
-                assertThat(KafkaUtils.verifyCrDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), key, value), is(true));
-                assertThat(KafkaUtils.verifyPodDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, scraperPodName,
-                    KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), KafkaComponents.getBrokerPodSetName(suiteTestStorage.getClusterName()),
-                        key, value, TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).version()), is(true));
-            }));
-        }
-
-        return dynamicTests.iterator();
-    }
-
-    /**
-     * Method, which dynamically generate test cases based on Kafka version
-     * @param kafkaVersion specific kafka version
-     * @return String generated test cases
-     */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
-    private static Map<String, Object> generateTestCases(String kafkaVersion) {
-
-        Map<String, ConfigModel> dynamicProperties = KafkaUtils.getDynamicConfigurationProperties(kafkaVersion);
-        Map<String, Object> testCases = new HashMap<>();
-
-        dynamicProperties.forEach((key, value) -> {
-
-            Type type = value.getType();
-            Object stochasticChosenValue;
-
-            switch (type) {
-                case STRING:
-                    stochasticChosenValue = switch (key) {
-                        case "compression.type" -> {
-                            List<String> compressionTypes = Arrays.asList("snappy", "gzip", "lz4", "zstd");
-                            yield compressionTypes.get(ThreadLocalRandom.current().nextInt(0, compressionTypes.size() - 1));
-                        }
-                        case "log.message.timestamp.type" -> "LogAppendTime";
-                        case "ssl.protocol" -> "TLSv1.1";
-                        default -> " ";
-                    };
-                    testCases.put(key, stochasticChosenValue);
-                    break;
-                case INT:
-                case LONG:
-                    stochasticChosenValue = switch (key) {
-                        case "num.recovery.threads.per.data.dir", "log.cleaner.threads", "num.network.threads",
-                             "num.replica.fetchers", "num.partitions" ->
-                                ThreadLocalRandom.current().nextInt(2, 3);
-                        case "log.cleaner.io.buffer.load.factor", "log.retention.ms", "max.connections",
-                             "max.connections.per.ip", "background.threads" ->
-                                ThreadLocalRandom.current().nextInt(4, 20);
-                        default -> ThreadLocalRandom.current().nextInt(100, 50_000);
-                    };
-                    testCases.put(key, stochasticChosenValue);
-                    break;
-                case DOUBLE:
-                    stochasticChosenValue = switch (key) {
-                        case "log.cleaner.min.cleanable.dirty.ratio", "log.cleaner.min.cleanable.ratio" ->
-                                ThreadLocalRandom.current().nextDouble(0, 1);
-                        default -> ThreadLocalRandom.current().nextDouble(1, 20);
-                    };
-                    testCases.put(key, stochasticChosenValue);
-                    break;
-                case BOOLEAN:
-                    stochasticChosenValue = switch (key) {
-                        case "unclean.leader.election.enable",
-                             "log.preallocate"
-                                -> true;
-                        case "log.message.downconversion.enable" -> false;
-                        default -> ThreadLocalRandom.current().nextInt(2) == 0;
-                    };
-                    testCases.put(key, stochasticChosenValue);
-                    break;
-                case LIST:
-                    // metric.reporters has default empty '""'
-                    // log.cleanup.policy = [delete, compact] -> default delete
-                    stochasticChosenValue = switch (key) {
-                        case "log.cleanup.policy" -> "compact";
-                        case "ssl.enabled.protocols" -> "TLSv1.1";
-                        default -> " ";
-                    };
-                    testCases.put(key, stochasticChosenValue);
-            }
-
-            // skipping these configuration, which doesn't work appear in the kafka pod (TODO: investigate why!)
-            testCases.remove("num.recovery.threads.per.data.dir");
-            testCases.remove("num.io.threads");
-            testCases.remove("log.cleaner.dedupe.buffer.size");
-            testCases.remove("num.partitions");
-
-            // skipping these configuration exceptions
-            testCases.remove("ssl.cipher.suites");
-
-            // from Kafka 4.x if ELR is enabled on the cluster we can't change this config anymore, so skipping it
-            testCases.remove("min.insync.replicas");
-        });
-
-        return testCases;
+        // verify phase
+        assertThat(KafkaUtils.verifyCrDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), config, value), is(true));
+        assertThat(
+            KafkaUtils.verifyPodDynamicConfiguration(
+                Environment.TEST_SUITE_NAMESPACE,
+                suiteTestStorage.getClusterName(),
+                scraperPodName,
+                scope,
+                config,
+                value
+            ),
+            is(true)
+        );
     }
 
     /**
