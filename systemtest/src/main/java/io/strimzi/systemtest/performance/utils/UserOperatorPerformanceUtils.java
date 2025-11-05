@@ -26,9 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
 
 /**
  * Utility class for managing KafkaUser resources in performance testing scenarios. It provides methods to create,
@@ -38,23 +36,13 @@ public class UserOperatorPerformanceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(UserOperatorPerformanceUtils.class);
 
-    // Maximum number of concurrent threads for I/O-bound operations (K8s API calls)
-    private static final int MAX_POOL_SIZE = Runtime.getRuntime().availableProcessors() * 10;
-
-    // Use bounded thread pool with on-demand thread creation for I/O-bound operations (K8s API calls)
-    // This allows many threads to be created on-demand but with a safe upper bound to prevent resource exhaustion (f.e., OOM).
     private static ExecutorService executorService = getCustomThreadPool();
 
     // ensuring that object can not be created outside of class
     private UserOperatorPerformanceUtils() {}
 
     private static ExecutorService getCustomThreadPool() {
-        return new ThreadPoolExecutor(
-            MAX_POOL_SIZE,                          // corePoolSize: keep threads alive for immediate reuse
-            MAX_POOL_SIZE,                          // maxPoolSize: same as core (fixed pool size)
-            0L, TimeUnit.SECONDS,                   // keepAliveTime: 0 since core=max (threads never die)
-            new LinkedBlockingQueue<>()             // unbounded queue: queue tasks when all threads are busy
-        );
+        return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);
     }
 
     public static void alterAllUsersInList(final TestStorage testStorage, final List<KafkaUser> listOfUsers, final String usersPrefix) {
