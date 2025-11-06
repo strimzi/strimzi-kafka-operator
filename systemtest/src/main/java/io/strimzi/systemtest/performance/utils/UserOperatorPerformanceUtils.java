@@ -345,25 +345,25 @@ public class UserOperatorPerformanceUtils {
      * @param latencies Map containing individual latency measurements in milliseconds
      * @return LatencyMetrics object containing statistical analysis
      */
-    private static LatencyMetrics calculateLatencyMetrics(Map<Integer, Long> latencies) {
+    private static LatencyMetrics calculateLatencyMetrics(final Map<Integer, Long> latencies) {
         if (latencies.isEmpty()) {
             return new LatencyMetrics(0, 0, 0, 0, 0, 0);
         }
 
-        List<Long> sortedLatencies = latencies.values().stream()
+        final List<Long> sortedLatencies = latencies.values().stream()
             .sorted()
             .collect(Collectors.toList());
 
-        long min = sortedLatencies.get(0);
-        long max = sortedLatencies.get(sortedLatencies.size() - 1);
-        double average = sortedLatencies.stream()
+        final long min = sortedLatencies.get(0);
+        final long max = sortedLatencies.get(sortedLatencies.size() - 1);
+        final double average = sortedLatencies.stream()
             .mapToLong(Long::longValue)
             .average()
             .orElse(0.0);
 
-        long p50 = calculatePercentile(sortedLatencies, 50);
-        long p95 = calculatePercentile(sortedLatencies, 95);
-        long p99 = calculatePercentile(sortedLatencies, 99);
+        final long p50 = calculatePercentile(sortedLatencies, 50);
+        final long p95 = calculatePercentile(sortedLatencies, 95);
+        final long p99 = calculatePercentile(sortedLatencies, 99);
 
         LOGGER.info("Latency Statistics - Min: {} ms, Max: {} ms, Avg: {} ms, P50: {} ms, P95: {} ms, P99: {} ms",
             min, max, String.format("%.2f", average), p50, p95, p99);
@@ -378,7 +378,8 @@ public class UserOperatorPerformanceUtils {
      * @param percentile      Percentile to calculate (0-100)
      * @return                Latency value at the specified percentile
      */
-    private static long calculatePercentile(List<Long> sortedLatencies, int percentile) {
+    private static long calculatePercentile(final List<Long> sortedLatencies,
+                                            final int percentile) {
         if (sortedLatencies.isEmpty()) {
             return 0;
         }
