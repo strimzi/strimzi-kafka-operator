@@ -167,7 +167,7 @@ public class Environment {
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV = "KAFKA_TIERED_STORAGE_BASE_IMAGE";
     public static final String KAFKA_TIERED_STORAGE_IMAGE_ENV = "KAFKA_TIERED_STORAGE_IMAGE";
     public static final String KAFKA_TIERED_STORAGE_CLASSPATH_ENV = "KAFKA_TIERED_STORAGE_CLASSPATH";
-    public static final String KANIKO_IMAGE_ENV = "KANIKO_IMAGE";
+    public static final String BUILDAH_IMAGE_ENV = "BUILDAH_IMAGE";
 
     public static final String POSTGRES_IMAGE_ENV = "POSTGRES_IMAGE";
 
@@ -204,7 +204,7 @@ public class Environment {
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka:latest-kafka-" + ST_KAFKA_VERSION_DEFAULT;
     public static final String KAFKA_TIERED_STORAGE_CLASSPATH_DEFAULT = "/opt/kafka/plugins/tiered-storage/*";
-    public static final String KANIKO_IMAGE_DEFAULT = "gcr.io/kaniko-project/executor:v1.23.2";
+    public static final String BUILDAH_IMAGE_DEFAULT = "quay.io/containers/buildah:v1.41.4";
 
     public static final String POSTGRES_IMAGE_DEFAULT = "docker.io/library/postgres:18.0";
 
@@ -264,7 +264,7 @@ public class Environment {
     public static final String IP_FAMILY = getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
-    public static final String KANIKO_IMAGE = getOrDefault(KANIKO_IMAGE_ENV, KANIKO_IMAGE_DEFAULT);
+    public static final String BUILDAH_IMAGE = getOrDefault(BUILDAH_IMAGE_ENV, BUILDAH_IMAGE_DEFAULT);
     public static final String KAFKA_TIERED_STORAGE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_IMAGE_ENV, "");
     public static final String KAFKA_TIERED_STORAGE_CLASSPATH = getOrDefault(KAFKA_TIERED_STORAGE_CLASSPATH_ENV, KAFKA_TIERED_STORAGE_CLASSPATH_DEFAULT);
 
