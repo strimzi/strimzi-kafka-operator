@@ -35,7 +35,7 @@ public class TopicOperatorPerformanceUtils {
         "compression.type", "gzip", "cleanup.policy", "delete", "min.insync.replicas", 2,
         "max.compaction.lag.ms", 54321L, "min.compaction.lag.ms", 54L, "retention.ms", 3690L,
         "segment.ms", 123456L, "retention.bytes", 9876543L, "segment.bytes", 321654L, "flush.messages", 456123L);
-    private static final int AVAILABLE_CPUS = Runtime.getRuntime().availableProcessors();
+    private static final int AVAILABLE_CPUS = Runtime.getRuntime().availableProcessors() * 10;
 
     private static ExecutorService executorService = Executors.newFixedThreadPool(AVAILABLE_CPUS);
 
@@ -203,7 +203,7 @@ public class TopicOperatorPerformanceUtils {
      */
     public static long processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics, int spareEvents, int warmUpTasksToProcess) {
         if (executorService.isShutdown() || executorService.isTerminated()) {
-            executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+            executorService = Executors.newFixedThreadPool(AVAILABLE_CPUS);
             LOGGER.info("Reinitialized ExecutorService for new test run.");
         }
 
