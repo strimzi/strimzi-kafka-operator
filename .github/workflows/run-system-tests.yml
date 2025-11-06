@@ -58,7 +58,7 @@ jobs:
       ARCH: ${{ matrix.config.architecture }}
       STRIMZI_RBAC_SCOPE: ${{ matrix.config.strimzi_rbac_scope }}
       CLUSTER_OPERATOR_INSTALL_TYPE: ${{ matrix.config.cluster_operator_install_type }}
-      STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_use_feature_gates }}
+      STRIMZI_FEATURE_GATES: ${{ matrix.config.strimzi_feature_gates }}
       PARALLEL: ${{ matrix.config.parallel }}
       STRIMZI_DEFAULT_LOG_LEVEL: DEBUG
       OPERATOR_IMAGE_PULL_POLICY: IfNotPresent
