@@ -5,11 +5,17 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -32,17 +38,32 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 
-/**
- * This suite contains tests related to StrimziPodSet and its features.<br>
- * The StrimziPodSets can be enabled by `STRIMZI_FEATURE_GATES` environment variable, and
- * they should be replacement for StatefulSets in the future.
- */
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for StrimziPodSet related functionality and features, which verifies pod set reconciliation behavior.")
+)
 public class PodSetST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PodSetST.class);
 
     @IsolatedTest("We are changing CO env variables in this test")
+    @TestDoc(
+        description = @Desc("Test verifies that when STRIMZI_POD_SET_RECONCILIATION_ONLY environment variable is enabled, only StrimziPodSet resources are reconciled while Kafka configuration changes do not trigger pod rolling updates."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with 3 replicas and configure topics for resilience.", expected = "Kafka cluster with node pools and topics is deployed successfully."),
+            @Step(value = "Start continuous producer and consumer clients.", expected = "Clients are producing and consuming messages."),
+            @Step(value = "Enable STRIMZI_POD_SET_RECONCILIATION_ONLY environment variable in Cluster Operator.", expected = "Cluster Operator rolls out with the new environment variable."),
+            @Step(value = "Change Kafka readiness probe timeout.", expected = "No pod rolling update occurs despite configuration change."),
+            @Step(value = "Delete one Kafka pod.", expected = "Pod is recreated by StrimziPodSet controller."),
+            @Step(value = "Remove STRIMZI_POD_SET_RECONCILIATION_ONLY environment variable from Cluster Operator.", expected = "Cluster Operator rolls out again."),
+            @Step(value = "Verify pod rolling update occurs.", expected = "Kafka pods are rolled due to the pending configuration change."),
+            @Step(value = "Verify StrimziPodSet status.", expected = "All StrimziPodSets are ready with matching pod counts."),
+            @Step(value = "Verify message continuity.", expected = "Continuous clients successfully produced and consumed all messages.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testPodSetOnlyReconciliation() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final Map<String, String> coPod = DeploymentUtils.depSnapshot(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName());
