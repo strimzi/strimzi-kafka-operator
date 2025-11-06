@@ -81,7 +81,7 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE, "TOPIC-CONCURRENT");
 
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_RECONCILIATION_INTERVAL, reconciliationTimeMs);
+                performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_RECONCILIATION_INTERVAL, reconciliationTimeMs);
 
                 try {
                     this.topicOperatorPerformanceReporter.logPerformanceData(this.suiteTestStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_SCALABILITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
