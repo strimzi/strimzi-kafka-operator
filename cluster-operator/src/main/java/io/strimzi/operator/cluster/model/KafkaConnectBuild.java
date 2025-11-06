@@ -412,9 +412,9 @@ public class KafkaConnectBuild extends AbstractModel {
         final String outputImage = build.getOutput().getImage();
 
         args.add(
-            "buildah build --file=/dockerfile/Dockerfile --tag=" + outputImage + " --storage-driver=vfs " + buildOpts + "\n" +
-            "buildah push --storage-driver=vfs --digestfile=/tmp/digest " + pushOpts + " " + outputImage + "\n" +
-            "echo \"$(buildah images --storage-driver=vfs --format '{{.Name}}' " + outputImage + ")@$(cat /tmp/digest)\" > /dev/termination-log"
+            "buildah build --file=/dockerfile/Dockerfile --tag=" + outputImage + " --storage-driver=overlay " + buildOpts + "\n" +
+            "buildah push --storage-driver=overlay --digestfile=/tmp/digest " + pushOpts + " " + outputImage + "\n" +
+            "echo \"$(buildah images --storage-driver=overlay --format '{{.Name}}' " + outputImage + ")@$(cat /tmp/digest)\" > /dev/termination-log"
         );
 
         return args;

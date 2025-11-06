@@ -63,8 +63,8 @@ public class KafkaConnectBuildTest {
             "--image-name-with-digest-file=/dev/termination-log",
             "--destination=my-image:latest");
 
-    private final String defaultBuildahBuildArgs = "--file=/dockerfile/Dockerfile --tag=my-image:latest --storage-driver=vfs";
-    private final String defaultBuildahPushArgs = "--storage-driver=vfs --digestfile=/tmp/digest";
+    private final String defaultBuildahBuildArgs = "--file=/dockerfile/Dockerfile --tag=my-image:latest --storage-driver=overlay";
+    private final String defaultBuildahPushArgs = "--storage-driver=overlay --digestfile=/tmp/digest";
 
     @Test
     public void testFromCrd()   {
