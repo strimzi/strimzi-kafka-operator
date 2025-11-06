@@ -6,12 +6,11 @@ See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
 
-* **Support for ZooKeeper-based clusters and for migration from ZooKeeper-based clusters to KRaft has been removed.**
-  **Please make sure all your clusters are using KRaft before upgrading to Strimzi 0.46.0 or newer!**
-* Support for MirrorMaker 1 has been removed.
-  Please make sure to migrate to MirrorMaker 2 before upgrading to Strimzi 0.46 or newer.
-* [Strimzi EnvVar Configuration Provider](https://github.com/strimzi/kafka-env-var-config-provider) (deprecated in Strimzi 0.38.0) and [Strimzi MirrorMaker 2 Extensions](https://github.com/strimzi/mirror-maker-2-extensions) (deprecated in Strimzi 0.28.0) plugins were removed from Strimzi container images.
-  Please use the Apache Kafka [EnvVarConfigProvider](https://github.com/strimzi/kafka-env-var-config-provider?tab=readme-ov-file#deprecation-notice) and [Identity Replication Policy](https://github.com/strimzi/mirror-maker-2-extensions?tab=readme-ov-file#identity-replication-policy) instead.
+**This release introduces new API version `v1` to all Strimzi custom resources.**
+**Make sure to [upgrade the CRDs](#upgrading-your-clusters) as part of the Strimzi upgrade as well.**
+**The old API versions (`v1alpha1`, `v1beta1`, and `v1beta2`) will continue to be supported until Strimzi 1.0.0 / 0.52.0.**
+**Before upgrading to Strimzi 0.49.0 or newer, make sure that you update your `KafkaUser` resources to [use the `.spec.authorization.acls[]operations` field instead of the deprecated `.spec.authorization.acls[]operation`](https://strimzi.io/docs/operators/0.49.0/deploying.html#con-api-conversion-v1-str).**
+For more details about the migration to the `v1` API and CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.49.0/deploying.html#assembly-api-conversion-str).
 
 ## Introduction
 
@@ -41,10 +40,10 @@ To upgrade the Strimzi operator, you can use the `helm upgrade` command.
 **The `helm upgrade` command does not upgrade the [Custom Resource Definitions](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/).**
 **Update the CRDs manually after upgrading the Cluster Operator.**
 You can access the CRDs from our [GitHub release page](https://github.com/strimzi/strimzi-kafka-operator/releases) or find them in the `crd` subdirectory inside the Helm Chart.
-For example, when upgrading to Strimzi 0.46.0, you can do:
+For example, when upgrading to Strimzi 0.49.0, you can do:
 
 ```bash
-kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.46.0/strimzi-crds-0.46.0.yaml 
+kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.49.0/strimzi-crds-0.49.0.yaml 
 ```
 
 The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
