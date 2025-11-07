@@ -10,8 +10,8 @@ inputs:
     description: "Kafka version. e.g. '4.0.0' or 'latest'"
     required: false
     default: "latest"
-  profile:
-    description: "Comma-separated or single profile name(s)"
+  pipeline:
+    description: "Comma-separated or single pipeline name(s)"
     required: false
     default: "smoke"
 
@@ -94,13 +94,13 @@ runs:
       id: build_comment
       uses: actions/github-script@v7
       env:
-        INPUT_PROFILE: ${{ inputs.profile }}
+        INPUT_PIPELINE: ${{ inputs.pipeline }}
         INPUT_KAFKA_VERSION: ${{ inputs.kafkaVersion }}
       with:
         script: |
           const body = context.payload?.comment?.body ?? '';
-          const profile = process.env.INPUT_PROFILE || 'smoke';
-          const fallback = `/gha run profile=${profile} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
+          const pipeline = process.env.INPUT_PIPELINE || 'smoke';
+          const fallback = `/gha run pipeline=${pipeline} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
           const builtComment = (body && body.trim().length) ? body : fallback;
           
           core.setOutput('builtComment', builtComment);
@@ -110,8 +110,6 @@ runs:
       id: parse_comment
       uses: actions/github-script@v7
       env:
-        INPUT_PROFILE: ${{ inputs.profile }}
-        INPUT_KAFKA_VERSION: ${{ inputs.kafkaVersion }}
         INPUT_RELEASE_VERSION: ${{ inputs.releaseVersion }}
         BUILT_COMMENT: ${{ steps.build_comment.outputs.builtComment }}
       with:
