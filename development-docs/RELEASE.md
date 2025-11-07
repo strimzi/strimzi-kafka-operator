@@ -92,16 +92,16 @@ After releasing RC, we need to run the System tests:
 * helm-acceptance (only one time by setting the latest supported Kafka version)
 * upgrade (only one time by setting the latest supported Kafka version)
 * regression (multiple times, one for each supported Kafka version)
-* feature-gates-regression (multiple times, one for each supported Kafka version)
+* regression-fg (multiple times, one for each supported Kafka version)
 
 Run them manually in GitHub Actions UI:
 
 * Select the release branch from the list
 * Set the "Release Version" (i.e. `0.45.0-rc1`)
 * Set the "Kafka Version" (i.e. `3.9.0`)
-* Set the "Profile list" (i.e. `regression,upgrade,helm-acceptance,gh-regression` based on profiles defined in [pipelines.yaml](../.github/actions/systemtests/generate-matrix/pipelines.yaml))
+* Set the "Pipeline list" (i.e. `regression,upgrade,helm-acceptance,gh-regression` based on pipelines defined in [pipelines.yaml](../.github/actions/systemtests/generate-matrix/pipelines.yaml))
 
-The workflow will generate jobs based on passed profile list and predefined values from the config file.
+The workflow will generate jobs based on passed pipeline list and predefined values from the config file.
 The workflow has to be triggered multiple times in case you want to run tests for multiple Kafka versions.
 
 ## Rebuild container image for base image CVEs
