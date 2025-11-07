@@ -67,7 +67,7 @@ jobs:
           oras push ghcr.io/${{ env.REPOSITORY }}/strimzi-binaries:${{ env.TAG }} strimzi-binaries.tar:application/x-tar
         env:
           TAG: ${{ inputs.releaseVersion }}-${{ inputs.sourceBuildRunId }}
-          REPOSITORY: "frawless"
+          REPOSITORY: "strimzi"
 
   # Push containers with suffix (e.g., 0.49.0-0) - optional step
   push-containers-with-suffix:
