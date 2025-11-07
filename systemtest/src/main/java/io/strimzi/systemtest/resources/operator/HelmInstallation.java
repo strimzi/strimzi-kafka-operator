@@ -106,8 +106,7 @@ public class HelmInstallation implements InstallationMethod {
         installCommand.set("logLevelOverride", Environment.STRIMZI_LOG_LEVEL);
         installCommand.set("fullReconciliationIntervalMs", Long.toString(clusterOperatorConfiguration.getReconciliationInterval()));
         installCommand.set("operationTimeoutMs", Long.toString(clusterOperatorConfiguration.getOperationTimeout()));
-        // As FG is CSV, we need to escape commas for interpretation of helm installation string
-        installCommand.set("featureGates", Environment.STRIMZI_FEATURE_GATES.replaceAll(",", "\\\\,"));
+        installCommand.set("featureGates", Environment.STRIMZI_FEATURE_GATES);
         installCommand.set("watchAnyNamespace", clusterOperatorConfiguration.isWatchingAllNamespaces());
         installCommand.set("replicas", clusterOperatorConfiguration.getReplicas());
 
@@ -125,10 +124,12 @@ public class HelmInstallation implements InstallationMethod {
             }
         }
 
-
-        installCommand.call();
         // Push the delete method to KubeResourceManager's stack, so it is automatically deleted after the tests
         KubeResourceManager.get().pushToStack(new ResourceItem<>(this::delete));
+
+        LOGGER.info("Installing ClusterOperator using Helm");
+        installCommand.call();
+        LOGGER.info("Installation of ClusterOperator completed");
     }
 
     /**
