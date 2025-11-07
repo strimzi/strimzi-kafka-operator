@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mm2-cluster
@@ -7,20 +7,22 @@ metadata:
 spec:
   version: 4.1.0
   replicas: 1
-  connectCluster: "my-cluster-target"
-  clusters:
-    - alias: "my-cluster-source"
-      bootstrapServers: my-cluster-source-kafka-bootstrap:9092
-    - alias: "my-cluster-target"
-      bootstrapServers: my-cluster-target-kafka-bootstrap:9092
-      config:
-        # -1 means it will use the default replication factor configured in the broker
-        config.storage.replication.factor: -1
-        offset.storage.replication.factor: -1
-        status.storage.replication.factor: -1
+  target:
+    alias: cluster-b
+    bootstrapServers: cluster-b-kafka-bootstrap:9092
+    groupId: my-mm2-cluster-group
+    configStorageTopic: my-mm2-cluster-config
+    offsetStorageTopic: my-mm2-cluster-offset
+    statusStorageTopic: my-mm2-cluster-status
+    config:
+      # -1 means it will use the default replication factor configured in the broker
+      config.storage.replication.factor: -1
+      offset.storage.replication.factor: -1
+      status.storage.replication.factor: -1
   mirrors:
-    - sourceCluster: "my-cluster-source"
-      targetCluster: "my-cluster-target"
+    - source:
+        bootstrapServers: cluster-a-kafka-bootstrap:9092
+        alias: cluster-a
       sourceConnector:
         config:
           # -1 means it will use the default replication factor configured in the broker

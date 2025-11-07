@@ -10,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.48.0
+defaultImageTag: 0.49.0
 
 image:
   registry: ""
@@ -149,6 +149,12 @@ kanikoExecutor:
     registry: ""
     repository: ""
     name: kaniko-executor
+    tag: ""
+buildah:
+  image:
+    registry: ""
+    repository: ""
+    name: buildah
     tag: ""
 mavenBuilder:
   image:
