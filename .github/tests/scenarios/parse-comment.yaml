@@ -191,8 +191,8 @@ scenarios:
     event: workflow_dispatch
     fixture: .github/tests/events/parse-comment/dispatch_default.json
     expectations:
-      pipelines: ""
-      profiles: "operators,operands,azp_kraft_upgrade"
+      pipelines: "regression,regression-fg,upgrade,acceptance-helm"
+      profiles: ""
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
@@ -206,8 +206,8 @@ scenarios:
     event: workflow_dispatch
     fixture: .github/tests/events/parse-comment/dispatch_custom.json
     expectations:
-      pipelines: ""
-      profiles: "custom-profile-1,custom-profile-2"
+      pipelines: "custom-pipeline-1,custom-pipeline-2"
+      profiles: ""
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"
@@ -223,8 +223,8 @@ scenarios:
     event: workflow_dispatch
     fixture: .github/tests/events/parse-comment/dispatch_empty.json
     expectations:
-      pipelines: ""
-      profiles: "smoke"
+      pipelines: "smoke"
+      profiles: ""
       strimzi_feature_gates: ""
       strimzi_rbac_scope: ""
       cluster_operator_install_type: "yaml"

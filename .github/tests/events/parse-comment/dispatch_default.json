@@ -2,7 +2,7 @@
   "action": "workflow_dispatch",
   "event_name": "workflow_dispatch",
   "inputs": {
-    "profile": "operators,operands,azp_kraft_upgrade",
+    "pipeline": "regression,regression-fg,upgrade,acceptance-helm",
     "kafkaVersion": "4.1.0",
     "releaseVersion": "0.48.0"
   },
