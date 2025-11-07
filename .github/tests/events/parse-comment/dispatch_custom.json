@@ -2,7 +2,7 @@
   "action": "workflow_dispatch",
   "event_name": "workflow_dispatch",
   "inputs": {
-    "profile": "custom-profile-1,custom-profile-2",
+    "pipeline": "custom-pipeline-1,custom-pipeline-2",
     "kafkaVersion": "3.5.0",
     "releaseVersion": "1.0.0"
   },

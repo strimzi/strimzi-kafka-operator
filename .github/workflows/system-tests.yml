@@ -12,10 +12,10 @@ on:
         description: "Kafka version. e.g. '4.0.0' or 'latest'"
         required: false
         default: "latest"
-      profile:
-        description: "Comma-separated or single profile name(s)"
+      pipeline:
+        description: "Comma-separated or single pipeline name(s)"
         required: false
-        default: ""
+        default: "regression,upgrade,regression-fg,acceptance-helm"
         type: string
   # Automated trigger for issue comment
   issue_comment:
@@ -66,7 +66,7 @@ jobs:
           # Parameters from manual trigger via UI
           releaseVersion: ${{ github.event.inputs.releaseVersion }}
           kafkaVersion: ${{ github.event.inputs.kafkaVersion }}
-          profile: ${{ github.event.inputs.profile }}
+          pipeline: ${{ github.event.inputs.pipeline }}
 
   check-rights:
     needs:
