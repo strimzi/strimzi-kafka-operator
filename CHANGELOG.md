@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.50.0
+
+* Nothing here yet, but we will surely develop something new pretty soon 😉
+
 ## 0.49.0
 
 * Add support for Kafka 4.0.1
