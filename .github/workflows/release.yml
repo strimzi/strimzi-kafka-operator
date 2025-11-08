@@ -101,9 +101,12 @@ jobs:
     needs:
       - push-containers-with-suffix
       - push-java-artifacts-to-ghcr
+      - prepare-release-artifacts
     # Run if push-containers-with-suffix succeeded/skipped and we're on a release branch
     if: |-
       ${{ always() && startsWith(github.ref, 'refs/heads/release-') && 
+        needs.prepare-release-artifacts.result == 'success' &&  
+        needs.push-java-artifacts-to-ghcr.result == 'success' &&
         (needs.push-containers-with-suffix.result == 'success' || 
         needs.push-containers-with-suffix.result == 'skipped') 
       }}
