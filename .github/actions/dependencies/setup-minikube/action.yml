@@ -59,6 +59,12 @@ runs:
       run: |
         echo "DOCKER_REGISTRY=localhost:5000" >> $GITHUB_ENV
 
+    # This is used for building connect image used withing STs for runs where already existing images are used (releases)
+    - name: Set CONNECT_BUILD_REGISTRY
+      shell: bash
+      run: |
+        echo "CONNECT_BUILD_REGISTRY=$(kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'):80" >> $GITHUB_ENV
+
     - name: DEBUG - check running containers
       shell: bash
       run: |
