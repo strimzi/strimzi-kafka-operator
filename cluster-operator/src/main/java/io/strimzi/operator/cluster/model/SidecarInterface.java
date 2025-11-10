@@ -46,18 +46,19 @@ public interface SidecarInterface {
 
     /**
      * Creates sidecar containers for the given pod template.
-     * This method is mandatory and must be implemented by all components supporting sidecars.
+     * This method is mandatory and must be implemented by all components supporting
+     * sidecars.
      * 
      * Typical implementation pattern:
+     * 
      * <pre>
-     * public List&lt;Container&gt; createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy) {
-     *     return SidecarUtils.convertSidecarContainers(templatePod, imagePullPolicy);
+     * public List&lt;Container&gt; createSidecarContainers(PodTemplate templatePod) {
+     *     return SidecarUtils.convertSidecarContainers(templatePod);
      * }
      * </pre>
      *
-     * @param templatePod     Pod template containing sidecar container definitions
-     * @param imagePullPolicy Image pull policy to apply to sidecar containers
+     * @param templatePod Pod template containing sidecar container definitions
      * @return List of sidecar containers
      */
-    List<Container> createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy);
+    List<Container> createSidecarContainers(PodTemplate templatePod);
 }

@@ -32,6 +32,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -331,6 +332,7 @@ public class ContainerUtils {
 
         return sidecarContainers.stream()
                 .map(ContainerUtils::convertSidecarContainer)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

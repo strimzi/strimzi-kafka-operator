@@ -1664,7 +1664,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         allContainers.add(createContainer(imagePullPolicy, pool));
         
         // Create sidecar containers (validation already done during KafkaCluster creation)
-        allContainers.addAll(this.createSidecarContainers(pool.templatePod, imagePullPolicy));
+        allContainers.addAll(this.createSidecarContainers(pool.templatePod));
 
         return allContainers;
     }
@@ -2091,15 +2091,15 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /**
      * Creates sidecar containers for the Kafka cluster.
      * This method is mandatory as part of the SidecarSupport interface.
-     * Since KafkaCluster has per-pool templates, this creates containers for a specific pool.
+     * Since KafkaCluster has per-pool templates, this creates containers for a
+     * specific pool.
      *
-     * @param templatePod     Pod template containing sidecar container definitions
-     * @param imagePullPolicy Image pull policy to apply to the containers
+     * @param templatePod Pod template containing sidecar container definitions
      * @return List of converted sidecar containers
      */
     @Override
-    public List<Container> createSidecarContainers(PodTemplate templatePod, ImagePullPolicy imagePullPolicy) {
-        return SidecarUtils.convertSidecarContainers(templatePod, imagePullPolicy);
+    public List<Container> createSidecarContainers(PodTemplate templatePod) {
+        return SidecarUtils.convertSidecarContainers(templatePod);
     }
 
     /**

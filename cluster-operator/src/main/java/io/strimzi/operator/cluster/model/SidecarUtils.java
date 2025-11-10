@@ -124,11 +124,23 @@ public class SidecarUtils {
             SidecarContainer container = sidecarContainers.get(i);
             String path = String.format(".spec.%s.template.pod.sidecarContainers[%d]", componentType, i);
 
-            // Validate container basics
+            // Validate container basics first (name and image required)
             validateContainerBasics(container, path, errors);
             
-            // Validate container name uniqueness and conflicts
-            validateContainerName(container, path, containerNames, reservedContainerNames, errors);
+            // Get name after basic validation to ensure it's non-null
+            String name = container.getName();
+
+            // Check for duplicate names (only if name passed basic validation)
+            if (name != null) {
+                if (containerNames.contains(name)) {
+                    errors.add(path + ".name '" + name + "' is already used by another sidecar container");
+                } else {
+                    containerNames.add(name);
+                }
+
+                // Validate container name format and conflicts
+                validateContainerName(container, path, name, reservedContainerNames, errors);
+            }
             
             // Validate port conflicts
             validateContainerPorts(container, path, usedPorts, errors);
@@ -205,25 +217,28 @@ public class SidecarUtils {
         }
     }
 
+    /**
+     * Validates container name format and checks for conflicts with reserved names.
+     * Note: Duplicate name checking is handled by the caller, not this method.
+     *
+     * @param container              The sidecar container to validate
+     * @param path                   JSON path for error reporting
+     * @param containerName          The container name to validate (can be null)
+     * @param reservedContainerNames Set of names that cannot be used (nullable)
+     * @param errors                 List to accumulate validation error messages
+     *                               (will be modified)
+     */
     private static void validateContainerName(SidecarContainer container, String path, 
-                                            Set<String> containerNames, Set<String> reservedContainerNames, List<String> errors) {
-        String name = container.getName();
-        if (name != null) {
+            String containerName, Set<String> reservedContainerNames, List<String> errors) {
+        if (containerName != null) {
             // Check for reserved names (if any are provided for this component)
-            if (reservedContainerNames != null && reservedContainerNames.contains(name)) {
-                errors.add(path + ".name '" + name + "' is reserved by Strimzi and cannot be used");
-            }
-            
-            // Check for duplicate names
-            if (containerNames.contains(name)) {
-                errors.add(path + ".name '" + name + "' is already used by another sidecar container");
-            } else {
-                containerNames.add(name);
+            if (reservedContainerNames != null && reservedContainerNames.contains(containerName)) {
+                errors.add(path + ".name '" + containerName + "' is reserved by Strimzi and cannot be used");
             }
             
             // Validate name format (Kubernetes container name rules)
-            if (!name.matches("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")) {
-                errors.add(path + ".name '" + name + "' must match regex ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$");
+            if (!containerName.matches("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")) {
+                errors.add(path + ".name '" + containerName + "' must match regex ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$");
             }
         }
     }
@@ -302,16 +317,15 @@ public class SidecarUtils {
     }
 
     /**
-     * Converts sidecar containers from a pod template to Kubernetes Container objects.
-     * This is a utility method for components to use in their interface implementations.
+     * Converts sidecar containers from a pod template to Kubernetes Container
+     * objects.
+     * This is a utility method for components to use in their interface
+     * implementations.
      *
-     * @param templatePod     Pod template containing sidecar container definitions
-     * @param imagePullPolicy Image pull policy to apply (currently unused but kept for compatibility)
+     * @param templatePod Pod template containing sidecar container definitions
      * @return List of converted Container objects
      */
-    public static List<Container> convertSidecarContainers(
-            PodTemplate templatePod, 
-            ImagePullPolicy imagePullPolicy) {
+    public static List<Container> convertSidecarContainers(PodTemplate templatePod) {
         if (templatePod == null || templatePod.getSidecarContainers() == null) {
             return new ArrayList<>();
         }

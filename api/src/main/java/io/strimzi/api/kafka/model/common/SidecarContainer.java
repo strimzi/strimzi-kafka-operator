@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Configures a sidecar container for inclusion in Kafka pods. This abstraction
+ * Configures a sidecar container for inclusion in Strimzi pods. This abstraction
  * is needed rather than using the standard Kubernetes container model to
  * avoid CRD generation issues with IntOrString fields while providing
  * essential container configuration options.
@@ -69,7 +69,7 @@ public class SidecarContainer implements UnknownPropertyPreserving {
     }
 
     @Description("The image pull policy for the container image. " +
-                "More info: https://kubernetes.io/docs/concepts/containers/images#image-pull-policy")
+            "More info: https://kubernetes.io/docs/concepts/containers/images#image-pull-policy")
     @KubeLink(group = "core", version = "v1", kind = "container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getImagePullPolicy() {
