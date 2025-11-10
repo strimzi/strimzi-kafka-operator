@@ -2,7 +2,6 @@ ARG BASE_IMAGE
 
 FROM ${BASE_IMAGE}
 
-
 ARG AIVEN_PLUGIN_VERSION="1.1.1"
 ARG TIERED_STORAGE_URL="https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/releases/download"
 
