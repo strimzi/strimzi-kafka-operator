@@ -160,12 +160,12 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     }
 
     @TestDoc(
-        description = @Desc("This test measures single user modification latency under different load levels to understand how response time scales with system load."),
+        description = @Desc("This test measures user modification latency statistics under different load levels by performing multiple user modifications to understand how response time scales with system load."),
         steps = {
             @Step(value = "Deploy Kafka cluster with User Operator configured with more resources to handle load and also non-default `STRIMZI_WORK_QUEUE_SIZE` set to 2048.", expected = "Kafka cluster with User Operator is deployed and ready."),
-            @Step(value = "For each configured load level (1000, 1500, 2000 existing users), create N KafkaUsers to establish the load.", expected = "N KafkaUsers are created and ready, establishing baseline load on the User Operator."),
+            @Step(value = "For each configured load level (1000 existing users), create N KafkaUsers to establish the load.", expected = "N KafkaUsers are created and ready, establishing baseline load on the User Operator."),
             @Step(value = "Perform 100 individual user modifications sequentially, measuring the latency of each modification.", expected = "Each modification latency is recorded independently."),
-            @Step(value = "Calculate latency statistics: min, max, average, P50, P95, and P99 percentiles from the 10 measurements.", expected = "Statistical analysis shows how single-user modification latency degrades as system load (number of existing users) increases."),
+            @Step(value = "Calculate latency statistics: min, max, average, P50, P95, and P99 percentiles from the 100 measurements.", expected = "Statistical analysis shows how single-user modification latency degrades as system load (number of existing users) increases."),
             @Step(value = "Clean up all users and persist latency metrics to user-operator report directory.", expected = "Namespace is cleaned, latency data is saved showing how responsiveness changes at different load levels.")
         },
         labels = {
