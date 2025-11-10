@@ -1348,14 +1348,27 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |`ImageVolumeSource` object to use to populate the volume.
 |====
 
-[id='type-SidecarContainer-{context}']
-= `SidecarContainer` schema reference
-
-Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 [id='type-EmptyDirVolume-{context}']
 = `EmptyDirVolume` schema reference
 
 Used in: xref:type-AdditionalVolume-{context}[`AdditionalVolume`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|medium
+|string (one of [Memory])
+|Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`. When not set, it will use the node's default medium.
+|sizeLimit
+|string
+|The total amount of local storage required for this EmptyDir volume (for example 1Gi).
+|====
+
+[id='type-SidecarContainer-{context}']
+= `SidecarContainer` schema reference
+
+Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 
 
 [cols="2,2,3a",options="header"]
@@ -1438,12 +1451,6 @@ Used in: xref:type-SidecarContainer-{context}[`SidecarContainer`]
 |failureThreshold
 |integer
 |Minimum consecutive failures for the probe to be considered failed after having succeeded. Minimum value is 1.
-|medium
-|string (one of [Memory])
-|Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`. When not set, it will use the node's default medium.
-|sizeLimit
-|string
-|The total amount of local storage required for this EmptyDir volume (for example 1Gi).
 |====
 
 [id='type-InternalServiceTemplate-{context}']
