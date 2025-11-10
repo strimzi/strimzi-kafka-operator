@@ -176,8 +176,8 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     @Tag(SCALABILITY)
     void testLatencyUnderLoad() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        // TODO: let's see if testing-farm handles such load... (locally even 4k users are okay) => but
-        final List<Integer> loadLevels = List.of(1000, 1200, 1400);
+        // TODO: after we switch to GHA we are limited to just 1k users (after switch we can add more 2k users ... etc.)
+        final List<Integer> loadLevels = List.of(1000);
         final int numberOfModifications = 100;
         // default configuration of UO
         final int maxBatchSize = 100;
