@@ -67,7 +67,7 @@ public class ReconciliationST extends AbstractST {
     @TestDoc(
         description = @Desc("This test verifies that pause reconciliation annotation prevents changes from being applied to `Kafka`, `KafkaConnect`, and `KafkaConnector` resources, and that resuming reconciliation applies pending changes."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with node pools.", expected = "Kafka cluster is deployed with 3 replicas."),
+            @Step(value = "Deploy a Kafka cluster with broker and controller node pools configured for 3 replicas each.", expected = "Kafka cluster deployed with 3 broker and 3 controller replicas."),
             @Step(value = "Add the pause annotation to the `Kafka` resource and scale the broker node pool to 4 replicas.", expected = "Kafka reconciliation is paused and no new pods are created."),
             @Step(value = "Remove pause annotation from the `Kafka` resource.", expected = "Kafka is scaled to 4 replicas."),
             @Step(value = "Deploy a `KafkaConnect` resource with the pause annotation.", expected = "Kafka Connect reconciliation is paused and no pods are created."),
@@ -154,11 +154,11 @@ public class ReconciliationST extends AbstractST {
     @TestDoc(
         description = @Desc("This test verifies that pause reconciliation annotation prevents changes from being applied to `KafkaTopic` and `KafkaRebalance` resources, and that resuming reconciliation applies pending changes."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with Cruise Control and node pools.", expected = "Kafka cluster with Cruise Control is deployed."),
+            @Step(value = "Deploy a Kafka cluster with Cruise Control, broker node pool (3 replicas), and controller node pool (1 replica).", expected = "Kafka cluster with Cruise Control deployed with 3 broker and 1 controller replicas."),
             @Step(value = "Create a `KafkaTopic` resource.", expected = "Topic is created and present in Kafka."),
             @Step(value = "Add the pause annotation to the `KafkaTopic` resource and change partition count to 4.", expected = "Topic reconciliation is paused and partitions are not changed."),
             @Step(value = "Remove pause annotation from the `KafkaTopic` resource.", expected = "Topic partitions are scaled to 4."),
-            @Step(value = "Create KafkaRebalance and wait for ProposalReady state.", expected = "KafkaRebalance reaches ProposalReady state."),
+            @Step(value = "Create a `KafkaRebalance` resource and wait for `ProposalReady` state.", expected = "`KafkaRebalance` reaches `ProposalReady` state."),
             @Step(value = "Add pause annotation to the KafkaRebalance resource and approve it.", expected = "Rebalance reconciliation is paused and approval is not triggered."),
             @Step(value = "Remove pause annotation from the `KafkaRebalance` resource.", expected = "`KafkaRebalance` returns to `ProposalReady` state."),
             @Step(value = "Approve the `KafkaRebalance` resource again.", expected = "Rebalance is executed and reaches `Ready` state.")

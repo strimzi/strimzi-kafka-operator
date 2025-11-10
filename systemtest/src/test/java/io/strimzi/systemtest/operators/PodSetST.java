@@ -50,7 +50,7 @@ public class PodSetST extends AbstractST {
     @TestDoc(
         description = @Desc("This test verifies that when the `STRIMZI_POD_SET_RECONCILIATION_ONLY` environment variable is enabled, only `StrimziPodSet` resources are reconciled, and Kafka configuration changes do not trigger rolling updates of pods."),
         steps = {
-            @Step(value = "Deploy a Kafka cluster with node pools configured for 3 replicas and configure topics for resilience.", expected = "Kafka cluster with node pools and topics is deployed successfully."),
+            @Step(value = "Deploy a Kafka cluster with broker and controller node pools configured for 3 replicas each.", expected = "Kafka cluster with node pools and topics deployed successfully."),
             @Step(value = "Start continuous producer and consumer clients.", expected = "Clients are producing and consuming messages."),
             @Step(value = "Enable `STRIMZI_POD_SET_RECONCILIATION_ONLY` environment variable in Cluster Operator.", expected = "Cluster Operator restarts with the new environment variable."),
             @Step(value = "Change Kafka readiness probe timeout in the `Kafka` resource.", expected = "No pod rolling update occurs despite configuration change."),

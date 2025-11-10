@@ -56,7 +56,7 @@ import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNa
 @SuiteDoc(
     description = @Desc("Test suite verifying the Cluster Operator's ability to recover Kafka cluster components from various deletion and failure scenarios."),
     beforeTestSteps = {
-        @Step(value = "Deploy shared Kafka cluster and KafkaBridge.", expected = "Kafka cluster with 3 replicas and KafkaBridge is deployed.")
+        @Step(value = "Deploy a Kafka cluster with broker and controller node pools configured for 3 replicas each, and HTTP Bridge.", expected = "Kafka cluster with 3 broker and 3 controller replicas, and HTTP Bridge deployed.")
     }
 )
 class RecoveryST extends AbstractST {
@@ -70,7 +70,7 @@ class RecoveryST extends AbstractST {
     @TestDoc(
         description = @Desc("This test verifies that the Cluster Operator can recover and recreate a deleted `StrimziPodSet` resource for Kafka brokers."),
         steps = {
-            @Step(value = "Capture `StrimziPodSet` UID for Kafka brokers.", expected = "`StrimziPodSet` UID is recorded."),
+            @Step(value = "Capture `StrimziPodSet` UID.", expected = "`StrimziPodSet` UID is recorded."),
             @Step(value = "Scale down Cluster Operator to 0 replicas.", expected = "Cluster Operator is stopped."),
             @Step(value = "Delete `StrimziPodSet` for the Kafka broker.", expected = "`StrimziPodSet` and associated pods are deleted."),
             @Step(value = "Scale up Cluster Operator to 1 replica.", expected = "Cluster Operator is running."),
