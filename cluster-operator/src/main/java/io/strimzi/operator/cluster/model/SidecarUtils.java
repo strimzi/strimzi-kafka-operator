@@ -80,6 +80,9 @@ public class SidecarUtils {
             case "kafka-bridge":
                 ports.add(8080); // DEFAULT_REST_API_PORT
                 break;
+            default:
+                // No additional ports for unknown component types
+                break;
         }
         
         return ports;
