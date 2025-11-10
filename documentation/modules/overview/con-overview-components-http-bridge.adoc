@@ -1,0 +1,35 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// // overview/overview.adoc
+
+[id="overview-components-http-bridge_{context}"]
+= Kafka Bridge interface
+
+[role="_abstract"]
+The Kafka Bridge provides a RESTful interface that allows HTTP-based clients to interact with a Kafka cluster. 
+It offers the advantages of a HTTP API connection to Strimzi for clients to produce and consume messages without the requirement to use the native Kafka protocol.
+
+The API has two main resources — `consumers` and `topics` — that are exposed and made accessible through endpoints to interact with consumers and producers in your Kafka cluster. The resources relate only to the Kafka Bridge, not the consumers and producers connected directly to Kafka.
+
+== HTTP requests
+The Kafka Bridge supports HTTP requests to a Kafka cluster, with methods to perform operations such as the following:
+
+* Send messages to a topic.
+* Retrieve messages from topics.
+* Retrieve a list of partitions for a topic.
+* Create and delete consumers.
+* Subscribe consumers to topics, so that they start receiving messages from those topics.
+* Retrieve a list of topics that a consumer is subscribed to.
+* Unsubscribe consumers from topics.
+* Assign partitions to consumers.
+* Commit a list of consumer offsets.
+* Seek on a partition, so that a consumer starts receiving messages from the first or last offset position, or a given offset position.
+
+The methods provide JSON responses and HTTP response code error handling.
+Messages can be sent in JSON or binary formats.
+
+[role="_additional-resources"]
+.Additional resources
+* To view the API documentation, including example requests and responses, see link:{BookURLBridge}[Using the Kafka Bridge^].

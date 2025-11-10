@@ -16,8 +16,13 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 
@@ -29,6 +34,8 @@ public class HelmInstallation implements InstallationMethod {
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
 
     private final ClusterOperatorConfiguration clusterOperatorConfiguration;
+
+    private static final Logger LOGGER = LogManager.getLogger(HelmInstallation.class);
 
     /**
      * Constructor with specific {@link ClusterOperatorConfiguration}.
@@ -99,8 +106,7 @@ public class HelmInstallation implements InstallationMethod {
         installCommand.set("logLevelOverride", Environment.STRIMZI_LOG_LEVEL);
         installCommand.set("fullReconciliationIntervalMs", Long.toString(clusterOperatorConfiguration.getReconciliationInterval()));
         installCommand.set("operationTimeoutMs", Long.toString(clusterOperatorConfiguration.getOperationTimeout()));
-        // As FG is CSV, we need to escape commas for interpretation of helm installation string
-        installCommand.set("featureGates", Environment.STRIMZI_FEATURE_GATES.replaceAll(",", "\\\\,"));
+        installCommand.set("featureGates", Environment.STRIMZI_FEATURE_GATES);
         installCommand.set("watchAnyNamespace", clusterOperatorConfiguration.isWatchingAllNamespaces());
         installCommand.set("replicas", clusterOperatorConfiguration.getReplicas());
 
@@ -118,10 +124,12 @@ public class HelmInstallation implements InstallationMethod {
             }
         }
 
-
-        installCommand.call();
         // Push the delete method to KubeResourceManager's stack, so it is automatically deleted after the tests
         KubeResourceManager.get().pushToStack(new ResourceItem<>(this::delete));
+
+        LOGGER.info("Installing ClusterOperator using Helm");
+        installCommand.call();
+        LOGGER.info("Installation of ClusterOperator completed");
     }
 
     /**
@@ -136,6 +144,28 @@ public class HelmInstallation implements InstallationMethod {
             .call();
 
         KubeResourceManager.get().kubeClient().getClient().namespaces().withName(clusterOperatorConfiguration.getNamespaceName()).delete();
+        // Because Helm is not deleting CRDs, we need to delete them "manually"
+        deleteCrds();
+    }
+
+    /**
+     * Deletes CRDs created by Helm - as Helm is not removing those during uninstall.
+     */
+    private void deleteCrds() {
+        List<File> crdFiles = Arrays.stream(new File(YamlInstallation.CO_INSTALL_DIR).listFiles()).sorted()
+            .filter(File::isFile)
+            .filter(file ->
+                // Skipping files that are not CRDs
+                file.getName().matches(".*Crd-.*"))
+            .toList();
+
+        for (File crdFile : crdFiles) {
+            try {
+                KubeResourceManager.get().kubeCmdClient().delete(crdFile);
+            } catch (Exception e) {
+                LOGGER.warn("Failed to delete CRD: {}", crdFile.getAbsolutePath(), e.getCause());
+            }
+        }
     }
 
     /**

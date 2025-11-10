@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures the `Kafka` custom resource to use Open Policy Agent authorization.
 
 To use link:https://www.openpolicyagent.org/[Open Policy Agent^] authorization, set the `type` property in the `authorization` section to the value `opa`,

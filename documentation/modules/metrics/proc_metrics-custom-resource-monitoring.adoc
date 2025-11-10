@@ -1,15 +1,17 @@
+:_mod-docs-content-type: PROCEDURE
+
 // This assembly is included in the following assemblies:
 //
 // metrics/assembly_metrics-custom-resource-monitoring.adoc
 
 [id='proc-metrics-custom-resource-monitoring-{context}']
 
-= Custom resource monitoring
+= Monitoring custom resources with kube-state-metrics
 
 [role="_abstract"]
-Use kube-state-metrics to provide custom resource monitoring.
-link:https://github.com/kubernetes/kube-state-metrics/[Kube-state-metrics^](KSM) is a scalable Kubernetes native service which listens to the Kubernetes API server and generates metrics about the state of the objects.
-Strimzi supports monitoring through KSM for the following custom resources: `KafkaUser` and `KafkaTopic`.
+Use kube-state-metrics (KSM) to monitor the state and readiness of custom resources managed by Strimzi.
+link:https://github.com/kubernetes/kube-state-metrics/[KSM^] is a scalable Kubernetes native service that listens to the Kubernetes API server and exports metrics about the state of the objects.
+Monitoring through KSM allows you to track the health of Strimzi components, identify resources that are not ready, and configure alerts for warning conditions.
 
 You can use your own KSM deployment or deploy KSM using the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
 The example files include a configuration file for a KSM deployment:

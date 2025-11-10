@@ -31,6 +31,11 @@ public class KafkaNodePoolCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaNodePoolV1() {
+        createDeleteCustomResource("KafkaNodePool-v1.yaml");
+    }
+
+    @Test
     void testKafkaNodePoolScaling() {
         createScaleDelete(KafkaNodePool.class, "KafkaNodePool.yaml");
     }
@@ -44,6 +49,15 @@ public class KafkaNodePoolCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(), anyOf(
                 containsStringIgnoringCase("spec.roles: Unsupported value: \"helper\": supported values: \"controller\", \"broker\""),
                 containsStringIgnoringCase("spec.roles[0]: Unsupported value: \"helper\": supported values: \"controller\", \"broker\"")));
+    }
+
+    @Test
+    void testKafkaNodePoolNoSpec() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaNodePool-v1-no-spec.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec");
     }
 
     @BeforeAll

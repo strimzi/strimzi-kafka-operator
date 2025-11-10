@@ -20,22 +20,20 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ConnectorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpec;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -62,6 +60,7 @@ public class KafkaMirrorMaker2Connectors {
 
     private static final String PLACEHOLDER_MIRRORMAKER2_CONNECTOR_CONFIGS_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s/%s:%s}";
 
+    @SuppressWarnings("deprecation") // Heartbeat connector is deprecated
     private static final Map<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaMirrorMaker2ConnectorSpec>> CONNECTORS = Map.of(
             SOURCE_CONNECTOR_SUFFIX, KafkaMirrorMaker2MirrorSpec::getSourceConnector,
             CHECKPOINT_CONNECTOR_SUFFIX, KafkaMirrorMaker2MirrorSpec::getCheckpointConnector,
@@ -69,7 +68,7 @@ public class KafkaMirrorMaker2Connectors {
     );
 
     private final Reconciliation reconciliation;
-    private final Map<String, KafkaMirrorMaker2ClusterSpec> clusters;
+    private final KafkaMirrorMaker2TargetClusterSpec target;
     private final List<KafkaMirrorMaker2MirrorSpec> mirrors;
     private final Tracing tracing;
     private final boolean rackAwarenessEnabled;
@@ -83,7 +82,7 @@ public class KafkaMirrorMaker2Connectors {
      */
     private KafkaMirrorMaker2Connectors(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2) {
         this.reconciliation = reconciliation;
-        this.clusters = kafkaMirrorMaker2.getSpec().getClusters().stream().collect(Collectors.toMap(KafkaMirrorMaker2ClusterSpec::getAlias, Function.identity()));
+        this.target = kafkaMirrorMaker2.getSpec().getTarget();
         this.mirrors = kafkaMirrorMaker2.getSpec().getMirrors();
         this.tracing = kafkaMirrorMaker2.getSpec().getTracing();
         this.rackAwarenessEnabled = kafkaMirrorMaker2.getSpec().getRack() != null;
@@ -99,44 +98,7 @@ public class KafkaMirrorMaker2Connectors {
      * @return  Newly created KafkaMirrorMaker2Connectors instance
      */
     public static KafkaMirrorMaker2Connectors fromCrd(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2)    {
-        validateConnectors(kafkaMirrorMaker2);
         return new KafkaMirrorMaker2Connectors(reconciliation, kafkaMirrorMaker2);
-    }
-
-    /* test */ static void validateConnectors(KafkaMirrorMaker2 kafkaMirrorMaker2)    {
-        if (kafkaMirrorMaker2.getSpec() == null)    {
-            throw new InvalidResourceException(".spec section is required for KafkaMirrorMaker2 resource");
-        } else {
-            if (kafkaMirrorMaker2.getSpec().getClusters() == null || kafkaMirrorMaker2.getSpec().getMirrors() == null)  {
-                throw new InvalidResourceException(".spec.clusters and .spec.mirrors sections are required in KafkaMirrorMaker2 resource");
-            } else {
-                Set<String> existingClusterAliases = kafkaMirrorMaker2.getSpec().getClusters().stream().map(KafkaMirrorMaker2ClusterSpec::getAlias).collect(Collectors.toSet());
-                Set<String> errorMessages = new HashSet<>();
-                String connectCluster = kafkaMirrorMaker2.getSpec().getConnectCluster();
-
-                for (KafkaMirrorMaker2MirrorSpec mirror : kafkaMirrorMaker2.getSpec().getMirrors())  {
-                    if (mirror.getSourceCluster() == null)  {
-                        errorMessages.add("Each MirrorMaker 2 mirror definition has to specify the source cluster alias");
-                    } else if (!existingClusterAliases.contains(mirror.getSourceCluster())) {
-                        errorMessages.add("Source cluster alias " + mirror.getSourceCluster() + " is used in a mirror definition, but cluster with this alias does not exist in cluster definitions");
-                    }
-
-                    if (mirror.getTargetCluster() == null)  {
-                        errorMessages.add("Each MirrorMaker 2 mirror definition has to specify the target cluster alias");
-                    } else if (!existingClusterAliases.contains(mirror.getTargetCluster())) {
-                        errorMessages.add("Target cluster alias " + mirror.getTargetCluster() + " is used in a mirror definition, but cluster with this alias does not exist in cluster definitions");
-                    }
-
-                    if (!mirror.getTargetCluster().equals(connectCluster) && !hasMatchingBootstrapServers(kafkaMirrorMaker2.getSpec().getClusters(), connectCluster, mirror.getTargetCluster())) {
-                        errorMessages.add("Connect cluster alias (currently set to " + connectCluster + ") must match the target cluster alias " + mirror.getTargetCluster() + " or both clusters must have the same bootstrap servers.");
-                    }
-                }
-
-                if (!errorMessages.isEmpty())   {
-                    throw new InvalidResourceException("KafkaMirrorMaker2 resource validation failed: " + errorMessages);
-                }
-            }
-        }
     }
 
     /**
@@ -154,15 +116,16 @@ public class KafkaMirrorMaker2Connectors {
                     @SuppressWarnings("deprecation") // getPause() is deprecated
                     KafkaConnector connector = new KafkaConnectorBuilder()
                             .withNewMetadata()
-                                .withName(mirror.getSourceCluster() + "->" + mirror.getTargetCluster() + connectorType.getKey())
+                                .withName(mirror.getSource().getAlias() + "->" + target.getAlias() + connectorType.getKey())
                             .endMetadata()
                             .withNewSpec()
                                 .withClassName(CONNECTOR_JAVA_PACKAGE + connectorType.getKey())
-                                .withConfig(prepareMirrorMaker2ConnectorConfig(mirror, mm2ConnectorSpec, clusters.get(mirror.getSourceCluster()), clusters.get(mirror.getTargetCluster())))
+                                .withConfig(prepareMirrorMaker2ConnectorConfig(mirror, mm2ConnectorSpec))
                                 .withPause(mm2ConnectorSpec.getPause())
                                 .withState(mm2ConnectorSpec.getState())
                                 .withAutoRestart(mm2ConnectorSpec.getAutoRestart())
                                 .withTasksMax(mm2ConnectorSpec.getTasksMax())
+                                .withVersion(mm2ConnectorSpec.getVersion())
                                 .withListOffsets(mm2ConnectorSpec.getListOffsets())
                                 .withAlterOffsets(mm2ConnectorSpec.getAlterOffsets())
                             .endSpec()
@@ -177,12 +140,15 @@ public class KafkaMirrorMaker2Connectors {
     }
 
     @SuppressWarnings("NPathComplexity")
-    /* test */ Map<String, Object> prepareMirrorMaker2ConnectorConfig(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ConnectorSpec connector, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster) {
-        Map<String, Object> config = new HashMap<>(connector.getConfig());
+    /* test */ Map<String, Object> prepareMirrorMaker2ConnectorConfig(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ConnectorSpec connector) {
+        Map<String, Object> config = new HashMap<>();
 
         // Source and target cluster configurations
-        addClusterToMirrorMaker2ConnectorConfig(reconciliation, config, targetCluster, TARGET_CLUSTER_PREFIX);
-        addClusterToMirrorMaker2ConnectorConfig(reconciliation, config, sourceCluster, SOURCE_CLUSTER_PREFIX);
+        addClusterToMirrorMaker2ConnectorConfig(reconciliation, config, target, TARGET_CLUSTER_PREFIX);
+        addClusterToMirrorMaker2ConnectorConfig(reconciliation, config, mirror.getSource(), SOURCE_CLUSTER_PREFIX);
+
+        // Add connector config to the configuration
+        config.putAll(connector.getConfig());
 
         // Topics pattern
         if (mirror.getTopicsPattern() != null) {
@@ -252,6 +218,7 @@ public class KafkaMirrorMaker2Connectors {
         return config;
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     /* test */ static void addClusterToMirrorMaker2ConnectorConfig(Reconciliation reconciliation, Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
         config.put(configPrefix + "alias", cluster.getAlias());
         config.put(configPrefix + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers());
@@ -310,6 +277,7 @@ public class KafkaMirrorMaker2Connectors {
         config.putAll(cluster.getAdditionalProperties());
     }
 
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     private static String oauthJaasConfig(KafkaMirrorMaker2ClusterSpec cluster, KafkaClientAuthenticationOAuth oauth) {
         Map<String, String> jaasOptions = cluster.getAuthentication() instanceof KafkaClientAuthenticationOAuth ? AuthenticationUtils.oauthJaasOptions((KafkaClientAuthenticationOAuth) cluster.getAuthentication()) : new LinkedHashMap<>();
 
@@ -365,24 +333,5 @@ public class KafkaMirrorMaker2Connectors {
         } else {
             return "PLAINTEXT";
         }
-    }
-
-    private static boolean hasMatchingBootstrapServers(List<KafkaMirrorMaker2ClusterSpec> clusterList, String connectClusterAlias, String targetClusterAlias) {
-        // Find the cluster for the connectClusterAlias
-        String connectClusterBootstrap = clusterList.stream()
-                .filter(cluster -> connectClusterAlias.equals(cluster.getAlias()))
-                .map(KafkaMirrorMaker2ClusterSpec::getBootstrapServers)
-                .findFirst()
-                .orElse(null);
-
-        // Find the cluster for the targetClusterAlias
-        String targetClusterBootstrap = clusterList.stream()
-                .filter(cluster -> targetClusterAlias.equals(cluster.getAlias()))
-                .map(KafkaMirrorMaker2ClusterSpec::getBootstrapServers)
-                .findFirst()
-                .orElse(null);
-
-        // Return true if both are found and have matching bootstrap servers
-        return connectClusterBootstrap != null && connectClusterBootstrap.equals(targetClusterBootstrap);
     }
 }

@@ -2,7 +2,7 @@
 
 **Description:** Verifies the deployment, manual rolling update, and undeployment of Kafka Connect components.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

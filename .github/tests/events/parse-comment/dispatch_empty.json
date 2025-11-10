@@ -2,7 +2,7 @@
   "action": "workflow_dispatch",
   "event_name": "workflow_dispatch",
   "inputs": {
-    "profile": "",
+    "pipeline": "",
     "kafkaVersion": "",
     "releaseVersion": ""
   },

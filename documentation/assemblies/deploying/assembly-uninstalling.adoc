@@ -1,3 +1,5 @@
+:_mod-docs-content-type: ASSEMBLY
+
 // This assembly is included in the following assemblies:
 //
 // assembly-management-tasks.adoc
@@ -20,15 +22,10 @@ Such resources include:
 
 These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaMirrorMaker2`, or `KafkaBridge` configuration.
 
-[WARNING]
-====
-*Deleting CRDs and related custom resources*
-
-When a `CustomResourceDefinition` is deleted, custom resources of that type are also deleted. 
+WARNING: When a `CustomResourceDefinition` is deleted, custom resources of that type are also deleted. 
 This includes the `Kafka`, `KafkaConnect`, `KafkaMirrorMaker2`, and `KafkaBridge` resources managed by Strimzi, as well as the `StrimziPodSet` resource Strimzi uses to manage the pods of the Kafka components. 
 In addition, any Kubernetes resources created by these custom resources, such as `Deployment`, `Pod`, `Service`, and `ConfigMap` resources, are also removed.
 Always exercise caution when deleting these resources to avoid unintended data loss.
-====
 
 //Uninstall from command line
 include::../../modules/deploying/proc-uninstalling.adoc[leveloffset=+1]

@@ -24,6 +24,7 @@ import io.strimzi.test.mockkube3.controllers.AbstractMockController;
 import io.strimzi.test.mockkube3.controllers.MockDeletionController;
 import io.strimzi.test.mockkube3.controllers.MockDeploymentController;
 import io.strimzi.test.mockkube3.controllers.MockPodController;
+import io.strimzi.test.mockkube3.controllers.MockPvcController;
 import io.strimzi.test.mockkube3.controllers.MockServiceController;
 import org.testcontainers.utility.DockerImageName;
 
@@ -356,6 +357,16 @@ public class MockKube3 {
          */
         public MockKube3Builder withNamespaces(String... namespaces)  {
             mock.initialNamespaces.addAll(Arrays.stream(namespaces).toList());
+            return this;
+        }
+
+        /**
+         * Registers PVC Controller to manage binding the PVC.
+         *
+         * @return  MockKube builder instance
+         */
+        public MockKube3Builder withPvcController() {
+            mock.registerController(new MockPvcController());
             return this;
         }
 

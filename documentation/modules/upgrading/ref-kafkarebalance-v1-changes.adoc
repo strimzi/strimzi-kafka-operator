@@ -1,0 +1,14 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-kafkarebalance-v1-changes-{context}']
+= KafkaRebalance
+
+[role="_abstract"]
+Changes required for the `KafkaRebalance` custom resource in the `v1` API.
+
+== Manual changes required
+
+The conversion tool does not apply the following updates. 
+You must make these changes manually to ensure compatibility:
+
+* Ensure the `.spec` section is present (required).

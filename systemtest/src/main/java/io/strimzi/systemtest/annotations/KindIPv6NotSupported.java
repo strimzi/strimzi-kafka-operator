@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(KindNotSupportedCondition.class)
+@ExtendWith(KindIPv6NotSupportedCondition.class)
 public @interface KindIPv6NotSupported {
 
     /**

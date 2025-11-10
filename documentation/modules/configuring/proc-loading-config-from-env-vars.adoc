@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 // Module included in the following assemblies:
 //
 // configuring/assembly-external-config.adoc
@@ -46,7 +48,7 @@ data:
 .Example Kafka Connect configuration to use external environment variables
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect
@@ -96,7 +98,7 @@ kubectl apply -f <kafka_connect_configuration_file>
 .Example connector configuration referencing the environment variable
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaConnectorApiVersion}
 kind: KafkaConnector
 metadata:
   name: my-connector

@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+    app: strimzi
+  name: kafka-certificates
+spec:
+  groups:
+  - name: kafka-certificates
+    interval: 1m0s
+    rules:
+    - alert: CertificateExpiration
+      expr: |
+        strimzi_certificate_expiration_timestamp_ms/1000 - time() < 30 * 24 * 60 * 60
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Certificate will expire in less than 30 days'
+        description: 'Certificate of type {{ $labels.type }} in cluster {{ $labels.cluster }} in namespace {{ $labels.resource_namespace }} will expire in less than 30 days'

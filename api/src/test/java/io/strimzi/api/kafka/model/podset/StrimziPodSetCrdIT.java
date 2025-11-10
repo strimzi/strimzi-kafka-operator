@@ -39,6 +39,11 @@ public class StrimziPodSetCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testStrimziPodSetV1() {
+        createDeleteCustomResource("StrimziPodSet-v1.yaml");
+    }
+
+    @Test
     void testStrimziPodSettWithMissingRequired() {
         Throwable exception = assertThrows(
                 KubernetesClientException.class,
@@ -67,6 +72,15 @@ public class StrimziPodSetCrdIT extends AbstractCrdIT {
         assertThat(createdPodSet.getSpec().getPods(), is(List.of()));
 
         Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName("my-pod-set").delete();
+    }
+
+    @Test
+    void testNoSpec() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("StrimziPodSet-v1-no-spec.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec");
     }
 
     @BeforeAll

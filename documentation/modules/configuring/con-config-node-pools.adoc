@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // assembly-config.adoc
@@ -10,10 +12,15 @@ Update the `spec` properties of the `KafkaNodePool` custom resource to configure
 A node pool is a distinct group of Kafka nodes within a Kafka cluster.
 The `strimzi.io/cluster` metadata label identifies the name of the Kafka custom resource the pool belongs to.
 
-Each pool has its own unique configuration, including mandatory settings for the number of replicas, roles, and storage allocation.
+Node pool configuration must define:
+
+* Node roles within the cluster
+* Number of replica nodes
+* Storage specifications
+
 The `.spec.roles` property defines whether the nodes in the pool act as controllers, brokers, or both.
 
-Optionally, you can also specify values for the following properties:
+Other optional properties may also be set in node pools:
 
 * `resources` to specify memory and cpu requests and limits
 * `template` to specify custom configuration for pods and other Kubernetes resources
@@ -29,8 +36,9 @@ Configuration specified in the `KafkaNodePool` resource takes precedence if set 
 For example, if both the node pool and Kafka configuration includes `jvmOptions`, the values specified in the node pool configuration are used.
 When `-Xmx: 1024m` is set in `KafkaNodePool.spec.jvmOptions` and `-Xms: 512m` is set in `Kafka.spec.kafka.jvmOptions`, the node uses the value from its node pool configuration.
 
-Properties from `Kafka` and `KafkaNodePool` schemas are not combined.  
-To clarify, if `KafkaNodePool.spec.template` includes only `podSet.metadata.labels`, and `Kafka.spec.kafka.template` includes `podSet.metadata.annotations` and `pod.metadata.labels`, the template values from the Kafka configuration are ignored since there is a template value in the node pool configuration.
+The same properties defined in the template sections in `Kafka` and `KafkaNodePool` custom resources are not combined.
+To clarify, if `KafkaNodePool.spec.template` includes only `podSet.metadata.labels`, and `Kafka.spec.kafka.template` includes `podSet.metadata.annotations` and `pod.metadata.labels`, the `pod.metadata.labels` template values from the Kafka configuration are used.
+But the `podSet.metadata.annotations` template values are ignored since there is a `podSet` template value already present in the node pool configuration.
 
 For a deeper understanding of the node pool configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 

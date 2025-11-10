@@ -82,7 +82,7 @@ public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivene
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @DeprecatedProperty(movedToPath = ".spec.entityOperator.userOperator.reconciliationIntervalMs")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     public Long getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
@@ -111,7 +111,7 @@ public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivene
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @DeprecatedProperty(description = "This property has been deprecated because ZooKeeper is not used anymore by the User Operator.")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     public Long getZookeeperSessionTimeoutSeconds() {
         return zookeeperSessionTimeoutSeconds;

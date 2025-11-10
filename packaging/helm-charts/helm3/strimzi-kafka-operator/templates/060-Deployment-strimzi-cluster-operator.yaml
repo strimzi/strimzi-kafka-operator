@@ -96,9 +96,9 @@ spec:
               {{- end }}
               {{- end }}
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
-              value: {{ .Values.fullReconciliationIntervalMs | quote }}
+              value: {{ .Values.fullReconciliationIntervalMs | int64 | quote }}
             - name: STRIMZI_OPERATION_TIMEOUT_MS
-              value: {{ .Values.operationTimeoutMs | quote }}
+              value: {{ .Values.operationTimeoutMs | int64 | quote }}
             {{- template "strimzi.kafka.image.map" . }}
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
               value: {{ template "strimzi.image" (set . "key" "topicOperator") }}
@@ -110,6 +110,8 @@ spec:
               value: {{ template "strimzi.image" (set . "key" "kafkaBridge") }}
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
               value: {{ template "strimzi.image" (set . "key" "kanikoExecutor") }}
+            - name: STRIMZI_DEFAULT_BUILDAH_IMAGE
+              value: {{ template "strimzi.image" (set . "key" "buildah") }}
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER
               value: {{ template "strimzi.image" (set . "key" "mavenBuilder") }}
             - name: STRIMZI_OPERATOR_NAMESPACE
@@ -146,7 +148,7 @@ spec:
             {{- end }}
             {{- if ne (int .Values.connectBuildTimeoutMs) 300000 }}
             - name: STRIMZI_CONNECT_BUILD_TIMEOUT_MS
-              value: {{ .Values.connectBuildTimeoutMs | quote }}
+              value: {{ .Values.connectBuildTimeoutMs | int64 | quote }}
             {{- end }}
             {{- if ne .Values.generatePodDisruptionBudget true}}
             - name: STRIMZI_POD_DISRUPTION_BUDGET_GENERATION

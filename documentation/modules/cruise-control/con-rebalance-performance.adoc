@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // assembly-cruise-control-concepts.adoc
@@ -5,6 +7,7 @@
 [id='con-rebalance-{context}']
 = Tuning options for rebalances
 
+[role="_abstract"]
 Configuration options allow you to fine-tune cluster rebalance performance. 
 These settings control the movement of partition replicas and leadership, as well as the bandwidth allocated for rebalances.
 

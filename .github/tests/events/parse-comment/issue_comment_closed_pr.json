@@ -1,0 +1,25 @@
+{
+  "event_name": "issue_comment",
+  "action": "created",
+  "comment": {
+    "body": "/gha run pipeline=regression,upgrade"
+  },
+  "issue": {
+    "number": 42,
+    "state": "closed",
+    "pull_request": {
+      "head": {
+        "ref": "feature-123",
+        "sha": "1111111111111111111111111111111111111111",
+        "repo": {
+          "name": "test-repo",
+          "owner": { "login": "batman" }
+        }
+      }
+    }
+  },
+  "repository": {
+    "name": "test-repo",
+    "owner": { "login": "batman" }
+  }
+}

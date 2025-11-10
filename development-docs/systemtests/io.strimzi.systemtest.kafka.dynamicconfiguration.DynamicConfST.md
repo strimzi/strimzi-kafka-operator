@@ -2,7 +2,7 @@
 
 **Description:** Responsible for verifying that changes in dynamic Kafka configuration do not trigger a rolling update.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

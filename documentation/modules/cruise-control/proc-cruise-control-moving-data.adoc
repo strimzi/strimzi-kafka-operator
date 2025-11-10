@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 [id='proc-cruise-control-moving-data-{context}']
 = Using Cruise Control to reassign partitions on JBOD disks
 

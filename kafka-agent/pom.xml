@@ -5,7 +5,7 @@
     <parent>
         <artifactId>strimzi</artifactId>
         <groupId>io.strimzi</groupId>
-        <version>0.48.0-SNAPSHOT</version>
+        <version>0.50.0-SNAPSHOT</version>
     </parent>
     <name>Kafka HTTP Agent</name>
     <modelVersion>4.0.0</modelVersion>
@@ -77,6 +77,14 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-core</artifactId>
         </dependency>
     </dependencies>
 

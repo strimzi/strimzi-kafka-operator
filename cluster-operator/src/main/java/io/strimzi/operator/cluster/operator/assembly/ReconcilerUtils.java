@@ -41,7 +41,6 @@ import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 
@@ -53,7 +52,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
@@ -390,6 +388,7 @@ public class ReconcilerUtils {
      *
      * @return      True ZooKeeper metadata are in use or when the cluster is in migration. False otherwise.
      */
+    @SuppressWarnings("deprecation") // KafkaMetadataState is deprecated, but we still use it to check for clusters not migrated to KRaft
     public static boolean nonMigratedCluster(Kafka kafka) {
         // When the Kafka status or the metadata state are null, we cannot decide anything about KRaft (it can be a new
         // cluster or a cluster that is still doing the first deployment). Only when it is set to one of the non-KRaft
@@ -434,23 +433,6 @@ public class ReconcilerUtils {
     }
 
     /**
-     * Method parses all dynamically unchangeable entries from the logging configuration.
-     * @param loggingConfiguration logging configuration to be parsed
-     * @return String containing all unmodifiable entries.
-     */
-    static String getLoggingDynamicallyUnmodifiableEntries(String loggingConfiguration) {
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(loggingConfiguration);
-        StringBuilder result = new StringBuilder();
-        for (Map.Entry<String, String> entry: new TreeMap<>(ops.asMap()).entrySet()) {
-            if (entry.getKey().startsWith("log4j.appender.") && !entry.getKey().equals("monitorInterval")) {
-                result.append(entry.getKey()).append("=").append(entry.getValue());
-            }
-        }
-        return result.toString();
-    }
-
-    /**
      * Checks if the Kubernetes resource matches LabelSelector. This is useful when you use get/getAsync to retrieve a
      * resource and want to check if it matches the labels from the selector (since get/getAsync is using name and not
      * labels to identify the resource). This method currently supports only the matchLabels object. matchExpressions
@@ -482,12 +464,13 @@ public class ReconcilerUtils {
      * @param certSecretSources TLS trusted certificates whose hashes are joined to result
      * @return Future computing hash from TLS + Auth
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<CertSecretSource> certSecretSources) {
         Future<Integer> tlsFuture;
         if (certSecretSources == null || certSecretSources.isEmpty()) {
             tlsFuture = Future.succeededFuture(0);
         } else {
-            // get all TLS trusted certs, compute hash from each of them, sum hashes
+            // get all TLS trusted certs, compute hash from them
             tlsFuture = Future.join(certSecretSources.stream().map(certSecretSource ->
                             getCertificateAsync(secretOperations, namespace, certSecretSource)
                                     .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
@@ -526,6 +509,34 @@ public class ReconcilerUtils {
                 // unknown Auth type
                 return tlsFuture;
             }
+        }
+    }
+
+    /**
+     * Gets trusted certificates from Secrets and merges them into a single String.
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param secretOperations      Secrets operator
+     * @param certificateSources    List of certificate sources
+     *
+     * @return  Certificates extracted from the Secrets
+     */
+    public static Future<String> trustedCertificates(Reconciliation reconciliation, SecretOperator secretOperations, List<CertSecretSource> certificateSources)   {
+        if (certificateSources != null && !certificateSources.isEmpty()) {
+            return Future.join(certificateSources
+                            .stream()
+                            .map(certSecretSource -> ReconcilerUtils.getCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource))
+                            .toList())
+                    .compose(certificates -> {
+                        if (certificates.list().isEmpty()) {
+                            return Future.succeededFuture();
+                        } else {
+                            return Future.succeededFuture(String.join("\n", certificates.list()));
+                        }
+                    });
+        } else {
+            // No trusted certificates to extract.
+            return Future.succeededFuture();
         }
     }
 
@@ -596,12 +607,12 @@ public class ReconcilerUtils {
                 .compose(secret -> {
                     if (certSecretSource.getCertificate() != null)  {
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret, certSecretSource.getCertificate())
-                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().get(certSecretSource.getCertificate())));
+                                .compose(validatedSecret -> Future.succeededFuture(Util.decodeFromBase64(validatedSecret.getData().get(certSecretSource.getCertificate()))));
                     } else if (certSecretSource.getPattern() != null)    {
                         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + certSecretSource.getPattern());
 
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret)
-                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().entrySet().stream().filter(e -> matcher.matches(Paths.get(e.getKey()))).map(Map.Entry::getValue).sorted().collect(Collectors.joining())));
+                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().entrySet().stream().filter(e -> matcher.matches(Paths.get(e.getKey()))).map(e -> Util.decodeFromBase64(e.getValue())).sorted().collect(Collectors.joining("\n"))));
                     } else {
                         throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
                     }

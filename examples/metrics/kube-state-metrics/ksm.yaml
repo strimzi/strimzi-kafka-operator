@@ -31,6 +31,11 @@ rules:
     resources:
       - strimzipodsets
     verbs: ["list", "watch"]
+  - apiGroups:
+      - access.strimzi.io
+    resources:
+      - kafkaaccesses
+    verbs: [ "list", "watch" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -99,14 +104,13 @@ spec:
               mountPath: /etc/customresourcestate
               readOnly: true
           imagePullPolicy: IfNotPresent
-          image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.14.0
+          image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.16.0
           ports:
             - containerPort: 8080
               name: "http"
           livenessProbe:
             failureThreshold: 3
             httpGet:
-              httpHeaders:
               path: /livez
               port: 8080
               scheme: HTTP
@@ -117,7 +121,6 @@ spec:
           readinessProbe:
             failureThreshold: 3
             httpGet:
-              httpHeaders:
               path: /readyz
               port: 8081
               scheme: HTTP

@@ -276,7 +276,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     .replace("replicas: 1", "replicas: 3") +
                     "    min.insync.replicas: 2");
 
-                KafkaTopicUtils.waitForKafkaTopicReady(testStorage.getNamespaceName(), testStorage.getTopicName());
+                KafkaTopicUtils.waitForKafkaTopicReadyForV1Beta2(testStorage.getNamespaceName(), testStorage.getTopicName());
             }
 
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
@@ -330,13 +330,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     KafkaNodePoolTemplates.controllerPoolPersistentStorage(componentsNamespaceName, CONTROLLER_NODE_NAME, CLUSTER_NAME, 3).build(),
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(componentsNamespaceName, BROKER_NODE_NAME, CLUSTER_NAME, 3).build(),
                     KafkaTemplates.kafka(componentsNamespaceName, CLUSTER_NAME, 3)
-                        .editMetadata()
-                            // This is still needed for upgrade tests. It should be remove once the upgrade tests use
-                            // only Strimzi versions that do not require these annotations.
-                            // Tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/11690
-                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
-                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
-                        .endMetadata()
                         .editSpec()
                             .editKafka()
                                 .withVersion(upgradeKafkaVersion.getVersion())
@@ -369,7 +362,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                 kafkaUserYaml = new File(dir, upgradeData.getFromExamples() + "/examples/user/kafka-user.yaml");
                 LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
                 KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
-                KafkaUserUtils.waitForKafkaUserReady(componentsNamespaceName, USER_NAME);
+                KafkaUserUtils.waitForKafkaUserReadyForV1Beta2(componentsNamespaceName, USER_NAME);
             }
         }
     }
@@ -385,7 +378,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
             }
             LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
             KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).create(kafkaTopicYaml);
-            KafkaTopicUtils.waitForKafkaTopicReady(componentsNamespaceName, TOPIC_NAME);
+            KafkaTopicUtils.waitForKafkaTopicReadyForV1Beta2(componentsNamespaceName, TOPIC_NAME);
         }
     }
 
@@ -729,24 +722,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         }
     }
 
-    /**
-     * Based on {@param isUTOUsed} and {@param wasUTOUsedBefore} it returns the expected count of KafkaTopics.
-     * In case that UTO was used before and after, the expected number of KafkaTopics is {@link #UPGRADE_TOPIC_COUNT}.
-     * In other cases - BTO was used before or after the upgrade/downgrade - the expected number of KafkaTopics is {@link #UPGRADE_TOPIC_COUNT}
-     * with {@link #BTO_KAFKA_TOPICS_ONLY_COUNT}.
-     * @param isUTOUsed boolean value determining if UTO is used after upgrade/downgrade of the CO
-     * @param wasUTOUsedBefore boolean value determining if UTO was used before upgrade/downgrade of the CO
-     * @return expected number of KafkaTopics
-     */
-    protected int getExpectedTopicCount(boolean isUTOUsed, boolean wasUTOUsedBefore) {
-        if (isUTOUsed && wasUTOUsedBefore) {
-            // topics that are just present in Kafka itself are not created as CRs in UTO, thus -3 topics in comparison to regular upgrade
-            return UPGRADE_TOPIC_COUNT;
-        }
-
-        return UPGRADE_TOPIC_COUNT + BTO_KAFKA_TOPICS_ONLY_COUNT;
-    }
-
     protected String getResourceApiVersion(String resourcePlural) {
         return resourcePlural + "." + Constants.V1BETA2 + "." + Constants.RESOURCE_GROUP_NAME;
     }
@@ -782,8 +757,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected void cleanUpKafkaTopics(String componentsNamespaceName) {
         if (CrdUtils.isCrdPresent(KafkaTopic.RESOURCE_PLURAL, KafkaTopic.RESOURCE_GROUP)) {
             // delete all topics created in test
-            List<KafkaTopic> kafkaTopics = CrdClients.kafkaTopicClient().inNamespace(componentsNamespaceName).list().getItems();
-            KubeResourceManager.get().deleteResourceWithWait(kafkaTopics.toArray(new KafkaTopic[0]));
+            KafkaTopicUtils.deleteAllKafkaTopicsWithV1Beta2(componentsNamespaceName);
         } else {
             LOGGER.info("Kafka Topic CustomResource Definition does not exist, no KafkaTopic is being deleted");
         }
@@ -796,7 +770,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         }
         if (kafkaTopicYaml != null) {
             LOGGER.info("Deleting KafkaTopic configuration files");
-            KafkaTopicUtils.setFinalizersInAllTopicsToNull(componentsNamespaceName);
+            KafkaTopicUtils.setFinalizersInAllV1Beta2TopicsToNull(componentsNamespaceName);
             KubeResourceManager.get().kubeCmdClient().inNamespace(componentsNamespaceName).delete(kafkaTopicYaml);
         }
         if (kafkaYaml != null) {

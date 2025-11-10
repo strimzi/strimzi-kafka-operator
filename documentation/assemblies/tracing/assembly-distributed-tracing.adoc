@@ -1,3 +1,5 @@
+:_mod-docs-content-type: ASSEMBLY
+
 // This assembly is included in the following assemblies:
 //
 // configuring/configuring.adoc
@@ -17,7 +19,7 @@ Strimzi provides built-in support for tracing for the following Kafka components
 
 * MirrorMaker to trace messages from a source cluster to a target cluster
 * Kafka Connect to trace messages consumed and produced by Kafka Connect
-* Kafka Bridge to trace messages between Kafka and HTTP client applications
+* HTTP Bridge to trace messages between Kafka and HTTP client applications
 
 Tracing is not supported for Kafka brokers.
 

@@ -1,0 +1,6 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster

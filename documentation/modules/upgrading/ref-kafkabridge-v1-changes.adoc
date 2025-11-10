@@ -1,0 +1,26 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-kafkabridge-v1-changes-{context}']
+= KafkaBridge
+
+[role="_abstract"]
+Changes required for the `KafkaBridge` custom resource in the `v1` API.
+
+== Manual changes required
+
+The conversion tool does not apply the following updates. 
+You must make these changes manually to ensure compatibility:
+
+* Ensure the `.spec` section is present (required).
+* Replace unsupported authentication `type: oauth` with `type: custom`.
+
+== Automatic changes supported
+
+The following updates are applied automatically by the conversion tool during conversion.  
+If the conversion tool is not used, you can apply the same changes manually:
+
+* Adds the `.spec.replicas` property if missing, defaulting to `1`.
+* Removes unsupported tracing `type: jaeger`.
+* Removes the `.spec.enableMetrics` property.  
+If `.spec.enableMetrics` was set to `true`, a new `ConfigMap` is created automatically with the metrics configuration.  
+Adds the `.spec.metricsConfig` property to reference this `ConfigMap`.

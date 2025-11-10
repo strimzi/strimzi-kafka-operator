@@ -226,7 +226,7 @@ public class KafkaNodePoolST extends AbstractST {
 
         // remove topic which blocks role change (removal of broker role thus decreasing number of broker nodes available)
         LOGGER.info("Delete Kafka Topic {}/{}", testStorage.getNamespaceName(), testStorage.getTopicName());
-        KubeResourceManager.get().deleteResource(kafkaTopic);
+        KubeResourceManager.get().deleteResourceWithWait(kafkaTopic);
         KafkaTopicUtils.waitForKafkaTopicDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
 
         // wait for final roll changing
@@ -319,7 +319,7 @@ public class KafkaNodePoolST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // clean topic
-        KubeResourceManager.get().deleteResource(kafkaTopic);
+        KubeResourceManager.get().deleteResourceWithWait(kafkaTopic);
         KafkaTopicUtils.waitForKafkaTopicDeletion(testStorage.getNamespaceName(), topicName);
     }
 

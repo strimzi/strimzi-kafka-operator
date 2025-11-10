@@ -34,18 +34,20 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -123,6 +125,21 @@ public class KafkaClusterListenersTest {
                 .withRoles(ProcessRoles.BROKER)
             .endSpec()
             .build();
+
+    private final static Map<Integer, Map<String, String>> ADVERTISED_HOSTNAMES = Map.of(
+            3, Map.of("PLAIN_9092", "mixed-3", "TLS_9093", "mixed-3", "EXTERNAL_9094", "mixed-3"),
+            4, Map.of("PLAIN_9092", "mixed-4", "TLS_9093", "mixed-4", "EXTERNAL_9094", "mixed-4"),
+            5, Map.of("PLAIN_9092", "broker-5", "TLS_9093", "broker-5", "EXTERNAL_9094", "broker-5"),
+            6, Map.of("PLAIN_9092", "broker-6", "TLS_9093", "broker-6", "EXTERNAL_9094", "broker-6"),
+            7, Map.of("PLAIN_9092", "broker-7", "TLS_9093", "broker-7", "EXTERNAL_9094", "broker-7")
+    );
+    private final static Map<Integer, Map<String, String>> ADVERTISED_PORTS = Map.of(
+            3, Map.of("PLAIN_9092", "9092", "TLS_9093", "10003", "EXTERNAL_9094", "20003"),
+            4, Map.of("PLAIN_9092", "9092", "TLS_9093", "10004", "EXTERNAL_9094", "20004"),
+            5, Map.of("PLAIN_9092", "9092", "TLS_9093", "10005", "EXTERNAL_9094", "20005"),
+            6, Map.of("PLAIN_9092", "9092", "TLS_9093", "10006", "EXTERNAL_9094", "20006"),
+            7, Map.of("PLAIN_9092", "9092", "TLS_9093", "10007", "EXTERNAL_9094", "20007")
+    );
 
     //////////
     // Utility methods
@@ -776,7 +793,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
 
         // Check per pod services
         List<Service> services = kc.generatePerPodServices();
@@ -786,11 +803,11 @@ public class KafkaClusterListenersTest {
             if (service.getMetadata().getName().contains("foo-brokers-")) {
                 assertThat(service.getMetadata().getName(), startsWith("foo-brokers-"));
                 assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
-                TestUtils.checkOwnerReference(service, POOL_BROKERS);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_BROKERS);
             } else {
                 assertThat(service.getMetadata().getName(), startsWith("foo-mixed-"));
                 assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-mixed-3", "foo-mixed-4"));
-                TestUtils.checkOwnerReference(service, POOL_MIXED);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_MIXED);
             }
 
             assertThat(service.getSpec().getType(), is("ClusterIP"));
@@ -811,7 +828,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapRoutes.get(0).getSpec().getTo().getKind(), is("Service"));
         assertThat(bootstrapRoutes.get(0).getSpec().getTo().getName(), is(CLUSTER + "-kafka-external-bootstrap"));
         assertThat(bootstrapRoutes.get(0).getSpec().getPort().getTargetPort(), is(new IntOrString(9094)));
-        TestUtils.checkOwnerReference(bootstrapRoutes.get(0), KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapRoutes.get(0), KAFKA);
 
         // Check per pod router
         List<Route> routes = kc.generateExternalRoutes();
@@ -821,11 +838,11 @@ public class KafkaClusterListenersTest {
             if (route.getMetadata().getName().contains("foo-brokers-")) {
                 assertThat(route.getMetadata().getName(), startsWith("foo-brokers-"));
                 assertThat(route.getSpec().getTo().getName(), oneOf("foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
-                TestUtils.checkOwnerReference(route, POOL_BROKERS);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(route, POOL_BROKERS);
             } else {
                 assertThat(route.getMetadata().getName(), startsWith("foo-mixed-"));
                 assertThat(route.getSpec().getTo().getName(), oneOf("foo-mixed-3", "foo-mixed-4"));
-                TestUtils.checkOwnerReference(route, POOL_MIXED);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(route, POOL_MIXED);
             }
 
             assertThat(route.getSpec().getTls().getTermination(), is("passthrough"));
@@ -1011,7 +1028,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getExternalTrafficPolicy(), is("Cluster"));
         assertThat(bootstrapServices.get(0).getSpec().getLoadBalancerSourceRanges(), is(List.of()));
         assertThat(bootstrapServices.get(0).getSpec().getAllocateLoadBalancerNodePorts(), is(nullValue()));
-        TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
 
         // Check per pod services
         List<Service> services = kc.generatePerPodServices();
@@ -1021,11 +1038,11 @@ public class KafkaClusterListenersTest {
             if (service.getMetadata().getName().contains("foo-brokers-")) {
                 assertThat(service.getMetadata().getName(), startsWith("foo-brokers-"));
                 assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
-                TestUtils.checkOwnerReference(service, POOL_BROKERS);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_BROKERS);
             } else {
                 assertThat(service.getMetadata().getName(), startsWith("foo-mixed-"));
                 assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-mixed-3", "foo-mixed-4"));
-                TestUtils.checkOwnerReference(service, POOL_MIXED);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_MIXED);
             }
 
             assertThat(service.getMetadata().getFinalizers(), is(List.of()));
@@ -1427,7 +1444,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
 
         // Check per pod services
         List<Service> services = kc.generatePerPodServices();
@@ -1437,11 +1454,11 @@ public class KafkaClusterListenersTest {
             if (service.getMetadata().getName().contains("foo-brokers-")) {
                 assertThat(service.getMetadata().getName(), startsWith("foo-brokers-"));
                 assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
-                TestUtils.checkOwnerReference(service, POOL_BROKERS);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_BROKERS);
             } else {
                 assertThat(service.getMetadata().getName(), startsWith("foo-mixed-"));
                 assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-mixed-3", "foo-mixed-4"));
-                TestUtils.checkOwnerReference(service, POOL_MIXED);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_MIXED);
             }
 
             assertThat(service.getSpec().getType(), is("NodePort"));
@@ -1614,7 +1631,7 @@ public class KafkaClusterListenersTest {
         assertThat(ext.getSpec().getPorts().get(0).getNodePort(), is(32001));
         assertThat(ext.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
-        TestUtils.checkOwnerReference(ext, KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
         List<Service> services = kc.generatePerPodServices();
@@ -1896,7 +1913,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-external"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
 
         // Check per pod services
         List<Service> services = kc.generatePerPodServices();
@@ -1906,11 +1923,11 @@ public class KafkaClusterListenersTest {
             if (service.getMetadata().getName().contains("foo-brokers-")) {
                 assertThat(service.getMetadata().getName(), startsWith("foo-brokers-"));
                 assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
-                TestUtils.checkOwnerReference(service, POOL_BROKERS);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_BROKERS);
             } else {
                 assertThat(service.getMetadata().getName(), startsWith("foo-mixed-"));
                 assertThat(service.getSpec().getSelector().get(Labels.STRIMZI_POD_NAME_LABEL), oneOf("foo-mixed-3", "foo-mixed-4"));
-                TestUtils.checkOwnerReference(service, POOL_MIXED);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_MIXED);
             }
 
             assertThat(service.getSpec().getType(), is("ClusterIP"));
@@ -1939,7 +1956,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapIngresses.get(0).getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
         assertThat(bootstrapIngresses.get(0).getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(CLUSTER + "-kafka-external-bootstrap"));
         assertThat(bootstrapIngresses.get(0).getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getPort().getNumber(), is(9094));
-        TestUtils.checkOwnerReference(bootstrapIngresses.get(0), KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapIngresses.get(0), KAFKA);
 
         // Check per pod ingress
         List<Ingress> ingresses = kc.generateExternalIngresses();
@@ -1948,10 +1965,10 @@ public class KafkaClusterListenersTest {
         for (Ingress ingress : ingresses)    {
             if (ingress.getMetadata().getName().contains("foo-brokers-")) {
                 assertThat(ingress.getMetadata().getName(), oneOf("foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
-                TestUtils.checkOwnerReference(ingress, POOL_BROKERS);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(ingress, POOL_BROKERS);
             } else {
                 assertThat(ingress.getMetadata().getName(), oneOf("foo-mixed-3", "foo-mixed-4"));
-                TestUtils.checkOwnerReference(ingress, POOL_MIXED);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(ingress, POOL_MIXED);
             }
 
             assertThat(ingress.getSpec().getIngressClassName(), is(nullValue()));
@@ -2131,7 +2148,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getStrVal(), is("tcp-clusterip"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
+        io.strimzi.operator.cluster.TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
 
         // Check per pod services
         List<Service> services = kc.generatePerPodServices();
@@ -2141,19 +2158,19 @@ public class KafkaClusterListenersTest {
             if (service.getMetadata().getName().startsWith("foo-brokers-clusterip-6")) {
                 assertThat(service.getMetadata().getAnnotations().get("anno"), is("anno-value-6"));
                 assertThat(service.getMetadata().getLabels().get("label"), is("label-value-6"));
-                TestUtils.checkOwnerReference(service, POOL_BROKERS);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_BROKERS);
             } else if (service.getMetadata().getName().startsWith("foo-mixed-clusterip-3")) {
                 assertThat(service.getMetadata().getAnnotations().get("anno"), is("anno-value-3"));
                 assertThat(service.getMetadata().getLabels().get("label"), is("label-value-3"));
-                TestUtils.checkOwnerReference(service, POOL_MIXED);
+                io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_MIXED);
             } else {
                 assertThat(service.getMetadata().getAnnotations().get("anno"), is(nullValue()));
                 assertThat(service.getMetadata().getLabels().get("label"), is(nullValue()));
 
                 if (service.getMetadata().getName().startsWith("foo-controllers-")) {
-                    TestUtils.checkOwnerReference(service, POOL_CONTROLLERS);
+                    io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_CONTROLLERS);
                 } else if (service.getMetadata().getName().startsWith("foo-mixed-")) {
-                    TestUtils.checkOwnerReference(service, POOL_MIXED);
+                    io.strimzi.operator.cluster.TestUtils.checkOwnerReference(service, POOL_MIXED);
                 } else {
                     TestUtils.checkOwnerReference(service, POOL_BROKERS);
                 }
@@ -2307,33 +2324,14 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        String brokerConfig = kc.generatePerBrokerConfiguration(5, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
 
-        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            // Volumes
-            List<Volume> volumes = pod.getSpec().getVolumes();
-            Volume vol = volumes.stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
+        assertThat(brokerConfig, is(containsString("listener.name.external-9094.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-secret:my-external-cert.crt}")));
+        assertThat(brokerConfig, is(containsString("listener.name.external-9094.ssl.keystore.key=${strimzisecrets:namespace/my-secret:my.key}")));
+        assertThat(brokerConfig, is(containsString("listener.name.external-9094.ssl.keystore.type=PEM")));
 
-            // Volume mounts
-            Container container = pod.getSpec().getContainers().stream().findFirst().orElseThrow();
-            VolumeMount mount = container.getVolumeMounts().stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
-
-            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(vol, is(nullValue()));
-                assertThat(mount, is(nullValue()));
-            } else {
-                assertThat(vol, is(notNullValue()));
-                assertThat(vol.getSecret().getSecretName(), is(secret));
-                assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
-                assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
-                assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
-                assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
-
-                assertThat(mount, is(notNullValue()));
-                assertThat(mount.getName(), is("custom-external-9094-certs"));
-                assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-external-9094-certs"));
-            }
-        }));
+        String controllerConfig = kc.generatePerBrokerConfiguration(0, Map.of(0, Map.of("CONTROLPLANE_9090", "controller-0")), Map.of(0, Map.of("CONTROLPLANE_9090", "9090")));
+        assertThat(controllerConfig, not(containsString("listener.name.external-9094")));
     }
 
     @Test
@@ -2363,32 +2361,13 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        String mixedConfig = kc.generatePerBrokerConfiguration(4, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
 
-        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            // Test volumes
-            List<Volume> volumes = pod.getSpec().getVolumes();
-            Volume vol = volumes.stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
+        assertThat(mixedConfig, is(containsString("listener.name.tls-9093.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-secret:my-external-cert.crt}")));
+        assertThat(mixedConfig, is(containsString("listener.name.tls-9093.ssl.keystore.key=${strimzisecrets:namespace/my-secret:my.key}")));
+        assertThat(mixedConfig, is(containsString("listener.name.tls-9093.ssl.keystore.type=PEM")));
 
-            // Test volume mounts
-            Container container = pod.getSpec().getContainers().stream().findAny().orElseThrow();
-            VolumeMount mount = container.getVolumeMounts().stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
-
-            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(vol, is(nullValue()));
-                assertThat(mount, is(nullValue()));
-            } else {
-                assertThat(vol, is(notNullValue()));
-                assertThat(vol.getSecret().getSecretName(), is(secret));
-                assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
-                assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
-                assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
-                assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
-
-                assertThat(mount, is(notNullValue()));
-                assertThat(mount.getName(), is("custom-tls-9093-certs"));
-                assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-tls-9093-certs"));
-            }
-        }));
+        String controllerConfig = kc.generatePerBrokerConfiguration(0, Map.of(0, Map.of("CONTROLPLANE_9090", "controller-0")), Map.of(0, Map.of("CONTROLPLANE_9090", "9090")));
+        assertThat(controllerConfig, not(containsString("listener.name.tls-9093")));
     }
 }

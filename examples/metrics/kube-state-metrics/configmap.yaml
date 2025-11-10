@@ -205,3 +205,21 @@ data:
                 connectorPluginsVersion: [ status, connectorPlugins, version ]
                 labelSelector: [ status, labelSelector ]
                 replicas: [ status, replicas ]
+        - groupVersionKind:
+            group: access.strimzi.io
+            version: v1alpha1
+            kind: KafkaAccess
+          metricNamePrefix: strimzi_kafka_access
+          metrics:
+            - name: resource_info
+              help: "The current state of a Strimzi Kafka Access resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                generation: [ status, observedGeneration ]

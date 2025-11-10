@@ -2,7 +2,7 @@
 
 **Description:** This test suite verifies various functionalities of KafkaNodePools in a Kafka cluster.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

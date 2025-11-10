@@ -2,7 +2,7 @@
 
 **Description:** Verifies the basic functionality for each supported Kafka version.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

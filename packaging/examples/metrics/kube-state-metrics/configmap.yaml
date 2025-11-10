@@ -9,7 +9,7 @@ data:
       resources:
         - groupVersionKind:
             group: kafka.strimzi.io
-            version: v1beta2
+            version: v1
             kind: KafkaTopic
           metricNamePrefix: strimzi_kafka_topic
           metrics:
@@ -31,7 +31,7 @@ data:
                 topicName: [ status, topicName ]
         - groupVersionKind:
             group: kafka.strimzi.io
-            version: v1beta2
+            version: v1
             kind: KafkaUser
           metricNamePrefix: strimzi_kafka_user
           metrics:
@@ -51,7 +51,7 @@ data:
                 username: [ status, username ]
         - groupVersionKind:
             group: kafka.strimzi.io
-            version: v1beta2
+            version: v1
             kind: Kafka
           metricNamePrefix: strimzi_kafka
           metrics:
@@ -74,7 +74,7 @@ data:
                 generation: [ status, observedGeneration ]
         - groupVersionKind:
             group: kafka.strimzi.io
-            version: v1beta2
+            version: v1
             kind: KafkaNodePool
           metricNamePrefix: strimzi_kafka_node_pool
           metrics:
@@ -97,7 +97,7 @@ data:
                 generation: [ status, observedGeneration ]
         - groupVersionKind:
             group: core.strimzi.io
-            version: v1beta2
+            version: v1
             kind: StrimziPodSet
           metricNamePrefix: strimzi_pod_set
           metrics:
@@ -117,7 +117,7 @@ data:
                 generation: [ status, observedGeneration ]
         - groupVersionKind:
             group: kafka.strimzi.io
-            version: v1beta2
+            version: v1
             kind: KafkaRebalance
           metricNamePrefix: strimzi_kafka_rebalance
           metrics:
@@ -137,7 +137,7 @@ data:
                 template: [ metadata, annotations, "strimzi.io/rebalance-template" ]
         - groupVersionKind:
             group: kafka.strimzi.io
-            version: v1beta2
+            version: v1
             kind: KafkaConnect
           metricNamePrefix: strimzi_kafka_connect
           metrics:
@@ -160,7 +160,7 @@ data:
                 labelSelector: [ status, labelSelector ]
         - groupVersionKind:
             group: kafka.strimzi.io
-            version: v1beta2
+            version: v1
             kind: KafkaConnector
           metricNamePrefix: strimzi_kafka_connector
           metrics:
@@ -182,7 +182,7 @@ data:
                 topics: [ status, topics ]
         - groupVersionKind:
             group: kafka.strimzi.io
-            version: v1beta2
+            version: v1
             kind: KafkaMirrorMaker2
           metricNamePrefix: strimzi_kafka_mm2
           metrics:

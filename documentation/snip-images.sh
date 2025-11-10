@@ -12,6 +12,8 @@ source $(dirname $(realpath $0))/../tools/multi-platform-support.sh
 get_kafka_versions
 
 cat <<EOF
+:_mod-docs-content-type: SNIPPET
+
 // Auto generated content - DO NOT EDIT BY HAND
 // Edit documentation/snip-images.sh instead
 [table,stripes=none]

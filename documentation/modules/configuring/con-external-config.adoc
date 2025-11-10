@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // configuring/assembly-external-config.adoc
@@ -11,7 +13,7 @@ You can enable one or more configuration providers using the `config.providers` 
 .Example configuration to enable a configuration provider
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect

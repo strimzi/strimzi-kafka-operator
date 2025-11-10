@@ -1,0 +1,25 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker-2
+spec:
+  version: 4.1.0
+  replicas: 1
+  mirrors:
+    - sourceConnector:
+        tasksMax: 1
+        config:
+          # -1 means it will use the default replication factor configured in the broker
+          replication.factor: -1
+          offset-syncs.topic.replication.factor: -1
+          sync.topic.acls.enabled: "false"
+          refresh.topics.interval.seconds: 600
+      checkpointConnector:
+        tasksMax: 1
+        config:
+          # -1 means it will use the default replication factor configured in the broker
+          checkpoints.topic.replication.factor: -1
+          sync.group.offsets.enabled: "false"
+          refresh.groups.interval.seconds: 600
+      topicsPattern: ".*"
+      groupsPattern: ".*"

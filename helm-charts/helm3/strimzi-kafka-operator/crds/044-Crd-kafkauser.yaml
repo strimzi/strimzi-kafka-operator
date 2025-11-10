@@ -24,6 +24,7 @@ spec:
     - name: v1beta2
       served: true
       storage: true
+      deprecated: false
       subresources:
         status: {}
       additionalPrinterColumns:
@@ -255,6 +256,7 @@ spec:
     - name: v1beta1
       served: true
       storage: false
+      deprecated: false
       subresources:
         status: {}
       additionalPrinterColumns:
@@ -486,6 +488,7 @@ spec:
     - name: v1alpha1
       served: true
       storage: false
+      deprecated: false
       subresources:
         status: {}
       additionalPrinterColumns:

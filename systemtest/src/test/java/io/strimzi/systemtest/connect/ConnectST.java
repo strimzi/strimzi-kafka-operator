@@ -106,6 +106,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -600,9 +601,9 @@ class ConnectST extends AbstractST {
         String tlsCertSecretName = KafkaConnectResources.internalTlsTrustedCertsSecretName(testStorage.getClusterName());
         LOGGER.info("Verifying that tls cert secret {} is created for KafkaConnect truststore", tlsCertSecretName);
         Secret tlsCertSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(tlsCertSecretName).get();
-        // The secret should contain certificates from both secrets
-        assertThat(tlsCertSecret.getData().containsKey(testStorage.getClusterName() + "-cluster-ca-cert-ca.crt"), is(true));
-        assertThat(tlsCertSecret.getData().containsKey("my-secret-ca2.crt"), is(true));
+        // The secret should contain the combined ca.crt file with the certificates
+        assertThat(tlsCertSecret.getData().containsKey("ca.crt"), is(true));
+        assertThat(tlsCertSecret.getData().get("ca.crt"), is(notNullValue()));
 
         LOGGER.info("Creating FileStreamSink KafkaConnector via Pod: {}/{} with Topic: {}", testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName());
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
@@ -955,10 +956,10 @@ class ConnectST extends AbstractST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editSpec()
-                .addToConfig("group.id", connectClusterName)
-                .addToConfig("offset.storage.topic", connectClusterName + "-offsets")
-                .addToConfig("config.storage.topic", connectClusterName + "-config")
-                .addToConfig("status.storage.topic", connectClusterName + "-status")
+                .withGroupId(connectClusterName)
+                .withConfigStorageTopic(connectClusterName + "-config")
+                .withOffsetStorageTopic(connectClusterName + "-offsets")
+                .withStatusStorageTopic(connectClusterName + "-status")
             .endSpec()
             .build());
 
@@ -1326,7 +1327,9 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("-------> Scaling KafkaConnect subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
-        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaConnect.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
+
+        // We use the KafkaConnect.v1beta2.kafka.strimzi.io kind to use the v1beta2 API. It should be removed once the KafkaConnect CR used is a valid v1 resource.
+        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaConnect.RESOURCE_KIND + ".v1beta2.kafka.strimzi.io", testStorage.getClusterName(), scaleTo);
 
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), scaleTo, true);
 

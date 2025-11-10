@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 To configure OAuth client authentication, set the `type` property to `oauth`.
 
 OAuth authentication can be configured using one of the following options:
@@ -25,7 +27,7 @@ authentication:
     key: client-secret
 ----
 
-Optionally, `scope` and `audience` can be specified if needed.
+Optionally, `scope` and `audience` can be specified if needed. `grantType` can also be specified for custom client credentials implementations.
 
 .Client ID and refresh token
 You can configure the address of your OAuth server in the `tokenEndpointUri` property together with the OAuth client ID and refresh token.

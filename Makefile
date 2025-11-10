@@ -14,9 +14,9 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=kafka-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init systemtest docker-images/artifacts packaging/helm-charts/helm3 packaging/install packaging/examples
-DOCKERDIRS=docker-images/base docker-images/operator docker-images/kafka-based docker-images/maven-builder docker-images/kaniko-executor
-DOCKER_TARGETS=docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_sign_manifest docker_delete_manifest docker_delete_archive docker_sbom docker_push_sbom docker_e2e
+SUBDIRS=kafka-agent tracing-agent crd-annotations test crd-generator api v1-api-conversion mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init systemtest docker-images/artifacts packaging/helm-charts/helm3 packaging/install packaging/examples
+DOCKERDIRS=docker-images/base docker-images/operator docker-images/kafka-based docker-images/maven-builder docker-images/kaniko-executor docker-images/buildah
+DOCKER_TARGETS=docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_sign_manifest docker_delete_manifest docker_delete_archive docker_sbom docker_push_sbom docker_e2e docker_gha_sign_manifest docker_gha_sbom docker_gha_push_sbom
 JAVA_TARGETS=java_build java_install java_clean
 
 all: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) crd_install dashboard_install helm_install shellcheck docu_versions docu_check
@@ -36,6 +36,7 @@ bridge_version:
 	CHART_PATH=./packaging/helm-charts/helm3/strimzi-kafka-operator; \
 	$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml; \
 	$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md
+	$(SED) -i 's/\(:BridgeVersion: \).*/\1$(BRIDGE_VERSION)/g' ./documentation/shared/attributes.adoc
 
 release_prepare:
 	echo $(shell echo $(RELEASE_VERSION) | tr a-z A-Z) > release.version
@@ -58,6 +59,7 @@ release_version:
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/quay.io\/strimzi\/kafka:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=quay.io\/strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kaniko-executor:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kaniko-executor:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kaniko-executor:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/buildah:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/buildah:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/buildah:$(RELEASE_VERSION)/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/maven-builder:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/maven-builder:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/maven-builder:$(RELEASE_VERSION)/g' {} \;
 	# Set Kafka Bridge version to its own version
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
@@ -110,6 +112,7 @@ docu_html: docu_htmlclean docu_versions docu_check
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/deploying/deploying.adoc -o documentation/html/deploying.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/configuring/configuring.adoc -o documentation/html/configuring.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/overview/overview.adoc -o documentation/html/overview.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/glossary/glossary.adoc -o documentation/html/glossary.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/contributing/contributing.adoc -o documentation/html/contributing.html
 
 docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
@@ -118,6 +121,7 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/deploying/deploying.adoc -o documentation/htmlnoheader/deploying-book.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/configuring/configuring.adoc -o documentation/htmlnoheader/configuring-book.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/overview/overview.adoc -o documentation/htmlnoheader/overview-book.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/glossary/glossary.adoc -o documentation/htmlnoheader/glossary-book.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/contributing/contributing.adoc -o documentation/htmlnoheader/contributing-book.html
 
 docu_pdf: docu_pdfclean docu_versions docu_check
@@ -125,6 +129,7 @@ docu_pdf: docu_pdfclean docu_versions docu_check
 	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/deploying/deploying.adoc -o documentation/pdf/deploying.pdf
 	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/configuring/configuring.adoc -o documentation/pdf/configuring.pdf
 	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/overview/overview.adoc -o documentation/pdf/overview.pdf
+	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/glossary/glossary.adoc -o documentation/pdf/glossary.pdf
 	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/contributing/contributing.adoc -o documentation/pdf/contributing.pdf
 
 docu_check:
@@ -150,9 +155,11 @@ release_docu: docu_html docu_htmlnoheader docu_pdf
 	$(CP) -rv documentation/pdf/overview.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
 	$(CP) -rv documentation/pdf/deploying.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
 	$(CP) -rv documentation/pdf/configuring.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
+	$(CP) -rv documentation/pdf/glossary.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
 	$(CP) -rv documentation/html/overview.html strimzi-$(RELEASE_VERSION)/docs/html/
 	$(CP) -rv documentation/html/deploying.html strimzi-$(RELEASE_VERSION)/docs/html/
 	$(CP) -rv documentation/html/configuring.html strimzi-$(RELEASE_VERSION)/docs/html/
+	$(CP) -rv documentation/html/glossary.html strimzi-$(RELEASE_VERSION)/docs/html/
 	$(CP) -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/html/images/
 
 docu_clean: docu_htmlclean docu_htmlnoheaderclean docu_pdfclean

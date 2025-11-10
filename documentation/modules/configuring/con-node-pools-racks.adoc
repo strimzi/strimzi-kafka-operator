@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 [id='config-node-pools-dependencies-{context}']
 = Impact on racks when moving nodes from node pools
 

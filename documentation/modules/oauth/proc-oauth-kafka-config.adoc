@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 // Module included in the following module:
 //
 // con-oauth-config.adoc
@@ -12,7 +14,7 @@ You can configure OAuth 2.0 authentication for the following components:
 
 * Kafka Connect
 * Kafka MirrorMaker
-* Kafka Bridge
+* HTTP Bridge
 
 In this scenario, the Kafka component and the authorization server are running in the same cluster.
 
@@ -31,7 +33,7 @@ The schema reference includes examples of configuration options.
 
 . Create a client secret and mount it to the component as an environment variable.
 +
-For example, here we are creating a client `Secret` for the Kafka Bridge:
+For example, here we are creating a client `Secret` for the HTTP Bridge:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -58,7 +60,7 @@ For OAuth 2.0 authentication, you can use the following options:
 * TLS
 --
 +
-For example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and secret, and TLS:
+For example, here OAuth 2.0 is assigned to the HTTP Bridge client using a client ID and secret, and TLS:
 +
 --
 .Example OAuth 2.0 authentication configuration using the client secret
@@ -86,7 +88,7 @@ spec:
 <3> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 --
 +
-In this example, OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and the location of a client assertion file, with TLS to connect to the authorization server:
+In this example, OAuth 2.0 is assigned to the HTTP Bridge client using a client ID and the location of a client assertion file, with TLS to connect to the authorization server:
 +
 --
 .Example OAuth 2.0 authentication configuration using client assertion
@@ -112,7 +114,7 @@ This file is typically added to the deployed pod by an external operator service
 Alternatively, use `clientAssertion` to refer to a secret containing the client assertion value.
 --
 +
-Here, OAuth 2.0 is assigned to the Kafka Bridge client using a service account token:
+Here, OAuth 2.0 is assigned to the HTTP Bridge client using a service account token:
 +
 --
 .Example OAuth 2.0 authentication configuration using the service account token

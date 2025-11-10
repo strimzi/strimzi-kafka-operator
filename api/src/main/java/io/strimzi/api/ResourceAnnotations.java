@@ -102,15 +102,6 @@ public class ResourceAnnotations {
     public static final String ANNO_STRIMZI_IO_REMOVE_NODE_IDS = STRIMZI_DOMAIN + "remove-node-ids";
 
     /**
-     * Annotation for enabling or disabling the Node Pools. This annotation is used
-     * on the Kafka CR
-     */
-    // This is still needed for upgrade tests. It should be remove once the upgrade tests use
-    // only Strimzi versions that do not require these annotations.
-    // Tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/11690
-    public static final String ANNO_STRIMZI_IO_NODE_POOLS = STRIMZI_DOMAIN + "node-pools";
-
-    /**
      * Annotation key for deleting both a Pod and a related PVC
      */
     public static final String ANNO_STRIMZI_IO_DELETE_POD_AND_PVC = STRIMZI_DOMAIN + "delete-pod-and-pvc";
@@ -129,14 +120,4 @@ public class ResourceAnnotations {
      * Annotation used to skip the check on broker scale-down
      */
     public static final String ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK = STRIMZI_DOMAIN + "skip-broker-scaledown-check";
-
-    /**
-     * Annotation for defining a cluster as KRaft (enabled) or ZooKeeper (disabled) based.
-     * This annotation is used on the Kafka CR
-     * If missing or with an invalid value, the cluster is assumed to be ZooKeeper-based
-     */
-    // This is still needed for upgrade tests. It should be remove once the upgrade tests use
-    // only Strimzi versions that do not require these annotations.
-    // Tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/11690
-    public static final String ANNO_STRIMZI_IO_KRAFT = STRIMZI_DOMAIN + "kraft";
 }

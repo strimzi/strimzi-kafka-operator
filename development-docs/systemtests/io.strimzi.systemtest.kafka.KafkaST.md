@@ -2,7 +2,7 @@
 
 **Description:** Test suite containing Kafka related stuff (i.e., JVM resources, EO, TO or UO removal from Kafka cluster), which ensures proper functioning of Kafka clusters.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

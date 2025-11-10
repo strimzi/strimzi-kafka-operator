@@ -4,10 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
+import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
@@ -29,13 +31,13 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,11 +134,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(logAndMetricsConfigMap -> {
                     String logging = logAndMetricsConfigMap.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY);
                     desiredLogging.set(logging);
+                    podAnnotations.put(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(KafkaMirrorMaker2Cluster.KAFKA_CONNECT_CONFIGURATION_FILENAME)));
                     return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, mirrorMaker2Cluster))
                 .compose(i -> connectPodDisruptionBudget(reconciliation, namespace, mirrorMaker2Cluster))
-                .compose(i -> generateAuthHash(namespace, kafkaMirrorMaker2.getSpec()))
+                .compose(i -> generateAuthHash(namespace, mirrorMaker2Cluster))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     return Future.succeededFuture();
@@ -145,8 +148,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
                 .map((Void) null)
                 .onComplete(reconciliationResult -> {
+                    // Extract warning conditions from reconciliation
+                    List<Condition> warningConditions = kafkaMirrorMaker2Status.getConditions();
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, reconciliationResult.cause());
-
+                    if (warningConditions != null && !warningConditions.isEmpty()) {
+                        kafkaMirrorMaker2Status.addConditions(warningConditions);
+                    }
                     if (!hasZeroReplicas) {
                         kafkaMirrorMaker2Status.setUrl(KafkaMirrorMaker2Resources.url(mirrorMaker2Cluster.getCluster(), namespace, KafkaMirrorMaker2Cluster.REST_API_PORT));
                     }
@@ -184,29 +191,29 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * Generates a hash from the trusted TLS certificates that can be used to spot if it has changed.
      *
      * @param namespace               Namespace of the MirrorMaker2 cluster
-     * @param kafkaMirrorMaker2Spec   KafkaMirrorMaker2Spec object
+     * @param mirrorMaker2Cluster     KafkaMirrorMaker2 cluster model
+     *
      * @return                        Future for tracking the asynchronous result of generating the TLS auth hash
      */
-    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Spec kafkaMirrorMaker2Spec) {
+    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
         Promise<Integer> authHash = Promise.promise();
-        if (kafkaMirrorMaker2Spec.getClusters() == null) {
-            authHash.complete(0);
-        } else {
-            Future.join(kafkaMirrorMaker2Spec.getClusters()
-                            .stream()
-                            .map(cluster -> {
-                                List<CertSecretSource> trustedCertificates = cluster.getTls() == null ? Collections.emptyList() : cluster.getTls().getTrustedCertificates();
-                                return ReconcilerUtils.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), trustedCertificates);
-                            }).collect(Collectors.toList())
-                    )
-                    .onSuccess(hashes -> {
-                        int hash = hashes.<Integer>list()
-                            .stream()
-                            .mapToInt(i -> i)
-                            .sum();
-                        authHash.complete(hash);
-                    }).onFailure(authHash::fail);
-        }
+
+        Future.join(mirrorMaker2Cluster
+                        .clusters()
+                        .stream()
+                        .map(cluster -> {
+                            List<CertSecretSource> trustedCertificates = cluster.getTls() == null ? List.of() : cluster.getTls().getTrustedCertificates();
+                            return ReconcilerUtils.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), trustedCertificates);
+                        }).collect(Collectors.toList())
+                )
+                .onSuccess(hashes -> {
+                    int hash = hashes.<Integer>list()
+                        .stream()
+                        .mapToInt(i -> i)
+                        .sum();
+                    authHash.complete(hash);
+                }).onFailure(authHash::fail);
+
         return authHash.future();
     }
 
@@ -307,11 +314,79 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @return  True if the provided resource instance has the strimzi.io/restart-connector annotation. False otherwise.
      */
+    @Override
+    protected boolean hasRestartAnnotation(HasMetadata resource, String connectorName) {
+        String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
+        return restartAnnotationConnectorName != null && restartAnnotationConnectorName.contains(connectorName);
+    }
+
+    /**
+     * Checks if restart annotation value has valid combination of values. These are valid and not valid combinations:
+     * strimzi.io/restart-connector=mirrormaker_connector_name:includeTasks,onlyFailed # restart with args: includeTasks=true and onlyFailed=true
+     * strimzi.io/restart-connector=mirrormaker_connector_name:includeTasks # restart with args: includeTasks=true and onlyFailed=false
+     * strimzi.io/restart-connector=mirrormaker_connector_name:onlyFailed # restart with args: includeTasks=false and onlyFailed=true
+     * strimzi.io/restart-connector=mirrormaker_connector_name # restart with args: includeTasks=false and onlyFailed=false
+     * strimzi.io/restart-connector=includeTasks,onlyFailed # do not restart, fail and log error because connector name is required
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has valid restart annotation. False otherwise.
+     * */
+    protected boolean restartAnnotationIsValid(HasMetadata resource, String connectorName) {
+        String restartValue = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "");
+        String[] values = restartValue.split(":");
+
+        // invalid format, more than one ':' character
+        if (values.length != 1 && values.length != 2) {
+            return false;
+        }
+
+        // check if connector name is present and valid
+        if (!values[0].equalsIgnoreCase(connectorName)) {
+            return false;
+        }
+
+        // we expect that second item in array contains a list of arguments to be used
+        if (values.length == 2) {
+            String[] argValues = values[1].split(",");
+
+            for (String arg : argValues) {
+                if (!STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG.equalsIgnoreCase(arg.trim()) && !STRIMZI_IO_RESTART_ONLY_FAILED_ARG.equalsIgnoreCase(arg.trim())) {
+                    // invalid argument found
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument includeTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
+     */
+    @Override
+    protected boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource) {
+        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
+                .contains(STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG);
+    }
+
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument onlyFailedTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
+     */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
-        String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
-        return connectorName.equals(restartAnnotationConnectorName);
+    protected boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource) {
+        return Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, "")
+                .contains(STRIMZI_IO_RESTART_ONLY_FAILED_ARG);
     }
 
     /**

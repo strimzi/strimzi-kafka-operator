@@ -19,6 +19,7 @@ import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -31,7 +32,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.test.ReadWriteUtils;
-import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -1028,8 +1028,8 @@ public class CaReconcilerReconcileCasTest {
                     assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences(), hasSize(1));
                     assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences(), hasSize(1));
 
-                    TestUtils.checkOwnerReference(clientsCaCertSecret, kafka);
-                    TestUtils.checkOwnerReference(clientsCaKeySecret, kafka);
+                    io.strimzi.operator.cluster.TestUtils.checkOwnerReference(clientsCaCertSecret, kafka);
+                    io.strimzi.operator.cluster.TestUtils.checkOwnerReference(clientsCaKeySecret, kafka);
 
                     async.flag();
                 })));
@@ -1057,7 +1057,7 @@ public class CaReconcilerReconcileCasTest {
                     assertThat(captorSecrets.clientsCaCert().getMetadata().getOwnerReferences(), hasSize(0));
                     assertThat(captorSecrets.clientsCaKey().getMetadata().getOwnerReferences(), hasSize(0));
 
-                    TestUtils.checkOwnerReference(captorSecrets.clusterCaCert(), kafka);
+                    io.strimzi.operator.cluster.TestUtils.checkOwnerReference(captorSecrets.clusterCaCert(), kafka);
                     TestUtils.checkOwnerReference(captorSecrets.clusterCaKey(), kafka);
 
                     async.flag();

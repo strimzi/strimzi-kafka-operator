@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -214,7 +213,6 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
             "\n" +
             "If unspecified, Kubernetes will choose the default value based on the service type.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @PresentInVersions("v1beta2+")
     public IpFamilyPolicy getIpFamilyPolicy() {
         return ipFamilyPolicy;
     }
@@ -227,7 +225,6 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
             "Available options are `IPv4` and `IPv6`. " +
             "If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @PresentInVersions("v1beta2+")
     public List<IpFamily> getIpFamilies() {
         return ipFamilies;
     }

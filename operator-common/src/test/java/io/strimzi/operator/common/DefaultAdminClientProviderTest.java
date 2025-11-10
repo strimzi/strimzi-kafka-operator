@@ -9,6 +9,7 @@ import io.strimzi.operator.common.auth.PemTrustSet;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Properties;
 
@@ -16,7 +17,10 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DefaultAdminClientProviderTest {
@@ -26,7 +30,6 @@ public class DefaultAdminClientProviderTest {
     private static final String USER_KEY = "user-key";
 
     private void assertDefaultConfigs(Properties config) {
-        assertThat(config.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG), is("my-kafka:9092"));
         assertThat(config.get(AdminClientConfig.METADATA_MAX_AGE_CONFIG), is("30000"));
         assertThat(config.get(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG), is("10000"));
         assertThat(config.get(AdminClientConfig.RETRIES_CONFIG), is("3"));
@@ -35,9 +38,10 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testPlainConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, null, new Properties());
+        DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+        Properties config = defaultAdminClientProvider.adminClientConfiguration(null, null, new Properties());
 
-        assertThat(config.size(), is(5));
+        assertThat(config.size(), is(4));
         assertDefaultConfigs(config);
     }
 
@@ -47,10 +51,10 @@ public class DefaultAdminClientProviderTest {
         customConfig.setProperty(AdminClientConfig.RETRIES_CONFIG, "5"); // Override a value we have default for
         customConfig.setProperty(AdminClientConfig.RECONNECT_BACKOFF_MS_CONFIG, "13000"); // Override a value we do not use
 
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, null, customConfig);
+        DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+        Properties config = defaultAdminClientProvider.adminClientConfiguration(null, null, customConfig);
 
-        assertThat(config.size(), is(6));
-        assertThat(config.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG), is("my-kafka:9092"));
+        assertThat(config.size(), is(5));
         assertThat(config.get(AdminClientConfig.METADATA_MAX_AGE_CONFIG), is("30000"));
         assertThat(config.get(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG), is("10000"));
         assertThat(config.get(AdminClientConfig.RETRIES_CONFIG), is("5"));
@@ -60,9 +64,10 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testTlsConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", mockPemTrustSet(), null, new Properties());
+        DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+        Properties config = defaultAdminClientProvider.adminClientConfiguration(mockPemTrustSet(), null, new Properties());
 
-        assertThat(config.size(), is(8));
+        assertThat(config.size(), is(7));
         assertDefaultConfigs(config);
         assertThat(config.get(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("SSL"));
         assertThat(config.get(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG), is("PEM"));
@@ -72,9 +77,10 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testMTlsConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", mockPemTrustSet(), mockPemAuthIdentity(), new Properties());
+        DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+        Properties config = defaultAdminClientProvider.adminClientConfiguration(mockPemTrustSet(), mockPemAuthIdentity(), new Properties());
 
-        assertThat(config.size(), is(11));
+        assertThat(config.size(), is(10));
         assertDefaultConfigs(config);
         assertThat(config.get(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("SSL"));
         assertThat(config.get(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG), is("PEM"));
@@ -87,9 +93,10 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testMTlsWithPublicCAConnection() {
-        Properties config = DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, mockPemAuthIdentity(), new Properties());
+        DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+        Properties config = defaultAdminClientProvider.adminClientConfiguration(null, mockPemAuthIdentity(), new Properties());
 
-        assertThat(config.size(), is(9));
+        assertThat(config.size(), is(8));
         assertDefaultConfigs(config);
         assertThat(config.get(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("SSL"));
         assertThat(config.get(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG).toString(), is("PEM"));
@@ -99,8 +106,39 @@ public class DefaultAdminClientProviderTest {
 
     @Test
     public void testNullConfig() {
-        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> DefaultAdminClientProvider.adminClientConfiguration("my-kafka:9092", null, mockPemAuthIdentity(), null));
+        DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> defaultAdminClientProvider.adminClientConfiguration(null, mockPemAuthIdentity(), null));
         assertThat(ex.getMessage(), is("The config parameter should not be null"));
+    }
+
+    @Test
+    public void tesCreateControllerAdminClientConfig() {
+        DefaultAdminClientProvider defaultAdminClientProvider = spy(DefaultAdminClientProvider.class);
+        // We expect a failure from creating an actual admin client since the bootstrap is not real
+        assertThrows(RuntimeException.class, () -> defaultAdminClientProvider.createControllerAdminClient("my-kafka-controller:9090", null, null));
+
+        ArgumentCaptor<Properties> configsCapture = ArgumentCaptor.forClass(Properties.class);
+        verify(defaultAdminClientProvider).adminClientConfiguration(eq(null), eq(null), configsCapture.capture());
+        Properties configs = configsCapture.getValue();
+
+        assertThat(configs.size(), is(5));
+        assertThat(configs.getProperty(AdminClientConfig.BOOTSTRAP_CONTROLLERS_CONFIG), is("my-kafka-controller:9090"));
+        assertDefaultConfigs(configs);
+    }
+
+    @Test
+    public void testCreateBrokerAdminClient() {
+        DefaultAdminClientProvider defaultAdminClientProvider = spy(DefaultAdminClientProvider.class);
+        // We expect a failure from creating an actual admin client since the bootstrap is not real
+        assertThrows(RuntimeException.class, () -> defaultAdminClientProvider.createAdminClient("my-kafka-broker:9092", null, null));
+
+        ArgumentCaptor<Properties> configsCapture = ArgumentCaptor.forClass(Properties.class);
+        verify(defaultAdminClientProvider).adminClientConfiguration(eq(null), eq(null), configsCapture.capture());
+        Properties configs = configsCapture.getValue();
+
+        assertThat(configs.size(), is(5));
+        assertThat(configs.getProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG), is("my-kafka-broker:9092"));
+        assertDefaultConfigs(configs);
     }
 
     public static PemTrustSet mockPemTrustSet() {

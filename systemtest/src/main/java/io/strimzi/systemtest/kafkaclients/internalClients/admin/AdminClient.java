@@ -33,39 +33,6 @@ public class AdminClient {
 
     }
 
-    public String deleteTopicsWithPrefixAndCountFromIndex(String topicPrefix, int topicCount, int fromIndex) {
-        AdminTopicCommand adminTopicCommand = new AdminTopicCommand()
-            .withDeleteSubcommand()
-            .withTopicPrefix(topicPrefix)
-            .withFromIndex(fromIndex)
-            .withTopicCount(topicCount);
-
-        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
-        return result.returnCode() == 0 ? result.out() : result.err();
-
-    }
-
-    public String deleteTopicsWithPrefixAndCount(String topicPrefix, int topicCount) {
-        AdminTopicCommand adminTopicCommand = new AdminTopicCommand()
-            .withDeleteSubcommand()
-            .withTopicPrefix(topicPrefix)
-            .withTopicCount(topicCount);
-
-        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
-        return result.returnCode() == 0 ? result.out() : result.err();
-
-    }
-
-    public String deleteTopicsWithPrefix(String topicPrefix) {
-        AdminTopicCommand adminTopicCommand = new AdminTopicCommand()
-            .withDeleteSubcommand()
-            .withTopicPrefix(topicPrefix)
-            .withAll();
-
-        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
-        return result.returnCode() == 0 ? result.out() : result.err();
-    }
-
     public KafkaTopicDescription describeTopic(String topicName) {
         AdminTopicCommand adminTopicCommand = new AdminTopicCommand()
             .withDescribeSubcommand()
@@ -89,31 +56,6 @@ public class AdminClient {
             }
         }
         throw new KafkaAdminException(result.err());
-    }
-
-    public String alterPartitionsForTopicsInRange(String topicPrefix, int topicPartitions, int topicsCount, int fromIndex) {
-        AdminTopicCommand adminTopicCommand = new AdminTopicCommand()
-            .withAlterSubcommand()
-            .withTopicCount(topicsCount)
-            .withTopicPartitions(topicPartitions)
-            .withTopicPrefix(topicPrefix)
-            .withFromIndex(fromIndex);
-
-        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
-        return result.returnCode() == 0 ? result.out() : result.err();
-
-    }
-
-    public String createTopics(String topicPrefix, int topicsCount, int topicPartitions, int topicReplicas) {
-        AdminTopicCommand adminTopicCommand = new AdminTopicCommand()
-            .withCreateSubcommand()
-            .withTopicCount(topicsCount)
-            .withTopicPartitions(topicPartitions)
-            .withTopicReplicas(topicReplicas)
-            .withTopicPrefix(topicPrefix);
-
-        ExecResult result = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(false, podName, adminTopicCommand.getCommand());
-        return result.returnCode() == 0 ? result.out() : result.err();
     }
 
     public void configureFromEnv() {

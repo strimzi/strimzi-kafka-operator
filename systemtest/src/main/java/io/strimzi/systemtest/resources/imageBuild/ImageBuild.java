@@ -30,8 +30,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static io.strimzi.systemtest.Environment.KANIKO_IMAGE;
-
 public class ImageBuild {
 
     /**
@@ -49,7 +47,7 @@ public class ImageBuild {
         if (KubeClusterResource.getInstance().isOpenShiftLikeCluster()) {
             buildImageOpenshift(namespace, name, dockerfilePath, imageTag, baseImage);
         } else {
-            buildImageKaniko(namespace, name, dockerfilePath, imageTag, baseImage);
+            buildImageBuildah(namespace, name, dockerfilePath, imageTag, baseImage);
         }
     }
 
@@ -63,8 +61,9 @@ public class ImageBuild {
      * @param baseImage used base image for the build
      * @throws IOException  When reading from file - when file doesn't exist or cannot be opened
      */
-    public static void buildImageKaniko(String namespace, String name, String dockerfilePath, String imageTag, String baseImage) throws IOException {
+    public static void buildImageBuildah(String namespace, String name, String dockerfilePath, String imageTag, String baseImage) throws IOException {
         createDockerfileConfigMap(namespace, name, dockerfilePath);
+        String imageName = Environment.getImageOutputRegistry(namespace, name, imageTag);
 
         Job kanikoJob = new JobBuilder()
             .withNewMetadata()
@@ -88,13 +87,13 @@ public class ImageBuild {
                         )
                         .addNewContainer()
                             .withName(name)
-                            .withImage(KANIKO_IMAGE)
+                            .withImage(Environment.BUILDAH_IMAGE)
                             .withArgs(
-                                "--dockerfile=/workspace/Dockerfile",
-                                "--destination=" + Environment.getImageOutputRegistry(namespace, name, imageTag),
-                                "--build-arg=BASE_IMAGE=" + baseImage,
-                                "--skip-tls-verify",
-                                "-v=debug")
+                                "/bin/bash",
+                                "-ec",
+                                "buildah build --file=/workspace/Dockerfile --tag=" + imageName + " --storage-driver=overlay --tls-verify=false --build-arg=BASE_IMAGE=" + baseImage + " \n" +
+                                "buildah push --storage-driver=overlay --tls-verify=false " + imageName + "\n"
+                            )
                             .withVolumeMounts(
                                 new VolumeMountBuilder()
                                         .withName(name)

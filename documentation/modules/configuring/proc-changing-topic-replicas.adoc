@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 // Module included in the following assemblies:
 //
 // configuring/assembly-reassign-tool.adoc
@@ -135,9 +137,9 @@ my-topic  Partition: 2  Leader: 3  Replicas: 2,3,4 Isr: 2,3,4
 
 . Finally, edit the `KafkaTopic` custom resource to change `.spec.replicas` to 3, and then wait the reconciliation.
 +
-[source,shell,subs=+quotes]
+[source,shell,subs=+attributes]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: my-topic

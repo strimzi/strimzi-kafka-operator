@@ -10,8 +10,8 @@ inputs:
     description: "Kafka version. e.g. '4.0.0' or 'latest'"
     required: false
     default: "latest"
-  profile:
-    description: "Comma-separated or single profile name(s)"
+  pipeline:
+    description: "Comma-separated or single pipeline name(s)"
     required: false
     default: "smoke"
 
@@ -77,7 +77,14 @@ runs:
             // Auto-run smoke tests on PR workflow changes
             shouldRun = true;
           } else if (ev === 'issue_comment' && context.payload?.issue?.pull_request) {
-            shouldRun = /^\s*\/gha\s+run\b/i.test(body || '');
+            // For issue comments on PRs, check if PR is closed first
+            const issueState = context.payload?.issue?.state;
+            if (issueState === 'closed') {
+              core.info(`PR #${context.payload.issue.number} is closed, skipping execution`);
+              shouldRun = false;
+            } else {
+              shouldRun = /^\s*\/gha\s+run\b/i.test(body || '');
+            }
           }
 
           core.setOutput('shouldRun', String(shouldRun));
@@ -87,13 +94,13 @@ runs:
       id: build_comment
       uses: actions/github-script@v7
       env:
-        INPUT_PROFILE: ${{ inputs.profile }}
+        INPUT_PIPELINE: ${{ inputs.pipeline }}
         INPUT_KAFKA_VERSION: ${{ inputs.kafkaVersion }}
       with:
         script: |
           const body = context.payload?.comment?.body ?? '';
-          const profile = process.env.INPUT_PROFILE || 'smoke';
-          const fallback = `/gha run profile=${profile} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
+          const pipeline = process.env.INPUT_PIPELINE || 'smoke';
+          const fallback = `/gha run pipeline=${pipeline} kafkaVersion=${process.env.INPUT_KAFKA_VERSION}`;
           const builtComment = (body && body.trim().length) ? body : fallback;
           
           core.setOutput('builtComment', builtComment);
@@ -103,8 +110,6 @@ runs:
       id: parse_comment
       uses: actions/github-script@v7
       env:
-        INPUT_PROFILE: ${{ inputs.profile }}
-        INPUT_KAFKA_VERSION: ${{ inputs.kafkaVersion }}
         INPUT_RELEASE_VERSION: ${{ inputs.releaseVersion }}
         BUILT_COMMENT: ${{ steps.build_comment.outputs.builtComment }}
       with:
@@ -134,9 +139,9 @@ runs:
           };
 
           const DEFAULTS = {
-            pipelines:    'regression,upgrade',
-            profiles:     'operators,operands,brokers-and-security,azp_kraft_upgrade,azp_kafka_upgrade',
-            featureGate:  '+DummyFeatureGate',
+            pipelines:    '',
+            profiles:     '',
+            featureGate:  '+ServerSideApplyPhase1,+UseConnectBuildWithBuildah',
             rbacScope:    'CLUSTER',
             installType:  'yaml',
             parallel:     '1',
@@ -164,8 +169,8 @@ runs:
             strimzi_rbac_scope:            getParameter('strimzi_rbac_scope',  sanitized),  // keep case
             cluster_operator_install_type: getParameter('cluster_operator_install_type', lower) || DEFAULTS.installType,
             parallel:                      getParameter('parallel', lower) || DEFAULTS.parallel,
-            groups:                        getParameter('groups', lower),
-            tests:                         getParameter('tests', lower),
+            groups:                        getParameter('groups', sanitized),
+            tests:                         getParameter('tests', sanitized),
             kafkaVersion:                  getParameter('kafkaversion', lower) || DEFAULTS.kafkaVersion,
             kubeVersion:                   getParameter('kubeversion',  lower) || DEFAULTS.kubeVersion,
             releaseVersion:                process.env.INPUT_RELEASE_VERSION || 'latest',

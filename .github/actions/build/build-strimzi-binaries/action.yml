@@ -29,22 +29,22 @@ runs:
       with:
         distribution: "temurin"
         java-version: "17"
-        cache: 'maven'
 
     # Caches for Maven and Kafka
-    - name: Cache local Maven repository
-      uses: actions/cache@v4
+    - name: Restore Maven cache
+      uses: actions/cache/restore@v4
       with:
         path: ~/.m2/repository
-        key: "maven-cache | **/pom.xml"
+        key: maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
-          maven | ${{ github.job }}
-          maven
+          maven-
     - name: Cache Kafka binaries
       uses: actions/cache@v4
       with:
         path: docker-images/artifacts/binaries/kafka/archives
-        key: '"kafka-binaries" | kafka-versions.yaml'
+        key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
+        restore-keys: |
+          kafka-binaries-
 
     # Building the artifacts
     - name: Build artifacts
@@ -53,7 +53,52 @@ runs:
         make java_install
       env:
         MVN_ARGS: ${{ inputs.mvnArgs }}
+        CURL_ARGS: "-s"
 
+    # Additional checks
+    - name: Run Spotbugs
+      shell: bash
+      run: "make spotbugs"
+      env:
+        MVN_ARGS: "-e -V -B"
+
+    - name: Setup dashboards for Helm Chart
+      shell: bash
+      run: "make dashboard_install"
+
+    - name: Generate YAMLs from Helm Chart
+      shell: bash
+      run: "make helm_install"
+
+    - name: Distribute CRDs
+      shell: bash
+      run: "make crd_install"
+
+    - name: Run Helm Chart unit tests
+      shell: bash
+      run: "make helm_unittest"
+
+    - name: Generate docs version files
+      shell: bash
+      run: "make docu_versions"
+
+    - name: Check docs
+      shell: bash
+      run: "make docu_check"
+
+    - name: Run Shellcheck
+      shell: bash
+      run: "make shellcheck"
+
+    - name: Check released files
+      shell: bash
+      run: "make release_files_check"
+
+    - name: Check for uncommitted files
+      shell: bash
+      run: ".azure/scripts/uncommitted-changes.sh"
+
+    # Create tarball and archive it
     - name: Create tarball with artifact
       shell: bash
       run: "tar -cvpf strimzi-binaries.tar ./docker-images/artifacts/binaries"
@@ -63,3 +108,20 @@ runs:
       with:
         name: strimzi-binaries.tar
         path: strimzi-binaries.tar
+
+    # Clean external SNAPSHOT dependencies before caching
+    - name: Clean external SNAPSHOT dependencies from Maven repository
+      if: github.ref == 'refs/heads/main'
+      shell: bash
+      run: |
+        mvn dependency:purge-local-repository \
+        -DsnapshotsOnly=true \
+        -DreResolve=false || true
+
+    # Save maven cache for main branches
+    - name: Save Maven cache
+      if: github.ref == 'refs/heads/main'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.m2/repository
+        key: maven-${{ hashFiles('**/pom.xml') }}

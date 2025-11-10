@@ -1,0 +1,10 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    # The strimzi.io/cluster label identifies the KafkaConnect instance
+    # in which to create this connector. That KafkaConnect instance
+    # must have the strimzi.io/use-connector-resources annotation
+    # set to true.
+    strimzi.io/cluster: my-connect-cluster

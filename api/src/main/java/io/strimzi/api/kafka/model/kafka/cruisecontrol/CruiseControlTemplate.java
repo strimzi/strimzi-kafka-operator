@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -98,6 +99,7 @@ public class CruiseControlTemplate implements UnknownPropertyPreserving {
 
     @DeprecatedProperty
     @Deprecated
+    @PresentInVersions("v1beta2")
     @Description("Template for the Cruise Control TLS sidecar container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getTlsSidecarContainer() {

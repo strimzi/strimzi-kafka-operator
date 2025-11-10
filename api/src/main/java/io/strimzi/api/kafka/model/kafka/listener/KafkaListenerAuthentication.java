@@ -20,6 +20,7 @@ import java.util.Map;
 /**
  * Configures listener authentication.
  */
+@SuppressWarnings("deprecation") // OAuth authentication is deprecated
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")
@@ -43,8 +44,10 @@ public abstract class KafkaListenerAuthentication implements UnknownPropertyPres
             "`oauth` type uses SASL OAUTHBEARER Authentication. " +
             "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
             "`tls` type uses TLS Client Authentication. " +
-            "`tls` type is supported only on TLS listeners." +
-            "`custom` type allows for any authentication type to be used.")
+            "`tls` type is supported only on TLS listeners. " +
+            "`custom` type allows for any authentication type to be used. " +
+            "As of Strimzi 0.49.0, `oauth` type is deprecated and will be removed in the `v1` API version. " +
+            "Please use `custom` type instead.")
     public abstract String getType();
 
     @Override

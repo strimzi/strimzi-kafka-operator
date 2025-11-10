@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
-import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.Container;
@@ -48,8 +46,6 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
-import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
-import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
@@ -73,7 +69,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
-import io.strimzi.operator.cluster.model.logging.LoggingUtils;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
@@ -84,7 +79,6 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,16 +86,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
-
 /**
  * Kafka Connect model class
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     /**
-     * Default Strimzi Metrics Reporter allow list.
-     * Check example dashboards compatibility in case of changes to existing regexes.
+     * Default Strimzi Metrics Reporter allowlist.
+     * Check example dashboard compatibility in case of changes to existing regexes.
      */
     private static final List<String> DEFAULT_METRICS_ALLOW_LIST = List.of(
             "kafka_admin_client_admin_client_metrics_connection_count",
@@ -159,6 +151,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected String connectConfigMapName;
 
     protected String bootstrapServers;
+    protected String groupId;
+    protected String configStorageTopic;
+    protected String statusStorageTopic;
+    protected String offsetStorageTopic;
     @SuppressWarnings("deprecation") // External Configuration environment variables are deprecated
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
 
@@ -177,7 +173,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     // Templates
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected ResourceTemplate templateInitClusterRoleBinding;
-    protected DeploymentTemplate templateDeployment;
     protected ResourceTemplate templatePodSet;
     protected PodTemplate templatePod;
     protected InternalServiceTemplate templateService;
@@ -206,10 +201,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     /**
      * Constructor
      *
-     * @param reconciliation The reconciliation
-     * @param resource Kubernetes resource with metadata containing the namespace and cluster name
-     * @param name              Name of the Strimzi component usually consisting from the cluster name and component type
-     * @param componentType configurable allow other classes to extend this class
+     * @param reconciliation            The reconciliation
+     * @param resource                  Kubernetes resource with metadata containing the namespace and cluster name
+     * @param name                      The name of the Strimzi component usually consisting from the cluster name and component type
+     * @param componentType             Type of the component this mode handles
      * @param sharedEnvironmentProvider Shared environment provider
      */
     protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource, String name, String componentType, SharedEnvironmentProvider sharedEnvironmentProvider) {
@@ -223,7 +218,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * Creates the Kafka Connect model instance from the Kafka Connect CRD
      *
      * @param reconciliation    Reconciliation marker
-     * @param kafkaConnect      Kafka connect custom resource
+     * @param kafkaConnect      Kafka Connect custom resource
      * @param versions          Supported Kafka versions
      * @param sharedEnvironmentProvider Shared environment provider
      *
@@ -237,14 +232,13 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * Abstracts the calling of setters on a (subclass of) KafkaConnectCluster
-     * from the instantiation of the (subclass of) KafkaConnectCluster,
-     * thus permitting reuse of the setter-calling code for subclasses.
+     * Abstracts the calling of setters on a (subclass of) KafkaConnectCluster from the instantiation of the (subclass of)
+     * KafkaConnectCluster, thus permitting reuse of the setter-calling code for subclasses.
      *
      * @param reconciliation    Reconciliation marker
      * @param spec              Spec section of the Kafka Connect resource
      * @param versions          Supported Kafka versions
-     * @param result            Kafka Connect resource which will be returned as the result
+     * @param result            Kafka Connect resource, which will be returned as the result
      *
      * @param <C>   Type of the Kafka Connect cluster
      */
@@ -254,7 +248,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                                                 KafkaVersion.Lookup versions,
                                                                 C result) {
         result.replicas = spec.getReplicas();
-        result.tracing = spec.getTracing();
 
         // Might already contain configuration from Mirror Maker 2 which extends Connect
         // We have to check it and either use the Mirror Maker 2 configs or get the Connect configs
@@ -263,6 +256,15 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             config = new KafkaConnectConfiguration(reconciliation, spec.getConfig().entrySet());
             result.configuration = config;
         }
+
+        // Internal Connect configurations
+        result.groupId = extractAndRemoveValueFromConfig(result.configuration, "group.id", spec.getGroupId(), "connect-cluster");
+        result.configStorageTopic = extractAndRemoveValueFromConfig(result.configuration, "config.storage.topic", spec.getConfigStorageTopic(), "connect-cluster-configs");
+        result.statusStorageTopic = extractAndRemoveValueFromConfig(result.configuration, "status.storage.topic", spec.getStatusStorageTopic(), "connect-cluster-status");
+        result.offsetStorageTopic = extractAndRemoveValueFromConfig(result.configuration, "offset.storage.topic", spec.getOffsetStorageTopic(), "connect-cluster-offsets");
+
+        // Tracing configuration
+        result.tracing = spec.getTracing();
         if (result.tracing != null)   {
             if (JaegerTracing.TYPE_JAEGER.equals(result.tracing.getType())) {
                 LOGGER.warnCr(reconciliation, "Tracing type \"{}\" is not supported anymore and will be ignored", JaegerTracing.TYPE_JAEGER);
@@ -273,6 +275,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
 
         if (result.getImage() == null) {
+            // The image is set only if it was not already set previously (which would mean that we run MM2 rather than Connect)
             result.image = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
         }
 
@@ -321,7 +324,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
-            result.templateDeployment = template.getDeployment();
             result.templatePodSet = template.getPodSet();
             result.templatePod = template.getPod();
             result.templateService = template.getApiService();
@@ -346,6 +348,36 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         result.mountedPlugins = spec.getPlugins();
 
         return result;
+    }
+
+    /**
+     * Utility method to help with backward compatibility between the old Connect configuration and a new Connect
+     * configuration. This should be removed once v1beta2 API is dropped, and we use only v1.
+     *      - We always use the new dedicated field if set (newConfig)
+     *      - If the new field is not set, we try to use the user values from .spec.config
+     *      - And if those are not set either, we use the defaults that were used from Strimzi beginnings.
+     *
+     * @param configuration     Kafka Connect configuration
+     * @param configKey         Kafka Connect configuration key
+     * @param newConfig         Configuration value from the new field or null if not set
+     * @param defaultConfig     Default configuration value
+     *
+     * @return  String with the value that should be used.
+     */
+    private static String extractAndRemoveValueFromConfig(AbstractConfiguration configuration, String configKey, String newConfig, String defaultConfig) {
+        if (newConfig != null) {
+            configuration.removeConfigOption(configKey);
+            return newConfig;
+        } else {
+            String oldConfig = configuration.getConfigOption(configKey);
+
+            if (oldConfig != null) {
+                configuration.removeConfigOption(configKey);
+                return oldConfig;
+            } else {
+                return defaultConfig;
+            }
+        }
     }
 
     /**
@@ -562,18 +594,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
-     */
-    protected Affinity getMergedAffinity() {
-        Affinity userAffinity = templatePod != null && templatePod.getAffinity() != null ? templatePod.getAffinity() : new Affinity();
-        AffinityBuilder builder = new AffinityBuilder(userAffinity);
-        if (rack != null) {
-            builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
-        }
-        return builder.build();
-    }
-
-    /**
      * Generates the StrimziPodSet for the Kafka cluster.
      * enabled.
      *
@@ -582,7 +602,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @param podSetAnnotations         Map with StrimziPodSet annotations
      * @param podAnnotations            Map with Pod annotations
      * @param isOpenShift               Flags whether we are on OpenShift or not
-     * @param imagePullPolicy           Image pull policy which will be used by the pods
+     * @param imagePullPolicy           Image pull policy, which will be used by the pods
      * @param imagePullSecrets          List of image pull secrets
      * @param customContainerImage      Custom container image produced by Kafka Connect Build. If null, the default
      *                                  image will be used.
@@ -613,10 +633,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         componentName,
                         componentName,
                         templatePod,
-                        DEFAULT_POD_LABELS,
+                        defaultPodLabels(),
                         podAnnotations,
                         componentName,
-                        getMergedAffinity(),
+                        ModelUtils.affinityWithRackLabelSelector(templatePod, rack),
                         ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
                         List.of(createContainer(imagePullPolicy, customContainerImage)),
                         getVolumes(isOpenShift),
@@ -871,7 +891,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * Creates the ClusterRoleBinding which is used to bind the Kafka Connect SA to the ClusterRole
+     * Creates the ClusterRoleBinding, which is used to bind the Kafka Connect SA to the ClusterRole
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
      *
      * @return The cluster role binding.
@@ -903,6 +923,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      **
      * @return role for the Kafka Connect
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public Role generateRole() {
         List<String> certSecretNames = new ArrayList<>();
         if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
@@ -925,8 +946,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 .withResourceNames(certSecretNames)
                 .build());
 
-        Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
-        return role;
+        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
     }
 
     /**
@@ -947,10 +967,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 .withKind("Role")
                 .build();
 
-        RoleBinding rb = RbacUtils
-               .createRoleBinding(getRoleBindingName(), namespace, roleRef, List.of(subject), labels, ownerReference, null);
-
-        return rb;
+        return RbacUtils.createRoleBinding(getRoleBindingName(), namespace, roleRef, List.of(subject), labels, ownerReference, null);
     }
 
     /**
@@ -975,15 +992,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * @return  Default logging configuration needed to update loggers in Kafka Connect (and Kafka Mirror Maker 2 which
-     *          is based on Kafka Connect)
-     */
-    public OrderedProperties defaultLogConfig()   {
-        return LoggingUtils.defaultLogConfig(reconciliation, logging.getDefaultLogConfigBaseName());
-    }
-
-    /**
-     * The default labels Connect pod has to be passed through a method so that we can handle different labels for
+     * The default labels Connect pod uses have to be passed through a method so that we can handle different labels for
      * Connect and Mirror Maker 2 (which inherits from this class) without duplicating the whole pod creation.
      * This method is overridden in KafkaMirrorMaker2Model.
      *
@@ -1009,6 +1018,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         data.put(
                 KAFKA_CONNECT_CONFIGURATION_FILENAME,
                 new KafkaConnectConfigurationBuilder(reconciliation, bootstrapServers)
+                        .withGroupIdAndInternalTopics(groupId, configStorageTopic, statusStorageTopic, offsetStorageTopic)
                         .withRestListeners(REST_API_PORT)
                         .withPluginPath()
                         .withTls(tls, cluster)
@@ -1058,13 +1068,5 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      */
     public LoggingModel logging()   {
         return logging;
-    }
-
-    /**
-     * @return  Returns the preferred Deployment Strategy. This is used for the migration form Deployment to
-     * StrimziPodSet or the other way around
-     */
-    public DeploymentStrategy deploymentStrategy()  {
-        return TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE);
     }
 }

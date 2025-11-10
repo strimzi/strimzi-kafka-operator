@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // deploying/assembly_deploy-tasks-prep.adoc
@@ -5,6 +7,7 @@
 [id='deploy-prereqs-{context}']
 = Deployment prerequisites
 
+[role="_abstract"]
 To deploy Strimzi, you will need the following:
 
 ifdef::Section[]

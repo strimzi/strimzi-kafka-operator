@@ -61,7 +61,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -210,6 +209,7 @@ public class KafkaAssemblyOperatorKRaftMockTest {
     /**
      * Does a basic check of the resources created / updated by a reconciliation
      */
+    @SuppressWarnings("deprecation") // .status.kafkaMetadataState is deprecated
     private void basicCheck()    {
         // Check pod sets, pods and their resources
         StrimziPodSet controllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
@@ -261,7 +261,6 @@ public class KafkaAssemblyOperatorKRaftMockTest {
         assertThat(k.getStatus().getKafkaMetadataVersion(), startsWith(VERSIONS.defaultVersion().metadataVersion() + "-IV"));
         assertThat(k.getStatus().getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
         assertThat(k.getStatus().getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
-        assertThat(k.getStatus().getKafkaMetadataState().toValue(), is("KRaft"));
         assertThat(k.getStatus().getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
     }
 
@@ -720,84 +719,5 @@ public class KafkaAssemblyOperatorKRaftMockTest {
 
                 async.flag();
             })));
-    }
-
-    /**
-     * Tests how the KRaft controller-only nodes have their configuration changes tracked using a Pod annotations. The
-     * annotation on controller-only pods should change when the controller-relevant config is changed. On broker pods
-     * it should never change. To test this, the test does 3 reconciliations:
-     *     - First initial one to establish the pods and collects the annotations
-     *     - Second with change that is not relevant to controllers => annotations should be the same for all nodes as
-     *       before
-     *     - Third with change to a controller-relevant option => annotations for controller nodes should change, for
-     *       broker nodes should be the same
-     *
-     * @param context   Test context
-     */
-    @Test
-    public void testReconcileWithControllerRelevantConfigChange(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
-
-        Map<String, String> brokerConfigurationAnnotations = new HashMap<>();
-
-        operator.reconcile(new Reconciliation("initial-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // Collect the configuration annotations
-                    StrimziPodSet spsControllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
-                    assertThat(spsControllers, is(notNullValue()));
-
-                    spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> brokerConfigurationAnnotations.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH)));
-
-                    StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
-                    assertThat(spsBrokers, is(notNullValue()));
-
-                    spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> brokerConfigurationAnnotations.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH)));
-
-                    // Update Kafka with dynamically changeable option that is not controller relevant => controller pod annotations should not change
-                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME)
-                            .edit(k -> new KafkaBuilder(k).editSpec().editKafka().addToConfig(Map.of("compression.type", "gzip")).endKafka().endSpec().build());
-                })))
-                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    StrimziPodSet spsControllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
-                    assertThat(spsControllers, is(notNullValue()));
-
-                    spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
-                        // Controller annotations be the same
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is(brokerConfigurationAnnotations.get(pod.getMetadata().getName())));
-                    });
-
-                    StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
-                    assertThat(spsBrokers, is(notNullValue()));
-
-                    spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
-                        // Broker annotations should be the same
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is(brokerConfigurationAnnotations.get(pod.getMetadata().getName())));
-                    });
-
-                    // Update Kafka with dynamically changeable controller relevant option => controller pod annotations should change
-                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME)
-                            .edit(k -> new KafkaBuilder(k).editSpec().editKafka().addToConfig(Map.of("max.connections", "1000")).endKafka().endSpec().build());
-                })))
-                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    StrimziPodSet spsControllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
-                    assertThat(spsControllers, is(notNullValue()));
-
-                    spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
-                        // Controller annotations should differ
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is(not(brokerConfigurationAnnotations.get(pod.getMetadata().getName()))));
-                    });
-
-                    StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
-                    assertThat(spsBrokers, is(notNullValue()));
-
-                    spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
-                        // Broker annotations should be the same
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is(brokerConfigurationAnnotations.get(pod.getMetadata().getName())));
-                    });
-
-                    async.flag();
-                })));
     }
 }

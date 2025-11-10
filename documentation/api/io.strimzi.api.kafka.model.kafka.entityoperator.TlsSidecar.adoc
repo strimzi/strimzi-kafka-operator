@@ -1,2 +1,4 @@
+:_mod-docs-content-type: CONCEPT
+
 The TLS sidecar type is not used anymore.
 If set, it will be ignored

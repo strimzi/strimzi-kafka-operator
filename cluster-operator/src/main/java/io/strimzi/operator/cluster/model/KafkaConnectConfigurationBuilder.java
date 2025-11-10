@@ -101,7 +101,7 @@ public class KafkaConnectConfigurationBuilder {
 
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS / SSL");
-                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName), "*.crt");
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalTlsTrustedCertsSecretName(clusterName), "ca.crt");
                 writer.println("ssl.truststore.certificates=" + configProviderValue);
                 writer.println("ssl.truststore.type=PEM");
 
@@ -128,6 +128,7 @@ public class KafkaConnectConfigurationBuilder {
      * @param clusterName name of the cluster
      * @return  the builder instance
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     public KafkaConnectConfigurationBuilder withAuthentication(KafkaClientAuthentication authentication, String clusterName) {
         if (authentication != null) {
             printSectionHeader("Authentication configuration");
@@ -225,7 +226,7 @@ public class KafkaConnectConfigurationBuilder {
 
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
                         String oauthTrustedCertsSecret = KafkaConnectResources.internalOauthTrustedCertsSecretName(clusterName);
-                        String trustStorePath = OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + oauthTrustedCertsSecret + "/" + oauthTrustedCertsSecret + ".crt";
+                        String trustStorePath = OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + oauthTrustedCertsSecret + "/ca.crt";
                         jaasConfig.append(" oauth.ssl.truststore.location=\"" + trustStorePath + "\" oauth.ssl.truststore.type=\"PEM\"");
                     }
 
@@ -390,6 +391,27 @@ public class KafkaConnectConfigurationBuilder {
         printSectionHeader("REST Listeners");
         writer.println("rest.advertised.host.name=${strimzienv:ADVERTISED_HOSTNAME}");
         writer.println("rest.advertised.port=" + port);
+        writer.println();
+
+        return this;
+    }
+
+    /**
+     * Configures Connect's internal topics and group ID
+     *
+     * @param groupId               Connect's group ID
+     * @param configStorageTopic    Connect's configuration topic
+     * @param statusStorageTopic    Connect's statuses topic
+     * @param offsetStorageTopic    Connect's offsets topic
+     *
+     * @return  Returns the builder instance
+     */
+    public KafkaConnectConfigurationBuilder withGroupIdAndInternalTopics(String groupId, String configStorageTopic, String statusStorageTopic, String offsetStorageTopic)  {
+        printSectionHeader("Internal topics and group ID");
+        writer.println("group.id=" + groupId);
+        writer.println("config.storage.topic=" + configStorageTopic);
+        writer.println("status.storage.topic=" + statusStorageTopic);
+        writer.println("offset.storage.topic=" + offsetStorageTopic);
         writer.println();
 
         return this;

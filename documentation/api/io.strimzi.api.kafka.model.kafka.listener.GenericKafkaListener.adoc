@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures listeners to connect to Kafka brokers within and outside Kubernetes.
 
 Configure Kafka broker listeners using the `listeners` property in the `Kafka` resource.

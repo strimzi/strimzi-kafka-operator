@@ -27,7 +27,6 @@ import io.skodjob.testframe.resources.SubscriptionType;
 import io.skodjob.testframe.resources.ValidatingWebhookConfigurationType;
 import io.skodjob.testframe.utils.KubeUtils;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
-import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
@@ -54,7 +53,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -67,7 +65,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith({TestExecutionWatcher.class})
-@DisplayNameGeneration(IndicativeSentences.class)
 @ResourceManager()
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public abstract class AbstractST implements TestSeparator {

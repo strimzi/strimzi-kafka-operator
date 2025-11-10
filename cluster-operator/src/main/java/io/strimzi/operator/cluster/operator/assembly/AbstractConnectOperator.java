@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -14,11 +15,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.model.common.CertSecretSource;
-import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
-import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.connect.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -77,13 +75,10 @@ import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -131,6 +126,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final SharedEnvironmentProvider sharedEnvironmentProvider;
     protected final int port;
 
+    /**
+     * This optional argument can be used to include tasks in the restart connector operation.
+     * */
+    protected static final String STRIMZI_IO_RESTART_INCLUDE_TASKS_ARG = "includeTasks";
+
+    /**
+     * This optional argument can be used to restart connector only failed tasks.
+     **/
+    protected static final String STRIMZI_IO_RESTART_ONLY_FAILED_ARG = "onlyFailed";
     /**
      * Constructor
      *
@@ -274,38 +278,23 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return  Future which completes when the reconciliation is done
      */
     protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        ClientTls tls = connect.getTls();
-        Set<String> secretsToCopy = new HashSet<>();
-
-        if (tls != null && tls.getTrustedCertificates() != null) {
-            secretsToCopy.addAll(tls.getTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
-        }
-
-        if (secretsToCopy.isEmpty()) {
+        if (connect.getTls() != null) {
+            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates())
+                    .compose(certificates -> {
+                        if (certificates != null) {
+                            return secretOperations.reconcile(
+                                            reconciliation,
+                                            namespace,
+                                            KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
+                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
+                                    .mapEmpty();
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    });
+        } else {
             return Future.succeededFuture();
         }
-
-        ConcurrentHashMap<String, String> secretData = new ConcurrentHashMap<>();
-        return Future.join(secretsToCopy.stream()
-                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
-                                .compose(secret -> {
-                                    if (secret == null) {
-                                        return Future.failedFuture("Secret " + secretName + " not found");
-                                    } else {
-                                        secret.getData().entrySet().stream()
-                                                .filter(e -> e.getKey().contains(".crt"))
-                                                // In case secrets contain the same key, append the secret name into the key
-                                                .forEach(e -> secretData.put(secretName + "-" + e.getKey(), e.getValue()));
-                                    }
-                                    return Future.succeededFuture();
-                                }))
-                        .collect(Collectors.toList()))
-                .compose(ignore -> secretOperations.reconcile(
-                                reconciliation,
-                                namespace,
-                                KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                connect.generateTlsTrustedCertsSecret(secretData, KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
-                        .mapEmpty());
     }
 
     /**
@@ -315,53 +304,24 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return  Future which completes when the reconciliation is done
      */
+    @SuppressWarnings("deprecation") // OAuth authentication is deprecated
     protected Future<Void> oauthTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        KafkaClientAuthentication authentication = connect.getAuthentication();
-        Set<String> secretsToCopy = new HashSet<>();
-
-        if (authentication instanceof KafkaClientAuthenticationOAuth oauth && oauth.getTlsTrustedCertificates() != null) {
-            secretsToCopy.addAll(oauth.getTlsTrustedCertificates().stream().map(CertSecretSource::getSecretName).toList());
-        }
-
-        if (secretsToCopy.isEmpty()) {
-            return Future.succeededFuture();
-        }
-
-        List<String> certs = new ArrayList<>();
-        String oauthSecret = KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster());
-        return Future.join(secretsToCopy.stream()
-                        .map(secretName -> secretOperations.getAsync(namespace, secretName)
-                                .compose(secret -> {
-                                    if (secret == null) {
-                                        return Future.failedFuture("Secret " + secretName + " not found");
-                                    } else {
-                                        secret.getData().entrySet().stream()
-                                                .filter(e -> e.getKey().contains(".crt"))
-                                                // In case secrets contain the same key, append the secret name into the key
-                                                .forEach(e -> certs.add(e.getValue()));
-                                    }
-                                    return Future.succeededFuture();
-                                }))
-                        .collect(Collectors.toList()))
-                .compose(ignore -> secretOperations.reconcile(
-                                reconciliation,
-                                namespace,
-                                oauthSecret,
-                                connect.generateTlsTrustedCertsSecret(Map.of(oauthSecret + ".crt", mergeAndEncodeCerts(certs)), oauthSecret))
-                        .mapEmpty());
-    }
-
-    private String mergeAndEncodeCerts(List<String> certs) {
-        if (certs.size() > 1) {
-            String decodedAndMergedCerts = certs.stream()
-                    .map(Util::decodeFromBase64)
-                    .collect(Collectors.joining("\n"));
-
-            return Util.encodeToBase64(decodedAndMergedCerts);
-        } else if (certs.size() < 1) {
-            return "";
+        if (connect.getAuthentication() instanceof KafkaClientAuthenticationOAuth oauth) {
+            return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, oauth.getTlsTrustedCertificates())
+                    .compose(certificates -> {
+                        if (certificates != null) {
+                            return secretOperations.reconcile(
+                                            reconciliation,
+                                            namespace,
+                                            KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()),
+                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster())))
+                                    .mapEmpty();
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    });
         } else {
-            return certs.get(0);
+            return Future.succeededFuture();
         }
     }
 
@@ -475,13 +435,22 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected Future<ConnectorStatusAndConditions> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                                 String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
         KafkaConnectorConfiguration desiredConfig = new KafkaConnectorConfiguration(reconciliation, connectorSpec.getConfig().entrySet());
+        // In Strimzi 0.50.0 connector.plugin.version will be added to forbidden list, for now add warning to conditions if specified
+        // Work for removing this is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/12027
+        List<Condition> initialConditions = new ArrayList<>();
+        if (desiredConfig.getConfigOption("connector.plugin.version") != null) {
+            String message = "Config option connector.plugin.version has been set under the config field. This is deprecated and will be forbidden in future. " +
+                    "Use version field instead.";
+            LOGGER.warnCr(reconciliation, message);
+            initialConditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", message));
+        }
 
         return VertxUtil.completableFutureToVertxFuture(apiClient.getConnectorConfig(reconciliation, new BackOff(200L, 2, 6), host, port, connectorName)).compose(
             currentConfig -> {
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, desiredConfig.asOrderedProperties().asMap(), currentConfig)) {
                     LOGGER.debugCr(reconciliation, "Connector {} exists and has desired config, {}=={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
                     return VertxUtil.completableFutureToVertxFuture(apiClient.status(reconciliation, host, port, connectorName))
-                        .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, new ArrayList<>()))
+                        .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, initialConditions))
                         .compose(conditions -> manageConnectorOffsets(reconciliation, host, apiClient, connectorName, resource, connectorSpec, conditions))
                         .compose(conditions -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, conditions))
@@ -492,7 +461,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 } else {
                     LOGGER.debugCr(reconciliation, "Connector {} exists but does not have desired config, {}!={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
-                        .compose(createConnectorStatusAndConditions())
+                        .compose(createConnectorStatusAndConditions(initialConditions))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 }
             },
@@ -501,7 +470,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         && ((ConnectRestException) error).getStatusCode() == 404) {
                     LOGGER.debugCr(reconciliation, "Connector {} does not exist", connectorName);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
-                        .compose(createConnectorStatusAndConditions())
+                        .compose(createConnectorStatusAndConditions(initialConditions))
                         .compose(status -> autoRestartFailedConnectorAndTasks(reconciliation, host, apiClient, connectorName, connectorSpec, status, resource))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
@@ -514,10 +483,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                        KafkaConnectorSpec connectorSpec,
                                        Map<String, String> desiredConfig,
                                        Map<String, String> actualConfig) {
-        // The actual which comes from Connect API includes tasks.max, connector.class and name,
+        // The actual which comes from Connect API includes tasks.max, connector.class, connector.plugin.version (if set) and name,
         // which connectorSpec.getConfig() does not
         if (connectorSpec.getTasksMax() != null) {
             desiredConfig.put("tasks.max", connectorSpec.getTasksMax().toString());
+        }
+        if (connectorSpec.getVersion() != null) {
+            desiredConfig.put("connector.plugin.version", connectorSpec.getVersion());
         }
         desiredConfig.put("name", connectorName);
         desiredConfig.put("connector.class", connectorSpec.getClassName());
@@ -746,8 +718,18 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     @SuppressWarnings({ "rawtypes" })
     private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         if (hasRestartAnnotation(resource, connectorName)) {
-            LOGGER.debugCr(reconciliation, "Restarting connector {}", connectorName);
-            return VertxUtil.completableFutureToVertxFuture(apiClient.restart(host, port, connectorName, false, false))
+
+            if (!restartAnnotationIsValid(resource, connectorName)) {
+                LOGGER.warnCr(reconciliation, "Invalid annotation format");
+                conditions.add(StatusUtils.buildWarningCondition("RestartConnector", "Invalid annotation format"));
+                return Future.succeededFuture(conditions);
+            }
+
+            boolean restartIncludeTasks = restartAnnotationHasIncludeTasksArg(resource);
+            boolean restartOnlyFailedTasks = restartAnnotationHasOnlyFailedTasksArg(resource);
+            LOGGER.infoCr(reconciliation, "Restarting connector {}, IncludeTasks {}, OnlyFailedTasks {}", connectorName, restartIncludeTasks, restartOnlyFailedTasks);
+
+            return VertxUtil.completableFutureToVertxFuture(apiClient.restart(host, port, connectorName, restartIncludeTasks, restartOnlyFailedTasks))
                     .compose(ignored -> removeRestartAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
                         throwable -> {
@@ -766,7 +748,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Future<List<Condition>> maybeRestartConnectorTask(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         int taskID = getRestartTaskAnnotationTaskID(resource, connectorName);
         if (taskID >= 0) {
-            LOGGER.debugCr(reconciliation, "Restarting connector task {}:{}", connectorName, taskID);
+            LOGGER.infoCr(reconciliation, "Restarting connector task {}:{}", connectorName, taskID);
             return VertxUtil.completableFutureToVertxFuture(apiClient.restartTask(host, port, connectorName, taskID))
                     .compose(ignored -> removeRestartTaskAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
@@ -1056,8 +1038,35 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return True if the provided resource has the restart annotation. False otherwise.
      */
-    @SuppressWarnings({ "rawtypes" })
-    abstract boolean hasRestartAnnotation(CustomResource resource, String connectorName);
+    abstract boolean hasRestartAnnotation(HasMetadata resource, String connectorName);
+
+    /**
+     * Checks if restart annotation value is valid
+     *
+     * @param resource          Resource instance to check
+     * @param connectorName     Connector name of the connector to check
+     *
+     * @return True if the provided resource has valid restart annotation. False otherwise.
+     * */
+    abstract boolean restartAnnotationIsValid(HasMetadata resource, String connectorName);
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument includeTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument includeTasks in restart annotation. False otherwise.
+     */
+    abstract boolean restartAnnotationHasIncludeTasksArg(HasMetadata resource);
+
+    /**
+     * Checks whether the provided resource instance (a KafkaConnector or KafkaMirrorMaker2) has argument onlyFailedTasks in restart annotation.
+     *
+     * @param resource          Resource instance to check
+     *
+     * @return True if the provided resource has argument onlyFailedTasks in restart annotation. False otherwise.
+     */
+    abstract boolean restartAnnotationHasOnlyFailedTasksArg(HasMetadata resource);
 
     /**
      * Returns the ID of the connector task to be restarted from the (a KafkaConnector or KafkaMirrorMaker2) custom resource.
@@ -1179,6 +1188,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
         if (spec.getTasksMax() != null) {
             connectorConfigJson.put("tasks.max", spec.getTasksMax());
+        }
+
+        if (spec.getVersion() != null) {
+            connectorConfigJson.put("connector.plugin.version", spec.getVersion());
         }
 
         return connectorConfigJson.put("connector.class", spec.getClassName());

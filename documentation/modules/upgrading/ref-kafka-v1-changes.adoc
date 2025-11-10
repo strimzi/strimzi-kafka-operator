@@ -1,0 +1,51 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-kafka-v1-changes-{context}']
+= Kafka
+
+[role="_abstract"]
+Changes required for the `Kafka` custom resource in the `v1` API.
+
+**Manual changes required**
+
+The conversion tool does not apply the following updates. 
+You must make these changes manually to ensure compatibility:
+
+* Ensure the `.spec` section is present (required).
+* Replace unsupported authentication `type: oauth` with `type: custom`.
+* In `type: custom` authentication, remove the `secrets` property. Mount secrets using the `template` section instead.
+* Replace unsupported authorization types `keycloak` and `opa` with `type: custom`.
+* Remove the `.spec.kafka.resources` property. Define resource requests and limits in `KafkaNodePool` resources.
+
+**Automatic changes supported**
+
+The following updates are applied automatically by the conversion tool during conversion.  
+If the conversion tool is not used, the same changes can be made manually.
+
+* Removes the `.spec.zookeeper` section. ZooKeeper-based clusters are not supported.
+* Removes the `.spec.jmxTrans` section. JMXTrans is not supported.
+* Removes the following Kafka properties:
+** `.spec.kafka.replicas` (replicas are configured through `KafkaNodePool` resources)
+** `.spec.kafka.storage` (storage is configured through `KafkaNodePool` resources)
+** `.spec.kafka.template.statefulset`
+* Removes the following Cruise Control properties:
+** `.spec.cruiseControl.tlsSidecar`
+** `.spec.cruiseControl.template.tlsSidecarContainer`
+** `.spec.cruiseControl.brokerCapacity.disk`
+** `.spec.cruiseControl.brokerCapacity.cpuUtilization`
+* Removes the `.spec.kafkaExporter.template.service` property.
+* Removes the following Entity Operator properties:
+** `.spec.entityOperator.tlsSidecar`
+** `.spec.entityOperator.template.tlsSidecarContainer`
+** `.spec.entityOperator.topicOperator.topicMetadataMaxAttempts`
+** `.spec.entityOperator.topicOperator.zookeeperSessionTimeoutSeconds`
+** `.spec.entityOperator.userOperator.zookeeperSessionTimeoutSeconds`
+* Replaces `.spec.entityOperator.topicOperator.reconciliationIntervalSeconds` with `.spec.entityOperator.topicOperator.reconciliationIntervalMs` (value multiplied by 1000).
+* Replaces `.spec.entityOperator.userOperator.reconciliationIntervalSeconds` with `.spec.entityOperator.userOperator.reconciliationIntervalMs` (value multiplied by 1000).
+* Removes the following properties from YAML definitions that include the status section:
+** `.status.registeredNodeIds`
+** `.status.kafkaMetadataState`
+** `.status.listeners[].type`
+
+NOTE: Status removal applies only to local YAML files (using the `convert-file` command). 
+The conversion tool does not modify the status of live resources within a Kubernetes cluster, as their status is actively managed by the Cluster Operator.

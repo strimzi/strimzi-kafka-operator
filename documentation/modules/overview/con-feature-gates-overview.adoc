@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // overview/assembly-overview-components.adoc
@@ -5,6 +7,7 @@
 [id='con-feature-gates-overview-{context}']
 = Feature gates in Strimzi Operators
 
+[role="_abstract"]
 Strimzi operators use feature gates to enable or disable specific features and functions. Enabling a feature gate alters the behavior of the associated operator, introducing the corresponding feature to your Strimzi deployment.
 
 Feature gates are set in the operator configuration and have three stages of maturity: alpha, beta, or graduated.

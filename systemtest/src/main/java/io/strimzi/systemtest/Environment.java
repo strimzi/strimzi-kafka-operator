@@ -166,7 +166,8 @@ public class Environment {
      */
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV = "KAFKA_TIERED_STORAGE_BASE_IMAGE";
     public static final String KAFKA_TIERED_STORAGE_IMAGE_ENV = "KAFKA_TIERED_STORAGE_IMAGE";
-    public static final String KANIKO_IMAGE_ENV = "KANIKO_IMAGE";
+    public static final String KAFKA_TIERED_STORAGE_CLASSPATH_ENV = "KAFKA_TIERED_STORAGE_CLASSPATH";
+    public static final String BUILDAH_IMAGE_ENV = "BUILDAH_IMAGE";
 
     public static final String POSTGRES_IMAGE_ENV = "POSTGRES_IMAGE";
 
@@ -193,8 +194,8 @@ public class Environment {
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "4.0.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.11.0";
+    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "4.1.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.12.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
@@ -202,9 +203,10 @@ public class Environment {
     public static final String IP_FAMILY_DUAL_STACK = "dual";
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka:latest-kafka-" + ST_KAFKA_VERSION_DEFAULT;
-    public static final String KANIKO_IMAGE_DEFAULT = "gcr.io/kaniko-project/executor:v1.23.2";
+    public static final String KAFKA_TIERED_STORAGE_CLASSPATH_DEFAULT = "/opt/kafka/plugins/tiered-storage/*";
+    public static final String BUILDAH_IMAGE_DEFAULT = "quay.io/containers/buildah:v1.41.4";
 
-    public static final String POSTGRES_IMAGE_DEFAULT = "postgres:latest";
+    public static final String POSTGRES_IMAGE_DEFAULT = "docker.io/library/postgres:18.0";
 
     /**
      * Set values
@@ -262,8 +264,9 @@ public class Environment {
     public static final String IP_FAMILY = getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
-    public static final String KANIKO_IMAGE = getOrDefault(KANIKO_IMAGE_ENV, KANIKO_IMAGE_DEFAULT);
+    public static final String BUILDAH_IMAGE = getOrDefault(BUILDAH_IMAGE_ENV, BUILDAH_IMAGE_DEFAULT);
     public static final String KAFKA_TIERED_STORAGE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_IMAGE_ENV, "");
+    public static final String KAFKA_TIERED_STORAGE_CLASSPATH = getOrDefault(KAFKA_TIERED_STORAGE_CLASSPATH_ENV, KAFKA_TIERED_STORAGE_CLASSPATH_DEFAULT);
 
     public static final String POSTGRES_IMAGE = getOrDefault(POSTGRES_IMAGE_ENV, POSTGRES_IMAGE_DEFAULT);
 
@@ -319,6 +322,10 @@ public class Environment {
 
     public static boolean isDualStackIpFamily() {
         return IP_FAMILY.contains(IP_FAMILY_DUAL_STACK);
+    }
+
+    public static boolean isConnectBuildWithBuildahEnabled() {
+        return STRIMZI_FEATURE_GATES.contains("+UseConnectBuildWithBuildah");
     }
 
     private static String getOrDefault(String varName, String defaultValue) {

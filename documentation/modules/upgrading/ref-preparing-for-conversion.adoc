@@ -1,0 +1,24 @@
+:_mod-docs-content-type: REFERENCE
+
+[id='ref-preparing-for-conversion-{context}']
+= Preparing for conversion
+
+[role="_abstract"]
+Before running the Strimzi API conversion tool, confirm that your environment meets the following prerequisites.
+
+== General prerequisites
+
+Applies to all conversion commands (`convert-file`, `convert-resource`, `crd-upgrade`):
+
+* All Strimzi custom resources are backed up.
+* You have reviewed any manual changes required for deprecated or unsupported `v1` API fields.
+
+== Cluster conversion prerequisites
+
+Applies only when running the tool against a Kubernetes cluster (`convert-resource`, `crd-upgrade`):
+
+* The deployed Strimzi Cluster Operator version is 0.49.0 or later.
+* You have identified the namespaces containing Strimzi resources to convert.
+* The user or service account running the tool has the required RBAC permissions:
+** For `convert-resource`: `list`, `get`, and `replace` permissions for all Strimzi custom resources.
+** For `crd-upgrade`: `patch` permissions for Custom Resource Definitions.

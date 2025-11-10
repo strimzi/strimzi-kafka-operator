@@ -19,5 +19,4 @@ They verify topic creation, updates, deletion behavior, quota enforcement, and m
 - [testRecoveryOfReplicationChangeDuringCcCrash](../io.strimzi.systemtest.operators.topic.TopicReplicasChangeST.md)
 - [testRecoveryOfReplicationChangeDuringEoCrash](../io.strimzi.systemtest.operators.topic.TopicReplicasChangeST.md)
 - [testSendingMessagesToNonExistingTopic](../io.strimzi.systemtest.operators.topic.TopicST.md)
-- [testThrottlingQuotasDuringAllTopicOperations](../io.strimzi.systemtest.operators.topic.ThrottlingQuotaST.md)
 - [testTopicWithoutLabels](../io.strimzi.systemtest.operators.topic.TopicST.md)

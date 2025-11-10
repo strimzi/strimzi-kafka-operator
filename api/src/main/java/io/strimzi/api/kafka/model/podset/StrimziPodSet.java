@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -37,7 +38,8 @@ import java.util.Map;
                 group = StrimziPodSet.RESOURCE_GROUP,
                 scope = StrimziPodSet.SCOPE,
                 versions = {
-                    @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true)
+                    @Crd.Spec.Version(name = Constants.V1, served = true, storage = false),
+                    @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true, deprecated = true, deprecationWarning = "Version v1beta2 of the StrimziPodSet API is deprecated. Please use the v1 version instead.")
                 },
                 subresources = @Crd.Spec.Subresources(
                     status = @Crd.Spec.Subresources.Status()
@@ -86,7 +88,7 @@ public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodS
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = Constants.SCOPE_NAMESPACED;
-    public static final List<String> VERSIONS = List.of(Constants.V1BETA2);
+    public static final List<String> VERSIONS = List.of(Constants.V1, Constants.V1BETA2);
     public static final String RESOURCE_KIND = "StrimziPodSet";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_CORE_GROUP_NAME;
@@ -113,6 +115,7 @@ public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodS
 
     @Override
     @Description("The specification of the StrimziPodSet.")
+    @RequiredInVersions("v1+")
     public StrimziPodSetSpec getSpec() {
         return super.getSpec();
     }

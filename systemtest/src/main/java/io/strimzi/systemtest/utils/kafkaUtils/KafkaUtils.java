@@ -23,8 +23,6 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
-import io.strimzi.kafka.config.model.ConfigModel;
-import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
@@ -44,21 +42,15 @@ import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIXES;
-import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.types.KafkaType.kafkaClient;
@@ -263,132 +255,62 @@ public class KafkaUtils {
 
     /**
      * Verifies that updated configuration was successfully changed inside Kafka pods
-     * @param namespaceName name of the namespace
-     * @param kafkaPodNamePrefix prefix of Kafka pods
-     * @param brokerConfigName key of specific property
-     * @param value value of specific property
-     * @param kafkaVersion Kafka version to get the config model
+     *
+     * @param namespaceName     Name of the namespace.
+     * @param clusterName       Name of the Kafka cluster.
+     * @param scraperPodName    Name of Scraper Pod.
+     * @param configName        Name of the configuration.
+     * @param value             Value of specific property.
+     *
      * @return
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value, String kafkaVersion) {
-        List<Pod> brokerPods = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
+    public synchronized static boolean verifyPodDynamicConfiguration(
+        final String namespaceName,
+        final String clusterName,
+        String scraperPodName,
+        String scope,
+        String configName,
+        String value
+    ) {
+        String bootstrapServer = KafkaResources.plainBootstrapAddress(clusterName);
+        String brokerPodSetName = KafkaComponents.getBrokerPodSetName(clusterName);
+
+        List<Pod> brokerPods = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, brokerPodSetName);
         int[] brokerId = {0};
 
-        Map<String, ConfigModel> configModelMap = readConfigModel(kafkaVersion);
-
         // the check/describe for a dynamic change is different depending on the property being cluster-wide or per-broker
-        if (configModelMap.get(brokerConfigName).getScope().equals(Scope.CLUSTER_WIDE)) {
+        if (Scope.valueOf(scope).equals(Scope.CLUSTER_WIDE)) {
+            TestUtils.waitFor("cluster-wide dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(), () -> {
+                String result = KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(namespaceName, scraperPodName, bootstrapServer);
 
-            TestUtils.waitFor("cluster-wide dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
-                    () -> {
-                        String result = KafkaCmdClient.describeKafkaBrokerDefaultsUsingPodCli(namespaceName, scraperPodName, bootstrapServer);
+                LOGGER.debug("This is cluster-wide dyn.configuration {}", result);
 
-                        LOGGER.debug("This cluster-wide dyn.configuration {}", result);
-
-                        if (!result.contains(brokerConfigName + "=" + value)) {
-                            LOGGER.error("Cluster-wide configuration doesn't contain {} with value {}", brokerConfigName, value);
-                            LOGGER.error("Kafka configuration {}", result);
-                            return false;
-                        }
-                        return true;
-                    });
-
+                if (!result.contains(configName + "=" + value)) {
+                    LOGGER.error("Cluster-wide configuration doesn't contain {} with value {}", configName, value);
+                    LOGGER.error("Kafka configuration {}", result);
+                    return false;
+                }
+                return true;
+            });
         } else {
-
             for (Pod pod : brokerPods) {
+                TestUtils.waitFor("dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(), () -> {
+                    String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
 
-                TestUtils.waitFor("dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
-                        () -> {
-                            String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
+                    LOGGER.debug("This is dyn.configuration {} inside the Kafka Pod: {}/{}", result, namespaceName, pod.getMetadata().getName());
 
-                            LOGGER.debug("This dyn.configuration {} inside the Kafka Pod: {}/{}", result, namespaceName, pod.getMetadata().getName());
-
-                            if (!result.contains(brokerConfigName + "=" + value)) {
-                                LOGGER.error("Kafka Pod: {}/{} doesn't contain {} with value {}", namespaceName, pod.getMetadata().getName(), brokerConfigName, value);
-                                LOGGER.error("Kafka configuration {}", result);
-                                return false;
-                            }
-                            return true;
-                        });
+                    if (!result.contains(configName + "=" + value)) {
+                        LOGGER.error("Kafka Pod: {}/{} doesn't contain {} with value {}", namespaceName, pod.getMetadata().getName(), configName, value);
+                        LOGGER.error("Kafka configuration {}", result);
+                        return false;
+                    }
+                    return true;
+                });
             }
         }
         return true;
-    }
-
-    /**
-     * Loads all kafka config parameters supported by the given {@code kafkaVersion}, as generated by #KafkaConfigModelGenerator in config-model-generator.
-     * @param kafkaVersion specific kafka version
-     * @return all supported kafka properties
-     */
-    public static Map<String, ConfigModel> readConfigModel(String kafkaVersion) {
-        String name = TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/kafka-" + kafkaVersion + "-config-model.json";
-        try {
-            try (InputStream in = new FileInputStream(name)) {
-                ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
-                if (!kafkaVersion.equals(configModels.getVersion())) {
-                    throw new RuntimeException("Incorrect version");
-                }
-                return configModels.getConfigs();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading from classpath resource " + name, e);
-        }
-    }
-
-    /**
-     * Return dynamic Kafka configs supported by the given version of Kafka.
-     * @param kafkaVersion specific kafka version
-     * @return all dynamic properties for specific kafka version
-     */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:BooleanExpressionComplexity"})
-    public static Map<String, ConfigModel> getDynamicConfigurationProperties(String kafkaVersion)  {
-
-        Map<String, ConfigModel> configs = KafkaUtils.readConfigModel(kafkaVersion);
-
-        LOGGER.info("Kafka config {}", configs.toString());
-
-        LOGGER.info("Number of all Kafka configs {}", configs.size());
-
-        Map<String, ConfigModel> dynamicConfigs = configs
-            .entrySet()
-            .stream()
-            .filter(a -> {
-                String[] prefixKey = a.getKey().split("\\.");
-
-                // filter all which is Scope = ClusterWide or PerBroker
-                boolean isClusterWideOrPerBroker = a.getValue().getScope() == Scope.CLUSTER_WIDE || a.getValue().getScope() == Scope.PER_BROKER;
-
-                if (prefixKey[0].equals("ssl") || prefixKey[0].equals("sasl") || prefixKey[0].equals("advertised") ||
-                    prefixKey[0].equals("listeners") || prefixKey[0].equals("listener")) {
-                    return isClusterWideOrPerBroker && !FORBIDDEN_PREFIXES.contains(prefixKey[0]);
-                }
-
-                return isClusterWideOrPerBroker;
-            })
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        LOGGER.info("Number of dynamic-configs {}", dynamicConfigs.size());
-
-        Map<String, ConfigModel> forbiddenExceptionsConfigs = configs
-            .entrySet()
-            .stream()
-            .filter(a -> FORBIDDEN_PREFIX_EXCEPTIONS.contains(a.getKey()))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        LOGGER.info("Number of forbidden-exception-configs {}", forbiddenExceptionsConfigs.size());
-
-        Map<String, ConfigModel> dynamicConfigsWithExceptions = new HashMap<>();
-
-        dynamicConfigsWithExceptions.putAll(dynamicConfigs);
-        dynamicConfigsWithExceptions.putAll(forbiddenExceptionsConfigs);
-
-        LOGGER.info("Size of dynamic-configs with forbidden-exception-configs {}", dynamicConfigsWithExceptions.size());
-
-        dynamicConfigsWithExceptions.forEach((key, value) -> LOGGER.info("{} -> {}:{}", key, value.getScope(), value.getType()));
-
-        return dynamicConfigsWithExceptions;
     }
 
     /**

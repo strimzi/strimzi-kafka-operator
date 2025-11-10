@@ -13,7 +13,7 @@ and stability of Kafka deployments in production environments.
 <!-- generated part -->
 **Tests:**
 - [testBridgeLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
-- [testChangingInternalToExternalLoggingTriggerRollingUpdate](../io.strimzi.systemtest.log.LoggingChangeST.md)
+- [testChangingInternalToExternalLoggingDoesNotTriggerRollingUpdate](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testConnectLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testCruiseControlLogChange](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testDynamicallyAndNonDynamicSetConnectLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)

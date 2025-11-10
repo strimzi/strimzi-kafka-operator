@@ -6,12 +6,15 @@ package io.strimzi.api.kafka.model.connector;
 
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * The purpose of this test is to confirm that we can create a
@@ -28,8 +31,22 @@ public class KafkaConnectorCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaConnectorv1() {
+        createDeleteCustomResource("KafkaConnector-v1.yaml");
+    }
+
+    @Test
     void testKafkaConnectorScaling() {
         createScaleDelete(KafkaConnector.class, "KafkaConnector.yaml");
+    }
+
+    @Test
+    void testKafkaConnectorV1NoSpec() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnector-v1-no-spec.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec");
     }
 
     @BeforeAll

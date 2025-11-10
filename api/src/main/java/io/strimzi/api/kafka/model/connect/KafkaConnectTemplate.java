@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -60,6 +61,7 @@ public class KafkaConnectTemplate implements HasJmxSecretTemplate, UnknownProper
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Deprecated
     @DeprecatedProperty(description = "Kafka Connect and MirrorMaker 2 operands do not use `Deployment` resources anymore. This field will be ignored.")
+    @PresentInVersions("v1beta2")
     public DeploymentTemplate getDeployment() {
         return deployment;
     }

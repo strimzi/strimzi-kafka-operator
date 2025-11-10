@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // managing/assembly-management-tasks.adoc
@@ -11,7 +13,7 @@ Service discovery makes it easier for client applications running in the same Ku
 A service discovery label and annotation are created for the following services:
 
 * Internal Kafka bootstrap service
-* Kafka Bridge service
+* HTTP Bridge service
 
 Service discovery label:: The service discovery label, `strimzi.io/discovery`, is set to `true` for `Service` resources to make them discoverable for client connections.
 Service discovery annotation:: The service discovery annotation provides connection details in JSON format for each service for client applications to use to establish connections.
@@ -45,7 +47,7 @@ spec:
   #...
 ----
 
-.Example Kafka Bridge service
+.Example HTTP Bridge service
 
 [source,yaml,subs="attributes+"]
 ----

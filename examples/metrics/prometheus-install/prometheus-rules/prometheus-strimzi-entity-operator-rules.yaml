@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+    app: strimzi
+  name: strimzi-entity-operator
+spec:
+  groups:
+  - name: strimzi-entity-operator
+    rules:
+    - alert: TopicOperatorContainerDown
+      expr: absent(container_last_seen{container="topic-operator",pod=~".+-entity-operator-.+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container topic-operator in Entity Operator pod down or in CrashLookBackOff status'
+        description: 'Container topic-operator in Entity Operator pod has been or in CrashLookBackOff status for 3 minutes'
+    - alert: UserOperatorContainerDown
+      expr: absent(container_last_seen{container="user-operator",pod=~".+-entity-operator-.+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container user-operator in Entity Operator pod down or in CrashLookBackOff status'
+        description: 'Container user-operator in Entity Operator pod have been down or in CrashLookBackOff status for 3 minutes'

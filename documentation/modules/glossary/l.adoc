@@ -1,0 +1,30 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= L
+
+== Listener
+[id="glossary-listener_{context}"]
+Defines how clients connect to the Kafka cluster. Strimzi supports several listener types for exposing Kafka internally or externally.
+
+Listener types:
+
+internal:: Kafka exposed only within the Kubernetes cluster  
+route:: Kafka exposed externally using OpenShift Routes  
+loadbalancer:: Kafka exposed externally using a `LoadBalancer` service  
+nodeport:: Kafka exposed externally using `NodePort` services  
+ingress:: Kafka exposed externally using Kubernetes NGINX Ingress with TLS passthrough  
+cluster-ip:: Kafka exposed using a per-broker `ClusterIP` service
+
+== Logging (configuration)
+[id="glossary-logging-configuration_{context}"]
+Logging for Kafka components and Strimzi operators is configured through their custom resources.  
+The configuration uses Log4j2 and supports dynamic updates without restarting pods.
+
+Configuration methods:
+
+inline:: Loggers and levels are defined directly in the custom resource.  
+Used for simple changes to log levels.
+
+external:: Loggers and levels are defined in a `ConfigMap` referenced by the custom resource.  
+Used for complex, reusable, or filtered configurations.

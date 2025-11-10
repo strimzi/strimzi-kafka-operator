@@ -75,7 +75,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
             + "broker.session.timeout.ms, broker.heartbeat.interval.ms, controller.socket.timeout.ms, "
             + "controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms"; // KRaft options
 
-    protected Storage storage;
+    private Storage storage;
     private String version;
     private String metadataVersion;
     private Map<String, Object> config = new HashMap<>(0);
@@ -152,7 +152,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
 
     @Deprecated
     @DeprecatedProperty(description = "Use `KafkaNodePool` resources.")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Description("Storage is now configured in the `KafkaNodePool` resources and this option is ignored.")
     public Storage getStorage() {
         return storage;
@@ -176,7 +176,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
 
     @Deprecated
     @DeprecatedProperty(description = "Use `KafkaNodePool` resources.")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Description("Replicas are now configured in `KafkaNodePool` resources and this option is ignored.")
     @Minimum(1)
     public Integer getReplicas() {
@@ -204,6 +204,9 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @KubeLink(group = "core", version = "v1", kind = "resourcerequirements")
     @Description("CPU and memory resources to reserve.")
+    @Deprecated
+    @DeprecatedProperty(description = "Use `KafkaNodePool` custom resources to configure CPU and memory.")
+    @PresentInVersions("v1beta2")
     public ResourceRequirements getResources() {
         return resources;
     }

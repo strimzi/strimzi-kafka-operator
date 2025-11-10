@@ -13,6 +13,8 @@ import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Example;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -91,6 +93,7 @@ public class AclRule implements UnknownPropertyPreserving {
             "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.")
     @DeprecatedProperty(movedToPath = "spec.authorization.acls[*].operations")
     @Deprecated
+    @PresentInVersions("v1alpha1-v1beta2")
     public AclOperation getOperation() {
         return operation;
     }
@@ -103,6 +106,7 @@ public class AclRule implements UnknownPropertyPreserving {
             "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All. " +
             "Only certain operations work with the specified resource.")
     @Example("operations: [\"Read\",\"Write\"]")
+    @RequiredInVersions("v1+")
     public List<AclOperation> getOperations() {
         return operations;
     }

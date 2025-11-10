@@ -10,10 +10,12 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
@@ -31,6 +33,11 @@ public class KafkaCrdIT extends AbstractCrdIT {
     @Test
     void testKafka() {
         createDeleteCustomResource("Kafka.yaml");
+    }
+
+    @Test
+    void testKafkaV1() {
+        createDeleteCustomResource("Kafka-v1.yaml");
     }
 
     @Test
@@ -122,6 +129,29 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 KubernetesClientException.class,
                 () -> createDeleteCustomResource("Kafka-with-autorebalance-empty.yaml"));
         assertThat(exception.getMessage(), containsStringIgnoringCase("spec.cruiseControl.autoRebalance in body should have at least 1 items"));
+    }
+
+    @Test
+    void testKafkaV1NoSpec() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("Kafka-v1-no-spec.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec");
+    }
+
+    @Test
+    public void testKafkaV1WrongTypes() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("Kafka-v1-wrong-types.yaml"));
+
+        assertThat(exception.getMessage(), allOf(
+                CoreMatchers.containsStringIgnoringCase("Unsupported value: \"opa\""),
+                CoreMatchers.containsStringIgnoringCase("supported values: \"simple\", \"custom\""),
+                CoreMatchers.containsStringIgnoringCase("Unsupported value: \"oauth\""),
+                CoreMatchers.containsStringIgnoringCase("supported values: \"tls\", \"scram-sha-512\", \"custom\""))
+        );
     }
 
     @BeforeAll

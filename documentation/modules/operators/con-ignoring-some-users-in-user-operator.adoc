@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // assembly-using-the-user-operator.adoc
@@ -5,6 +7,7 @@
 [id='con-ignoring-some-users-in-user-operator-{context}']
 = Ignoring specific users
 
+[role="_abstract"]
 In some scenarios, you might want to exclude certain users from being managed by the User Operator.
 This is useful for the following types of users:
 

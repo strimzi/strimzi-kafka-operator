@@ -5,13 +5,13 @@
 package io.strimzi.api.kafka.model.mirrormaker2;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -24,13 +24,14 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"sourceCluster", "targetCluster", "sourceConnector", "heartbeatConnector", "checkpointConnector",
+@JsonPropertyOrder({"sourceCluster", "targetCluster", "source", "sourceConnector", "heartbeatConnector", "checkpointConnector",
     "topicsPattern", "topicsBlacklistPattern", "topicsExcludePattern", "groupsPattern", "groupsBlacklistPattern", "groupsExcludePattern"})
 @EqualsAndHashCode
 @ToString
 public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     private String sourceCluster;
     private String targetCluster;
+    private KafkaMirrorMaker2ClusterSpec source;
     private KafkaMirrorMaker2ConnectorSpec sourceConnector;
     private KafkaMirrorMaker2ConnectorSpec checkpointConnector;
     private KafkaMirrorMaker2ConnectorSpec heartbeatConnector;
@@ -42,6 +43,17 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     private String groupsExcludePattern;
     private Map<String, Object> additionalProperties;
 
+    @Description("The source Apache Kafka cluster. " +
+            "The source Kafka cluster is used by the Kafka MirrorMaker 2 connectors.")
+    @RequiredInVersions("v1+")
+    public KafkaMirrorMaker2ClusterSpec getSource() {
+        return source;
+    }
+
+    public void setSource(KafkaMirrorMaker2ClusterSpec source) {
+        this.source = source;
+    }
+
     @Description("A regular expression matching the topics to be mirrored, for example, \"topic1|topic2|topic3\". Comma-separated lists are also supported.")
     public String getTopicsPattern() {
         return topicsPattern;
@@ -52,7 +64,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     }
 
     @DeprecatedProperty(movedToPath = ".spec.mirrors.topicsExcludePattern")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     @Description("A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.")
     public String getTopicsBlacklistPattern() {
@@ -82,7 +94,7 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     }
 
     @DeprecatedProperty(movedToPath = ".spec.mirrors.groupsExcludePattern")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     @Description("A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.")
     public String getGroupsBlacklistPattern() {
@@ -103,7 +115,9 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     }
 
     @Description("The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
-    @JsonProperty(required = true)
+    @Deprecated
+    @DeprecatedProperty(movedToPath = ".spec.mirrors.source", description = "The `sourceCluster` property is deprecated and will be removed in the `v1` CRD API.")
+    @PresentInVersions("v1beta2")
     public String getSourceCluster() {
         return sourceCluster;
     }
@@ -113,7 +127,9 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     }
 
     @Description("The alias of the target cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
-    @JsonProperty(required = true)
+    @Deprecated
+    @DeprecatedProperty(movedToPath = ".spec.target", description = "The `targetCluster` property is deprecated and will be removed in the `v1` CRD API.")
+    @PresentInVersions("v1beta2")
     public String getTargetCluster() {
         return targetCluster;
     }
@@ -141,6 +157,9 @@ public class KafkaMirrorMaker2MirrorSpec implements UnknownPropertyPreserving {
     }
 
     @Description("The specification of the Kafka MirrorMaker 2 heartbeat connector.")
+    @Deprecated
+    @DeprecatedProperty(description = "The `heartbeatConnector` property is deprecated and will be removed in the `v1` CRD API.")
+    @PresentInVersions("v1beta2")
     public KafkaMirrorMaker2ConnectorSpec getHeartbeatConnector() {
         return heartbeatConnector;
     }

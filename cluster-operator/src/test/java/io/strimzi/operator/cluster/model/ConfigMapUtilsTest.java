@@ -8,13 +8,12 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.strimzi.api.kafka.model.common.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
@@ -33,14 +32,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ConfigMapUtilsTest {
     private final static String NAME = "my-cm";
     private final static String NAMESPACE = "my-namespace";
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("my-kind")
-            .withName("my-name")
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-name")
@@ -51,11 +42,11 @@ public class ConfigMapUtilsTest {
 
     @Test
     public void testConfigMapCreation() {
-        ConfigMap cm = ConfigMapUtils.createConfigMap(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, Map.of("key1", "value1", "key2", "value2"));
+        ConfigMap cm = ConfigMapUtils.createConfigMap(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, Map.of("key1", "value1", "key2", "value2"));
 
         assertThat(cm.getMetadata().getName(), is(NAME));
         assertThat(cm.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(cm.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(cm.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(cm.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(cm.getMetadata().getAnnotations(), is(Map.of()));
 

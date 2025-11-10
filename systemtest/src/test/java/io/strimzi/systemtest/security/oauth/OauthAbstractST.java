@@ -26,6 +26,9 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.StringJoiner;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static io.strimzi.systemtest.TestTags.OAUTH;
@@ -113,6 +116,28 @@ public class OauthAbstractST extends AbstractST {
                 .withDisableTlsHostnameVerification(true)
             .endKafkaListenerAuthenticationOAuth()
             .build();
+    };
+
+    /**
+     * Used by the system tests using `type: custom` authentication
+     */
+    protected static final BiFunction<String, Map<String, String>, String> JAAS_CONFIG_BUILDER = (moduleName, options) -> {
+        StringJoiner joiner = new StringJoiner(" ");
+
+        for (Map.Entry<String, String> entry : options.entrySet()) {
+            String key = Objects.requireNonNull(entry.getKey());
+            String value = Objects.requireNonNull(entry.getValue());
+            if (key.contains("=") || key.contains(";")) {
+                throw new IllegalArgumentException("Keys must not contain '=' or ';'");
+            }
+            if (moduleName.isEmpty() || moduleName.contains(";") || moduleName.contains("=")) {
+                throw new IllegalArgumentException("module name must be not empty and must not contain '=' or ';'");
+            } else {
+                joiner.add(key + "=\"" + value + "\"");
+            }
+        }
+
+        return moduleName + " required " + joiner + ";";
     };
 
     protected void setupCoAndKeycloak(String keycloakNamespace) {

@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // assembly-config.adoc
@@ -48,4 +50,4 @@ examples
 `Kafka` configuration examples enable auto-rebalancing on scaling events and set default optimization goals.
 `KakaRebalance` configuration examples set proposal-specific optimization goals and generate optimization proposals in various supported modes.
 <8> `KafkaConnect` and `KafkaConnector` custom resource configuration for a deployment of Kafka Connect. Includes example configurations for a single or multi-node deployment.
-<9> `KafkaBridge` custom resource configuration for a deployment of Kafka Bridge.
+<9> `KafkaBridge` custom resource configuration for a deployment of HTTP Bridge.

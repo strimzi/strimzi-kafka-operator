@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.common.CustomResourceConditions;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -36,7 +37,8 @@ import java.util.function.Predicate;
         group = KafkaConnector.RESOURCE_GROUP,
         scope = KafkaConnector.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true)
+            @Crd.Spec.Version(name = Constants.V1, served = true, storage = false),
+            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaConnector API is deprecated. Please use the v1 version instead.")
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status(),
@@ -83,7 +85,7 @@ import java.util.function.Predicate;
 public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConnectorStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    public static final List<String> VERSIONS = List.of(Constants.V1BETA2);
+    public static final List<String> VERSIONS = List.of(Constants.V1, Constants.V1BETA2);
     public static final String SCOPE = Constants.SCOPE_NAMESPACED;
     public static final String RESOURCE_PLURAL = "kafkaconnectors";
     public static final String RESOURCE_SINGULAR = "kafkaconnector";
@@ -111,6 +113,7 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
 
     @Override
     @Description("The specification of the Kafka Connector.")
+    @RequiredInVersions("v1+")
     public KafkaConnectorSpec getSpec() {
         return super.getSpec();
     }

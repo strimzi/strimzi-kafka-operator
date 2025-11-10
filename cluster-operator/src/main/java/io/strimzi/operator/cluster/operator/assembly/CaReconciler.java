@@ -148,7 +148,7 @@ public class CaReconciler {
                 .withKind(kafkaCr.getKind())
                 .withName(kafkaCr.getMetadata().getName())
                 .withUid(kafkaCr.getMetadata().getUid())
-                .withBlockOwnerDeletion(false)
+                .withBlockOwnerDeletion(true)
                 .withController(false)
                 .build();
         this.clusterCaConfig = kafkaCr.getSpec().getClusterCa();

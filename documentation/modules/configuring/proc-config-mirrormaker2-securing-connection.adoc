@@ -1,14 +1,16 @@
+:_mod-docs-content-type: PROCEDURE
+
 // Module included in the following assemblies:
 
 // assembly-config.adoc
 
 [id='proc-config-mirrormaker2-securing-connection-{context}']
-= Securing a Kafka MirrorMaker 2 deployment
+= Securing MirrorMaker 2 connections
 
 [role="_abstract"]
-This procedure describes in outline the configuration required to secure a MirrorMaker 2 deployment.
+This procedure describes in outline the configuration required to secure MirrorMaker 2 connections.
 
-You need separate configuration for the source Kafka cluster and the target Kafka cluster.
+You configure these settings independently for the source Kafka cluster and the target Kafka cluster.
 You also need separate user configuration to provide the credentials required for MirrorMaker to connect to the source and target Kafka clusters.
 
 For the Kafka clusters, you specify internal listeners for secure connections within a Kubernetes cluster and external listeners for connections outside the Kubernetes cluster.
@@ -261,14 +263,6 @@ spec:
         operations:
           - Read
           - Describe
-      # MirrorHeartbeatConnector
-      - resource:
-          type: topic
-          name: heartbeats
-        operations:
-          - Create
-          - Describe
-          - Write
 ----
 +
 NOTE: You can use a certificate issued outside the User Operator by setting `type` to `tls-external`.
@@ -299,48 +293,47 @@ metadata:
 spec:
   version: {DefaultKafkaVersion}
   replicas: 1
-  connectCluster: "my-target-cluster"
-  clusters:
-    - alias: "my-source-cluster"
-      bootstrapServers: my-source-cluster-kafka-bootstrap:9093
-      tls: # <1>
-        trustedCertificates:
-          - secretName: my-source-cluster-cluster-ca-cert
-            pattern: "*.crt"
-      authentication: # <2>
-        type: tls
-        certificateAndKey:
-          secretName: my-source-user
-          certificate: user.crt
-          key: user.key
-    - alias: "my-target-cluster"
-      bootstrapServers: my-target-cluster-kafka-bootstrap:9093
-      tls: # <3>
-        trustedCertificates:
-          - secretName: my-target-cluster-cluster-ca-cert
-            pattern: "*.crt"
-      authentication: # <4>
-        type: tls
-        certificateAndKey:
-          secretName: my-target-user
-          certificate: user.crt
-          key: user.key
-      config:
-        # -1 means it will use the default replication factor configured in the broker
-        config.storage.replication.factor: -1
-        offset.storage.replication.factor: -1
-        status.storage.replication.factor: -1
+  target:
+    alias: "my-cluster-target"
+    bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+    groupId: my-mirror-maker2-group
+    configStorageTopic: my-mirror-maker2-config
+    offsetStorageTopic: my-mirror-maker2-offset
+    statusStorageTopic: my-mirror-maker2-status
+    tls: # <1>
+      trustedCertificates:
+        - secretName: my-target-cluster-cluster-ca-cert
+          pattern: "*.crt"
+    authentication: # <2>
+      type: tls
+      certificateAndKey:
+        secretName: my-target-user
+        certificate: user.crt
+        key: user.key
+    config:
+      # -1 means it will use the default replication factor configured in the broker
+      config.storage.replication.factor: -1
+      offset.storage.replication.factor: -1
+      status.storage.replication.factor: -1
   mirrors:
-    - sourceCluster: "my-source-cluster"
-      targetCluster: "my-target-cluster"
+    - source:
+        alias: "my-source-cluster"
+        bootstrapServers: my-source-cluster-kafka-bootstrap:9093
+        tls: # <3>
+          trustedCertificates:
+            - secretName: my-source-cluster-cluster-ca-cert
+              pattern: "*.crt"
+        authentication: # <4>
+          type: tls
+          certificateAndKey:
+            secretName: my-source-user
+            certificate: user.crt
+            key: user.key
       sourceConnector:
         config:
           replication.factor: 1
-          offset-syncs.topic.replication.factor: 1
+          offset-syncs.topic.replication.factor: -1
           sync.topic.acls.enabled: "false"
-      heartbeatConnector:
-        config:
-          heartbeats.topic.replication.factor: 1
       checkpointConnector:
         config:
           checkpoints.topic.replication.factor: 1
@@ -348,14 +341,9 @@ spec:
       topicsPattern: "topic1|topic2|topic3"
       groupsPattern: "group1|group2|group3"
 ----
-<1> The TLS certificates for the source Kafka cluster. If they are in a separate namespace, copy the cluster secrets from the namespace of the Kafka cluster.
-<2> The user authentication for accessing the source Kafka cluster using the TLS mechanism.
-<3> The TLS certificates for the target Kafka cluster.
-<4> The user authentication for accessing the target Kafka cluster.
+<1> The TLS certificates for the target Kafka cluster.
+<2> The user authentication for accessing the target Kafka cluster.
+<3> The TLS certificates for the source Kafka cluster. If they are in a separate namespace, copy the cluster secrets from the namespace of the Kafka cluster.
+<4> The user authentication for accessing the source Kafka cluster using the TLS mechanism. Supported authentication methods include `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and `oauth`.
 
-. Create or update the `KafkaMirrorMaker2` resource in the same namespace as the target Kafka cluster.
-+
-[source,shell,subs=+quotes]
-----
-kubectl apply -f _<mirrormaker2_configuration_file>_ -n _<namespace_of_target_cluster>_
-----
+. Apply the changes to the `KafkaMirrorMaker2` resource to the same namespace as the target Kafka cluster.

@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // This assembly is included in the following assemblies:
 //
 // assembly-upgrade.adoc
@@ -27,16 +29,8 @@ However, if you attempt to upgrade to a new Strimzi version that does not suppor
 In this case, you must upgrade the Kafka version as part of the Strimzi upgrade by changing the `spec.kafka.version` in the `Kafka` custom resource to the supported version for the new Strimzi version.
 
 ifdef::Section[]
-[NOTE]
-====
-You can review supported Kafka versions in the link:https://strimzi.io/downloads/[Supported versions^] table.
+Review supported Kafka versions in the link:https://strimzi.io/downloads/[Supported versions^] table on the Strimzi website.
 
 * The *Operators* column lists all released Strimzi versions (the Strimzi version is often called the "Operator version").
 * The *Kafka versions* column lists the supported Kafka versions for each Strimzi version.
-====
 endif::Section[]
-
-== Upgrading from a Strimzi version earlier than 0.39
-
-Strimzi {ProductVersion} supports upgrades only for KRaft-based Apache Kafka clusters managed by Strimzi 0.39 and newer.
-When upgrading from older Strimzi versions, please make sure to first upgrade to a Strimzi version from 0.39 to 0.45 and migrate to KRaft before upgrading to Strimzi {ProductVersion}.

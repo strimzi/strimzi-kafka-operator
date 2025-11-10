@@ -135,6 +135,7 @@ public class KafkaPool extends AbstractModel {
      *
      * @return Kafka pool instance
      */
+    @SuppressWarnings("deprecation") // Resource configuration in Kafka CR (.spec.kafka.resources) is deprecated
     public static KafkaPool fromCrd(
             Reconciliation reconciliation,
             Kafka kafka,
@@ -190,34 +191,42 @@ public class KafkaPool extends AbstractModel {
             result.setStorage(pool.getSpec().getStorage());
         }
 
-        // Adds the warnings about unknown or deprecated fields
-        result.warningConditions.addAll(StatusUtils.validate(reconciliation, pool));
-
-        if (pool.getSpec().getTemplate() != null) {
-            KafkaNodePoolTemplate template = pool.getSpec().getTemplate();
-
-            result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
-            result.templatePodSet = template.getPodSet();
-            result.templatePod = template.getPod();
-            result.templatePerBrokerService = template.getPerPodService();
-            result.templatePerBrokerRoute = template.getPerPodRoute();
-            result.templatePerBrokerIngress = template.getPerPodIngress();
-            result.templateContainer = template.getKafkaContainer();
-            result.templateInitContainer = template.getInitContainer();
-        } else if (kafka.getSpec().getKafka().getTemplate() != null) {
-            KafkaClusterTemplate template = kafka.getSpec().getKafka().getTemplate();
-
-            result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
-            result.templatePodSet = template.getPodSet();
-            result.templatePod = template.getPod();
-            result.templatePerBrokerService = template.getPerPodService();
-            result.templatePerBrokerRoute = template.getPerPodRoute();
-            result.templatePerBrokerIngress = template.getPerPodIngress();
-            result.templateContainer = template.getKafkaContainer();
-            result.templateInitContainer = template.getInitContainer();
-        }
+        processTemplate(result, kafka.getSpec().getKafka().getTemplate(), pool.getSpec().getTemplate());
 
         return result;
+    }
+
+    /**
+     * Processes the template and combines it from the Kafka and KafkaNodePool CRs
+     *
+     * @param result                    KafkaPool instance
+     * @param kafkaClusterTemplate      Template from the Kafka CR
+     * @param kafkaNodePoolTemplate     Template from the KafkaNodePool CR
+     */
+    private static void processTemplate(KafkaPool result, KafkaClusterTemplate kafkaClusterTemplate, KafkaNodePoolTemplate kafkaNodePoolTemplate)   {
+        // The Kafka CR sets the initial template
+        if (kafkaClusterTemplate != null) {
+            result.templatePersistentVolumeClaims = kafkaClusterTemplate.getPersistentVolumeClaim();
+            result.templatePodSet = kafkaClusterTemplate.getPodSet();
+            result.templatePod = kafkaClusterTemplate.getPod();
+            result.templatePerBrokerService = kafkaClusterTemplate.getPerPodService();
+            result.templatePerBrokerRoute = kafkaClusterTemplate.getPerPodRoute();
+            result.templatePerBrokerIngress = kafkaClusterTemplate.getPerPodIngress();
+            result.templateContainer = kafkaClusterTemplate.getKafkaContainer();
+            result.templateInitContainer = kafkaClusterTemplate.getInitContainer();
+        }
+
+        // If the KafkaNodePool template exists, anything set in it would overwrite the Kafka CR template
+        if (kafkaNodePoolTemplate != null) {
+            if (kafkaNodePoolTemplate.getPersistentVolumeClaim() != null) result.templatePersistentVolumeClaims = kafkaNodePoolTemplate.getPersistentVolumeClaim();
+            if (kafkaNodePoolTemplate.getPodSet() != null) result.templatePodSet = kafkaNodePoolTemplate.getPodSet();
+            if (kafkaNodePoolTemplate.getPod() != null) result.templatePod = kafkaNodePoolTemplate.getPod();
+            if (kafkaNodePoolTemplate.getPerPodService() != null) result.templatePerBrokerService = kafkaNodePoolTemplate.getPerPodService();
+            if (kafkaNodePoolTemplate.getPerPodRoute() != null) result.templatePerBrokerRoute = kafkaNodePoolTemplate.getPerPodRoute();
+            if (kafkaNodePoolTemplate.getPerPodIngress() != null) result.templatePerBrokerIngress = kafkaNodePoolTemplate.getPerPodIngress();
+            if (kafkaNodePoolTemplate.getKafkaContainer() != null) result.templateContainer = kafkaNodePoolTemplate.getKafkaContainer();
+            if (kafkaNodePoolTemplate.getInitContainer() != null) result.templateInitContainer = kafkaNodePoolTemplate.getInitContainer();
+        }
     }
 
     /**

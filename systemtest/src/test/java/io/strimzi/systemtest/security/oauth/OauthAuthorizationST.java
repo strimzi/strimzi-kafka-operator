@@ -60,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
+@SuppressWarnings("deprecation") // OAuth authentication and Keycloak Authorization are deprecated
 public class OauthAuthorizationST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationST.class);
 

@@ -28,6 +28,7 @@ import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -60,7 +61,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     private ResourceRequirements resources;
     private JvmOptions jvmOptions;
     private Logging logging;
-    private boolean enableMetrics;
+    private Boolean enableMetrics;
     private MetricsConfig metricsConfig;
     private Probe livenessProbe;
     private Probe readinessProbe;
@@ -69,10 +70,12 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     private String clientRackInitImage;
     private Rack rack;
 
-    @Description("The number of pods in the `Deployment`.  " +
-            "Defaults to `1`.")
+    @Description("The number of pods in the `Deployment`. " +
+            "Required in the `v1` version of the Strimzi API. " +
+            "Defaults to `1` in the `v1beta2` version of the Strimzi API.")
     @Minimum(0)
     @JsonProperty(defaultValue = "1")
+    @RequiredInVersions("v1+")
     public int getReplicas() {
         return replicas;
     }
@@ -84,14 +87,14 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     @Deprecated
     @DeprecatedProperty(movedToPath = ".spec.metricsConfig",
             description = "The `enableMetrics` configuration is deprecated and will be removed in the future.")
-    @PresentInVersions("v1alpha1-v1beta2")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @PresentInVersions("v1beta2")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Description("Enable the metrics for the Kafka Bridge. Default is false.")
-    public boolean getEnableMetrics() {
+    public Boolean getEnableMetrics() {
         return enableMetrics;
     }
 
-    public void setEnableMetrics(boolean enableMetrics) {
+    public void setEnableMetrics(Boolean enableMetrics) {
         this.enableMetrics = enableMetrics;
     }
 

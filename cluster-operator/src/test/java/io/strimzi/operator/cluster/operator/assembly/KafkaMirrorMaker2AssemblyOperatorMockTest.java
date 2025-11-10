@@ -35,6 +35,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
+import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -47,6 +48,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,6 +65,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.IsNot.not;
@@ -74,6 +77,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -229,7 +233,10 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     .withConnectCluster("target")
                     .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
                             new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
-                    .withMirrors(List.of())
+                    .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withSourceCluster("source")
+                                    .withTargetCluster("target")
+                                    .build())
                 .endSpec()
             .build()).create();
 
@@ -483,6 +490,159 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
                     //Assert offsets reset
                     assertThat(connectorOffsets, is(RESET_OFFSETS_JSON));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testConnectorVersion(VertxTestContext context) {
+        String connectorName = "source->target.MirrorSourceConnector";
+        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(Map.of("foo", "bar"))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(REPLICAS)
+                    .withConnectCluster("target")
+                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
+                    .withMirrors(
+                            new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withSourceCluster("source")
+                                    .withTargetCluster("target")
+                                    .withNewSourceConnector()
+                                        .withTasksMax(1)
+                                        .withVersion("[0.1.0,)")
+                                        .withConfig(Map.of("replication.factor", -1))
+                                    .endSourceConnector()
+                                    .build()
+                    )
+                .endSpec()
+                .build()).create();
+
+        KafkaConnectApi connectApi = mock(KafkaConnectApi.class);
+        when(connectApi.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
+        when(connectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.failedFuture(new ConnectRestException("maybeCreateOrUpdateConnector", "", 404, "error", "error")));
+        when(connectApi.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(Map.of()));
+        when(connectApi.status(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RUNNING"))));
+        when(connectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RUNNING"))));
+        when(connectApi.getConnectorTopics(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(List.of()));
+
+        Checkpoint async = context.checkpoint();
+
+        createMirrorMaker2Cluster(context, connectApi, false)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    ArgumentCaptor<JsonObject> configJsonCaptor = ArgumentCaptor.forClass(JsonObject.class);
+                    verify(connectApi).createOrUpdatePutRequest(any(), any(), anyInt(), eq(connectorName), configJsonCaptor.capture());
+                    assertThat(configJsonCaptor.getValue().getString("connector.plugin.version"), is("[0.1.0,)"));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testConnectorDeprecatedVersionConfig(VertxTestContext context) {
+        String connectorName = "source->target.MirrorSourceConnector";
+        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(Map.of("foo", "bar"))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(REPLICAS)
+                    .withConnectCluster("target")
+                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
+                    .withMirrors(
+                            new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withSourceCluster("source")
+                                    .withTargetCluster("target")
+                                    .withNewSourceConnector()
+                                        .withTasksMax(1)
+                                        .withConfig(Map.of("replication.factor", -1, "connector.plugin.version", "[0.1.0,)"))
+                                    .endSourceConnector()
+                                    .build()
+                    )
+                    .endSpec()
+                .build()).create();
+
+        KafkaConnectApi connectApi = mock(KafkaConnectApi.class);
+        when(connectApi.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
+        when(connectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.failedFuture(new ConnectRestException("maybeCreateOrUpdateConnector", "", 404, "error", "error")));
+        when(connectApi.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(Map.of()));
+        when(connectApi.status(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RUNNING"))));
+        when(connectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RUNNING"))));
+        when(connectApi.getConnectorTopics(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(List.of()));
+
+        Checkpoint async = context.checkpoint();
+
+        createMirrorMaker2Cluster(context, connectApi, false)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    ArgumentCaptor<JsonObject> configJsonCaptor = ArgumentCaptor.forClass(JsonObject.class);
+                    verify(connectApi).createOrUpdatePutRequest(any(), any(), anyInt(), eq(connectorName), configJsonCaptor.capture());
+                    assertThat(configJsonCaptor.getValue().getString("connector.plugin.version"), is("[0.1.0,)"));
+
+                    List<Condition> conditions = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get().getStatus().getConditions();
+                    List<String> deprecatedFieldsConditionMessages = conditions.stream().filter(condition -> "DeprecatedFields".equals(condition.getReason()))
+                            .map(Condition::getMessage)
+                            .toList();
+                    assertThat(deprecatedFieldsConditionMessages, hasItems("Config option connector.plugin.version has been set under the config field. This is deprecated and will be forbidden in future. Use version field instead."));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testConnectorVersionOverride(VertxTestContext context) {
+        String connectorName = "source->target.MirrorSourceConnector";
+        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(Map.of("foo", "bar"))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(REPLICAS)
+                    .withConnectCluster("target")
+                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
+                    .withMirrors(
+                            new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withSourceCluster("source")
+                                    .withTargetCluster("target")
+                                    .withNewSourceConnector()
+                                        .withTasksMax(1)
+                                        .withVersion("[0.2.0,)")
+                                        .withConfig(Map.of("replication.factor", -1, "connector.plugin.version", "[0.1.0,)"))
+                                    .endSourceConnector()
+                                    .build()
+                    )
+                    .endSpec()
+                .build()).create();
+
+        KafkaConnectApi connectApi = mock(KafkaConnectApi.class);
+        when(connectApi.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
+        when(connectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.failedFuture(new ConnectRestException("maybeCreateOrUpdateConnector", "", 404, "error", "error")));
+        when(connectApi.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(Map.of()));
+        when(connectApi.status(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RUNNING"))));
+        when(connectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RUNNING"))));
+        when(connectApi.getConnectorTopics(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(List.of()));
+
+        Checkpoint async = context.checkpoint();
+
+        createMirrorMaker2Cluster(context, connectApi, false)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    ArgumentCaptor<JsonObject> configJsonCaptor = ArgumentCaptor.forClass(JsonObject.class);
+                    verify(connectApi).createOrUpdatePutRequest(any(), any(), anyInt(), eq(connectorName), configJsonCaptor.capture());
+                    assertThat(configJsonCaptor.getValue().getString("connector.plugin.version"), is("[0.2.0,)"));
+
+                    List<Condition> conditions = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get().getStatus().getConditions();
+                    List<String> deprecatedFieldsConditionMessages = conditions.stream().filter(condition -> "DeprecatedFields".equals(condition.getReason()))
+                            .map(Condition::getMessage)
+                            .toList();
+                    assertThat(deprecatedFieldsConditionMessages, hasItems("Config option connector.plugin.version has been set under the config field. This is deprecated and will be forbidden in future. Use version field instead."));
                     async.flag();
                 })));
     }

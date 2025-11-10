@@ -125,7 +125,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.32.0
+    tag: 0.33.1
 kafkaExporter:
   image:
     registry: ""
@@ -149,6 +149,12 @@ kanikoExecutor:
     registry: ""
     repository: ""
     name: kaniko-executor
+    tag: ""
+buildah:
+  image:
+    registry: ""
+    repository: ""
+    name: buildah
     tag: ""
 mavenBuilder:
   image:

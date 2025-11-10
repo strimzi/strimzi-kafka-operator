@@ -117,5 +117,40 @@ docker_push_sbom_default:
 	cosign sign --tlog-upload=false -a author=StrimziCI -a BuildID=$(BUILD_ID) -a Commit=$(BUILD_COMMIT) --key cosign.key --attachment sbom $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST
 	@rm cosign.key
 
+# GitHub Actions specific targets with keyless signing
+# TODO - remove gha prefix once migrated fully to gha
+.PHONY: docker_gha_sign_manifest_default
+docker_gha_sign_manifest_default:
+	# Signs the manifest and its images using keyless signing (GitHub OIDC)
+	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) --format '{{ json . }}' | jq -r .manifest.digest); \
+	cosign sign --yes --recursive --timeout 6m0s -a author=StrimziCI -a BuildID=$(BUILD_ID) -a Commit=$(BUILD_COMMIT) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST
+
+.PHONY: docker_gha_sbom_default
+docker_gha_sbom_default:
+	# Saves the SBOM of the image and signs with keyless signing
+	test -d $(SBOM_DIR) || mkdir -p $(SBOM_DIR)
+	# Generate the text format
+	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) --format '{{ json . }}' | jq -r .manifest.digest); \
+	syft packages $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST --output syft-table --file $(SBOM_DIR)/$(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)/$(DOCKER_TAG)/$$MANIFEST_DIGEST.txt
+	# Generate the SPDX JSON format for machine processing
+	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) --format '{{ json . }}' | jq -r .manifest.digest); \
+	syft packages $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST --output spdx-json --file $(SBOM_DIR)/$(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)/$(DOCKER_TAG)/$$MANIFEST_DIGEST.json
+	# Sign the TXT and SPDX-JSON SBOM with keyless signing
+	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) --format '{{ json . }}' | jq -r .manifest.digest); \
+	cosign sign-blob --yes --bundle $(SBOM_DIR)/$(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)/$(DOCKER_TAG)/$$MANIFEST_DIGEST.txt.bundle $(SBOM_DIR)/$(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)/$(DOCKER_TAG)/$$MANIFEST_DIGEST.txt
+	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) --format '{{ json . }}' | jq -r .manifest.digest); \
+	cosign sign-blob --yes --bundle $(SBOM_DIR)/$(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)/$(DOCKER_TAG)/$$MANIFEST_DIGEST.json.bundle $(SBOM_DIR)/$(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)/$(DOCKER_TAG)/$$MANIFEST_DIGEST.json
+
+.PHONY: docker_gha_push_sbom_default
+docker_gha_push_sbom_default:
+	# Push the SBOM to the container registry and sign it with keyless signing
+	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) --format '{{ json . }}' | jq -r .manifest.digest); \
+	cosign attach sbom --sbom $(SBOM_DIR)/$(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)/$(DOCKER_TAG)/$$MANIFEST_DIGEST.json $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX)
+	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) --format '{{ json . }}' | jq -r .manifest.digest); \
+	cosign sign --yes -a author=StrimziCI -a BuildID=$(BUILD_ID) -a Commit=$(BUILD_COMMIT) --attachment sbom $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST
+
+docker_gha_%: docker_gha_%_default
+	@  true
+
 docker_%: docker_%_default
 	@  true

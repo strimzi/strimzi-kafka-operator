@@ -6,12 +6,14 @@ package io.strimzi.api.kafka.model.common.authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -32,13 +34,17 @@ import java.util.Map;
     "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientSecret", "passwordSecret", "accessToken",
     "refreshToken", "tlsTrustedCertificates", "disableTlsHostnameVerification", "maxTokenExpirySeconds",
     "accessTokenIsJwt", "enableMetrics", "includeAcceptHeader", "accessTokenLocation",
-    "clientAssertion", "clientAssertionLocation", "clientAssertionType", "saslExtensions"})
+    "clientAssertion", "clientAssertionLocation", "clientAssertionType", "saslExtensions", "grantType"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@Deprecated
+@DeprecatedType(replacedWithType = KafkaClientAuthenticationCustom.class)
+@PresentInVersions("v1beta2")
 public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     public static final String TYPE_OAUTH = "oauth";
 
     private String clientId;
+    private String grantType;
     private String username;
     private String scope;
     private String audience;
@@ -78,6 +84,17 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    @Description("A custom OAuth grant type to use when authenticating against the authorization server with `clientId` and one of `clientSecret` or `clientAssertion`. "
+            + "The value defaults to `client_credentials` in these cases. This is optional configuration, only used with custom authorization server implementations.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getGrantType() {
+        return grantType;
+    }
+
+    public void setGrantType(String grantType) {
+        this.grantType = grantType;
     }
 
     @Description("OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. "

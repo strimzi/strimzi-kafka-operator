@@ -524,6 +524,19 @@ public class KafkaRollerTest {
     }
 
     @Test
+    public void testRollHandlesErrorWhenGettingControllerConfig(VertxTestContext testContext) {
+        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, 0, REPLICAS), podOps,
+                noException(), null,
+                noException(), noException(), podId -> podId == 1 ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+        // The algorithm should carry on rolling the pods
+        doSuccessfulRollingRestart(testContext, kafkaRoller,
+                asList(0, 1, 2, 3, 4),
+                asList(0, 2, 3, 4, 1));
+    }
+
+    @Test
     public void testRollHandlesErrorWhenGettingConfigFromController(VertxTestContext testContext) {
         int controller = 2;
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
@@ -552,7 +565,7 @@ public class KafkaRollerTest {
     @Test
     public void testSuccessfulAlteringConfigNotRoll(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(3, 3, 3), podOps,
                 noException(), null,
                 noException(), noException(), noException(),
                 brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
@@ -997,7 +1010,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
+        protected KafkaQuorumCheck quorumCheck(Admin ac, NodeRef ref) {
             Admin admin = mock(Admin.class);
             DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
             when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
@@ -1027,7 +1040,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerConfig(NodeRef nodeRef) throws ForceableProblem {
+        protected Config getConfig(NodeRef nodeRef, boolean isPureController) throws ForceableProblem {
             ForceableProblem problem = getConfigsException.apply(nodeRef.nodeId());
             if (problem != null) {
                 throw problem;
@@ -1035,12 +1048,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerLogging(int brokerId) {
-            return new Config(emptyList());
-        }
-
-        @Override
-        protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff) throws ForceableProblem {
+        protected void dynamicUpdateKafkaConfig(NodeRef nodeRef, Admin ac, KafkaConfigurationDiff configurationDiff) throws ForceableProblem {
             ForceableProblem problem = alterConfigsException.apply(nodeRef.nodeId());
             if (problem != null) {
                 throw problem;

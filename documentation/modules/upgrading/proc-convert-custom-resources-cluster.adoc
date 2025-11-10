@@ -1,0 +1,46 @@
+:_mod-docs-content-type: PROCEDURE
+
+[id='proc-convert-custom-resources-cluster-{context}']
+= Converting custom resources in a Kubernetes cluster
+
+[role="_abstract"]
+Use the Strimzi API conversion tool with the `convert-resource` command to convert existing Strimzi custom resources directly in a Kubernetes cluster to the `v1` API.
+
+.Procedure
+
+. Run `convert-resource` using one of the following options:
++
+* `--namespace <namespace>` to convert resources in a specific namespace  
+* `--all-namespaces` to convert resources in all namespaces  
+* Omit both options to convert resources in the current namespace  
+* `--kind <kind>` to convert only resources of a specific kind (for example, `Kafka`, `KafkaConnect`, or `KafkaBridge`)  
+* `--name <name>` with `--kind` to convert a single resource by name  
++
+To report on the operation, add a `--log-level` flag.
++
+Example commands:
++
+[source,shell]
+----
+# Convert all Strimzi resources in the current namespace with INFO logging:
+bin/v1-api-conversion.sh convert-resource --log-level INFO
+
+# Convert all Strimzi resources in all namespaces:
+bin/v1-api-conversion.sh convert-resource --all-namespaces
+
+# Convert all Strimzi resources in the `my-kafka` namespace:
+bin/v1-api-conversion.sh convert-resource --namespace my-kafka
+
+# Convert only Kafka resources in all namespaces:
+bin/v1-api-conversion.sh convert-resource --all-namespaces --kind Kafka
+
+# Convert `Kafka` and `KafkaConnect` resources in all namespaces:
+bin/v1-api-conversion.sh convert-resource --all-namespaces --kind Kafka --kind KafkaConnect
+
+# Convert a Kafka cluster named `my-cluster` in namespace `my-kafka`: 
+bin/v1-api-conversion.sh convert-resource --namespace my-kafka --kind Kafka --name my-cluster
+----
+
+. Review the log output to ensure that all custom resources converted successfully and address any errors. 
+
+. Ensure that all conversions complete successfully before proceeding to upgrade the CRDs.

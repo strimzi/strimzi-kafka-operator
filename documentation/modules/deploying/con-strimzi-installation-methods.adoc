@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // This downstream module is included in:
 //
 // deploying.adoc (downstream)

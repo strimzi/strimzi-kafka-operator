@@ -1,0 +1,46 @@
+:_mod-docs-content-type: PROCEDURE
+
+[id='proc-convert-custom-resource-yaml-{context}']
+= Converting custom resource YAML files
+
+[role="_abstract"]
+Use the Strimzi API conversion tool with the `convert-file` command to convert Strimzi custom resources from YAML files to the `v1` API.
+
+Each input file can contain multiple resource definitions.
+The conversion operation converts all Strimzi custom resources while leaving other Kubernetes resources unchanged.
+
+.Procedure
+
+. Run `convert-file` with the `--file` option to specify the input file.
++
+Choose one of the following output options:
++
+* Use `--in-place` to overwrite the source file.
+* Use `--output <file>` to create a new file.
+* Omit both options to print the converted resource to standard output.
++
+To report on the operation, add a `--log-level` flag.
++
+Example commands:
++
+[source,shell]
+----
+# Convert the input file and print the output with INFO logging:
+bin/v1-api-conversion.sh convert-file --file <input.yaml> --log-level INFO
+
+# Convert and overwrite the input file:
+bin/v1-api-conversion.sh convert-file --file <input.yaml> --in-place
+
+# Convert and write to a new file: 
+bin/v1-api-conversion.sh convert-file --file <input.yaml> --output <output.yaml>
+
+# Convert multiple input files and print the output: 
+bin/v1-api-conversion.sh convert-file --file <input1.yaml> --file <input2.yaml>
+----
+
+. Review the log output to ensure that all custom resources converted successfully and address any errors.
+Inspect the output YAML and confirm that the `apiVersion` for Strimzi resources is set to **`kafka.strimzi.io/v1`**.
+
+. Apply the converted files to the cluster using `kubectl apply -f` or `kubectl replace -f`.
+
+. Ensure that all conversions complete successfully before proceeding to upgrade the CRDs.

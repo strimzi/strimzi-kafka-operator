@@ -11,12 +11,14 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -33,6 +35,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 
@@ -174,5 +177,13 @@ class RecoveryST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, KAFKA_REPLICAS).build());
         KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
+    }
+
+    @AfterEach
+    void cleanup() {
+        // In order to properly delete all resources, we need to delete KafkaNodePools first (as the correct deletion is KafkaNodePools -> Kafka)
+        // This will ensure everything will be deleted properly
+        List<KafkaNodePool> nodePools = CrdClients.kafkaNodePoolClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).list().getItems();
+        KubeResourceManager.get().deleteResourceAsyncWait(nodePools.toArray(new KafkaNodePool[0]));
     }
 }

@@ -10,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.47.0
+defaultImageTag: 0.48.0
 
 image:
   registry: ""
@@ -42,6 +42,7 @@ annotations: {}
 labels: {}
 nodeSelector: {}
 deploymentAnnotations: {}
+deploymentStrategy: {}
 priorityClassName: ""
 
 podSecurityContext: {}
@@ -124,7 +125,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.32.0
+    tag: 0.33.1
 kafkaExporter:
   image:
     registry: ""

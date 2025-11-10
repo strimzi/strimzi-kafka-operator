@@ -12,6 +12,6 @@ public enum DeploymentTypes {
     DrainCleaner,
     Scraper,
     AdminClient,
-    Minio,
+    SeaweedFS,
     AccessOperator
 }

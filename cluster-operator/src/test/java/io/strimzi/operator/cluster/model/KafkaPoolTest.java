@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
@@ -19,6 +17,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -56,14 +55,6 @@ public class KafkaPoolTest {
                     .endKafka()
                 .endSpec()
                 .build();
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("Kafka")
-            .withName(CLUSTER_NAME)
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private final static KafkaNodePool POOL = new KafkaNodePoolBuilder()
             .withNewMetadata()
                 .withName("pool")
@@ -86,7 +77,7 @@ public class KafkaPoolTest {
                 POOL,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         );
 
@@ -145,7 +136,7 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         );
 
@@ -176,7 +167,7 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         );
 
@@ -216,7 +207,7 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         );
 
@@ -261,7 +252,7 @@ public class KafkaPoolTest {
                 POOL,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         );
 
@@ -307,6 +298,9 @@ public class KafkaPoolTest {
                             .withXmx("8192m")
                         .endJvmOptions()
                         .withNewTemplate()
+                            .withNewKafkaContainer()
+                                .addToEnv(new ContainerEnvVarBuilder().withName("MY_OTHER_ENV_VAR").withValue("my-other-env-var-value").build())
+                            .endKafkaContainer()
                             .withNewInitContainer()
                                 .addToEnv(new ContainerEnvVarBuilder().withName("MY_INIT_ENV_VAR").withValue("my-init-env-var-value").build())
                             .endInitContainer()
@@ -321,7 +315,7 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         );
 
@@ -332,7 +326,7 @@ public class KafkaPoolTest {
         assertThat(kp.gcLoggingEnabled, is(true));
         assertThat(kp.jvmOptions.getXmx(), is("4096m"));
         assertThat(kp.templateContainer.getEnv(), is(List.of(new ContainerEnvVarBuilder().withName("MY_ENV_VAR").withValue("my-env-var-value").build())));
-        assertThat(kp.templateInitContainer, is(nullValue()));
+        assertThat(kp.templateInitContainer.getEnv(), is(List.of(new ContainerEnvVarBuilder().withName("MY_INIT_ENV_VAR").withValue("my-init-env-var-value").build())));
         assertThat(kp.templatePod, is(nullValue()));
         assertThat(kp.templatePerBrokerIngress, is(nullValue()));
         assertThat(kp.templatePodSet, is(nullValue()));
@@ -376,7 +370,7 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         );
 
@@ -387,7 +381,7 @@ public class KafkaPoolTest {
         assertThat(kp.gcLoggingEnabled, is(true));
         assertThat(kp.jvmOptions.getXmx(), is("8192m"));
         assertThat(kp.templateContainer.getEnv(), is(List.of(new ContainerEnvVarBuilder().withName("MY_ENV_VAR").withValue("my-env-var-value").build())));
-        assertThat(kp.templateInitContainer, is(nullValue()));
+        assertThat(kp.templateInitContainer.getEnv(), is(List.of(new ContainerEnvVarBuilder().withName("MY_INIT_ENV_VAR").withValue("my-init-env-var-value").build())));
         assertThat(kp.templatePod, is(nullValue()));
         assertThat(kp.templatePerBrokerIngress, is(nullValue()));
         assertThat(kp.templatePodSet, is(nullValue()));
@@ -413,7 +407,7 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         ));
 
@@ -436,7 +430,7 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of(), Set.of()),
                 null,
-                OWNER_REFERENCE,
+                ResourceUtils.DUMMY_OWNER_REFERENCE,
                 SHARED_ENV_PROVIDER
         ));
 

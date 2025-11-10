@@ -324,9 +324,6 @@ public class KafkaClusterCreator {
             KafkaVersion.Lookup versions,
             SharedEnvironmentProvider sharedEnvironmentProvider
     ) {
-        // We prepare the KafkaPool models and create the KafkaCluster model
-        // KRaft to be considered not only when fully enabled (KRAFT = 4) but also when a migration is about to start (PRE_MIGRATION = 1)
-        // NOTE: this is important to drive the right validation happening in node pools (i.e. roles on node pools, storage, number of controllers, ...)
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePoolCrs, oldStorage, versionChange, sharedEnvironmentProvider);
         String clusterId = NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePoolCrs);
         return KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, versions, versionChange, clusterId, sharedEnvironmentProvider);

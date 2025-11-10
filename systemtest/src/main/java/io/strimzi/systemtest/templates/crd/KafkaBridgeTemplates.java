@@ -4,9 +4,15 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
+import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.utils.FileUtils;
 
 public class KafkaBridgeTemplates {
+    private static final String METRICS_BRIDGE_CONFIG_MAP_SUFFIX = "-bridge-metrics";
+    private static final String CONFIG_MAP_KEY = "metrics-config.yml";
 
     private KafkaBridgeTemplates() {}
 
@@ -48,8 +54,25 @@ public class KafkaBridgeTemplates {
     ) {
         return defaultKafkaBridge(namespaceName, bridgeName, bootstrap, kafkaBridgeReplicas)
             .editSpec()
-                .withEnableMetrics(true)
+                .withNewJmxPrometheusExporterMetricsConfig()
+                    .withNewValueFrom()
+                        .withNewConfigMapKeyRef(CONFIG_MAP_KEY, getConfigMapName(bridgeName), false)
+                    .endValueFrom()
+                .endJmxPrometheusExporterMetricsConfig()
             .endSpec();
+    }
+
+    public static ConfigMap bridgeMetricsConfigMap(String namespaceName, String bridgeName) {
+        return new ConfigMapBuilder(FileUtils.extractConfigMapFromYAMLWithResources(TestConstants.PATH_TO_KAFKA_BRIDGE_METRICS_CONFIG, "bridge-metrics"))
+            .editOrNewMetadata()
+                .withNamespace(namespaceName)
+                .withName(getConfigMapName(bridgeName))
+            .endMetadata()
+            .build();
+    }
+
+    private static String getConfigMapName(String kafkaConnectClusterName) {
+        return kafkaConnectClusterName + METRICS_BRIDGE_CONFIG_MAP_SUFFIX;
     }
 
     private static KafkaBridgeBuilder defaultKafkaBridge(

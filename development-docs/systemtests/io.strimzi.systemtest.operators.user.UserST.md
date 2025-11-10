@@ -2,7 +2,7 @@
 
 **Description:** Test suite for various Kafka User operations and configurations.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

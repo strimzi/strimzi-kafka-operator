@@ -2,7 +2,7 @@
 
 **Description:** This test suite validates the functionality and behavior of Cruise Control across multiple Kafka scenarios. It ensures correct operation under various configurations and conditions.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

@@ -2,7 +2,7 @@
 
 **Description:** This suite verifies logging behavior under various configurations and scenarios.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
@@ -113,5 +113,5 @@
 **Labels:**
 
 * [logging](labels/logging.md)
-* `mirror-maker-2` (description file doesn't exist)
+* [mirror-maker-2](labels/mirror-maker-2.md)
 

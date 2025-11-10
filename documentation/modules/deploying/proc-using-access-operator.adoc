@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 // This assembly is included in the following assemblies:
 //
 // security/assembly-access-operator.adoc
@@ -130,3 +132,21 @@ data:
 . Make the secret available to your application. 
 + 
 Applications can reference the secret directly, or you can inject it into an application's environment using an operator to implement the link:https://servicebinding.io/spec/core/1.0.0/[Service Binding specification].
++
+Optionally, you can specify the name of the secret by adding the `secretName` field to the `KafkaAccess` resource specification:
++
+[source,yaml]
+----
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: my-kafka-access
+spec:
+  kafka:
+    name: my-cluster
+    namespace: kafka
+    listener: tls
+  secretName: my-custom-secret
+----
++
+If no `secretName` is provided, the secret name defaults to the name of the `KafkaAccess` resource.

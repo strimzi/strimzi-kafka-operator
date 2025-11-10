@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
@@ -60,6 +59,8 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.NodeOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleBindingOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.RoleOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
@@ -144,6 +145,8 @@ public class KafkaReconciler {
     private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     private final PodOperator podOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
+    private final RoleOperator roleOperator;
+    private final RoleBindingOperator roleBindingOperator;
     private final RouteOperator routeOperator;
     private final IngressOperator ingressOperator;
     private final NodeOperator nodeOperator;
@@ -219,6 +222,8 @@ public class KafkaReconciler {
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
         this.podOperator = supplier.podOperations;
         this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
+        this.roleBindingOperator = supplier.roleBindingOperations;
+        this.roleOperator = supplier.roleOperations;
         this.routeOperator = supplier.routeOperations;
         this.ingressOperator = supplier.ingressOperations;
         this.nodeOperator = supplier.nodeOperator;
@@ -249,6 +254,8 @@ public class KafkaReconciler {
                 .compose(i -> pvcs(kafkaStatus))
                 .compose(i -> serviceAccount())
                 .compose(i -> initClusterRoleBinding())
+                .compose(i -> kafkaRole())
+                .compose(i -> kafkaRoleBinding())
                 .compose(i -> scaleDown())
                 .compose(i -> updateNodePoolStatuses(kafkaStatus))
                 .compose(i -> listeners())
@@ -539,6 +546,39 @@ public class KafkaReconciler {
     }
 
     /**
+     * Manages the Kafka role. This Role is always created and lives in
+     * the same namespace as the Kafka Cluster resource. This is used to load
+     * certificates from secrets directly.
+     *
+     * @return  Completes when the Role was successfully created or updated
+     */
+    protected Future<Void> kafkaRole() {
+        return roleOperator
+                .reconcile(
+                        reconciliation,
+                        reconciliation.namespace(),
+                        kafka.getComponentName(),
+                        kafka.generateRole()
+                ).mapEmpty();
+    }
+
+    /**
+     * Manages the Kafka Role Bindings.
+     * The Role Binding is in the namespace where the Kafka Cluster resource exists.
+     *
+     * @return  Completes when the Role Binding was successfully created or updated
+     */
+    protected Future<Void> kafkaRoleBinding() {
+        return roleBindingOperator
+                .reconcile(
+                        reconciliation,
+                        reconciliation.namespace(),
+                        KafkaResources.kafkaRoleBindingName(reconciliation.name()),
+                        kafka.generateRoleBindingForRole())
+                .mapEmpty();
+    }
+
+    /**
      * Scales down the Kafka cluster if needed. Kafka scale-down is done in one go.
      *
      * @return  Future which completes when the scale-down is finished
@@ -673,7 +713,6 @@ public class KafkaReconciler {
                                     .map(kv -> kv.getKey() + "://" + kv.getValue())
                                     .sorted()
                                     .collect(Collectors.joining(" "));
-                            nodeConfiguration += cm.getData().getOrDefault(KafkaCluster.BROKER_LISTENERS_FILENAME, "");
                         }
 
                         // Changes to regular Kafka configuration are handled through the KafkaRoller which decides whether to roll the pod or not
@@ -683,12 +722,6 @@ public class KafkaReconciler {
 
                         // We collect the configuration options related to various plugins
                         nodeConfiguration += kc.unknownConfigsWithValues(kafka.getKafkaVersion()).toString();
-
-                        // We collect the information relevant to controller-only nodes
-                        if (pool.isController() && !pool.isBroker())   {
-                            // For controllers only, we extract the controller-relevant configurations and use it in the configuration annotations
-                            nodeConfiguration = kc.controllerConfigsWithValues().toString();
-                        }
 
                         // We store hash of the broker configurations for later use in Pod and in rolling updates
                         this.brokerConfigurationHash.put(nodeId, Util.hashStub(nodeConfiguration));
@@ -879,7 +912,7 @@ public class KafkaReconciler {
     }
 
     /**
-     * Roles the Kafka brokers (if needed).
+     * Rolls the Kafka brokers (if needed).
      *
      * @param podSetDiffs   Map with the PodSet reconciliation results
      *
@@ -1181,7 +1214,6 @@ public class KafkaReconciler {
     /* test */ Future<Void> updateKafkaStatus(KafkaStatus kafkaStatus) {
         kafkaStatus.setListeners(listenerReconciliationResults.listenerStatuses);
         kafkaStatus.setKafkaVersion(kafka.getKafkaVersion().version());
-        kafkaStatus.setKafkaMetadataState(KafkaMetadataState.KRaft);
 
         return Future.succeededFuture();
     }

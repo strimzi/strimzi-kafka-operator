@@ -132,7 +132,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:NPathComplexity", "deprecation"}) // .status.kafkaMetadataState is deprecated
     public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
         Promise<KafkaStatus> createOrUpdatePromise = Promise.promise();
         ReconciliationState reconcileState = createReconciliationState(reconciliation, kafkaAssembly);
@@ -169,12 +169,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         && kafkaAssembly.getStatus().getKafkaMetadataVersion() != null)  {
                     // Copy the metadata version if needed
                     status.setKafkaMetadataVersion(kafkaAssembly.getStatus().getKafkaMetadataVersion());
-                }
-
-                if (status.getKafkaMetadataState() == null
-                        && kafkaAssembly.getStatus().getKafkaMetadataState() != null)  {
-                    // Copy the metadata state if needed
-                    status.setKafkaMetadataState(kafkaAssembly.getStatus().getKafkaMetadataState());
                 }
 
                 if (status.getAutoRebalance() == null
@@ -217,6 +211,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
+        // The .status.kafkaMetadataState field is deprecated and we do not set it anymore. But we can still use it to
+        // check the state in the older resources previously reconciled by other operators. And we can prevent
+        // reconciliation of clusters not yet migrated to KRaft that way.
         if (ReconcilerUtils.nonMigratedCluster(reconcileState.kafkaAssembly)) {
             throw new InvalidConfigurationException("Strimzi " + OPERATOR_VERSION + " supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi " + OPERATOR_VERSION + ".");
         }

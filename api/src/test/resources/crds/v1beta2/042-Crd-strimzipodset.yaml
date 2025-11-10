@@ -1,0 +1,208 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: strimzipodsets.core.strimzi.io
+  labels:
+    app: strimzi
+    strimzi.io/crd-install: "true"
+spec:
+  group: core.strimzi.io
+  names:
+    kind: StrimziPodSet
+    listKind: StrimziPodSetList
+    singular: strimzipodset
+    plural: strimzipodsets
+    shortNames:
+    - sps
+    categories:
+    - strimzi
+  scope: Namespaced
+  conversion:
+    strategy: None
+  versions:
+  - name: v1
+    served: true
+    storage: false
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: Pods
+      description: Number of pods managed by the StrimziPodSet
+      jsonPath: .status.pods
+      type: integer
+    - name: Ready Pods
+      description: Number of ready pods managed by the StrimziPodSet
+      jsonPath: .status.readyPods
+      type: integer
+    - name: Current Pods
+      description: Number of up-to-date pods managed by the StrimziPodSet
+      jsonPath: .status.currentPods
+      type: integer
+    - name: Age
+      description: Age of the StrimziPodSet
+      jsonPath: .metadata.creationTimestamp
+      type: date
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          apiVersion:
+            type: string
+            description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+          kind:
+            type: string
+            description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+          metadata:
+            type: object
+          spec:
+            type: object
+            properties:
+              selector:
+                type: object
+                properties:
+                  matchExpressions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        values:
+                          type: array
+                          items:
+                            type: string
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
+              pods:
+                type: array
+                items:
+                  x-kubernetes-preserve-unknown-fields: true
+                  type: object
+            required:
+            - selector
+            - pods
+          status:
+            type: object
+            properties:
+              conditions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                    lastTransitionTime:
+                      type: string
+                    reason:
+                      type: string
+                    message:
+                      type: string
+              observedGeneration:
+                type: integer
+              pods:
+                type: integer
+              readyPods:
+                type: integer
+              currentPods:
+                type: integer
+        required:
+        - spec
+  - name: v1beta2
+    served: true
+    storage: true
+    deprecated: true
+    deprecationWarning: Version v1beta2 of the StrimziPodSet API is deprecated. Please use the v1 version instead.
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: Pods
+      description: Number of pods managed by the StrimziPodSet
+      jsonPath: .status.pods
+      type: integer
+    - name: Ready Pods
+      description: Number of ready pods managed by the StrimziPodSet
+      jsonPath: .status.readyPods
+      type: integer
+    - name: Current Pods
+      description: Number of up-to-date pods managed by the StrimziPodSet
+      jsonPath: .status.currentPods
+      type: integer
+    - name: Age
+      description: Age of the StrimziPodSet
+      jsonPath: .metadata.creationTimestamp
+      type: date
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          apiVersion:
+            type: string
+            description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+          kind:
+            type: string
+            description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+          metadata:
+            type: object
+          spec:
+            type: object
+            properties:
+              selector:
+                type: object
+                properties:
+                  matchExpressions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        values:
+                          type: array
+                          items:
+                            type: string
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
+              pods:
+                type: array
+                items:
+                  x-kubernetes-preserve-unknown-fields: true
+                  type: object
+            required:
+            - selector
+            - pods
+          status:
+            type: object
+            properties:
+              conditions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                    lastTransitionTime:
+                      type: string
+                    reason:
+                      type: string
+                    message:
+                      type: string
+              observedGeneration:
+                type: integer
+              pods:
+                type: integer
+              readyPods:
+                type: integer
+              currentPods:
+                type: integer

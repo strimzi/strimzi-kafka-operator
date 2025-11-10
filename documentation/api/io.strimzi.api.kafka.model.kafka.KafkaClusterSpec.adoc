@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 Configures a Kafka cluster using the `Kafka` custom resource.
 
 The `config` properties are one part of the overall configuration for the resource.
@@ -116,9 +118,6 @@ Be aware that if the configured image is not compatible with Strimzi images, it 
 
 [id='property-kafka-logging-{context}']
 = Logging
-
-WARNING: Kafka 3.9 and earlier versions use log4j1 for logging.
-For log4j1-based configuration examples, refer to the link:{DocArchive}[Strimzi 0.45 documentation^]. 
 
 Kafka has its own preconfigured loggers:
 

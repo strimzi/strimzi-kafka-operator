@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // assembly-using-the-topic-operator.adoc
@@ -5,6 +7,7 @@
 [id='con-tuning-topic-request-batches-{context}']
 = Tuning request batches for topic operations
 
+[role="_abstract"]
 The Topic Operator uses the request batching capabilities of the Kafka Admin API for operations on topic resources. 
 You can fine-tune the batching mechanism using the following operator configuration properties:
 

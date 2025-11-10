@@ -6,11 +6,15 @@ rm -rf ~/.kube
 KIND_VERSION=${KIND_VERSION:-"v0.29.0"}
 KIND_CLOUD_PROVIDER_VERSION=${KIND_CLOUD_PROVIDER_VERSION:-"v0.6.0"}
 # To properly upgrade Kind version check the releases in github https://github.com/kubernetes-sigs/kind/releases and use proper image based on Kind version
-KIND_DEFAULT_IMAGE="kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f"
-KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-$KIND_DEFAULT_IMAGE}
+KIND_LATEST_DEFAULT_IMAGE="kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f"
+KIND_OLDEST_DEFAULT_IMAGE="kindest/node:v1.27.16@sha256:2d21a61643eafc439905e18705b8186f3296384750a835ad7a005dceb9546d20"
+KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-$KIND_LATEST_DEFAULT_IMAGE}
 # Replace latest as one special version
 if [[ "${KIND_NODE_IMAGE}" == "latest" ]]; then
-    KIND_NODE_IMAGE=$KIND_DEFAULT_IMAGE
+    KIND_NODE_IMAGE=$KIND_LATEST_DEFAULT_IMAGE
+fi
+if [[ "${KIND_NODE_IMAGE}" == "oldest" ]]; then
+    KIND_NODE_IMAGE=$KIND_OLDEST_DEFAULT_IMAGE
 fi
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 DOCKER_CMD="${DOCKER_CMD:-docker}"

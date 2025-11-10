@@ -201,6 +201,7 @@ public interface TestConstants {
     String PATH_TO_KAFKA_CONNECT_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/connect/kafka-connect.yaml";
     String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-connect-metrics.yaml";
     String PATH_TO_KAFKA_BRIDGE_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/bridge/kafka-bridge.yaml";
+    String PATH_TO_KAFKA_BRIDGE_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-bridge-metrics.yaml";
     String PATH_TO_KAFKA_REBALANCE_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-rebalance-full.yaml";
     String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-cruise-control.yaml";
     String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-cruise-control-metrics.yaml";
@@ -351,4 +352,9 @@ public interface TestConstants {
      * Label for Kubernetes worker nodes
      */
     String WORKER_NODE_LABEL = "node-role.kubernetes.io/worker";
+
+    /**
+     * API version
+     */
+    String V1_BETA_2_API_VERSION = "kafka.strimzi.io/v1beta2";
 }

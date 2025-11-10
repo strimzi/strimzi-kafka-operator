@@ -1,5 +1,62 @@
 # CHANGELOG
 
+## 0.50.0
+
+* Nothing here yet, but we will surely develop something new pretty soon 😉
+
+## 0.49.0
+
+* Add support for Kafka 4.0.1
+* Set `blockOwnerDeletion` to `true` in the owner references in Strimzi managed resources.
+  Deleting the Strimzi custom resources will now by default wait for the deletion of all the owned Kubernetes resources.
+* Introduce the `v1` API to Strimzi CRDs and move User and Topic Operators to use it.
+  The `v1` APi Conversion Tool can be used to convert the resources in files or in your Kubernetes cluter from the `v1beta2` API to the `v1` API.
+* Make `.spec` sections required in the `v1` version of all Strimzi custom resources.
+* Make `.spec.replicas` properties required in the `v1` of the `KafkaBridge`, `KafkaConnect`, and `KafkaMirrorMaker2` custom resources.
+* New fields `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` in the `KafkaConnect` custom resource for configuring Connect's group ID and internal topics.
+* New way of defining the target (`.spec.target`) and source clusters (`.spec.mirrors[].source`) in the `KafkaMirrorMaker2` custom resources.
+* Improved behavior for merging the `Kafka` and `KafkaNodePool` `template` sections.
+  The templates are now merged at a property level.
+  If two different properties are defined in the two `template` sections, both are applied.
+  If the same property is defined in both `template` sections, only the property from the `KafkaNodePool` template is used.
+  See the [Strimzi Proposal 120](https://github.com/strimzi/proposals/blob/main/120-improve-template-behavior-in-Kafka-node-pools.md) for more details.
+* Strimzi Access Operator installation files updated to version 0.2.0
+* New feature gate `UseConnectBuildWithBuildah` (disabled by default) for running the Connect Build feature with Buildah instead of Kaniko on Kubernetes - according to [Strimzi Proposal #114](https://github.com/strimzi/proposals/blob/main/114-use-buildah-instead-of-kaniko.md).
+* New field `spec.version` in the `KafkaConnecter` custom resource, and new `version` fields for each connector under `spec.mirrors[]` in the `KafkaMirrorMaker2` custom resource for configuring the desired version of a connector.
+* New field `.volumeAttributesClass` for `persistent-claim` type Storage in `Kafka` and `KafkaNodePool` custom resource. Enables configuring `VolumeAttributesClass` for `PersistentVolumeClaim`s available since Kubernetes v1.34.
+* Update OAuth library to 0.17.1 to fix `KeycloakAuthorizer` issue on Kafka 4.1.0
+
+### Major changes, deprecations, and removals
+
+* **This version introduces a new API version to our CRDs.**
+  **Before upgrading to Strimzi 0.49 or newer, make sure that you update your `KafkaUser` resources to use the `.spec.authorization.acls[]operations` field instead of the deprecated `.spec.authorization.acls[]operation`.**
+  **Especially when using Helm, make sure that the CRDs are updated when you upgrade the operator.**
+* **When rack-awareness is enabled in the `Kafka` custom resource (`.spec.kafka.rack`), Strimzi will not automatically add the best-effort-affinity rules for spreading the Kafka Pods between the zones.**
+  **Please make sure to set your own `topologySpreadConstraint` or `affinity` rules instead.**
+* The `.status.kafkaMetadataState` field in the `Kafka` custom resource is deprecated and not used anymore.
+* The `type: oauth` authentication in Kafka brokers and Kafka clients (Kafka Connect, MirrorMaker 2, and Strimzi HTTP Bridge) has been deprecated.
+  Please use the `type: custom` authentication instead.
+  The Strimzi OAuth library continues to be packaged with the Strimzi container images.
+  Follow the documentation for the examples and migration details.
+* The Keycloak authorization (`type: keycloak`) has been deprecated and will be removed in the future.
+  To use the Keycloak authorizer, you can use the `type: custom` authorization.
+  The Strimzi OAuth library with the Keycloak authorizer continues to be packaged with the Strimzi container images.
+  Follow the documentation for the examples and migration details.
+* CPU and memory configuration for the Kafka nodes in `.spec.kafka.resources` is deprecated and will be removed in the `v1` CRD API.
+  Please use the `KafkaNodePool` resources to configure CPU and memory for Kafka nodes.
+* The `group.id`, `config.storage.topic`, `offset.storage.topic`, and `status.storage.topic` fields in `.spec.config` section of the `KafkaConnect` resource are deprecated and will be forbidden in the `v1` CRD API.
+  Please use the new `.spec.groupId`, `.spec.configStorageTopic`, `.spec.offsetStorageTopic`, and `.spec.statusStorageTopic` fields instead.
+* The `.spec.connectCluster`, `.spec.clusters`, `.spec.mirrors[].sourceCluster`, `.spec.mirrors[].targetCluster`, and `.spec.mirrors[].heartbeatConnector` fields of the `KafkaMirrorMaker2` resource are deprecated and will be removed in the `v1` CRD API.
+  Please use the new fields `.spec.target` and `.spec.mirrors[].source` instead to configure the source and target clusters.
+  If you want to deploy and run the Heartbeat connector, you can use separate `KafkaConnect` and `KafkaConnector` custom resources.
+* The `.spec.build.output.additionalKanikoOptions` field in the `KafkaConnect` custom resource is deprecated and will be removed in the future. 
+  * Use `.spec.build.output.additionalBuildOptions` field instead.
+* The way the `template` properties in the `Kafka` and `KafkaNodePool` resources are handled has changed.
+  See the [0.49.0 section](https://github.com/strimzi/strimzi-kafka-operator/blob/main/CHANGELOG.md#0490) or the [Strimzi Proposal 120](https://github.com/strimzi/proposals/blob/main/120-improve-template-behavior-in-Kafka-node-pools.md) for more details.
+* Kafka nodes are now configured with PEM certificates instead of P12/JKS for keystore and truststore.
+* Configuring `connector.plugin.version` under `spec.config` in the `KafkaConnector` custom resource, and under `spec.mirrors[].sourceConnector.config`, `spec.mirrors[].checkpointConnector.config`, and `spec.mirrors[].heartbeatConnector.config` in the `KafkaMirrorMaker2` custom resource is deprecated and will be forbidden in Strimzi 0.50.0.
+  Instead, please use `spec.version` in the `KafkaConnecter` custom resource, and the connector specific `version` fields in the `KafkaMirrorMaker2` custom resource.
+
 ## 0.48.0
 
 * Add support for Kafka 4.1.0.
@@ -16,6 +73,12 @@
 * Extend the EntityOperator, Cruise Control and KafkaExporter deployment to support PDB via the template section in the CR spec.
 * Added support for [KIP-1073](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1073:+Return+fenced+brokers+in+DescribeCluster+response)
   to get the list of the registered brokers by using the Kafka Admin API. It replaces the usage of the `.status.registeredNodeIds` field in Kafka.
+* Added support for [KIP-745](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=181308623) in Kafka Connector and Mirror Maker 2, allowing the usage of 
+  `includeTasks` and `onlyFailed` arguments in Kafka connectors restart.
+* Update OAuth library to 0.17.0.
+* Additional OAuth configuration options have been added for 'oauth' authentication on the listener and the client.
+  On the listener `clientGrantType` has been added.
+  On the client `grantType` has been added.
 
 ### Major changes, deprecations and removals
 

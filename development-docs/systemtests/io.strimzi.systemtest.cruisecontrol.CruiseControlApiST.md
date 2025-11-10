@@ -2,7 +2,7 @@
 
 **Description:** This test suite verifies that Cruise Control's basic API requests function correctly
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

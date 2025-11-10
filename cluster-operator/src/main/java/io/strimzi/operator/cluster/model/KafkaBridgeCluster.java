@@ -5,8 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.fabric8.kubernetes.api.model.Affinity;
-import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -203,7 +201,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
             result.metrics = new StrimziMetricsReporterModel(spec, DEFAULT_METRICS_ALLOW_LIST);
         } else {
-            result.isLegacyMetricsConfigEnabled = spec.getEnableMetrics();
+            result.isLegacyMetricsConfigEnabled = Boolean.TRUE.equals(spec.getEnableMetrics());
         }
 
         result.setTls(spec.getTls() != null ? spec.getTls() : null);
@@ -370,7 +368,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                         templatePod,
                         DEFAULT_POD_LABELS,
                         annotations,
-                        getMergedAffinity(),
+                        ModelUtils.affinityWithRackLabelSelector(templatePod, rack),
                         ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(isOpenShift),
@@ -508,18 +506,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      */
     public KafkaBridgeHttpConfig getHttp() {
         return this.http;
-    }
-
-    /**
-     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
-     */
-    protected Affinity getMergedAffinity() {
-        Affinity userAffinity = templatePod != null && templatePod.getAffinity() != null ? templatePod.getAffinity() : new Affinity();
-        AffinityBuilder builder = new AffinityBuilder(userAffinity);
-        if (rack != null) {
-            builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
-        }
-        return builder.build();
     }
 
     /**

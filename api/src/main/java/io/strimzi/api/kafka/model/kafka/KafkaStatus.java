@@ -109,11 +109,15 @@ public class KafkaStatus extends Status {
         this.kafkaMetadataVersion = kafkaMetadataVersion;
     }
 
-    @Description("Defines where cluster metadata are stored. Since Kafka KRaft has been fully adopted, the only applicable value is `KRaft`.")
+    @Description("Defines where cluster metadata are stored. This property is deprecated and not used anymore.")
+    @Deprecated
+    @DeprecatedProperty(description = "The `kafkaMetadataState` property is deprecated and will be removed in the future.")
+    @PresentInVersions("v1beta2")
     public KafkaMetadataState getKafkaMetadataState() {
         return kafkaMetadataState;
     }
 
+    @SuppressWarnings("deprecation") // KafkaMetadataState is deprecated
     public void setKafkaMetadataState(KafkaMetadataState metadataState) {
         this.kafkaMetadataState = metadataState;
     }

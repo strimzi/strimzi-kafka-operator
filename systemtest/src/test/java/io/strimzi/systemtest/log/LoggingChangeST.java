@@ -61,7 +61,6 @@ import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -2132,22 +2131,18 @@ class LoggingChangeST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @TestDoc(
-        description = @Desc("This test case checks that changing Logging configuration from internal to external triggers Rolling Update."),
+        description = @Desc("This test case checks that changing Logging configuration from internal to external will not trigger Rolling Update."),
         steps = {
             @Step(value = "Deploy Kafka cluster, without any logging related configuration.", expected = "Cluster is deployed."),
-            @Step(value = "Modify Kafka by changing specification of logging to new external value.", expected = "Change in logging specification triggers Rolling Update."),
-            @Step(value = "Modify ConfigMap to new logging format.", expected = "Change in logging specification triggers Rolling Update.")
+            @Step(value = "Modify Kafka by changing specification of logging to new external value.", expected = "Change in logging specification doesn't trigger Rolling Update."),
+            @Step(value = "Modify ConfigMap to new logging format.", expected = "Change in logging specification doesn't trigger Rolling Update.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
             @Label(value = TestDocsLabels.LOGGING)
         }
     )
-    void testChangingInternalToExternalLoggingTriggerRollingUpdate() {
-        // This test would need some changes since Kafka 4.0.0 uses Log4j2 which provides dynamic logging changes for the brokers and is therefore disabled.
-        // This test can be enabled again once we fix the issue: https://github.com/strimzi/strimzi-kafka-operator/issues/11312
-        Assumptions.assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
-
+    void testChangingInternalToExternalLoggingDoesNotTriggerRollingUpdate() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
@@ -2155,26 +2150,53 @@ class LoggingChangeST extends AbstractST {
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+        );
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
+        String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        final String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-            "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-            "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
-            "kafka.root.logger.level=INFO\n" +
-            "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-            "log4j.logger.kafka=INFO\n" +
-            "log4j.logger.org.apache.kafka=INFO\n" +
-            "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
-            "log4j.logger.kafka.network.Processor=INFO\n" +
-            "log4j.logger.kafka.server.KafkaApis=INFO\n" +
-            "log4j.logger.kafka.network.RequestChannel$=INFO\n" +
-            "log4j.logger.kafka.controller=INFO\n" +
-            "log4j.logger.kafka.log.LogCleaner=INFO\n" +
-            "log4j.logger.state.change.logger=TRACE\n" +
-            "log4j.logger.kafka.authorizer.logger=INFO";
+        assertThat(KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 0).contains("root=DEBUG"), is(true));
+
+        final String loggersConfig = """
+            status = WARN
+            # Periodic interval for Log4j2 to check the properties and change it accordingly
+            monitorInterval = 10
+            # Dynamic property
+            property.kafka.root.logger.level = INFO
+            appender.console.type = Console
+            appender.console.name = CONSOLE
+            appender.console.target = SYSTEM_OUT
+            appender.console.layout.type = PatternLayout
+            appender.console.layout.pattern = %d{ISO8601} %p %m (%c) [%t]
+            rootLogger.level = ${kafka.root.logger.level}
+            rootLogger.appenderRef.console.ref = CONSOLE
+            logger.kafka.name = kafka
+            logger.kafka.level = INFO
+            logger.orgapachekafka.name = org.apache.kafka
+            logger.orgapachekafka.level = INFO
+            logger.kafkarequest.name = kafka.request.logger
+            logger.kafkarequest.level = WARN
+            logger.kafkarequest.additivity = false
+            logger.kafkarequest.appenderRef.console.ref = CONSOLE
+            logger.kafkanetproc.name = kafka.network.Processor
+            logger.kafkanetproc.level = INFO
+            logger.kafkaserverapis.name = kafka.server.KafkaApis
+            logger.kafkaserverapis.level = INFO
+            logger.kafkarequestchannel.name = kafka.network.RequestChannel$
+            logger.kafkarequestchannel.level = INFO
+            logger.kafkacontroller.name = kafka.controller
+            logger.kafkacontroller.level = INFO
+            logger.kafkalogcleaner.name = kafka.log.LogCleaner
+            logger.kafkalogcleaner.level = INFO
+            logger.statechange.name = state.change.logger
+            logger.statechange.level = TRACE
+            logger.kafkabrokerauth.name = kafka.authorizer.logger
+            logger.kafkabrokerauth.level = INFO
+            """;
 
         final String configMapLoggersName = "loggers-config-map";
         ConfigMap configMapLoggers = new ConfigMapBuilder()
@@ -2182,12 +2204,12 @@ class LoggingChangeST extends AbstractST {
                 .withNamespace(testStorage.getNamespaceName())
                 .withName(configMapLoggersName)
             .endMetadata()
-            .addToData("log4j-custom.properties", loggersConfig)
+            .addToData("log4j2-custom.properties", loggersConfig)
             .build();
 
         ConfigMapKeySelector log4jLoggimgCMselector = new ConfigMapKeySelectorBuilder()
             .withName(configMapLoggersName)
-            .withKey("log4j-custom.properties")
+            .withKey("log4j2-custom.properties")
             .build();
 
         KubeResourceManager.get().createResourceWithWait(configMapLoggers);
@@ -2195,25 +2217,31 @@ class LoggingChangeST extends AbstractST {
         KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setLogging(new ExternalLoggingBuilder()
                 .withNewValueFrom()
-                .withConfigMapKeyRef(log4jLoggimgCMselector)
+                    .withConfigMapKeyRef(log4jLoggimgCMselector)
                 .endValueFrom()
                 .build());
         });
 
-        LOGGER.info("Waiting for controller pods to roll after change in logging");
-        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
+        LOGGER.info("Waiting for controller pods to not roll after change in logging");
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPods);
 
-        LOGGER.info("Waiting for broker pods to roll after change in logging");
-        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+        LOGGER.info("Waiting for broker pods to not roll after change in logging");
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods);
 
-        configMapLoggers.getData().put("log4j-custom.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 0).contains("root=INFO"));
+
+        configMapLoggers.getData().put("log4j2-custom.properties", loggersConfig.replace("property.kafka.root.logger.level = INFO", "property.kafka.root.logger.level = WARN"));
         KubeResourceManager.get().updateResource(configMapLoggers);
 
-        LOGGER.info("Waiting for controller pods to roll after change in logging properties config map");
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
+        LOGGER.info("Waiting for controller pods to not roll after change in logging");
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPods);
 
-        LOGGER.info("Waiting for broker pods to roll after change in logging properties config map");
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+        LOGGER.info("Waiting for broker pods to not roll after change in logging");
+        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods);
+
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 0).contains("root=WARN"));
     }
 
     @BeforeAll

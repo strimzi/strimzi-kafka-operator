@@ -1,0 +1,28 @@
+:experimental:
+include::shared/attributes.adoc[]
+//turns off numbering
+:sectnums!:
+
+:context: str
+
+[id="glossary-book_{context}"]
+= Strimzi Glossary
+
+[role="_abstract"]
+This glossary explains terminology unique to Strimzi and its components. 
+It supports consistent usage and understanding across Strimzi documentation. 
+Terms from Kafka and Kubernetes are outside its scope.
+
+//glossary entries
+include::modules/glossary/a.adoc[leveloffset=+1]
+include::modules/glossary/c.adoc[leveloffset=+1]
+include::modules/glossary/d.adoc[leveloffset=+1]
+include::modules/glossary/e.adoc[leveloffset=+1]
+include::modules/glossary/f.adoc[leveloffset=+1]
+include::modules/glossary/k.adoc[leveloffset=+1]
+include::modules/glossary/l.adoc[leveloffset=+1]
+include::modules/glossary/m.adoc[leveloffset=+1]
+include::modules/glossary/n.adoc[leveloffset=+1]
+include::modules/glossary/s.adoc[leveloffset=+1]
+include::modules/glossary/t.adoc[leveloffset=+1]
+include::modules/glossary/u.adoc[leveloffset=+1]

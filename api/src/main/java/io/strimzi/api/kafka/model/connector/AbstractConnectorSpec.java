@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -28,7 +29,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"pause", "tasksMax", "config", "state", "listOffsets", "alterOffsets"})
+@JsonPropertyOrder({"pause", "tasksMax", "version", "config", "state", "listOffsets", "alterOffsets"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public abstract class AbstractConnectorSpec extends Spec {
@@ -39,6 +40,7 @@ public abstract class AbstractConnectorSpec extends Spec {
 
     private Integer tasksMax;
     private Boolean pause;
+    private String version;
     private Map<String, Object> config = new HashMap<>(0);
     private ConnectorState state;
 
@@ -66,6 +68,24 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
+     * @return Version or version range for the Kafka Connector
+     */
+    @Description("Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public String getVersion() {
+        return version;
+    }
+
+    /**
+     * Sets the plugin version string for the Kafka Connector
+     *
+     * @param version Version or version range
+     */
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    /**
      * @return  Connector configuration
      */
     @Description("The Kafka Connector configuration. The following properties cannot be set: " + FORBIDDEN_PARAMETERS)
@@ -89,6 +109,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     @Description("Whether the connector should be paused. Defaults to false.")
     @Deprecated
     @DeprecatedProperty(description = "Deprecated in Strimzi 0.38.0, use state instead.")
+    @PresentInVersions("v1beta2")
     public Boolean getPause() {
         return pause;
     }

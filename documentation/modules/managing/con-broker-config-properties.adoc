@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // This module is included in the following files:
 //
 // assembly-client-config.adoc
@@ -135,8 +137,6 @@ num.recovery.threads.per.data.dir=4 <4>
 Configuration updates to the thread pools for all brokers might occur dynamically at the cluster level.
 These updates are restricted to between half the current size and twice the current size.
 
-[TIP]
-====
 The following Kafka broker metrics can help with working out the number of threads required:
 
 * `kafka.network:type=SocketServer,name=NetworkProcessorAvgIdlePercent` provides metrics on the average time network threads are idle as a percentage.
@@ -144,7 +144,6 @@ The following Kafka broker metrics can help with working out the number of threa
 
 If there is 0% idle time, all resources are in use, which means that adding more threads might be beneficial.
 When idle time goes below 30%, performance may start to suffer.
-====
 
 If threads are slow or limited due to the number of disks, you can try increasing the size of the buffers for network requests to improve throughput:
 

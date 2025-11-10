@@ -5,11 +5,10 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
@@ -23,14 +22,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class NetworkPolicyUtilsTest {
     private final static String NAME = "my-np";
     private final static String NAMESPACE = "my-namespace";
-    private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
-            .withApiVersion("v1")
-            .withKind("my-kind")
-            .withName("my-name")
-            .withUid("my-uid")
-            .withBlockOwnerDeletion(false)
-            .withController(false)
-            .build();
     private static final Labels LABELS = Labels
             .forStrimziKind("my-kind")
             .withStrimziName("my-name")
@@ -45,11 +36,11 @@ public class NetworkPolicyUtilsTest {
                 NetworkPolicyUtils.createIngressRule(5678, List.of(NetworkPolicyUtils.createPeer(Map.of("key", "peer2"))))
         );
 
-        NetworkPolicy np = NetworkPolicyUtils.createNetworkPolicy(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, rules);
+        NetworkPolicy np = NetworkPolicyUtils.createNetworkPolicy(NAME, NAMESPACE, LABELS, ResourceUtils.DUMMY_OWNER_REFERENCE, rules);
 
         assertThat(np.getMetadata().getName(), is(NAME));
         assertThat(np.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(np.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(np.getMetadata().getOwnerReferences(), is(List.of(ResourceUtils.DUMMY_OWNER_REFERENCE)));
         assertThat(np.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(LABELS.strimziSelectorLabels().toMap()));
         assertThat(np.getSpec().getIngress(), is(rules));

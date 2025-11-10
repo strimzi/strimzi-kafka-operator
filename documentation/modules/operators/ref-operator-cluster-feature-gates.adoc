@@ -1,3 +1,5 @@
+:_mod-docs-content-type: REFERENCE
+
 // Module included in the following assemblies:
 //
 // deploying/deploying.adoc
@@ -93,6 +95,12 @@ The following table shows the maturity of the feature gates introduced across St
 ¦0.51 (planned)
 ¦0.54 (planned)
 
+ifdef::Section[]
+¦`UseConnectBuildWithBuildah`
+¦0.49
+¦0.52 (planned)
+¦0.55 (planned)
+endif::Section[]
 |===
 
 
@@ -137,8 +145,28 @@ If a conflict occurs in a managed field, the update is retried with `force = tru
 The conflict and the switch to forced apply are logged by the Cluster Operator.
 
 Ownership of individual fields is tracked through the `.metadata.managedFields` property of the resource being updated.
-.Enabling the `ServerSideApplyPhase1` feature gate
+
 To enable the `ServerSideApplyPhase1` feature gate, specify `+ServerSideApplyPhase1` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+ifdef::Section[]
+[id='ref-operator-use-connect-build-with-buildah-feature-gate-{context}']
+=== `UseConnectBuildWithBuildah` feature gate
+
+The `UseConnectBuildWithBuildah` feature gate has a default state of _disabled_.
+
+When enabled, the Connect Build feature uses Buildah instead of Kaniko to build Kafka Connect container images.
+On Kubernetes, either Kaniko or Buildah is used depending on this feature gate.
+On OpenShift, the build mechanism remains unchanged.
+Builds continue to use the OpenShift Build API.
+Using Buildah does not change the overall build behavior. 
+The difference is that you can specify additional options in the `build` section of the `KafkaConnect` custom resource.  
+These options are grouped as follows:
+
+* Build phase options (`additionalBuildOptions`)  
+* Push phase options (`additionalPushOptions`)
+
+To enable the `UseConnectBuildWithBuildah` feature gate, specify `+UseConnectBuildWithBuildah` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+endif::Section[]
 
 == Enabling feature gates
 

@@ -10,10 +10,12 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -30,6 +32,11 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaConnectScaling() {
         createScaleDelete(KafkaConnect.class, "KafkaConnect.yaml");
+    }
+
+    @Test
+    void testKafkaConnectV1() {
+        createDeleteCustomResource("KafkaConnect-v1.yaml");
     }
 
     @Test
@@ -101,6 +108,48 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @Test
     public void testKafkaConnectWithDnsConfig() {
         createDeleteCustomResource("KafkaConnect-with-dnsConfig.yaml");
+    }
+
+    @Test
+    void testKafkaConnectV1NoSpec() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnect-v1-no-spec.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec");
+    }
+
+    @Test
+    void testKafkaConnectV1NoReplicasGroupEtc() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnect-v1-no-replicas-group-etc.yaml"));
+
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "replicas", "groupId", "configStorageTopic", "statusStorageTopic", "offsetStorageTopic");
+    }
+
+    @Test
+    public void testKafkaConnectV1WrongAuth() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnect-v1-wrong-auth.yaml"));
+
+        assertThat(exception.getMessage(), allOf(
+                CoreMatchers.containsStringIgnoringCase("Unsupported value: \"oauth\""),
+                CoreMatchers.containsStringIgnoringCase("supported values: \"tls\", \"scram-sha-256\", \"scram-sha-512\", \"plain\", \"custom\""))
+        );
+    }
+
+    @Test
+    public void testKafkaConnectV1WrongTracing() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnect-v1-wrong-tracing.yaml"));
+
+        assertThat(exception.getMessage(), allOf(
+                CoreMatchers.containsStringIgnoringCase("Unsupported value: \"jaeger\""),
+                CoreMatchers.containsStringIgnoringCase("supported values: \"opentelemetry\""))
+        );
     }
 
     @BeforeAll

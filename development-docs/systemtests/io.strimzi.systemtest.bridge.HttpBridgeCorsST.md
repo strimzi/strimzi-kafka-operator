@@ -2,7 +2,7 @@
 
 **Description:** Test suite for HTTP Bridge CORS functionality, focusing on verifying correct handling of allowed and forbidden origins.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

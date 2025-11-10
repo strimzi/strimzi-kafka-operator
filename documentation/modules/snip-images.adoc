@@ -1,3 +1,5 @@
+:_mod-docs-content-type: SNIPPET
+
 // Auto generated content - DO NOT EDIT BY HAND
 // Edit documentation/snip-images.sh instead
 [table,stripes=none]
@@ -7,6 +9,7 @@
 |Kafka
 a|
 * {DockerOrg}/kafka:{DockerTag}-kafka-4.0.0
+* {DockerOrg}/kafka:{DockerTag}-kafka-4.0.1
 * {DockerOrg}/kafka:{DockerTag}-kafka-4.1.0
 
 a|

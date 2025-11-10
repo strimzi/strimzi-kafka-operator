@@ -13,6 +13,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpecBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -99,9 +101,13 @@ public class KafkaMirrorMaker2Templates {
         String sourceNs,
         String targetNs
     ) {
-        KafkaMirrorMaker2ClusterSpec targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
+        KafkaMirrorMaker2TargetClusterSpec targetClusterSpec = new KafkaMirrorMaker2TargetClusterSpecBuilder()
             .withAlias(targetKafkaClusterName)
             .withBootstrapServers(targetNs == null ? KafkaResources.plainBootstrapAddress(targetKafkaClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(targetNs, targetKafkaClusterName))
+            .withGroupId("mirrormaker2-cluster")
+            .withConfigStorageTopic("mirrormaker2-cluster-configs")
+            .withOffsetStorageTopic("mirrormaker2-cluster-offsets")
+            .withStatusStorageTopic("mirrormaker2-cluster-status")
             .addToConfig("config.storage.replication.factor", -1)
             .addToConfig("offset.storage.replication.factor", -1)
             .addToConfig("status.storage.replication.factor", -1)
@@ -113,7 +119,7 @@ public class KafkaMirrorMaker2Templates {
             .build();
 
         if (tlsListener) {
-            targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(targetClusterSpec)
+            targetClusterSpec = new KafkaMirrorMaker2TargetClusterSpecBuilder(targetClusterSpec)
                 .withBootstrapServers(targetNs == null ? KafkaResources.tlsBootstrapAddress(targetKafkaClusterName) : KafkaUtils.namespacedTlsBootstrapAddress(targetNs, targetKafkaClusterName))
                 .withNewTls()
                     .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(targetKafkaClusterName)).withCertificate("ca.crt").build())
@@ -136,11 +142,9 @@ public class KafkaMirrorMaker2Templates {
             .editOrNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
                 .withReplicas(kafkaMirrorMaker2Replicas)
-                .withConnectCluster(targetKafkaClusterName)
-                .withClusters(targetClusterSpec, sourceClusterSpec)
+                .withTarget(targetClusterSpec)
                 .addNewMirror()
-                    .withSourceCluster(sourceKafkaClusterName)
-                    .withTargetCluster(targetKafkaClusterName)
+                    .withSource(sourceClusterSpec)
                     .withNewSourceConnector()
                         .withTasksMax(1)
                         .addToConfig("replication.factor", -1)

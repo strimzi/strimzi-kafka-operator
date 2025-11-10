@@ -47,7 +47,7 @@ public class SetupDrainCleaner {
     private static final String KUBERNETES_DIRECTORY = "kubernetes";
     public static final String DRAIN_CLEANER_DIRECTORY = KubeClusterResource.getInstance().isOpenShiftLikeCluster() ? OPENSHIFT_DIRECTORY : KUBERNETES_DIRECTORY;
     public static final String PATH_TO_DC_CONFIG = TestUtils.USER_PATH + "/../packaging/install/drain-cleaner/" + DRAIN_CLEANER_DIRECTORY;
-    private static final String PATH_TO_DRAIN_CLEANER_DEP = TestUtils.USER_PATH + "/../packaging/install/drain-cleaner/kubernetes/060-Deployment.yaml";
+    private static final String PATH_TO_DRAIN_CLEANER_DEP = TestUtils.USER_PATH + "/../packaging/install/drain-cleaner/" + DRAIN_CLEANER_DIRECTORY + "/060-Deployment.yaml";
 
     private static final Logger LOGGER = LogManager.getLogger(SetupDrainCleaner.class);
 

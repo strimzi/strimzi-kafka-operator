@@ -3,7 +3,7 @@
 # Run Apache Kafka on Kubernetes and OpenShift
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/strimzi/strimzi-kafka-operator/badge)](https://scorecard.dev/viewer/?uri=github.com/strimzi/strimzi-kafka-operator)
-[![Build Status](https://dev.azure.com/cncf/strimzi/_apis/build/status/build?branchName=main)](https://dev.azure.com/cncf/strimzi/_build/latest?definitionId=16&branchName=main)
+[![Build Status](https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/strimzi/strimzi-kafka-operator/actions/workflows/build.yml?query=branch%3Amain)
 [![GitHub release](https://img.shields.io/github/release/strimzi/strimzi-kafka-operator.svg)](https://github.com/strimzi/strimzi-kafka-operator/releases/latest)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Twitter Follow](https://img.shields.io/twitter/follow/strimziio?style=social)](https://twitter.com/strimziio)
@@ -47,9 +47,9 @@ Resources:
 ## Contributing
 
 You can contribute by:
-- Raising any issues you find using Strimzi
+- Raising issues you find while using Strimzi
 - Fixing issues by opening Pull Requests
-- Improving documentation
+- Improving Strimzi documentation
 - Talking about Strimzi
 
 All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi-kafka-operator/issues). Issues which 
@@ -68,6 +68,14 @@ If you want to get in touch with us first before contributing, you can use:
 
 ## License
 Strimzi is licensed under the [Apache License](./LICENSE), Version 2.0
+
+## Community Testing
+
+### Linux on IBM Z (s390x)
+
+[![Jenkins](https://ibmz-ci.osuosl.org/job/Strimzi_Kafka_Operator_IBMZ_CI/badge/icon)](https://ibmz-ci.osuosl.org/job/Strimzi_Kafka_Operator_IBMZ_CI/)
+
+_Note: This badge represents a community-led initiative and is not officially endorsed by the Strimzi project maintainers._
 
 ## Container signatures
 

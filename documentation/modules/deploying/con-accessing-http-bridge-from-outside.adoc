@@ -1,0 +1,33 @@
+:_mod-docs-content-type: CONCEPT
+
+// This assembly is included in the following assemblies:
+//
+// assembly-http-bridge-overview.adoc
+
+[id='con-accessing-http-bridge-from-outside-{context}']
+
+= Accessing the HTTP Bridge outside of Kubernetes
+
+[role="_abstract"]
+After deployment, the HTTP Bridge can only be accessed by applications running in the same Kubernetes cluster.
+These applications use the `_<kafka_bridge_name>_-bridge-service` service to access the API.
+
+If you want to make the HTTP Bridge accessible to applications running outside of the Kubernetes cluster, you can expose it manually by creating one of the following features:
+
+* `LoadBalancer` or `NodePort` type services
+
+* `Ingress` resources (Kubernetes only)
+
+* OpenShift routes (OpenShift only)
+
+If you decide to create Services, use the labels from the `selector` of the `_<kafka_bridge_name>_-bridge-service` service to configure the pods to which the service will route the traffic:
+
+[source,yaml,subs=attributes+]
+----
+  # ...
+  selector:
+    strimzi.io/cluster: kafka-bridge-name <1>
+    strimzi.io/kind: KafkaBridge
+  #...
+----
+<1> Name of the HTTP Bridge custom resource in your Kubernetes cluster.

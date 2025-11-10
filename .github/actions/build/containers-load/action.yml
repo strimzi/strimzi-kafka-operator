@@ -1,5 +1,5 @@
 name: "Load Strimzi images"
-description: "Load Strimzi images"
+description: "Load Strimzi images from Build workflow"
 
 inputs:
   architecture:
@@ -13,10 +13,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/download-artifact@v4
-      with:
-        name: containers-${{ inputs.architecture }}.tar
-
     - name: "Untar the ${{ inputs.architecture }} containers"
       shell: bash
       run: tar -xvf containers-${{ inputs.architecture }}.tar

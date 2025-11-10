@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // This module is included in:
 //
 // overview/assembly-key-features.adoc
@@ -37,13 +39,10 @@ MirrorMaker 2 also uses the Kafka Connect framework.
 In this case, the external data system is another Kafka cluster.
 Specialized connectors for MirrorMaker 2 manage data replication between source and target Kafka clusters.
 
-[NOTE]
-====
 In addition to the MirrorMaker 2 connectors, Kafka provides two connectors as examples:
 
 * `FileStreamSourceConnector` streams data from a file on the worker's filesystem to Kafka, reading the input file and sending each line to a given Kafka topic.
 * `FileStreamSinkConnector` streams data from Kafka to the worker's filesystem, reading messages from a Kafka topic and writing a line for each in an output file.
-====
 
 The following source connector diagram shows the process flow for a source connector that streams records from an external data system.
 A Kafka Connect cluster might operate source and sink connectors at the same time.

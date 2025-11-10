@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 // Module included in the following assemblies:
 //
 // assembly-config.adoc
@@ -54,21 +56,7 @@ The following tables describe the producers and consumers for each of the connec
 
 |===
 
-NOTE: You can set `offset-syncs.topic.location` to `target` to use the target Kafka cluster as the location of the `offset-syncs` topic. 
-
-.Heartbeat connector producer
-[cols="1,1a,3m",options="header"]
-|===
-
-|Type
-|Description
-|Configuration
-
-|Producer
-|Emits heartbeats.
-|mirrors.heartbeatConnector.config: producer.override.*
-
-|===
+NOTE: You can set `offset-syncs.topic.location` to `target` to use the target Kafka cluster as the location of the `offset-syncs` topic.
 
 The following example shows how you configure the producers and consumers. 
 
@@ -83,8 +71,8 @@ spec:
   version: {DefaultKafkaVersion}
   # ...
   mirrors:
-  - sourceCluster: "my-cluster-source"
-    targetCluster: "my-cluster-target"
+  - source:
+      # ...
     sourceConnector:
       tasksMax: 5
       config:
@@ -98,8 +86,4 @@ spec:
         producer.override.request.timeout.ms: 30000
         consumer.max.poll.interval.ms: 300000
         # ...
-    heartbeatConnector:
-      config:
-        producer.override.request.timeout.ms: 30000
-        # ...      
 ----

@@ -1,0 +1,34 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= C
+
+== Clients CA
+[id="glossary-clients-ca_{context}"]
+A Certificate Authority managed by the Strimzi Cluster Operator that issues TLS certificates for Kafka clients.
+These certificates are used for mutual TLS (mTLS) authentication between external clients and Kafka brokers.
+
+== Cluster CA
+[id="glossary-cluster-ca_{context}"]
+A Certificate Authority managed by the Strimzi Cluster Operator that issues TLS certificates to secure communication between Kafka brokers, internal components, and Kafka clients. 
+These certificates enable encrypted and authenticated communication over TLS.
+
+== Cluster Operator
+[id="glossary-cluster-operator_{context}"]
+The central operator responsible for deploying and managing Kafka clusters, Kafka Connect, Kafka MirrorMaker, and related components.
+
+For more information, see the following:
+
+* link:{BookURLOverview}#overview-components-cluster-operator-str[Cluster Operator^]
+* link:{BookURLDeploying}#ref-operator-cluster-str[Configuring the Cluster Operator^]
+
+== Cruise Control
+[id="glossary-cruise-control_{context}"]
+A component that provides automated Kafka cluster rebalancing and optimization.
+Cruise Control is configured through the `Kafka` custom resource, while rebalancing operations are managed using the `KafkaRebalance` custom resource.
+
+For more information, see the following:
+
+* link:{BookURLDeploying}#cruise-control-concepts-str[Using Cruise Control for cluster rebalancing^]
+* link:{BookURLDeploying}#proc-cruise-control-topic-replication-str[Using Cruise Control to modify topic replication factor^]
+* link:{BookURLDeploying}#proc-cruise-control-moving-data-str[Using Cruise Control to reassign partitions on JBOD disks^]

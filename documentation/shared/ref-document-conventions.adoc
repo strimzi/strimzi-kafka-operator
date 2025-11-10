@@ -1,3 +1,5 @@
+:_mod-docs-content-type: REFERENCE
+
 // Module included in the following assemblies:
 //
 // assembly-overview.adoc
@@ -5,6 +7,7 @@
 [id='document-conventions-{context}']
 = Document conventions
 
+[role="_abstract"]
 User-replaced values, also known as _replaceables_, are shown in with angle brackets (< >).
 Underscores ( _ ) are used for multi-word values.
 If the value refers to code or commands, `monospace` is also used.

@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -53,7 +52,6 @@ public class InternalServiceTemplate implements HasMetadataTemplate, UnknownProp
             "`RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. " +
             "If unspecified, Kubernetes will choose the default value based on the service type.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @PresentInVersions("v1beta2+")
     public IpFamilyPolicy getIpFamilyPolicy() {
         return ipFamilyPolicy;
     }
@@ -66,7 +64,6 @@ public class InternalServiceTemplate implements HasMetadataTemplate, UnknownProp
             "Available options are `IPv4` and `IPv6`. " +
             "If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @PresentInVersions("v1beta2+")
     public List<IpFamily> getIpFamilies() {
         return ipFamilies;
     }

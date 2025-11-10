@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 [id="con-mapping-keycloak-authz-services-to-kafka-model_{context}"]
 = Mapping authorization models
 
@@ -9,12 +11,9 @@ You then specify Keycloak Authorization Services rules on the client.
 Typically, the client ID of the OAuth client that represents the Kafka cluster is `kafka`.
 The xref:proc-oauth-authorization-keycloak-example_str[example configuration files] provided with Strimzi use `kafka` as the OAuth client id.
 
-[NOTE]
-====
-If you have multiple Kafka clusters, you can use a single OAuth client (`kafka`) for all of them.
+NOTE: If you have multiple Kafka clusters, you can use a single OAuth client (`kafka`) for all of them.
 This gives you a single, unified space in which to define and manage authorization rules.
 However, you can also use different OAuth client ids (for example, `my-cluster-kafka` or `cluster-dev-kafka`) and define authorization rules for each cluster within each client configuration.
-====
 
 The `kafka` client definition must have the *Authorization Enabled* option enabled in the Keycloak Admin Console.
 For information on enabling authorization services, see the guide to {keycloak-authorization-services}.
@@ -47,10 +46,7 @@ Authorization scopes should contain the following Kafka permissions regardless o
 If you're certain you won't need a permission (for example, `IdempotentWrite`), you can omit it from the list of authorization scopes.
 However, that permission won't be available to target on Kafka resources.
 
-[NOTE]
-====
-The `All` permission is not supported.
-====
+NOTE: The `All` permission is not supported.
 
 .Resource patterns for permissions checks
 

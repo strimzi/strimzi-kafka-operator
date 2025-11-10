@@ -1,3 +1,5 @@
+:_mod-docs-content-type: PROCEDURE
+
 // Module included in the following assemblies:
 //
 // deploying/assembly_deploy-kafka-connect.adoc

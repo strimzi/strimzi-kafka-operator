@@ -13,6 +13,7 @@ import io.strimzi.operator.common.Reconciliation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,154 +32,17 @@ public class KafkaConfiguration extends AbstractConfiguration {
 
     private static final List<String> FORBIDDEN_PREFIXES;
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
+    private static final Map<String, String> DEFAULTS;
 
     static {
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaClusterSpec.FORBIDDEN_PREFIXES);
         FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
-    }
 
-    /**
-     * List of configuration options that are relevant to controllers and should be considered when deciding whether
-     * a controller-only node needs to be rolled or not.
-     */
-    private static final Set<String> CONTROLLER_RELEVANT_CONFIGS = Set.of(
-            "alter.config.policy.class.name",
-            "authorizer.class.name",
-            "auto.create.topics.enable",
-            "background.threads",
-            "broker.heartbeat.interval.ms",
-            "broker.rack",
-            "broker.session.timeout.ms",
-            "connection.failed.authentication.delay.ms",
-            "connections.max.idle.ms",
-            "connections.max.reauth.ms",
-            "controlled.shutdown.enable",
-            "controlled.shutdown.max.retries",
-            "controlled.shutdown.retry.backoff.ms",
-            "controller.listener.names",
-            "controller.quorum.append.linger.ms",
-            "controller.quorum.election.backoff.max.ms",
-            "controller.quorum.election.timeout.ms",
-            "controller.quorum.fetch.timeout.ms",
-            "controller.quorum.request.timeout.ms",
-            "controller.quorum.retry.backoff.ms",
-            "controller.quorum.voters",
-            "controller.quota.window.num",
-            "controller.quota.window.size.seconds",
-            "controller.socket.timeout.ms",
-            "create.topic.policy.class.name",
-            "default.replication.factor",
-            "delete.topic.enable",
-            "early.start.listeners",
-            "kafka.metrics.polling.interval.secs",
-            "kafka.metrics.reporters",
-            "leader.imbalance.check.interval.seconds",
-            "leader.imbalance.per.broker.percentage",
-            "listener.name.controlplane-9090.ssl.keystore.location",
-            "listener.name.controlplane-9090.ssl.keystore.password",
-            "listener.name.controlplane-9090.ssl.keystore.type",
-            "listener.name.controlplane-9090.ssl.truststore.location",
-            "listener.name.controlplane-9090.ssl.truststore.password",
-            "listener.name.controlplane-9090.ssl.truststore.type",
-            "listener.name.controlplane-9090.ssl.client.auth",
-            "listener.security.protocol.map",
-            "listeners",
-            "log.dir",
-            "log.dirs",
-            "min.insync.replicas",
-            "max.connection.creation.rate",
-            "max.connections.per.ip.overrides",
-            "max.connections.per.ip",
-            "max.connections",
-            "metadata.log.dir",
-            "metadata.log.max.record.bytes.between.snapshots",
-            "metadata.log.max.snapshot.interval.ms",
-            "metadata.log.segment.bytes",
-            "metadata.log.segment.min.bytes",
-            "metadata.log.segment.ms",
-            "metadata.max.idle.interval.ms",
-            "metadata.max.retention.bytes",
-            "metadata.max.retention.ms",
-            "metric.reporters",
-            "metrics.num.samples",
-            "metrics.recording.level",
-            "metrics.sample.window.ms",
-            "node.id",
-            "num.io.threads",
-            "num.network.threads",
-            "num.partitions",
-            "offsets.topic.replication.factor",
-            "principal.builder.class",
-            "process.roles",
-            "remote.log.storage.system.enable",
-            "replica.selector.class",
-            "reserved.broker.max.id",
-            "sasl.enabled.mechanisms",
-            "sasl.kerberos.kinit.cmd",
-            "sasl.kerberos.min.time.before.relogin",
-            "sasl.kerberos.principal.to.local.rules",
-            "sasl.kerberos.service.name",
-            "sasl.kerberos.ticket.renew.jitter",
-            "sasl.kerberos.ticket.renew.window.factor",
-            "sasl.login.callback.handler.class",
-            "sasl.login.class",
-            "sasl.login.connect.timeout.ms",
-            "sasl.login.read.timeout.ms",
-            "sasl.login.refresh.buffer.seconds",
-            "sasl.login.refresh.min.period.seconds",
-            "sasl.login.refresh.window.factor",
-            "sasl.login.refresh.window.jitter",
-            "sasl.login.retry.backoff.max.ms",
-            "sasl.login.retry.backoff.ms",
-            "sasl.mechanism.controller.protocol",
-            "sasl.oauthbearer.clock.skew.seconds",
-            "sasl.oauthbearer.expected.audience",
-            "sasl.oauthbearer.expected.issuer",
-            "sasl.oauthbearer.jwks.endpoint.refresh.ms",
-            "sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms",
-            "sasl.oauthbearer.jwks.endpoint.retry.backoff.ms",
-            "sasl.oauthbearer.jwks.endpoint.url",
-            "sasl.oauthbearer.scope.claim.name",
-            "sasl.oauthbearer.sub.claim.name",
-            "sasl.oauthbearer.token.endpoint.url",
-            "sasl.server.callback.handler.class",
-            "sasl.server.max.receive.size",
-            "security.providers",
-            "server.max.startup.time.ms",
-            "socket.connection.setup.timeout.max.ms",
-            "socket.connection.setup.timeout.ms",
-            "socket.listen.backlog.size",
-            "socket.receive.buffer.bytes",
-            "socket.request.max.bytes",
-            "socket.send.buffer.bytes",
-            "ssl.cipher.suites",
-            "ssl.client.auth",
-            "ssl.enabled.protocols",
-            "ssl.endpoint.identification.algorithm",
-            "ssl.engine.factory.class",
-            "ssl.key.password",
-            "ssl.keymanager.algorithm",
-            "ssl.keystore.certificate.chain",
-            "ssl.keystore.key",
-            "ssl.keystore.location",
-            "ssl.keystore.password",
-            "ssl.keystore.type",
-            "ssl.principal.mapping.rules",
-            "ssl.protocol",
-            "ssl.provider",
-            "ssl.secure.random.implementation",
-            "ssl.trustmanager.algorithm",
-            "ssl.truststore.certificates",
-            "ssl.truststore.location",
-            "ssl.truststore.password",
-            "ssl.truststore.type",
-            "super.users",
-            "transaction.state.log.min.isr",
-            "transaction.state.log.replication.factor",
-            "queued.max.requests",
-            "queued.max.requests.bytes",
-            "unclean.leader.election.enable"
-    );
+        DEFAULTS = new HashMap<>(1);
+        // when users remove "min.insync.replicas" from the Kafka custom resource, the operator is going to force the
+        // default value (1) regardless of whether ELR (Eligible Leader Replicas) is enabled or disabled
+        DEFAULTS.put("min.insync.replicas", "1");
+    }
 
     /**
      * Copy constructor which creates new instance of the Kafka Configuration from existing configuration. It is
@@ -198,11 +62,11 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), Map.of());
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), DEFAULTS);
     }
 
     private KafkaConfiguration(Reconciliation reconciliation, String configuration, List<String> forbiddenPrefixes) {
-        super(reconciliation, configuration, forbiddenPrefixes, List.of(), List.of(), Map.of());
+        super(reconciliation, configuration, forbiddenPrefixes, List.of(), List.of(), DEFAULTS);
     }
 
 
@@ -277,24 +141,6 @@ public class KafkaConfiguration extends AbstractConfiguration {
                 result.add(e.getKey() + "=" + e.getValue());
             }
         }
-        return result;
-    }
-
-    /**
-     * Return the config properties with their values in this KafkaConfiguration which are known to be relevant for the
-     * Kafka controller nodes.
-     *
-     * @return  The configuration options relevant for controllers
-     */
-    public Set<String> controllerConfigsWithValues() {
-        Set<String> result = new HashSet<>();
-
-        for (Map.Entry<String, String> e :this.asOrderedProperties().asMap().entrySet()) {
-            if (CONTROLLER_RELEVANT_CONFIGS.contains(e.getKey())) {
-                result.add(e.getKey() + "=" + e.getValue());
-            }
-        }
-
         return result;
     }
 

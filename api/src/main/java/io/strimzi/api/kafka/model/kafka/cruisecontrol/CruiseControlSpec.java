@@ -24,6 +24,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -84,6 +85,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
     @Deprecated
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @PresentInVersions("v1beta2")
     public TlsSidecar getTlsSidecar() {
         return tlsSidecar;
     }

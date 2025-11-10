@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.common.CustomResourceConditions;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.RequiredInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -38,9 +39,10 @@ import java.util.function.Predicate;
         group = KafkaUser.RESOURCE_GROUP,
         scope = KafkaUser.SCOPE,
         versions = {
-            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true),
-            @Crd.Spec.Version(name = Constants.V1BETA1, served = true, storage = false),
-            @Crd.Spec.Version(name = Constants.V1ALPHA1, served = true, storage = false)
+            @Crd.Spec.Version(name = Constants.V1, served = true, storage = false),
+            @Crd.Spec.Version(name = Constants.V1BETA2, served = true, storage = true, deprecated = true, deprecationWarning = "Version v1beta2 of the KafkaUser API is deprecated. Please use the v1 version instead."),
+            @Crd.Spec.Version(name = Constants.V1BETA1, served = true, storage = false, deprecated = true, deprecationWarning = "Version v1beta1 of the KafkaUser API is deprecated. Please use the v1 version instead."),
+            @Crd.Spec.Version(name = Constants.V1ALPHA1, served = true, storage = false, deprecated = true, deprecationWarning = "Version v1alpha1 of the KafkaUser API is deprecated. Please use the v1 version instead.")
         },
         subresources = @Crd.Spec.Subresources(
             status = @Crd.Spec.Subresources.Status()
@@ -78,13 +80,13 @@ import java.util.function.Predicate;
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-@Version(Constants.V1BETA2)
+@Version(Constants.V1)
 @Group(Constants.RESOURCE_GROUP_NAME)
 public class KafkaUser extends CustomResource<KafkaUserSpec, KafkaUserStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = Constants.SCOPE_NAMESPACED;
-    public static final List<String> VERSIONS = List.of(Constants.V1BETA2, Constants.V1BETA1, Constants.V1ALPHA1);
+    public static final List<String> VERSIONS = List.of(Constants.V1, Constants.V1BETA2, Constants.V1BETA1, Constants.V1ALPHA1);
     public static final String RESOURCE_KIND = "KafkaUser";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
@@ -111,6 +113,7 @@ public class KafkaUser extends CustomResource<KafkaUserSpec, KafkaUserStatus> im
 
     @Override
     @Description("The specification of the user.")
+    @RequiredInVersions("v1+")
     public KafkaUserSpec getSpec() {
         return super.getSpec();
     }

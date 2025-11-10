@@ -71,7 +71,7 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Deprecated
     @DeprecatedProperty(description = "Please use the template section to configure additional volumes instead.")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     public List<GenericSecretSource> getSecrets() {
         return secrets;
     }

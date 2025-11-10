@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
-import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -308,6 +307,7 @@ public class KafkaStatusTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // .status.kafkaMetadataState is deprecated
     public void testStatusAfterFailedReconciliationWithPreviousSuccess(VertxTestContext context) {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -339,7 +339,6 @@ public class KafkaStatusTest {
                     .withKafkaVersion("old-kafka")
                     .withOperatorLastSuccessfulVersion("old-operator")
                     .withKafkaMetadataVersion("old-metadata-version")
-                    .withKafkaMetadataState(KafkaMetadataState.KRaft)
                 .endStatus()
                 .build();
 
@@ -380,7 +379,6 @@ public class KafkaStatusTest {
             assertThat(status.getKafkaVersion(), is("old-kafka"));
             assertThat(status.getOperatorLastSuccessfulVersion(), is("old-operator"));
             assertThat(status.getKafkaMetadataVersion(), is("old-metadata-version"));
-            assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.KRaft));
 
             async.flag();
         })));

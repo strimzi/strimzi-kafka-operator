@@ -83,7 +83,7 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @DeprecatedProperty(movedToPath = ".spec.entityOperator.topicOperator.reconciliationIntervalMs")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     public Integer getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
@@ -108,7 +108,7 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @DeprecatedProperty(description = "This property is not used anymore in Strimzi 0.41.0 and it is ignored.")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     public Integer getZookeeperSessionTimeoutSeconds() {
         return zookeeperSessionTimeoutSeconds;
@@ -122,7 +122,7 @@ public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLiven
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @DeprecatedProperty(description = "This property is not used anymore in Strimzi 0.41.0 and it is ignored.")
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     public Integer getTopicMetadataMaxAttempts() {
         return topicMetadataMaxAttempts;

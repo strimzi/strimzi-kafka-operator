@@ -2,7 +2,7 @@
 
 **Description:** This class demonstrates various tests for Kafka listeners using different authentication mechanisms.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

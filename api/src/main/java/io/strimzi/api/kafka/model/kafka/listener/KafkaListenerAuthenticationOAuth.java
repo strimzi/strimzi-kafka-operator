@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
@@ -35,9 +36,12 @@ import java.util.List;
     "accessTokenIsJwt", "tlsTrustedCertificates", "disableTlsHostnameVerification", "enableECDSA",
     "maxSecondsWithoutReauthentication", "enablePlain", "tokenEndpointUri", "enableOauthBearer", "customClaimCheck",
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientScope", "clientAudience",
-    "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation", "userNamePrefix"})
+    "clientGrantType", "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation", "userNamePrefix"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@Deprecated
+@DeprecatedType(replacedWithType = KafkaListenerAuthenticationCustom.class)
+@PresentInVersions("v1beta2")
 public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthentication {
     public static final String TYPE_OAUTH = "oauth";
     public static final int DEFAULT_JWKS_EXPIRY_SECONDS = 360;
@@ -81,6 +85,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private Integer httpRetryPauseMs;
     private String clientScope = null;
     private String clientAudience = null;
+    private String clientGrantType = null;
     private boolean enableMetrics = false;
     private boolean failFast = true;
     private boolean includeAcceptHeader = true;
@@ -215,6 +220,18 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setClientAudience(String audience) {
         this.clientAudience = audience;
+    }
+
+    @Description("The grant type to use when making requests to the authorization server's token endpoint. " +
+            "Used for `OAuth over PLAIN` when `username` and `password` passed via SASL_PLAIN client authentication " +
+            "are passed on to the authorization server as `clientId` and `secret`.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getClientGrantType() {
+        return clientGrantType;
+    }
+
+    public void setClientGrantType(String grantType) {
+        this.clientGrantType = grantType;
     }
 
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")
@@ -414,7 +431,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     @DeprecatedProperty
-    @PresentInVersions("v1alpha1-v1beta2")
+    @PresentInVersions("v1beta2")
     @Deprecated
     @Description("Enable or disable ECDSA support by installing BouncyCastle crypto provider. " +
             "ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.")

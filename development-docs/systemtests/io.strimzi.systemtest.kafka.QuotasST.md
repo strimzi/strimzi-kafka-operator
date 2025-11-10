@@ -2,7 +2,7 @@
 
 **Description:** NOTE: STs in this class will not work properly on `minikube` clusters (and maybe not on other clusters that use local storage), because the calculation of currently used storage is based on the local storage, which can be shared across multiple Docker containers. To properly run this suite, you should use cluster with proper storage.
 
-**Before tests execution steps:**
+**Before test execution steps:**
 
 | Step | Action | Result |
 | - | - | - |

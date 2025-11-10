@@ -1,0 +1,21 @@
+:_mod-docs-content-type: REFERENCE
+
+[role="_abstract"]
+= T
+
+== Tiered storage
+[id="glossary-tiered-storage_{context}"]
+A capability enabling Kafka brokers to store topic log segments across different storage tiers, such as local disk and remote object storage. 
+It is configured through the `Kafka` custom resource.
+
+For more information, see the following:
+
+* link:{BookURLDeploying}#ref-tiered-storage-str[Tiered storage^]
+* link:{BookURLConfiguring}#type-TieredStorageCustom-reference[`TieredStorageCustom` schema reference^]
+
+== Topic Operator
+[id="glossary-topic-operator_{context}"]
+The operator responsible for managing Kafka topics through `KafkaTopic` custom resources.
+
+* link:{BookURLOverview}#overview-concepts-topic-operator-str[Topic Operator^]
+* link:{BookURLDeploying}#using-the-topic-operator-str[Using the Topic Operator to manage Kafka topics^]

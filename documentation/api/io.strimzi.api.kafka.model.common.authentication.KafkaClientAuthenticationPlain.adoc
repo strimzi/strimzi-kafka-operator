@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 To configure SASL-based PLAIN authentication, set the `type` property to `plain`.
 The SASL PLAIN authentication mechanism requires a username and password.
 

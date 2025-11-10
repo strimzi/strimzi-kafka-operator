@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.48.0-SNAPSHOT</version>
+    <version>0.50.0-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -39,23 +39,6 @@
         </developer>
     </developers>
 
-    <repositories>
-        <repository>
-            <!--
-            Until there is a new release of Kafka Access Operator we are using the Sonatype repository with its SNAPSHOT.
-            Tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/11207.
-            -->
-            <id>oss-sonatype</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
@@ -65,8 +48,8 @@
 
         <!-- Maven plugin versions -->
         <maven.compiler.version>3.10.1</maven.compiler.version>
-        <maven.surefire.version>3.1.2</maven.surefire.version>
-        <maven.failsafe.version>3.1.2</maven.failsafe.version>
+        <maven.surefire.version>3.5.4</maven.surefire.version>
+        <maven.failsafe.version>3.5.4</maven.failsafe.version>
         <maven.assembly.version>3.4.2</maven.assembly.version>
         <maven.shade.version>3.4.1</maven.shade.version>
         <maven.javadoc.version>3.10.0</maven.javadoc.version>
@@ -99,53 +82,43 @@
         <fasterxml.jackson-annotations.version>2.18.3</fasterxml.jackson-annotations.version>
         <fasterxml.jackson-datatype.version>2.18.3</fasterxml.jackson-datatype.version>
         <fasterxml.jackson-jaxrs.version>2.18.3</fasterxml.jackson-jaxrs.version>
-        <vertx.version>5.0.4</vertx.version>
-        <vertx-junit5.version>5.0.4</vertx-junit5.version>
+        <vertx.version>5.0.5</vertx.version>
+        <vertx-junit5.version>5.0.5</vertx-junit5.version>
         <kafka.version>4.1.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
-        <!-- Used for test-frame and the systemtests-->
-        <slf4j2.version>2.0.16</slf4j2.version>
-        <log4j2.version>2.24.1</log4j2.version>
-
-        <slf4j.version>1.7.36</slf4j.version>
-        <log4j.version>2.17.2</log4j.version>
-        <quartz.version>2.3.2</quartz.version>
+        <slf4j.version>2.0.17</slf4j.version>
+        <log4j.version>2.25.0</log4j.version>
+        <quartz.version>2.5.0</quartz.version>
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
         <jetty.version>12.0.22</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
-        <strimzi-oauth.version>0.16.2</strimzi-oauth.version>
-        <netty.version>4.2.5.Final</netty.version>
+        <strimzi-oauth.version>0.17.1</strimzi-oauth.version>
+        <netty.version>4.2.7.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
-        <registry.version>1.3.2.Final</registry.version>
         <commons-codec.version>1.13</commons-codec.version>
+        <picocli.version>4.7.7</picocli.version>
+        <snakeyaml.version>2.5</snakeyaml.version>
 
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
         <mockito.version>4.11.0</mockito.version>
-        <junit.platform.version>1.9.3</junit.platform.version>
         <opentest4j.version>1.2.0</opentest4j.version>
-        <jupiter.version>5.9.3</jupiter.version>
-        <strimzi-test-container.version>0.112.0</strimzi-test-container.version>
+        <jupiter.version>6.0.0</jupiter.version>
+        <strimzi-test-container.version>0.113.0</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <valid4j.version>1.1</valid4j.version>
         <javax.json.version>1.1.4</javax.json.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
-        <kindcontainer.version>1.4.9</kindcontainer.version>
-        <testcontainer.version>1.20.1</testcontainer.version>
+        <kindcontainer.version>1.4.10</kindcontainer.version>
+        <testcontainer.version>1.21.3</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.test-frame.version>1.1.0</skodjob.test-frame.version>
-        <skodjob-doc.version>0.4.0</skodjob-doc.version>
+        <skodjob-doc.version>0.6.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
-        <!--
-            Currently, there are no released versions in Maven repository of this module,
-            using SNAPSHOT for having the `api` module available and usable in the STs.
-            Tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/11207.
-        -->
-        <access-operator.version>0.2.0-SNAPSHOT</access-operator.version>
+        <access-operator.version>0.2.0</access-operator.version>
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
@@ -161,6 +134,7 @@
         <module>crd-generator</module>
         <module>api</module>
         <module>mockkube</module>
+        <module>v1-api-conversion</module>
         <module>config-model</module>
         <module>config-model-generator</module>
         <module>operator-common</module>
@@ -379,7 +353,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-slf4j-impl</artifactId>
+                <artifactId>log4j-slf4j2-impl</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
             <dependency>
@@ -636,21 +610,6 @@
                 <version>${commons-codec.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.apicurio</groupId>
-                <artifactId>apicurio-registry-utils-streams</artifactId>
-                <version>${registry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.apicurio</groupId>
-                <artifactId>apicurio-registry-utils-kafka</artifactId>
-                <version>${registry.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.apicurio</groupId>
-                <artifactId>apicurio-registry-common</artifactId>
-                <version>${registry.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
                 <version>${opentelemetry.version}</version>
@@ -660,32 +619,15 @@
                 <artifactId>json-path</artifactId>
                 <version>${jayway-jsonpath.version}</version>
             </dependency>
-            <!-- The skodjob dependency is required at compile time, not solely in the test scope, due to the creation of custom metrics components. -->
             <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-metrics-collector</artifactId>
-                <version>${skodjob.test-frame.version}</version>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${picocli.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-log-collector</artifactId>
-                <version>${skodjob.test-frame.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-common</artifactId>
-                <version>${skodjob.test-frame.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-kubernetes</artifactId>
-                <version>${skodjob.test-frame.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-openshift</artifactId>
-                <version>${skodjob.test-frame.version}</version>
-                <scope>test</scope>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
             </dependency>
             <!-- Test dependencies -->
             <dependency>
@@ -765,25 +707,30 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>io.vertx</groupId>
-                <artifactId>vertx-junit5</artifactId>
-                <version>${vertx-junit5.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-commons</artifactId>
-                <version>${junit.platform.version}</version>
+                <version>${jupiter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-launcher</artifactId>
-                <version>${junit.platform.version}</version>
+                <version>${jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${jupiter.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-engine</artifactId>
-                <version>${junit.platform.version}</version>
+                <version>${jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-junit5</artifactId>
+                <version>${vertx-junit5.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -1011,18 +958,6 @@
                     <useModulePath>false</useModulePath>
                     <skipTests>${skip.surefire.tests}</skipTests>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.junit.jupiter</groupId>
-                        <artifactId>junit-jupiter-engine</artifactId>
-                        <version>${jupiter.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.vertx</groupId>
-                        <artifactId>vertx-junit5</artifactId>
-                        <version>${vertx-junit5.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

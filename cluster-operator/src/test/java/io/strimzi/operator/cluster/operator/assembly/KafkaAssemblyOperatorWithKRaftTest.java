@@ -1435,6 +1435,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
      * @param context   Test context
      */
     @Test
+    @SuppressWarnings("deprecation") // KafkaMetadataState is deprecated
     public void testClusterWithZooKeeperMetadata(VertxTestContext context)  {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editStatus()
@@ -1471,6 +1472,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
      * @param context   Test context
      */
     @Test
+    @SuppressWarnings("deprecation") // KafkaMetadataState is deprecated
     public void testClusterWithMigrationMetadata(VertxTestContext context)  {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editStatus()

@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 A `PodDisruptionBudget` is a Kubernetes resource that helps maintain high availability during planned maintenance or upgrades.
 It defines the minimum number of pods that must remain available at all times.
 

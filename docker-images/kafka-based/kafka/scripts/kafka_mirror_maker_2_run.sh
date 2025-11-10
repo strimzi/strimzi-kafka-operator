@@ -2,6 +2,10 @@
 set -e
 set +x
 
+# Clean-up /tmp directory from files which might have remained from previous container restart
+# We ignore any errors which might be caused by files injected by different agents which we do not have the rights to delete
+rm -rfv /tmp/* || true
+
 # Generate temporary keystore password
 MIRRORMAKER_2_CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
 export MIRRORMAKER_2_CERTS_STORE_PASSWORD
@@ -76,13 +80,5 @@ if [ -n "$KAFKA_MIRRORMAKER_2_CLUSTERS" ]; then
     echo "Preparing MirrorMaker 2 cluster truststores is complete"
 fi
 
-if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
-    export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
-fi
-
-# Disable FIPS if needed
-if [ "$FIPS_MODE" = "disabled" ]; then
-    export KAFKA_OPTS="${KAFKA_OPTS} -Dcom.redhat.fips=false"
-fi
-
-exec ./kafka_connect_run.sh
+# Run the script shared between Connect and MirrorMaker 2
+exec ./kafka_connect_mm2_shared_run.sh

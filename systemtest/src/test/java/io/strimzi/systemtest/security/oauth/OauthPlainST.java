@@ -18,6 +18,8 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpec;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2TargetClusterSpecBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
@@ -449,10 +451,14 @@ public class OauthPlainST extends OauthAbstractST {
             .endKafkaClientAuthenticationOAuth()
             .build();
 
-        KafkaMirrorMaker2ClusterSpec targetClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
+        KafkaMirrorMaker2TargetClusterSpec targetClusterWithOauth = new KafkaMirrorMaker2TargetClusterSpecBuilder()
             .withAlias(testStorage.getTargetClusterName())
             .withConfig(connectorConfig)
             .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
+            .withGroupId("mirrormaker2-cluster")
+            .withConfigStorageTopic("mirrormaker2-cluster-configs")
+            .withOffsetStorageTopic("mirrormaker2-cluster-offsets")
+            .withStatusStorageTopic("mirrormaker2-cluster-status")
             .withNewKafkaClientAuthenticationOAuth()
                 .withEnableMetrics()
                 .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
@@ -471,9 +477,9 @@ public class OauthPlainST extends OauthAbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafkaSourceClusterName, testStorage.getTargetClusterName(), 1, false)
             .editSpec()
                 .withMetricsConfig(OAUTH_METRICS)
-                .withClusters(sourceClusterWithOauth, targetClusterWithOauth)
+                .withTarget(targetClusterWithOauth)
                 .editFirstMirror()
-                    .withSourceCluster(kafkaSourceClusterName)
+                    .withSource(sourceClusterWithOauth)
                 .endMirror()
             .endSpec()
             .build());
@@ -555,22 +561,25 @@ public class OauthPlainST extends OauthAbstractST {
         InlineLogging ilDebug = new InlineLogging();
         ilDebug.setLoggers(Map.of("rootLogger.level", "DEBUG"));
 
-        KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridgeWithMetrics(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
-            .editSpec()
-                .withNewKafkaClientAuthenticationOAuth()
-                    .withEnableMetrics()
-                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                    .withClientId("kafka-bridge")
-                    .withNewClientSecret()
-                        .withSecretName(BRIDGE_OAUTH_SECRET)
-                        .withKey(OAUTH_KEY)
-                    .endClientSecret()
-                    .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
-                    .withReadTimeoutSeconds(READ_TIMEOUT_S)
-                .endKafkaClientAuthenticationOAuth()
-                .withLogging(ilDebug)
-            .endSpec()
-            .build());
+        KubeResourceManager.get().createResourceWithWait(
+                KafkaBridgeTemplates.bridgeMetricsConfigMap(Environment.TEST_SUITE_NAMESPACE, oauthClusterName),
+                KafkaBridgeTemplates.kafkaBridgeWithMetrics(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
+                        .editSpec()
+                            .withNewKafkaClientAuthenticationOAuth()
+                                .withEnableMetrics()
+                                .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                                .withClientId("kafka-bridge")
+                                .withNewClientSecret()
+                                    .withSecretName(BRIDGE_OAUTH_SECRET)
+                                    .withKey(OAUTH_KEY)
+                                .endClientSecret()
+                                .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                                .withReadTimeoutSeconds(READ_TIMEOUT_S)
+                            .endKafkaClientAuthenticationOAuth()
+                            .withLogging(ilDebug)
+                        .endSpec()
+                        .build()
+        );
 
         // Allow connections from scraper to Bridge pods when NetworkPolicies are set to denied by default
         NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeScraper(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaBridgeResources.componentName(oauthClusterName));

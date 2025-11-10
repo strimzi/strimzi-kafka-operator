@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
-import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -32,13 +30,16 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
-import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
@@ -63,6 +64,7 @@ import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPlugin;
 import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginStrimzi;
@@ -97,6 +99,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +145,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     private static final String ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED = "KAFKA_JMX_EXPORTER_ENABLED";
+    private static final String ENV_VAR_KAFKA_CLUSTER_NAME = "KAFKA_CLUSTER_NAME";
     private static final String ENV_VAR_STRIMZI_OPA_AUTHZ_TRUSTED_CERTS = "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS";
     private static final String ENV_VAR_STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS = "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS";
 
@@ -155,7 +159,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     protected static final String REPLICATION_PORT_NAME = "tcp-replication";
     protected static final int KAFKA_AGENT_PORT = 8443;
     protected static final String KAFKA_AGENT_PORT_NAME = "tcp-kafkaagent";
-    protected static final int CONTROLPLANE_PORT = 9090;
+    /**
+     * Port number used for control plane
+     */
+    public static final int CONTROLPLANE_PORT = 9090;
     protected static final String CONTROLPLANE_PORT_NAME = "tcp-ctrlplane"; // port name is up to 15 characters
 
     /**
@@ -169,12 +176,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final int INGRESS_PORT = 443;
 
     protected static final String KAFKA_NAME = "kafka";
-    protected static final String CLUSTER_CA_CERTS_VOLUME = "cluster-ca";
-    protected static final String BROKER_CERTS_VOLUME = "broker-certs";
-    protected static final String CLIENT_CA_CERTS_VOLUME = "client-ca-cert";
-    protected static final String CLUSTER_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/cluster-ca-certs";
-    protected static final String BROKER_CERTS_VOLUME_MOUNT = "/opt/kafka/broker-certs";
-    protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-certs";
     protected static final String TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/certificates";
     protected static final String CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT = "/opt/kafka/custom-authn-secrets";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
@@ -196,11 +197,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Key under which the broker configuration is stored in Config Map
      */
     public static final String BROKER_CONFIGURATION_FILENAME = "server.config";
-
-    /**
-     * Key under which the listener configuration is stored in Config Map
-     */
-    public static final String BROKER_LISTENERS_FILENAME = "listeners.config";
 
     /**
      * Key under which the Kafka cluster.id is stored in Config Map
@@ -288,7 +284,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return Kafka cluster instance
      */
-    @SuppressWarnings("NPathComplexity")
+    @SuppressWarnings({"NPathComplexity", "deprecation"}) // Keycloak Authorization is deprecated; resource configuration in Kafka CR (.spec.kafka.resources) is deprecated
     public static KafkaCluster fromCrd(Reconciliation reconciliation,
                                        Kafka kafka,
                                        List<KafkaPool> pools,
@@ -1218,7 +1214,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             DEFAULT_POD_LABELS,
                             podAnnotationsProvider.apply(node),
                             KafkaResources.brokersServiceName(cluster),
-                            getMergedAffinity(pool),
+                            ModelUtils.affinityWithRackLabelSelector(pool.templatePod, rack),
                             ContainerUtils.listOrNull(createInitContainer(imagePullPolicy, pool)),
                             createAllContainers(imagePullPolicy, pool),
                             getPodSetVolumes(node, pool.storage, pool.templatePod, isOpenShift),
@@ -1369,14 +1365,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return List of non-data volumes used by the Kafka pods
      */
-    @SuppressWarnings("deprecation") // OPA authorization and Secrets in custom authentication are deprecated
+    @SuppressWarnings("deprecation") // OPA and Keycloak authorization, OAuth authentication, and Secrets in custom authentication are deprecated
     private List<Volume> getNonDataVolumes(boolean isOpenShift, NodeRef node, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, node.podName(), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaResources.clientsCaCertificateSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, node.podName()));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
 
@@ -1389,25 +1382,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
             // Listener specific volumes related to their specific authentication or encryption settings
             for (GenericKafkaListener listener : listeners) {
-                if (listener.isTls()
-                        && listener.getConfiguration() != null
-                        && listener.getConfiguration().getBrokerCertChainAndKey() != null) {
-                    CertAndKeySecretSource secretSource = listener.getConfiguration().getBrokerCertChainAndKey();
-
-                    Map<String, String> items = new HashMap<>(2);
-                    items.put(secretSource.getKey(), "tls.key");
-                    items.put(secretSource.getCertificate(), "tls.crt");
-
-                    volumeList.add(
-                            VolumeUtils.createSecretVolume(
-                                    "custom-" + ListenersUtils.identifier(listener) + "-certs",
-                                    secretSource.getSecretName(),
-                                    items,
-                                    isOpenShift
-                            )
-                    );
-                }
-
                 if (ListenersUtils.isListenerWithOAuth(listener)) {
                     KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                     CertUtils.createTrustedCertificatesVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift, "oauth-" + ListenersUtils.identifier(listener));
@@ -1462,13 +1436,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of volume mounts
      */
-    @SuppressWarnings("deprecation") // OPA Authorization and Secrets in custom authentication are deprecated
+    @SuppressWarnings("deprecation") // OPA and Keycloak Authorization, OAuth authentication, and Secrets in custom authentication are deprecated
     private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate, boolean isBroker) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
-        volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
 
@@ -1482,12 +1453,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             // Listener specific volumes related to their specific authentication or encryption settings
             for (GenericKafkaListener listener : listeners) {
                 String identifier = ListenersUtils.identifier(listener);
-
-                if (listener.isTls()
-                        && listener.getConfiguration() != null
-                        && listener.getConfiguration().getBrokerCertChainAndKey() != null)  {
-                    volumeMountList.add(VolumeUtils.createVolumeMount("custom-" + identifier + "-certs", "/opt/kafka/certificates/custom-" + identifier + "-certs"));
-                }
 
                 if (ListenersUtils.isListenerWithOAuth(listener))   {
                     KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
@@ -1519,39 +1484,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         TemplateUtils.addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer);
         return volumeMountList;
-    }
-
-    /**
-     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
-     *
-     * @param pool  Node pool with custom affinity configuration
-     *
-     * @return  Combined affinity
-     */
-    private Affinity getMergedAffinity(KafkaPool pool) {
-        Affinity userAffinity = pool.templatePod != null && pool.templatePod.getAffinity() != null ? pool.templatePod.getAffinity() : new Affinity();
-        AffinityBuilder builder = new AffinityBuilder(userAffinity);
-        if (rack != null) {
-            // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
-            // We add the affinity even for controller only nodes as we prefer them to be spread even if they don't directly use rack awareness
-            builder = builder
-                    .editOrNewPodAntiAffinity()
-                        .addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                            .withWeight(100)
-                            .withNewPodAffinityTerm()
-                                .withTopologyKey(rack.getTopologyKey())
-                                .withNewLabelSelector()
-                                    .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
-                                    .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, componentName)
-                                .endLabelSelector()
-                            .endPodAffinityTerm()
-                        .endPreferredDuringSchedulingIgnoredDuringExecution()
-                    .endPodAntiAffinity();
-
-            builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
-        }
-
-        return builder.build();
     }
 
     private List<EnvVar> getInitContainerEnvVars(KafkaPool pool) {
@@ -1675,12 +1607,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of environment variables
      */
-    @SuppressWarnings("deprecation") // OPA Authorization is deprecated
+    @SuppressWarnings("deprecation") // OPA and Keycloak Authorization and OAuth authentication are deprecated
     private  List<EnvVar> getEnvVars(KafkaPool pool) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_JMX_EXPORTER_ENABLED,
                 String.valueOf(metrics instanceof JmxPrometheusExporterModel)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(pool.gcLoggingEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CLUSTER_NAME, cluster));
 
         JvmOptionUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, pool.jvmOptions, pool.resources);
         JvmOptionUtils.jvmPerformanceOptions(varList, pool.jvmOptions);
@@ -1752,6 +1685,61 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         } else {
             return null;
         }
+    }
+
+    /**
+     * Creates a Role for reading TLS certificate secrets in the same namespace as the resource.
+     * This is used for loading certificates from secrets directly.
+     **
+     * @return role for the Kafka Cluster
+     */
+    public Role generateRole() {
+        Set<String> certSecretNames = new HashSet<>();
+        certSecretNames.add(KafkaResources.clusterCaCertificateSecretName(cluster));
+        certSecretNames.addAll(nodes().stream().map(NodeRef::podName).toList());
+
+        for (GenericKafkaListener listener : listeners) {
+            if (listener.isTls()) {
+                if (listener.getConfiguration() != null && listener.getConfiguration().getBrokerCertChainAndKey() != null) {
+                    certSecretNames.add(listener.getConfiguration().getBrokerCertChainAndKey().getSecretName());
+                }
+            }
+
+            if (listener.getAuth() instanceof KafkaListenerAuthenticationTls) {
+                certSecretNames.add(KafkaResources.clientsCaCertificateSecretName(cluster));
+            }
+        }
+
+        List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
+                .withApiGroups("")
+                .withResources("secrets")
+                .withVerbs("get")
+                .withResourceNames(certSecretNames.stream().toList())
+                .build());
+
+        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
+    }
+
+    /**
+     * Generates the Kafka Cluster Role Binding
+     *
+     * @return  Role Binding for the Kafka Cluster
+     */
+    public RoleBinding generateRoleBindingForRole() {
+        Subject subject = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(componentName)
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName(componentName)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("Role")
+                .build();
+
+        return RbacUtils
+                .createRoleBinding(KafkaResources.kafkaRoleBindingName(cluster), namespace, roleRef, List.of(subject), labels, ownerReference, null);
     }
 
     /**
@@ -1895,7 +1883,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .withKRaftMetadataLogDir(VolumeUtils.kraftMetadataPath(pool.storage))
                 .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, false))
                 .withListeners(cluster,
-                        kafkaVersion,
                         namespace,
                         listeners,
                         listenerId -> advertisedHostnames.get(node.nodeId()).get(listenerId),
@@ -1942,16 +1929,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
                 data.put(LoggingModel.LOG4J2_CONFIG_MAP_KEY, parsedLogging);
                 data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerConfiguration(node, pool, advertisedHostnames, advertisedPorts));
-
-                // List of configured listeners => StrimziPodSets still need this because of OAUTH and how the OAUTH secret
-                // environment variables are parsed in the container bash scripts.
-                // The actual content of this file is not used on controller-only nodes as they do not expose any
-                // user-configured listeners. But we still pass there an empty file as that allows us to share the same
-                // script to generate the node configuration.
-                data.put(BROKER_LISTENERS_FILENAME, node.broker() ? listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")) : null);
-
-                // controller and broker gets the Cluster ID in different states during migration
-                // and they both get it when in full KRaft-mode
                 data.put(BROKER_CLUSTER_ID_FILENAME, clusterId);
                 data.put(BROKER_METADATA_VERSION_FILENAME, metadataVersion);
 
@@ -1961,6 +1938,18 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         return configMaps;
+    }
+
+    /**
+     * Generates a Secret with the given name and data in Kafka Cluster's namespace
+     *
+     * @param secretData    Secret data
+     * @param secretName    Secret name
+     *
+     * @return Secret that is generated
+     */
+    public Secret generateSecret(Map<String, String> secretData, String secretName) {
+        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.of(), Map.of());
     }
 
     /**

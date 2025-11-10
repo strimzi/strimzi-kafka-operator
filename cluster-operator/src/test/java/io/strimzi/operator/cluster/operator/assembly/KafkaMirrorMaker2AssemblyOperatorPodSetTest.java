@@ -31,6 +31,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
+import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -70,6 +71,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -100,13 +102,27 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
             .withNewMetadata()
                 .withName(NAME)
                 .withNamespace(NAMESPACE)
+                .withLabels(Map.of("my-user-label", "cromulent"))
             .endMetadata()
             .withNewSpec()
-                .withReplicas(3)
-                .withClusters(List.of())
-                .withMirrors(List.of())
+                .withNewTarget()
+                    .withAlias("target")
+                    .withGroupId("my-mm2-group")
+                    .withConfigStorageTopic("my-mm2-config")
+                    .withOffsetStorageTopic("my-mm2-offset")
+                    .withStatusStorageTopic("my-mm2-status")
+                    .withBootstrapServers("target:9092")
+                .endTarget()
+                .withMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withNewSource()
+                            .withAlias("source")
+                            .withBootstrapServers("source:9092")
+                        .endSource()
+                        // We do not configure any connectors to avoid mocking the Connect REST API
+                        .build())
             .endSpec()
             .build();
+
     private static final KafkaMirrorMaker2Cluster CLUSTER = KafkaMirrorMaker2Cluster.fromCrd(RECONCILIATION, MM2, VERSIONS, SHARED_ENV_PROVIDER);
 
     protected static Vertx vertx;
@@ -191,6 +207,14 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
 
+                    // Check pod annotations
+                    for (Pod pod : PodSetUtils.podSetToPods(podSet))  {
+                        assertThat(pod.getMetadata().getAnnotations().size(), is(3));
+                        assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue())); // We do not check the exact value -> it just describes the exact pod configuration which might change with too many unrelated code or dependency changes
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("97e8b518"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("0")); // We do not use any security in this test, so it is set but as 0
+                    }
+
                     // Verify services => one regular and one headless
                     List<Service> capturedServices = serviceCaptor.getAllValues();
                     assertThat(capturedServices, hasSize(2));
@@ -205,7 +229,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     assertThat(headlessService.getSpec().getType(), is("ClusterIP"));
                     assertThat(headlessService.getSpec().getClusterIP(), is("None"));
 
-                    // Verify PDB => should be set up for custom controller
+                    // Verify PDB => should be set up for a custom controller
                     List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                     assertThat(capturedPdb.size(), is(1));
                     PodDisruptionBudget pdb = capturedPdb.get(0);
