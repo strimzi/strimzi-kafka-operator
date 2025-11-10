@@ -52,7 +52,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test suite for verifying reconciliation pause functionality across various Strimzi custom resources including Kafka, KafkaConnect, KafkaConnector, KafkaTopic, and KafkaRebalance.")
+    description = @Desc("Test suite verifying reconciliation pause functionality for Strimzi custom resources including `Kafka`, `KafkaConnect`, `KafkaConnector`, `KafkaTopic`, and `KafkaRebalance`.")
 )
 public class ReconciliationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ReconciliationST.class);
@@ -65,16 +65,16 @@ public class ReconciliationST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     @TestDoc(
-        description = @Desc("Test verifies that pause reconciliation annotation prevents changes from being applied to Kafka, KafkaConnect, and KafkaConnector resources, and that resuming reconciliation applies pending changes."),
+        description = @Desc("This test verifies that pause reconciliation annotation prevents changes from being applied to `Kafka`, `KafkaConnect`, and `KafkaConnector` resources, and that resuming reconciliation applies pending changes."),
         steps = {
             @Step(value = "Deploy Kafka cluster with node pools.", expected = "Kafka cluster is deployed with 3 replicas."),
-            @Step(value = "Add pause annotation to Kafka and scale broker pool to 4 replicas.", expected = "Kafka reconciliation is paused and no new pods are created."),
-            @Step(value = "Remove pause annotation from Kafka.", expected = "Kafka is scaled to 4 replicas."),
-            @Step(value = "Deploy KafkaConnect with pause annotation.", expected = "KafkaConnect reconciliation is paused and no pods are created."),
-            @Step(value = "Remove pause annotation from KafkaConnect.", expected = "KafkaConnect pod is created."),
-            @Step(value = "Create KafkaConnector.", expected = "KafkaConnector is deployed successfully."),
-            @Step(value = "Add pause annotation to KafkaConnector and scale tasksMax to 4.", expected = "KafkaConnector reconciliation is paused and configuration is not updated."),
-            @Step(value = "Remove pause annotation from KafkaConnector.", expected = "KafkaConnector tasksMax is updated to 4.")
+            @Step(value = "Add the pause annotation to the `Kafka` resource and scale the broker node pool to 4 replicas.", expected = "Kafka reconciliation is paused and no new pods are created."),
+            @Step(value = "Remove pause annotation from the `Kafka` resource.", expected = "Kafka is scaled to 4 replicas."),
+            @Step(value = "Deploy a `KafkaConnect` resource with the pause annotation.", expected = "Kafka Connect reconciliation is paused and no pods are created."),
+            @Step(value = "Remove pause annotation from the `KafkaConnect` resource.", expected = "A Kafka Connect pod is created."),
+            @Step(value = "Create a `KafkaConnector` resource.", expected = "`Kafka Connect connector is deployed successfully."),
+            @Step(value = "Add the pause annotation to the `KafkaConnector` resource and scale `tasksMax` to 4.", expected = "`KafkaConnector` reconciliation is paused and configuration is not updated."),
+            @Step(value = "Remove pause annotation from the `KafkaConnector` resource.", expected = "``KafkaConnector` `tasksMax` is updated to 4.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
@@ -152,16 +152,16 @@ public class ReconciliationST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
     @TestDoc(
-        description = @Desc("Test verifies that pause reconciliation annotation prevents changes from being applied to KafkaTopic and KafkaRebalance resources, and that resuming reconciliation applies pending changes."),
+        description = @Desc("This test verifies that pause reconciliation annotation prevents changes from being applied to `KafkaTopic` and `KafkaRebalance` resources, and that resuming reconciliation applies pending changes."),
         steps = {
             @Step(value = "Deploy Kafka cluster with Cruise Control and node pools.", expected = "Kafka cluster with Cruise Control is deployed."),
-            @Step(value = "Create KafkaTopic.", expected = "Topic is created and present in Kafka."),
-            @Step(value = "Add pause annotation to KafkaTopic and change partition count to 4.", expected = "Topic reconciliation is paused and partitions are not changed."),
-            @Step(value = "Remove pause annotation from KafkaTopic.", expected = "Topic partitions are scaled to 4."),
+            @Step(value = "Create a `KafkaTopic` resource.", expected = "Topic is created and present in Kafka."),
+            @Step(value = "Add the pause annotation to the `KafkaTopic` resource and change partition count to 4.", expected = "Topic reconciliation is paused and partitions are not changed."),
+            @Step(value = "Remove pause annotation from the `KafkaTopic` resource.", expected = "Topic partitions are scaled to 4."),
             @Step(value = "Create KafkaRebalance and wait for ProposalReady state.", expected = "KafkaRebalance reaches ProposalReady state."),
-            @Step(value = "Add pause annotation to KafkaRebalance and approve it.", expected = "Rebalance reconciliation is paused and approval is not triggered."),
-            @Step(value = "Remove pause annotation from KafkaRebalance.", expected = "KafkaRebalance returns to ProposalReady state."),
-            @Step(value = "Approve KafkaRebalance again.", expected = "Rebalance is executed and reaches Ready state.")
+            @Step(value = "Add pause annotation to the KafkaRebalance resource and approve it.", expected = "Rebalance reconciliation is paused and approval is not triggered."),
+            @Step(value = "Remove pause annotation from the `KafkaRebalance` resource.", expected = "`KafkaRebalance` returns to `ProposalReady` state."),
+            @Step(value = "Approve the `KafkaRebalance` resource again.", expected = "Rebalance is executed and reaches `Ready` state.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),

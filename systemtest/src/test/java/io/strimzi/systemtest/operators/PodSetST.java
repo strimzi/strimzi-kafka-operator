@@ -40,7 +40,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test suite for StrimziPodSet related functionality and features, which verifies pod set reconciliation behavior.")
+    description = @Desc("Test suite for `StrimziPodSet` related functionality and features, which verifies pod set reconciliation behavior.")
 )
 public class PodSetST extends AbstractST {
 
@@ -48,17 +48,17 @@ public class PodSetST extends AbstractST {
 
     @IsolatedTest("We are changing CO env variables in this test")
     @TestDoc(
-        description = @Desc("Test verifies that when STRIMZI_POD_SET_RECONCILIATION_ONLY environment variable is enabled, only StrimziPodSet resources are reconciled while Kafka configuration changes do not trigger pod rolling updates."),
+        description = @Desc("This test verifies that when the `STRIMZI_POD_SET_RECONCILIATION_ONLY` environment variable is enabled, only `StrimziPodSet` resources are reconciled, and Kafka configuration changes do not trigger rolling updates of pods."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with 3 replicas and configure topics for resilience.", expected = "Kafka cluster with node pools and topics is deployed successfully."),
+            @Step(value = "Deploy a Kafka cluster with node pools configured for 3 replicas and configure topics for resilience.", expected = "Kafka cluster with node pools and topics is deployed successfully."),
             @Step(value = "Start continuous producer and consumer clients.", expected = "Clients are producing and consuming messages."),
-            @Step(value = "Enable STRIMZI_POD_SET_RECONCILIATION_ONLY environment variable in Cluster Operator.", expected = "Cluster Operator rolls out with the new environment variable."),
-            @Step(value = "Change Kafka readiness probe timeout.", expected = "No pod rolling update occurs despite configuration change."),
-            @Step(value = "Delete one Kafka pod.", expected = "Pod is recreated by StrimziPodSet controller."),
-            @Step(value = "Remove STRIMZI_POD_SET_RECONCILIATION_ONLY environment variable from Cluster Operator.", expected = "Cluster Operator rolls out again."),
-            @Step(value = "Verify pod rolling update occurs.", expected = "Kafka pods are rolled due to the pending configuration change."),
-            @Step(value = "Verify StrimziPodSet status.", expected = "All StrimziPodSets are ready with matching pod counts."),
-            @Step(value = "Verify message continuity.", expected = "Continuous clients successfully produced and consumed all messages.")
+            @Step(value = "Enable `STRIMZI_POD_SET_RECONCILIATION_ONLY` environment variable in Cluster Operator.", expected = "Cluster Operator restarts with the new environment variable."),
+            @Step(value = "Change Kafka readiness probe timeout in the `Kafka` resource.", expected = "No pod rolling update occurs despite configuration change."),
+            @Step(value = "Delete one Kafka pod.", expected = "Pod is recreated by `StrimziPodSet` controller."),
+            @Step(value = "Remove `STRIMZI_POD_SET_RECONCILIATION_ONLY` environment variable from Cluster Operator.", expected = "Cluster Operator restarts again."),
+            @Step(value = "Verify pod rolling update occurs.", expected = "Kafka pods are restarted due to the pending configuration change."),
+            @Step(value = "Verify `StrimziPodSet` status.", expected = "All `StrimziPodSet` resources are ready with matching pod counts."),
+            @Step(value = "Verify message continuity.", expected = "Clients continued to successfully produce and consume all messages.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
