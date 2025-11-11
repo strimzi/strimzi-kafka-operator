@@ -396,8 +396,18 @@ pipelines:
   ### Performance ###
   ###################
   # x86-64
-  - agent: "oracle-vm-8cpu-32gb-x86-64"
+  - agent: "ubuntu-latest"
     arch: "amd64"
+    pipeline: "performance"
+    profile: "performance"
+    timeout: 180
+    strimzi_feature_gates: ""
+    strimzi_rbac_scope: "CLUSTER"
+    cluster_operator_install_type: "yaml"
+    parallel: 1
+  # arm64
+  - agent: "ubuntu-24.04-arm"
+    arch: "arm64"
     pipeline: "performance"
     profile: "performance"
     timeout: 180
