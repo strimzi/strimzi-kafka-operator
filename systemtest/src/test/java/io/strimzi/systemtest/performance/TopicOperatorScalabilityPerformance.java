@@ -99,30 +99,30 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
         suiteTestStorage = new TestStorage(KubeResourceManager.get().getTestContext(), TestConstants.CO_NAMESPACE);
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
+            KafkaNodePoolTemplates.brokerPool(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
         );
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaTemplates.kafka(suiteTestStorage.getNamespaceName(),  suiteTestStorage.getClusterName(), 3)
                 .editSpec()
                     .editKafka()
-                    .withResources(new ResourceRequirementsBuilder()
-                        .addToLimits("memory", new Quantity("768Mi"))
-                        .addToLimits("cpu", new Quantity("750m"))
-                        .addToRequests("memory", new Quantity("768Mi"))
-                        .addToRequests("cpu", new Quantity("750m"))
-                        .build())
+//                    .withResources(new ResourceRequirementsBuilder()
+//                        .addToLimits("memory", new Quantity("768Mi"))
+//                        .addToLimits("cpu", new Quantity("750m"))
+//                        .addToRequests("memory", new Quantity("768Mi"))
+//                        .addToRequests("cpu", new Quantity("750m"))
+//                        .build())
                     .endKafka()
                         .editEntityOperator()
                             .editTopicOperator()
                                 .withReconciliationIntervalMs(10_000L)
-                                .withResources(new ResourceRequirementsBuilder()
-                                    .addToLimits("memory", new Quantity("768Mi"))
-                                    .addToLimits("cpu", new Quantity("750m"))
-                                    .addToRequests("memory", new Quantity("768Mi"))
-                                    .addToRequests("cpu", new Quantity("750m"))
-                                    .build())
+//                                .withResources(new ResourceRequirementsBuilder()
+//                                    .addToLimits("memory", new Quantity("768Mi"))
+//                                    .addToLimits("cpu", new Quantity("750m"))
+//                                    .addToRequests("memory", new Quantity("768Mi"))
+//                                    .addToRequests("cpu", new Quantity("750m"))
+//                                    .build())
                             .endTopicOperator()
                             .editOrNewTemplate()
                                 .editOrNewTopicOperatorContainer()
