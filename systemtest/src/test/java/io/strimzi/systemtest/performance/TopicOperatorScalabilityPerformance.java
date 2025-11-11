@@ -46,7 +46,7 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
     private TestStorage suiteTestStorage;
 
     // topic event batches to test
-    private final List<Integer> eventBatches = List.of(10, 100, 500, 1000);
+    private final List<Integer> eventBatches = List.of(10, 110, 500, 1000);
     private final int maxBatchSize = 100;
     private final int maxBatchLingerMs = 100;
     private final int maxQueueSize = Integer.MAX_VALUE;
