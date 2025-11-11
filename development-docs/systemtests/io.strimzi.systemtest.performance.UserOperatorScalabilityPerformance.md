@@ -16,7 +16,7 @@
 
 ## testLatencyUnderLoad
 
-**Description:** This test measures single user modification latency under different load levels to understand how response time scales with system load.
+**Description:** This test measures user modification latency statistics under different load levels by performing multiple user modifications to understand how response time scales with system load.
 
 **Steps:**
 
