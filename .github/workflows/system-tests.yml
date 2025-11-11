@@ -356,7 +356,7 @@ jobs:
         with:
           pattern: performance-results-*
           path: systemtest/target/performance-artifacts
-          merge-multiple: true
+          # Each artifact gets its own subdirectory (not merged) to preserve arch-specific results
 
       - name: List downloaded artifacts
         uses: ./.github/actions/utils/list-artifacts
