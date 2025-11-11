@@ -347,45 +347,6 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: ./.github/actions/systemtests/run-perf-report
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
-
-      - name: Download performance results
-        uses: actions/download-artifact@v4
-        with:
-          pattern: performance-results-*
-          path: systemtest/target/performance-artifacts
-          # Each artifact gets its own subdirectory (not merged) to preserve arch-specific results
-
-      - name: List downloaded artifacts
-        uses: ./.github/actions/utils/list-artifacts
-        with:
-          artifacts-path: systemtest/target/performance-artifacts
-
-      - name: Generate performance report
-        id: generate_report
-        uses: ./.github/actions/systemtests/perf-report
-        with:
-          performance-dir: systemtest/target/performance-artifacts
-
-      - name: Add performance report comment
-        if: ${{ steps.generate_report.outputs.has-results == 'true' }}
-        uses: ./.github/actions/utils/add-comment
-        with:
-          commentMessage: |
-            ## Performance Test Results
-
-            ${{ steps.generate_report.outputs.summary }}
-
-      - name: Add performance report to job summary
-        if: ${{ steps.generate_report.outputs.has-results == 'true' }}
-        uses: ./.github/actions/utils/add-to-summary
-        with:
-          content: ${{ steps.generate_report.outputs.summary }}
-
-      - name: No results warning
-        if: ${{ steps.generate_report.outputs.has-results == 'false' }}
-        uses: ./.github/actions/utils/create-warning
-        with:
-          message: "No performance results found in artifacts"

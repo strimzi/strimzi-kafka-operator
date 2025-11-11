@@ -19,5 +19,5 @@ runs:
         ARTIFACTS_PATH: ${{ inputs.artifacts-path }}
         MAX_FILES: ${{ inputs.max-files }}
       run: |
-        echo "Downloaded performance artifacts:"
+        echo "Downloaded artifacts:"
         find "$ARTIFACTS_PATH" -type f | head -n "$MAX_FILES"

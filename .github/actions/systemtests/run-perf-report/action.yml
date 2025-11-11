@@ -1,0 +1,60 @@
+name: Run Performance Report
+description: Downloads artifacts, generates performance report, and posts results
+inputs:
+  ref:
+    description: 'Git ref to checkout'
+    required: true
+  artifacts-pattern:
+    description: 'Pattern for performance artifacts to download'
+    required: false
+    default: 'performance-results-*'
+  artifacts-path:
+    description: 'Path where artifacts should be downloaded'
+    required: false
+    default: 'systemtest/target/performance-artifacts'
+runs:
+  using: composite
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        ref: ${{ inputs.ref }}
+
+    - name: Download performance results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ inputs.artifacts-pattern }}
+        path: ${{ inputs.artifacts-path }}
+        # Each artifact gets its own subdirectory (not merged) to preserve arch-specific results
+
+    - name: List downloaded artifacts
+      uses: .github/actions/utils/list-artifacts
+      with:
+        artifacts-path: ${{ inputs.artifacts-path }}
+
+    - name: Generate performance report
+      id: generate_report
+      uses: .github/actions/systemtests/perf-report
+      with:
+        performance-dir: ${{ inputs.artifacts-path }}
+
+    - name: Add performance report comment
+      if: ${{ steps.generate_report.outputs.has-results == 'true' }}
+      uses: .github/actions/utils/add-comment
+      with:
+        commentMessage: |
+          ## Performance Test Results
+
+          ${{ steps.generate_report.outputs.summary }}
+
+    - name: Add performance report to job summary
+      if: ${{ steps.generate_report.outputs.has-results == 'true' }}
+      uses: .github/actions/utils/add-to-summary
+      with:
+        content: ${{ steps.generate_report.outputs.summary }}
+
+    - name: No results warning
+      if: ${{ steps.generate_report.outputs.has-results == 'false' }}
+      uses: .github/actions/utils/create-warning
+      with:
+        message: "No performance results found in artifacts"
