@@ -1,0 +1,23 @@
+name: List Artifacts
+description: "Lists downloaded artifacts for debugging purposes"
+
+inputs:
+  artifacts-path:
+    description: "Path to the artifacts directory"
+    required: true
+  max-files:
+    description: "Maximum number of files to list"
+    required: false
+    default: "20"
+
+runs:
+  using: composite
+  steps:
+    - name: List artifacts
+      shell: bash
+      env:
+        ARTIFACTS_PATH: ${{ inputs.artifacts-path }}
+        MAX_FILES: ${{ inputs.max-files }}
+      run: |
+        echo "Downloaded performance artifacts:"
+        find "$ARTIFACTS_PATH" -type f | head -n "$MAX_FILES"
