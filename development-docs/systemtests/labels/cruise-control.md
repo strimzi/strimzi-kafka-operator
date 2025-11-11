@@ -26,3 +26,4 @@ Ensuring the correctness of Cruise Control behavior under different configuratio
 - [testCruiseControlWithSingleNodeKafka](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testDeployAndUnDeployCruiseControl](../io.strimzi.systemtest.cruisecontrol.CruiseControlConfigurationST.md)
 - [testKafkaRebalanceAutoApprovalMechanism](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
+- [testPauseReconciliationInKafkaRebalanceAndTopic](../io.strimzi.systemtest.operators.ReconciliationST.md)

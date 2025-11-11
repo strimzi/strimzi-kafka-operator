@@ -4,6 +4,11 @@
  */
 package io.strimzi.systemtest.operators;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -12,6 +17,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -45,6 +51,9 @@ import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite verifying reconciliation pause functionality for Strimzi custom resources including `Kafka`, `KafkaConnect`, `KafkaConnector`, `KafkaTopic`, and `KafkaRebalance`.")
+)
 public class ReconciliationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ReconciliationST.class);
 
@@ -55,6 +64,23 @@ public class ReconciliationST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
+    @TestDoc(
+        description = @Desc("This test verifies that pause reconciliation annotation prevents changes from being applied to `Kafka`, `KafkaConnect`, and `KafkaConnector` resources, and that resuming reconciliation applies pending changes."),
+        steps = {
+            @Step(value = "Deploy a Kafka cluster with broker and controller node pools configured for 3 replicas each.", expected = "Kafka cluster deployed with 3 broker and 3 controller replicas."),
+            @Step(value = "Add the pause annotation to the `Kafka` resource and scale the broker node pool to 4 replicas.", expected = "Kafka reconciliation is paused and no new pods are created."),
+            @Step(value = "Remove pause annotation from the `Kafka` resource.", expected = "Kafka is scaled to 4 replicas."),
+            @Step(value = "Deploy a `KafkaConnect` resource with the pause annotation.", expected = "Kafka Connect reconciliation is paused and no pods are created."),
+            @Step(value = "Remove pause annotation from the `KafkaConnect` resource.", expected = "A Kafka Connect pod is created."),
+            @Step(value = "Create a `KafkaConnector` resource.", expected = "`Kafka Connect connector is deployed successfully."),
+            @Step(value = "Add the pause annotation to the `KafkaConnector` resource and scale `tasksMax` to 4.", expected = "`KafkaConnector` reconciliation is paused and configuration is not updated."),
+            @Step(value = "Remove pause annotation from the `KafkaConnector` resource.", expected = "``KafkaConnector` `tasksMax` is updated to 4.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.CONNECT)
+        }
+    )
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -125,6 +151,23 @@ public class ReconciliationST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
+    @TestDoc(
+        description = @Desc("This test verifies that pause reconciliation annotation prevents changes from being applied to `KafkaTopic` and `KafkaRebalance` resources, and that resuming reconciliation applies pending changes."),
+        steps = {
+            @Step(value = "Deploy a Kafka cluster with Cruise Control, broker node pool (3 replicas), and controller node pool (1 replica).", expected = "Kafka cluster with Cruise Control deployed with 3 broker and 1 controller replicas."),
+            @Step(value = "Create a `KafkaTopic` resource.", expected = "Topic is created and present in Kafka."),
+            @Step(value = "Add the pause annotation to the `KafkaTopic` resource and change partition count to 4.", expected = "Topic reconciliation is paused and partitions are not changed."),
+            @Step(value = "Remove pause annotation from the `KafkaTopic` resource.", expected = "Topic partitions are scaled to 4."),
+            @Step(value = "Create a `KafkaRebalance` resource and wait for `ProposalReady` state.", expected = "`KafkaRebalance` reaches `ProposalReady` state."),
+            @Step(value = "Add pause annotation to the KafkaRebalance resource and approve it.", expected = "Rebalance reconciliation is paused and approval is not triggered."),
+            @Step(value = "Remove pause annotation from the `KafkaRebalance` resource.", expected = "`KafkaRebalance` returns to `ProposalReady` state."),
+            @Step(value = "Approve the `KafkaRebalance` resource again.", expected = "Rebalance is executed and reaches `Ready` state.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL)
+        }
+    )
     void testPauseReconciliationInKafkaRebalanceAndTopic() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 

@@ -35,6 +35,7 @@ maintaining data consistency and availability in a streaming ecosystem.
 - [testMountingSecretAndConfigMapAsVolumesAndEnvVars](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testMultiNodeKafkaConnectWithConnectorCreation](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testMultipleCOsInDifferentNamespaces](../io.strimzi.systemtest.operators.MultipleClusterOperatorsST.md)
+- [testPauseReconciliationInKafkaAndKafkaConnectWithConnector](../io.strimzi.systemtest.operators.ReconciliationST.md)
 - [testPushIntoImageStream](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testScaleConnectAndConnectorSubresource](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testScaleConnectWithConnectorToZero](../io.strimzi.systemtest.connect.ConnectST.md)
