@@ -157,7 +157,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     }
 
     @TestDoc(
-        description = @Desc("This test measures single user modification latency under different load levels to understand how response time scales with system load."),
+        description = @Desc("This test measures user modification latency statistics under different load levels by performing multiple user modifications to understand how response time scales with system load."),
         steps = {
             @Step(value = "Deploy Kafka cluster with User Operator configured with more resources to handle load and also non-default `STRIMZI_WORK_QUEUE_SIZE` set to 2048.", expected = "Kafka cluster with User Operator is deployed and ready."),
             @Step(value = "For each configured load level (1000, 1500, 2000 existing users), create N KafkaUsers to establish the load.", expected = "N KafkaUsers are created and ready, establishing baseline load on the User Operator."),
