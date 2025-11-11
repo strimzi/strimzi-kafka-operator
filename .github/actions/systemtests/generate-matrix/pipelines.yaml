@@ -396,7 +396,7 @@ pipelines:
   ### Performance ###
   ###################
   # x86-64
-  - agent: "ubuntu-latest"
+  - agent: "oracle-vm-8cpu-32gb-x86-64"
     arch: "amd64"
     pipeline: "performance"
     profile: "performance"
