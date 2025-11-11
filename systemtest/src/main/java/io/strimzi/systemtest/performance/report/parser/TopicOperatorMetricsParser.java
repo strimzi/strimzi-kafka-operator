@@ -151,4 +151,9 @@ public class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
     protected void showMetrics() {
         System.out.println(this.buildResultTable());
     }
+
+    @Override
+    protected String getSortKey() {
+        return PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS;
+    }
 }

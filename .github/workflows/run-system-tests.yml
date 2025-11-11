@@ -283,6 +283,13 @@ jobs:
           name: systemtest-logs-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest-logs
 
+      - name: Archive performance results
+        if: ${{ always() && matrix.config.profile == 'performance' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
+          path: systemtest/target/performance
+
       - name: Set check & commit status
         if: ${{ always() }}
         uses: ./.github/actions/utils/check-and-status

@@ -23,7 +23,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,7 +44,7 @@ public abstract class BasePerformanceMetricsParser {
 
     public BasePerformanceMetricsParser() {
         this.parentPath = determineBasePathBasedOnEnvironment();
-        this.useCaseExperiments = new HashMap<>();
+        this.useCaseExperiments = new LinkedHashMap<>();
     }
 
     /**
@@ -78,6 +78,16 @@ public abstract class BasePerformanceMetricsParser {
      * @return                      An array of strings representing the headers for the use case.
      */
     protected abstract String[] getHeadersForUseCase(ExperimentMetrics experimentMetrics);
+
+    /**
+     * Abstract method to get the metric key used for sorting experiments.
+     * This allows different parsers to specify which metric should be used to sort
+     * their experiments in ascending order.
+     *
+     * @return                      The metric key to use for sorting (e.g., "IN: NUMBER OF TOPICS").
+     *                              Return null if no sorting is desired.
+     */
+    protected abstract String getSortKey();
 
     /**
      * Checks if the current execution context is a test environment.
@@ -140,6 +150,9 @@ public abstract class BasePerformanceMetricsParser {
     protected void parseComponentMetrics(File componentDir) throws IOException {
         File[] useCaseDirs = componentDir.listFiles(File::isDirectory);
         if (useCaseDirs != null) {
+            // Sort use case directories alphabetically
+            Arrays.sort(useCaseDirs, Comparator.comparing(File::getName));
+
             for (File useCaseDir : useCaseDirs) {
                 String useCaseName = useCaseDir.getName();
                 List<ExperimentMetrics> experimentsList = new ArrayList<>();
@@ -257,8 +270,31 @@ public abstract class BasePerformanceMetricsParser {
     }
 
     /**
+     * Sorts a list of experiments based on the specified sort key.
+     *
+     * @param experimentsList   The list of experiments to sort.
+     * @param sortKey           The metric key to use for sorting.
+     */
+    private void sortExperiments(List<ExperimentMetrics> experimentsList, String sortKey) {
+        if (sortKey != null && !experimentsList.isEmpty()) {
+            experimentsList.sort(Comparator.comparingDouble(experiment -> {
+                String value = experiment.getTestMetrics().get(sortKey);
+                if (value != null) {
+                    try {
+                        return Double.parseDouble(value);
+                    } catch (NumberFormatException e) {
+                        LOGGER.warn("Failed to parse sort key value '{}' for key '{}', using 0 as default", value, sortKey);
+                        return 0.0;
+                    }
+                }
+                return 0.0;
+            }));
+        }
+    }
+
+    /**
      * Construct the values of parsed experiments in a formatted table.
-     * This method organizes metrics into rows and columns based on headers and formats the output.
+     * This method organizes metrics into a clean Markdown table format, showing only varying parameters.
      * @return      A string representation of the formatted table.
      */
     protected String buildResultTable() {
@@ -266,39 +302,91 @@ public abstract class BasePerformanceMetricsParser {
 
         // Populate data for each experiment
         this.useCaseExperiments.forEach((useCaseName, experimentsList) -> {
-            output.append("Use Case: ")
-                .append(useCaseName)
-                .append("\n");
-
-            final String[] headers = getHeadersForUseCase(experimentsList.get(0));
-            final List<String[]> allRows = new ArrayList<>();
-
-            allRows.add(headers);
-
-            // Determine max width for each column
-            final int[] columnWidths = new int[headers.length];
-            for (final String[] row : allRows) {
-                for (int i = 0; i < row.length; i++) {
-                    columnWidths[i] = Math.max(columnWidths[i], row[i].length());
-                }
+            if (experimentsList.isEmpty()) {
+                return;
             }
 
-            int experimentCounter = 1;
-            output.append(generateColumn(columnWidths));
+            // Sort experiments by the specified sort key if provided
+            sortExperiments(experimentsList, getSortKey());
 
+            output.append("**Use Case:** ").append(useCaseName).append("\n\n");
+
+            final String[] headers = getHeadersForUseCase(experimentsList.get(0));
+            final List<String[]> allRowsData = new ArrayList<>();
+
+            // Collect all row data
+            int experimentCounter = 1;
             for (final ExperimentMetrics experimentMetrics : experimentsList) {
-                // Assume methods to extract and format metrics correctly are implemented
                 final String[] rowData = extractAndFormatRowData(experimentCounter, experimentMetrics);
-                allRows.add(rowData);
+                allRowsData.add(rowData);
                 experimentCounter++;
             }
 
-            allRows.forEach(row -> output.append(generateRow(row, columnWidths)));
+            // Find which columns have varying values vs fixed values
+            final List<Integer> varyingColumns = new ArrayList<>();
+            final List<Integer> fixedColumns = new ArrayList<>();
 
-            output.append(generateColumn(columnWidths));
+            for (int col = 1; col < headers.length; col++) {  // Skip "Experiment" column
+                String firstValue = allRowsData.get(0)[col];
+                boolean isVarying = false;
+
+                for (String[] rowData : allRowsData) {
+                    if (!rowData[col].equals(firstValue)) {
+                        isVarying = true;
+                        break;
+                    }
+                }
+
+                if (isVarying || headers[col].startsWith("OUT:")) {
+                    varyingColumns.add(col);
+                } else {
+                    fixedColumns.add(col);
+                }
+            }
+
+            // Display fixed parameters first (if any)
+            if (!fixedColumns.isEmpty()) {
+                output.append("**Configuration:**\n");
+                for (int col : fixedColumns) {
+                    String label = headers[col].replace("IN: ", "");
+                    String value = allRowsData.get(0)[col];
+                    output.append("- ").append(label).append(": ").append(value).append("\n");
+                }
+                output.append("\n");
+            }
+
+            // Build markdown table for varying parameters
+            output.append("**Results:**\n\n");
+
+            // Table header
+            output.append("| # |");
+            for (int col : varyingColumns) {
+                String label = headers[col]
+                    .replace("IN: ", "")
+                    .replace("OUT: ", "");
+                output.append(" ").append(label).append(" |");
+            }
+            output.append("\n");
+
+            // Table separator
+            output.append("|---|");
+            for (int ignored : varyingColumns) {
+                output.append("---|");
+            }
+            output.append("\n");
+
+            // Table rows
+            for (int row = 0; row < allRowsData.size(); row++) {
+                String[] rowData = allRowsData.get(row);
+                output.append("| ").append(row + 1).append(" |");
+                for (int col : varyingColumns) {
+                    output.append(" ").append(rowData[col]).append(" |");
+                }
+                output.append("\n");
+            }
+            output.append("\n");
         });
 
-        // return result table
         return output.toString();
     }
 

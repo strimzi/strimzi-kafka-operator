@@ -293,10 +293,10 @@ jobs:
       - generate-matrix
       - run-tests
     if: |-
-      ${{ 
-        always() && 
-        needs.parse-params.outputs.shouldRun == 'true' && 
-        needs.check-rights.result == 'success' && 
+      ${{
+        always() &&
+        needs.parse-params.outputs.shouldRun == 'true' &&
+        needs.check-rights.result == 'success' &&
         github.event_name != 'pull_request' &&
         needs.generate-matrix.outputs.isValid == 'true'
       }}
@@ -324,3 +324,66 @@ jobs:
           checkState: ${{ needs.run-tests.result == 'skipped' && 'neutral' || needs.run-tests.result }}
           checkName: "System tests verification"
           checkDescription: "Check for overall system test verification"
+
+  perf-report:
+    name: Performance Report
+    needs:
+      - parse-params
+      - check-rights
+      - generate-matrix
+      - run-tests
+    # Only run if performance profile/pipeline was executed
+    if: |-
+      ${{
+        always() &&
+        needs.parse-params.outputs.shouldRun == 'true' &&
+        needs.check-rights.result == 'success' &&
+        github.event_name != 'pull_request' &&
+        needs.generate-matrix.outputs.isValid == 'true' &&
+        (contains(needs.parse-params.outputs.profileList, 'performance') || contains(needs.parse-params.outputs.pipelineList, 'performance'))
+      }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.parse-params.outputs.ref }}
+
+      - name: Download performance results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: performance-results-*
+          path: systemtest/target/performance-artifacts
+          merge-multiple: true
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded performance artifacts:"
+          find systemtest/target/performance-artifacts -type f | head -20
+
+      - name: Generate performance report
+        id: generate_report
+        uses: ./.github/actions/systemtests/perf-report
+        with:
+          performance-dir: systemtest/target/performance-artifacts
+
+      - name: Add performance report comment
+        if: ${{ steps.generate_report.outputs.has-results == 'true' }}
+        uses: ./.github/actions/utils/add-comment
+        with:
+          commentMessage: |
+            ## Performance Test Results
+
+            ${{ steps.generate_report.outputs.summary }}
+
+      - name: Add performance report to job summary
+        if: ${{ steps.generate_report.outputs.has-results == 'true' }}
+        run: |
+          echo "${{ steps.generate_report.outputs.summary }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: No results warning
+        if: ${{ steps.generate_report.outputs.has-results == 'false' }}
+        run: |
+          echo "::warning::No performance results found in artifacts"
