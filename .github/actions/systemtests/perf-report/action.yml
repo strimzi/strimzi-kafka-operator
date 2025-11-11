@@ -34,6 +34,40 @@ runs:
           const perfDir = process.env.PERF_DIR || 'systemtest/target/performance';
 
           /**
+           * Map agent name to architecture
+           */
+          function getArchFromAgent(agentName) {
+            if (agentName.includes('arm')) {
+              return 'arm64';
+            }
+            return 'amd64';
+          }
+
+          /**
+           * Detect artifact directories (performance-results-*)
+           */
+          function findArtifactDirs(baseDir) {
+            if (!fs.existsSync(baseDir)) {
+              core.warning(`Performance directory not found: ${baseDir}`);
+              return [];
+            }
+
+            const entries = fs.readdirSync(baseDir, { withFileTypes: true });
+            const artifactDirs = entries
+              .filter(entry => entry.isDirectory() && entry.name.startsWith('performance-results-'))
+              .map(entry => ({
+                name: entry.name,
+                path: path.join(baseDir, entry.name),
+                // Extract architecture from agent name in artifact name
+                // e.g., performance-results-performance-performance-ubuntu-latest -> amd64
+                // e.g., performance-results-performance-performance-ubuntu-24.04-arm -> arm64
+                arch: getArchFromAgent(entry.name)
+              }));
+
+            return artifactDirs;
+          }
+
+          /**
            * Find the latest timestamped results directory
            */
           function findLatestResultsDir(baseDir) {
@@ -142,34 +176,64 @@ runs:
           }
 
           /**
-           * Generate markdown summary
+           * Generate markdown summary for multiple architectures
            */
-          function generateMarkdownSummary(results) {
-            const lines = [
-              `**Test Run:** \`${formatTimestamp(results.timestamp)}\``,
-              ''
-            ];
+          function generateMarkdownSummary(allResults) {
+            const lines = [];
 
-            for (const [operatorName, operatorData] of Object.entries(results.operators)) {
-              if (!operatorData || !operatorData.resultsTable) {
-                continue;
+            // Get all unique timestamps and operators
+            const timestamps = new Set();
+            const allArchs = Object.keys(allResults);
+
+            allArchs.forEach(arch => {
+              if (allResults[arch].timestamp) {
+                timestamps.add(allResults[arch].timestamp);
               }
+            });
 
+            if (timestamps.size > 0) {
+              const timestamp = Array.from(timestamps)[0];
+              lines.push(`**Test Run:** \`${formatTimestamp(timestamp)}\``);
+              lines.push('');
+            }
+
+            // Group results by operator
+            const operators = new Set();
+            allArchs.forEach(arch => {
+              Object.keys(allResults[arch].operators || {}).forEach(op => operators.add(op));
+            });
+
+            // Generate report for each operator
+            for (const operatorName of operators) {
               const title = operatorName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
               lines.push(`## ${title}`);
               lines.push('');
 
-              const tableData = operatorData.resultsTable;
+              // Show results for each architecture
+              for (const arch of allArchs.sort()) {
+                const operatorData = allResults[arch].operators?.[operatorName];
 
-              if (!tableData.experiments || tableData.experiments.length === 0) {
-                lines.push('_No results available_');
+                lines.push(`### ${arch.toUpperCase()}`);
                 lines.push('');
-                continue;
-              }
 
-              // Add the raw table (already contains use case header)
-              lines.push(tableData.rawTable);
-              lines.push('');
+                if (!operatorData || !operatorData.resultsTable) {
+                  lines.push('_No results available_');
+                  lines.push('');
+                  continue;
+                }
+
+                const tableData = operatorData.resultsTable;
+
+                if (!tableData.experiments || tableData.experiments.length === 0) {
+                  lines.push('_No results available_');
+                  lines.push('');
+                  continue;
+                }
+
+                // Add the raw table (already contains use case header)
+                lines.push(tableData.rawTable);
+                lines.push('');
+              }
             }
 
             lines.push('---');
@@ -180,42 +244,102 @@ runs:
 
           // Main execution
           try {
-            const latestDir = findLatestResultsDir(perfDir);
+            // First, check if we have artifact directories (from separate downloads)
+            const artifactDirs = findArtifactDirs(perfDir);
 
-            if (!latestDir) {
+            let allResults = {};
+            let hasResults = false;
+            let commonTimestamp = '';
+
+            if (artifactDirs.length > 0) {
+              // Process each artifact directory (one per architecture)
+              core.info(`Found ${artifactDirs.length} artifact directories`);
+
+              for (const artifactDir of artifactDirs) {
+                core.info(`Processing artifact: ${artifactDir.name} (${artifactDir.arch})`);
+
+                const latestDir = findLatestResultsDir(artifactDir.path);
+                if (!latestDir) {
+                  core.warning(`No results found in ${artifactDir.name}`);
+                  continue;
+                }
+
+                const timestamp = path.basename(latestDir);
+                if (!commonTimestamp) {
+                  commonTimestamp = timestamp;
+                }
+
+                const results = {
+                  timestamp,
+                  operators: {}
+                };
+
+                // Parse topic-operator results
+                const topicOpDir = path.join(latestDir, 'topic-operator');
+                const topicOpResults = parseOperatorResults(topicOpDir);
+                if (topicOpResults) {
+                  results.operators['topic-operator'] = topicOpResults;
+                  hasResults = true;
+                }
+
+                // Parse user-operator results
+                const userOpDir = path.join(latestDir, 'user-operator');
+                const userOpResults = parseOperatorResults(userOpDir);
+                if (userOpResults) {
+                  results.operators['user-operator'] = userOpResults;
+                  hasResults = true;
+                }
+
+                allResults[artifactDir.arch] = results;
+              }
+            } else {
+              // Fallback to old behavior for backward compatibility (single directory)
+              core.info('No artifact directories found, checking for direct results');
+              const latestDir = findLatestResultsDir(perfDir);
+
+              if (latestDir) {
+                const timestamp = path.basename(latestDir);
+                commonTimestamp = timestamp;
+                core.info(`Found performance results: ${timestamp}`);
+
+                const results = {
+                  timestamp,
+                  operators: {}
+                };
+
+                // Parse topic-operator results
+                const topicOpDir = path.join(latestDir, 'topic-operator');
+                const topicOpResults = parseOperatorResults(topicOpDir);
+                if (topicOpResults) {
+                  results.operators['topic-operator'] = topicOpResults;
+                  hasResults = true;
+                }
+
+                // Parse user-operator results
+                const userOpDir = path.join(latestDir, 'user-operator');
+                const userOpResults = parseOperatorResults(userOpDir);
+                if (userOpResults) {
+                  results.operators['user-operator'] = userOpResults;
+                  hasResults = true;
+                }
+
+                // Assume amd64 if not specified
+                allResults['amd64'] = results;
+              }
+            }
+
+            if (!hasResults) {
               core.setOutput('has_results', 'false');
               core.setOutput('summary', '_No performance results found_');
               core.setOutput('timestamp', '');
               return;
             }
 
-            const timestamp = path.basename(latestDir);
-            core.info(`Found performance results: ${timestamp}`);
-
-            const results = {
-              timestamp,
-              operators: {}
-            };
-
-            // Parse topic-operator results
-            const topicOpDir = path.join(latestDir, 'topic-operator');
-            const topicOpResults = parseOperatorResults(topicOpDir);
-            if (topicOpResults) {
-              results.operators['topic-operator'] = topicOpResults;
-            }
-
-            // Parse user-operator results
-            const userOpDir = path.join(latestDir, 'user-operator');
-            const userOpResults = parseOperatorResults(userOpDir);
-            if (userOpResults) {
-              results.operators['user-operator'] = userOpResults;
-            }
-
-            const summary = generateMarkdownSummary(results);
+            const summary = generateMarkdownSummary(allResults);
 
             core.setOutput('has_results', 'true');
             core.setOutput('summary', summary);
-            core.setOutput('timestamp', timestamp);
+            core.setOutput('timestamp', commonTimestamp);
 
             core.info('Performance report generated successfully');
 
