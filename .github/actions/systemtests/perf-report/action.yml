@@ -282,12 +282,8 @@ runs:
               }
 
               // Generate merged tables for each use case
+              // Note: Only use cases that are actually present in the results will be processed
               for (const [useCase, archResults] of useCases) {
-                // Skip latencyUseCase for topic-operator (it should only have scalabilityUseCase)
-                if (operatorName === 'topic-operator' && useCase === 'latencyUseCase') {
-                  continue;
-                }
-
                 lines.push(`**Use Case:** ${useCase}`);
                 lines.push('');
 
