@@ -92,7 +92,7 @@ runs:
           }
 
           /**
-           * Parse a results-table.txt file
+           * Parse a results-table.txt file that may contain multiple use cases
            */
           function parseResultsTable(tableFile) {
             if (!fs.existsSync(tableFile)) {
@@ -106,43 +106,94 @@ runs:
               return null;
             }
 
-            // Extract use case name from first line
-            const useCase = lines[0].replace('Use Case: ', '').trim();
+            // Find all use case sections
+            const useCaseIndices = [];
+            lines.forEach((line, idx) => {
+              if (line.match(/^\*\*Use Case:\*\*/) || line.match(/^Use Case:/)) {
+                useCaseIndices.push(idx);
+              }
+            });
 
-            // Find data lines (lines starting with |, excluding separator lines with +)
-            const dataLines = lines.filter(line => line.startsWith('|') && !line.startsWith('+'));
-
-            if (dataLines.length < 2) {
-              return { useCase, experiments: [], rawTable: content };
+            if (useCaseIndices.length === 0) {
+              return null;
             }
 
-            // Parse header
-            const header = dataLines[0].split('|')
-              .slice(1, -1)
-              .map(col => col.trim());
+            // Parse each use case section
+            const useCases = [];
+            for (let i = 0; i < useCaseIndices.length; i++) {
+              const startIdx = useCaseIndices[i];
+              const endIdx = i < useCaseIndices.length - 1 ? useCaseIndices[i + 1] : lines.length;
+              const sectionLines = lines.slice(startIdx, endIdx);
 
-            // Parse experiment rows
-            const experiments = [];
-            for (let i = 1; i < dataLines.length; i++) {
-              const values = dataLines[i].split('|')
+              // Extract use case name
+              const useCaseLine = sectionLines[0];
+              const useCase = useCaseLine
+                .replace(/^\*\*Use Case:\*\*/, '')
+                .replace(/^Use Case:/, '')
+                .trim();
+
+              // Extract configuration and table sections
+              const configStart = sectionLines.findIndex(line => line.match(/^\*\*Configuration:\*\*/));
+              const resultsStart = sectionLines.findIndex(line => line.match(/^\*\*Results:\*\*/));
+
+              let configLines = [];
+              if (configStart >= 0 && resultsStart >= 0) {
+                configLines = sectionLines.slice(configStart + 1, resultsStart)
+                  .filter(line => line.trim() && !line.match(/^\*\*/))
+                  .map(line => line.replace(/^- /, ''));
+              }
+
+              // Find table data
+              const tableLines = resultsStart >= 0
+                ? sectionLines.slice(resultsStart + 1)
+                : sectionLines.slice(1);
+
+              const dataLines = tableLines.filter(line =>
+                line.startsWith('|') && !line.startsWith('|---')
+              );
+
+              if (dataLines.length < 2) {
+                continue;
+              }
+
+              // Parse header
+              const header = dataLines[0].split('|')
                 .slice(1, -1)
                 .map(col => col.trim());
 
-              if (values.length === header.length) {
-                const experiment = {};
-                header.forEach((h, idx) => {
-                  experiment[h] = values[idx];
-                });
-                experiments.push(experiment);
+              // Parse experiment rows
+              const experiments = [];
+              for (let j = 1; j < dataLines.length; j++) {
+                const values = dataLines[j].split('|')
+                  .slice(1, -1)
+                  .map(col => col.trim());
+
+                if (values.length === header.length) {
+                  const experiment = {};
+                  header.forEach((h, idx) => {
+                    experiment[h] = values[idx];
+                  });
+                  experiments.push(experiment);
+                }
               }
+
+              // Build raw table for this use case
+              const rawTableLines = [
+                `Use Case: ${useCase}`,
+                ...configLines,
+                '',
+                ...dataLines
+              ];
+
+              useCases.push({
+                useCase,
+                header,
+                experiments,
+                rawTable: rawTableLines.join('\n')
+              });
             }
 
-            return {
-              useCase,
-              header,
-              experiments,
-              rawTable: content
-            };
+            return useCases;
           }
 
           /**
@@ -183,7 +234,7 @@ runs:
 
             // Get all unique timestamps and operators
             const timestamps = new Set();
-            const allArchs = Object.keys(allResults);
+            const allArchs = Object.keys(allResults).sort();
 
             allArchs.forEach(arch => {
               if (allResults[arch].timestamp) {
@@ -209,29 +260,152 @@ runs:
               lines.push(`## ${title}`);
               lines.push('');
 
-              // Show results for each architecture
-              for (const arch of allArchs.sort()) {
-                const operatorData = allResults[arch].operators?.[operatorName];
+              // Group results by use case across architectures
+              const useCases = new Map();
 
-                lines.push(`### ${arch.toUpperCase()}`);
+              for (const arch of allArchs) {
+                const operatorData = allResults[arch].operators?.[operatorName];
+                if (operatorData?.resultsTable) {
+                  // resultsTable is now an array of use cases
+                  const useCasesArray = Array.isArray(operatorData.resultsTable)
+                    ? operatorData.resultsTable
+                    : [operatorData.resultsTable];
+
+                  useCasesArray.forEach(tableData => {
+                    const useCase = tableData.useCase;
+                    if (!useCases.has(useCase)) {
+                      useCases.set(useCase, {});
+                    }
+                    useCases.get(useCase)[arch] = tableData;
+                  });
+                }
+              }
+
+              // Generate merged tables for each use case
+              for (const [useCase, archResults] of useCases) {
+                lines.push(`**Use Case:** ${useCase}`);
                 lines.push('');
 
-                if (!operatorData || !operatorData.resultsTable) {
-                  lines.push('_No results available_');
-                  lines.push('');
-                  continue;
+                // Get configuration from first available architecture
+                const firstArchData = Object.values(archResults)[0];
+                if (firstArchData.rawTable) {
+                  // Extract configuration lines (lines before the table starts)
+                  const rawLines = firstArchData.rawTable.split('\n');
+                  const configLines = [];
+                  for (let i = 1; i < rawLines.length; i++) {
+                    if (rawLines[i].startsWith('|')) break;
+                    if (rawLines[i].trim()) {
+                      configLines.push(rawLines[i]);
+                    }
+                  }
+                  if (configLines.length > 0) {
+                    lines.push('**Configuration:**');
+                    configLines.forEach(line => lines.push(line));
+                    lines.push('');
+                  }
                 }
 
-                const tableData = operatorData.resultsTable;
+                // Build merged table with architecture-specific columns
+                const hasMultipleArchs = Object.keys(archResults).length > 1;
+                lines.push('**Results:**');
+                lines.push('');
 
-                if (!tableData.experiments || tableData.experiments.length === 0) {
-                  lines.push('_No results available_');
-                  lines.push('');
-                  continue;
+                if (hasMultipleArchs) {
+                  // Merge tables by combining metric columns
+                  const archList = Object.keys(archResults).sort();
+                  const tables = {};
+
+                  // Parse all architecture tables
+                  for (const arch of archList) {
+                    const tableData = archResults[arch];
+                    if (tableData.experiments && tableData.header) {
+                      tables[arch] = {
+                        header: tableData.header,
+                        experiments: tableData.experiments
+                      };
+                    }
+                  }
+
+                  if (Object.keys(tables).length > 0) {
+                    // Identify common columns (typically identifiers like #, NUMBER OF TOPICS, etc.)
+                    // and metric columns (will have architecture suffix)
+                    const firstArch = archList[0];
+                    const baseHeader = tables[firstArch].header;
+
+                    // Determine which columns are identifiers vs metrics
+                    // Heuristic: columns with # or NUMBER in name are identifiers
+                    const identifierCols = [];
+                    const metricCols = [];
+
+                    baseHeader.forEach(col => {
+                      if (col.match(/^#$|NUMBER|Experiment/i)) {
+                        identifierCols.push(col);
+                      } else {
+                        metricCols.push(col);
+                      }
+                    });
+
+                    // Build merged header
+                    const mergedHeader = [...identifierCols];
+                    metricCols.forEach(metricCol => {
+                      archList.forEach(arch => {
+                        const archLabel = arch.toUpperCase();
+                        mergedHeader.push(`${metricCol} [${archLabel}]`);
+                      });
+                    });
+
+                    // Build merged rows
+                    const mergedRows = [];
+                    const firstArchExperiments = tables[firstArch].experiments;
+
+                    for (let i = 0; i < firstArchExperiments.length; i++) {
+                      const row = {};
+
+                      // Copy identifier columns from first architecture
+                      identifierCols.forEach(col => {
+                        row[col] = firstArchExperiments[i][col] || '';
+                      });
+
+                      // Add metric columns for each architecture
+                      metricCols.forEach(metricCol => {
+                        archList.forEach(arch => {
+                          const archLabel = arch.toUpperCase();
+                          const archExp = tables[arch]?.experiments[i];
+                          row[`${metricCol} [${archLabel}]`] = archExp?.[metricCol] || 'N/A';
+                        });
+                      });
+
+                      mergedRows.push(row);
+                    }
+
+                    // Generate markdown table
+                    const headerRow = '| ' + mergedHeader.join(' | ') + ' |';
+                    const separatorRow = '|' + mergedHeader.map(() => '---').join('|') + '|';
+                    lines.push(headerRow);
+                    lines.push(separatorRow);
+
+                    mergedRows.forEach(row => {
+                      const values = mergedHeader.map(h => row[h] || '');
+                      lines.push('| ' + values.join(' | ') + ' |');
+                    });
+                  }
+                } else {
+                  // Single architecture - show table as-is
+                  const tableData = Object.values(archResults)[0];
+                  if (tableData.rawTable) {
+                    const rawLines = tableData.rawTable.split('\n');
+                    const tableStart = rawLines.findIndex(line => line.startsWith('|'));
+                    if (tableStart >= 0) {
+                      lines.push(rawLines.slice(tableStart).join('\n'));
+                    }
+                  }
                 }
 
-                // Add the raw table (already contains use case header)
-                lines.push(tableData.rawTable);
+                lines.push('');
+              }
+
+              if (useCases.size === 0) {
+                lines.push('_No results available_');
                 lines.push('');
               }
             }
