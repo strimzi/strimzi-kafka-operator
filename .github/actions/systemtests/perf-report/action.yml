@@ -260,13 +260,13 @@ runs:
               lines.push(`## ${title}`);
               lines.push('');
 
-              // Group results by use case across architectures
+              // Group results by use case across architectures for this specific operator
               const useCases = new Map();
 
               for (const arch of allArchs) {
                 const operatorData = allResults[arch].operators?.[operatorName];
                 if (operatorData?.resultsTable) {
-                  // resultsTable is now an array of use cases
+                  // resultsTable is an array of use cases for this specific operator
                   const useCasesArray = Array.isArray(operatorData.resultsTable)
                     ? operatorData.resultsTable
                     : [operatorData.resultsTable];
@@ -282,8 +282,18 @@ runs:
               }
 
               // Generate merged tables for each use case
-              // Note: Only use cases that are actually present in the results will be processed
+              // For multi-architecture runs, skip use cases that don't have data from all architectures
+              // This prevents showing partial/incorrect data (e.g., from only one architecture)
               for (const [useCase, archResults] of useCases) {
+                const numArchsWithData = Object.keys(archResults).length;
+                const expectedNumArchs = allArchs.length;
+
+                // Skip if we're in a multi-arch scenario but don't have data from all architectures
+                if (expectedNumArchs > 1 && numArchsWithData < expectedNumArchs) {
+                  core.warning(`Skipping ${operatorName}/${useCase}: only ${numArchsWithData} of ${expectedNumArchs} architectures have data`);
+                  continue;
+                }
+
                 lines.push(`**Use Case:** ${useCase}`);
                 lines.push('');
 
