@@ -347,6 +347,9 @@ jobs:
       contents: read
       pull-requests: write
     steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.parse-params.outputs.ref }}
       - uses: ./.github/actions/systemtests/run-perf-report
         with:
           ref: ${{ needs.parse-params.outputs.ref }}

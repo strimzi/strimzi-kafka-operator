@@ -152,7 +152,7 @@ jobs:
 
       - name: Download container images from this build
         id: download-containers-local
-        if: ${{ inputs.buildRunId == '' }}
+        if: ${{ inputs.buildRunId == '' && inputs.releaseVersion == 'latest' }}
         uses: actions/download-artifact@v4
         with:
           name: "containers-${{ matrix.config.arch }}.tar"
