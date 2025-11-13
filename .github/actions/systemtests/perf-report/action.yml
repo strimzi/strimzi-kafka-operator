@@ -59,8 +59,6 @@ runs:
                 name: entry.name,
                 path: path.join(baseDir, entry.name),
                 // Extract architecture from agent name in artifact name
-                // e.g., performance-results-performance-performance-ubuntu-latest -> amd64
-                // e.g., performance-results-performance-performance-ubuntu-24.04-arm -> arm64
                 arch: getArchFromAgent(entry.name)
               }));
 

@@ -396,7 +396,7 @@ pipelines:
   ### Performance ###
   ###################
   # x86-64
-  - agent: "ubuntu-latest"
+  - agent: "oracle-vm-8cpu-32gb-x86-64"
     arch: "amd64"
     pipeline: "performance"
     profile: "performance"
@@ -406,7 +406,7 @@ pipelines:
     cluster_operator_install_type: "yaml"
     parallel: 1
   # arm64
-  - agent: "ubuntu-24.04-arm"
+  - agent: "oracle-vm-8cpu-32gb-arm64"
     arch: "arm64"
     pipeline: "performance"
     profile: "performance"
