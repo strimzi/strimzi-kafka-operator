@@ -171,7 +171,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     @Tag(SCALABILITY)
     void testLatencyUnderLoad() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        final List<Integer> loadLevels = List.of(110, 200, 300);
+        final List<Integer> loadLevels = List.of(1000, 1500, 2000);
         final int numberOfModifications = 100;
         // default configuration of UO
         final int maxBatchSize = 100;
