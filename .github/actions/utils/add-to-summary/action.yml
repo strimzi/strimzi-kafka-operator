@@ -1,0 +1,17 @@
+name: Add to Job Summary
+description: "Adds content to the GitHub Actions job summary"
+
+inputs:
+  content:
+    description: "Content to add to the job summary (supports markdown)"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Add content to summary
+      shell: bash
+      env:
+        SUMMARY_CONTENT: ${{ inputs.content }}
+      run: |
+        echo "$SUMMARY_CONTENT" >> "$GITHUB_STEP_SUMMARY"

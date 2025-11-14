@@ -23,7 +23,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy Kafka cluster with User Operator configured with more resources to handle load and also non-default `STRIMZI_WORK_QUEUE_SIZE` set to 2048. | Kafka cluster with User Operator is deployed and ready. |
-| 2. | For each configured load level (1000 existing users), create N KafkaUsers to establish the load. | N KafkaUsers are created and ready, establishing baseline load on the User Operator. |
+| 2. | For each configured load level (1000, 1500, 2000 existing users), create N KafkaUsers to establish the load. | N KafkaUsers are created and ready, establishing baseline load on the User Operator. |
 | 3. | Perform 100 individual user modifications sequentially, measuring the latency of each modification. | Each modification latency is recorded independently. |
 | 4. | Calculate latency statistics: min, max, average, P50, P95, and P99 percentiles from the 100 measurements. | Statistical analysis shows how single-user modification latency degrades as system load (number of existing users) increases. |
 | 5. | Clean up all users and persist latency metrics to user-operator report directory. | Namespace is cleaned, latency data is saved showing how responsiveness changes at different load levels. |

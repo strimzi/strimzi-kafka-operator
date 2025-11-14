@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.performance;
 
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
@@ -34,8 +32,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.temporal.TemporalAccessor;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +52,6 @@ import static io.strimzi.systemtest.TestTags.SCALABILITY;
 @Tag(SCALABILITY)
 public class UserOperatorScalabilityPerformance extends AbstractST {
 
-    protected static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
     protected static final String REPORT_DIRECTORY = "user-operator";
 
     protected UserOperatorPerformanceReporter userOperatorPerformanceReporter = new UserOperatorPerformanceReporter();
@@ -88,8 +83,8 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
         final int maxWorkQueueSize = 1024;
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
 
         KubeResourceManager.get().createResourceWithWait(
@@ -102,12 +97,12 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                         .editEntityOperator()
                             .editUserOperator()
                                 .withReconciliationIntervalMs(10_000L)
-                                .withResources(new ResourceRequirementsBuilder()
-                                    .addToLimits("memory", new Quantity("768Mi"))
-                                    .addToLimits("cpu", new Quantity("750m"))
-                                    .addToRequests("memory", new Quantity("768Mi"))
-                                    .addToRequests("cpu", new Quantity("750m"))
-                                    .build())
+//                                .withResources(new ResourceRequirementsBuilder()
+//                                    .addToLimits("memory", new Quantity("768Mi"))
+//                                    .addToLimits("cpu", new Quantity("750m"))
+//                                    .addToRequests("memory", new Quantity("768Mi"))
+//                                    .addToRequests("cpu", new Quantity("750m"))
+//                                    .build())
                             .endUserOperator()
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
@@ -151,7 +146,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_RECONCILIATION_INTERVAL, reconciliationTimeMs);
 
                 try {
-                    this.userOperatorPerformanceReporter.logPerformanceData(testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_SCALABILITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                    this.userOperatorPerformanceReporter.logPerformanceData(testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_SCALABILITY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -163,7 +158,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
         description = @Desc("This test measures user modification latency statistics under different load levels by performing multiple user modifications to understand how response time scales with system load."),
         steps = {
             @Step(value = "Deploy Kafka cluster with User Operator configured with more resources to handle load and also non-default `STRIMZI_WORK_QUEUE_SIZE` set to 2048.", expected = "Kafka cluster with User Operator is deployed and ready."),
-            @Step(value = "For each configured load level (1000 existing users), create N KafkaUsers to establish the load.", expected = "N KafkaUsers are created and ready, establishing baseline load on the User Operator."),
+            @Step(value = "For each configured load level (1000, 1500, 2000 existing users), create N KafkaUsers to establish the load.", expected = "N KafkaUsers are created and ready, establishing baseline load on the User Operator."),
             @Step(value = "Perform 100 individual user modifications sequentially, measuring the latency of each modification.", expected = "Each modification latency is recorded independently."),
             @Step(value = "Calculate latency statistics: min, max, average, P50, P95, and P99 percentiles from the 100 measurements.", expected = "Statistical analysis shows how single-user modification latency degrades as system load (number of existing users) increases."),
             @Step(value = "Clean up all users and persist latency metrics to user-operator report directory.", expected = "Namespace is cleaned, latency data is saved showing how responsiveness changes at different load levels.")
@@ -176,8 +171,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     @Tag(SCALABILITY)
     void testLatencyUnderLoad() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        // TODO: after we switch to GHA we are limited to just 1k users (after switch we can add more 2k users ... etc.)
-        final List<Integer> loadLevels = List.of(1000);
+        final List<Integer> loadLevels = List.of(1000, 1500, 2000);
         final int numberOfModifications = 100;
         // default configuration of UO
         final int maxBatchSize = 100;
@@ -186,8 +180,8 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
         final int maxWorkQueueSize = 2048;
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
 
         KubeResourceManager.get().createResourceWithWait(
@@ -200,12 +194,12 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                         .editEntityOperator()
                             .editUserOperator()
                                 .withReconciliationIntervalMs(10_000L)
-                                .withResources(new ResourceRequirementsBuilder()
-                                    .addToLimits("memory", new Quantity("768Mi"))
-                                    .addToLimits("cpu", new Quantity("750m"))
-                                    .addToRequests("memory", new Quantity("768Mi"))
-                                    .addToRequests("cpu", new Quantity("750m"))
-                                    .build())
+//                                .withResources(new ResourceRequirementsBuilder()
+//                                    .addToLimits("memory", new Quantity("768Mi"))
+//                                    .addToLimits("cpu", new Quantity("750m"))
+//                                    .addToRequests("memory", new Quantity("768Mi"))
+//                                    .addToRequests("cpu", new Quantity("750m"))
+//                                    .build())
                             .endUserOperator()
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
@@ -257,7 +251,7 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                     performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_P99_LATENCY, latencyMetrics.p99());
 
                     try {
-                        this.userOperatorPerformanceReporter.logPerformanceData(testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_LATENCY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                        this.userOperatorPerformanceReporter.logPerformanceData(testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_LATENCY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
