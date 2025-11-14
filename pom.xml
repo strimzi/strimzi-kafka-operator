@@ -84,7 +84,7 @@
         <fasterxml.jackson-jaxrs.version>2.18.3</fasterxml.jackson-jaxrs.version>
         <vertx.version>5.0.5</vertx.version>
         <vertx-junit5.version>5.0.5</vertx-junit5.version>
-        <kafka.version>4.1.0</kafka.version>
+        <kafka.version>4.1.1</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
         <slf4j.version>2.0.17</slf4j.version>
