@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.strimzi.api.kafka.model.common.Constants;
+import io.strimzi.api.kafka.model.common.SidecarContainer;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
@@ -38,8 +39,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
-    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig", 
-    "enableServiceLinks", "tmpDirSizeLimit", "volumes"})
+    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig",
+    "enableServiceLinks", "tmpDirSizeLimit", "volumes", "sidecarContainers"})
 @EqualsAndHashCode
 @ToString
 @DescriptionFile
@@ -60,6 +61,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private String tmpDirSizeLimit;
     private List<AdditionalVolume> volumes;
     private Map<String, Object> additionalProperties;
+    private List<SidecarContainer> sidecarContainers;
 
     @Description("Metadata applied to the resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -233,6 +235,16 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
 
     public void setVolumes(List<AdditionalVolume> volumes) {
         this.volumes = volumes;
+    }
+
+    @Description("Additional sidecar containers that can be added to the pod.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<SidecarContainer> getSidecarContainers() {
+        return sidecarContainers;
+    }
+
+    public void setSidecarContainers(List<SidecarContainer> sidecarContainers) {
+        this.sidecarContainers = sidecarContainers;
     }
 
     @Override

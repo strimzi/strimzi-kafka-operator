@@ -1150,6 +1150,259 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      sidecarContainers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            image:
+                              type: string
+                            imagePullPolicy:
+                              type: string
+                            command:
+                              type: array
+                              items:
+                                type: string
+                            args:
+                              type: array
+                              items:
+                                type: string
+                            env:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                                  valueFrom:
+                                    type: object
+                                    properties:
+                                      secretKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                      configMapKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                    oneOf:
+                                    - properties:
+                                        secretKeyRef: {}
+                                      required:
+                                      - secretKeyRef
+                                    - properties:
+                                        configMapKeyRef: {}
+                                      required:
+                                      - configMapKeyRef
+                                oneOf:
+                                - properties:
+                                    value: {}
+                                  required:
+                                  - value
+                                - properties:
+                                    valueFrom: {}
+                                  required:
+                                  - valueFrom
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                            ports:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  containerPort:
+                                    type: integer
+                                  hostIP:
+                                    type: string
+                                  hostPort:
+                                    type: integer
+                                  name:
+                                    type: string
+                                  protocol:
+                                    type: string
+                            resources:
+                              type: object
+                              properties:
+                                claims:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      request:
+                                        type: string
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                            securityContext:
+                              type: object
+                              properties:
+                                allowPrivilegeEscalation:
+                                  type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                capabilities:
+                                  type: object
+                                  properties:
+                                    add:
+                                      type: array
+                                      items:
+                                        type: string
+                                    drop:
+                                      type: array
+                                      items:
+                                        type: string
+                                privileged:
+                                  type: boolean
+                                procMount:
+                                  type: string
+                                readOnlyRootFilesystem:
+                                  type: boolean
+                                runAsGroup:
+                                  type: integer
+                                runAsNonRoot:
+                                  type: boolean
+                                runAsUser:
+                                  type: integer
+                                seLinuxOptions:
+                                  type: object
+                                  properties:
+                                    level:
+                                      type: string
+                                    role:
+                                      type: string
+                                    type:
+                                      type: string
+                                    user:
+                                      type: string
+                                seccompProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                windowsOptions:
+                                  type: object
+                                  properties:
+                                    gmsaCredentialSpec:
+                                      type: string
+                                    gmsaCredentialSpecName:
+                                      type: string
+                                    hostProcess:
+                                      type: boolean
+                                    runAsUserName:
+                                      type: string
+                            livenessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                httpGetPath:
+                                  type: string
+                                httpGetPort:
+                                  type: string
+                                httpGetScheme:
+                                  type: string
+                                tcpSocketPort:
+                                  type: string
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
+                            readinessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                httpGetPath:
+                                  type: string
+                                httpGetPort:
+                                  type: string
+                                httpGetScheme:
+                                  type: string
+                                tcpSocketPort:
+                                  type: string
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
                   apiService:
                     type: object
                     properties:
@@ -2135,6 +2388,259 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      sidecarContainers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            image:
+                              type: string
+                            imagePullPolicy:
+                              type: string
+                            command:
+                              type: array
+                              items:
+                                type: string
+                            args:
+                              type: array
+                              items:
+                                type: string
+                            env:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                                  valueFrom:
+                                    type: object
+                                    properties:
+                                      secretKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                      configMapKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                    oneOf:
+                                    - properties:
+                                        secretKeyRef: {}
+                                      required:
+                                      - secretKeyRef
+                                    - properties:
+                                        configMapKeyRef: {}
+                                      required:
+                                      - configMapKeyRef
+                                oneOf:
+                                - properties:
+                                    value: {}
+                                  required:
+                                  - value
+                                - properties:
+                                    valueFrom: {}
+                                  required:
+                                  - valueFrom
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                            ports:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  containerPort:
+                                    type: integer
+                                  hostIP:
+                                    type: string
+                                  hostPort:
+                                    type: integer
+                                  name:
+                                    type: string
+                                  protocol:
+                                    type: string
+                            resources:
+                              type: object
+                              properties:
+                                claims:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      request:
+                                        type: string
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                            securityContext:
+                              type: object
+                              properties:
+                                allowPrivilegeEscalation:
+                                  type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                capabilities:
+                                  type: object
+                                  properties:
+                                    add:
+                                      type: array
+                                      items:
+                                        type: string
+                                    drop:
+                                      type: array
+                                      items:
+                                        type: string
+                                privileged:
+                                  type: boolean
+                                procMount:
+                                  type: string
+                                readOnlyRootFilesystem:
+                                  type: boolean
+                                runAsGroup:
+                                  type: integer
+                                runAsNonRoot:
+                                  type: boolean
+                                runAsUser:
+                                  type: integer
+                                seLinuxOptions:
+                                  type: object
+                                  properties:
+                                    level:
+                                      type: string
+                                    role:
+                                      type: string
+                                    type:
+                                      type: string
+                                    user:
+                                      type: string
+                                seccompProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                windowsOptions:
+                                  type: object
+                                  properties:
+                                    gmsaCredentialSpec:
+                                      type: string
+                                    gmsaCredentialSpecName:
+                                      type: string
+                                    hostProcess:
+                                      type: boolean
+                                    runAsUserName:
+                                      type: string
+                            livenessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                httpGetPath:
+                                  type: string
+                                httpGetPort:
+                                  type: string
+                                httpGetScheme:
+                                  type: string
+                                tcpSocketPort:
+                                  type: string
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
+                            readinessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                httpGetPath:
+                                  type: string
+                                httpGetPort:
+                                  type: string
+                                httpGetScheme:
+                                  type: string
+                                tcpSocketPort:
+                                  type: string
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
                   buildContainer:
                     type: object
                     properties:
@@ -3969,6 +4475,259 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      sidecarContainers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            image:
+                              type: string
+                            imagePullPolicy:
+                              type: string
+                            command:
+                              type: array
+                              items:
+                                type: string
+                            args:
+                              type: array
+                              items:
+                                type: string
+                            env:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                                  valueFrom:
+                                    type: object
+                                    properties:
+                                      secretKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                      configMapKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                    oneOf:
+                                    - properties:
+                                        secretKeyRef: {}
+                                      required:
+                                      - secretKeyRef
+                                    - properties:
+                                        configMapKeyRef: {}
+                                      required:
+                                      - configMapKeyRef
+                                oneOf:
+                                - properties:
+                                    value: {}
+                                  required:
+                                  - value
+                                - properties:
+                                    valueFrom: {}
+                                  required:
+                                  - valueFrom
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                            ports:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  containerPort:
+                                    type: integer
+                                  hostIP:
+                                    type: string
+                                  hostPort:
+                                    type: integer
+                                  name:
+                                    type: string
+                                  protocol:
+                                    type: string
+                            resources:
+                              type: object
+                              properties:
+                                claims:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      request:
+                                        type: string
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                            securityContext:
+                              type: object
+                              properties:
+                                allowPrivilegeEscalation:
+                                  type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                capabilities:
+                                  type: object
+                                  properties:
+                                    add:
+                                      type: array
+                                      items:
+                                        type: string
+                                    drop:
+                                      type: array
+                                      items:
+                                        type: string
+                                privileged:
+                                  type: boolean
+                                procMount:
+                                  type: string
+                                readOnlyRootFilesystem:
+                                  type: boolean
+                                runAsGroup:
+                                  type: integer
+                                runAsNonRoot:
+                                  type: boolean
+                                runAsUser:
+                                  type: integer
+                                seLinuxOptions:
+                                  type: object
+                                  properties:
+                                    level:
+                                      type: string
+                                    role:
+                                      type: string
+                                    type:
+                                      type: string
+                                    user:
+                                      type: string
+                                seccompProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                windowsOptions:
+                                  type: object
+                                  properties:
+                                    gmsaCredentialSpec:
+                                      type: string
+                                    gmsaCredentialSpecName:
+                                      type: string
+                                    hostProcess:
+                                      type: boolean
+                                    runAsUserName:
+                                      type: string
+                            livenessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                httpGetPath:
+                                  type: string
+                                httpGetPort:
+                                  type: string
+                                httpGetScheme:
+                                  type: string
+                                tcpSocketPort:
+                                  type: string
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
+                            readinessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                httpGetPath:
+                                  type: string
+                                httpGetPort:
+                                  type: string
+                                httpGetScheme:
+                                  type: string
+                                tcpSocketPort:
+                                  type: string
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
                   apiService:
                     type: object
                     properties:
@@ -4954,6 +5713,259 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      sidecarContainers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            image:
+                              type: string
+                            imagePullPolicy:
+                              type: string
+                            command:
+                              type: array
+                              items:
+                                type: string
+                            args:
+                              type: array
+                              items:
+                                type: string
+                            env:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  value:
+                                    type: string
+                                  valueFrom:
+                                    type: object
+                                    properties:
+                                      secretKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                      configMapKeyRef:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          name:
+                                            type: string
+                                          optional:
+                                            type: boolean
+                                    oneOf:
+                                    - properties:
+                                        secretKeyRef: {}
+                                      required:
+                                      - secretKeyRef
+                                    - properties:
+                                        configMapKeyRef: {}
+                                      required:
+                                      - configMapKeyRef
+                                oneOf:
+                                - properties:
+                                    value: {}
+                                  required:
+                                  - value
+                                - properties:
+                                    valueFrom: {}
+                                  required:
+                                  - valueFrom
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                            ports:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  containerPort:
+                                    type: integer
+                                  hostIP:
+                                    type: string
+                                  hostPort:
+                                    type: integer
+                                  name:
+                                    type: string
+                                  protocol:
+                                    type: string
+                            resources:
+                              type: object
+                              properties:
+                                claims:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      request:
+                                        type: string
+                                limits:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                                requests:
+                                  additionalProperties:
+                                    anyOf:
+                                    - type: integer
+                                    - type: string
+                                    pattern: "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$"
+                                    x-kubernetes-int-or-string: true
+                                  type: object
+                            securityContext:
+                              type: object
+                              properties:
+                                allowPrivilegeEscalation:
+                                  type: boolean
+                                appArmorProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                capabilities:
+                                  type: object
+                                  properties:
+                                    add:
+                                      type: array
+                                      items:
+                                        type: string
+                                    drop:
+                                      type: array
+                                      items:
+                                        type: string
+                                privileged:
+                                  type: boolean
+                                procMount:
+                                  type: string
+                                readOnlyRootFilesystem:
+                                  type: boolean
+                                runAsGroup:
+                                  type: integer
+                                runAsNonRoot:
+                                  type: boolean
+                                runAsUser:
+                                  type: integer
+                                seLinuxOptions:
+                                  type: object
+                                  properties:
+                                    level:
+                                      type: string
+                                    role:
+                                      type: string
+                                    type:
+                                      type: string
+                                    user:
+                                      type: string
+                                seccompProfile:
+                                  type: object
+                                  properties:
+                                    localhostProfile:
+                                      type: string
+                                    type:
+                                      type: string
+                                windowsOptions:
+                                  type: object
+                                  properties:
+                                    gmsaCredentialSpec:
+                                      type: string
+                                    gmsaCredentialSpecName:
+                                      type: string
+                                    hostProcess:
+                                      type: boolean
+                                    runAsUserName:
+                                      type: string
+                            livenessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                httpGetPath:
+                                  type: string
+                                httpGetPort:
+                                  type: string
+                                httpGetScheme:
+                                  type: string
+                                tcpSocketPort:
+                                  type: string
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
+                            readinessProbe:
+                              type: object
+                              properties:
+                                execCommand:
+                                  type: array
+                                  items:
+                                    type: string
+                                httpGetPath:
+                                  type: string
+                                httpGetPort:
+                                  type: string
+                                httpGetScheme:
+                                  type: string
+                                tcpSocketPort:
+                                  type: string
+                                initialDelaySeconds:
+                                  type: integer
+                                  minimum: 0
+                                timeoutSeconds:
+                                  type: integer
+                                  minimum: 1
+                                periodSeconds:
+                                  type: integer
+                                  minimum: 1
+                                successThreshold:
+                                  type: integer
+                                  minimum: 1
+                                failureThreshold:
+                                  type: integer
+                                  minimum: 1
                   buildContainer:
                     type: object
                     properties:
