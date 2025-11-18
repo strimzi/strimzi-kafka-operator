@@ -20,7 +20,7 @@ jobs:
         env:
           PERF_DIR: ${{ github.event.inputs.performance_dir }}
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ github.token || 'dummy-token-for-local-testing' }}
           script: |
             const { generatePerformanceReport } = require('./.github/actions/systemtests/run-perf-report/generate-report.js');
             const perfDir = process.env.PERF_DIR || 'systemtest/target/performance';
