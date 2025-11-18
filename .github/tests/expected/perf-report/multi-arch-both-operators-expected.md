@@ -48,8 +48,8 @@
 
 **Results:**
 
-| # | NUMBER OF KAFKA USERS | Min Latency (ms) [AMD64] | Max Latency (ms) [AMD64] | Average Latency (ms) [AMD64] | P50 Latency (ms) [AMD64] | P95 Latency (ms) [AMD64] | P99 Latency (ms) [AMD64] | Min Latency (ms) [ARM64] | Max Latency (ms) [ARM64] | Average Latency (ms) [ARM64] | P50 Latency (ms) [ARM64] | P95 Latency (ms) [ARM64] | P99 Latency (ms) [ARM64] |
+| # | NUMBER OF KAFKA USERS | Min Latency (ms) [AMD64] | Min Latency (ms) [ARM64] | Max Latency (ms) [AMD64] | Max Latency (ms) [ARM64] | Average Latency (ms) [AMD64] | Average Latency (ms) [ARM64] | P50 Latency (ms) [AMD64] | P50 Latency (ms) [ARM64] | P95 Latency (ms) [AMD64] | P95 Latency (ms) [ARM64] | P99 Latency (ms) [AMD64] | P99 Latency (ms) [ARM64] |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 110 | 12 | 69 | 27.78 | 26 | 39 | 54 | 12 | 69 | 27.78 | 26 | 39 | 54 |
-| 2 | 200 | 11 | 75 | 29.93 | 28 | 48 | 75 | 11 | 75 | 29.93 | 28 | 48 | 75 |
-| 3 | 300 | 10 | 61 | 26.0 | 26 | 41 | 50 | 10 | 61 | 26.0 | 26 | 41 | 50 |
+| 1 | 110 | 12 | 12 | 69 | 69 | 27.78 | 27.78 | 26 | 26 | 39 | 39 | 54 | 54 |
+| 2 | 200 | 11 | 11 | 75 | 75 | 29.93 | 29.93 | 28 | 28 | 48 | 48 | 75 | 75 |
+| 3 | 300 | 10 | 10 | 61 | 61 | 26.0 | 26.0 | 26 | 26 | 41 | 41 | 50 | 50 |
