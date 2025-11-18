@@ -39,8 +39,6 @@ runs:
       uses: ./.github/actions/utils/add-comment
       with:
         commentMessage: |
-          ## Performance Test Results
-
           ${{ steps.generate_report.outputs.summary }}
 
     - name: Add performance report to job summary

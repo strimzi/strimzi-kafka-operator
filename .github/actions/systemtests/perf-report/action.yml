@@ -233,6 +233,10 @@ runs:
           function generateMarkdownSummary(allResults) {
             const lines = [];
 
+            // Add main header
+            lines.push('## Performance Test Results');
+            lines.push('');
+
             // Get all unique timestamps and operators
             const timestamps = new Set();
             const allArchs = Object.keys(allResults).sort();
@@ -402,14 +406,19 @@ runs:
                     });
                   }
                 } else {
-                  // Single architecture - show table as-is
+                  // Single architecture - show table with separator row
                   const tableData = Object.values(archResults)[0];
-                  if (tableData.rawTable) {
-                    const rawLines = tableData.rawTable.split('\n');
-                    const tableStart = rawLines.findIndex(line => line.startsWith('|'));
-                    if (tableStart >= 0) {
-                      lines.push(rawLines.slice(tableStart).join('\n'));
-                    }
+                  if (tableData.header && tableData.experiments) {
+                    // Generate table with proper separator
+                    const headerRow = '| ' + tableData.header.join(' | ') + ' |';
+                    const separatorRow = '|' + tableData.header.map(() => '---').join('|') + '|';
+                    lines.push(headerRow);
+                    lines.push(separatorRow);
+
+                    tableData.experiments.forEach(exp => {
+                      const values = tableData.header.map(h => exp[h] || '');
+                      lines.push('| ' + values.join(' | ') + ' |');
+                    });
                   }
                 }
 
