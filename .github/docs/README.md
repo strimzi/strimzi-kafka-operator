@@ -145,3 +145,25 @@ Every generated `GITHUB_TOKEN` has only read access to the repo/org without acce
 Unit and integration tests invoked via [actions-tests.yml](../workflows/actions-tests.yml) workflow.
 It uses files specified within [tests](../tests) folder and via [act](https://github.com/nektos/act) it tries to execute the actions and check the outputs.
 Currently, we tests `check-permissions`, `generate-matrix`, and `parse-comment` actions.
+
+### Performance Report Tests
+The performance report generation workflow has test scenarios defined in [tests/scenarios/perf-report.yaml](../tests/scenarios/perf-report.yaml).
+These tests validate the performance report generation for different operator configurations.
+
+> [!IMPORTANT]
+> The test input directories in `.github/tests/inputs/perf-report/` must match the parser type constants defined in `systemtest/src/main/java/io/strimzi/systemtest/performance/PerformanceConstants.java`.
+
+When adding a new operator or component parser type to `PerformanceConstants.java`:
+1. Add the corresponding constant (e.g., `NEW_OPERATOR_PARSER = "new-operator"`)
+2. Create matching test input directories in `.github/tests/inputs/perf-report/` with subdirectories named after the parser type (e.g., `new-operator/`)
+3. Update test scenarios in `.github/tests/scenarios/perf-report.yaml` to include the new operator in test cases
+4. Generate corresponding expected output files in `.github/tests/expected/perf-report/`
+
+Example directory structure for operators:
+```
+.github/tests/inputs/perf-report/
+└── single-arch-both-operators/
+    └── 2025-11-18-10-30-00/
+        ├── topic-operator/    # matches PerformanceConstants.TOPIC_OPERATOR_PARSER = "topic-operator"
+        └── user-operator/     # matches PerformanceConstants.USER_OPERATOR_PARSER = "user-operator"
+```
