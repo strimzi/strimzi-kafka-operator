@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.performance;
 
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
@@ -105,22 +107,22 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
             KafkaTemplates.kafka(suiteTestStorage.getNamespaceName(),  suiteTestStorage.getClusterName(), 3)
                 .editSpec()
                     .editKafka()
-//                    .withResources(new ResourceRequirementsBuilder()
-//                        .addToLimits("memory", new Quantity("768Mi"))
-//                        .addToLimits("cpu", new Quantity("750m"))
-//                        .addToRequests("memory", new Quantity("768Mi"))
-//                        .addToRequests("cpu", new Quantity("750m"))
-//                        .build())
+                    .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("768Mi"))
+                        .addToLimits("cpu", new Quantity("750m"))
+                        .addToRequests("memory", new Quantity("768Mi"))
+                        .addToRequests("cpu", new Quantity("750m"))
+                        .build())
                     .endKafka()
                         .editEntityOperator()
                             .editTopicOperator()
                                 .withReconciliationIntervalMs(10_000L)
-//                                .withResources(new ResourceRequirementsBuilder()
-//                                    .addToLimits("memory", new Quantity("768Mi"))
-//                                    .addToLimits("cpu", new Quantity("750m"))
-//                                    .addToRequests("memory", new Quantity("768Mi"))
-//                                    .addToRequests("cpu", new Quantity("750m"))
-//                                    .build())
+                                .withResources(new ResourceRequirementsBuilder()
+                                    .addToLimits("memory", new Quantity("768Mi"))
+                                    .addToLimits("cpu", new Quantity("750m"))
+                                    .addToRequests("memory", new Quantity("768Mi"))
+                                    .addToRequests("cpu", new Quantity("750m"))
+                                    .build())
                             .endTopicOperator()
                             .editOrNewTemplate()
                                 .editOrNewTopicOperatorContainer()
