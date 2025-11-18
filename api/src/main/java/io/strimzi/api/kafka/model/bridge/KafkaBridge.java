@@ -58,7 +58,7 @@ import java.util.function.Predicate;
                 type = "integer"),
             @Crd.Spec.AdditionalPrinterColumn(
                 name = "Bootstrap Servers",
-                description = "The boostrap servers",
+                description = "The bootstrap servers",
                 jsonPath = ".spec.bootstrapServers",
                 type = "string",
                 priority = 1),
