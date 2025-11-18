@@ -14,11 +14,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Test the perf-report action
+      # Test the performance report generation step only (mocking download/upload steps)
       - id: perf-report
-        uses: ./.github/actions/systemtests/perf-report
+        uses: actions/github-script@v7
+        env:
+          PERF_DIR: ${{ github.event.inputs.performance_dir }}
         with:
-          performance-dir: ${{ github.event.inputs.performance_dir }}
+          github-token: ${{ github.token }}
+          script: |
+            const { generatePerformanceReport } = require('./.github/actions/systemtests/run-perf-report/generate-report.js');
+            const perfDir = process.env.PERF_DIR || 'systemtest/target/performance';
+            const result = generatePerformanceReport(perfDir, core);
+            core.setOutput('has_results', result.has_results);
+            core.setOutput('summary', result.summary);
+            core.setOutput('timestamp', result.timestamp);
 
       # Validate the generated report
       - name: Validate performance report

@@ -30,9 +30,18 @@ runs:
 
     - name: Generate performance report
       id: generate_report
-      uses: ./.github/actions/systemtests/perf-report
+      uses: actions/github-script@v7
+      env:
+        PERF_DIR: ${{ inputs.artifacts-path }}
       with:
-        performance-dir: ${{ inputs.artifacts-path }}
+        github-token: ${{ github.token || 'dummy-token-for-local-testing' }}
+        script: |
+          const { generatePerformanceReport } = require('./.github/actions/systemtests/run-perf-report/generate-report.js');
+          const perfDir = process.env.PERF_DIR || 'systemtest/target/performance';
+          const result = generatePerformanceReport(perfDir, core);
+          core.setOutput('has_results', result.has_results);
+          core.setOutput('summary', result.summary);
+          core.setOutput('timestamp', result.timestamp);
 
     - name: Add performance report comment
       if: ${{ steps.generate_report.outputs.has-results == 'true' }}
