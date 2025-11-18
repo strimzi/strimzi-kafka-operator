@@ -44,14 +44,14 @@ runs:
           core.setOutput('timestamp', result.timestamp);
 
     - name: Add performance report comment
-      if: ${{ steps.generate_report.outputs.has-results == 'true' }}
+      if: ${{ steps.generate_report.outputs.has_results == 'true' }}
       uses: ./.github/actions/utils/add-comment
       with:
         commentMessage: |
           ${{ steps.generate_report.outputs.summary }}
 
     - name: Add performance report to job summary
-      if: ${{ steps.generate_report.outputs.has-results == 'true' }}
+      if: ${{ steps.generate_report.outputs.has_results == 'true' }}
       shell: bash
       env:
         SUMMARY_CONTENT: ${{ steps.generate_report.outputs.summary }}
@@ -59,7 +59,7 @@ runs:
         echo "$SUMMARY_CONTENT" >> "$GITHUB_STEP_SUMMARY"
 
     - name: No results warning
-      if: ${{ steps.generate_report.outputs.has-results == 'false' }}
+      if: ${{ steps.generate_report.outputs.has_results == 'false' }}
       shell: bash
       env:
         WARNING_MESSAGE: "No performance results found in artifacts"

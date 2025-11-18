@@ -40,7 +40,7 @@ jobs:
           VALIDATION_ERRORS=0
 
           SUMMARY='${{ steps.perf-report.outputs.summary }}'
-          HAS_RESULTS='${{ steps.perf-report.outputs.has-results }}'
+          HAS_RESULTS='${{ steps.perf-report.outputs.has_results }}'
           TIMESTAMP='${{ steps.perf-report.outputs.timestamp }}'
 
           echo "::group::Generated Summary"
@@ -50,15 +50,15 @@ jobs:
           echo "Has Results: $HAS_RESULTS"
           echo "Timestamp: $TIMESTAMP"
 
-          # Validate has-results flag matches expectation
+          # Validate has_results flag matches expectation
           if [[ -n "$EXPECTED_HAS_RESULTS" ]]; then
             if [[ "$HAS_RESULTS" != "$EXPECTED_HAS_RESULTS" ]]; then
-              echo "❌ has-results flag mismatch"
+              echo "❌ has_results flag mismatch"
               echo "   Expected: $EXPECTED_HAS_RESULTS"
               echo "   Actual: $HAS_RESULTS"
               VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
             else
-              echo "✅ has-results flag matches expectation"
+              echo "✅ has_results flag matches expectation"
             fi
           fi
 
@@ -180,7 +180,7 @@ jobs:
 
             # Basic validation - check summary is not empty when has_results is true
             if [[ "$HAS_RESULTS" == "true" && -z "$SUMMARY" ]]; then
-              echo "❌ Summary is empty but has-results is true"
+              echo "❌ Summary is empty but has_results is true"
               VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
             else
               echo "✅ Basic validation passed"
