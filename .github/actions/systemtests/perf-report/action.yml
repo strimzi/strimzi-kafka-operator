@@ -421,9 +421,6 @@ runs:
               }
             }
 
-            lines.push('---');
-            lines.push('_Performance results generated automatically_');
-
             return lines.join('\n');
           }
 

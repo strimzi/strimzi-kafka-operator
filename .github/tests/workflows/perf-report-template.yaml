@@ -1,0 +1,191 @@
+name: Perf-report template
+
+on:
+  workflow_dispatch:
+    inputs:
+      performance_dir:
+        description: "Path to performance results directory"
+        required: false
+        default: ".github/tests/inputs/perf-report/single-arch-both-operators"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Test the perf-report action
+      - id: perf-report
+        uses: ./.github/actions/systemtests/perf-report
+        with:
+          performance-dir: ${{ github.event.inputs.performance_dir }}
+
+      # Validate the generated report
+      - name: Validate performance report
+        shell: bash
+        env:
+          EXPECTED_OUTPUT_FILE: ${{ env.EXPECTED_OUTPUT_FILE }}
+          EXPECTED_HAS_RESULTS: ${{ env.EXPECTED_HAS_RESULTS }}
+        run: |
+          set +e  # Don't exit on first error
+          VALIDATION_ERRORS=0
+
+          SUMMARY='${{ steps.perf-report.outputs.summary }}'
+          HAS_RESULTS='${{ steps.perf-report.outputs.has-results }}'
+          TIMESTAMP='${{ steps.perf-report.outputs.timestamp }}'
+
+          echo "::group::Generated Summary"
+          echo "$SUMMARY"
+          echo "::endgroup::"
+
+          echo "Has Results: $HAS_RESULTS"
+          echo "Timestamp: $TIMESTAMP"
+
+          # Validate has-results flag matches expectation
+          if [[ -n "$EXPECTED_HAS_RESULTS" ]]; then
+            if [[ "$HAS_RESULTS" != "$EXPECTED_HAS_RESULTS" ]]; then
+              echo "❌ has-results flag mismatch"
+              echo "   Expected: $EXPECTED_HAS_RESULTS"
+              echo "   Actual: $HAS_RESULTS"
+              VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            else
+              echo "✅ has-results flag matches expectation"
+            fi
+          fi
+
+          # If expected output file is provided, compare content
+          if [[ -n "$EXPECTED_OUTPUT_FILE" ]]; then
+            if [[ ! -f "$EXPECTED_OUTPUT_FILE" ]]; then
+              echo "❌ Expected output file not found: $EXPECTED_OUTPUT_FILE"
+              VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            else
+              echo "Comparing with expected output: $EXPECTED_OUTPUT_FILE"
+
+              EXPECTED_SUMMARY=$(cat "$EXPECTED_OUTPUT_FILE")
+
+              echo "::group::Expected Summary"
+              echo "$EXPECTED_SUMMARY"
+              echo "::endgroup::"
+
+              # Remove timestamp line for comparison (since it varies)
+              ACTUAL_NO_TIMESTAMP=$(echo "$SUMMARY" | grep -v "^**Test Run:**")
+              EXPECTED_NO_TIMESTAMP=$(echo "$EXPECTED_SUMMARY" | grep -v "^**Test Run:**")
+
+              # Strict structure validation
+              echo "::group::Structural Validation"
+
+              # 1. Validate operator sections
+              EXPECTED_OPERATORS=$(echo "$EXPECTED_SUMMARY" | grep "^## " | sed 's/^## //' | sort)
+              ACTUAL_OPERATORS=$(echo "$SUMMARY" | grep "^## " | sed 's/^## //' | sort)
+
+              if [[ "$EXPECTED_OPERATORS" != "$ACTUAL_OPERATORS" ]]; then
+                echo "❌ Operator sections mismatch"
+                echo "   Expected: $EXPECTED_OPERATORS"
+                echo "   Actual: $ACTUAL_OPERATORS"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+              else
+                echo "✅ Operator sections match"
+              fi
+
+              # 2. Validate use cases for each operator
+              while IFS= read -r operator; do
+                if [[ -z "$operator" ]]; then continue; fi
+
+                EXPECTED_USE_CASES=$(echo "$EXPECTED_SUMMARY" | awk "/^## ${operator}/,/^## /" | grep "^\*\*Use Case:\*\*" | sed 's/\*\*Use Case:\*\* //' | sort)
+                ACTUAL_USE_CASES=$(echo "$SUMMARY" | awk "/^## ${operator}/,/^## /" | grep "^\*\*Use Case:\*\*" | sed 's/\*\*Use Case:\*\* //' | sort)
+
+                if [[ "$EXPECTED_USE_CASES" != "$ACTUAL_USE_CASES" ]]; then
+                  echo "❌ Use cases mismatch for ${operator}"
+                  echo "   Expected: $EXPECTED_USE_CASES"
+                  echo "   Actual: $ACTUAL_USE_CASES"
+                  VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+                else
+                  echo "✅ Use cases match for ${operator}"
+                fi
+              done <<< "$EXPECTED_OPERATORS"
+
+              # 3. Validate table headers (check architecture suffixes)
+              EXPECTED_HEADERS=$(echo "$EXPECTED_SUMMARY" | grep "^|" | grep -v "^|---" | head -20)
+              ACTUAL_HEADERS=$(echo "$SUMMARY" | grep "^|" | grep -v "^|---" | head -20)
+
+              # Check if multi-arch columns exist when expected
+              if echo "$EXPECTED_SUMMARY" | grep -q "\[AMD64\]"; then
+                if ! echo "$SUMMARY" | grep -q "\[AMD64\]"; then
+                  echo "❌ Missing AMD64 architecture columns"
+                  VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+                else
+                  echo "✅ AMD64 architecture columns present"
+                fi
+              fi
+
+              if echo "$EXPECTED_SUMMARY" | grep -q "\[ARM64\]"; then
+                if ! echo "$SUMMARY" | grep -q "\[ARM64\]"; then
+                  echo "❌ Missing ARM64 architecture columns"
+                  VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+                else
+                  echo "✅ ARM64 architecture columns present"
+                fi
+              fi
+
+              # 4. Validate configuration sections
+              EXPECTED_CONFIG_COUNT=$(echo "$EXPECTED_SUMMARY" | grep -c "^\*\*Configuration:\*\*" || true)
+              ACTUAL_CONFIG_COUNT=$(echo "$SUMMARY" | grep -c "^\*\*Configuration:\*\*" || true)
+
+              if [[ "$EXPECTED_CONFIG_COUNT" != "$ACTUAL_CONFIG_COUNT" ]]; then
+                echo "❌ Configuration section count mismatch"
+                echo "   Expected: $EXPECTED_CONFIG_COUNT"
+                echo "   Actual: $ACTUAL_CONFIG_COUNT"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+              else
+                echo "✅ Configuration section count matches"
+              fi
+
+              # 5. Validate table row counts for each use case
+              EXPECTED_TABLE_ROWS=$(echo "$EXPECTED_SUMMARY" | grep "^|" | grep -v "^|---" | wc -l | tr -d ' ')
+              ACTUAL_TABLE_ROWS=$(echo "$SUMMARY" | grep "^|" | grep -v "^|---" | wc -l | tr -d ' ')
+
+              if [[ "$EXPECTED_TABLE_ROWS" != "$ACTUAL_TABLE_ROWS" ]]; then
+                echo "❌ Table row count mismatch"
+                echo "   Expected: $EXPECTED_TABLE_ROWS rows"
+                echo "   Actual: $ACTUAL_TABLE_ROWS rows"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+              else
+                echo "✅ Table row count matches"
+              fi
+
+              echo "::endgroup::"
+
+              # Final content comparison
+              if ! diff -u <(echo "$EXPECTED_NO_TIMESTAMP") <(echo "$ACTUAL_NO_TIMESTAMP"); then
+                echo "❌ Generated summary does not match expected output"
+                echo ""
+                echo "Differences found between expected and actual summary"
+                echo "   Expected file: $EXPECTED_OUTPUT_FILE"
+                VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+              else
+                echo "✅ Generated summary matches expected output"
+              fi
+            fi
+          else
+            echo "No expected output file provided - performing basic validation only"
+
+            # Basic validation - check summary is not empty when has_results is true
+            if [[ "$HAS_RESULTS" == "true" && -z "$SUMMARY" ]]; then
+              echo "❌ Summary is empty but has-results is true"
+              VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+            else
+              echo "✅ Basic validation passed"
+            fi
+          fi
+
+          # Summary and exit with appropriate code
+          echo ""
+          echo "Validation Summary:"
+          if [[ $VALIDATION_ERRORS -eq 0 ]]; then
+            echo "✅ All validations passed! Performance report generation is working correctly."
+            exit 0
+          else
+            echo "❌ Validation failed with $VALIDATION_ERRORS error(s)"
+            echo "   Please review the output above for detailed error information"
+            exit 1
+          fi

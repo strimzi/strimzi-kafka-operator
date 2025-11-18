@@ -377,3 +377,95 @@ jobs:
           echo "───────────────────────────────────────"
           echo "🎉 All $TOTAL validate-matrix scenarios passed!"
           echo "   Matrix validation logic validated ✅"
+
+  test-perf-report:
+    needs:
+      - lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Install dependencies
+      - name: Install act
+        run: |
+          # Install act for workflow testing
+          curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+          sudo install -m 0755 ./bin/act /usr/local/bin/act
+
+      - name: Install yq
+        uses: ./.github/actions/dependencies/install-yq
+
+      # Test all perf-report scenarios
+      - name: Test perf-report action scenarios
+        run: |
+          set -e
+
+          SCENARIOS_FILE=".github/tests/scenarios/perf-report.yaml"
+          WORKFLOW=".github/tests/workflows/perf-report-template.yaml"
+
+          echo "📊 Running perf-report action tests..."
+          echo "📁 Loading scenarios from: $SCENARIOS_FILE"
+
+          # Get total number of scenarios
+          TOTAL=$(yq eval '.scenarios | length' "$SCENARIOS_FILE")
+          echo "📊 Found $TOTAL test scenarios"
+          echo
+
+          # Initialize overall result tracker
+          overall_result=true
+
+          # Loop through each scenario
+          for i in $(seq 0 $((TOTAL - 1))); do
+            # Extract scenario details using yq
+            id=$(yq eval ".scenarios[$i].id" "$SCENARIOS_FILE")
+            description=$(yq eval ".scenarios[$i].description" "$SCENARIOS_FILE")
+            event=$(yq eval ".scenarios[$i].event" "$SCENARIOS_FILE")
+            perf_dir=$(yq eval ".scenarios[$i].inputs.performance_dir" "$SCENARIOS_FILE")
+            expected_file=$(yq eval ".scenarios[$i].expectations.expected_output_file" "$SCENARIOS_FILE")
+            expected_has_results=$(yq eval ".scenarios[$i].expectations.has_results" "$SCENARIOS_FILE")
+
+            echo "───────────────────────────────────────"
+            echo "🔍 Scenario $((i + 1))/$TOTAL: $id"
+            echo "   Description: $description"
+            echo "   Event: $event"
+            echo "   Performance dir: $perf_dir"
+
+            # Create a temporary event file with the performance_dir input
+            EVENT_FILE=$(mktemp)
+            cat > "$EVENT_FILE" <<EOF
+          {
+            "inputs": {
+              "performance_dir": "$perf_dir"
+            }
+          }
+          EOF
+
+            # Run act with the scenario
+            # Mount docker socket into the container so nested act can work
+            echo "▶️  Running test..."
+
+            if act "$event" -W "$WORKFLOW" -e "$EVENT_FILE" \
+                -P ubuntu-latest=catthehacker/ubuntu:act-latest \
+                --pull=false \
+                --env EXPECTED_OUTPUT_FILE="$expected_file" \
+                --env EXPECTED_HAS_RESULTS="$expected_has_results"; then
+              echo "✅ $id passed"
+            else
+              echo "❌ $id failed"
+              overall_result=false
+            fi
+
+            # Clean up temporary event file
+            rm "$EVENT_FILE"
+
+            # Print blank line for better readability
+            echo
+          done
+
+          if [ "$overall_result" = "false" ]; then
+            echo "There are some test ❌. Please check the logs for more details."
+            exit 1
+          fi
+
+          echo "───────────────────────────────────────"
+          echo "🎉 All $TOTAL perf-report scenarios passed!"

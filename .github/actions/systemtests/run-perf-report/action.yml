@@ -23,9 +23,10 @@ runs:
         # Each artifact gets its own subdirectory (not merged) to preserve arch-specific results
 
     - name: List downloaded artifacts
-      uses: ./.github/actions/utils/list-artifacts
-      with:
-        artifacts-path: ${{ inputs.artifacts-path }}
+      shell: bash
+      run: |
+        echo "Downloaded artifacts:"
+        find "${{ inputs.artifacts-path }}" -type f | head -n 20
 
     - name: Generate performance report
       id: generate_report
@@ -44,12 +45,16 @@ runs:
 
     - name: Add performance report to job summary
       if: ${{ steps.generate_report.outputs.has-results == 'true' }}
-      uses: ./.github/actions/utils/add-to-summary
-      with:
-        content: ${{ steps.generate_report.outputs.summary }}
+      shell: bash
+      env:
+        SUMMARY_CONTENT: ${{ steps.generate_report.outputs.summary }}
+      run: |
+        echo "$SUMMARY_CONTENT" >> "$GITHUB_STEP_SUMMARY"
 
     - name: No results warning
       if: ${{ steps.generate_report.outputs.has-results == 'false' }}
-      uses: ./.github/actions/utils/create-warning
-      with:
-        message: "No performance results found in artifacts"
+      shell: bash
+      env:
+        WARNING_MESSAGE: "No performance results found in artifacts"
+      run: |
+        echo "::warning::$WARNING_MESSAGE"
