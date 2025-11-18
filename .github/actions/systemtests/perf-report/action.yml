@@ -27,6 +27,7 @@ runs:
       env:
         PERF_DIR: ${{ inputs.performance-dir }}
       with:
+        github-token: ${{ github.token || 'dummy-token-for-local-testing' }}
         script: |
           const fs = require('fs');
           const path = require('path');
