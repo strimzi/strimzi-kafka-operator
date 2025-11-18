@@ -658,33 +658,46 @@ public class KafkaRoller {
 
     /* test */ void dynamicUpdateKafkaConfig(NodeRef nodeRef, Admin ac, KafkaConfigurationDiff configurationDiff)
             throws ForceableProblem, InterruptedException {
-        Map<ConfigResource, Collection<AlterConfigOp>> updatedPerBrokerConfig = new HashMap<>(2);
-        Map<ConfigResource, Collection<AlterConfigOp>> updatedClusterWideConfig = new HashMap<>(1);
         var podId = nodeRef.nodeId();
-        updatedPerBrokerConfig.put(getBrokersConfig(podId), configurationDiff.getConfigDiff(Scope.PER_BROKER));
-        updatedClusterWideConfig.put(getClusterWideConfig(), configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE));
+        Collection<AlterConfigOp> perBrokerDiff = configurationDiff.getConfigDiff(Scope.PER_BROKER);
+        Collection<AlterConfigOp> clusterWideDiff = configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE);
 
-        LOGGER.traceCr(reconciliation, "Updating cluster wide configuration with {}", updatedClusterWideConfig);
-        LOGGER.debugCr(reconciliation, "Updating broker configuration {}", nodeRef);
-        LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", nodeRef, updatedPerBrokerConfig);
+        if (!perBrokerDiff.isEmpty()) {
+            Map<ConfigResource, Collection<AlterConfigOp>> updatedPerBrokerConfig = new HashMap<>(2);
+            updatedPerBrokerConfig.put(getBrokersConfig(podId), perBrokerDiff);
+            LOGGER.debugCr(reconciliation, "Updating broker configuration {}", nodeRef);
+            LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", nodeRef, updatedPerBrokerConfig);
 
-        AlterConfigsResult alterClusterConfigResult = ac.incrementalAlterConfigs(updatedClusterWideConfig);
-        KafkaFuture<Void> clusterConfigFuture = alterClusterConfigResult.values().get(getClusterWideConfig());
+            AlterConfigsResult alterBrokerConfigResult = ac.incrementalAlterConfigs(updatedPerBrokerConfig);
+            KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(podId));
 
-        AlterConfigsResult alterBrokerConfigResult = ac.incrementalAlterConfigs(updatedPerBrokerConfig);
-        KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(podId));
+            await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
+                    error -> {
+                        LOGGER.errorCr(reconciliation, "Error updating Kafka configuration for pod {}", nodeRef, error);
+                        return new ForceableProblem("Error updating Kafka configuration for pod " + nodeRef, error);
+                    });
 
-        await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, clusterConfigFuture), 30, TimeUnit.SECONDS,
-                error -> {
-                    LOGGER.errorCr(reconciliation, "Error updating cluster-wide configuration", error);
-                    return new ForceableProblem("Error updating cluster-wide configuration", error);
-                });
-        await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
-            error -> {
-                LOGGER.errorCr(reconciliation, "Error updating Kafka configuration for pod {}", nodeRef, error);
-                return new ForceableProblem("Error updating Kafka configuration for pod " + nodeRef, error);
-            });
-        LOGGER.infoCr(reconciliation, "Dynamic update of pod {} was successful.", nodeRef);
+            LOGGER.infoCr(reconciliation, "Dynamic update of pod {} was successful.", nodeRef);
+        }
+
+        if (!clusterWideDiff.isEmpty()) {
+            Map<ConfigResource, Collection<AlterConfigOp>> updatedClusterWideConfig = new HashMap<>(1);
+            updatedClusterWideConfig.put(getClusterWideConfig(), clusterWideDiff);
+
+            LOGGER.debugCr(reconciliation, "Updating cluster-wide configuration");
+            LOGGER.traceCr(reconciliation, "Updating cluster-wide configuration with {}", updatedClusterWideConfig);
+
+            AlterConfigsResult alterClusterConfigResult = ac.incrementalAlterConfigs(updatedClusterWideConfig);
+            KafkaFuture<Void> clusterConfigFuture = alterClusterConfigResult.values().get(getClusterWideConfig());
+
+            await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, clusterConfigFuture), 30, TimeUnit.SECONDS,
+                    error -> {
+                        LOGGER.errorCr(reconciliation, "Error updating cluster-wide configuration", error);
+                        return new ForceableProblem("Error updating cluster-wide configuration", error);
+                    });
+
+            LOGGER.infoCr(reconciliation, "Dynamic update of cluster-wide configuration(s)");
+        }
     }
 
     /** Exceptions which we're prepared to ignore (thus forcing a restart) in some circumstances. */
