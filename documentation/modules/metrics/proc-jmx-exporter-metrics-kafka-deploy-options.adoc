@@ -10,7 +10,7 @@
 [role="_abstract"]
 To enable and expose metrics in Strimzi for Prometheus, configure the appropriate properties in the custom resources for the components you want to monitor.
 
-Use `metricsConfig` to expose metrics for these components:
+Use `metricsConfig` to expose JMX-based metrics for these components:
 
 * Kafka
 * Kafka Connect
@@ -18,16 +18,10 @@ Use `metricsConfig` to expose metrics for these components:
 * Kafka Bridge
 * Cruise Control
 
-This enables the {JMXExporter}, which exposes metrics on port 9404 through an HTTP endpoint. 
+The {JMXExporter} exposes metrics on port 9404 through an HTTP endpoint. 
 Prometheus scrapes this endpoint to collect Kafka metrics.
 
-Set `enableMetrics` to `true` to expose metrics for the following:
-
-* OAuth 2.0
-** Configure in the `Kafka` resource for `oauth` or `keycloak` cluster authorization, or `oauth` listener authentication.
-** Configure in the `KafkaBridge`, `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication.
-
-You can create your own Prometheus configuration or use the xref:assembly-metrics-config-files-{context}[example custom resource files] provided with Strimzi:
+You can create your own Prometheus configuration or start with the xref:assembly-metrics-config-files-{context}[example custom resource files] provided with Strimzi:
 
 * `kafka-metrics.yaml`
 * `kafka-connect-metrics.yaml`
@@ -38,32 +32,32 @@ You can create your own Prometheus configuration or use the xref:assembly-metric
 
 These files include relabeling rules and example metrics configuration, and are a good starting point for trying Prometheus with Strimzi.
 
-This procedure shows how to deploy example Prometheus metrics configuration to the `Kafka` resource.
+NOTE: OAuth 2.0–related metrics are also available when OAuth 2.0 authentication or authorization is configured by using `type: custom`.  
+For a working example that enables OAuth 2.0 metrics for Kafka, see the `kafka-ephemeral-oauth-single-keycloak-authz-metrics.yaml` example file.
+
+This procedure shows how to deploy the example Prometheus metrics configuration to the `Kafka` resource.
 The same steps apply when deploying the example files for other resources.
 
 .Procedure
 
 . Deploy the example custom resource with the Prometheus configuration.
 +
-For example, for each `Kafka` resource you can apply the `kafka-metrics.yaml` file.
+For example, for each `Kafka` resource you can apply the `kafka-metrics.yaml` file:
 +
-.Deploying the example configuration
 [source,shell,subs="+attributes"]
 ----
 kubectl apply -f kafka-metrics.yaml
 ----
 +
-Alternatively, copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource.
+Alternatively, copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource:
 +
-.Copying the example configuration
 [source,shell]
 ----
 kubectl edit kafka <kafka_configuration_file>
 ----
 +
-Copy the `metricsConfig` property and the `ConfigMap` it references to your `Kafka` resource.
+Add the `metricsConfig` property and corresponding `ConfigMap` as shown in the following example:
 +
-.Example metrics configuration for Kafka
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -90,51 +84,7 @@ data:
   kafka-metrics-config.yml: |
   # _metrics configuration..._
 ----
-<1> Copy the `metricsConfig` property that references the `ConfigMap` containing metrics configuration.
-<2> Copy the whole `ConfigMap` specifying the metrics configuration.
-
-.Enabling metrics for OAuth 2.0 
-
-To expose metrics for OAuth 2.0, set the `enableMetrics` property to `true` in the appropriate custom resource.
-
-* In the Kafka resource for:
-** Cluster authorization (`oauth` or `keycloak`)
-** Listener authentication (`oauth` only)
-* In the `KafkaBridge`, `KafkaConnect`, or `KafkaMirrorMaker2` resources for `oauth` authentication  
-
-In the following example, metrics are enabled for OAuth 2.0 listener authentication and OAuth 2.0 (`keycloak`) cluster authorization.
-
-.Example configuration with OAuth 2.0 metrics enabled
-[source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-metadata:
-  name: my-cluster
-  namespace: myproject
-spec:
-  kafka:
-    # ...
-    listeners:
-    - name: external3
-      port: 9094
-      type: loadbalancer
-      tls: true
-      authentication:
-        type: oauth
-        enableMetrics: true
-      configuration:
-        #...
-    authorization:
-      type: keycloak
-      enableMetrics: true
-  # ...
-----
-
-To use OAuth 2.0 metrics with Prometheus, copy the `ConfigMap` configuration from the `oauth-metrics.yaml` file to the same `Kafka` resource configuration file where you enabled metrics for OAuth 2.0 and then apply the configuration.
-
-NOTE: You can also enable metrics for the `type: opa` authorization option in the same way as for OAuth 2.0 authorization.
-However, `type: opa` is deprecated and will be removed in a future release.
-To continue using the Open Policy Agent authorizer, use the `type: custom` authorization configuration.
+<1> Add the `metricsConfig` property that references the metrics `ConfigMap`.
+<2> Add the complete `ConfigMap` definition with the JMX Exporter configuration.
 
 
