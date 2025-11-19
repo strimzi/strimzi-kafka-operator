@@ -13,8 +13,8 @@ Scopes correspond to different levels of access to Kafka topics or operations wi
 
 OAuth 2.0 also supports single sign-on and integration with identity providers. 
 
-NOTE: The authentication types `oauth` and `keycloak` are deprecated and will be removed in a future release. 
-Use the `custom` authentication type to configure token-based security on listeners and components.
+NOTE: The authentication type `oauth` and `keycloak` authorization type are deprecated and will be removed in a future release. 
+Use the `custom` authentication and authorization type to configure token-based security on listeners and components.
 This content is currently being updated to reflect the transition to the `custom` authentication type.
 
 ifdef::Section[]
