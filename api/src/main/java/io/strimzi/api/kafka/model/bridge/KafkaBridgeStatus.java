@@ -29,7 +29,7 @@ public class KafkaBridgeStatus extends Status {
     private int replicas;
     private String labelSelector;
 
-    @Description("The URL at which external client applications can access the Kafka Bridge.")
+    @Description("The URL at which external client applications can access the HTTP Bridge.")
     public String getUrl() {
         return url;
     }

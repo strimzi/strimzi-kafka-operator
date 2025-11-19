@@ -1,6 +1,6 @@
 :_mod-docs-content-type: CONCEPT
 
-Configures a Kafka Bridge cluster.
+Configures a HTTP Bridge cluster.
 
 Configuration options relate to:
 
@@ -13,7 +13,7 @@ Configuration options relate to:
 [id='property-http-bridge-logging-{context}']
 = Logging
 
-Kafka Bridge has its own preconfigured loggers:
+HTTP Bridge has its own preconfigured loggers:
 
 [cols="1m,2,1",options="header"]
 |===
@@ -76,7 +76,7 @@ spec:
   # ...
 ----
 
-Kafka Bridge uses the Apache `log4j2` logger implementation.
+HTTP Bridge uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
 
 You can set log levels using either the `inline` or `external` logging configuration types.

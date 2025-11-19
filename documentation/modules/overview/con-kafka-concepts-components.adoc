@@ -28,5 +28,5 @@ External data is translated and transformed into the appropriate format.
 +
 Kafka Connect can be configured to build custom container images with the required connectors.
 Kafka MirrorMaker:: Kafka MirrorMaker replicates data between two Kafka clusters, either in the same data center or across different locations.
-Kafka Bridge:: Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
+HTTP Bridge:: HTTP Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 Kafka Exporter:: Kafka Exporter extracts data for analysis as Prometheus metrics, primarily data relating to offsets, consumer groups, consumer lag and topics. Consumer lag is the delay between the last message written to a partition and the message currently being picked up from that partition by a consumer

@@ -13,7 +13,7 @@ To enable and expose metrics in Strimzi for Prometheus, configure the appropriat
 Use `metricsConfig` configuration to expose metrics for these components:
 
 * Kafka
-* Kafka Bridge
+* HTTP Bridge
 * Kafka Connect
 * Kafka MirrorMaker 2
 

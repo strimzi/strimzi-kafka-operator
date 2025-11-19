@@ -55,7 +55,7 @@ KafkaAutoRebalanceStatus
 
 ¦KafkaBridge
 ¦KafkaBridgeStatus
-¦The Kafka Bridge
+¦The HTTP Bridge
 
 ¦KafkaRebalance
 ¦KafkaRebalanceStatus

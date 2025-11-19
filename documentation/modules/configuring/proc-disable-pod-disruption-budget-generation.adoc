@@ -13,7 +13,7 @@ Strimzi automatically generates a `PodDisruptionBudget` resource for each of the
 * Kafka cluster
 * Kafka Connect
 * MirrorMaker 2
-* Kafka Bridge
+* HTTP Bridge
 
 Each budget applies across all pods deployed for that component.
 

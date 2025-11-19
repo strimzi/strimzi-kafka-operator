@@ -19,7 +19,7 @@ Use custom resources to configure the following components:
 * Node pools for Kafka clusters
 * MirrorMaker source and target clusters
 * Kafka Connect
-* Kafka Bridge
+* HTTP Bridge
 
 Strimzi provides link:{BookURLDeploying}#config-examples-{context}[example configuration files^], which can serve as a starting point when building your own Kafka component configuration for deployment.
 

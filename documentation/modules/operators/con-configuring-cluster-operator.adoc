@@ -76,7 +76,7 @@ env:
 ----
 
 `STRIMZI_POD_DISRUPTION_BUDGET_GENERATION`::  Optional. Default is `true`. 
-Controls automatic creation of `PodDisruptionBudget` resources for Kafka, Kafka Connect, MirrorMaker2, and Kafka Bridge. Each budget applies across all pods deployed for the associated component. For Kafka clusters, this includes all node pool pods.
+Controls automatic creation of `PodDisruptionBudget` resources for Kafka, Kafka Connect, MirrorMaker2, and HTTP Bridge. Each budget applies across all pods deployed for the associated component. For Kafka clusters, this includes all node pool pods.
 +
 A pod disruption budget with the `maxUnavailable` value set to zero prevents Kubernetes from evicting pods automatically.
 +
@@ -155,7 +155,7 @@ The image name to use as the default when deploying Cruise Control if no image i
 
 `STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE`:: Optional.
 The default is `{DockerKafkaBridge}`.
-The image name to use as the default when deploying the Kafka Bridge if no image is specified as the `Kafka.spec.kafkaBridge.image` in the `Kafka` resource.
+The image name to use as the default when deploying the HTTP Bridge if no image is specified as the `Kafka.spec.kafkaBridge.image` in the `Kafka` resource.
 
 `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional.
 The default is `{DockerKafkaInit}`.

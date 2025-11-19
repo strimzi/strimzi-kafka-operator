@@ -17,7 +17,7 @@ The Cluster Operator manages the clusters of the following Kafka components:
 * Kafka (including Entity Operator, Kafka Exporter, and Cruise Control)
 * Kafka Connect
 * Kafka MirrorMaker
-* Kafka Bridge
+* HTTP Bridge
 
 The clusters are deployed using custom resources.
 

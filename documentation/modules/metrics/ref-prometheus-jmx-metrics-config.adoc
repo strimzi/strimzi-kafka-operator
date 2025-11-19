@@ -36,7 +36,7 @@ For example, the value of a label may be derived from the name of a Kafka server
 |`KafkaMirrorMaker2`
 |`kafka-mirror-maker-2-metrics.yaml`
 
-|Kafka Bridge
+|HTTP Bridge
 |`KafkaBridge`
 |`kafka-bridge-metrics.yaml`
 

@@ -81,7 +81,7 @@ If the rack ID is not specified, or if it cannot find a replica with the same ra
 .Example showing client consuming from replicas in the same availability zone
 image::rack-config-availability-zones.png[consuming from replicas in the same availability zone]
 
-You can also configure Kafka Connect, MirrorMaker 2 and Kafka Bridge so that connectors consume messages from the closest replicas.
+You can also configure Kafka Connect, MirrorMaker 2 and HTTP Bridge so that connectors consume messages from the closest replicas.
 You enable rack awareness in the `KafkaConnect`, `KafkaMirrorMaker2`, and `KafkaBridge` custom resources.
 The configuration does does not set affinity rules, but you can also configure `affinity` or `topologySpreadConstraints`.
 For more information see link:{BookURLDeploying}#assembly-scheduling-str[Configuring pod scheduling^].
@@ -116,9 +116,9 @@ spec:
   # ...
 ----
 
-When deploying Kafka Bridge using Strimzi, you can use the `rack` section in the `KafkaBridge` custom resource to automatically configure the `client.rack` option.
+When deploying HTTP Bridge using Strimzi, you can use the `rack` section in the `KafkaBridge` custom resource to automatically configure the `client.rack` option.
 
-.Example `rack` configuration for Kafka Bridge
+.Example `rack` configuration for HTTP Bridge
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaBridgeApiVersion}
