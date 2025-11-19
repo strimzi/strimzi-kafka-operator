@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.performance;
 
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
@@ -99,12 +97,6 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                         .editEntityOperator()
                             .editUserOperator()
                                 .withReconciliationIntervalMs(10_000L)
-                                .withResources(new ResourceRequirementsBuilder()
-                                    .addToLimits("memory", new Quantity("768Mi"))
-                                    .addToLimits("cpu", new Quantity("750m"))
-                                    .addToRequests("memory", new Quantity("768Mi"))
-                                    .addToRequests("cpu", new Quantity("750m"))
-                                    .build())
                             .endUserOperator()
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
@@ -182,7 +174,14 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
         final int maxWorkQueueSize = 2048;
 
         KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                .editSpec()
+                    .withNewPersistentClaimStorage()
+                        .withSize("5Gi")
+                        .withDeleteClaim(true)
+                    .endPersistentClaimStorage()
+                .endSpec()
+                .build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
 
@@ -196,12 +195,6 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                         .editEntityOperator()
                             .editUserOperator()
                                 .withReconciliationIntervalMs(10_000L)
-                                .withResources(new ResourceRequirementsBuilder()
-                                    .addToLimits("memory", new Quantity("768Mi"))
-                                    .addToLimits("cpu", new Quantity("750m"))
-                                    .addToRequests("memory", new Quantity("768Mi"))
-                                    .addToRequests("cpu", new Quantity("750m"))
-                                    .build())
                             .endUserOperator()
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
