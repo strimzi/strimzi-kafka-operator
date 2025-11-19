@@ -23,8 +23,12 @@ NOTE: Refer to the documentation supporting a specific version of Strimzi for in
 * You have xref:downloads-{context}[downloaded the release artifacts for Strimzi {ProductVersion}].
 * You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
 
-Currently, no feature gates require enabling or disabling before upgrading. 
-If a feature gate introduces such a requirement, the details will be provided here.
+Before upgrading, review the feature gates available in this release.  
+Some feature gates provide functionality that has not yet graduated to general availability and can be enabled or disabled through the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.  
+If you want to change the state of a feature gate, configure it before you apply the upgrade.
+
+For information on the available feature gates, their default states, and how to configure them, see xref:ref-operator-cluster-feature-gates-{context}[Feature gates].
+
 
 .Procedure
 
