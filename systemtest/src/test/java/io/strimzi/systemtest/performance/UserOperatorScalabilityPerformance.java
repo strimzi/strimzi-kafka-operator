@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.performance;
 
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
@@ -102,6 +104,12 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                         .editEntityOperator()
                             .editUserOperator()
                                 .withReconciliationIntervalMs(10_000L)
+                                .withResources(new ResourceRequirementsBuilder()
+                                    .addToLimits("memory", new Quantity("768Mi"))
+                                    .addToLimits("cpu", new Quantity("750m"))
+                                    .addToRequests("memory", new Quantity("768Mi"))
+                                    .addToRequests("cpu", new Quantity("750m"))
+                                    .build())
                             .endUserOperator()
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
@@ -194,6 +202,12 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                         .editEntityOperator()
                             .editUserOperator()
                                 .withReconciliationIntervalMs(10_000L)
+                                .withResources(new ResourceRequirementsBuilder()
+                                    .addToLimits("memory", new Quantity("1Gi"))
+                                    .addToLimits("cpu", new Quantity("1"))
+                                    .addToRequests("memory", new Quantity("1Gi"))
+                                    .addToRequests("cpu", new Quantity("1"))
+                                    .build())
                             .endUserOperator()
                             .editOrNewTemplate()
                                 .editOrNewUserOperatorContainer()
