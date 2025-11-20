@@ -111,14 +111,14 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
     }
     
     @Override
-    @Description("The specification of the Kafka Bridge.")
+    @Description("The specification of the HTTP Bridge.")
     @RequiredInVersions("v1+")
     public KafkaBridgeSpec getSpec() {
         return super.getSpec();
     }
 
     @Override
-    @Description("The status of the Kafka Bridge.")
+    @Description("The status of the HTTP Bridge.")
     public KafkaBridgeStatus getStatus() {
         return super.getStatus();
     }

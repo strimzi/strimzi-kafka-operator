@@ -12,5 +12,5 @@ For more information, see link:{BookURLDeploying}#assembly-metrics-str[Introduci
 
 == Metrics Reporter
 [id="glossary-metrics-reporter_{context}"]
-A component that exposes metrics from Strimzi-managed components such as Kafka brokers, Kafka Connect, Kafka MirrorMaker 2, and Kafka Bridge in Prometheus format.
+A component that exposes metrics from Strimzi-managed components such as Kafka brokers, Kafka Connect, Kafka MirrorMaker 2, and HTTP Bridge in Prometheus format.
 The Metrics Reporter is enabled through the `metricsConfig` property in the corresponding custom resource.

@@ -3818,10 +3818,10 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |Property |Property type |Description
 |spec
 |xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
-|The specification of the Kafka Bridge.
+|The specification of the HTTP Bridge.
 |status
 |xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`]
-|The status of the Kafka Bridge.
+|The status of the HTTP Bridge.
 |====
 
 [id='type-KafkaBridgeSpec-{context}']
@@ -3845,13 +3845,13 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |The number of pods in the `Deployment`. Required in the `v1` version of the Strimzi API. Defaults to `1` in the `v1beta2` version of the Strimzi API.
 |image
 |string
-|The container image used for Kafka Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
+|The container image used for HTTP Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used.
 |bootstrapServers
 |string
 |A list of host:port pairs for establishing the initial connection to the Kafka cluster.
 |tls
 |xref:type-ClientTls-{context}[`ClientTls`]
-|TLS configuration for connecting Kafka Bridge to the cluster.
+|TLS configuration for connecting HTTP Bridge to the cluster.
 |authentication
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationCustom-{context}[`KafkaClientAuthenticationCustom`]
 |Authentication configuration for connecting to the cluster.
@@ -3875,7 +3875,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |JVM Options for pods.
 |logging
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|Logging configuration for Kafka Bridge.
+|Logging configuration for HTTP Bridge.
 |clientRackInitImage
 |string
 |The image of the init container used for initializing the `client.rack`.
@@ -3884,7 +3884,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |Configuration of the node label which will be used as the client.rack consumer configuration.
 |enableMetrics
 |boolean
-|**The `enableMetrics` property has been deprecated, and should now be configured using `.spec.metricsConfig`.** The `enableMetrics` configuration is deprecated and will be removed in the future. Enable the metrics for the Kafka Bridge. Default is false.
+|**The `enableMetrics` property has been deprecated, and should now be configured using `.spec.metricsConfig`.** The `enableMetrics` configuration is deprecated and will be removed in the future. Enable the metrics for the HTTP Bridge. Default is false.
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`], xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Metrics configuration.
@@ -3896,10 +3896,10 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec.adoc[leveloffs
 |Pod readiness checking.
 |template
 |xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
-|Template for Kafka Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
+|Template for HTTP Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
 |tracing
 |xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
-|The configuration of tracing in Kafka Bridge.
+|The configuration of tracing in HTTP Bridge.
 |====
 
 [id='type-KafkaBridgeHttpConfig-{context}']
@@ -4019,28 +4019,28 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 |Property |Property type |Description
 |deployment
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
-|Template for Kafka Bridge `Deployment`.
+|Template for HTTP Bridge `Deployment`.
 |pod
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|Template for Kafka Bridge `Pods`.
+|Template for HTTP Bridge `Pods`.
 |apiService
 |xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
-|Template for Kafka Bridge API `Service`.
+|Template for HTTP Bridge API `Service`.
 |podDisruptionBudget
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
-|Template for Kafka Bridge `PodDisruptionBudget`.
+|Template for HTTP Bridge `PodDisruptionBudget`.
 |bridgeContainer
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|Template for the Kafka Bridge container.
+|Template for the HTTP Bridge container.
 |clusterRoleBinding
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|Template for the Kafka Bridge ClusterRoleBinding.
+|Template for the HTTP Bridge ClusterRoleBinding.
 |serviceAccount
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|Template for the Kafka Bridge service account.
+|Template for the HTTP Bridge service account.
 |initContainer
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|Template for the Kafka Bridge init container.
+|Template for the HTTP Bridge init container.
 |====
 
 [id='type-KafkaBridgeStatus-{context}']
@@ -4060,7 +4060,7 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |The generation of the CRD that was last reconciled by the operator.
 |url
 |string
-|The URL at which external client applications can access the Kafka Bridge.
+|The URL at which external client applications can access the HTTP Bridge.
 |replicas
 |integer
 |The current number of pods being used to provide this resource.

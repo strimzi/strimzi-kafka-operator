@@ -11,11 +11,11 @@
 [role="_abstract"]
 HTTP Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 
-//Procedure to deploy a Kafka Bridge cluster
+//Procedure to deploy a HTTP Bridge cluster
 include::../../modules/deploying/proc-deploy-http-bridge.adoc[leveloffset=+1]
 //exposing the bridge to a local machine
 include::../../modules/deploying/proc-exposing-http-bridge-service-local-machine.adoc[leveloffset=+1]
 //accessing the bridge outside the cluster
 include::../../modules/deploying/con-accessing-http-bridge-from-outside.adoc[leveloffset=+1]
-//Resources created for Kafka Bridge
+//Resources created for HTTP Bridge
 include::../../modules/configuring/ref-list-of-http-bridge-resources.adoc[leveloffset=+1]

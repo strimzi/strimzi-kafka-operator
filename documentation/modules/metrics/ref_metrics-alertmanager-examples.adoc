@@ -17,7 +17,7 @@ The `prometheus-rules` directory contains example rules for the following compon
 * Kafka
 * Entity Operator
 * Kafka Connect
-* Kafka Bridge
+* HTTP Bridge
 * MirrorMaker2
 * Kafka Exporter
 

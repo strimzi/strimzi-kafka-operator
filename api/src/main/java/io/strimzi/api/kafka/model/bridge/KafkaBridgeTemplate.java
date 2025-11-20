@@ -44,7 +44,7 @@ public class KafkaBridgeTemplate implements UnknownPropertyPreserving {
     private ResourceTemplate serviceAccount;
     private Map<String, Object> additionalProperties;
 
-    @Description("Template for Kafka Bridge `Deployment`.")
+    @Description("Template for HTTP Bridge `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public DeploymentTemplate getDeployment() {
         return deployment;
@@ -54,7 +54,7 @@ public class KafkaBridgeTemplate implements UnknownPropertyPreserving {
         this.deployment = deployment;
     }
 
-    @Description("Template for Kafka Bridge `Pods`.")
+    @Description("Template for HTTP Bridge `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodTemplate getPod() {
         return pod;
@@ -64,7 +64,7 @@ public class KafkaBridgeTemplate implements UnknownPropertyPreserving {
         this.pod = pod;
     }
 
-    @Description("Template for Kafka Bridge API `Service`.")
+    @Description("Template for HTTP Bridge API `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public InternalServiceTemplate getApiService() {
         return apiService;
@@ -74,7 +74,7 @@ public class KafkaBridgeTemplate implements UnknownPropertyPreserving {
         this.apiService = apiService;
     }
 
-    @Description("Template for Kafka Bridge `PodDisruptionBudget`.")
+    @Description("Template for HTTP Bridge `PodDisruptionBudget`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
         return podDisruptionBudget;
@@ -84,7 +84,7 @@ public class KafkaBridgeTemplate implements UnknownPropertyPreserving {
         this.podDisruptionBudget = podDisruptionBudget;
     }
 
-    @Description("Template for the Kafka Bridge container")
+    @Description("Template for the HTTP Bridge container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getBridgeContainer() {
         return bridgeContainer;
@@ -94,7 +94,7 @@ public class KafkaBridgeTemplate implements UnknownPropertyPreserving {
         this.bridgeContainer = bridgeContainer;
     }
 
-    @Description("Template for the Kafka Bridge init container")
+    @Description("Template for the HTTP Bridge init container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getInitContainer() {
         return initContainer;
@@ -104,7 +104,7 @@ public class KafkaBridgeTemplate implements UnknownPropertyPreserving {
         this.initContainer = initContainer;
     }
 
-    @Description("Template for the Kafka Bridge ClusterRoleBinding.")
+    @Description("Template for the HTTP Bridge ClusterRoleBinding.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getClusterRoleBinding() {
         return clusterRoleBinding;
@@ -114,7 +114,7 @@ public class KafkaBridgeTemplate implements UnknownPropertyPreserving {
         this.clusterRoleBinding = clusterRoleBinding;
     }
 
-    @Description("Template for the Kafka Bridge service account.")
+    @Description("Template for the HTTP Bridge service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;

@@ -30,7 +30,7 @@ Whether your deployment involves public or private clouds, or if you are setting
 include::assembly-deploy-intro-custom-resources.adoc[leveloffset=+1]
 //operators
 include::assembly-deploy-intro-operators.adoc[leveloffset=+1]
-//info on kafka bridge
+//info on HTTP Bridge
 include::../../modules/deploying/con-http-bridge-concepts.adoc[leveloffset=+1]
 //info on FIPS
 include::../../modules/deploying/con-fips-support.adoc[leveloffset=+1]
@@ -42,4 +42,4 @@ include::../../shared/ref-document-conventions.adoc[leveloffset=+1]
 
 * link:{BookURLOverview}[Strimzi Overview^]
 * link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^]
-* link:{BookURLBridge}[Using the Kafka Bridge^]
+* link:{BookURLBridge}[Using the HTTP Bridge^]
