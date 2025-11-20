@@ -49,12 +49,12 @@ Strimzi image for running the operators:
 * User Operator
 * Kafka Initializer
 
-|Kafka Bridge
+|HTTP Bridge
 a|
 * {DockerOrg}/kafka-bridge:{BridgeDockerTag}
 
 a|
-Strimzi image for running the Kafka Bridge
+Strimzi image for running the HTTP Bridge
 
 |Strimzi Drain Cleaner
 a|

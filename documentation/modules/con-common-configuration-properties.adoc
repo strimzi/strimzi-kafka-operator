@@ -57,7 +57,7 @@ The combination is encapsulated in the `TLS_AES_256_GCM_SHA384` cipher suite spe
 
 The `ssl.enabled.protocols` property specifies the available TLS versions that can be used for secure communication between the cluster and its clients. 
 The `ssl.protocol` property sets the default TLS version for all connections, and it must be chosen from the enabled protocols.
-Use the `ssl.endpoint.identification.algorithm` property to enable or disable hostname verification (configurable only in components based on Kafka clients - Kafka Connect, MirrorMaker 2, and Kafka Bridge).
+Use the `ssl.endpoint.identification.algorithm` property to enable or disable hostname verification (configurable only in components based on Kafka clients - Kafka Connect, MirrorMaker 2, and HTTP Bridge).
 
 .Example SSL configuration
 [source,yaml,subs="attributes+"]
@@ -79,7 +79,7 @@ config:
 == `trustedCertificates`
 
 Use the `tls` and `trustedCertificates` properties to enable TLS encryption and specify secrets under which TLS certificates are stored in X.509 format.
-You can add this configuration to the Kafka Connect, Kafka MirrorMaker, and Kafka Bridge components for TLS connections to the Kafka cluster.
+You can add this configuration to the Kafka Connect, Kafka MirrorMaker, and HTTP Bridge components for TLS connections to the Kafka cluster.
 
 You can use the secrets created by the Cluster Operator for the Kafka cluster,
 or you can create your own TLS certificate file, then create a `Secret` from the file:
@@ -176,7 +176,7 @@ For example:
 
 * `KafkaConnect` resource for Kafka Connect (`spec.resources`)
 * `KafkaMirrorMaker2` resource for MirrorMaker (`spec.resources`)
-* `KafkaBridge` resource for Kafka Bridge (`spec.resources`)
+* `KafkaBridge` resource for HTTP Bridge (`spec.resources`)
 
 .Example resource configuration for a node pool 
 [source,yaml,subs="+attributes"]
@@ -434,7 +434,7 @@ For more information on image environment variables, see link:{BookURLDeploying}
 | STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
 | {DockerKafka}
 
-| Kafka Bridge
+| HTTP Bridge
 | STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
 | {DockerKafkaBridge}
 
@@ -586,7 +586,7 @@ The following Strimzi components run inside a Java Virtual Machine (JVM):
 * Apache Kafka
 * Apache Kafka Connect
 * Apache Kafka MirrorMaker
-* Kafka Bridge
+* HTTP Bridge
 
 To optimize their performance on different platforms and architectures, you configure the `jvmOptions` property in the following resources:
 
@@ -652,7 +652,7 @@ The following table shows the default heap values.
 |75%
 |None
 
-|Kafka Bridge
+|HTTP Bridge
 |50%
 |31 Gi
 
@@ -747,7 +747,7 @@ Strimzi supports specifying additional volumes and volume mounts in the followin
 
 * Kafka
 * Kafka Connect
-* Kafka Bridge
+* HTTP Bridge
 * Kafka MirrorMaker2
 * Entity Operator
 * Cruise Control

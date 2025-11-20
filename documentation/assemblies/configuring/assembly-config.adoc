@@ -17,7 +17,7 @@ Use custom resources to configure and create instances of the following componen
 * Kafka clusters
 * Kafka Connect clusters
 * Kafka MirrorMaker
-* Kafka Bridge
+* HTTP Bridge
 * Cruise Control
 
 You can use configuration to manage your instances or modify your deployment to introduce additional features.

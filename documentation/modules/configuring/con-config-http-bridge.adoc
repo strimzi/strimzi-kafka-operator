@@ -10,11 +10,11 @@
 [role="_abstract"]
 Update the `spec` properties of the `KafkaBridge` custom resource to configure your HTTP Bridge deployment.
 
-In order to prevent issues arising when client consumer requests are processed by different HTTP Bridge instances, address-based routing must be employed to ensure that requests are routed to the right Kafka Bridge instance.
+In order to prevent issues arising when client consumer requests are processed by different HTTP Bridge instances, address-based routing must be employed to ensure that requests are routed to the right HTTP Bridge instance.
 Additionally, each independent HTTP Bridge instance must have a replica.
 A HTTP Bridge instance has its own state which is not shared with another instances.
 
-For a deeper understanding of the HTTP Bridge and its cluster configuration options, refer to the link:{BookURLBridge}[Using the Kafka Bridge^] guide and the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+For a deeper understanding of the HTTP Bridge and its cluster configuration options, refer to the link:{BookURLBridge}[Using the HTTP Bridge^] guide and the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .Example `KafkaBridge` custom resource configuration
 [source,yaml,subs="+quotes,attributes"]

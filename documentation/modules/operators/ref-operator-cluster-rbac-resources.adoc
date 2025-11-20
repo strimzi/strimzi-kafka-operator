@@ -77,7 +77,7 @@ All cluster roles are required by the Cluster Operator in order to delegate priv
 |Access rights used by the Topic and User Operators to manage Kafka users and topics.
 
 |strimzi-kafka-client
-|Access rights to allow Kafka Connect, MirrorMaker (1 and 2), and Kafka Bridge to get the topology labels from Kubernetes worker nodes when rack-awareness is used.
+|Access rights to allow Kafka Connect, MirrorMaker (1 and 2), and HTTP Bridge to get the topology labels from Kubernetes worker nodes when rack-awareness is used.
 
 |===
 
@@ -162,6 +162,6 @@ This allows the Cluster Operator to follow the principle of least privilege and 
 |MirrorMaker 2 pods
 
 |<cluster_name>-bridge
-|Kafka Bridge pods
+|HTTP Bridge pods
 
 |===

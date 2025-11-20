@@ -20,7 +20,7 @@ The basic deployment path includes the following steps:
 ** The Topic Operator and User Operator as standalone components, if not deployed with the Kafka cluster
 ** Kafka Connect
 ** Kafka MirrorMaker
-** Kafka Bridge
+** HTTP Bridge
 ** Metrics monitoring components
 
 The Cluster Operator creates Kubernetes resources such as `Deployment`, `Service`, and `Pod` for each component. 

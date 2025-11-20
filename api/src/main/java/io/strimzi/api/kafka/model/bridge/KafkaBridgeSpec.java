@@ -89,7 +89,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
             description = "The `enableMetrics` configuration is deprecated and will be removed in the future.")
     @PresentInVersions("v1beta2")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Description("Enable the metrics for the Kafka Bridge. Default is false.")
+    @Description("Enable the metrics for the HTTP Bridge. Default is false.")
     public Boolean getEnableMetrics() {
         return enableMetrics;
     }
@@ -110,7 +110,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
         this.metricsConfig = metricsConfig;
     }
 
-    @Description("Logging configuration for Kafka Bridge.")
+    @Description("Logging configuration for HTTP Bridge.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     @Override
     public Logging getLogging() {
@@ -154,7 +154,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
         this.authentication = authentication;
     }
 
-    @Description("TLS configuration for connecting Kafka Bridge to the cluster.")
+    @Description("TLS configuration for connecting HTTP Bridge to the cluster.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public ClientTls getTls() {
         return tls;
@@ -214,7 +214,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
         this.http = http;
     }
 
-    @Description("The container image used for Kafka Bridge pods. "
+    @Description("The container image used for HTTP Bridge pods. "
         + "If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. "
         + "If an image name is not defined in the Cluster Operator configuration, a default value is used.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -226,7 +226,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
         this.image = image;
     }
 
-    @Description("Template for Kafka Bridge resources. " +
+    @Description("Template for HTTP Bridge resources. " +
             "The template allows users to specify how a `Deployment` and `Pod` is generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaBridgeTemplate getTemplate() {
@@ -258,7 +258,7 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("The configuration of tracing in Kafka Bridge.")
+    @Description("The configuration of tracing in HTTP Bridge.")
     public Tracing getTracing() {
         return tracing;
     }

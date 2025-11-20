@@ -41,7 +41,7 @@ m|Strimzi resource      |Long name          |Short name
 | Kafka Connect         | kafkaconnect      | kc
 | Kafka Connector       | kafkaconnector    | kctr
 | Kafka MirrorMaker 2   | kafkamirrormaker2 | kmm2
-| Kafka Bridge          | kafkabridge       | kb
+| HTTP Bridge          | kafkabridge       | kb
 | Kafka Rebalance       | kafkarebalance    | kr
 | Strimzi Pod Set       | strimzipodset     | sps
 

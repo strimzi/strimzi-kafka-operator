@@ -41,7 +41,7 @@ The dashboards are populated with a representative set of metrics for monitoring
 |Kafka MirrorMaker 2
 |`strimzi-kafka-mirror-maker-2.json`
 
-|Kafka Bridge
+|HTTP Bridge
 |`strimzi-kafka-bridge.json`
 
 |Cruise Control

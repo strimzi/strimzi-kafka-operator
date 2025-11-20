@@ -15,7 +15,7 @@ Use `metricsConfig` to expose metrics for these components:
 * Kafka
 * Kafka Connect
 * Kafka MirrorMaker 2
-* Kafka Bridge
+* HTTP Bridge
 * Cruise Control
 
 This enables the {JMXExporter}, which exposes metrics on port 9404 through an HTTP endpoint. 

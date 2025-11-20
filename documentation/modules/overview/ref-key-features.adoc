@@ -82,7 +82,7 @@ Strimzi operators automate rolling upgrades and recovery of Kafka components, he
 They also support scaling of Kafka clusters through node pools, automated partition reassignment using Cruise Control to maintain balanced workloads, and safe node removal using the Strimzi Drain Cleaner.
 
 Integrated support for data streaming pipelines::
-When Strimzi is installed, you can deploy and manage Kafka clusters alongside supporting components such as Kafka Connect, MirrorMaker 2, and Kafka Bridge, all using Kubernetes-native custom resources. 
+When Strimzi is installed, you can deploy and manage Kafka clusters alongside supporting components such as Kafka Connect, MirrorMaker 2, and HTTP Bridge, all using Kubernetes-native custom resources. 
 
 Integrated security:: 
 Strimzi enables fine-grained access control through listener-level authentication, cluster-wide authorization, and network policies. 
