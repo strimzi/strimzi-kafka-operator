@@ -109,6 +109,14 @@ public abstract class BaseMetricsCollectionScheduler {
      * @param unit the time unit of the initial delay and interval.
      */
     public void startCollecting(long initialDelay, long interval, TimeUnit unit) {
+        // Recreate scheduler if it has been shut down
+        if (this.scheduler.isShutdown()) {
+            LOGGER.debug("Scheduler was shut down, creating a new one.");
+            this.scheduler = Executors.newSingleThreadScheduledExecutor();
+            // Clear metrics from previous collection cycle when restarting
+            this.metricsStore.clear();
+        }
+
         // Capture the context in the thread where startCollecting is called
         final ExtensionContext currentContext = KubeResourceManager.get().getTestContext();
 
