@@ -658,18 +658,17 @@ public class KafkaRoller {
 
     /* test */ void dynamicUpdateKafkaConfig(NodeRef nodeRef, Admin ac, KafkaConfigurationDiff configurationDiff)
             throws ForceableProblem, InterruptedException {
-        var podId = nodeRef.nodeId();
         Collection<AlterConfigOp> perBrokerDiff = configurationDiff.getConfigDiff(Scope.PER_BROKER);
         Collection<AlterConfigOp> clusterWideDiff = configurationDiff.getConfigDiff(Scope.CLUSTER_WIDE);
 
         if (!perBrokerDiff.isEmpty()) {
             Map<ConfigResource, Collection<AlterConfigOp>> updatedPerBrokerConfig = new HashMap<>(2);
-            updatedPerBrokerConfig.put(getBrokersConfig(podId), perBrokerDiff);
+            updatedPerBrokerConfig.put(getBrokersConfig(nodeRef.nodeId()), perBrokerDiff);
             LOGGER.debugCr(reconciliation, "Updating broker configuration {}", nodeRef);
             LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", nodeRef, updatedPerBrokerConfig);
 
             AlterConfigsResult alterBrokerConfigResult = ac.incrementalAlterConfigs(updatedPerBrokerConfig);
-            KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(podId));
+            KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(nodeRef.nodeId()));
 
             await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
                     error -> {
