@@ -47,6 +47,14 @@ rules:
   - patch
   - update
 - apiGroups:
+    - "kafka.strimzi.io"
+  resources:
+    # Needed for environments with enabled OwnerReferencesPermissionEnforcement admission controller (e.g. OpenShift)
+    - kafkatopics/finalizers
+    - kafkausers/finalizers
+  verbs:
+    - update
+- apiGroups:
   - ""
   resources:
     # The entity operator user-operator needs to access and manage secrets to store generated credentials

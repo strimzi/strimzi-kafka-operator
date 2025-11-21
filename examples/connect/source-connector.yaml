@@ -2,7 +2,7 @@
 # the strimzi.io/use-connector-resources annotation on the KafkaConnect custom resource.
 # From Apache Kafka 3.1.1 and 3.2.0, you also have to add the FileStreamSourceConnector
 # connector to the container image. You can do that using the kafka-connect-build.yaml example.
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaConnector
 metadata:
   name: my-source-connector

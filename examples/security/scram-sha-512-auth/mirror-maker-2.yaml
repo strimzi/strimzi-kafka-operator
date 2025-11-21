@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: source
@@ -19,13 +19,13 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: cluster-a
 spec:
   kafka:
-    version: 4.1.0
+    version: 4.1.1
     metadataVersion: 4.1-IV1
     listeners:
       - name: tls
@@ -47,7 +47,7 @@ spec:
     userOperator: {}
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: target
@@ -68,13 +68,13 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: cluster-b
 spec:
   kafka:
-    version: 4.1.0
+    version: 4.1.1
     metadataVersion: 4.1-IV1
     listeners:
       - name: tls
@@ -96,7 +96,7 @@ spec:
     userOperator: {}
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
   name: cluster-a-user
@@ -117,7 +117,7 @@ spec:
           - DescribeConfigs
           - Read
           - Write
-      - resource: # Needed for every topic which is mirrored
+      - resource: # Needed for every topic that is mirrored
           type: topic
           name: "*"
         operations:
@@ -140,7 +140,7 @@ spec:
           - Read
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
   name: cluster-b-user
@@ -155,21 +155,12 @@ spec:
       # Underlying Kafka Connects internal topics used to store configuration, offsets or status
       - resource:
           type: group
-          name: mirrormaker2-cluster
+          name: my-mirror-maker-2-group
         operations:
           - Read
       - resource:
           type: topic
-          name: mirrormaker2-cluster-configs
-        operations:
-          - Create
-          - Describe
-          - DescribeConfigs
-          - Read
-          - Write
-      - resource:
-          type: topic
-          name: mirrormaker2-cluster-status
+          name: my-mirror-maker-2-config
         operations:
           - Create
           - Describe
@@ -178,7 +169,16 @@ spec:
           - Write
       - resource:
           type: topic
-          name: mirrormaker2-cluster-offsets
+          name: my-mirror-maker-2-status
+        operations:
+          - Create
+          - Describe
+          - DescribeConfigs
+          - Read
+          - Write
+      - resource:
+          type: topic
+          name: my-mirror-maker-2-offset
         operations:
           - Create
           - Describe
@@ -186,7 +186,7 @@ spec:
           - Read
           - Write
       # MirrorSourceConnector
-      - resource: # Needed for every topic which is mirrored
+      - resource: # Needed for every topic that is mirrored
           type: topic
           name: "*"
         operations:
@@ -212,63 +212,55 @@ spec:
         operations:
           - Read
           - Describe
-      - resource: # Needed for every topic which is mirrored
+      - resource: # Needed for every topic that is mirrored
           type: topic
           name: "*"
         operations:
           - Read
-      # MirrorHeartbeatConnector => needed only if the connector is enabled
-      # - resource:
-      #     type: topic
-      #     name: heartbeats
-      #   operations:
-      #     - Read
-      #     - Create
-      #     - Describe
-      #     - Write
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 4.1.0
+  version: 4.1.1
   replicas: 1
-  connectCluster: "cluster-b" # Must be the target custer
-  clusters:
-    - alias: "cluster-a" # Source cluster
-      bootstrapServers: cluster-a-kafka-bootstrap:9093
-      tls:
+  target:
+    alias: cluster-b
+    bootstrapServers: cluster-b-kafka-bootstrap:9093
+    groupId: my-mirror-maker-2-group
+    configStorageTopic: my-mirror-maker-2-config
+    offsetStorageTopic: my-mirror-maker-2-offset
+    statusStorageTopic: my-mirror-maker-2-status
+    tls:
+      trustedCertificates:
+        - secretName: cluster-b-cluster-ca-cert
+          pattern: "*.crt"
+    authentication:
+      type: scram-sha-512
+      username: cluster-b-user
+      passwordSecret:
+        secretName: cluster-b-user
+        password: password
+    config:
+      # -1 means it will use the default replication factor configured in the broker
+      config.storage.replication.factor: -1
+      offset.storage.replication.factor: -1
+      status.storage.replication.factor: -1
+  mirrors:
+    - source:
+        alias: cluster-a
+        bootstrapServers: cluster-a-kafka-bootstrap:9093
         trustedCertificates:
           - secretName: cluster-a-cluster-ca-cert
             pattern: "*.crt"
-      authentication:
-        type: scram-sha-512
-        username: cluster-a-user
-        passwordSecret:
-          secretName: cluster-a-user
-          password: password
-    - alias: "cluster-b" # Target cluster
-      bootstrapServers: cluster-b-kafka-bootstrap:9093
-      tls:
-        trustedCertificates:
-          - secretName: cluster-b-cluster-ca-cert
-            pattern: "*.crt"
-      authentication:
-        type: scram-sha-512
-        username: cluster-b-user
-        passwordSecret:
-          secretName: cluster-b-user
-          password: password
-      config:
-        # -1 means it will use the default replication factor configured in the broker
-        config.storage.replication.factor: -1
-        offset.storage.replication.factor: -1
-        status.storage.replication.factor: -1
-  mirrors:
-    - sourceCluster: "cluster-a"
-      targetCluster: "cluster-b"
+        authentication:
+          type: scram-sha-512
+          username: cluster-a-user
+          passwordSecret:
+            secretName: cluster-a-user
+            password: password
       sourceConnector:
         tasksMax: 1
         config:

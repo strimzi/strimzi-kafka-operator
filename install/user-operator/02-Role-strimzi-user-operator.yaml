@@ -25,6 +25,13 @@ rules:
   - patch
   - update
 - apiGroups:
+    - "kafka.strimzi.io"
+  resources:
+    # Needed for environments with enabled OwnerReferencesPermissionEnforcement admission controller (e.g. OpenShift)
+    - kafkausers/finalizers
+  verbs:
+    - update
+- apiGroups:
   - ""
   resources:
   - secrets
