@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
@@ -322,7 +323,7 @@ public class KafkaConnectBuild extends AbstractModel {
      *
      * @return  List of volume mounts
      */
-    private List<VolumeMount> getVolumeMounts() {
+    private List<VolumeMount> getVolumeMounts(boolean isBuildahBuild) {
         List<VolumeMount> volumeMounts = new ArrayList<>(2);
 
         volumeMounts.add(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build());
@@ -330,7 +331,11 @@ public class KafkaConnectBuild extends AbstractModel {
         if (build.getOutput() instanceof DockerOutput output) {
 
             if (output.getPushSecret() != null) {
-                volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/kaniko/.docker").build());
+                if (isBuildahBuild) {
+                    volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/build/.docker").build());
+                } else {
+                    volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/kaniko/.docker").build());
+                }
             }
         } else {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");
@@ -346,9 +351,15 @@ public class KafkaConnectBuild extends AbstractModel {
      *
      * @return  List of environment variables
      */
-    private List<EnvVar> getBuildContainerEnvVars() {
+    private List<EnvVar> getBuildContainerEnvVars(boolean isBuildahBuild) {
         // Add shared environment variables used for all containers
         List<EnvVar> varList = new ArrayList<>(sharedEnvironmentProvider.variables());
+
+        if (build.getOutput() instanceof DockerOutput output) {
+            if (output.getPushSecret() != null && isBuildahBuild) {
+                varList.add(new EnvVarBuilder().withName("REGISTRY_AUTH_FILE").withValue("/build/.docker/config.json").build());
+            }
+        }
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
@@ -370,9 +381,9 @@ public class KafkaConnectBuild extends AbstractModel {
             isBuildahBuild ? buildahArguments() : kanikoArguments(),
             securityProvider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
             resources,
-            getBuildContainerEnvVars(),
+            getBuildContainerEnvVars(isBuildahBuild),
             null,
-            getVolumeMounts(),
+            getVolumeMounts(isBuildahBuild),
             null,
             null,
             imagePullPolicy
