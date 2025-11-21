@@ -21,10 +21,9 @@ spec:
   conversion:
     strategy: None
   versions:
-    - name: v1beta2
+    - name: v1
       served: true
-      storage: true
-      deprecated: false
+      storage: false
       subresources:
         status: {}
         scale:
@@ -79,6 +78,162 @@ spec:
                       type: integer
                       description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                   description: Automatic restart of connector and tasks configuration.
+                version:
+                  type: string
+                  description: Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
+                config:
+                  x-kubernetes-preserve-unknown-fields: true
+                  type: object
+                  description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max."
+                state:
+                  type: string
+                  enum:
+                    - paused
+                    - stopped
+                    - running
+                  description: The state the connector should be in. Defaults to running.
+                listOffsets:
+                  type: object
+                  properties:
+                    toConfigMap:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                      description: Reference to the ConfigMap where the list of offsets will be written to.
+                  required:
+                    - toConfigMap
+                  description: Configuration for listing offsets.
+                alterOffsets:
+                  type: object
+                  properties:
+                    fromConfigMap:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                      description: Reference to the ConfigMap where the new offsets are stored.
+                  required:
+                    - fromConfigMap
+                  description: Configuration for altering offsets.
+              description: The specification of the Kafka Connector.
+            status:
+              type: object
+              properties:
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: "The unique identifier of a condition, used to distinguish between other conditions in the resource."
+                      status:
+                        type: string
+                        description: "The status of the condition, either True, False or Unknown."
+                      lastTransitionTime:
+                        type: string
+                        description: "Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
+                      reason:
+                        type: string
+                        description: The reason for the condition's last transition (a single word in CamelCase).
+                      message:
+                        type: string
+                        description: Human-readable message indicating details about the condition's last transition.
+                  description: List of status conditions.
+                observedGeneration:
+                  type: integer
+                  description: The generation of the CRD that was last reconciled by the operator.
+                autoRestart:
+                  type: object
+                  properties:
+                    count:
+                      type: integer
+                      description: The number of times the connector or task is restarted.
+                    connectorName:
+                      type: string
+                      description: The name of the connector being restarted.
+                    lastRestartTimestamp:
+                      type: string
+                      description: The last time the automatic restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ' in the UTC time zone.
+                  description: The auto restart status.
+                connectorStatus:
+                  x-kubernetes-preserve-unknown-fields: true
+                  type: object
+                  description: "The connector status, as reported by the Kafka Connect REST API."
+                tasksMax:
+                  type: integer
+                  description: The maximum number of tasks for the Kafka Connector.
+                topics:
+                  type: array
+                  items:
+                    type: string
+                  description: The list of topics used by the Kafka Connector.
+              description: The status of the Kafka Connector.
+          required:
+            - spec
+    - name: v1beta2
+      served: true
+      storage: true
+      deprecated: true
+      deprecationWarning: Version v1beta2 of the KafkaConnector API is deprecated. Please use the v1 version instead.
+      subresources:
+        status: {}
+        scale:
+          specReplicasPath: .spec.tasksMax
+          statusReplicasPath: .status.tasksMax
+      additionalPrinterColumns:
+        - name: Cluster
+          description: The name of the Kafka Connect cluster this connector belongs to
+          jsonPath: .metadata.labels.strimzi\.io/cluster
+          type: string
+        - name: Connector class
+          description: The class used by this connector
+          jsonPath: .spec.class
+          type: string
+        - name: Max Tasks
+          description: Maximum number of tasks
+          jsonPath: .spec.tasksMax
+          type: integer
+        - name: Ready
+          description: The state of the custom resource
+          jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
+          type: string
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                class:
+                  type: string
+                  description: The Class for the Kafka Connector.
+                tasksMax:
+                  type: integer
+                  minimum: 1
+                  description: The maximum number of tasks for the Kafka Connector.
+                autoRestart:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
+                    maxRestarts:
+                      type: integer
+                      description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
+                  description: Automatic restart of connector and tasks configuration.
+                version:
+                  type: string
+                  description: Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
                 config:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object

@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: controller
@@ -16,7 +16,7 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: broker
@@ -34,13 +34,13 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 4.1.0
+    version: 4.1.1
     metadataVersion: 4.1-IV1
     listeners:
       - name: plain

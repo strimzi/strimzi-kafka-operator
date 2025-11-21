@@ -51,6 +51,19 @@ rules:
       - patch
       - update
   - apiGroups:
+      - "kafka.strimzi.io"
+    resources:
+      # Needed for environments with enabled OwnerReferencesPermissionEnforcement admission controller (e.g. OpenShift)
+      - kafkas/finalizers
+      - kafkanodepools/finalizers
+      - kafkaconnects/finalizers
+      - kafkaconnectors/finalizers
+      - kafkabridges/finalizers
+      - kafkamirrormaker2s/finalizers
+      - kafkarebalances/finalizers
+    verbs:
+      - update
+  - apiGroups:
       - "core.strimzi.io"
     resources:
       # The cluster operator uses StrimziPodSets to manage the Kafka, Kafka Connect, and Kafka MirrorMaker 2 pods
@@ -71,6 +84,13 @@ rules:
     verbs:
       - get
       - patch
+      - update
+  - apiGroups:
+      - "core.strimzi.io"
+    resources:
+      # Needed for environments with enabled OwnerReferencesPermissionEnforcement admission controller (e.g. OpenShift)
+      - strimzipodsets/finalizers
+    verbs:
       - update
   - apiGroups:
       - "kafka.strimzi.io"

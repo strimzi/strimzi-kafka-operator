@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: source
@@ -19,13 +19,13 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: cluster-a
 spec:
   kafka:
-    version: 4.1.0
+    version: 4.1.1
     metadataVersion: 4.1-IV1
     listeners:
       - name: tls
@@ -47,7 +47,7 @@ spec:
     userOperator: {}
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaNodePool
 metadata:
   name: target
@@ -68,13 +68,13 @@ spec:
         kraftMetadata: shared
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: cluster-b
 spec:
   kafka:
-    version: 4.1.0
+    version: 4.1.1
     metadataVersion: 4.1-IV1
     listeners:
       - name: tls
@@ -96,7 +96,7 @@ spec:
     userOperator: {}
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
   name: cluster-a-user
@@ -117,7 +117,7 @@ spec:
           - DescribeConfigs
           - Write
           - Create
-      - resource: # Needed for every topic which is mirrored
+      - resource: # Needed for every topic that is mirrored
           type: topic
           name: "*"
         operations:
@@ -135,7 +135,7 @@ spec:
           - Describe
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaUser
 metadata:
   name: cluster-b-user
@@ -150,38 +150,38 @@ spec:
       # Underlying Kafka Connects internal topics used to store configuration, offsets or status
       - resource:
           type: group
-          name: mirrormaker2-cluster
+          name: my-mirror-maker-2-group
         operations:
           - Read
       - resource:
           type: topic
-          name: mirrormaker2-cluster-configs
+          name: my-mirror-maker-2-config
         operations:
-          - Read
+          - Create
           - Describe
           - DescribeConfigs
+          - Read
           - Write
-          - Create
       - resource:
           type: topic
-          name: mirrormaker2-cluster-status
+          name: my-mirror-maker-2-status
         operations:
-          - Read
+          - Create
           - Describe
           - DescribeConfigs
+          - Read
           - Write
-          - Create
       - resource:
           type: topic
-          name: mirrormaker2-cluster-offsets
+          name: my-mirror-maker-2-offset
         operations:
-          - Read
+          - Create
           - Describe
           - DescribeConfigs
+          - Read
           - Write
-          - Create
       # MirrorSourceConnector
-      - resource: # Needed for every topic which is mirrored
+      - resource: # Needed for every topic that is mirrored
           type: topic
           name: "*"
         operations:
@@ -208,67 +208,50 @@ spec:
         operations:
           - Read
           - Describe
-      # MirrorHeartbeatConnector => needed only if the connector is enabled
-      # - resource:
-      #     type: topic
-      #     name: heartbeats
-      #   operations:
-      #     - Read
-      #     - Create
-      #     - Describe
-      #     - Write
 ---
 
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 4.1.0
+  version: 4.1.1
   replicas: 1
-  connectCluster: "cluster-b" # Must be the target custer
-  clusters:
-    - alias: "cluster-a"  # Source cluster
-      bootstrapServers: cluster-a-kafka-bootstrap:9093
-      tls:
+  target:
+    alias: cluster-b
+    bootstrapServers: cluster-b-kafka-bootstrap:9093
+    groupId: my-mirror-maker-2-group
+    configStorageTopic: my-mirror-maker-2-config
+    offsetStorageTopic: my-mirror-maker-2-offset
+    statusStorageTopic: my-mirror-maker-2-status
+    tls:
+      trustedCertificates:
+        - secretName: cluster-b-cluster-ca-cert
+          pattern: "*.crt"
+    authentication:
+      type: tls
+      certificateAndKey:
+        secretName: cluster-b-user
+        certificate: user.crt
+        key: user.key
+    config:
+      # -1 means it will use the default replication factor configured in the broker
+      config.storage.replication.factor: -1
+      offset.storage.replication.factor: -1
+      status.storage.replication.factor: -1
+  mirrors:
+    - source:
+        alias: cluster-a
+        bootstrapServers: cluster-a-kafka-bootstrap:9093
         trustedCertificates:
           - secretName: cluster-a-cluster-ca-cert
             pattern: "*.crt"
-      authentication:
-        type: tls
-        certificateAndKey:
-          secretName: cluster-a-user
-          certificate: user.crt
-          key: user.key
-    - alias: "cluster-b" # Target cluster
-      bootstrapServers: cluster-b-kafka-bootstrap:9093
-      tls:
-        trustedCertificates:
-          - secretName: cluster-b-cluster-ca-cert
-            pattern: "*.crt"
-      authentication:
-        type: tls
-        certificateAndKey:
-          secretName: cluster-b-user
-          certificate: user.crt
-          key: user.key
-      config:
-        # -1 means it will use the default replication factor configured in the broker
-        config.storage.replication.factor: -1
-        offset.storage.replication.factor: -1
-        status.storage.replication.factor: -1
-  mirrors:
-    - sourceCluster: "cluster-a"
-      targetCluster: "cluster-b"
-      sourceConnector:
-        tasksMax: 1
-        config:
-          # -1 means it will use the default replication factor configured in the broker
-          replication.factor: -1
-          offset-syncs.topic.replication.factor: -1
-          sync.topic.acls.enabled: "false"
-          refresh.topics.interval.seconds: 600
-          offset.lag.max: 100
+        authentication:
+          type: tls
+          certificateAndKey:
+            secretName: cluster-a-user
+            certificate: user.crt
+            key: user.key
       checkpointConnector:
         tasksMax: 1
         config:

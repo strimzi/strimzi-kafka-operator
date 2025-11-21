@@ -9,6 +9,8 @@ spec:
   group: access.strimzi.io
   names:
     kind: KafkaAccess
+    categories:
+      - strimzi
     plural: kafkaaccesses
     shortNames:
       - ka
@@ -28,6 +30,10 @@ spec:
           name: User
           priority: 0
           type: string
+        - jsonPath: .status.conditions[?(@.type=="Ready")].status
+          name: Ready
+          priority: 0
+          type: string
       name: v1alpha1
       schema:
         openAPIV3Schema:
@@ -45,6 +51,8 @@ spec:
                   required:
                     - name
                   type: object
+                secretName:
+                  type: string
                 user:
                   properties:
                     apiGroup:
@@ -73,10 +81,6 @@ spec:
                 conditions:
                   items:
                     properties:
-                      additionalProperties:
-                        additionalProperties:
-                          type: object
-                        type: object
                       lastTransitionTime:
                         type: string
                       message:
@@ -88,6 +92,7 @@ spec:
                       type:
                         type: string
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   type: array
                 observedGeneration:
                   type: integer
