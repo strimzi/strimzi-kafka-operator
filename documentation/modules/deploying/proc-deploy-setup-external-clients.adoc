@@ -23,10 +23,10 @@ Client access to the Kafka cluster is secured with the following configuration:
 
 At least one listener supporting the desired authentication must be configured for the `KafkaUser`.
 
-Listeners can be configured for mutual `TLS`, `SCRAM-SHA-512`, or `OAuth` authentication. 
-While mTLS always uses encryption, it's also recommended when using SCRAM-SHA-512 and OAuth 2.0 authentication.
+Listeners can be configured for mutual `TLS`, `SCRAM-SHA-512`, or `custom` authentication. 
+While mTLS always uses encryption, it's also recommended when using SCRAM-SHA-512 or a custom configuration for OAuth 2.0 authentication.
 
-Authorization options for Kafka include `simple`, `OAuth`, `OPA`, or `custom`. 
+Authorization options for Kafka include `simple` or `custom`. 
 When enabled, authorization is applied to all enabled listeners.
 
 To ensure compatibility between Kafka and clients, configuration of the following authentication and authorization mechanisms must align:

@@ -31,11 +31,9 @@ This procedure assumes that the Kafka cluster was deployed using Strimzi.
 In `examples/bridge/kafka-bridge.yaml`, add or update the following properties as needed: 
 +
 * `spec.bootstrapServers` to specify the Kafka bootstrap address.
-* `spec.authentication` to specify the authentication type as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`. +
-See the link:{BookURLConfiguring}#type-KafkaBridgeSpec-schema-reference[`KafkaBridgeSpec` schema properties^] for configuration details.
+* `spec.authentication` to specify the authentication type as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `custom`. See the link:{BookURLConfiguring}#type-KafkaBridgeSpec-schema-reference[`KafkaBridgeSpec` schema properties^] for configuration details.
 * `spec.tls.trustedCertificates` to configure the TLS certificate. +
-Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates. +
-See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
+Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates. See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
 
 . Deploy HTTP Bridge to your Kubernetes cluster:
 +

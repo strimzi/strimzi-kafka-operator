@@ -16,9 +16,9 @@ The authorization method is defined in the `type` field.
 Supported authorization options:
 
 * link:{BookURLConfiguring}#type-KafkaAuthorizationSimple-reference[Simple authorization]
-* xref:assembly-oauth-authorization_str[OAuth 2.0 authorization] (if you are using OAuth 2.0 token based authentication)
-* link:{BookURLConfiguring}#type-KafkaAuthorizationOpa-reference[Open Policy Agent (OPA) authorization]
 * link:{BookURLConfiguring}#type-KafkaAuthorizationCustom-reference[Custom authorization]
+
+Use custom authorization to configure token-based authorization.
 
 .Kafka cluster authorization options
 image::kafka-authorization-config-options.png[options for kafka authorization configuration]

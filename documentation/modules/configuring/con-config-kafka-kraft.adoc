@@ -157,7 +157,7 @@ spec:
 <4> Listener type specified as `internal` or `cluster-ip` (to expose Kafka using per-broker `ClusterIP` services), or for external listeners, as `route` (OpenShift only), `loadbalancer`, `nodeport` or `ingress` (Kubernetes only).
 <5> Enables or disables TLS encryption for each listener. For `route` and `ingress` type listeners, TLS encryption must always be enabled by setting it to `true`.
 <6> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
-<7> Listener authentication mechanism specified as mTLS, SCRAM-SHA-512, or token-based OAuth 2.0.
+<7> Listener authentication mechanism specified as mTLS, SCRAM-SHA-512, or custom.
 <8> External listener configuration specifies how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`.
 <9> Optional configuration for a Kafka listener certificate managed by an external CA (certificate authority). The `brokerCertChainAndKey` specifies a `Secret` that contains a server certificate and a private key. You can configure Kafka listener certificates on any listener with enabled TLS encryption.
 <10> Kafka version, which can be changed to a supported version by following the upgrade procedure.
@@ -167,7 +167,7 @@ spec:
 <14> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <15> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka.
 <16> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
-<17> Authorization enables simple, OAuth 2.0, custom, or OPA (deprecated) authorization on the Kafka broker. Simple authorization uses the `StandardAuthorizer` Kafka plugin.
+<17> Authorization enables simple and custom authorization on the Kafka broker. Simple authorization uses the `StandardAuthorizer` Kafka plugin.
 <18> Rack awareness configuration to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label.
 Use rack awareness together with custom `topologySpreadConstraint` or `affinity` rules to distribute Kafka broker pods (replicas) across zones.
 <19> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).

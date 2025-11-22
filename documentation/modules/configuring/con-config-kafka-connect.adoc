@@ -175,7 +175,7 @@ In this example, JSON convertors are specified.
 A replication factor of 3 is set for the internal topics used by Kafka Connect (minimum requirement for production environment).
 Changing the replication factor after the topics have been created has no effect.
 <10> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<11> Authentication for the Kafka Connect cluster, specified as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`.
+<11> Authentication for the Kafka Connect cluster, specified as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `custom`.
 By default, Kafka Connect connects to Kafka brokers using a plaintext connection.
 For details on configuring authentication, see the link:{BookURLConfiguring}#type-KafkaConnectSpec-schema-reference[`KafkaConnectSpec` schema properties^].
 <12> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.

@@ -37,11 +37,9 @@ This procedure assumes that the Kafka cluster was deployed using Strimzi.
 In `examples/connect/kafka-connect.yaml`, add or update the following properties as needed: 
 +
 * `spec.bootstrapServers` to specify the Kafka bootstrap address.
-* `spec.authentication` to specify the authentication type as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`. +
-See the link:{BookURLConfiguring}#type-KafkaConnectSpec-schema-reference[`KafkaConnectSpec` schema properties^] for configuration details.
+* `spec.authentication` to specify the authentication type as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `custom`. See the link:{BookURLConfiguring}#type-KafkaConnectSpec-schema-reference[`KafkaConnectSpec` schema properties^] for configuration details.
 * `spec.tls.trustedCertificates` to configure the TLS certificate. +
-Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates. +
-See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
+Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates. See the link:{BookURLConfiguring}#con-common-configuration-trusted-certificates-reference[`trustedCertificates` properties^] for configuration details.
 
 . Configure the deployment for multiple Kafka Connect clusters (if required).
 + 

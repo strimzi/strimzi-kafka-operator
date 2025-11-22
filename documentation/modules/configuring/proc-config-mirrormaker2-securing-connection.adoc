@@ -344,6 +344,6 @@ spec:
 <1> The TLS certificates for the target Kafka cluster.
 <2> The user authentication for accessing the target Kafka cluster.
 <3> The TLS certificates for the source Kafka cluster. If they are in a separate namespace, copy the cluster secrets from the namespace of the Kafka cluster.
-<4> The user authentication for accessing the source Kafka cluster using the TLS mechanism. Supported authentication methods include `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and `oauth`.
+<4> The user authentication for accessing the source Kafka cluster using the TLS mechanism. Supported authentication methods include `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and `custom`.
 
 . Apply the changes to the `KafkaMirrorMaker2` resource to the same namespace as the target Kafka cluster.

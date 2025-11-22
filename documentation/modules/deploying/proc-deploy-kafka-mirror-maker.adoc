@@ -36,7 +36,7 @@ In `examples/mirror-maker/kafka-mirror-maker-2.yaml`, add or update the followin
 +
 * `spec.target.bootstrapServers` and `.spec.mirrors[].source.bootstrapServers` to specify the Kafka bootstrap address for the source and target clusters.
 * `spec.target.alias` and `.spec.mirrors[].source.alias` to specify a unique identifier for each cluster.
-* `spec.target.authentication` and `.spec.mirrors[].source.authentication` to specify the authentication type for each cluster as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`.
+* `spec.target.authentication` and `.spec.mirrors[].source.authentication` to specify the authentication type for each cluster as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `custom`.
 See the link:{BookURLConfiguring}#type-KafkaMirrorMaker2ClusterSpec-schema-reference[`KafkaMirrorMaker2Spec` schema properties^] for configuration details.
 * `spec.target.tls.trustedCertificates` and `.spec.mirrors[].source.tls.trustedCertificates` to configure the TLS certificate for each cluster.
 Use `[]` (an empty array) to trust the default Java CAs, or specify secrets containing trusted certificates.

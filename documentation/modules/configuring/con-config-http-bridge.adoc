@@ -125,7 +125,7 @@ spec:
 <4> CORS access specifying selected resources and access methods. Additional HTTP headers in requests describe the origins that are permitted access to the Kafka cluster.
 <5> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <6> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
-<7> Authentication for the HTTP Bridge cluster, specified as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `oauth`.
+<7> Authentication for the HTTP Bridge cluster, specified as `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, or `custom`.
 By default, the HTTP Bridge connects to Kafka brokers without authentication.
 For details on configuring authentication, see the link:{BookURLConfiguring}#type-KafkaBridgeSpec-schema-reference[`KafkaBridgeSpec` schema properties^]
 <8> Consumer configuration options.
