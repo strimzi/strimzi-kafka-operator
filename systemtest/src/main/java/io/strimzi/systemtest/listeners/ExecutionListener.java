@@ -6,6 +6,7 @@ package io.strimzi.systemtest.listeners;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.systemtest.TestTags;
+import io.strimzi.systemtest.performance.TimeHolder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -32,6 +33,7 @@ public class ExecutionListener implements TestExecutionListener {
         LOGGER.info("=======================================================================");
         testPlan = plan;
         printSelectedTestClasses(testPlan);
+        TimeHolder.resetTimestamp();
     }
 
     public void testPlanExecutionFinished(TestPlan testPlan) {

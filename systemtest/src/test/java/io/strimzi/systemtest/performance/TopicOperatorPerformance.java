@@ -38,8 +38,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.temporal.TemporalAccessor;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +54,6 @@ public class TopicOperatorPerformance extends AbstractST {
     private TopicOperatorMetricsCollectionScheduler topicOperatorMetricsGatherer;
     private TestLogCollector logCollector;
 
-    protected static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
     protected static final String REPORT_DIRECTORY = "topic-operator";
 
     protected TopicOperatorPerformanceReporter topicOperatorPerformanceReporter = new TopicOperatorPerformanceReporter();
@@ -213,7 +210,7 @@ public class TopicOperatorPerformance extends AbstractST {
 
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.topicOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
 
-                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_CAPACITY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
             }
         }
     }

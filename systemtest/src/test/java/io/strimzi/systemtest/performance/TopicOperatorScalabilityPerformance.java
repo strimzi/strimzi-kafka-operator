@@ -28,8 +28,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.temporal.TemporalAccessor;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +39,6 @@ import static io.strimzi.systemtest.TestTags.SCALABILITY;
 @Tag(SCALABILITY)
 public class TopicOperatorScalabilityPerformance extends AbstractST {
 
-    protected static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
     protected static final String REPORT_DIRECTORY = "topic-operator";
 
     protected TopicOperatorPerformanceReporter topicOperatorPerformanceReporter = new TopicOperatorPerformanceReporter();
@@ -84,7 +81,7 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
                 performanceAttributes.put(PerformanceConstants.OPERATOR_OUT_RECONCILIATION_INTERVAL, reconciliationTimeMs);
 
                 try {
-                    this.topicOperatorPerformanceReporter.logPerformanceData(this.suiteTestStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_SCALABILITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                    this.topicOperatorPerformanceReporter.logPerformanceData(this.suiteTestStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_SCALABILITY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

@@ -37,8 +37,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.temporal.TemporalAccessor;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +47,6 @@ import static io.strimzi.systemtest.TestTags.USER_CAPACITY;
 public class UserOperatorPerformance extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(UserOperatorPerformance.class);
-    private static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
 
     private static final String REPORT_DIRECTORY = "user-operator";
 
@@ -228,7 +225,7 @@ public class UserOperatorPerformance extends AbstractST {
 
                 performanceAttributes.put(PerformanceConstants.METRICS_HISTORY, this.userOperatorMetricsGatherer.getMetricsStore()); // Map of metrics history
 
-                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_CAPACITY_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+                this.userOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.GENERAL_CAPACITY_USE_CASE, TimeHolder.getActualTime(), Environment.PERFORMANCE_DIR);
             }
         }
     }

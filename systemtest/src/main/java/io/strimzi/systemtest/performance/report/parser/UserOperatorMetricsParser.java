@@ -143,4 +143,9 @@ public class UserOperatorMetricsParser extends BasePerformanceMetricsParser {
     protected void showMetrics() {
         System.out.println(this.buildResultTable());
     }
+
+    @Override
+    protected String getSortKey() {
+        return PerformanceConstants.USER_OPERATOR_IN_NUMBER_OF_KAFKA_USERS;
+    }
 }
