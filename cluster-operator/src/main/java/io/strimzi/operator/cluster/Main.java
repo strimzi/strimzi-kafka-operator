@@ -22,7 +22,6 @@ import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.vertx.core.CompositeFuture;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -83,7 +82,7 @@ public class Main {
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-cluster-operator", strimziVersion).build();
 
         startHealthServer(vertx, metricsProvider)
-                .compose(i -> leaderElection(client, config, shutdownHook))
+                .compose(i -> leaderElection(vertx, client, config, shutdownHook))
                 .compose(i -> createPlatformFeaturesAvailability(vertx, client))
                 .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config, shutdownHook))
                 .onComplete(res -> {
@@ -210,13 +209,13 @@ public class Main {
      *
      * When the leader election is disabled, it just completes the future without waiting for anything.
      *
+     * @param vertx         Vert.x instance
      * @param client        Kubernetes client
      * @param config        Cluster Operator configuration
      * @param shutdownHook  Shutdown hook to register leader election shutdown
      */
-    private static Future<Void> leaderElection(KubernetesClient client, ClusterOperatorConfig config, ShutdownHook shutdownHook)    {
+    private static Future<Void> leaderElection(Vertx vertx, KubernetesClient client, ClusterOperatorConfig config, ShutdownHook shutdownHook)    {
         Promise<Void> leader = Promise.promise();
-        Context context = Vertx.currentContext();
 
         if (config.getLeaderElectionConfig() != null) {
             LeaderElectionManager leaderElection = new LeaderElectionManager(
@@ -224,7 +223,7 @@ public class Main {
                     () -> {
                         // New leader => complete the future
                         LOGGER.info("I'm the new leader");
-                        context.runOnContext(v -> leader.complete());
+                        vertx.runOnContext(v -> leader.complete());
                     },
                     isShuttingDown -> {
                         // Not a leader anymore
