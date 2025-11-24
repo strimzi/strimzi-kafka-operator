@@ -348,7 +348,7 @@ public abstract class BasePerformanceMetricsParser {
             if (!fixedColumns.isEmpty()) {
                 output.append("**Configuration:**\n");
                 for (int col : fixedColumns) {
-                    String label = headers[col].replace("IN: ", "");
+                    String label = headers[col];
                     String value = allRowsData.get(0)[col];
                     output.append("- ").append(label).append(": ").append(value).append("\n");
                 }
@@ -361,9 +361,7 @@ public abstract class BasePerformanceMetricsParser {
             // Table header
             output.append("| # |");
             for (int col : varyingColumns) {
-                String label = headers[col]
-                    .replace("IN: ", "")
-                    .replace("OUT: ", "");
+                String label = headers[col];
                 output.append(" ").append(label).append(" |");
             }
             output.append("\n");
