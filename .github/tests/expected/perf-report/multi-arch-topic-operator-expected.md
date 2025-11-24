@@ -7,14 +7,14 @@
 **Use Case:** scalabilityUseCase
 
 **Configuration:**
-- MAX QUEUE SIZE: 2147483647
-- MAX BATCH SIZE (ms): 100
-- MAX BATCH LINGER (ms): 100
-- PROCESS TYPE: TOPIC-CONCURRENT
+- IN: MAX QUEUE SIZE: 2147483647
+- IN: MAX BATCH SIZE (ms): 100
+- IN: MAX BATCH LINGER (ms): 100
+- IN: PROCESS TYPE: TOPIC-CONCURRENT
 
 **Results:**
 
-| # | NUMBER OF TOPICS | NUMBER OF EVENTS | Reconciliation interval (ms) [AMD64] | Reconciliation interval (ms) [ARM64] |
+| # | IN: NUMBER OF TOPICS | IN: NUMBER OF EVENTS | OUT: Reconciliation interval (ms) [AMD64] | OUT: Reconciliation interval (ms) [ARM64] |
 |---|---|---|---|---|
 | 1 | 2 | 8 | 10229 | 10229 |
 | 2 | 32 | 98 | 11505 | 11505 |
