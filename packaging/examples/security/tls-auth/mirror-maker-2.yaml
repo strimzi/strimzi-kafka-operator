@@ -243,9 +243,10 @@ spec:
     - source:
         alias: cluster-a
         bootstrapServers: cluster-a-kafka-bootstrap:9093
-        trustedCertificates:
-          - secretName: cluster-a-cluster-ca-cert
-            pattern: "*.crt"
+        tls:
+          trustedCertificates:
+            - secretName: cluster-a-cluster-ca-cert
+              pattern: "*.crt"
         authentication:
           type: tls
           certificateAndKey:
