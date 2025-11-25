@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.kafka.api.conversion.v1.converter.ApiConversionFailedException;
@@ -74,8 +75,14 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
      * @return      Updated custom resource
      */
     protected GenericKubernetesResource replace(String kind, GenericKubernetesResource cr) {
-        MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> op = Utils.versionedOperation(client, kind, STRIMZI_GROUPS.get(kind), TO_API_VERSION);
-        return op.inNamespace(cr.getMetadata().getNamespace()).resource(cr).update();
+        try {
+            MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> op = Utils.versionedOperation(client, kind, STRIMZI_GROUPS.get(kind), TO_API_VERSION);
+            GenericKubernetesResource replaced =  op.inNamespace(cr.getMetadata().getNamespace()).resource(cr).update();
+            println(cr.getKind() + " resource named " + cr.getMetadata().getName() + " in namespace " + cr.getMetadata().getNamespace() + " has been replaced in Kubernetes");
+            return replaced;
+        } catch (KubernetesClientException e) {
+            throw new RuntimeException("Failed to updated the converted " + kind + " resource named " + cr.getMetadata().getName() + " in namespace " + cr.getMetadata().getNamespace() + ".", e);
+        }
     }
 
     /**
@@ -176,6 +183,10 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
             String namespace;
             boolean allNamespaces;
             client = new KubernetesClientBuilder().build();
+
+            // Pre-check for more user-friendliness
+            println("Checking that the CRDs are present and have the desired API versions.");
+            Utils.checkCrdsHaveApiVersions(client, CRD_NAMES.values(), FROM_API_VERSION, TO_API_VERSION);
 
             // Handle the --namespace and --all-namespaces options
             if (exclusive == null)  {
