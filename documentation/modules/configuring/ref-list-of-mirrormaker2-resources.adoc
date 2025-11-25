@@ -10,14 +10,17 @@
 [role="_abstract"]
 The following resources are created by the Cluster Operator in the Kubernetes cluster:
 
-<mirrormaker2_cluster_name>-mirrormaker2:: Name given to the following MirrorMaker 2 resources:
+`<mirrormaker2_cluster_name>-mirrormaker2`:: Name given to the following MirrorMaker 2 resources:
 +
 - StrimziPodSet that creates the MirrorMaker 2 worker node pods.
 - Headless service that provides stable DNS names to the MirrorMaker 2 pods.
 - Service account used by the MirrorMaker 2 pods.
 - Pod disruption budget configured for the MirrorMaker 2 worker nodes.
 - Network Policy managing access to the MirrorMaker 2 REST API.
-<mirrormaker2_cluster_name>-mirrormaker2-<pod_id>:: Pods created by the MirrorMaker 2 StrimziPodSet.
-<mirrormaker2_cluster_name>-mirrormaker2-api:: Service which exposes the REST interface for managing the MirrorMaker 2 cluster.
-<mirrormaker2_cluster_name>-mirrormaker2-config:: ConfigMap which contains the MirrorMaker 2 ancillary configuration and is mounted as a volume by the MirrorMaker 2 pods.
-strimzi-<namespace-name>-<mirrormaker2_cluster_name>-mirrormaker2-init:: Cluster role binding used by the MirrorMaker 2 cluster.
+- Role granting the MirrorMaker 2 worker nodes access to read their certificates and credentials.
+
+`<mirrormaker2_cluster_name>-mirrormaker2-<pod_id>`:: Pods created by the MirrorMaker 2 StrimziPodSet.
+`<mirrormaker2_cluster_name>-mirrormaker2-api`:: Service which exposes the REST interface for managing the MirrorMaker 2 cluster.
+`<mirrormaker2_cluster_name>-mirrormaker2-config`:: ConfigMap which contains the MirrorMaker 2 ancillary configuration and is mounted as a volume by the MirrorMaker 2 pods.
+`<mirrormaker2_cluster_name>-mirrormaker2-role`:: Role binding granting the MirrorMaker 2 worker nodes access to read their certificates and credentials.
+`strimzi-<namespace-name>-<mirrormaker2_cluster_name>-mirrormaker2-init`:: Cluster role binding used by the MirrorMaker 2 cluster.
