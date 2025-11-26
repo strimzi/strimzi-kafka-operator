@@ -21,7 +21,6 @@ public abstract class AbstractCommand implements Runnable {
 
     protected static final ApiVersion FROM_API_VERSION = ApiVersion.V1BETA2;
     protected static final ApiVersion TO_API_VERSION = ApiVersion.V1;
-    protected static final String STRIMZI_API = "kafka.strimzi.io";
     protected static final Set<String> STRIMZI_KINDS = Set.of(
             "Kafka",
             "KafkaConnect",
@@ -46,6 +45,21 @@ public abstract class AbstractCommand implements Runnable {
             "KafkaRebalance", "kafka.strimzi.io",
             "KafkaNodePool", "kafka.strimzi.io",
             "StrimziPodSet", "core.strimzi.io"
+    );
+
+    // Mapping between kinds and the CRD names used to get the right CRD from the Kubernetes API
+    @SuppressWarnings("SpellCheckingInspection")
+    protected static final Map<String, String> CRD_NAMES = Map.of(
+            "Kafka", "kafkas.kafka.strimzi.io",
+            "KafkaConnect", "kafkaconnects.kafka.strimzi.io",
+            "KafkaBridge", "kafkabridges.kafka.strimzi.io",
+            "KafkaMirrorMaker2", "kafkamirrormaker2s.kafka.strimzi.io",
+            "KafkaTopic", "kafkatopics.kafka.strimzi.io",
+            "KafkaUser", "kafkausers.kafka.strimzi.io",
+            "KafkaConnector", "kafkaconnectors.kafka.strimzi.io",
+            "KafkaRebalance", "kafkarebalances.kafka.strimzi.io",
+            "KafkaNodePool", "kafkanodepools.kafka.strimzi.io",
+            "StrimziPodSet", "strimzipodsets.core.strimzi.io"
     );
 
     @CommandLine.Spec

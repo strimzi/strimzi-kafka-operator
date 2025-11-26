@@ -17,28 +17,12 @@ import picocli.CommandLine;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Upgrades the API versions in CRDs to store the new v1 version only
  */
 @CommandLine.Command(name = "crd-upgrade", aliases = {"crd"}, description = "Upgrades the Strimzi CRDs and CRs to use v1beta2 version")
 public class CrdUpgradeCommand extends AbstractCommand {
-    // Mapping between kinds and the CRD names used to get the right CRD from the Kubernetes API
-    @SuppressWarnings("SpellCheckingInspection")
-    final static Map<String, String> CRD_NAMES = Map.of(
-            "Kafka", "kafkas.kafka.strimzi.io",
-            "KafkaConnect", "kafkaconnects.kafka.strimzi.io",
-            "KafkaBridge", "kafkabridges.kafka.strimzi.io",
-            "KafkaMirrorMaker2", "kafkamirrormaker2s.kafka.strimzi.io",
-            "KafkaTopic", "kafkatopics.kafka.strimzi.io",
-            "KafkaUser", "kafkausers.kafka.strimzi.io",
-            "KafkaConnector", "kafkaconnectors.kafka.strimzi.io",
-            "KafkaRebalance", "kafkarebalances.kafka.strimzi.io",
-            "KafkaNodePool", "kafkanodepools.kafka.strimzi.io",
-            "StrimziPodSet", "strimzipodsets.core.strimzi.io"
-    );
-
     private KubernetesClient client;
 
     /**
@@ -153,6 +137,10 @@ public class CrdUpgradeCommand extends AbstractCommand {
     @Override
     public void run() {
         client = new KubernetesClientBuilder().build();
+
+        // Pre-check for more user-friendliness
+        println("Checking that the CRDs are present and have the desired API versions.");
+        Utils.checkCrdsHaveApiVersions(client, CRD_NAMES.values(), FROM_API_VERSION, TO_API_VERSION);
 
         // Change the stored version in CRD spec to v1beta2
         println("Changing stored version in all Strimzi CRDs to " + TO_API_VERSION + ":");
