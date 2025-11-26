@@ -27,6 +27,8 @@ listeners:
 
 When the certificate or key in the `brokerCertChainAndKey` secret is updated, the operator automatically detects it in the next reconciliation and triggers a rolling update of the Kafka brokers to reload the certificate.
 
+NOTE: The private key referenced in `brokerCertChainAndKey` must be in an unencrypted PKCS #8 format. If you obtain the certificate is obtained using the {CertManagerProject}, you can set {CertManagerPrivateKeyEncoding} to use PKCS#8.
+
 [id='property-listener-config-traffic-policy-{context}']
 = Avoiding hops to other nodes
 
