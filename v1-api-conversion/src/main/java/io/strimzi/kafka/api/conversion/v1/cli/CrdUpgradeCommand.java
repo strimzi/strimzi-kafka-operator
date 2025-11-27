@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * Upgrades the API versions in CRDs to store the new v1 version only
  */
-@CommandLine.Command(name = "crd-upgrade", aliases = {"crd"}, description = "Upgrades the Strimzi CRDs and CRs to use v1beta2 version")
+@CommandLine.Command(name = "crd-upgrade", aliases = {"crd"}, description = "Upgrades the Strimzi CRDs and CRs to use v1 version")
 public class CrdUpgradeCommand extends AbstractCommand {
     private KubernetesClient client;
 
@@ -53,7 +53,7 @@ public class CrdUpgradeCommand extends AbstractCommand {
     }
 
     /**
-     * Changes the stored versions in the CRD spec to keep v1beta2 as stored and the other versions as served. This
+     * Changes the stored versions in the CRD spec to keep v1 as stored and the other versions as served. This
      * method does the change to a single Strimzi CRD.
      *
      * @param kind Kind of the custom resource definition where the stored version should be changed
@@ -85,7 +85,7 @@ public class CrdUpgradeCommand extends AbstractCommand {
     }
 
     /**
-     * Changes the stored versions in the CRD spec to keep v1beta2 as stored and the other versions as served. This does
+     * Changes the stored versions in the CRD spec to keep v1 as stored and the other versions as served. This does
      * the change for all Strimzi CRDs.
      */
     private void changeStoredVersionInSpec()   {
@@ -95,7 +95,7 @@ public class CrdUpgradeCommand extends AbstractCommand {
     }
 
     /**
-     * Changes the stored versions in the CRD status to keep only v1beta2 for given Strimzi kind.
+     * Changes the stored versions in the CRD status to keep only v1 for given Strimzi kind.
      *
      * @param kind Kind of the custom resource definition where the stored versions should be changed
      */
@@ -121,7 +121,7 @@ public class CrdUpgradeCommand extends AbstractCommand {
     }
 
     /**
-     * Changes the stored versions in the CRD status to keep only v1beta2 there. This does the change for all Strimzi CRDs.
+     * Changes the stored versions in the CRD status to keep only v1 there. This does the change for all Strimzi CRDs.
      */
     private void changeStoredVersionInStatus()   {
         for (String kind : STRIMZI_KINDS)  {
@@ -142,17 +142,17 @@ public class CrdUpgradeCommand extends AbstractCommand {
         println("Checking that the CRDs are present and have the desired API versions.");
         Utils.checkCrdsHaveApiVersions(client, CRD_NAMES.values(), FROM_API_VERSION, TO_API_VERSION);
 
-        // Change the stored version in CRD spec to v1beta2
+        // Change the stored version in CRD spec to v1
         println("Changing stored version in all Strimzi CRDs to " + TO_API_VERSION + ":");
         changeStoredVersionInSpec();
         println();
 
-        // "Touch" all resources to have them stored as v1beta2
+        // "Touch" all resources to have them stored as v1
         println("Updating all Strimzi CRs to be stored under " + TO_API_VERSION + ":");
         storeCrsUnderNewVersion();
         println();
 
-        // Change the stored versions in CRDs to v1beta2
+        // Change the stored versions in CRDs to v1
         println("Changing stored version in statuses of all Strimzi CRDs to " + TO_API_VERSION + ":");
         changeStoredVersionInStatus();
     }
