@@ -52,14 +52,19 @@ import java.util.function.Predicate;
                 jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
                 type = "string"),
             @Crd.Spec.AdditionalPrinterColumn(
-                name = "Metadata State",
-                description = "The state of the cluster metadata",
-                jsonPath = ".status.kafkaMetadataState",
-                type = "string"),
-            @Crd.Spec.AdditionalPrinterColumn(
                 name = "Warnings",
                 description = "Warnings related to the custom resource",
                 jsonPath = ".status.conditions[?(@.type==\"Warning\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Kafka version",
+                description = "The Kafka version used by the cluster",
+                jsonPath = ".status.kafkaVersion",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Metadata version",
+                description = "The Kafka metadata version used by the cluster",
+                jsonPath = ".status.kafkaMetadataVersion",
                 type = "string")
         }
     )
