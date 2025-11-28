@@ -304,8 +304,11 @@ public class KafkaConnectBuild extends AbstractModel {
 
         volumes.add(VolumeUtils.createConfigMapVolume("dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
 
-        if (build.getOutput() instanceof DockerOutput output && output.getPushSecret() != null) {
-            volumes.add(VolumeUtils.createSecretVolume("docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json"), isOpenShift));
+        if (build.getOutput() instanceof DockerOutput output) {
+
+            if (output.getPushSecret() != null) {
+                volumes.add(VolumeUtils.createSecretVolume("docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json"), isOpenShift));
+            }
         } else {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");
         }
