@@ -130,7 +130,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             "kafka_server_brokertopicmetrics.*",
             "kafka_server_kafkarequesthandlerpool_requesthandleravgidlepercent",
             "kafka_server_kafkaserver_brokerstate",
-            "kafka_server_kafkaserver_clusterid_info",
+            "kafka_server_kafkaserver_clusterid",
             "kafka_server_kafkaserver_linux.*",
             "kafka_server_raft.*",
             "kafka_server_replicamanager.*",
