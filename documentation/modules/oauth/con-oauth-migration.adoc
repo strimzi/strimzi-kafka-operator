@@ -1,0 +1,17 @@
+:_mod-docs-content-type: CONCEPT
+
+[id='con-oauth-migration-{context}']
+= Migrating to the `custom` authentication type
+
+[role="_abstract"]
+The `oauth` and `keycloak` authentication types are deprecated and will be removed in a future release.  
+Kafka listeners and Kafka clients must now configure OAuth 2.0 using the `custom` authentication type.
+OAuth 2.0 support remains the same; only the configuration model changes.
+
+This change affects **both server-side listener configuration** and **client-side authentication** for Strimzi-managed components and external Kafka applications.
+
+For more information on the configuration options, see the following API schema references:
+
+* link:{BookURLConfiguring}#type-KafkaListenerAuthenticationCustom-reference[`KafkaListenerAuthenticationCustom` schema reference^]
+* link:{BookURLConfiguring}#type-KafkaClientAuthenticationCustom-reference[`KafkaClientAuthenticationCustom` schema reference^].
+

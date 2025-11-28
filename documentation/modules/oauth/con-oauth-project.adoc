@@ -1,0 +1,31 @@
+:_mod-docs-content-type: CONCEPT
+
+[id='con-oauth-project-{context}']
+= Before you begin configuring OAuth 2.0
+
+[role="_abstract"]
+Strimzi enables OAuth 2.0 for Kafka using the Strimzi Kafka OAuth libraries to handle authentication and authorization. 
+This section describes only the configuration that is required when deploying OAuth with Strimzi.
+
+For reference information, advanced configuration options, and platform-specific examples, see the {oauth-project}.
+
+Strimzi can integrate with any OAuth 2.0 or OpenID Connect compliant authorization server.
+If you are using a specific provider, refer to its documentation for information on how the following must be configured:
+
+* Client registration  
+* Token and JWKS endpoints  
+* Authorization features (such as scopes, roles, or policies)  
+* Realm, tenant, or application definitions  
+
+Strimzi also provides **Keycloak-specific examples**, including realm files and Kafka cluster
+configurations that demonstrate how to use Keycloak Authorization Services with Kafka:
+
+* xref:config-examples-{context}[Example configuration files]
+
+If you use Keycloak, you may also find the Keycloak project documentation helpful:
+
+* {keycloak-docs}  
+
+Review the documentation for your OAuth provider to understand how tokens are issued and validated,
+and how authorization rules are managed, before configuring OAuth on Kafka listeners or Kafka clients
+in Strimzi.

@@ -1,0 +1,112 @@
+:_mod-docs-content-type: CONCEPT
+
+[id='con-oauth-authz-config-{context}']
+= Enabling authorization on Kafka brokers
+
+[role="_abstract"]
+You can enable authorization so that Kafka brokers use information in access tokens to determine whether clients are permitted to perform specific operations.
+
+Authorization builds on OAuth 2.0 authentication.  
+Clients must connect through a Kafka listener that is configured for OAuth 2.0 using the `custom` authentication type.  
+Only tokens that are successfully validated by the listener are evaluated by the authorizer.
+
+To enable authorization, set the `authorization` field on the Kafka cluster resource and configure the `custom` authorization type. 
+The broker evaluates authorization decisions using token claims provided by the OAuth 2.0 authorization server.
+
+NOTE: Advanced authorization settings are described in the {oauth-project}.  
+Keycloak-specific examples for use with Strimzi are provided in the xref:config-examples-{context}[example configuration files].
+
+The following example shows a Kafka cluster that uses OAuth 2.0 authentication and Keycloak Authorization Services for authorization:
+
+[source,yaml]
+----
+spec:
+  kafka:
+    # ...
+    listeners:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: custom
+          sasl: true
+          listenerConfig:
+            sasl.enabled.mechanisms: OAUTHBEARER
+            oauthbearer.sasl.server.callback.handler.class: io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
+            oauthbearer.sasl.jaas.config: |
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="thePrincipalName" oauth.valid.issuer.uri="https://${SSO_HOST}/realms/kafka-authz" oauth.jwks.endpoint.uri="https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/certs" oauth.username.claim="preferred_username" oauth.ssl.truststore.location="/mnt/oauth-certs/tls.crt" oauth.ssl.truststore.type="PEM";
+            connections.max.reauth.ms: 3600
+    authorization:
+      type: custom
+      authorizerClass: io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer
+      superUsers:
+        - service-account-kafka
+    config:
+      # Needed for Oauth authentication and Keycloak authorization
+      principal.builder.class: io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder
+      # Needed for Keycloak authorization
+      strimzi.authorization.client.id: kafka
+      strimzi.authorization.token.endpoint.uri: https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/token
+      strimzi.authorization.ssl.endpoint.identification.algorithm: ""
+      strimzi.authorization.delegate.to.kafka.acl: "false"
+      strimzi.authorization.ssl.truststore.location: /mnt/oauth-certs/tls.crt
+      strimzi.authorization.ssl.truststore.type: PEM
+    # ...  
+----
+
+In this configuration:
+
+* The listener is configured with the `OAUTHBEARER` SASL mechanism and validates access tokens using the JWKS endpoint published by Keycloak.
+* The JAAS module and callback handler (`JaasServerOauthValidatorCallbackHandler`) validate the token and extract the authenticated principal.
+* `connections.max.reauth.ms` enforces periodic re-authentication so that expiring access tokens can be refreshed without disconnecting the client.
+* The authorization block enables the `custom` authorizer and loads the `KeycloakAuthorizer` class, which evaluates permissions derived from Keycloak Authorization Services.
+* The `superUsers` list defines identities that bypass authorization checks.
+* The `principal.builder.class` maps validated OAuth tokens to Kafka principals, which the authorizer uses when evaluating access decisions.
+* `strimzi.authorization.client.id` identifies the broker to Keycloak Authorization Services.
+* `strimzi.authorization.token.endpoint.uri` specifies the token endpoint used by the authorizer to obtain Keycloak permission grants.
+* TLS configuration for the authorizer (`strimzi.authorization.ssl.*`) ensures secure HTTPS communication with the authorization server.
+* `strimzi.authorization.delegate.to.kafka.acl` controls whether failed authorization checks are passed to Kafka’s built-in ACL authorizer (disabled in this example).
+
+== How Kafka permissions map to Keycloak
+
+Kafka uses an authorization model based on *resource types* and *operations*. 
+For example, a user might have `Describe` and `Write` permissions on a `Topic` resource.
+
+Keycloak Authorization Services use *resources*, *scopes*, *policies*, and *permissions*. 
+When you use `KeycloakAuthorizer`, Kafka resources are mapped to Keycloak resources, and Kafka operations are mapped to Keycloak scopes. 
+The authorizer evaluates Keycloak permissions for the authenticated user or service account to decide whether an operation is allowed.
+
+Resources in Keycloak follow a naming pattern that matches Kafka resources. 
+The general format is `resourceType:pattern`.
+
+Examples:
+
+* `Topic:my-topic`
+* `Topic:topic-*`
+* `Group:group-*`
+* `Cluster:*`
+
+A resource pattern can also be prefixed with the Kafka cluster name:
+
+Examples:
+
+* `kafka-cluster:my-cluster,Topic:*`
+* `kafka-cluster:*,Group:b_*`
+
+If the `kafka-cluster:` prefix is omitted, it is treated as `kafka-cluster:*`.
+
+Authorization scopes normally mirror Kafka operations, such as the following:
+
+* `Create`, `Write`, `Read`, `Delete`, `Describe`, `Alter`, `DescribeConfigs`, `AlterConfigs`, `ClusterAction`, `IdempotentWrite`
+
+The `All` permission is not supported.
+Define explicit scopes for each permitted operation.
+
+Permissions in Keycloak combine resources, scopes, and policies that target users, groups, or 
+service accounts. 
+
+Common patterns include:
+
+* *Role policies* for service accounts (for example, microservices using client credentials)
+* *Group policies* for human users (for example, CLI users who need controlled access)

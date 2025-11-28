@@ -1,0 +1,20 @@
+:_mod-docs-content-type: CONCEPT
+
+[id='con-oauth-keycloak-config-{context}']
+= Using Keycloak as an OAuth 2.0 provider
+
+[role="_abstract"]
+Keycloak is a commonly used OAuth 2.0 authorization server for securing Kafka clusters.  
+Strimzi supports using Keycloak both for token-based authentication and, optionally, for fine-grained authorization.
+
+A Keycloak authorizer (`KeycloakAuthorizer`) is provided with Strimzi. 
+The authorizer retrieves permission grants from Keycloak Authorization Services and enforces authorization locally on each Kafka broker.
+
+When using Keycloak with Strimzi:
+
+* Configure OAuth 2.0 *authentication* on Kafka listeners using the `custom` authentication type.  
+* Enable *authorization* using the `KeycloakAuthorizer`.  
+* Model resources, scopes, policies, and permissions in Keycloak according to your Kafka access-control requirements.
+
+NOTE: Keycloak examples for Strimzi, including a preconfigured realm and `Kafka` custom resource examples, are provided in the xref:config-examples-{context}[example configuration files].
+For information on configuring realms, clients, and authorization services in Keycloak, see the {keycloak-docs}.
