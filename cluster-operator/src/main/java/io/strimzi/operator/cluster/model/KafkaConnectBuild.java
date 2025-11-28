@@ -304,11 +304,8 @@ public class KafkaConnectBuild extends AbstractModel {
 
         volumes.add(VolumeUtils.createConfigMapVolume("dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
 
-        if (build.getOutput() instanceof DockerOutput output) {
-
-            if (output.getPushSecret() != null) {
-                volumes.add(VolumeUtils.createSecretVolume("docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json"), isOpenShift));
-            }
+        if (build.getOutput() instanceof DockerOutput output && output.getPushSecret() != null) {
+            volumes.add(VolumeUtils.createSecretVolume("docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json"), isOpenShift));
         } else {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");
         }
@@ -329,7 +326,6 @@ public class KafkaConnectBuild extends AbstractModel {
         volumeMounts.add(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build());
 
         if (build.getOutput() instanceof DockerOutput output) {
-
             if (output.getPushSecret() != null) {
                 if (isBuildahBuild) {
                     volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/build/.docker").build());
@@ -355,10 +351,8 @@ public class KafkaConnectBuild extends AbstractModel {
         // Add shared environment variables used for all containers
         List<EnvVar> varList = new ArrayList<>(sharedEnvironmentProvider.variables());
 
-        if (build.getOutput() instanceof DockerOutput output) {
-            if (output.getPushSecret() != null && isBuildahBuild) {
-                varList.add(new EnvVarBuilder().withName("REGISTRY_AUTH_FILE").withValue("/build/.docker/config.json").build());
-            }
+        if (build.getOutput() instanceof DockerOutput output && output.getPushSecret() != null && isBuildahBuild) {
+            varList.add(new EnvVarBuilder().withName("REGISTRY_AUTH_FILE").withValue("/build/.docker/config.json").build());
         }
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
