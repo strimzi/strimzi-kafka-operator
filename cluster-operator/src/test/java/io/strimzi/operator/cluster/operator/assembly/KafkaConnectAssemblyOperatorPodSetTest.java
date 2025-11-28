@@ -118,6 +118,11 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
             .endMetadata()
             .withNewSpec()
                 .withReplicas(3)
+                .withBootstrapServers("my-kafka:9092")
+                .withGroupId("my-group")
+                .withConfigStorageTopic("my-config-topic")
+                .withOffsetStorageTopic("my-offset-topic")
+                .withStatusStorageTopic("my-status-topic")
             .endSpec()
             .build();
     private static final KafkaConnectCluster CLUSTER = KafkaConnectCluster.fromCrd(RECONCILIATION, CONNECT, VERSIONS, SHARED_ENV_PROVIDER);
@@ -239,7 +244,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     for (Pod pod : PodSetUtils.podSetToPods(podSet))  {
                         assertThat(pod.getMetadata().getAnnotations().size(), is(3));
                         assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue())); // We do not check the exact value -> it just describes the exact pod configuration which might change with too many unrelated code or dependency changes
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("6d84a3fb"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("bf2e4dfa"));
                         assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("1621340526")); // We do not use any security in this test, so it is set but as 0
                     }
 
@@ -264,7 +269,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(headlessService.getSpec().getType(), is("ClusterIP"));
                     assertThat(headlessService.getSpec().getClusterIP(), is("None"));
 
-                    // Verify PDB => should be set up for custom controller
+                    // Verify PDB => should be set up for a custom controller
                     List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                     assertThat(capturedPdb.size(), is(1));
                     PodDisruptionBudget pdb = capturedPdb.get(0);
@@ -390,7 +395,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(headlessService.getSpec().getType(), is("ClusterIP"));
                     assertThat(headlessService.getSpec().getClusterIP(), is("None"));
 
-                    // Verify PDB => should be set up for custom controller
+                    // Verify PDB => should be set up for a custom controller
                     List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                     assertThat(capturedPdb.size(), is(1));
                     PodDisruptionBudget pdb = capturedPdb.get(0);
@@ -1514,8 +1519,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         when(mockConnectorOps.listAsync(any(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(List.of()));
         String kcNamespace = "test";
 
-        KafkaConnect foo = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "foo");
-        KafkaConnect bar = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "bar");
+        KafkaConnect foo = new KafkaConnectBuilder(CONNECT).editMetadata().withNamespace(kcNamespace).withName("foo").endMetadata().build();
+        KafkaConnect bar = new KafkaConnectBuilder(CONNECT).editMetadata().withNamespace(kcNamespace).withName("bar").endMetadata().build();
         when(mockConnectOps.listAsync(eq(kcNamespace), isNull(LabelSelector.class))).thenReturn(Future.succeededFuture(List.of(foo, bar)));
         when(mockConnectOps.getAsync(eq(kcNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
         when(mockConnectOps.getAsync(eq(kcNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
@@ -1716,14 +1721,15 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
     @Test
     public void testImageStreamValidation(VertxTestContext context) {
-        String kcName = "my-connect", kcNamespace = "test";
-        String failureMsg = String.format("The build can't start because there is no image stream with name %s", kcName);
+        //String kcName = "my-connect", kcNamespace = "test";
+        String failureMsg = String.format("The build can't start because there is no image stream with name %s", NAME);
 
-        KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
+        KafkaConnect kc = new KafkaConnectBuilder(CONNECT).build();
+                //ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
         kc.getSpec().setBuild(
             new BuildBuilder()
                 .withNewImageStreamOutput()
-                    .withImage(kcName + ":latest")
+                    .withImage(NAME + ":latest")
                 .endImageStreamOutput()
                 .withPlugins(new PluginBuilder()
                         .withName("my-connector")
@@ -1741,22 +1747,22 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         var mockPodOps = supplier.podOperations;
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, SHARED_ENV_PROVIDER);
-        when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
+        when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
         when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(null));
+        when(mockDcOps.getAsync(NAMESPACE, connect.getComponentName())).thenReturn(Future.succeededFuture(null));
         when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.componentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockBcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
-        when(mockIsOps.getAsync(kcNamespace, kcName)).thenReturn(Future.succeededFuture());
-        when(mockPodOps.listAsync(eq(kcNamespace), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockIsOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig());
 
         Checkpoint async = context.checkpoint();
-        ops.reconcile(new Reconciliation("unit-test", KafkaConnect.RESOURCE_KIND, kcNamespace, kcName))
+        ops.reconcile(new Reconciliation("unit-test", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.failing(v -> context.verify(() -> {
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
                 assertThat(capturedConnects, hasSize(1));

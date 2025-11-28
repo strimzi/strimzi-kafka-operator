@@ -19,8 +19,6 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
-import io.strimzi.api.kafka.model.connect.KafkaConnect;
-import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
@@ -149,23 +147,6 @@ public class ResourceUtils {
                     .withLabels(Labels.forStrimziCluster(clusterName).withStrimziKind(Kafka.RESOURCE_KIND).toMap())
                 .endMetadata()
                 .addToData("ca.key", caKey)
-                .build();
-    }
-
-    /**
-     * Create an empty Kafka Connect custom resource
-     */
-    public static KafkaConnect createEmptyKafkaConnect(String namespace, String name) {
-        return new KafkaConnectBuilder()
-                .withMetadata(new ObjectMetaBuilder()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
-                                "my-user-label", "cromulent"))
-                        .withAnnotations(emptyMap())
-                        .build())
-                .withNewSpec()
-                .endSpec()
                 .build();
     }
 
