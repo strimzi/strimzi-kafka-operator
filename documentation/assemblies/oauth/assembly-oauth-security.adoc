@@ -1,35 +1,36 @@
 :_mod-docs-content-type: ASSEMBLY
 
 [id='assembly-oauth-security-{context}']
-= Enabling OAuth 2.0 token-based access
+= Configuring OAuth 2.0 token-based security
 
 [role="_abstract"]
-Strimzi supports OAuth 2.0 for securing Kafka clusters by integrating with an OAuth 2.0 authorization server.
-Kafka brokers and clients both need to be configured to use OAuth 2.0.
+Strimzi supports OAuth 2.0 token-based authentication and authorization for securing Kafka clusters and Kafka-related components.
 
-OAuth 2.0 enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
-You can define specific scopes for fine-grained access control.
-Scopes correspond to different levels of access to Kafka topics or operations within the cluster.  
+With OAuth 2.0 integration you can:
 
-OAuth 2.0 also supports single sign-on and integration with identity providers. 
+* Enable token-based authentication on Kafka brokers  
+* Configure Kafka components, such as Kafka Connect, MirrorMaker 2, and the Kafka Bridge, to authenticate using access tokens  
+* Use token claims or Keycloak Authorization Services to perform fine-grained authorization
 
-NOTE: The authentication type `oauth` and `keycloak` authorization type are deprecated and will be removed in a future release. 
-Use the `custom` authentication and authorization type to configure token-based security on listeners and components.
-This content is currently being updated to reflect the transition to the `custom` authentication type.
+OAuth 2.0 provides centralized identity and access control using access tokens issued by an authorization server.
+Kafka brokers validate these tokens when clients connect, and authorization providers can use token claims to make access decisions.
 
-ifdef::Section[]
-For more information on using OAuth 2.0, see the link:https://github.com/strimzi/strimzi-kafka-oauth[Strimzi OAuth 2.0 for Apache Kafka project^].
-endif::Section[]
+This section describes the minimal configuration required to deploy a Kafka cluster and clients with token-based authentication and authorization.
 
-//setting up oauth server
-include::../../modules/oauth/proc-oauth-server-config.adoc[leveloffset=+1]
+//migration
+include::../../modules/oauth/con-oauth-migration.adoc[leveloffset=+1]
 
-//oauth authentication
-include::../oauth/assembly-oauth-authentication.adoc[leveloffset=+1]
+//oauth-project
+include::../../modules/oauth/con-oauth-project.adoc[leveloffset=+1]
 
-//oauth authorization
-include::../oauth/assembly-oauth-authorization.adoc[leveloffset=+1]
+//server-side config
+include::../../modules/oauth/con-oauth-server-config.adoc[leveloffset=+1]
 
-//keycloak authorization
-include::../oauth/assembly-managing-policies-permissions-keycloak.adoc[leveloffset=+1]
+//client-side config
+include::../../modules/oauth/con-oauth-client-config.adoc[leveloffset=+1]
 
+//enabling authorization
+include::../../modules/oauth/con-oauth-authz-config.adoc[leveloffset=+1]
+
+//using keycloak
+include::../../modules/oauth/con-oauth-keycloak-config.adoc[leveloffset=+1]

@@ -1,0 +1,176 @@
+:_mod-docs-content-type: CONCEPT
+
+[id='con-oauth-client-config-{context}']
+= Client-side configuration
+
+[role="_abstract"]
+Kafka clients, including Strimzi-managed components and external applications, can authenticate to Kafka using OAuth 2.0 access tokens. 
+Clients obtain a token from an authorization server and present it to Kafka using the `OAUTHBEARER` SASL mechanism. 
+Kafka brokers validate the token using the OAuth configuration defined on their listeners.
+
+Client applications must use OAuth settings that match the broker configuration, including token type, issuer, and TLS trust configuration.
+
+This section describes:
+
+* OAuth requirements common to all Kafka clients
+* How Strimzi components authenticate as OAuth clients
+* How external Kafka applications configure `OAUTHBEARER` authentication
+* How clients obtain and refresh tokens
+
+NOTE: Advanced OAuth client settings are described in the {oauth-project}.
+
+== Common requirements for OAuth 2.0 clients
+
+Kafka clients that use OAuth-based authentication typically require:
+
+* The `OAUTHBEARER` SASL mechanism  
+* A token endpoint to obtain OAuth 2.0 access tokens  
+* A client ID and credentials registered with the authorization server  
+* TLS trust configuration for HTTPS calls to the authorization server  
+* A way to refresh tokens before they expire  
+* Truststore configuration that matches the Kafka broker listener
+
+Strimzi does not decide which OAuth 2.0 flow is used. 
+The chosen flow depends on the authorization server and the client application.
+
+== Configuring Strimzi-managed components
+
+Strimzi-managed components such as Kafka Connect, MirrorMaker 2, and HTTP Bridge authenticate as OAuth 2.0 clients when connecting to Kafka brokers. 
+These components use the `KafkaClientAuthenticationCustom` schema and configure OAuth by supplying SASL and JAAS settings.
+
+Each component requires:
+
+* A token endpoint URL  
+* A client ID and credentials stored in a Kubernetes secret  
+* TLS trust configuration for connecting to the authorization server  
+* `OAUTHBEARER` SASL settings to authenticate to Kafka brokers
+
+The following example shows a simplified OAuth configuration for the HTTP Bridge. 
+The same structure applies to Kafka Connect and MirrorMaker 2.
+
+[source,yaml]
+----
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  authentication:
+    type: custom
+    sasl: true
+    config:
+      sasl.mechanism: OAUTHBEARER
+      sasl.login.callback.handler.class: io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+      sasl.jaas.config: |
+        org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+          oauth.token.endpoint.uri="https://<auth_server_address>/<path_to_token_endpoint>"
+          oauth.client.id="kafka-bridge"
+          oauth.client.secret="${strimzienv:OAUTH_CLIENT_SECRET}";
+  template:
+    bridgeContainer:
+      env:
+        - name: OAUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth-secret
+              key: oauth-client-secret
+  # ...
+----
+
+In this configuration:
+
+* The HTTP Bridge uses the `custom` authentication type.
+* SASL is enabled and configured with the `OAUTHBEARER` mechanism.
+* The Strimzi OAuth client callback handler retrieves and refreshes access tokens.
+* The JAAS login module defines how the HTTP Bridge authenticates to the authorization server.
+* The `oauth.token.endpoint.uri` property specifies where tokens are obtained.
+* The OAuth client ID identifies the HTTP Bridge as a registered OAuth client.
+* The client secret is injected into the HTTP Bridge container as an environment variable from a Kubernetes secret and consumed through the `${strimzienv:OAUTH_CLIENT_SECRET}` reference in the JAAS configuration.
+
+== Configuring external Kafka client applications
+
+External Kafka clients authenticate using the `OAUTHBEARER` SASL mechanism. 
+Clients obtain an access token from the authorization server and present the token when connecting to Kafka.
+
+Client configuration requires:
+
+* The `OAUTHBEARER` SASL mechanism  
+* TLS trust configuration for Kafka broker communication  
+* OAuth settings that match the broker's validation method (JWKS or introspection)  
+* A mechanism to retrieve, refresh, or supply access tokens at runtime  
+
+The following example shows a minimal Java client configuration:
+
+[source,properties]
+----
+security.protocol=SASL_SSL
+sasl.mechanism=OAUTHBEARER
+
+# Truststore for connecting to Kafka brokers
+ssl.truststore.location=/tmp/kafka-truststore.p12
+ssl.truststore.password=$KAFKA_STOREPASS
+ssl.truststore.type=PKCS12
+
+# Strimzi OAuth login callback handler
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+
+# JAAS configuration for obtaining access tokens
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
+  oauth.token.endpoint.uri="https://auth.url.com/oauth/token" \
+  oauth.client.id="kafka-client" \
+  oauth.client.secret="client-secret" \
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
+  oauth.ssl.truststore.password="$OAUTH_STOREPASS" \
+  oauth.ssl.truststore.type="PKCS12" \
+  oauth.scope="example-scope" \
+  oauth.audience="example-audience" ;
+----
+
+In this configuration:
+
+* `SASL_SSL` enables encrypted communication with Kafka brokers.  
+* The SASL mechanism is set to `OAUTHBEARER` for token-based authentication.  
+* A truststore validates the Kafka broker certificate.  
+* The OAuth login module handles token acquisition.  
+* The client uses the client-credentials flow to obtain tokens.  
+* A separate truststore is used for communication with the authorization server.  
+* Optional OAuth parameters such as `scope` and `audience` can be added when required.  
+* The Strimzi OAuth callback handler refreshes tokens automatically.
+
+== Obtaining tokens
+
+Kafka clients must obtain an OAuth 2.0 access token before connecting to a Kafka listener that is configured for token-based authentication. 
+The method for obtaining a token depends on the client application and the authorization server.
+
+In practice, Kafka clients can use a range of token acquisition patterns.  
+Common examples include the following:
+
+Client credentials with remote validation::
+The client requests a short-lived access token using a client ID and credentials.  
+The broker validates the token by calling the authorization server's introspection endpoint.
+
+Client credentials with local validation:: 
+The client requests a short-lived JWT access token using a client ID and credentials.  
+The broker validates the token locally using a JWKS endpoint.
+
+Long-lived access token with remote validation::  
+The client is issued a long-lived opaque token outside the application (for example, by a CI/CD system).  
+The broker validates the token through the introspection endpoint.  
+Token refresh is the responsibility of the application.
+
+Long-lived JWT token with local validation::
+The client is issued a long-lived JWT outside the application.  
+The broker validates the token locally against the JWKS endpoint.  
+The token cannot be refreshed, so the connection fails after expiry.
+
+Strimzi does not manage token acquisition for external applications.  
+Applications must request, store, and refresh tokens according to their security requirements.
+
+== Token expiry and re-authentication
+
+Client sessions may expire when a token expires or when the broker requires re-authentication.
+
+If the broker is configured with `connections.max.reauth.ms`, clients must refresh the access token before re-authentication occurs. 
+When using the client-credentials flow, the Strimzi OAuth client library refreshes tokens automatically. 
+If an application supplies a long-lived, manually generated token, the client cannot refresh it and authentication fails when the token expires.

@@ -23,6 +23,7 @@ Supported authentication options:
 
 . mTLS authentication (only on the listeners with TLS enabled encryption)
 . SCRAM-SHA-512 authentication
+. xref:assembly-oauth-security-{context}[OAuth 2.0 token-based authentication]
 . link:{BookURLConfiguring}#type-KafkaListenerAuthenticationCustom-reference[Custom authentication^]
 . link:{BookURLConfiguring}#con-common-configuration-ssl-reference[TLS versions and cipher suites^]
 
