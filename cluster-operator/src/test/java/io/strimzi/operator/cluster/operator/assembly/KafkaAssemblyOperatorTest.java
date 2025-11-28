@@ -5,6 +5,8 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -24,6 +26,8 @@ import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -195,10 +199,13 @@ public class KafkaAssemblyOperatorTest {
         LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));
     }
 
-    private final String metricsCmJson = "{\"foo\":\"bar\"}";
     private final String metricsCMName = "metrics-cm";
-    private final String differentMetricsCMName = "metrics-cm-2";
-    private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName, "metrics-config.yml");
+    private final ConfigMap metricsCM = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withName(metricsCMName)
+                .endMetadata()
+                .withData(Map.of("metrics-config.yml", "{\"foo\":\"bar\"}"))
+                .build();
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
 
@@ -439,7 +446,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockCmOps.reconcile(any(), anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
         when(mockCmOps.getAsync(NAMESPACE, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
-        when(mockCmOps.getAsync(NAMESPACE, differentMetricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
         when(mockCmOps.listAsync(NAMESPACE, kafkaCluster.getSelectorLabels())).thenReturn(Future.succeededFuture(List.of()));
         when(mockCmOps.deleteAsync(any(), any(), any(), anyBoolean())).thenReturn(Future.succeededFuture());
 
@@ -718,11 +724,21 @@ public class KafkaAssemblyOperatorTest {
     }
 
     private Kafka getParametrizedKafkaCr() {
+        JmxPrometheusExporterMetrics jmxMetrics = new JmxPrometheusExporterMetricsBuilder()
+                .withNewValueFrom()
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                            .withName(metricsCMName)
+                            .withKey("metrics-config.yml")
+                            .withOptional(true)
+                            .build())
+                .endValueFrom()
+                .build();
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
                         .withListeners(kafkaListeners)
-                        .withMetricsConfig(metrics ? null : io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", "metrics-cm"))
+                        .withMetricsConfig(metrics ? null : jmxMetrics)
                     .endKafka()
                     .withEntityOperator(eoConfig)
                     .withKafkaExporter(metrics ? new KafkaExporterSpec() : null)
@@ -889,7 +905,6 @@ public class KafkaAssemblyOperatorTest {
         // Config Maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.getAsync(NAMESPACE, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
-        when(mockCmOps.getAsync(NAMESPACE, differentMetricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
         when(mockCmOps.listAsync(NAMESPACE, updatedKafkaCluster.getSelectorLabels())).thenReturn(Future.succeededFuture(List.of()));
         when(mockCmOps.deleteAsync(any(), any(), any(), anyBoolean())).thenReturn(Future.succeededFuture());
 
