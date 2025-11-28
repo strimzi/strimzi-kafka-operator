@@ -108,6 +108,8 @@
 :OPAAuthorizer: link:https://github.com/anderseknert/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
 :external-cors-link: link:https://fetch.spec.whatwg.org/[Fetch CORS specification^]
 :HelmCustomResourceDefinitions: link:https://helm.sh/docs/chart_best_practices/custom_resource_definitions/[Custom Resource Definitions for Helm^]
+:CertManagerProject: link:https://cert-manager.io/docs/[cert-manager project^]
+:CertManagerPrivateKeyEncoding: link:https://cert-manager.io/docs/reference/api-docs/#cert-manager.io/v1.PrivateKeyEncoding[key encoding^]
 
 //distributed tracing versions and links
 :OpenTelemetryAlphaVersion: 1.34.1-alpha
