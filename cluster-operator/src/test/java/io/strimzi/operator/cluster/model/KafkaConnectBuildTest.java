@@ -5,12 +5,18 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.openshift.api.model.BuildConfig;
@@ -839,5 +845,292 @@ public class KafkaConnectBuildTest {
         );
 
         assertThat(e.getMessage(), containsString(".spec.build.output.additionalBuildOptions contains forbidden options: [--reproducible-something, --build-arg, --digest-file]"));
+    }
+
+    @Test
+    public void testKanikoVolumesVolumeMountsAndEnvVariables() {
+        // Test that additional volume, env and push secret are correctly propagated into
+        // the final list of Volumes, VolumeMounts, and EnvVars
+        KafkaConnect kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                        .withPushSecret("kaniko-push-secret")
+                    .endDockerOutput()
+                    .withPlugins(
+                        new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build()
+                    )
+                .endBuild()
+                .editOrNewTemplate()
+                    .withNewBuildContainer()
+                        .addToVolumeMounts(
+                            new VolumeMountBuilder()
+                            .withName("volume")
+                            .withMountPath("/mnt/my/path")
+                            .build()
+                        )
+                        .addNewEnv()
+                            .withName("MY_ENV")
+                            .withValue("value")
+                        .endEnv()
+                    .endBuildContainer()
+                .endTemplate()
+            .endSpec()
+            .build();
+
+        KafkaConnectBuild kafkaConnectBuild = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, false);
+
+        List<Volume> volumes = kafkaConnectBuild.getVolumes(false);
+
+        assertThat(volumes.size(), is(2));
+        assertThat(volumes.contains(
+            new VolumeBuilder()
+                .withName("dockerfile")
+                .withConfigMap(
+                    new ConfigMapVolumeSourceBuilder()
+                        .withName(KafkaConnectResources.dockerFileConfigMapName(cluster))
+                        .withItems(
+                            new KeyToPathBuilder()
+                                .withKey("Dockerfile")
+                                .withPath("Dockerfile")
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        ), is(true));
+        assertThat(volumes.contains(
+            new VolumeBuilder()
+                .withName("docker-credentials")
+                .withSecret(
+                    new SecretVolumeSourceBuilder()
+                        .withDefaultMode(292)
+                        .withSecretName("kaniko-push-secret")
+                        .withItems(
+                            new KeyToPathBuilder()
+                                .withKey(".dockerconfigjson")
+                                .withPath("config.json")
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        ), is(true));
+
+        List<VolumeMount> volumeMounts = kafkaConnectBuild.getVolumeMounts(false);
+
+        assertThat(volumeMounts.size(), is(3));
+        assertThat(volumeMounts.contains(new VolumeMountBuilder().withName("volume").withMountPath("/mnt/my/path").build()), is(true));
+        assertThat(volumeMounts.contains(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/kaniko/.docker").build()), is(true));
+        assertThat(volumeMounts.contains(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build()), is(true));
+
+
+        List<EnvVar> envVars = kafkaConnectBuild.getBuildContainerEnvVars(false);
+
+        assertThat(envVars.size(), is(1));
+        assertThat(envVars.get(0).equals(new EnvVarBuilder().withName("MY_ENV").withValue("value").build()), is(true));
+
+        // now check the Volumes, VolumeMounts, and EnvVars without additional volume, env var, and also push secret
+        kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                    .endDockerOutput()
+                    .withPlugins(
+                        new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build()
+                    )
+                .endBuild()
+            .endSpec()
+            .build();
+
+        kafkaConnectBuild = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, false);
+
+        volumes = kafkaConnectBuild.getVolumes(false);
+
+        assertThat(volumes.size(), is(1));
+        assertThat(volumes.get(0).equals(
+            new VolumeBuilder()
+                .withName("dockerfile")
+                .withConfigMap(
+                    new ConfigMapVolumeSourceBuilder()
+                        .withName(KafkaConnectResources.dockerFileConfigMapName(cluster))
+                        .withItems(
+                            new KeyToPathBuilder()
+                                .withKey("Dockerfile")
+                                .withPath("Dockerfile")
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        ), is(true));
+
+        volumeMounts = kafkaConnectBuild.getVolumeMounts(false);
+
+        assertThat(volumeMounts.size(), is(1));
+        assertThat(volumeMounts.contains(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build()), is(true));
+
+
+        envVars = kafkaConnectBuild.getBuildContainerEnvVars(false);
+
+        assertThat(envVars.size(), is(0));
+    }
+
+    @Test
+    public void testBuildahVolumesVolumeMountsAndEnvVariables() {
+        // Test that additional volume, env and push secret are correctly propagated into
+        // the final list of Volumes, VolumeMounts, and EnvVars
+        KafkaConnect kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                        .withPushSecret("buildah-push-secret")
+                    .endDockerOutput()
+                    .withPlugins(
+                        new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build()
+                    )
+                .endBuild()
+                .editOrNewTemplate()
+                    .withNewBuildContainer()
+                        .addToVolumeMounts(
+                            new VolumeMountBuilder()
+                                .withName("volume")
+                                .withMountPath("/mnt/my/path")
+                                .build()
+                        )
+                        .addNewEnv()
+                            .withName("MY_ENV")
+                            .withValue("value")
+                        .endEnv()
+                    .endBuildContainer()
+                .endTemplate()
+            .endSpec()
+            .build();
+
+        KafkaConnectBuild kafkaConnectBuild = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, true);
+
+        List<Volume> volumes = kafkaConnectBuild.getVolumes(false);
+
+        assertThat(volumes.size(), is(2));
+        assertThat(volumes.contains(
+            new VolumeBuilder()
+                .withName("dockerfile")
+                .withConfigMap(
+                    new ConfigMapVolumeSourceBuilder()
+                        .withName(KafkaConnectResources.dockerFileConfigMapName(cluster))
+                        .withItems(
+                            new KeyToPathBuilder()
+                                .withKey("Dockerfile")
+                                .withPath("Dockerfile")
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        ), is(true));
+        assertThat(volumes.contains(
+            new VolumeBuilder()
+                .withName("docker-credentials")
+                .withSecret(
+                    new SecretVolumeSourceBuilder()
+                        .withDefaultMode(292)
+                        .withSecretName("buildah-push-secret")
+                        .withItems(
+                            new KeyToPathBuilder()
+                                .withKey(".dockerconfigjson")
+                                .withPath("config.json")
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        ), is(true));
+
+        List<VolumeMount> volumeMounts = kafkaConnectBuild.getVolumeMounts(true);
+
+        assertThat(volumeMounts.size(), is(3));
+        assertThat(volumeMounts.contains(new VolumeMountBuilder().withName("volume").withMountPath("/mnt/my/path").build()), is(true));
+        assertThat(volumeMounts.contains(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/build/.docker").build()), is(true));
+        assertThat(volumeMounts.contains(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build()), is(true));
+
+
+        List<EnvVar> envVars = kafkaConnectBuild.getBuildContainerEnvVars(true);
+
+        assertThat(envVars.size(), is(2));
+        assertThat(envVars.contains(new EnvVarBuilder().withName("MY_ENV").withValue("value").build()), is(true));
+        assertThat(envVars.contains(new EnvVarBuilder().withName("REGISTRY_AUTH_FILE").withValue("/build/.docker/config.json").build()), is(true));
+
+        // now check the Volumes, VolumeMounts, and EnvVars without additional volume, env var, and also push secret
+        kc = new KafkaConnectBuilder()
+            .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+            .endMetadata()
+            .withNewSpec()
+                .withBootstrapServers("my-kafka:9092")
+                .withNewBuild()
+                    .withNewDockerOutput()
+                        .withImage("my-image:latest")
+                    .endDockerOutput()
+                    .withPlugins(
+                        new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                        new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build()
+                    )
+                .endBuild()
+            .endSpec()
+            .build();
+
+        kafkaConnectBuild = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS, SHARED_ENV_PROVIDER, true);
+
+        volumes = kafkaConnectBuild.getVolumes(false);
+
+        assertThat(volumes.size(), is(1));
+        assertThat(volumes.get(0).equals(
+            new VolumeBuilder()
+                .withName("dockerfile")
+                .withConfigMap(
+                    new ConfigMapVolumeSourceBuilder()
+                        .withName(KafkaConnectResources.dockerFileConfigMapName(cluster))
+                        .withItems(
+                            new KeyToPathBuilder()
+                                .withKey("Dockerfile")
+                                .withPath("Dockerfile")
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        ), is(true));
+
+        volumeMounts = kafkaConnectBuild.getVolumeMounts(true);
+
+        assertThat(volumeMounts.size(), is(1));
+        assertThat(volumeMounts.contains(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build()), is(true));
+
+
+        envVars = kafkaConnectBuild.getBuildContainerEnvVars(true);
+
+        assertThat(envVars.size(), is(0));
     }
 }

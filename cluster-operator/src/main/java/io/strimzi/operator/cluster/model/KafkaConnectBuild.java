@@ -299,7 +299,7 @@ public class KafkaConnectBuild extends AbstractModel {
      *
      * @return  List of volumes
      */
-    private List<Volume> getVolumes(boolean isOpenShift) {
+    /* test */ List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumes = new ArrayList<>(2);
 
         volumes.add(VolumeUtils.createConfigMapVolume("dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
@@ -323,7 +323,7 @@ public class KafkaConnectBuild extends AbstractModel {
      *
      * @return  List of volume mounts
      */
-    private List<VolumeMount> getVolumeMounts(boolean isBuildahBuild) {
+    /* test */ List<VolumeMount> getVolumeMounts(boolean isBuildahBuild) {
         List<VolumeMount> volumeMounts = new ArrayList<>(2);
 
         volumeMounts.add(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build());
@@ -351,7 +351,7 @@ public class KafkaConnectBuild extends AbstractModel {
      *
      * @return  List of environment variables
      */
-    private List<EnvVar> getBuildContainerEnvVars(boolean isBuildahBuild) {
+    /* test */ List<EnvVar> getBuildContainerEnvVars(boolean isBuildahBuild) {
         // Add shared environment variables used for all containers
         List<EnvVar> varList = new ArrayList<>(sharedEnvironmentProvider.variables());
 
