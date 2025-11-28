@@ -32,6 +32,7 @@ Please let us know by adding your company name and, if you want, a description o
    * Use Strimzi to create a (streaming) telemetry platform and EDA for Network Orchestration.
 * [AppsFlyer](https://www.appsflyer.com/)
   * Running dozens of high-throughput clusters, handling tens of millions of messages per second, relying on the local ephemeral storage.
+* [Feedzai](https://www.feedzai.com/)
 
 ### Vendors
 
