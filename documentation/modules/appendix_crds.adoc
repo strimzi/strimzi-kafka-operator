@@ -543,7 +543,7 @@ Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaList
 |The name of the file certificate in the Secret.
 |key
 |string
-|The name of the private key in the Secret.
+|The name of the private key in the secret. The private key must be in unencrypted PKCS #8 format. For more information, see RFC 5208: https://datatracker.ietf.org/doc/html/rfc5208.
 |====
 
 [id='type-GenericKafkaListenerConfigurationBootstrap-{context}']

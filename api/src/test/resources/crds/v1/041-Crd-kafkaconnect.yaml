@@ -121,7 +121,7 @@ spec:
                         description: The name of the file certificate in the Secret.
                       key:
                         type: string
-                        description: The name of the private key in the Secret.
+                        description: "The name of the private key in the secret. The private key must be in unencrypted PKCS #8 format. For more information, see RFC 5208: https://datatracker.ietf.org/doc/html/rfc5208."
                     required:
                     - secretName
                     - certificate

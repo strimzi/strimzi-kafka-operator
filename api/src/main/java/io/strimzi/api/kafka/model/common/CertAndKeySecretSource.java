@@ -52,7 +52,9 @@ public class CertAndKeySecretSource implements UnknownPropertyPreserving {
         this.certificate = certificate;
     }
 
-    @Description("The name of the private key in the Secret.")
+    @Description("The name of the private key in the secret. " +
+            "The private key must be in unencrypted PKCS #8 format. " +
+            "For more information, see RFC 5208: https://datatracker.ietf.org/doc/html/rfc5208.")
     @JsonProperty(required = true)
     public String getKey() {
         return key;
