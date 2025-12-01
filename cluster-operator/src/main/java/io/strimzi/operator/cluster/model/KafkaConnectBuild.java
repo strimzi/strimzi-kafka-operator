@@ -330,11 +330,8 @@ public class KafkaConnectBuild extends AbstractModel {
 
         if (build.getOutput() instanceof DockerOutput output) {
             if (output.getPushSecret() != null) {
-                if (isBuildahBuild) {
-                    volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/build/.docker").build());
-                } else {
-                    volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/kaniko/.docker").build());
-                }
+                String pushSecretPath = isBuildahBuild ? "/build/.docker" : "/kaniko/.docker";
+                volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath(pushSecretPath).build());
             }
         } else {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");
@@ -354,7 +351,7 @@ public class KafkaConnectBuild extends AbstractModel {
         // Add shared environment variables used for all containers
         List<EnvVar> varList = new ArrayList<>(sharedEnvironmentProvider.variables());
 
-        if (build.getOutput() instanceof DockerOutput output && output.getPushSecret() != null && isBuildahBuild) {
+        if (isBuildahBuild && build.getOutput() instanceof DockerOutput output && output.getPushSecret() != null) {
             varList.add(new EnvVarBuilder().withName("REGISTRY_AUTH_FILE").withValue("/build/.docker/config.json").build());
         }
 
