@@ -103,7 +103,7 @@ class LoggingChangeST extends AbstractST {
 
     private static final Pattern DEFAULT_LOG4J_PATTERN = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) (?<status>\\w+) (?<message>.+)");
 
-    @ParallelNamespaceTest
+    @IsolatedTest("We are configuring and scraping logs from CO")
     @TestDoc(
         description = @Desc("Test verifying that the logging in JSON format works correctly across Kafka and operators using the JsonTemplateLayout."),
         steps = {
@@ -349,7 +349,7 @@ class LoggingChangeST extends AbstractST {
         KubeResourceManager.get().updateResource(configMapCO);
     }
 
-    @ParallelNamespaceTest
+    @IsolatedTest("We are configuring and scraping logs from CO")
     @TestDoc(
             description = @Desc("Test verifying that the logging in JSON format works correctly across Kafka and operators."),
             steps = {
