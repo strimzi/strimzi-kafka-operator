@@ -42,6 +42,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -397,7 +398,12 @@ public class YamlInstallation implements InstallationMethod {
 
         // Map the current envVars list to Map for easier manipulation
         Map<String, EnvVar> envVarMap = envVars.stream()
-            .collect(Collectors.toMap(EnvVar::getName, Function.identity()));
+            .collect(Collectors.toMap(
+                EnvVar::getName,
+                Function.identity(),
+                (existing, replacement) -> existing,
+                LinkedHashMap::new
+            ));
 
         // Adding custom evn vars specified by user in installation
         if (clusterOperatorConfiguration.getExtraEnvVars() != null) {

@@ -5,11 +5,11 @@
 package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.skodjob.testframe.enums.InstallType;
 import io.skodjob.testframe.installation.InstallationMethod;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 
 /**
  * Class for handling the installation of ClusterOperator.
@@ -127,12 +127,7 @@ public class SetupClusterOperator {
             }
         }
 
-        KubeResourceManager.get().createResourceWithWait(new NamespaceBuilder()
-            .withNewMetadata()
-                .withName(clusterOperatorConfiguration.getNamespaceName())
-            .endMetadata()
-            .build()
-        );
+        NamespaceUtils.createNamespaceAndPrepare(clusterOperatorConfiguration.getNamespaceName());
     }
 
     /**
