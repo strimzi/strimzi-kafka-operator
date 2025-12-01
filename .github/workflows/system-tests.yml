@@ -351,5 +351,3 @@ jobs:
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - uses: ./.github/actions/systemtests/run-perf-report
-        with:
-          ref: ${{ needs.parse-params.outputs.ref }}
