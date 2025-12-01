@@ -448,7 +448,8 @@ jobs:
                 -P ubuntu-latest=catthehacker/ubuntu:act-latest \
                 --pull=false \
                 --env EXPECTED_OUTPUT_FILE="$expected_file" \
-                --env EXPECTED_HAS_RESULTS="$expected_has_results"; then
+                --env EXPECTED_HAS_RESULTS="$expected_has_results" \
+                -s GITHUB_TOKEN=dummy-token-for-testing; then
               echo "✅ $id passed"
             else
               echo "❌ $id failed"
