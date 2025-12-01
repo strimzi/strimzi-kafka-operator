@@ -4,15 +4,10 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -28,32 +23,10 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TestUtils {
-    public static JmxPrometheusExporterMetrics getJmxPrometheusExporterMetrics(String key, String name) {
-        return new JmxPrometheusExporterMetricsBuilder()
-                .withNewValueFrom()
-                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
-                            .withName(name)
-                            .withKey(key)
-                            .withOptional(true)
-                            .build())
-                .endValueFrom()
-                .build();
-    }
-
-    public static ConfigMap getJmxMetricsCm(String data, String metricsCMName, String metricsConfigYaml) {
-        return new ConfigMapBuilder()
-                .withNewMetadata()
-                .withName(metricsCMName)
-                .endMetadata()
-                .withData(singletonMap(metricsConfigYaml, data))
-                .build();
-    }
-
     /**
      * Gets the given container's environment as a Map. This makes it easier to verify the environment variables in
      * unit tests.

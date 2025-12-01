@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -116,6 +117,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT;
 import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT_NAME;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -274,7 +276,12 @@ public class KafkaClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm("{\"animal\":\"wombat\"}", "kafka-metrics-config", "kafka-metrics-config.yml");
+        ConfigMap metricsCm = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withName("kafka-metrics-config")
+                .endMetadata()
+                .withData(singletonMap("kafka-metrics-config.yml", "{\"animal\":\"wombat\"}"))
+                .build();
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
