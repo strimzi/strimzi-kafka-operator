@@ -882,15 +882,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * Returns the Tracing object with tracing configuration or null if tracing was not enabled.
-     *
-     * @return  Tracing object with tracing configuration
-     */
-    public Tracing getTracing() {
-        return tracing;
-    }
-
-    /**
      * Creates the ClusterRoleBinding, which is used to bind the Kafka Connect SA to the ClusterRole
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
      *
