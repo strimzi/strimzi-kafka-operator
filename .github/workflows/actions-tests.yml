@@ -449,7 +449,7 @@ jobs:
                 --pull=false \
                 --env EXPECTED_OUTPUT_FILE="$expected_file" \
                 --env EXPECTED_HAS_RESULTS="$expected_has_results" \
-                -s GITHUB_TOKEN=dummy-token-for-testing; then
+                -s GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}; then
               echo "✅ $id passed"
             else
               echo "❌ $id failed"
