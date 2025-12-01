@@ -470,7 +470,7 @@ public abstract class BasePerformanceMetricsParser {
     /**
      * Writes formatted experiment data to a specific file determined by the parser type.
      * This method finds the directory named after the {@link ParserType} provided and writes the data
-     * into a text file named according to the constant {@link PerformanceConstants#RESULTS_TABLE}.
+     * into a markdown file named according to the constant {@link PerformanceConstants#RESULTS_TABLE}.
      * This operation is performed in the latest directory returned by {@code findLatestDirectory()}.
      *
      * @param parserType    The type of parser which determines the directory in which to write the file.
@@ -489,7 +489,7 @@ public abstract class BasePerformanceMetricsParser {
                 .orElseThrow(() -> new IOException("No directory found for parser type: " + parserType.getParserName()));
 
             final Path typeSpecificDir = componentDir.toPath();
-            final Path file = typeSpecificDir.resolve(PerformanceConstants.RESULTS_TABLE + ".txt");
+            final Path file = typeSpecificDir.resolve(PerformanceConstants.RESULTS_TABLE + ".md");
 
             try (final BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
                 writer.write(formattedData);

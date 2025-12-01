@@ -26,9 +26,6 @@ function findArtifactDirs(baseDir) {
     .map(entry => ({
       name: entry.name,
       path: path.join(baseDir, entry.name),
-      // Extract architecture from agent name in artifact name
-      // e.g., performance-results-performance-performance-ubuntu-latest -> amd64
-      // e.g., performance-results-performance-performance-ubuntu-24.04-arm -> arm64
       arch: getArchFromAgent(entry.name)
     }));
 
@@ -36,9 +33,9 @@ function findArtifactDirs(baseDir) {
 }
 
 /**
- * Find the latest timestamped results directory
+ * Find the timestamped results directory within an artifact
  */
-function findLatestResultsDir(baseDir) {
+function findTimestampedResultsDir(baseDir) {
   if (!fs.existsSync(baseDir)) {
     console.warn(`Performance directory not found: ${baseDir}`);
     return null;
@@ -60,124 +57,90 @@ function findLatestResultsDir(baseDir) {
 }
 
 /**
- * Parse a results-table.txt file that may contain multiple use cases
+ * Read markdown content from results-table.md file
  */
-function parseResultsTable(tableFile) {
-  if (!fs.existsSync(tableFile)) {
+function readResultsMarkdown(componentDir) {
+  const mdPath = path.join(componentDir, 'results-table.md');
+  if (!fs.existsSync(mdPath)) {
     return null;
   }
+  return fs.readFileSync(mdPath, 'utf8');
+}
 
-  const content = fs.readFileSync(tableFile, 'utf8');
+/**
+ * Parse markdown content to extract use cases with their tables
+ * Returns array of { useCase, config, header, rows }
+ */
+function parseMarkdownContent(content) {
+  if (!content) return [];
+
   const lines = content.trim().split('\n');
-
-  if (lines.length === 0) {
-    return null;
-  }
-
-  // Find all use case sections
-  const useCaseIndices = [];
-  lines.forEach((line, idx) => {
-    if (line.match(/^\*\*Use Case:\*\*/) || line.match(/^Use Case:/)) {
-      useCaseIndices.push(idx);
-    }
-  });
-
-  if (useCaseIndices.length === 0) {
-    return null;
-  }
-
-  // Parse each use case section
   const useCases = [];
-  for (let i = 0; i < useCaseIndices.length; i++) {
-    const startIdx = useCaseIndices[i];
-    const endIdx = i < useCaseIndices.length - 1 ? useCaseIndices[i + 1] : lines.length;
-    const sectionLines = lines.slice(startIdx, endIdx);
+  let currentUseCase = null;
+  let inConfig = false;
+  let inResults = false;
+  let configLines = [];
+  let tableLines = [];
 
-    // Extract use case name
-    const useCaseLine = sectionLines[0];
-    const useCase = useCaseLine
-      .replace(/^\*\*Use Case:\*\*/, '')
-      .replace(/^Use Case:/, '')
-      .trim();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
 
-    // Extract configuration and table sections
-    const configStart = sectionLines.findIndex(line => line.match(/^\*\*Configuration:\*\*/));
-    const resultsStart = sectionLines.findIndex(line => line.match(/^\*\*Results:\*\*/));
-
-    let configLines = [];
-    if (configStart >= 0 && resultsStart >= 0) {
-      configLines = sectionLines.slice(configStart + 1, resultsStart)
-        .filter(line => line.trim() && !line.match(/^\*\*/))
-        .map(line => line.replace(/^- /, ''));
-    }
-
-    // Find table data
-    const tableLines = resultsStart >= 0
-      ? sectionLines.slice(resultsStart + 1)
-      : sectionLines.slice(1);
-
-    const dataLines = tableLines.filter(line =>
-      line.startsWith('|') && !line.startsWith('|---')
-    );
-
-    if (dataLines.length < 2) {
-      continue;
-    }
-
-    // Parse header
-    const header = dataLines[0].split('|')
-      .slice(1, -1)
-      .map(col => col.trim());
-
-    // Parse experiment rows
-    const experiments = [];
-    for (let j = 1; j < dataLines.length; j++) {
-      const values = dataLines[j].split('|')
-        .slice(1, -1)
-        .map(col => col.trim());
-
-      if (values.length === header.length) {
-        const experiment = {};
-        header.forEach((h, idx) => {
-          experiment[h] = values[idx];
-        });
-        experiments.push(experiment);
+    if (line.startsWith('**Use Case:**')) {
+      // Save previous use case if exists
+      if (currentUseCase) {
+        useCases.push(buildUseCaseData(currentUseCase, configLines, tableLines));
       }
+      currentUseCase = line.replace('**Use Case:**', '').trim();
+      inConfig = false;
+      inResults = false;
+      configLines = [];
+      tableLines = [];
+    } else if (line.startsWith('**Configuration:**')) {
+      inConfig = true;
+      inResults = false;
+    } else if (line.startsWith('**Results:**')) {
+      inConfig = false;
+      inResults = true;
+    } else if (inConfig && line.startsWith('- ')) {
+      configLines.push(line.substring(2));
+    } else if (inResults && line.startsWith('|')) {
+      tableLines.push(line);
     }
+  }
 
-    // Build raw table for this use case
-    const rawTableLines = [
-      `Use Case: ${useCase}`,
-      ...configLines,
-      '',
-      ...dataLines
-    ];
-
-    useCases.push({
-      useCase,
-      header,
-      experiments,
-      rawTable: rawTableLines.join('\n')
-    });
+  // Save last use case
+  if (currentUseCase) {
+    useCases.push(buildUseCaseData(currentUseCase, configLines, tableLines));
   }
 
   return useCases;
 }
 
 /**
- * Parse results for a specific operator
+ * Build use case data object from parsed lines
  */
-function parseOperatorResults(operatorDir) {
-  if (!fs.existsSync(operatorDir)) {
-    return null;
+function buildUseCaseData(useCase, configLines, tableLines) {
+  // Filter out separator lines and parse table
+  const dataLines = tableLines.filter(line => !line.match(/^\|[-:]+\|/));
+
+  let header = [];
+  let rows = [];
+
+  if (dataLines.length > 0) {
+    header = dataLines[0].split('|').slice(1, -1).map(col => col.trim());
+    for (let i = 1; i < dataLines.length; i++) {
+      const values = dataLines[i].split('|').slice(1, -1).map(col => col.trim());
+      if (values.length === header.length) {
+        rows.push(values);
+      }
+    }
   }
 
-  const resultsTablePath = path.join(operatorDir, 'results-table.txt');
-  const operatorName = path.basename(operatorDir);
-
   return {
-    operator: operatorName,
-    resultsTable: parseResultsTable(resultsTablePath)
+    useCase,
+    config: configLines,
+    header,
+    rows
   };
 }
 
@@ -185,7 +148,6 @@ function parseOperatorResults(operatorDir) {
  * Format timestamp from directory name (yyyy-MM-dd-HH-mm-ss) to readable format
  */
 function formatTimestamp(timestamp) {
-  // Parse format: 2025-11-07-17-39-26
   const parts = timestamp.split('-');
   if (parts.length === 6) {
     const [year, month, day, hour, minute] = parts;
@@ -195,19 +157,102 @@ function formatTimestamp(timestamp) {
 }
 
 /**
+ * Merge tables from multiple architectures
+ * For multi-arch, combines columns with architecture suffixes
+ */
+function mergeArchTables(archResults) {
+  const archList = Object.keys(archResults).sort();
+
+  if (archList.length === 1) {
+    // Single architecture - return as-is with proper formatting
+    const data = archResults[archList[0]];
+    return {
+      header: data.header,
+      rows: data.rows,
+      merged: false
+    };
+  }
+
+  // Multi-architecture merge
+  const firstArch = archList[0];
+  const baseData = archResults[firstArch];
+
+  // Identify identifier columns (# or columns that don't have metrics)
+  // Heuristic: first column is usually row number, columns with "IN:" are identifiers
+  const identifierIndices = [];
+  const metricIndices = [];
+
+  baseData.header.forEach((col, idx) => {
+    if (col === '#' || col.startsWith('IN:')) {
+      identifierIndices.push(idx);
+    } else {
+      metricIndices.push(idx);
+    }
+  });
+
+  // Build merged header
+  const mergedHeader = identifierIndices.map(idx => baseData.header[idx]);
+  metricIndices.forEach(idx => {
+    archList.forEach(arch => {
+      mergedHeader.push(`${baseData.header[idx]} [${arch.toUpperCase()}]`);
+    });
+  });
+
+  // Build merged rows
+  const mergedRows = [];
+  for (let rowIdx = 0; rowIdx < baseData.rows.length; rowIdx++) {
+    const newRow = identifierIndices.map(idx => baseData.rows[rowIdx][idx]);
+
+    metricIndices.forEach(idx => {
+      archList.forEach(arch => {
+        const archData = archResults[arch];
+        const value = archData.rows[rowIdx]?.[idx] || 'N/A';
+        newRow.push(value);
+      });
+    });
+
+    mergedRows.push(newRow);
+  }
+
+  return {
+    header: mergedHeader,
+    rows: mergedRows,
+    merged: true
+  };
+}
+
+/**
+ * Generate markdown table from header and rows
+ */
+function generateMarkdownTable(header, rows) {
+  const lines = [];
+
+  // Header row
+  lines.push('| ' + header.join(' | ') + ' |');
+
+  // Separator row
+  lines.push('|' + header.map(() => '---').join('|') + '|');
+
+  // Data rows
+  rows.forEach(row => {
+    lines.push('| ' + row.join(' | ') + ' |');
+  });
+
+  return lines.join('\n');
+}
+
+/**
  * Generate markdown summary for multiple architectures
  */
 function generateMarkdownSummary(allResults) {
   const lines = [];
 
-  // Add main header
   lines.push('## Performance Test Results');
   lines.push('');
 
-  // Get all unique timestamps and operators
-  const timestamps = new Set();
+  // Get timestamp
   const allArchs = Object.keys(allResults).sort();
-
+  const timestamps = new Set();
   allArchs.forEach(arch => {
     if (allResults[arch].timestamp) {
       timestamps.add(allResults[arch].timestamp);
@@ -220,7 +265,7 @@ function generateMarkdownSummary(allResults) {
     lines.push('');
   }
 
-  // Group results by operator
+  // Collect all operators
   const operators = new Set();
   allArchs.forEach(arch => {
     Object.keys(allResults[arch].operators || {}).forEach(op => operators.add(op));
@@ -232,167 +277,50 @@ function generateMarkdownSummary(allResults) {
     lines.push(`## ${title}`);
     lines.push('');
 
-    // Group results by use case across architectures for this specific operator
-    const useCases = new Map();
+    // Group results by use case across architectures
+    const useCasesByArch = new Map();
 
     for (const arch of allArchs) {
       const operatorData = allResults[arch].operators?.[operatorName];
-      if (operatorData?.resultsTable) {
-        // resultsTable is an array of use cases for this specific operator
-        const useCasesArray = Array.isArray(operatorData.resultsTable)
-          ? operatorData.resultsTable
-          : [operatorData.resultsTable];
-
-        useCasesArray.forEach(tableData => {
-          const useCase = tableData.useCase;
-          if (!useCases.has(useCase)) {
-            useCases.set(useCase, {});
+      if (operatorData?.useCases) {
+        operatorData.useCases.forEach(uc => {
+          if (!useCasesByArch.has(uc.useCase)) {
+            useCasesByArch.set(uc.useCase, {});
           }
-          useCases.get(useCase)[arch] = tableData;
+          useCasesByArch.get(uc.useCase)[arch] = uc;
         });
       }
     }
 
-    // Generate merged tables for each use case
-    // For multi-architecture runs, skip use cases that don't have data from all architectures
-    // This prevents showing partial/incorrect data (e.g., from only one architecture)
-    for (const [useCase, archResults] of useCases) {
-      const numArchsWithData = Object.keys(archResults).length;
-      const expectedNumArchs = allArchs.length;
-
-      // Skip if we're in a multi-arch scenario but don't have data from all architectures
-      if (expectedNumArchs > 1 && numArchsWithData < expectedNumArchs) {
-        console.warn(`Skipping ${operatorName}/${useCase}: only ${numArchsWithData} of ${expectedNumArchs} architectures have data`);
+    // For multi-arch, skip use cases that don't have data from all architectures
+    for (const [useCase, archData] of useCasesByArch) {
+      const numArchsWithData = Object.keys(archData).length;
+      if (allArchs.length > 1 && numArchsWithData < allArchs.length) {
+        console.warn(`Skipping ${operatorName}/${useCase}: only ${numArchsWithData} of ${allArchs.length} architectures have data`);
         continue;
       }
 
       lines.push(`**Use Case:** ${useCase}`);
       lines.push('');
 
-      // Get configuration from first available architecture
-      const firstArchData = Object.values(archResults)[0];
-      if (firstArchData.rawTable) {
-        // Extract configuration lines (lines before the table starts)
-        const rawLines = firstArchData.rawTable.split('\n');
-        const configLines = [];
-        for (let i = 1; i < rawLines.length; i++) {
-          if (rawLines[i].startsWith('|')) break;
-          if (rawLines[i].trim()) {
-            configLines.push(rawLines[i]);
-          }
-        }
-        if (configLines.length > 0) {
-          lines.push('**Configuration:**');
-          configLines.forEach(line => lines.push(`- ${line}`));
-          lines.push('');
-        }
+      // Add configuration from first architecture
+      const firstArchData = Object.values(archData)[0];
+      if (firstArchData.config && firstArchData.config.length > 0) {
+        lines.push('**Configuration:**');
+        firstArchData.config.forEach(cfg => lines.push(`- ${cfg}`));
+        lines.push('');
       }
 
-      // Build merged table with architecture-specific columns
-      const hasMultipleArchs = Object.keys(archResults).length > 1;
       lines.push('**Results:**');
       lines.push('');
 
-      if (hasMultipleArchs) {
-        // Merge tables by combining metric columns
-        const archList = Object.keys(archResults).sort();
-        const tables = {};
-
-        // Parse all architecture tables
-        for (const arch of archList) {
-          const tableData = archResults[arch];
-          if (tableData.experiments && tableData.header) {
-            tables[arch] = {
-              header: tableData.header,
-              experiments: tableData.experiments
-            };
-          }
-        }
-
-        if (Object.keys(tables).length > 0) {
-          // Identify common columns (typically identifiers like #, NUMBER OF TOPICS, etc.)
-          // and metric columns (will have architecture suffix)
-          const firstArch = archList[0];
-          const baseHeader = tables[firstArch].header;
-
-          // Determine which columns are identifiers vs metrics
-          // Heuristic: columns with # or NUMBER in name are identifiers
-          const identifierCols = [];
-          const metricCols = [];
-
-          baseHeader.forEach(col => {
-            if (col.match(/^#$|NUMBER|Experiment/i)) {
-              identifierCols.push(col);
-            } else {
-              metricCols.push(col);
-            }
-          });
-
-          // Build merged header
-          const mergedHeader = [...identifierCols];
-          metricCols.forEach(metricCol => {
-            archList.forEach(arch => {
-              const archLabel = arch.toUpperCase();
-              mergedHeader.push(`${metricCol} [${archLabel}]`);
-            });
-          });
-
-          // Build merged rows
-          const mergedRows = [];
-          const firstArchExperiments = tables[firstArch].experiments;
-
-          for (let i = 0; i < firstArchExperiments.length; i++) {
-            const row = {};
-
-            // Copy identifier columns from first architecture
-            identifierCols.forEach(col => {
-              row[col] = firstArchExperiments[i][col] || '';
-            });
-
-            // Add metric columns for each architecture
-            metricCols.forEach(metricCol => {
-              archList.forEach(arch => {
-                const archLabel = arch.toUpperCase();
-                const archExp = tables[arch]?.experiments[i];
-                row[`${metricCol} [${archLabel}]`] = archExp?.[metricCol] || 'N/A';
-              });
-            });
-
-            mergedRows.push(row);
-          }
-
-          // Generate markdown table
-          const headerRow = '| ' + mergedHeader.join(' | ') + ' |';
-          const separatorRow = '|' + mergedHeader.map(() => '---').join('|') + '|';
-          lines.push(headerRow);
-          lines.push(separatorRow);
-
-          mergedRows.forEach(row => {
-            const values = mergedHeader.map(h => row[h] || '');
-            lines.push('| ' + values.join(' | ') + ' |');
-          });
-        }
-      } else {
-        // Single architecture - show table with separator row
-        const tableData = Object.values(archResults)[0];
-        if (tableData.header && tableData.experiments) {
-          // Generate table with proper separator
-          const headerRow = '| ' + tableData.header.join(' | ') + ' |';
-          const separatorRow = '|' + tableData.header.map(() => '---').join('|') + '|';
-          lines.push(headerRow);
-          lines.push(separatorRow);
-
-          tableData.experiments.forEach(exp => {
-            const values = tableData.header.map(h => exp[h] || '');
-            lines.push('| ' + values.join(' | ') + ' |');
-          });
-        }
-      }
-
+      // Merge tables if multi-arch
+      const tableData = mergeArchTables(archData);
+      lines.push(generateMarkdownTable(tableData.header, tableData.rows));
       lines.push('');
     }
 
-    if (useCases.size === 0) {
+    if (useCasesByArch.size === 0) {
       lines.push('_No results available_');
       lines.push('');
     }
@@ -409,7 +337,6 @@ function generateMarkdownSummary(allResults) {
  */
 function generatePerformanceReport(perfDir, core) {
   try {
-    // First, check if we have artifact directories (from separate downloads)
     const artifactDirs = findArtifactDirs(perfDir);
 
     let allResults = {};
@@ -417,19 +344,18 @@ function generatePerformanceReport(perfDir, core) {
     let commonTimestamp = '';
 
     if (artifactDirs.length > 0) {
-      // Process each artifact directory (one per architecture)
       core.info(`Found ${artifactDirs.length} artifact directories`);
 
       for (const artifactDir of artifactDirs) {
         core.info(`Processing artifact: ${artifactDir.name} (${artifactDir.arch})`);
 
-        const latestDir = findLatestResultsDir(artifactDir.path);
-        if (!latestDir) {
+        const timestampedDir = findTimestampedResultsDir(artifactDir.path);
+        if (!timestampedDir) {
           core.warning(`No results found in ${artifactDir.name}`);
           continue;
         }
 
-        const timestamp = path.basename(latestDir);
+        const timestamp = path.basename(timestampedDir);
         if (!commonTimestamp) {
           commonTimestamp = timestamp;
         }
@@ -440,30 +366,34 @@ function generatePerformanceReport(perfDir, core) {
         };
 
         // Parse topic-operator results
-        const topicOpDir = path.join(latestDir, 'topic-operator');
-        const topicOpResults = parseOperatorResults(topicOpDir);
-        if (topicOpResults) {
-          results.operators['topic-operator'] = topicOpResults;
+        const topicOpDir = path.join(timestampedDir, 'topic-operator');
+        const topicOpMd = readResultsMarkdown(topicOpDir);
+        if (topicOpMd) {
+          results.operators['topic-operator'] = {
+            useCases: parseMarkdownContent(topicOpMd)
+          };
           hasResults = true;
         }
 
         // Parse user-operator results
-        const userOpDir = path.join(latestDir, 'user-operator');
-        const userOpResults = parseOperatorResults(userOpDir);
-        if (userOpResults) {
-          results.operators['user-operator'] = userOpResults;
+        const userOpDir = path.join(timestampedDir, 'user-operator');
+        const userOpMd = readResultsMarkdown(userOpDir);
+        if (userOpMd) {
+          results.operators['user-operator'] = {
+            useCases: parseMarkdownContent(userOpMd)
+          };
           hasResults = true;
         }
 
         allResults[artifactDir.arch] = results;
       }
     } else {
-      // Fallback to old behavior for backward compatibility (single directory)
+      // Fallback for single directory (backward compatibility)
       core.info('No artifact directories found, checking for direct results');
-      const latestDir = findLatestResultsDir(perfDir);
+      const timestampedDir = findTimestampedResultsDir(perfDir);
 
-      if (latestDir) {
-        const timestamp = path.basename(latestDir);
+      if (timestampedDir) {
+        const timestamp = path.basename(timestampedDir);
         commonTimestamp = timestamp;
         core.info(`Found performance results: ${timestamp}`);
 
@@ -472,23 +402,24 @@ function generatePerformanceReport(perfDir, core) {
           operators: {}
         };
 
-        // Parse topic-operator results
-        const topicOpDir = path.join(latestDir, 'topic-operator');
-        const topicOpResults = parseOperatorResults(topicOpDir);
-        if (topicOpResults) {
-          results.operators['topic-operator'] = topicOpResults;
+        const topicOpDir = path.join(timestampedDir, 'topic-operator');
+        const topicOpMd = readResultsMarkdown(topicOpDir);
+        if (topicOpMd) {
+          results.operators['topic-operator'] = {
+            useCases: parseMarkdownContent(topicOpMd)
+          };
           hasResults = true;
         }
 
-        // Parse user-operator results
-        const userOpDir = path.join(latestDir, 'user-operator');
-        const userOpResults = parseOperatorResults(userOpDir);
-        if (userOpResults) {
-          results.operators['user-operator'] = userOpResults;
+        const userOpDir = path.join(timestampedDir, 'user-operator');
+        const userOpMd = readResultsMarkdown(userOpDir);
+        if (userOpMd) {
+          results.operators['user-operator'] = {
+            useCases: parseMarkdownContent(userOpMd)
+          };
           hasResults = true;
         }
 
-        // Assume amd64 if not specified
         allResults['amd64'] = results;
       }
     }

@@ -202,6 +202,9 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
                         .editEntityOperator()
                             .editUserOperator()
                                 .withReconciliationIntervalMs(10_000L)
+                                // CPU set to 2 cores: ARM64 GHA runners are slower than AMD64, causing timeouts
+                                // with lower limits (750m, 1 CPU) when creating 1k+ users. 2 CPUs works reliably
+                                // on both architectures (~30% slower than unlimited, but ensures consistent results).
                                 .withResources(new ResourceRequirementsBuilder()
                                     .addToLimits("memory", new Quantity("1Gi"))
                                     .addToLimits("cpu", new Quantity("2"))
