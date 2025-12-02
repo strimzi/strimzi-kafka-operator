@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.kafka.api.conversion.v1.converter.ApiConversionFailedException;
 
 /**
  * Class for holding the various conversions specific for the KafkaNodePool API conversion
@@ -40,8 +39,6 @@ public class NodePoolConversions {
                     }
                 } else if (storage instanceof PersistentClaimStorage persistentVolume && persistentVolume.getOverrides() != null) {
                     persistentVolume.setOverrides(null);
-                } else {
-                    throw new ApiConversionFailedException("Cannot remove storage overrides in " + storage.getClass().getName());
                 }
 
                 return storage;

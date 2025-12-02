@@ -160,6 +160,8 @@ public class ConvertFileCommandTest {
                 Arguments.of("nodepool-v1beta2.yaml", "nodepool-v1beta2.out"),
                 Arguments.of("nodepool-no-jbod.yaml", "nodepool-no-jbod.out"),
                 Arguments.of("nodepool-no-overrides.yaml", "nodepool-no-overrides.out"),
+                Arguments.of("nodepool-no-overrides-no-jbod.yaml", "nodepool-no-overrides-no-jbod.out"),
+                Arguments.of("nodepool-ephemeral.yaml", "nodepool-ephemeral.out"),
                 Arguments.of("connect-v1beta2.yaml", "connect-v1beta2.out"),
                 Arguments.of("connect-up-to-date.yaml", "connect-up-to-date.out"),
                 Arguments.of("mm2-v1beta2.yaml", "mm2-v1beta2.out"),
