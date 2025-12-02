@@ -1652,14 +1652,19 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             }
         }
 
-        List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
-                .withApiGroups("")
-                .withResources("secrets")
-                .withVerbs("get")
-                .withResourceNames(certSecretNames.stream().toList())
-                .build());
+        if (certSecretNames.isEmpty()) {
+            // This should never happen but just in case it does, we throw an error
+            throw new RuntimeException("No TLS certificate secrets found for the Kafka cluster.");
+        } else {
+            List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
+                    .withApiGroups("")
+                    .withResources("secrets")
+                    .withVerbs("get")
+                    .withResourceNames(certSecretNames.stream().toList())
+                    .build());
 
-        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
+            return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
+        }
     }
 
     /**

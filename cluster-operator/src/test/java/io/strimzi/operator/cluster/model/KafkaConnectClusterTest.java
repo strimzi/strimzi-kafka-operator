@@ -46,6 +46,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.JvmOptions;
@@ -2377,5 +2379,43 @@ public class KafkaConnectClusterTest {
             assertThat(containers.get(0).getVolumeMounts().get(4).getName(), is("plugin-second-connector-695ab9d6"));
             assertThat(containers.get(0).getVolumeMounts().get(4).getMountPath(), is("/opt/kafka/plugins/second-connector/695ab9d6"));
         });
+    }
+
+    @Test
+    public void testRoleAbdRoleBindingNoSecrets() {
+        assertThat(KC.generateRole(), is(nullValue()));
+        assertThat(KC.generateRoleBindingForRole(), is(nullValue()));
+    }
+
+    @Test
+    public void testRoleAbdRoleBindingWithSecrets() {
+        KafkaConnect resource = new KafkaConnectBuilder(RESOURCE)
+                .editSpec()
+                    .withNewTls()
+                        .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("ca.crt").build())
+                    .endTls()
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        Role role = kc.generateRole();
+        assertThat(role.getMetadata().getName(), is(kc.componentName));
+        assertThat(role.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(role.getRules().size(), is(1));
+        assertThat(role.getRules().get(0).getApiGroups(), is(List.of("")));
+        assertThat(role.getRules().get(0).getResources(), is(List.of("secrets")));
+        assertThat(role.getRules().get(0).getVerbs(), is(List.of("get")));
+        assertThat(role.getRules().get(0).getResourceNames(), is(List.of(kc.componentName + "-tls-trusted-certs")));
+
+        RoleBinding rb = kc.generateRoleBindingForRole();
+        assertThat(rb.getMetadata().getName(), is(KafkaConnectResources.connectRoleBindingName(NAME)));
+        assertThat(rb.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(rb.getSubjects().size(), is(1));
+        assertThat(rb.getSubjects().get(0).getKind(), is("ServiceAccount"));
+        assertThat(rb.getSubjects().get(0).getNamespace(), is(NAMESPACE));
+        assertThat(rb.getSubjects().get(0).getName(), is(kc.componentName));
+        assertThat(rb.getRoleRef().getKind(), is("Role"));
+        assertThat(rb.getRoleRef().getName(), is(kc.componentName));
     }
 }

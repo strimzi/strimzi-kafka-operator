@@ -42,6 +42,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.JvmOptions;
@@ -2497,5 +2499,52 @@ public class KafkaMirrorMaker2ClusterTest {
         // Check config map
         ConfigMap cm = KMM2.generateConnectConfigMap(new MetricsAndLogging(METRICS_CONFIG, null));
         assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
+    }
+
+    @Test
+    public void testRoleAbdRoleBindingNoSecrets() {
+        assertThat(KMM2.generateRole(), is(nullValue()));
+        assertThat(KMM2.generateRoleBindingForRole(), is(nullValue()));
+    }
+
+    @Test
+    public void testRoleAbdRoleBindingWithSecrets() {
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(RESOURCE)
+                .editSpec()
+                    .editTarget()
+                        .withNewTls()
+                            .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("ca.crt").build())
+                        .endTls()
+                    .endTarget()
+                    .editFirstMirror()
+                        .editSource()
+                            .withNewTls()
+                                .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-source-secret").withCertificate("ca.crt").build())
+                            .endTls()
+                        .endSource()
+                    .endMirror()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        Role role = kmm2.generateRole();
+        assertThat(role.getMetadata().getName(), is(kmm2.componentName));
+        assertThat(role.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(role.getRules().size(), is(1));
+        assertThat(role.getRules().get(0).getApiGroups(), is(List.of("")));
+        assertThat(role.getRules().get(0).getResources(), is(List.of("secrets")));
+        assertThat(role.getRules().get(0).getVerbs(), is(List.of("get")));
+        assertThat(role.getRules().get(0).getResourceNames(), is(List.of(KafkaConnectResources.componentName(NAME) + "-tls-trusted-certs")));
+
+        RoleBinding rb = kmm2.generateRoleBindingForRole();
+        assertThat(rb.getMetadata().getName(), is(KafkaMirrorMaker2Resources.mm2RoleBindingName(NAME)));
+        assertThat(rb.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(rb.getSubjects().size(), is(1));
+        assertThat(rb.getSubjects().get(0).getKind(), is("ServiceAccount"));
+        assertThat(rb.getSubjects().get(0).getNamespace(), is(NAMESPACE));
+        assertThat(rb.getSubjects().get(0).getName(), is(kmm2.componentName));
+        assertThat(rb.getRoleRef().getKind(), is("Role"));
+        assertThat(rb.getRoleRef().getName(), is(kmm2.componentName));
     }
 }
