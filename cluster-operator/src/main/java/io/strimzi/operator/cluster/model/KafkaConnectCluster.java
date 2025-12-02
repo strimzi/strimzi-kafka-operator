@@ -595,7 +595,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
     /**
      * Generates the StrimziPodSet for the Kafka cluster.
-     * enabled.
      *
      * @param replicas                  Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs, node
      *                                  sets with different numbers of pods are generated.
@@ -909,13 +908,11 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * Creates a Role for reading TLS certificate secrets in the same namespace as the resource.
-     * This is used for loading certificates from secrets directly.
-     **
-     * @return role for the Kafka Connect
+     * @return  The list of Secrets the Pods will need access to through Kubernetes API to load their values using
+     *          configuration providers.
      */
     @SuppressWarnings("deprecation") // OAuth authentication is deprecated
-    public Role generateRole() {
+    private List<String> secretsToAllowAccessTo() {
         List<String> certSecretNames = new ArrayList<>();
         if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
             certSecretNames.add(KafkaConnectResources.internalTlsTrustedCertsSecretName(cluster));
@@ -930,14 +927,30 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             }
         }
 
-        List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
-                .withApiGroups("")
-                .withResources("secrets")
-                .withVerbs("get")
-                .withResourceNames(certSecretNames)
-                .build());
+        return certSecretNames;
+    }
 
-        return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
+    /**
+     * Creates a Role for reading TLS certificate secrets in the same namespace as the resource.
+     * This is used for loading certificates from secrets directly.
+     **
+     * @return role for the Kafka Connect
+     */
+    public Role generateRole() {
+        List<String> certSecretNames = secretsToAllowAccessTo();
+
+        if (certSecretNames.isEmpty()) {
+            return null;
+        } else {
+            List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
+                    .withApiGroups("")
+                    .withResources("secrets")
+                    .withVerbs("get")
+                    .withResourceNames(certSecretNames)
+                    .build());
+
+            return RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, null);
+        }
     }
 
     /**
@@ -946,19 +959,23 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @return  Role Binding for the Kafka Connect
      */
     public RoleBinding generateRoleBindingForRole() {
-        Subject subject = new SubjectBuilder()
-                .withKind("ServiceAccount")
-                .withName(componentName)
-                .withNamespace(namespace)
-                .build();
+        if (secretsToAllowAccessTo().isEmpty()) {
+            return null;
+        } else {
+            Subject subject = new SubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName(componentName)
+                    .withNamespace(namespace)
+                    .build();
 
-        RoleRef roleRef = new RoleRefBuilder()
-                .withName(componentName)
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("Role")
-                .build();
+            RoleRef roleRef = new RoleRefBuilder()
+                    .withName(componentName)
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("Role")
+                    .build();
 
-        return RbacUtils.createRoleBinding(getRoleBindingName(), namespace, roleRef, List.of(subject), labels, ownerReference, null);
+            return RbacUtils.createRoleBinding(getRoleBindingName(), namespace, roleRef, List.of(subject), labels, ownerReference, null);
+        }
     }
 
     /**
