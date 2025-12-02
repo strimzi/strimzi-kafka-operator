@@ -79,6 +79,8 @@ public class ConvertResourceCommandSampleResourcesIT {
                 Arguments.of("nodepool-v1beta2.yaml"),
                 Arguments.of("nodepool-no-jbod.yaml"),
                 Arguments.of("nodepool-no-overrides.yaml"),
+                Arguments.of("nodepool-no-overrides-no-jbod.yaml"),
+                Arguments.of("nodepool-ephemeral.yaml"),
                 Arguments.of("connect-v1beta2.yaml"),
                 Arguments.of("connect-up-to-date.yaml"),
                 Arguments.of("mm2-v1beta2.yaml"),
