@@ -89,7 +89,7 @@ The connections.max.reauth.ms setting ensures that the broker prompts clients to
 === Token introspection example
 
 The following example shows a listener configuration that validates opaque access tokens using an OAuth 2.0 introspection endpoint. 
-The Kafka broker authenticates to the authorization server using a client ID and a client secret mounted from a Kubernetes secret.
+The Kafka broker authenticates to the authorization server using a client ID and a client secret configured in the JAAS module.
 
 [source,yaml]
 ----
@@ -112,36 +112,25 @@ spec:
                 oauth.access.token.is.jwt="false"
                 oauth.introspection.endpoint.uri="https://${SSO_HOST}/realms/myrealm/protocol/openid-connect/token/introspect"
                 oauth.client.id="kafka-broker"
-                oauth.client.secret="/opt/oauth/credentials/client-secret"
+                oauth.client.secret="<client-secret-value>"
                 oauth.valid.issuer.uri="https://${SSO_HOST}/realms/myrealm"
                 oauth.username.claim="preferred_username"
                 oauth.ssl.truststore.location="/opt/oauth-certs/tls.crt"
                 oauth.ssl.truststore.type="PEM";
-    template:
-      pod:
-        volumes:
-          - name: oauth-credentials
-            secret:
-              name: kafka-broker-oauth-secret
-          - name: oauth-certs
-            secret:
-              name: oauth-server-cert
-      kafkaContainer:
-        volumeMounts:
-          - name: oauth-credentials
-            mountPath: /opt/oauth/credentials
-          - name: oauth-certs
-            mountPath: /opt/oauth-certs
+    # ...            
 ----
 
 In this configuration:
 
 * The listener uses the `OAUTHBEARER` SASL mechanism.
 * Tokens are validated by calling the OAuth 2.0 introspection endpoint for each new client connection.
-* The broker authenticates to the protected introspection endpoint using a client ID and a client secret mounted into the container.
-* The JAAS login module and callback handler perform token validation and map a specified attribute value from introspection endpoint response to a Kafka principal.
-* The truststore used for TLS connections to the authorization server is mounted into the pod.
+* The broker authenticates to the protected introspection endpoint using a client ID and client secret configured in the JAAS module.
+* The JAAS login module and callback handler perform token validation and map the `preferred_username` value from the introspection endpoint response to a Kafka principal.
+* The truststore used for TLS connections to the authorization server is specified by `oauth.ssl.truststore.location` and `oauth.ssl.truststore.type`.
 * The `oauth.access.token.is.jwt="false"` setting ensures that the broker does not attempt to interpret access tokens as JWTs (for example, if debug logging is enabled).
+
+NOTE: In production deployments, store the client secret securely, such as in a `Secret`, and inject it through an environment variable or other secure mechanism.
+For more information, see xref:assembly-loading-config-with-providers-{context}[Loading configuration values from external sources].
 
 === Authenticating brokers to protected authorization-server endpoints
 

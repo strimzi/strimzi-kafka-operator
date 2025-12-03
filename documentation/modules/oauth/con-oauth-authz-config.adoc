@@ -48,7 +48,6 @@ spec:
       # Needed for Keycloak authorization
       strimzi.authorization.client.id: kafka
       strimzi.authorization.token.endpoint.uri: https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/token
-      strimzi.authorization.ssl.endpoint.identification.algorithm: ""
       strimzi.authorization.delegate.to.kafka.acl: "false"
       strimzi.authorization.ssl.truststore.location: /mnt/oauth-certs/tls.crt
       strimzi.authorization.ssl.truststore.type: PEM
@@ -74,7 +73,7 @@ Kafka uses an authorization model based on *resource types* and *operations*.
 For example, a user might have `Describe` and `Write` permissions on a `Topic` resource.
 
 Keycloak Authorization Services use *resources*, *scopes*, *policies*, and *permissions*. 
-When you use `KeycloakAuthorizer`, Kafka resources are mapped to Keycloak resources, and Kafka operations are mapped to Keycloak scopes. 
+When you use `KeycloakAuthorizer`, Kafka resources are mapped to Keycloak resources, and Kafka operations are mapped to Keycloak authorization scopes. 
 The authorizer evaluates Keycloak permissions for the authenticated user or service account to decide whether an operation is allowed.
 
 Resources in Keycloak follow a naming pattern that matches Kafka resources. 
