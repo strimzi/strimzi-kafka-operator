@@ -101,23 +101,6 @@
 * [mirror-maker-2](labels/mirror-maker-2.md)
 
 
-## testMirrorMaker2CorrectlyMirrorsHeaders
-
-**Description:** Checks that Kafka headers are correctly mirrored by MM2.
-
-**Steps:**
-
-| Step | Action | Result |
-| - | - | - |
-| 1. | Deploy Kafka clusters, topic, and MM2. | Kafka clusters, topic and MM2 are ready. |
-| 2. | Produce messages with specific headers to the source Kafka cluster. | Messages with headers are produced to source Kafka cluster. |
-| 3. | Consume from mirrored topic on target Kafka cluster. | Headers are present in consumer log. |
-
-**Labels:**
-
-* [mirror-maker-2](labels/mirror-maker-2.md)
-
-
 ## testMirrorMaker2TlsAndScramSha512Auth
 
 **Description:** Checks message mirroring over TLS with SCRAM-SHA-512 authentication.
