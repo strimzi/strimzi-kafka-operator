@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER;
+import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.KAFKA_BRIDGE_CONFIG_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
 
@@ -339,7 +340,22 @@ public class KafkaBridgeConfigurationBuilder {
     public KafkaBridgeConfigurationBuilder withHttp(KafkaBridgeHttpConfig http, KafkaBridgeProducerSpec kafkaBridgeProducer, KafkaBridgeConsumerSpec kafkaBridgeConsumer) {
         printSectionHeader("HTTP configuration");
         writer.println("http.host=" + KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST);
+        //TODO: Should this be changed to the https port if set to the default 8080?
         writer.println("http.port=" + (http != null ? http.getPort() : KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT));
+
+        if (http != null && http.getTls() != null) {
+            writer.println("http.ssl.enable=true");
+
+            if (http.getTls().getCertificateAndKey() != null) {
+                writer.println("http.ssl.keystore.location=" + HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + http.getTls().getCertificateAndKey().getSecretName() + "/" + http.getTls().getCertificateAndKey().getCertificate());
+                writer.println("http.ssl.keystore.key.location=" + HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + http.getTls().getCertificateAndKey().getSecretName() + "/" + http.getTls().getCertificateAndKey().getKey());
+            }
+
+            if (!http.getTls().getConfig().isEmpty()) {
+                http.getTls().getConfig().forEach((key, value) -> writer.println("http." + key + "=" + value));
+            }
+        }
+
         if (http != null && http.getCors() != null) {
             writer.println("http.cors.enabled=true");
 
