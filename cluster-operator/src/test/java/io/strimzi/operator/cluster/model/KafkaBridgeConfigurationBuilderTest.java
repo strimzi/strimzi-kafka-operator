@@ -637,6 +637,38 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "http.timeoutSeconds=-1",
                 "http.producer.enabled=true"
         ));
+
+        // test TLS configuration
+        http = new KafkaBridgeHttpConfigBuilder()
+                .withPort(8443)
+                .withNewTls()
+                    .withNewCertificateAndKey()
+                        .withSecretName("my-secret")
+                        .withCertificate("cert.crt")
+                        .withKey("private.key")
+                    .endCertificateAndKey()
+                    .addToConfig(Map.of("ssl.enabled.protocols", "TLSv1.3", "ssl.enabled.cipher.suites", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"))
+                .endTls()
+                .build();
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withHttp(http, null, null)
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "http.host=0.0.0.0",
+                "http.port=8443",
+                "http.ssl.enable=true",
+                "http.ssl.keystore.location=/opt/strimzi/bridge-server-certs/my-secret/cert.crt",
+                "http.ssl.keystore.key.location=/opt/strimzi/bridge-server-certs/my-secret/private.key",
+                "http.ssl.enabled.protocols=TLSv1.3",
+                "http.ssl.enabled.cipher.suites=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                "http.cors.enabled=false",
+                "http.consumer.enabled=true",
+                "http.timeoutSeconds=-1",
+                "http.producer.enabled=true"
+        ));
     }
 
     @Test

@@ -2,7 +2,8 @@
 
 ## 0.50.0
 
-* Nothing here yet, but we will surely develop something new pretty soon 😉
+* Add support for TLS/SSL on the HTTP Bridge
+  Set `spec.http.tls.certificateAndKey` configuration to enable it and provide the certificate and key via Secret.
 
 ### Major changes, deprecations, and removals
 
