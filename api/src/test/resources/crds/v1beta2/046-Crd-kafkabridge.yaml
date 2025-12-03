@@ -139,6 +139,25 @@ spec:
                   port:
                     type: integer
                     minimum: 1023
+                  tls:
+                    type: object
+                    properties:
+                      certificateAndKey:
+                        type: object
+                        properties:
+                          secretName:
+                            type: string
+                          certificate:
+                            type: string
+                          key:
+                            type: string
+                        required:
+                        - secretName
+                        - certificate
+                        - key
+                      config:
+                        x-kubernetes-preserve-unknown-fields: true
+                        type: object
                   cors:
                     type: object
                     properties:
@@ -1577,6 +1596,25 @@ spec:
                   port:
                     type: integer
                     minimum: 1023
+                  tls:
+                    type: object
+                    properties:
+                      certificateAndKey:
+                        type: object
+                        properties:
+                          secretName:
+                            type: string
+                          certificate:
+                            type: string
+                          key:
+                            type: string
+                        required:
+                        - secretName
+                        - certificate
+                        - key
+                      config:
+                        x-kubernetes-preserve-unknown-fields: true
+                        type: object
                   cors:
                     type: object
                     properties:

@@ -3,6 +3,8 @@
 ## 0.51.0
 
 * Allow setting the following configurations with the listener prefix (e.g. `listener.name.listener1-9900.`): `connections.max.reauth.ms`, `max.connections*` and `max.connection.creation.rate`.
+* Add support for TLS/SSL on the HTTP Bridge
+  Set `spec.http.tls.certificateAndKey` configuration to enable it and provide the certificate and key via Secret.
 
 ### Major changes, deprecations, and removals
 

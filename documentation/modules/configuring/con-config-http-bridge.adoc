@@ -138,3 +138,37 @@ For details on configuring authentication, see the link:{BookURLConfiguring}#typ
 <15> Environment variables are set for distributed tracing.
 <16> Distributed tracing is enabled by using OpenTelemetry.
 <17> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter.
+
+.Example `KafkaBridge` custom resource configuration for TLS encrypted connections to HTTP Bridge server
+[source,yaml,subs="+quotes,attributes"]
+----
+# Basic configuration (required)
+apiVersion: {KafkaBridgeApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # Replicas (required)
+  replicas: 3 # <1>
+  # Kafka bootstrap servers (required)
+  bootstrapServers: _<cluster_name>_-cluster-kafka-bootstrap:9092 # <2>
+  # HTTP configuration (required)
+  http: # <3>
+    port: 8443
+    # HTTP Bridge server TLS configuration (optional)
+    tls: # <4>
+        # Secret containing server certificate and key (required)
+        certificateAndKey:
+            secretName: <cluster_name>-cert-secret
+            certificate: cert.crt
+            key: key.key
+        # SSL configuration (optional)
+        config: # <5>
+            ssl.enabled.protocols: "TLSv1.1,TLSv1.2,TLSv1.3"
+            ssl.enabled.cipher.suites: "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+----
+<1> The number of replica nodes.
+<2> Bootstrap address for connection to the target Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
+<3> HTTP access to Kafka brokers.
+<4> TLS configuration for encrypted connections between HTTP clients and HTTP Bridge with X.509 certificate and key stored in X.509 in PEM format within the specified secrets.
+<5> Additional SSL configurations for HTTP Bridge server.
