@@ -13,5 +13,5 @@ This change affects **both server-side listener configuration** and **client-sid
 For more information on the configuration options, see the following API schema references:
 
 * link:{BookURLConfiguring}#type-KafkaListenerAuthenticationCustom-reference[`KafkaListenerAuthenticationCustom` schema reference^]
-* link:{BookURLConfiguring}#type-KafkaClientAuthenticationCustom-reference[`KafkaClientAuthenticationCustom` schema reference^].
+* link:{BookURLConfiguring}#type-KafkaClientAuthenticationCustom-reference[`KafkaClientAuthenticationCustom` schema reference^]
 

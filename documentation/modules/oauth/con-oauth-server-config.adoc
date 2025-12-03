@@ -10,7 +10,7 @@ To configure OAuth 2.0 on the server side, define the `custom` authentication ty
 The configuration specifies how Kafka brokers validate tokens. 
 
 Strimzi supports OAuth 2.0 for both server-side and client-side authentication. 
-Kafka brokers validate tokens using the OAuth configuration defined on the listener, and Kafka components, such as Kafka Connect, MirrorMaker 2, and the HTP Bridge authenticate as OAuth clients when connecting to Kafka.
+Kafka brokers validate tokens using the OAuth configuration defined on the listener, and Kafka components, such as Kafka Connect, MirrorMaker 2, and the HTTP Bridge authenticate as OAuth clients when connecting to Kafka.
 
 You can also enable authorization based on token claims when using an OAuth-compatible authorization service, such as Keycloak Authorization Services.
 For more information, see xref:con-oauth-authz-config-{context}[Enabling authorization on Kafka brokers].
@@ -84,7 +84,7 @@ In this configuration:
 * The JAAS module and callback handler perform token validation and map a specified token claim to the Kafka principal.
 * The truststore is mounted into the Kafka pod and used for TLS connections to the JWKS endpoint.
 * The listener requires periodic re-authentication.
-The connections.max.reauth.ms setting ensures that the broker prompts clients to re-authenticate at regular intervals, allowing expiring OAuth access tokens to be refreshed without closing the connection.
+The `connections.max.reauth.ms` setting ensures that the broker prompts clients to re-authenticate at regular intervals, allowing expiring OAuth access tokens to be refreshed without closing the connection.
 
 === Token introspection example
 

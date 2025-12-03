@@ -35,7 +35,12 @@ spec:
             sasl.enabled.mechanisms: OAUTHBEARER
             oauthbearer.sasl.server.callback.handler.class: io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler
             oauthbearer.sasl.jaas.config: |
-              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub="thePrincipalName" oauth.valid.issuer.uri="https://${SSO_HOST}/realms/kafka-authz" oauth.jwks.endpoint.uri="https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/certs" oauth.username.claim="preferred_username" oauth.ssl.truststore.location="/mnt/oauth-certs/tls.crt" oauth.ssl.truststore.type="PEM";
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+                oauth.valid.issuer.uri="https://${SSO_HOST}/realms/kafka-authz"
+                oauth.jwks.endpoint.uri="https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/certs"
+                oauth.username.claim="preferred_username"
+                oauth.ssl.truststore.location="/mnt/oauth-certs/tls.crt"
+                oauth.ssl.truststore.type="PEM";
             connections.max.reauth.ms: 3600
     authorization:
       type: custom
@@ -43,7 +48,7 @@ spec:
       superUsers:
         - service-account-kafka
     config:
-      # Needed for Oauth authentication and Keycloak authorization
+      # Needed for OAuth authentication and Keycloak authorization
       principal.builder.class: io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder
       # Needed for Keycloak authorization
       strimzi.authorization.client.id: kafka
