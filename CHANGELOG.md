@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 0.49.1
+
+* Fixed TLS configuration in MirrorMaker 2 examples
+* `v1` API Conversion Tool bug fixes (Improved CRD validation before doing the conversion, conversion of Node Pools with single volume persistent storage, various typos)
+* Fixed incorrect default names for Strimzi Metrics Provider metrics
+* Fixed Push secret handling when `UseConnectBuildWithBuildah` feature gate is enabled
+* Documentation improvements
+
 ## 0.49.0
 
 * Add support for Kafka 4.0.1 and 4.1.1
