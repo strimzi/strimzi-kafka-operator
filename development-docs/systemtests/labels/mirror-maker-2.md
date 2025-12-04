@@ -18,7 +18,6 @@ and error handling via status or conditions and offset introspection.
 - [testKafkaMirrorMaker2WrongBootstrap](../io.strimzi.systemtest.operators.CustomResourceStatusST.md)
 - [testLeaderElection](../io.strimzi.systemtest.operators.LeaderElectionST.md)
 - [testMirrorMaker2](../io.strimzi.systemtest.mirrormaker.MirrorMaker2ST.md)
-- [testMirrorMaker2CorrectlyMirrorsHeaders](../io.strimzi.systemtest.mirrormaker.MirrorMaker2ST.md)
 - [testMirrorMaker2LogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testMirrorMaker2Metrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testMirrorMaker2TlsAndScramSha512Auth](../io.strimzi.systemtest.mirrormaker.MirrorMaker2ST.md)

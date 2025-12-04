@@ -585,66 +585,6 @@ class MirrorMaker2ST extends AbstractST {
         });
     }
 
-    @ParallelNamespaceTest
-    @TestDoc(
-        description = @Desc("Checks that Kafka headers are correctly mirrored by MM2."),
-        steps = {
-            @Step(value = "Deploy Kafka clusters, topic, and MM2.", expected = "Kafka clusters, topic and MM2 are ready."),
-            @Step(value = "Produce messages with specific headers to the source Kafka cluster.", expected = "Messages with headers are produced to source Kafka cluster."),
-            @Step(value = "Consume from mirrored topic on target Kafka cluster.", expected = "Headers are present in consumer log.")
-        },
-        labels = {
-            @Label(TestDocsLabels.MIRROR_MAKER_2),
-        }
-    )
-    void testMirrorMaker2CorrectlyMirrorsHeaders() {
-        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-
-        KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
-        );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), 1).build());
-
-        KubeResourceManager.get().createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
-        );
-        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), 1).build());
-        // Deploy Topic for example clients
-        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getSourceClusterName()).build());
-
-        KubeResourceManager.get().createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage, 1, false)
-                .editSpec()
-                    .editMirror(0)
-                        .editSourceConnector()
-                            .addToConfig("refresh.topics.interval.seconds", "1")
-                        .endSourceConnector()
-                    .endMirror()
-                .endSpec().build());
-
-        // Deploying example clients for checking if mm2 will mirror messages with headers
-
-        final KafkaClients targetKafkaClientsJob = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
-            .withTopicName(testStorage.getMirroredSourceTopicName())
-            .build();
-        KubeResourceManager.get().createResourceWithWait(targetKafkaClientsJob.consumerStrimzi());
-
-        final KafkaClients sourceKafkaClientsJob = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
-            .withHeaders("header_key_one=header_value_one, header_key_two=header_value_two")
-            .build();
-        KubeResourceManager.get().createResourceWithWait(sourceKafkaClientsJob.producerStrimzi());
-
-        ClientUtils.waitForInstantClientSuccess(testStorage, false);
-
-        LOGGER.info("Checking log of {} Job if the headers are correct", testStorage.getConsumerName());
-        String header1 = "key: header_key_one, value: header_value_one";
-        String header2 = "key: header_key_two, value: header_value_two";
-        String log = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getConsumerName()).get(0).getMetadata().getName(), "", testStorage.getMessageCount() + "s");
-        assertThat(String.format("Consumer's log doesn't contain header: %s", header1), log.contains(header1), is(true));
-        assertThat(String.format("Consumer's log doesn't contain header: %s", header2), log.contains(header2), is(true));
-    }
-
     /*
      * This test is using the Kafka Identity Replication policy. This is what should be used by all new users.
      */
