@@ -36,8 +36,8 @@ If you encounter any issues while using Strimzi, you can get help using:
 ## Strimzi Community Meetings
 
 You can join our regular community meetings:
-* Thursday 9:00 AM UTC (every 4 weeks starting from 11th December 2025) - [convert to your timezone](https://www.thetimezoneconverter.com/?t=8%3A00&tz=UTC)
-* Thursday 4:00 PM UTC (every 4 weeks starting from 18th June 2020) - [convert to your timezone](https://www.thetimezoneconverter.com/?t=16%3A00&tz=UTC)
+* Thursday 9:00 AM UTC (every 4 weeks) - [convert to your timezone](https://www.thetimezoneconverter.com/?t=8%3A00&tz=UTC)
+* Thursday 4:00 PM UTC (every 4 weeks, offset by 2 weeks from above meeting) - [convert to your timezone](https://www.thetimezoneconverter.com/?t=16%3A00&tz=UTC)
 
 Resources:
 * [Meeting minutes, agenda and Zoom link](https://docs.google.com/document/d/1V1lMeMwn6d2x1LKxyydhjo2c_IFANveelLD880A6bYc/edit#heading=h.vgkvn1hr5uor)
