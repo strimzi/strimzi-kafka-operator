@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
@@ -212,8 +213,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             365,
             30,
             true,
-            null
-    );
+            CertificateManagerType.STRIMZI_IO,
+            null);
 
     protected static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
