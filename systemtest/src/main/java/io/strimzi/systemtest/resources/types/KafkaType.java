@@ -99,7 +99,8 @@ public class KafkaType implements ResourceType<Kafka> {
             .getItems();
 
         if (!nodePools.isEmpty()) {
-            LOGGER.info("Deleting KafkaNodePools connected to this Kafka cluster");
+            List<String> nodePoolNames = nodePools.stream().map(nodePool -> nodePool.getMetadata().getName()).toList();
+            LOGGER.info("Deleting KafkaNodePools - {} - related to Kafka {}/{}", nodePoolNames, namespaceName, clusterName);
             KubeResourceManager.get().deleteResourceWithWait(nodePools.toArray(new KafkaNodePool[0]));
         }
 
