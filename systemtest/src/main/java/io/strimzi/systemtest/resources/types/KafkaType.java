@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.resources.types;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -13,6 +14,7 @@ import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.ResourceConditions;
@@ -21,6 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.platform.commons.util.Preconditions;
 
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -82,6 +86,22 @@ public class KafkaType implements ResourceType<Kafka> {
                 .map(kt -> CrdClients.kafkaTopicClient().inNamespace(namespaceName).withName(kt.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete())
                 // check that all topic was successfully deleted
                 .allMatch(result -> true);
+        }
+
+        // Delete KNPs attached to this Kafka cluster first, to prevent issues with hanging PVCs
+        List<KafkaNodePool> nodePools = CrdClients.kafkaNodePoolClient().inNamespace(namespaceName)
+            .withLabelSelector(
+                new LabelSelectorBuilder()
+                    .withMatchLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, kafka.getMetadata().getName()))
+                    .build()
+            )
+            .list()
+            .getItems();
+
+        if (!nodePools.isEmpty()) {
+            List<String> nodePoolNames = nodePools.stream().map(nodePool -> nodePool.getMetadata().getName()).toList();
+            LOGGER.info("Deleting KafkaNodePools - {} - related to Kafka {}/{}", nodePoolNames, namespaceName, clusterName);
+            KubeResourceManager.get().deleteResourceWithWait(nodePools.toArray(new KafkaNodePool[0]));
         }
 
         // get current Kafka
