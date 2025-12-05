@@ -65,7 +65,7 @@ spec:
                   description: The number of pods in the `Deployment`. Required in the `v1` version of the Strimzi API. Defaults to `1` in the `v1beta2` version of the Strimzi API.
                 image:
                   type: string
-                  description: "The container image used for Kafka Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
+                  description: "The container image used for HTTP Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
                 bootstrapServers:
                   type: string
                   description: A list of host:port pairs for establishing the initial connection to the Kafka cluster.
@@ -98,7 +98,7 @@ spec:
                         required:
                           - secretName
                       description: Trusted certificates for TLS connection.
-                  description: TLS configuration for connecting Kafka Bridge to the cluster.
+                  description: TLS configuration for connecting HTTP Bridge to the cluster.
                 authentication:
                   type: object
                   properties:
@@ -113,7 +113,7 @@ spec:
                           description: The name of the file certificate in the Secret.
                         key:
                           type: string
-                          description: The name of the private key in the Secret.
+                          description: "The name of the private key in the secret. The private key must be in unencrypted PKCS #8 format. For more information, see RFC 5208: https://datatracker.ietf.org/doc/html/rfc5208."
                       required:
                         - secretName
                         - certificate
@@ -303,7 +303,7 @@ spec:
                       description: '`ConfigMap` entry where the logging configuration is stored. '
                   required:
                     - type
-                  description: Logging configuration for Kafka Bridge.
+                  description: Logging configuration for HTTP Bridge.
                 clientRackInitImage:
                   type: string
                   description: The image of the init container used for initializing the `client.rack`.
@@ -429,7 +429,7 @@ spec:
                             - RollingUpdate
                             - Recreate
                           description: Pod replacement strategy for deployment configuration changes. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
-                      description: Template for Kafka Bridge `Deployment`.
+                      description: Template for HTTP Bridge `Deployment`.
                     pod:
                       type: object
                       properties:
@@ -1074,7 +1074,7 @@ spec:
                                   csi: {}
                                   image: {}
                           description: Additional volumes that can be mounted to the pod.
-                      description: Template for Kafka Bridge `Pods`.
+                      description: Template for HTTP Bridge `Pods`.
                     apiService:
                       type: object
                       properties:
@@ -1107,7 +1107,7 @@ spec:
                               - IPv4
                               - IPv6
                           description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6`. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting."
-                      description: Template for Kafka Bridge API `Service`.
+                      description: Template for HTTP Bridge API `Service`.
                     podDisruptionBudget:
                       type: object
                       properties:
@@ -1129,7 +1129,7 @@ spec:
                           type: integer
                           minimum: 0
                           description: "Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1."
-                      description: Template for Kafka Bridge `PodDisruptionBudget`.
+                      description: Template for HTTP Bridge `PodDisruptionBudget`.
                     bridgeContainer:
                       type: object
                       properties:
@@ -1272,7 +1272,7 @@ spec:
                               subPathExpr:
                                 type: string
                           description: Additional volume mounts which should be applied to the container.
-                      description: Template for the Kafka Bridge container.
+                      description: Template for the HTTP Bridge container.
                     clusterRoleBinding:
                       type: object
                       properties:
@@ -1290,7 +1290,7 @@ spec:
                               type: object
                               description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
-                      description: Template for the Kafka Bridge ClusterRoleBinding.
+                      description: Template for the HTTP Bridge ClusterRoleBinding.
                     serviceAccount:
                       type: object
                       properties:
@@ -1308,7 +1308,7 @@ spec:
                               type: object
                               description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
-                      description: Template for the Kafka Bridge service account.
+                      description: Template for the HTTP Bridge service account.
                     initContainer:
                       type: object
                       properties:
@@ -1451,8 +1451,8 @@ spec:
                               subPathExpr:
                                 type: string
                           description: Additional volume mounts which should be applied to the container.
-                      description: Template for the Kafka Bridge init container.
-                  description: Template for Kafka Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
+                      description: Template for the HTTP Bridge init container.
+                  description: Template for HTTP Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
                 tracing:
                   type: object
                   properties:
@@ -1463,11 +1463,11 @@ spec:
                       description: "Type of the tracing used. Currently the only supported type is `opentelemetry` for OpenTelemetry tracing. As of Strimzi 0.37.0, `jaeger` type is not supported anymore and this option is ignored."
                   required:
                     - type
-                  description: The configuration of tracing in Kafka Bridge.
+                  description: The configuration of tracing in HTTP Bridge.
               required:
                 - replicas
                 - bootstrapServers
-              description: The specification of the Kafka Bridge.
+              description: The specification of the HTTP Bridge.
             status:
               type: object
               properties:
@@ -1497,14 +1497,14 @@ spec:
                   description: The generation of the CRD that was last reconciled by the operator.
                 url:
                   type: string
-                  description: The URL at which external client applications can access the Kafka Bridge.
+                  description: The URL at which external client applications can access the HTTP Bridge.
                 replicas:
                   type: integer
                   description: The current number of pods being used to provide this resource.
                 labelSelector:
                   type: string
                   description: Label selector for pods providing this resource.
-              description: The status of the Kafka Bridge.
+              description: The status of the HTTP Bridge.
           required:
             - spec
     - name: v1beta2
@@ -1553,7 +1553,7 @@ spec:
                   description: The number of pods in the `Deployment`. Required in the `v1` version of the Strimzi API. Defaults to `1` in the `v1beta2` version of the Strimzi API.
                 image:
                   type: string
-                  description: "The container image used for Kafka Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
+                  description: "The container image used for HTTP Bridge pods. If no image name is explicitly specified, the image name corresponds to the image specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
                 bootstrapServers:
                   type: string
                   description: A list of host:port pairs for establishing the initial connection to the Kafka cluster.
@@ -1586,7 +1586,7 @@ spec:
                         required:
                           - secretName
                       description: Trusted certificates for TLS connection.
-                  description: TLS configuration for connecting Kafka Bridge to the cluster.
+                  description: TLS configuration for connecting HTTP Bridge to the cluster.
                 authentication:
                   type: object
                   properties:
@@ -1623,7 +1623,7 @@ spec:
                           description: The name of the file certificate in the Secret.
                         key:
                           type: string
-                          description: The name of the private key in the Secret.
+                          description: "The name of the private key in the secret. The private key must be in unencrypted PKCS #8 format. For more information, see RFC 5208: https://datatracker.ietf.org/doc/html/rfc5208."
                       required:
                         - secretName
                         - certificate
@@ -1926,7 +1926,7 @@ spec:
                       description: '`ConfigMap` entry where the logging configuration is stored. '
                   required:
                     - type
-                  description: Logging configuration for Kafka Bridge.
+                  description: Logging configuration for HTTP Bridge.
                 clientRackInitImage:
                   type: string
                   description: The image of the init container used for initializing the `client.rack`.
@@ -1942,7 +1942,7 @@ spec:
                   description: Configuration of the node label which will be used as the client.rack consumer configuration.
                 enableMetrics:
                   type: boolean
-                  description: Enable the metrics for the Kafka Bridge. Default is false.
+                  description: Enable the metrics for the HTTP Bridge. Default is false.
                 metricsConfig:
                   type: object
                   properties:
@@ -2055,7 +2055,7 @@ spec:
                             - RollingUpdate
                             - Recreate
                           description: Pod replacement strategy for deployment configuration changes. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
-                      description: Template for Kafka Bridge `Deployment`.
+                      description: Template for HTTP Bridge `Deployment`.
                     pod:
                       type: object
                       properties:
@@ -2700,7 +2700,7 @@ spec:
                                   csi: {}
                                   image: {}
                           description: Additional volumes that can be mounted to the pod.
-                      description: Template for Kafka Bridge `Pods`.
+                      description: Template for HTTP Bridge `Pods`.
                     apiService:
                       type: object
                       properties:
@@ -2733,7 +2733,7 @@ spec:
                               - IPv4
                               - IPv6
                           description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6`. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting."
-                      description: Template for Kafka Bridge API `Service`.
+                      description: Template for HTTP Bridge API `Service`.
                     podDisruptionBudget:
                       type: object
                       properties:
@@ -2755,7 +2755,7 @@ spec:
                           type: integer
                           minimum: 0
                           description: "Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1."
-                      description: Template for Kafka Bridge `PodDisruptionBudget`.
+                      description: Template for HTTP Bridge `PodDisruptionBudget`.
                     bridgeContainer:
                       type: object
                       properties:
@@ -2898,7 +2898,7 @@ spec:
                               subPathExpr:
                                 type: string
                           description: Additional volume mounts which should be applied to the container.
-                      description: Template for the Kafka Bridge container.
+                      description: Template for the HTTP Bridge container.
                     clusterRoleBinding:
                       type: object
                       properties:
@@ -2916,7 +2916,7 @@ spec:
                               type: object
                               description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
-                      description: Template for the Kafka Bridge ClusterRoleBinding.
+                      description: Template for the HTTP Bridge ClusterRoleBinding.
                     serviceAccount:
                       type: object
                       properties:
@@ -2934,7 +2934,7 @@ spec:
                               type: object
                               description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
-                      description: Template for the Kafka Bridge service account.
+                      description: Template for the HTTP Bridge service account.
                     initContainer:
                       type: object
                       properties:
@@ -3077,8 +3077,8 @@ spec:
                               subPathExpr:
                                 type: string
                           description: Additional volume mounts which should be applied to the container.
-                      description: Template for the Kafka Bridge init container.
-                  description: Template for Kafka Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
+                      description: Template for the HTTP Bridge init container.
+                  description: Template for HTTP Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
                 tracing:
                   type: object
                   properties:
@@ -3090,10 +3090,10 @@ spec:
                       description: "Type of the tracing used. Currently the only supported type is `opentelemetry` for OpenTelemetry tracing. As of Strimzi 0.37.0, `jaeger` type is not supported anymore and this option is ignored."
                   required:
                     - type
-                  description: The configuration of tracing in Kafka Bridge.
+                  description: The configuration of tracing in HTTP Bridge.
               required:
                 - bootstrapServers
-              description: The specification of the Kafka Bridge.
+              description: The specification of the HTTP Bridge.
             status:
               type: object
               properties:
@@ -3123,11 +3123,11 @@ spec:
                   description: The generation of the CRD that was last reconciled by the operator.
                 url:
                   type: string
-                  description: The URL at which external client applications can access the Kafka Bridge.
+                  description: The URL at which external client applications can access the HTTP Bridge.
                 replicas:
                   type: integer
                   description: The current number of pods being used to provide this resource.
                 labelSelector:
                   type: string
                   description: Label selector for pods providing this resource.
-              description: The status of the Kafka Bridge.
+              description: The status of the HTTP Bridge.
