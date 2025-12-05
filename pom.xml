@@ -99,6 +99,8 @@
         <micrometer.version>1.14.5</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
         <commons-codec.version>1.13</commons-codec.version>
+        <commons-io.version>2.18.0</commons-io.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
         <picocli.version>4.7.7</picocli.version>
         <snakeyaml.version>2.5</snakeyaml.version>
 
@@ -609,6 +611,20 @@
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid version conflict between
+                testcontainers and mockserver uses 3.12.x whereas for testcontainers need 3.18.x -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; required by testcontainers 2.x to avoid
+                 java.lang.NoClassDefFoundError: org/apache/commons/io/file/attribute/FileTime -->
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
