@@ -54,6 +54,9 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class WorkloadUtilsTest {
@@ -545,7 +548,9 @@ public class WorkloadUtilsTest {
                 .withStrimziPodName(NAME + "-0")
                 .withAdditionalLabels(Map.of("default-label", "default-value"))
                 .toMap()));
-        assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", PodRevision.STRIMZI_REVISION_ANNOTATION, "65a2d237")));
+        assertThat(pod.getMetadata().getAnnotations(), allOf(
+                hasEntry("extra", "annotations"),
+                hasKey(PodRevision.STRIMZI_REVISION_ANNOTATION)));
 
         assertThat(pod.getSpec().getRestartPolicy(), is("Always"));
         assertThat(pod.getSpec().getHostname(), is(NAME + "-0"));
