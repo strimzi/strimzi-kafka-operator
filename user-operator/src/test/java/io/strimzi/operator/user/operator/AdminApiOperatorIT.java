@@ -47,6 +47,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
         kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
                 .withNumberOfBrokers(1)
                 .withAdditionalKafkaConfiguration(additionalConfiguration)
+                .withSharedNetwork()
                 .build();
         kafkaCluster.start();
 
