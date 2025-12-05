@@ -104,7 +104,7 @@ the documentation for more details.
 | `watchAnyNamespace`                              | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                      |
 | `defaultImageRegistry`                           | Default image registry for all the images                                       | `quay.io`                    |
 | `defaultImageRepository`                         | Default image registry for all the images                                       | `strimzi`                    |
-| `defaultImageTag`                                | Default image tag for all the images except Kafka Bridge                        | `0.49.0`                     |
+| `defaultImageTag`                                | Default image tag for all the images except Kafka Bridge                        | `0.49.1`                     |
 | `deploymentAnnotations`                          | Annotations for the operator deployment                                         | `{}`                         |
 | `image.registry`                                 | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                               | Override default Cluster Operator image repository                              | `nil`                        |
