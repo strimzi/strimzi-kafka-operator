@@ -64,6 +64,6 @@ kubectl apply -f prometheus-additional.yaml
 . Deploy the Prometheus resources:
 +
 [source,shell,subs="+quotes,attributes"]
-kubectl apply -f pod-monitors/*.yaml
-kubectl apply -f prometheus-rules/*.yaml
+kubectl apply -f pod-monitors/
+kubectl apply -f prometheus-rules/
 kubectl apply -f prometheus.yaml
