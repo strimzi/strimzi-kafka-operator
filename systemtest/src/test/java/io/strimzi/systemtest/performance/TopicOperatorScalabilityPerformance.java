@@ -6,14 +6,20 @@ package io.strimzi.systemtest.performance;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
-import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
+import io.strimzi.systemtest.performance.report.parser.BasePerformanceMetricsParser;
 import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -35,6 +41,15 @@ import java.util.Map;
 import static io.strimzi.systemtest.TestTags.PERFORMANCE;
 import static io.strimzi.systemtest.TestTags.SCALABILITY;
 
+@SuiteDoc(
+    description = @Desc("Test suite for measuring Topic Operator scalability under concurrent topic operations."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Kafka cluster with Topic Operator configured with specific resource limits and batch settings.", expected = "Kafka cluster with Topic Operator is deployed and ready.")
+    },
+    labels = {
+        @Label(TestDocsLabels.TOPIC_OPERATOR)
+    }
+)
 @Tag(PERFORMANCE)
 @Tag(SCALABILITY)
 public class TopicOperatorScalabilityPerformance extends AbstractST {
@@ -54,6 +69,21 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
     private final int maxQueueSize = Integer.MAX_VALUE;
     private long reconciliationTimeMs;
 
+    @TestDoc(
+        description = @Desc("This test measures throughput (time to process N topics in parallel), NOT latency (response time for a single topic)."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with Topic Operator configured with more resources to handle load.", expected = "Kafka cluster with Topic Operator is deployed and ready."),
+            @Step(value = "For each configured number of topics (10, 100, 500, 1000), spawn one thread per KafkaTopic to perform its full lifecycle concurrently.", expected = "N concurrent threads are created, each responsible for one KafkaTopic full lifecycle (create, modify, delete)."),
+            @Step(value = "Each thread performs CREATE: Creates KafkaTopic with specified partitions and replicas.", expected = "KafkaTopic is created and ready."),
+            @Step(value = "Each thread performs MODIFY: Updates topic configuration.", expected = "KafkaTopic is updated and reconciled."),
+            @Step(value = "Each thread performs DELETE: Deletes the KafkaTopic.", expected = "KafkaTopic is deleted from the cluster."),
+            @Step(value = "Wait for all threads to complete their full lifecycle operations and measure total elapsed time.", expected = "All KafkaTopics have completed create-modify-delete lifecycle. Total time represents THROUGHPUT capacity (time for all N topics to complete), not individual topic LATENCY."),
+            @Step(value = "Clean up any remaining topics and collect performance metrics (e.g., total time to complete all topic lifecycles) i.e., reconciliation time.", expected = "Namespace is cleaned, performance data is persisted to topic-operator report directory for analysis.")
+        },
+        labels = {
+            @Label(TestDocsLabels.TOPIC_OPERATOR)
+        }
+    )
     @IsolatedTest
     void testScalability() {
         eventBatches.forEach(numEvents -> {
@@ -149,6 +179,6 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
     @AfterAll
     void tearDown() {
         // show tables with metrics
-        TopicOperatorMetricsParser.main(new String[]{PerformanceConstants.TOPIC_OPERATOR_PARSER});
+        BasePerformanceMetricsParser.main(new String[]{PerformanceConstants.TOPIC_OPERATOR_PARSER});
     }
 }
