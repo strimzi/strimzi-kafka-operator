@@ -293,10 +293,10 @@ jobs:
       - generate-matrix
       - run-tests
     if: |-
-      ${{ 
-        always() && 
-        needs.parse-params.outputs.shouldRun == 'true' && 
-        needs.check-rights.result == 'success' && 
+      ${{
+        always() &&
+        needs.parse-params.outputs.shouldRun == 'true' &&
+        needs.check-rights.result == 'success' &&
         github.event_name != 'pull_request' &&
         needs.generate-matrix.outputs.isValid == 'true'
       }}
@@ -324,3 +324,30 @@ jobs:
           checkState: ${{ needs.run-tests.result == 'skipped' && 'neutral' || needs.run-tests.result }}
           checkName: "System tests verification"
           checkDescription: "Check for overall system test verification"
+
+  perf-report:
+    name: Performance Report
+    needs:
+      - parse-params
+      - check-rights
+      - generate-matrix
+      - run-tests
+    # Only run if performance profile/pipeline was executed
+    if: |-
+      ${{
+        always() &&
+        needs.parse-params.outputs.shouldRun == 'true' &&
+        needs.check-rights.result == 'success' &&
+        github.event_name != 'pull_request' &&
+        needs.generate-matrix.outputs.isValid == 'true' &&
+        (contains(needs.parse-params.outputs.profileList, 'performance') || contains(needs.parse-params.outputs.pipelineList, 'performance'))
+      }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.parse-params.outputs.ref }}
+      - uses: ./.github/actions/systemtests/run-perf-report

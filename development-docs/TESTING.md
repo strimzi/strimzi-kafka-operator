@@ -544,6 +544,11 @@ Evaluates user operator performance with different configurations, including:
 
 What is worth mentioning is that these capacity tests take on average **23 minutes** for the Topic Operator and **5 hours 22 minutes** for the User Operator, depending on your HW specs.
 
+> [!IMPORTANT]
+> When modifying performance attributes in test code (e.g., changing the `performanceAttributes` map in `TopicOperatorPerformance.java`, TopicOperatorScalabilityPerformance` and other performance test suites), you must also update the corresponding GitHub Actions (GHA) tests. 
+
+See the [Performance Report Tests section in .github/docs/README.md](../.github/docs/README.md#performance-report-tests) for details on maintaining test input directories and expected outputs that match the constants defined in `PerformanceConstants.java`.
+
 #### 2. Scalability Tests
 
 Scalability tests assess how well Strimzi scales as the workload increases and help identify potential bottlenecks in the system.

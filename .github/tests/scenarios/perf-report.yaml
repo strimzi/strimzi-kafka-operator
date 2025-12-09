@@ -1,0 +1,36 @@
+scenarios:
+  - id: single-arch-both-operators
+    description: "Generate performance report for single architecture with both operators"
+    event: workflow_dispatch
+    inputs:
+      performance_dir: ".github/tests/inputs/perf-report/single-arch-both-operators"
+    expectations:
+      expected_output_file: ".github/tests/expected/perf-report/single-arch-both-operators-expected.md"
+      has_results: "true"
+
+  - id: multi-arch-topic-operator
+    description: "Generate performance report for multiple architectures with topic operator"
+    event: workflow_dispatch
+    inputs:
+      performance_dir: ".github/tests/inputs/perf-report/multi-arch-topic-operator"
+    expectations:
+      expected_output_file: ".github/tests/expected/perf-report/multi-arch-topic-operator-expected.md"
+      has_results: "true"
+
+  - id: multi-arch-both-operators
+    description: "Generate performance report for multiple architectures with both operators"
+    event: workflow_dispatch
+    inputs:
+      performance_dir: ".github/tests/inputs/perf-report/multi-arch-both-operators"
+    expectations:
+      expected_output_file: ".github/tests/expected/perf-report/multi-arch-both-operators-expected.md"
+      has_results: "true"
+
+  - id: no-results
+    description: "Handle case when no performance results are found"
+    event: workflow_dispatch
+    inputs:
+      performance_dir: ".github/tests/inputs/perf-report/no-results"
+    expectations:
+      expected_output_file: ".github/tests/expected/perf-report/no-results-expected.md"
+      has_results: "false"
