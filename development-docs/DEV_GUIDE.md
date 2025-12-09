@@ -117,15 +117,16 @@ configuration of Eclipse projects for annotation processing.
 
 If you are using M2E and encounter the bug ["Path must include project and resource name: /"](https://github.com/eclipse-m2e/m2e-core/issues/1790) when importing or updating the Strimzi projects in Eclipse, you may have success working around the error/bug by making _local_ modifications to the `cluster-operator/pom.xml` and `systemtest/pom.xml`. These changes should not be committed or made a part of any PR you may open to the Strimzi project.
   1. In `cluster-operator/pom.xml` remove the following resource
-
+        ```xml
         <resource>
             <directory>..</directory>
             <includes>
                 <include>kafka-versions.yaml</include>
             </includes>
         </resource>
+        ```
   2. In `cluster-operator/pom.xml` add executions to the `maven-resources-plugin`:
-
+        ```xml
         <executions>
             <execution>
                 <id>copy-kafka-versions</id>
@@ -146,8 +147,9 @@ If you are using M2E and encounter the bug ["Path must include project and resou
                 </configuration>
             </execution>
         </executions>
+        ```
   3. In `systemtest/pom.xml` remove the resource section
-
+        ```xml
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -160,8 +162,9 @@ If you are using M2E and encounter the bug ["Path must include project and resou
                 </includes>
             </resource>
         </resources>
+        ```
   4. In `systemtest/pom.xml` add `maven-resources-plugin` configured as below:
-
+        ```xml
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-resources-plugin</artifactId>
@@ -188,6 +191,7 @@ If you are using M2E and encounter the bug ["Path must include project and resou
                 </execution>
             </executions>
         </plugin>
+        ```
 
 ### IDE build problems
 
