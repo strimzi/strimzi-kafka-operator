@@ -144,7 +144,7 @@ class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
 
     @Override
     public void parseMetrics() throws IOException {
-        this.parseLatestMetrics();
+        this.parseLatestMetrics(PerformanceConstants.TOPIC_OPERATOR_PARSER);
     }
 
     @Override
