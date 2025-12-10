@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 
@@ -20,6 +21,10 @@ import java.util.stream.Collectors;
 public class PodSetUtils {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final TypeReference<Map<String, Object>> POD_TYPE = new TypeReference<>() { };
+
+    static {
+        MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+    }
 
     /**
      * Converts Pod to Map for storing it in StrimziPodSets
