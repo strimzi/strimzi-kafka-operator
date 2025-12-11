@@ -614,14 +614,18 @@
             </dependency>
             <dependency>
                 <!-- transitive dep; override here to avoid version conflict between
-                testcontainers and mockserver uses 3.12.x whereas for testcontainers need 3.18.x -->
+                testcontainers and mockserver uses 3.12.x whereas for testcontainers need 3.18.x
+                TODO: Remove when Kafka 4.2 is released (https://github.com/apache/kafka/pull/21115 updates commons-lang3 to 3.20.0)
+                      and mockserver is replaced with alternative (https://github.com/strimzi/strimzi-kafka-operator/issues/12213) -->
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
             </dependency>
             <dependency>
                 <!-- transitive dep; required by testcontainers 2.x to avoid
-                 java.lang.NoClassDefFoundError: org/apache/commons/io/file/attribute/FileTime -->
+                 java.lang.NoClassDefFoundError: org/apache/commons/io/file/attribute/FileTime
+                 TODO: Remove when Kafka 4.2 is released (https://github.com/apache/kafka/pull/21115 updates commons-lang3 to 3.20.0)
+                       and mockserver is replaced with alternative (https://github.com/strimzi/strimzi-kafka-operator/issues/12213) -->
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
