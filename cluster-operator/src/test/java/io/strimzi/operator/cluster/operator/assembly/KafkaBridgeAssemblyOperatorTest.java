@@ -57,6 +57,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -183,7 +185,9 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List<KafkaBridge> capturedStatuses = bridgeCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUrl(), is("http://foo-bridge-service.test.svc:8080"));
                 assertThat(capturedStatuses.get(0).getStatus().getReplicas(), is(bridge.getReplicas()));
-                assertThat(capturedStatuses.get(0).getStatus().getLabelSelector(), is(bridge.getSelectorLabels().toSelectorString()));
+                List<String> expectedParts = Arrays.asList(bridge.getSelectorLabels().toSelectorString().split(","));
+                List<String> actualParts   = Arrays.asList(capturedStatuses.get(0).getStatus().getLabelSelector().split(","));
+                assertThat(actualParts, containsInAnyOrder(expectedParts.toArray(new String[0])));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), is("Ready"));
 
