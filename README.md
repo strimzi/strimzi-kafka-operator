@@ -80,20 +80,13 @@ _Note: This badge represents a community-led initiative and is not officially en
 ## Container signatures
 
 From the 0.38.0 release, Strimzi containers are signed using the [`cosign` tool](https://github.com/sigstore/cosign).
-Strimzi currently does not use the keyless signing and the transparency log.
-To verify the container, you can copy the following public key into a file:
+Strimzi uses keyless signing since 0.49.0 release. 
+To verify the container, you can run the following command:
 
-```
------BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET3OleLR7h0JqatY2KkECXhA9ZAkC
-TRnbE23Wb5AzJPnpevvQ1QUEQQ5h/I4GobB7/jkGfqYkt6Ct5WOU2cc6HQ==
------END PUBLIC KEY-----
-```
-
-And use it to verify the signature:
-
-```
-cosign verify --key strimzi.pub quay.io/strimzi/operator:latest --insecure-ignore-tlog=true
+```shell
+cosign verify --certificate-identity-regexp='https://github.com/strimzi/.*' \
+    --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
+    quay.io/strimzi/operator:latest
 ```
 
 ## Software Bill of Materials (SBOM)
@@ -101,19 +94,15 @@ cosign verify --key strimzi.pub quay.io/strimzi/operator:latest --insecure-ignor
 From the 0.38.0 release, Strimzi publishes the software bill of materials (SBOM) of our containers.
 The SBOMs are published as an archive with `SPDX-JSON` and `Syft-Table` formats signed using cosign.
 For releases, they are also pushed into the container registry.
-To verify the SBOM signatures, please use the Strimzi public key:
 
-```
------BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET3OleLR7h0JqatY2KkECXhA9ZAkC
-TRnbE23Wb5AzJPnpevvQ1QUEQQ5h/I4GobB7/jkGfqYkt6Ct5WOU2cc6HQ==
------END PUBLIC KEY-----
-```
+Strimzi uses keyless signing since 0.49.0 release.
+To verify the SBOM signatures, you can run the following command:
 
-You can use it to verify the signature of the SBOM files with the following command:
-
-```
-cosign verify-blob --key cosign.pub --bundle <SBOM-file>.bundle --insecure-ignore-tlog=true <SBOM-file>
+```shell
+cosign verify-blob --bundle <SBOM-file>.bundle \
+    --certificate-identity-regexp='https://github.com/strimzi/.*' \
+    --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
+    <SBOM-file>
 ```
 
 ---
