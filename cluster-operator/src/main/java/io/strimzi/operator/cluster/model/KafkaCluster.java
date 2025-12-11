@@ -1316,8 +1316,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     secrets.add(newCertSecret);
                 }
             } else {
-                // Certificate has not changed, but use new Secret to make sure labels etc are correct
-                secrets.add(newCertSecret);
+                // Certificate has not changed
+                secrets.add(existingCertSecret);
             }
         }
         return secrets;
