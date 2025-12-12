@@ -121,7 +121,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                 return VertxUtil.toFuture(configMapOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.configMapName(reconciliation.name()), configMap));
             })
             .compose(i -> isPodDisruptionBudgetGeneration ? VertxUtil.toFuture(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudget())) : Future.succeededFuture())
-            .compose(i -> ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
+            .compose(i -> ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, trustedCertificates))
+            .compose(certs -> ReconcilerUtils.authTlsHash(secretOperations, namespace, auth, certs))
             .compose(authTlsHash -> {
                 podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(authTlsHash));
                 return VertxUtil.toFuture(deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)));
