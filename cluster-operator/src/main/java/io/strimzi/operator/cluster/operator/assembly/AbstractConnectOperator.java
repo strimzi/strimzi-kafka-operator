@@ -277,7 +277,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return  Future which completes when the reconciliation is done
      */
-    protected Future<Void> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+    protected Future<List<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         if (connect.getTls() != null) {
             return ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, connect.getTls().getTrustedCertificates())
                     .compose(certificates -> {
@@ -286,8 +286,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                             reconciliation,
                                             namespace,
                                             KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
-                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
-                                    .mapEmpty();
+                                            connect.generateTlsTrustedCertsSecret(
+                                                Map.of("ca.crt", Util.encodeToBase64(String.join("\n", certificates))),
+                                                KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster())))
+                                    .map(certificates);
                         } else {
                             return Future.succeededFuture();
                         }
@@ -314,7 +316,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                             reconciliation,
                                             namespace,
                                             KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster()),
-                                            connect.generateTlsTrustedCertsSecret(Map.of("ca.crt", Util.encodeToBase64(certificates)), KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster())))
+                                            connect.generateTlsTrustedCertsSecret(
+                                                Map.of("ca.crt", Util.encodeToBase64(String.join("\n", certificates))),
+                                                KafkaConnectResources.internalOauthTrustedCertsSecretName(connect.getCluster())
+                                            ))
                                     .mapEmpty();
                         } else {
                             return Future.succeededFuture();

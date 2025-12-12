@@ -27,6 +27,7 @@ import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
@@ -49,6 +50,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -398,16 +400,17 @@ public class ReconcilerUtilsTest {
                 .withSecretName("css-secret")
                 .build();
 
+        String secretString = "value";
+
         Secret secret = new SecretBuilder()
-                .withData(Map.of("key", "dmFsdWU="))
+                .withData(Map.of("key", Util.encodeToBase64(secretString)))
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(secret));
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(css));
+        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(secretString));
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(true));
             // we are summing "value" hash four times
@@ -444,8 +447,10 @@ public class ReconcilerUtilsTest {
                 .withSecretName("css-secret")
                 .build();
 
+        String secretString = "value";
+
         Secret secret = new SecretBuilder()
-                .withData(Map.of("key", "dmFsdWU="))
+                .withData(Map.of("key", Util.encodeToBase64(secretString)))
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
@@ -453,73 +458,11 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(null));
         when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(secret));
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(css));
+        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(secretString));
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(false));
             assertThat(v.cause().getMessage(), is("Secret top-secret-cs not found"));
         });
-    }
-
-    @Test
-    void getHashForPattern(VertxTestContext context) {
-        String namespace = "ns";
-
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("cert-secret")
-                .withPattern("*.crt")
-                .build();
-        CertSecretSource cert2 = new CertSecretSourceBuilder()
-                .withSecretName("cert-secret2")
-                .withPattern("*.crt")
-                .build();
-        CertSecretSource cert3 = new CertSecretSourceBuilder()
-                .withSecretName("cert-secret3")
-                .withCertificate("my.crt")
-                .build();
-
-        Secret secret = new SecretBuilder()
-                .withData(Map.of("ca.crt", "dmFsdWU=", "ca2.crt", "dmFsdWUy"))
-                .build();
-        Secret secret2 = new SecretBuilder()
-                .withData(Map.of("ca3.crt", "dmFsdWUz", "ca4.crt", "dmFsdWU0"))
-                .build();
-        Secret secret3 = new SecretBuilder()
-                .withData(Map.of("my.crt", "dmFsdWU1"))
-                .build();
-
-        SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret2"))).thenReturn(Future.succeededFuture(secret2));
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret3"))).thenReturn(Future.succeededFuture(secret3));
-
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.authTlsHash(secretOps, "ns", null, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, is("value\nvalue2".hashCode() + "value3\nvalue4".hashCode() + "value5".hashCode()));
-            async.flag();
-        }));
-    }
-
-    @Test
-    void getHashPatternNotMatching(VertxTestContext context) {
-        String namespace = "ns";
-
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("cert-secret")
-                .withPattern("*.pem")
-                .build();
-
-        Secret secret = new SecretBuilder()
-                .withData(Map.of("ca.crt", "value", "ca2.crt", "value2"))
-                .build();
-
-        SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
-
-        Checkpoint async = context.checkpoint();
-        ReconcilerUtils.authTlsHash(secretOps, "ns", null, singletonList(cert1)).onComplete(context.succeeding(res -> {
-            assertThat(res, is(0));
-            async.flag();
-        }));
     }
 
     @Test
@@ -699,7 +642,7 @@ public class ReconcilerUtilsTest {
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, is("value\nvalue2\nvalue3\nvalue5"));
+            assertThat(res, contains("value\nvalue2", "value3", "value5"));
             async.flag();
         }));
     }
