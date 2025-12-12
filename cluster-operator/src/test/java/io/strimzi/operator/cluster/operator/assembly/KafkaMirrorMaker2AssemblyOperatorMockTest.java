@@ -65,7 +65,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.IsNot.not;
@@ -543,7 +542,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     }
 
     @Test
-    public void testConnectorDeprecatedVersionConfig(VertxTestContext context) {
+    public void testConnectorForbiddenVersionConfig(VertxTestContext context) {
         String connectorName = "source->target.MirrorSourceConnector";
         Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
                 .withNewMetadata()
@@ -583,66 +582,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     ArgumentCaptor<JsonObject> configJsonCaptor = ArgumentCaptor.forClass(JsonObject.class);
                     verify(connectApi).createOrUpdatePutRequest(any(), any(), anyInt(), eq(connectorName), configJsonCaptor.capture());
-                    assertThat(configJsonCaptor.getValue().getString("connector.plugin.version"), is("[0.1.0,)"));
-
-                    List<Condition> conditions = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get().getStatus().getConditions();
-                    List<String> deprecatedFieldsConditionMessages = conditions.stream().filter(condition -> "DeprecatedFields".equals(condition.getReason()))
-                            .map(Condition::getMessage)
-                            .toList();
-                    assertThat(deprecatedFieldsConditionMessages, hasItems("Config option connector.plugin.version has been set under the config field. This is deprecated and will be forbidden in future. Use version field instead."));
-                    async.flag();
-                })));
-    }
-
-    @Test
-    public void testConnectorVersionOverride(VertxTestContext context) {
-        String connectorName = "source->target.MirrorSourceConnector";
-        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
-                .withNewMetadata()
-                    .withName(CLUSTER_NAME)
-                    .withNamespace(namespace)
-                    .withLabels(Map.of("foo", "bar"))
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(REPLICAS)
-                    .withConnectCluster("target")
-                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
-                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
-                    .withMirrors(
-                            new KafkaMirrorMaker2MirrorSpecBuilder()
-                                    .withSourceCluster("source")
-                                    .withTargetCluster("target")
-                                    .withNewSourceConnector()
-                                        .withTasksMax(1)
-                                        .withVersion("[0.2.0,)")
-                                        .withConfig(Map.of("replication.factor", -1, "connector.plugin.version", "[0.1.0,)"))
-                                    .endSourceConnector()
-                                    .build()
-                    )
-                    .endSpec()
-                .build()).create();
-
-        KafkaConnectApi connectApi = mock(KafkaConnectApi.class);
-        when(connectApi.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
-        when(connectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.failedFuture(new ConnectRestException("maybeCreateOrUpdateConnector", "", 404, "error", "error")));
-        when(connectApi.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(Map.of()));
-        when(connectApi.status(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RUNNING"))));
-        when(connectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RUNNING"))));
-        when(connectApi.getConnectorTopics(any(), any(), anyInt(), eq(connectorName))).thenReturn(CompletableFuture.completedFuture(List.of()));
-
-        Checkpoint async = context.checkpoint();
-
-        createMirrorMaker2Cluster(context, connectApi, false)
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    ArgumentCaptor<JsonObject> configJsonCaptor = ArgumentCaptor.forClass(JsonObject.class);
-                    verify(connectApi).createOrUpdatePutRequest(any(), any(), anyInt(), eq(connectorName), configJsonCaptor.capture());
-                    assertThat(configJsonCaptor.getValue().getString("connector.plugin.version"), is("[0.2.0,)"));
-
-                    List<Condition> conditions = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get().getStatus().getConditions();
-                    List<String> deprecatedFieldsConditionMessages = conditions.stream().filter(condition -> "DeprecatedFields".equals(condition.getReason()))
-                            .map(Condition::getMessage)
-                            .toList();
-                    assertThat(deprecatedFieldsConditionMessages, hasItems("Config option connector.plugin.version has been set under the config field. This is deprecated and will be forbidden in future. Use version field instead."));
+                    // there is no config, because `connector.plugin.version` is forbidden, thus checking if the JSONObject is null
+                    assertThat(configJsonCaptor.getValue(), is(null));
                     async.flag();
                 })));
     }
