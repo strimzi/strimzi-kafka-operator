@@ -89,6 +89,21 @@ cosign verify --certificate-identity-regexp='https://github.com/strimzi/.*' \
     quay.io/strimzi/operator:latest
 ```
 
+In case you want to verify containers of older version of Strimzi than 0.49.0, then use our public key:
+
+```
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET3OleLR7h0JqatY2KkECXhA9ZAkC
+TRnbE23Wb5AzJPnpevvQ1QUEQQ5h/I4GobB7/jkGfqYkt6Ct5WOU2cc6HQ==
+-----END PUBLIC KEY-----
+```
+
+And use it to verify the signature:
+
+```shell
+cosign verify --key strimzi.pub quay.io/strimzi/operator:latest --insecure-ignore-tlog=true
+```
+
 ## Software Bill of Materials (SBOM)
 
 From the 0.38.0 release, Strimzi publishes the software bill of materials (SBOM) of our containers.
@@ -103,6 +118,21 @@ cosign verify-blob --bundle <SBOM-file>.bundle \
     --certificate-identity-regexp='https://github.com/strimzi/.*' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     <SBOM-file>
+```
+
+In case you want to verify SBOM signatures of older version of Strimzi than 0.49.0, then use our public key:
+
+```
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET3OleLR7h0JqatY2KkECXhA9ZAkC
+TRnbE23Wb5AzJPnpevvQ1QUEQQ5h/I4GobB7/jkGfqYkt6Ct5WOU2cc6HQ==
+-----END PUBLIC KEY-----
+```
+
+You can use it to verify the signature of the SBOM files with the following command:
+
+```shell
+cosign verify-blob --key cosign.pub --bundle <SBOM-file>.bundle --insecure-ignore-tlog=true <SBOM-file>
 ```
 
 ---
