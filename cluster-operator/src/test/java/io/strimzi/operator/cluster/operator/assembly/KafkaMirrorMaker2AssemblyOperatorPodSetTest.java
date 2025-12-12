@@ -838,7 +838,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
                     assertThat(mm2Status.getUrl(), is("http://my-mm2-mirrormaker2-api.my-namespace.svc:8083"));
                     assertThat(mm2Status.getReplicas(), is(3));
-                    assertThat(mm2Status.getLabelSelector(), is("strimzi.io/cluster=my-mm2,strimzi.io/name=my-mm2-mirrormaker2,strimzi.io/kind=KafkaMirrorMaker2"));
+                    // Compare as Sets to avoid order-dependent flakiness due to HashMap iteration order in labelSelector
+                    assertThat(Set.of(mm2Status.getLabelSelector().split(",")), is(Set.of("strimzi.io/cluster=my-mm2", "strimzi.io/name=my-mm2-mirrormaker2", "strimzi.io/kind=KafkaMirrorMaker2")));
                     assertThat(mm2Status.getConditions().get(0).getStatus(), is("True"));
                     assertThat(mm2Status.getConditions().get(0).getType(), is("NotReady"));
 
