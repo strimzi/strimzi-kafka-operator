@@ -2,7 +2,11 @@
 
 ## 0.50.0
 
-* Configuration for specifying Connector version - `connector.plugin.version` - was added to list of forbidden options, `spec.version` in `KafkaConnector` custom resource and `version` field in `spec.mirrors[]` in the `KafkaMirrorMaker2` custom resource should be used instead.
+* Nothing here yet, but we will surely develop something new pretty soon 😉
+
+### Major changes, deprecations, and removals
+
+* `connector.plugin.version` option is now forbidden in `KafkaConnect` CR in `.spec.config` and in `KafkaMirrorMaker2` CR in `.spec.mirrors[].sourceConnector.config` and `.spec.mirrors[].checkpointConnector.config`. Please use the dedicated `version` field instead.
 
 ## 0.49.1
 

@@ -582,8 +582,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     ArgumentCaptor<JsonObject> configJsonCaptor = ArgumentCaptor.forClass(JsonObject.class);
                     verify(connectApi).createOrUpdatePutRequest(any(), any(), anyInt(), eq(connectorName), configJsonCaptor.capture());
-                    // there is no config, because `connector.plugin.version` is forbidden, thus checking if the JSONObject is null
-                    assertThat(configJsonCaptor.getValue(), is(null));
+                    // `connector.plugin.version` is forbidden, so the config JSON will not contain this key
+                    assertThat(configJsonCaptor.getValue().containsKey("connector.plugin.version"), is(false));
                     async.flag();
                 })));
     }
