@@ -2,7 +2,7 @@
 
 ## 0.50.0
 
-* Nothing here yet, but we will surely develop something new pretty soon 😉
+* Configuration for specifying Connector version - `connector.plugin.version` - was added to list of forbidden options, `spec.version` in `KafkaConnector` custom resource and `version` field in `spec.mirrors[]` in the `KafkaMirrorMaker2` custom resource should be used instead.
 
 ## 0.49.1
 
