@@ -302,7 +302,7 @@ spec:
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
-                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max."
+                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max, connector.plugin.version."
                         state:
                           type: string
                           enum:
@@ -358,7 +358,7 @@ spec:
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
-                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max."
+                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max, connector.plugin.version."
                         state:
                           type: string
                           enum:
@@ -3441,7 +3441,7 @@ spec:
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
-                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max."
+                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max, connector.plugin.version."
                         state:
                           type: string
                           enum:
@@ -3500,7 +3500,7 @@ spec:
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
-                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max."
+                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max, connector.plugin.version."
                         state:
                           type: string
                           enum:
@@ -3559,7 +3559,7 @@ spec:
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
-                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max."
+                          description: "The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max, connector.plugin.version."
                         state:
                           type: string
                           enum:

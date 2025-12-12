@@ -4107,7 +4107,7 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
 |config
 |map
-|The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max.
+|The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max, connector.plugin.version.
 |pause
 |boolean
 |**The `pause` property has been deprecated.** Deprecated in Strimzi 0.38.0, use state instead. Whether the connector should be paused. Defaults to false.
@@ -4451,7 +4451,7 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 |Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.
 |config
 |map
-|The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max.
+|The Kafka Connector configuration. The following properties cannot be set: name, connector.class, tasks.max, connector.plugin.version.
 |state
 |string (one of [running, paused, stopped])
 |The state the connector should be in. Defaults to running.

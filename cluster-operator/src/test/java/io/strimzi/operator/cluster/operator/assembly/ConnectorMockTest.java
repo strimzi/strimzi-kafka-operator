@@ -2598,7 +2598,7 @@ public class ConnectorMockTest {
 
     /** Create connect, create connector with version specified under config */
     @Test
-    public void testConnectorDeprecatedVersionConfig() {
+    public void testConnectorForbiddenVersionConfig() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -2641,23 +2641,26 @@ public class ConnectorMockTest {
                 .build();
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
         waitForConnectorReady(connectorName);
-        waitForConnectorCondition(connectorName, "Warning", "DeprecatedFields");
 
         verify(api, times(2)).list(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT));
 
-        ArgumentCaptor<JsonObject> connectorConfig =  ArgumentCaptor.forClass(JsonObject.class);
+        ArgumentCaptor<JsonObject> connectorConfig = ArgumentCaptor.forClass(JsonObject.class);
         verify(api, times(1)).createOrUpdatePutRequest(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), connectorConfig.capture());
-        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectordeprecatedversionconfig.svc", connectorName))));
+        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectorforbiddenversionconfig.svc", connectorName))));
 
-        assertThat(connectorConfig.getValue().getString("connector.plugin.version"), is("[0.1.0,)"));
+        // There is no such configuration, as the `connector.plugin.version` config is forbidden and therefore ignored
+        assertThat(connectorConfig.getValue().containsKey("connector.plugin.version"), is(false));
     }
 
-    /** Create connect, create connector with version range and version specified under config, version field takes precedence */
+    /**
+     * Create connect, create connector with version range and version specified under config, version field is taken,
+     * version in config is ignored
+     */
     @Test
-    public void testConnectorVersionOverride() {
+    public void testConnectorVersionInConfigIgnored() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -2701,7 +2704,6 @@ public class ConnectorMockTest {
                 .build();
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
         waitForConnectorReady(connectorName);
-        waitForConnectorCondition(connectorName, "Warning", "DeprecatedFields");
 
         verify(api, times(2)).list(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT));
@@ -2710,7 +2712,7 @@ public class ConnectorMockTest {
         verify(api, times(1)).createOrUpdatePutRequest(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), connectorConfig.capture());
-        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectorversionoverride.svc", connectorName))));
+        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectorversioninconfigignored.svc", connectorName))));
 
         assertThat(connectorConfig.getValue().getString("connector.plugin.version"), is("[0.2.0,)"));
     }
