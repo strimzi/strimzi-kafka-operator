@@ -2102,13 +2102,13 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     .withNewTls()
                         .withTrustedCertificates(List.of(
                                 new CertSecretSourceBuilder()
-                                        .withSecretName("shared-tls-secret")
-                                        .withCertificate("ca.crt")
-                                        .build(),
+                                    .withSecretName("shared-tls-secret")
+                                    .withCertificate("ca.crt")
+                                    .build(),
                                 new CertSecretSourceBuilder()
-                                        .withSecretName("shared-tls-secret")
-                                        .withCertificate("ca2.crt")
-                                        .build()
+                                    .withSecretName("shared-tls-secret")
+                                    .withCertificate("ca2.crt")
+                                    .build()
                         ))
                     .endTls()
                 .endSpec()
@@ -2147,11 +2147,11 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
         // Mock Secrets - the shared TLS secret referenced multiple times
         Secret tlsSecret = new SecretBuilder()
-                .withNewMetadata().withName("shared-tls-secret").endMetadata()
-                .withData(Map.of(
-                        "ca.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----"),
-                        "ca2.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert-2\n-----END CERTIFICATE-----")))
-                .build();
+            .withNewMetadata().withName("shared-tls-secret").endMetadata()
+            .withData(Map.of(
+                "ca.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----"),
+                "ca2.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert-2\n-----END CERTIFICATE-----")))
+            .build();
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
