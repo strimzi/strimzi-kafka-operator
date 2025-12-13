@@ -7,7 +7,7 @@ package io.strimzi.operator.user.operator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.user.model.KafkaUserModel;
-import io.strimzi.test.container.StrimziKafkaContainer;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +36,7 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
     public static final String SCRAM_USERNAME = "my-user";
     public static final String TLS_USERNAME = "CN=my-user";
 
-    private static StrimziKafkaContainer kafkaContainer;
+    private static StrimziKafkaCluster kafkaCluster;
     protected static Admin adminClient;
 
     @BeforeAll
@@ -44,13 +44,15 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
         Map<String, String> additionalConfiguration = Map.of(
             "authorizer.class.name", "org.apache.kafka.metadata.authorizer.StandardAuthorizer",
             "super.users", "User:ANONYMOUS");
-        kafkaContainer = new StrimziKafkaContainer()
-                .withBrokerId(1)
-                .withKafkaConfigurationMap(additionalConfiguration);
-        kafkaContainer.start();
+        kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withNumberOfBrokers(1)
+                .withAdditionalKafkaConfiguration(additionalConfiguration)
+                .withSharedNetwork()
+                .build();
+        kafkaCluster.start();
 
         Properties p = new Properties();
-        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers());
+        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers());
         adminClient = Admin.create(p);
     }
 
@@ -59,8 +61,9 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
         if (adminClient != null) {
             adminClient.close();
         }
-
-        kafkaContainer.stop();
+        if (kafkaCluster != null) {
+            kafkaCluster.stop();
+        }
     }
 
     abstract AdminApiOperator<T, S> operator();
