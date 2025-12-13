@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -682,8 +683,8 @@ public class KubernetesRestartEventsMockTest {
                 365,
                 30,
                 true,
-                null
-        );
+                CertificateManagerType.STRIMZI_IO,
+                null);
     }
 
     private void patchClusterCaKeySecretWithAnnotation(String annotation, String value) {
