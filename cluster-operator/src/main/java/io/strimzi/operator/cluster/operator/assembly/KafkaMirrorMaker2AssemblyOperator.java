@@ -111,6 +111,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         String namespace = reconciliation.namespace();
 
         Map<String, String> podAnnotations = new HashMap<>(1);
+        Map<String, List<String>> clusterCerts = new HashMap<>(mirrorMaker2Cluster.clusters().size());
 
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
 
@@ -128,8 +129,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> manualRollingUpdate(reconciliation, mirrorMaker2Cluster))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generateHeadlessService()))
-                .compose(i -> tlsTrustedCertsSecret(reconciliation, namespace, mirrorMaker2Cluster))
-                .compose(certs -> generateAuthHash(namespace, mirrorMaker2Cluster, certs))
+                .compose(i -> updateMM2ClusterCertificateMap(reconciliation, mirrorMaker2Cluster, clusterCerts))
+                .compose(i -> {
+                    List<String> targetClusterCerts = clusterCerts.get(kafkaMirrorMaker2.getSpec().getTarget().getAlias());
+                    return tlsTrustedCertsSecret(reconciliation, namespace, mirrorMaker2Cluster, targetClusterCerts);
+                })
+                .compose(i -> generateAuthHash(namespace, mirrorMaker2Cluster, clusterCerts))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     return Future.succeededFuture();
@@ -192,13 +197,14 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      *
      * @param namespace               Namespace of the MirrorMaker2 cluster
      * @param mirrorMaker2Cluster     KafkaMirrorMaker2 cluster model
-     * @param certificates            List of trusted certificates
+     * @param clusterCert             Map of certificates for all clusters
      *
      * @return                        Future for tracking the asynchronous result of generating the TLS auth hash
      */
-    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, List<String> certificates) {
+    private Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster, Map<String, List<String>> clusterCert) {
         Promise<Integer> authHash = Promise.promise();
 
+        List<String> certificates = clusterCert.values().stream().flatMap(List::stream).toList();
         Future.join(mirrorMaker2Cluster
                         .clusters()
                         .stream()
@@ -301,6 +307,19 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         StatusUtils.setStatusConditionAndObservedGeneration(mirrorMaker2, status, error);
         return maybeUpdateStatusCommon(resourceOperator, mirrorMaker2, reconciliation, status,
             (mirror1, status2) -> new KafkaMirrorMaker2Builder(mirror1).withStatus(status2).build());
+    }
+
+    private Future<?> updateMM2ClusterCertificateMap(Reconciliation reconciliation, KafkaMirrorMaker2Cluster mirrorMaker2, Map<String, List<String>> clusterCerts) {
+        return Future.join(mirrorMaker2.clusters().stream().map(cluster ->
+            ReconcilerUtils.trustedCertificates(reconciliation, secretOperations, cluster.getTls().getTrustedCertificates())
+                .compose(certs -> {
+                    if (certs != null) {
+                        // Duplicate check is done in KafkaMirrorMaker2Cluster::validateAndUpdateToNewAPI
+                        clusterCerts.put(cluster.getAlias(), certs);
+                    }
+                    return Future.succeededFuture();
+                }))
+                .toList());
     }
 
     // Methods for working with connector restarts
