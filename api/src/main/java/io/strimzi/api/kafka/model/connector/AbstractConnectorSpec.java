@@ -36,7 +36,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     /**
      * Forbidden options in the connector configuration => these are full options and not prefixes
      */
-    public static final String FORBIDDEN_PARAMETERS = "name, connector.class, tasks.max";
+    public static final String FORBIDDEN_PARAMETERS = "name, connector.class, tasks.max, connector.plugin.version";
 
     private Integer tasksMax;
     private Boolean pause;

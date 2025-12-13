@@ -435,22 +435,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected Future<ConnectorStatusAndConditions> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                                 String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
         KafkaConnectorConfiguration desiredConfig = new KafkaConnectorConfiguration(reconciliation, connectorSpec.getConfig().entrySet());
-        // In Strimzi 0.50.0 connector.plugin.version will be added to forbidden list, for now add warning to conditions if specified
-        // Work for removing this is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/12027
-        List<Condition> initialConditions = new ArrayList<>();
-        if (desiredConfig.getConfigOption("connector.plugin.version") != null) {
-            String message = "Config option connector.plugin.version has been set under the config field. This is deprecated and will be forbidden in future. " +
-                    "Use version field instead.";
-            LOGGER.warnCr(reconciliation, message);
-            initialConditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", message));
-        }
 
         return VertxUtil.completableFutureToVertxFuture(apiClient.getConnectorConfig(reconciliation, new BackOff(200L, 2, 6), host, port, connectorName)).compose(
             currentConfig -> {
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, desiredConfig.asOrderedProperties().asMap(), currentConfig)) {
                     LOGGER.debugCr(reconciliation, "Connector {} exists and has desired config, {}=={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
                     return VertxUtil.completableFutureToVertxFuture(apiClient.status(reconciliation, host, port, connectorName))
-                        .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, initialConditions))
+                        .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, new ArrayList<>()))
                         .compose(conditions -> manageConnectorOffsets(reconciliation, host, apiClient, connectorName, resource, connectorSpec, conditions))
                         .compose(conditions -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, conditions))
@@ -461,7 +452,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 } else {
                     LOGGER.debugCr(reconciliation, "Connector {} exists but does not have desired config, {}!={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
-                        .compose(createConnectorStatusAndConditions(initialConditions))
+                        .compose(createConnectorStatusAndConditions())
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 }
             },
@@ -470,7 +461,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         && ((ConnectRestException) error).getStatusCode() == 404) {
                     LOGGER.debugCr(reconciliation, "Connector {} does not exist", connectorName);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
-                        .compose(createConnectorStatusAndConditions(initialConditions))
+                        .compose(createConnectorStatusAndConditions())
                         .compose(status -> autoRestartFailedConnectorAndTasks(reconciliation, host, apiClient, connectorName, connectorSpec, status, resource))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
