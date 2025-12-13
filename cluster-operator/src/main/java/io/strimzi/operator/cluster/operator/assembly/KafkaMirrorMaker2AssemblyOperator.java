@@ -132,11 +132,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     List<String> targetClusterCerts = clusterCerts.get(kafkaMirrorMaker2.getSpec().getTarget().getAlias());
                     return tlsTrustedCertsSecret(reconciliation, namespace, mirrorMaker2Cluster, targetClusterCerts);
                 })
-                .compose(i -> generateAuthHash(namespace, mirrorMaker2Cluster, clusterCerts))
-                .compose(hash -> {
-                    podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
-                    return Future.succeededFuture();
-                })
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, mirrorMaker2Cluster))
                 .compose(logAndMetricsConfigMap -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH, Util.hashStub(logAndMetricsConfigMap.getData().get(KafkaMirrorMaker2Cluster.KAFKA_CONNECT_CONFIGURATION_FILENAME)));
@@ -144,6 +139,11 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, mirrorMaker2Cluster))
                 .compose(i -> connectPodDisruptionBudget(reconciliation, namespace, mirrorMaker2Cluster))
+                .compose(i -> generateAuthHash(namespace, mirrorMaker2Cluster, clusterCerts))
+                .compose(hash -> {
+                    podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
+                    return Future.succeededFuture();
+                })
                 .compose(i -> reconcilePodSet(reconciliation, mirrorMaker2Cluster, podAnnotations, null, null))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
                 .map((Void) null)
