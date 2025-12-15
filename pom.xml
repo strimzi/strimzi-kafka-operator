@@ -99,6 +99,8 @@
         <micrometer.version>1.14.5</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
         <commons-codec.version>1.13</commons-codec.version>
+        <commons-io.version>2.18.0</commons-io.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
         <picocli.version>4.7.7</picocli.version>
         <snakeyaml.version>2.5</snakeyaml.version>
 
@@ -107,13 +109,13 @@
         <mockito.version>4.11.0</mockito.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>6.0.0</jupiter.version>
-        <strimzi-test-container.version>0.113.0</strimzi-test-container.version>
+        <strimzi-test-container.version>0.114.0</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <valid4j.version>1.1</valid4j.version>
         <javax.json.version>1.1.4</javax.json.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
-        <kindcontainer.version>1.4.10</kindcontainer.version>
-        <testcontainer.version>1.21.3</testcontainer.version>
+        <kindcontainer.version>2.0.0</kindcontainer.version>
+        <testcontainer.version>2.0.2</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
         <skodjob.test-frame.version>1.3.0</skodjob.test-frame.version>
@@ -609,6 +611,26 @@
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; override here to avoid version conflict between
+                testcontainers and mockserver uses 3.12.x whereas for testcontainers need 3.18.x
+                TODO: Remove when Kafka 4.2 is released (https://github.com/apache/kafka/pull/21115
+                  updates commons-lang3 to 3.20.0) and mockserver is replaced with alternative
+                  (https://github.com/strimzi/strimzi-kafka-operator/issues/12213) -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <!-- transitive dep; required by testcontainers 2.x to avoid
+                 java.lang.NoClassDefFoundError: org/apache/commons/io/file/attribute/FileTime
+                 TODO: Remove when Kafka 4.2 is released (https://github.com/apache/kafka/pull/21115
+                  updates commons-lang3 to 3.20.0) and mockserver is replaced with alternative
+                  (https://github.com/strimzi/strimzi-kafka-operator/issues/12213) -->
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentelemetry</groupId>
