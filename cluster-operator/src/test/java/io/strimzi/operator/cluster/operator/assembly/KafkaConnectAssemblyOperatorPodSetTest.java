@@ -71,6 +71,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,6 +88,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -412,7 +414,9 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
                     assertThat(connectStatus.getUrl(), is("http://my-connect-connect-api.my-namespace.svc:8083"));
                     assertThat(connectStatus.getReplicas(), is(3));
-                    assertThat(connectStatus.getLabelSelector(), is("strimzi.io/cluster=my-connect,strimzi.io/name=my-connect-connect,strimzi.io/kind=KafkaConnect"));
+                    List<String> actualParts = Arrays.asList(connectStatus.getLabelSelector().split(","));
+                    List<String> expectedParts = List.of("strimzi.io/cluster=my-connect", "strimzi.io/name=my-connect-connect", "strimzi.io/kind=KafkaConnect");
+                    assertThat(actualParts, containsInAnyOrder(expectedParts.toArray(new String[0])));
                     assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                     assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
