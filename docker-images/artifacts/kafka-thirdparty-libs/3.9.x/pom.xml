@@ -416,5 +416,11 @@
             <artifactId>kafka-env-var-config-provider</artifactId>
             <version>${kafka-env-var-config-provider.version}</version>
         </dependency>
+        <!-- Adding nimbus-jose-jwt as a direct dependency to remediate CVE-2025-53864 -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>${nimbus-jose-jwt.version}</version>
+        </dependency>
     </dependencies>
 </project>
