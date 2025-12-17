@@ -966,7 +966,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Admin adminClient(Set<NodeRef> nodes, boolean b) throws ForceableProblem, FatalProblem {
+        protected Admin adminClient(Set<NodeRef> nodes, boolean b) throws ForceableProblem {
             if (delegateAdminClientCall) {
                 return super.adminClient(nodes, b);
             }
