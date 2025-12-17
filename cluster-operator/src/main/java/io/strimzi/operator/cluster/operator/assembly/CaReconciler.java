@@ -430,7 +430,6 @@ public class CaReconciler {
                     if (clusterCaCertManagerType == CertificateManagerType.CERT_MANAGER_IO) {
                         Secret newCoSecret = CertManagerUtils.buildTrustedCertificateSecretFromCertManager(
                                 clusterCa,
-                                null, //we don't need the Clients CA generation present on this Secret
                                 certManagerSecret,
                                 reconciliation.namespace(),
                                 KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
