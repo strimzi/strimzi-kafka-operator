@@ -2598,7 +2598,7 @@ public class ConnectorMockTest {
 
     /** Create connect, create connector with version specified under config */
     @Test
-    public void testConnectorDeprecatedVersionConfig() {
+    public void testConnectorForbiddenVersionConfig() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -2641,78 +2641,18 @@ public class ConnectorMockTest {
                 .build();
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
         waitForConnectorReady(connectorName);
-        waitForConnectorCondition(connectorName, "Warning", "DeprecatedFields");
 
         verify(api, times(2)).list(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT));
 
-        ArgumentCaptor<JsonObject> connectorConfig =  ArgumentCaptor.forClass(JsonObject.class);
+        ArgumentCaptor<JsonObject> connectorConfig = ArgumentCaptor.forClass(JsonObject.class);
         verify(api, times(1)).createOrUpdatePutRequest(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), connectorConfig.capture());
-        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectordeprecatedversionconfig.svc", connectorName))));
+        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectorforbiddenversionconfig.svc", connectorName))));
 
-        assertThat(connectorConfig.getValue().getString("connector.plugin.version"), is("[0.1.0,)"));
-    }
-
-    /** Create connect, create connector with version range and version specified under config, version field takes precedence */
-    @Test
-    public void testConnectorVersionOverride() {
-        String connectName = "cluster";
-        String connectorName = "connector";
-
-        // Create KafkaConnect cluster and wait till it's ready
-        KafkaConnect connect = new KafkaConnectBuilder()
-                .withNewMetadata()
-                    .withNamespace(namespace)
-                    .withName(connectName)
-                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-                .endMetadata()
-                    .withNewSpec()
-                    .withReplicas(1)
-                    .withBootstrapServers("my-kafka:9092")
-                .endSpec()
-                .build();
-        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
-
-        waitForConnectReady(connectName);
-
-        // could be triggered twice (creation followed by status update) but waitForConnectReady could be satisfied with single
-        verify(api, atLeastOnce()).list(any(),
-                eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT));
-
-        verify(api, never()).createOrUpdatePutRequest(any(),
-                eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
-                eq(connectorName), any());
-
-        // Create KafkaConnector and wait till it's ready
-        KafkaConnector connector = new KafkaConnectorBuilder()
-                .withNewMetadata()
-                    .withName(connectorName)
-                    .withNamespace(namespace)
-                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
-                .endMetadata()
-                .withNewSpec()
-                    .withTasksMax(1)
-                    .withClassName("Dummy")
-                    .withVersion("[0.2.0,)")
-                    .withConfig(Map.of("connector.plugin.version", "[0.1.0,)"))
-                .endSpec()
-                .build();
-        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
-        waitForConnectorReady(connectorName);
-        waitForConnectorCondition(connectorName, "Warning", "DeprecatedFields");
-
-        verify(api, times(2)).list(any(),
-                eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT));
-
-        ArgumentCaptor<JsonObject> connectorConfig =  ArgumentCaptor.forClass(JsonObject.class);
-        verify(api, times(1)).createOrUpdatePutRequest(any(),
-                eq(KafkaConnectResources.qualifiedServiceName(connectName, namespace)), eq(KafkaConnectCluster.REST_API_PORT),
-                eq(connectorName), connectorConfig.capture());
-        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectorversionoverride.svc", connectorName))));
-
-        assertThat(connectorConfig.getValue().getString("connector.plugin.version"), is("[0.2.0,)"));
+        // There is no such configuration, as the `connector.plugin.version` config is forbidden and therefore ignored
+        assertThat(connectorConfig.getValue().containsKey("connector.plugin.version"), is(false));
     }
 
     // Utility record used during tests

@@ -4,6 +4,10 @@
 
 * Nothing here yet, but we will surely develop something new pretty soon 😉
 
+### Major changes, deprecations, and removals
+
+* `connector.plugin.version` option is now forbidden in `KafkaConnect` CR in `.spec.config` and in `KafkaMirrorMaker2` CR in `.spec.mirrors[].sourceConnector.config` and `.spec.mirrors[].checkpointConnector.config`. Please use the dedicated `version` field instead.
+
 ## 0.49.1
 
 * Fixed TLS configuration in MirrorMaker 2 examples
