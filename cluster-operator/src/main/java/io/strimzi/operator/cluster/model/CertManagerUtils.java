@@ -107,6 +107,26 @@ public class CertManagerUtils {
      * Used when cert-manager has issued the CA Secret.
      *
      * @param clusterCa         The Cluster CA
+     * @param certManagerSecret cert-manager Secret containing the Cluster CA
+     * @param namespace         Namespace for the Secret
+     * @param secretName        Name of the Secret
+     * @param keyCertName       Key under which the certificate will be stored in the new Secret
+     * @param labels            Labels
+     * @param ownerReference    Owner reference
+     * @return Newly built Secret
+     */
+    public static Secret buildTrustedCertificateSecretFromCertManager(ClusterCa clusterCa, Secret certManagerSecret, String namespace,
+                                                                      String secretName, String keyCertName, Labels labels,
+                                                                      OwnerReference ownerReference) {
+        // TO, UO, KE etc do not track the clientsCa generation annotation on their Secret, so pass null
+        return buildTrustedCertificateSecretFromCertManager(clusterCa, null, certManagerSecret, namespace, secretName, keyCertName, labels, ownerReference);
+    }
+
+    /**
+     * Builds a certificate Secret based on the cert-manager provided Secret.
+     * Used when cert-manager has issued the CA Secret.
+     *
+     * @param clusterCa         The Cluster CA
      * @param clientsCa         The Clients CA. If this is not null the Clients CA generation is added
      * @param certManagerSecret cert-manager Secret containing the Cluster CA
      * @param namespace         Namespace for the Secret

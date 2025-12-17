@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.certmanager.api.model.v1.Certificate;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -33,14 +34,19 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.PemTrustSet;
+import io.strimzi.operator.common.model.Ca;
 import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
+import static io.strimzi.operator.common.model.Ca.x509Certificate;
 
 /**
  * Kafka Exporter model
@@ -284,8 +290,24 @@ public class KafkaExporter extends AbstractModel {
     }
 
     /**
+     * Creates the Certificate resource for the Kafka Exporter used when cert-manager is issuing certificates
+     *
+     * @param clusterCa                 The CA for cluster certificates
+     *
+     * @return List of Certificate resources
+     */
+    public Certificate generateCertificateResource(ClusterCa clusterCa) {
+        return CertManagerUtils.buildCertManagerCertificate(namespace,
+                KafkaExporterResources.secretName(cluster),
+                clusterCa.getCertManagerCert(componentName, Ca.IO_STRIMZI),
+                labels,
+                ownerReference);
+    }
+
+    /**
      * Generate the Secret containing the Kafka Exporter certificate signed by the cluster CA certificate used for TLS based
      * internal communication with Kafka. It also contains the related Kafka Exporter private key.
+     * Used when Strimzi is issuing certificates.
      *
      * @param clusterCa                             The cluster CA.
      * @param existingSecret                        The existing secret with Kafka certificates
@@ -294,9 +316,58 @@ public class KafkaExporter extends AbstractModel {
      *
      * @return The generated Secret.
      */
-    public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateCertificatesSecretForStrimziCa(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         return CertUtils.buildTrustedCertificateSecret(reconciliation, clusterCa, existingSecret, namespace, KafkaExporterResources.secretName(cluster), componentName,
                 COMPONENT_TYPE, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+    }
+
+    /**
+     * Generate the Secret containing the Kafka Exporter certificate signed by the cluster CA certificate used for TLS based
+     * internal communication with Kafka. It also contains the related Kafka Exporter private key.
+     * Used when cert-manager is issuing certificates.
+     *
+     * @param clusterCa                             The cluster CA.
+     * @param existingSecret                        Existing Secret.
+     * @param certManagerSecret                     Secret managed by cert-manager, may be null.
+     * @param pemTrustSet                           Trust set to use to determine if new certificates are trusted
+     *
+     * @return The generated Secret.
+     */
+    public Secret generateCertificatesSecretForCertManagerCA(ClusterCa clusterCa, Secret existingSecret, Secret certManagerSecret, PemTrustSet pemTrustSet) {
+        Secret newSecret = CertManagerUtils.buildTrustedCertificateSecretFromCertManager(clusterCa, certManagerSecret, namespace, KafkaExporterResources.secretName(cluster),
+                COMPONENT_TYPE, labels, ownerReference);
+        if (existingSecret == null) {
+            return newSecret;
+        } else if (CertManagerUtils.certManagerCertUpdated(existingSecret, newSecret)) {
+            if (certManagerSecretNotTrusted(pemTrustSet, existingSecret)) {
+                LOGGER.infoCr(reconciliation, "New certificate for Kafka Exporter, but not trusted yet so keeping existing certificate Secret.");
+                return existingSecret;
+            } else {
+                LOGGER.infoCr(reconciliation, "New certificate for Kafka Exporter, updating Secret {}/{}", namespace, existingSecret.getMetadata().getName());
+                return newSecret;
+            }
+        } else {
+            // Certificate has not changed
+            return existingSecret;
+        }
+    }
+
+    /**
+     * Checks if the cert-manager Secret is trusted by the current CA cert
+     *
+     * @param certManagerSecret Secret containing cert-manager provided cert
+     * @return Whether the cert is trusted
+     */
+    private boolean certManagerSecretNotTrusted(PemTrustSet pemTrustSet, Secret certManagerSecret) {
+        X509Certificate x509CaCert;
+        X509Certificate certManagerCert;
+        try {
+            x509CaCert = x509Certificate(pemTrustSet.trustedCertificatesPemBytes());
+            certManagerCert = x509Certificate(Util.decodeBytesFromBase64(certManagerSecret.getData().get("tls.crt")));
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        }
+        return !CertUtils.certIsTrusted(reconciliation, certManagerCert, x509CaCert);
     }
 
     /**
