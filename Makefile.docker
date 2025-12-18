@@ -123,7 +123,7 @@ docker_push_sbom_default:
 docker_gha_sign_manifest_default:
 	# Signs the manifest and its images using keyless signing (GitHub OIDC)
 	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) --format '{{ json . }}' | jq -r .manifest.digest); \
-	cosign clean $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST || true; \
+	cosign clean -f --type signature $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST || true; \
 	cosign sign --yes --recursive --timeout 6m0s -a author=StrimziCI -a BuildID=$(BUILD_ID) -a Commit=$(BUILD_COMMIT) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST
 
 .PHONY: docker_gha_sbom_default
