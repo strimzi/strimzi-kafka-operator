@@ -50,11 +50,11 @@ jobs:
           curl -L https://github.com/mikefarah/yq/releases/download/v4.2.1/yq_linux_amd64 > yq && chmod +x yq
           sudo cp -v yq /usr/bin/
 
-    # Setup OpenJDK 17
+    # Setup OpenJDK 21
     - uses: actions/setup-java@6a0805fcefea3d4657a47ac4c165951e33482018 # v4.2.2
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
 
     # Setup Maven cache
     - name: Restore Maven cache

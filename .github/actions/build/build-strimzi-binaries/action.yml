@@ -28,7 +28,7 @@ runs:
       uses: actions/setup-java@v5
       with:
         distribution: "temurin"
-        java-version: "17"
+        java-version: "21"
 
     # Caches for Maven and Kafka
     - name: Restore Maven cache
