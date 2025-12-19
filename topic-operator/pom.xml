@@ -118,11 +118,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-inline</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>operator-common</artifactId>
         </dependency>
@@ -205,7 +200,6 @@
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-client</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-httpclient-jdk</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j2-impl</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
                                 <!-- Needed for adding new appender JsonTemplateLayout support for logging, it's a runtime dep -->
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-layout-template-json</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>

@@ -41,7 +41,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
 
         <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
         <strimziRootDirectory>${basedir}</strimziRootDirectory>
@@ -54,7 +54,7 @@
         <maven.shade.version>3.4.1</maven.shade.version>
         <maven.javadoc.version>3.10.0</maven.javadoc.version>
         <maven.source.version>3.0.1</maven.source.version>
-        <maven.dependency.version>3.3.0</maven.dependency.version>
+        <maven.dependency.version>3.9.0</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>
         <maven.checkstyle.version>3.5.0</maven.checkstyle.version>
         <maven.enforcer.version>3.0.0-M2</maven.enforcer.version>
@@ -106,7 +106,7 @@
 
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
-        <mockito.version>4.11.0</mockito.version>
+        <mockito.version>5.21.0</mockito.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>6.0.0</jupiter.version>
         <strimzi-test-container.version>0.114.0</strimzi-test-container.version>
@@ -701,12 +701,6 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>${mockito.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-inline</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>

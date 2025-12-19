@@ -9,7 +9,7 @@ inputs:
   javaVersion:
     description: "Java version to be installed"
     required: false
-    default: "17"
+    default: "21"
   javaDistro:
     description: "Java distribution to be installed"
     required: false
