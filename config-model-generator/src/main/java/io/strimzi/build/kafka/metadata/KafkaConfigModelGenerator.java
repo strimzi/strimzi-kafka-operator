@@ -128,14 +128,13 @@ public class KafkaConfigModelGenerator {
                 descriptor.setPattern(".+");
             } else if (key.validator instanceof ConfigDef.NonEmptyString) {
                 descriptor.setPattern(".+");
+            } else if (key.validator != null && "class org.apache.kafka.raft.QuorumConfig$ControllerQuorumVotersValidator".equals(key.validator.getClass().toString())) {
+                // custom validation not added to the descriptor but still need to include the controller.quorum.voters entry into the JSON model
+            } else if (key.validator != null && "class org.apache.kafka.raft.QuorumConfig$ControllerQuorumBootstrapServersValidator".equals(key.validator.getClass().toString())) {
+                // custom validation not added to the descriptor but still need to include the controller.quorum.bootstrap.servers entry into the JSON model
             } else if (key.validator != null && "class org.apache.kafka.common.config.ConfigDef$LambdaValidator".equals(key.validator.getClass().toString()) && configName.equals("compression.gzip.level")) { // From Kafka 4.0.0, the compression.gzip.level is using the LambdaValidator
                 descriptor.setPattern("[1-9]{1}|-1");
-            } else if (key.validator != null &&
-                      !"class org.apache.kafka.raft.QuorumConfig$ControllerQuorumVotersValidator".equals(key.validator.getClass().toString()) &&
-                      !"class org.apache.kafka.raft.QuorumConfig$ControllerQuorumBootstrapServersValidator".equals(key.validator.getClass().toString())) {
-                // No exception to be raised for ControllerQuorumVotersValidator and ControllerQuorumBootstrapServersValidator
-                // They have custom validators so we don't add any additional descriptor configuration, but their configs
-                // (controller.quorum.voters and controller.quorum.bootstrap.servers) still need to be included in the JSON model
+            } else if (key.validator != null) {
                 throw new IllegalStateException("Invalid validator '" + key.validator.getClass() + "' for option '" + configName + "'");
             }
 
