@@ -54,8 +54,10 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
 
     /**
      * Controller configuration options to skip for broker only node
+     * It excludes all controller related options but not the controller.quorum.voters
+     * which needs a broker restart to be applied
      */
-    private static final Pattern IGNORABLE_CONTROLLER_PROPERTIES_PATTERN = Pattern.compile("controller\\.quorum\\..*");
+    private static final Pattern IGNORABLE_CONTROLLER_PROPERTIES_PATTERN = Pattern.compile("controller\\.quorum\\.(?!voters$).*");
 
     /**
      *  Configuration options that are relevant to controllers. This list is mutually exclusive with IGNORABLE_PROPERTIES_PATTERN (no overlap).
