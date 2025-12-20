@@ -1,0 +1,29 @@
+name: "Setup Java and Maven"
+description: "Setup Java and Maven"
+
+inputs:
+  mavenVersion:
+    description: "Maven version to be installed"
+    required: false
+    default: "3.9.9"
+  javaVersion:
+    description: "Java version to be installed"
+    required: false
+    default: "17"
+  javaDistro:
+    description: "Java distribution to be installed"
+    required: false
+    default: "temurin"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Maven
+      uses: stCarolas/setup-maven@v5
+      with:
+        maven-version: ${{ inputs.mavenVersion }}
+
+    - uses: actions/setup-java@v5
+      with:
+        distribution: ${{ inputs.javaDistro }}
+        java-version: ${{ inputs.javaVersion }}
