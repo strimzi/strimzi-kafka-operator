@@ -128,11 +128,11 @@ public class KafkaConfigModelGenerator {
                 descriptor.setPattern(".+");
             } else if (key.validator instanceof ConfigDef.NonEmptyString) {
                 descriptor.setPattern(".+");
-            } else if (key.validator != null && "class org.apache.kafka.raft.QuorumConfig$ControllerQuorumVotersValidator".equals(key.validator.getClass().toString()))   { // we compare the class names because of changes done between Kafka version 3.7 and 3.8 => this is for Kafka 3.8 and newer
-                continue;
-            } else if (key.validator != null && "class org.apache.kafka.raft.QuorumConfig$ControllerQuorumBootstrapServersValidator".equals(key.validator.getClass().toString()))   { // we compare the class names because of changes done between Kafka version 3.7 and 3.8 => this is for Kafka 3.8 and newer
-                continue;
-            } else if (key.validator != null && "class org.apache.kafka.common.config.ConfigDef$LambdaValidator".equals(key.validator.getClass().toString()) && configName.equals("compression.gzip.level"))   { // From Kafka 4.0.0, the compression.gzip.level is using the LambdaValidator
+            } else if (key.validator != null && "class org.apache.kafka.raft.QuorumConfig$ControllerQuorumVotersValidator".equals(key.validator.getClass().toString())) {
+                // custom validation not added to the descriptor but still need to include the controller.quorum.voters entry into the JSON model
+            } else if (key.validator != null && "class org.apache.kafka.raft.QuorumConfig$ControllerQuorumBootstrapServersValidator".equals(key.validator.getClass().toString())) {
+                // custom validation not added to the descriptor but still need to include the controller.quorum.bootstrap.servers entry into the JSON model
+            } else if (key.validator != null && "class org.apache.kafka.common.config.ConfigDef$LambdaValidator".equals(key.validator.getClass().toString()) && configName.equals("compression.gzip.level")) { // From Kafka 4.0.0, the compression.gzip.level is using the LambdaValidator
                 descriptor.setPattern("[1-9]{1}|-1");
             } else if (key.validator != null) {
                 throw new IllegalStateException("Invalid validator '" + key.validator.getClass() + "' for option '" + configName + "'");
