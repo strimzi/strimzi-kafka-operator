@@ -22,6 +22,10 @@ on:
         required: true
         type: string
 
+# Declare default permissions as read only
+permissions:
+  contents: read
+
 jobs:
   # Prepare release artifacts - builds release files, documentation, and pushes to Maven Central
   prepare-release-artifacts:
@@ -79,7 +83,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       id-token: write
     env:
       DOCKER_REGISTRY: "quay.io"
@@ -104,16 +107,15 @@ jobs:
       - prepare-release-artifacts
     # Run if push-containers-with-suffix succeeded/skipped and we're on a release branch
     if: |-
-      ${{ always() && startsWith(github.ref, 'refs/heads/release-') && 
-        needs.prepare-release-artifacts.result == 'success' &&  
+      ${{ always() && startsWith(github.ref, 'refs/heads/release-') &&
+        needs.prepare-release-artifacts.result == 'success' &&
         needs.push-java-artifacts-to-ghcr.result == 'success' &&
-        (needs.push-containers-with-suffix.result == 'success' || 
-        needs.push-containers-with-suffix.result == 'skipped') 
+        (needs.push-containers-with-suffix.result == 'success' ||
+        needs.push-containers-with-suffix.result == 'skipped')
       }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       id-token: write
     env:
       DOCKER_REGISTRY: "quay.io"

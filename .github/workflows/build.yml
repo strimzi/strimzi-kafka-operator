@@ -9,6 +9,10 @@ on:
     branches:
       - "*"
 
+# Declare default permissions as read only
+permissions:
+  contents: read
+
 # Cancel previous builds on the same branch/PR
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -99,7 +103,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       # Required for keyless signing with GitHub OIDC
       id-token: write
     env:
