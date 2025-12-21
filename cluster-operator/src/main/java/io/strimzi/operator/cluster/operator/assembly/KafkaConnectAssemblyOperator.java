@@ -141,9 +141,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         KafkaConnectCluster connect;
         KafkaConnectBuild build;
         KafkaConnectStatus kafkaConnectStatus = new KafkaConnectStatus();
-        List<String> tlsCertificates;
-        List<String> oauthCertificates;
-
         try {
             connect = KafkaConnectCluster.fromCrd(reconciliation, kafkaConnect, versions, sharedEnvironmentProvider);
             build = KafkaConnectBuild.fromCrd(reconciliation, kafkaConnect, versions, sharedEnvironmentProvider, useConnectBuildWithBuildah);
