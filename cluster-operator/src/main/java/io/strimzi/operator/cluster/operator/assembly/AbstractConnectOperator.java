@@ -275,7 +275,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Generates or reconciles the secret that combines secrets and certificates
      * provided for Kafka Connect truststore if TLS is enabled.
      *
-     * @return  Future which completes when the reconciliation is done
+     * @return List of trusted certificates as a Future.
      */
     protected Future<List<String>> tlsTrustedCertsSecret(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
         if (connect.getTls() != null) {
