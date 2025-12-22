@@ -93,7 +93,7 @@ runs:
 
     - name: Check for uncommitted files
       shell: bash
-      run: "${{ github.action_path }}/../../../.azure/scripts/uncommitted-changes.sh"
+      run: "${{ github.action_path }}/../../../../.azure/scripts/uncommitted-changes.sh"
 
     # Create tarball and archive it
     - name: Create tarball with artifact

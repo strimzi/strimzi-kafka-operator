@@ -25,7 +25,7 @@ runs:
   steps:
     - name: Install prerequisites
       shell: bash
-      run: ${{ github.action_path }}/../../../.azure/scripts/install_syft.sh
+      run: ${{ github.action_path }}/../../../../.azure/scripts/install_syft.sh
       env:
         ARCH: ${{ inputs.runnerArch }}
 
