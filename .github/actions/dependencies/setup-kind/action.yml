@@ -69,7 +69,7 @@ runs:
     - name: Setup Kind
       shell: bash
       run: |
-        ./.azure/scripts/setup-kind.sh "${{ inputs.architecture }}"
+        ${{ github.action_path }}/../../../../.azure/scripts/setup-kind.sh "${{ inputs.architecture }}"
       env:
         REGISTRY_IMAGE: ${{ inputs.registry }}
         CONTROL_NODES: ${{ inputs.controlNodes }}
