@@ -73,7 +73,7 @@ These options are automatically configured in case they are not present in the `
 
 *Exceptions*
 
-You can specify and configure the options listed in the {ApacheKafkaConnectConfig}.
+You can specify and configure the options listed in the link:{ApacheKafkaDocsBase}configuration/kafka-connect-configs/[Kafka Connect configuration documentation^].
 
 However, Strimzi takes care of configuring and managing options related to the following, which cannot be changed:
 

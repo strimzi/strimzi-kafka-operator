@@ -51,4 +51,4 @@ A name is specified as a `literal` or a `prefix` using the `patternType` propert
 
 When `patternType` is set as `literal`, you can set the name to `*` to indicate that the rule applies to all resources.
 
-For more details about `simple` authorization, ACLs, and supported combinations of resources and operations, see link:http://kafka.apache.org/documentation/#security_authz[Authorization and ACLs^].
+For more details about `simple` authorization, ACLs, and supported combinations of resources and operations, see link:{ApacheKafkaDocsBase}security/authorization-and-acls/[Authorization and ACLs^].

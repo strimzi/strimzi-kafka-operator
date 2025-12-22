@@ -57,8 +57,8 @@ public class KafkaUserSpec extends Spec {
     }
 
     @Description("Quotas on requests to control the broker resources used by clients. " +
-            "Network bandwidth and request rate quotas can be enforced." +
-            "Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.")
+            "Network bandwidth and request rate quotas can be enforced. " +
+            "For more information, see the Apache Kafka design documentation about quotas.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaUserQuotas getQuotas() {
         return quotas;

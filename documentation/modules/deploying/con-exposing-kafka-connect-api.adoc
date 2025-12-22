@@ -12,7 +12,7 @@ Use the Kafka Connect REST API as an alternative to using `KafkaConnector` resou
 The Kafka Connect REST API is available as a service running on `_<connect_cluster_name>_-connect-api:8083`, where _<connect_cluster_name>_ is the name of your Kafka Connect cluster.
 The service is created when you create a Kafka Connect instance.
 
-The operations supported by the Kafka Connect REST API are described in the {ApacheKafkaConnectAPI}.
+The operations supported by the Kafka Connect REST API are described in the link:{ApacheKafkaDocsBase}kafka-connect/user-guide/#rest-api[Apache Kafka Connect API documentation^].
 
 NOTE: The `strimzi.io/use-connector-resources` annotation enables KafkaConnectors.
 If you applied the annotation to your `KafkaConnect` resource configuration, you need to remove it to use the Kafka Connect API.

@@ -3530,7 +3530,7 @@ Authentication is optional. If authentication is not configured, no credentials 
 |Authorization rules for this Kafka user.
 |quotas
 |xref:type-KafkaUserQuotas-{context}[`KafkaUserQuotas`]
-|Quotas on requests to control the broker resources used by clients. Network bandwidth and request rate quotas can be enforced.Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.
+|Quotas on requests to control the broker resources used by clients. Network bandwidth and request rate quotas can be enforced. For more information, see the Apache Kafka design documentation about quotas.
 |template
 |xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`]
 |Template to specify how Kafka User `Secrets` are generated.

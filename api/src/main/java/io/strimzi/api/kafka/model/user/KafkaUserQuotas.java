@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * Represent the Quotas configuration for Kafka User.
- * Kafka documentation for Kafka User quotas can be found <a href="http://kafka.apache.org/documentation/#design_quotas">here</a>
+ * For more information, see the Apache Kafka design documentation about quotas.
  */
 @DescriptionFile
 @Buildable(
