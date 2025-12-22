@@ -10,11 +10,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up JDK
-      uses: actions/setup-java@v5
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+    - name: Setup Java and Maven
+      uses: ./.github/actions/dependencies/setup-java
 
     - name: Restore Maven cache
       uses: actions/cache/restore@v4

@@ -24,11 +24,8 @@ runs:
         architecture: ${{ inputs.runnerArch }}
     - name: Install Helm
       uses: ./.github/actions/dependencies/install-helm
-    - name: Setup Java
-      uses: actions/setup-java@v5
-      with:
-        distribution: "temurin"
-        java-version: "17"
+    - name: Setup Java and Maven
+      uses: ./.github/actions/dependencies/setup-java
 
     # Caches for Maven and Kafka
     - name: Restore Maven cache

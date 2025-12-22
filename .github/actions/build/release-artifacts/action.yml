@@ -41,11 +41,8 @@ runs:
         gem install asciidoctor
         gem install asciidoctor-pdf
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+    - name: Setup Java and Maven
+      uses: ./.github/actions/dependencies/setup-java
 
     - name: Restore Maven cache
       uses: actions/cache/restore@v4

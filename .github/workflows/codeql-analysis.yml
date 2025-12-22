@@ -46,15 +46,11 @@ jobs:
 
     # Install yq
     - name: Install yq
-      run: |
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.2.1/yq_linux_amd64 > yq && chmod +x yq
-          sudo cp -v yq /usr/bin/
+      uses: ./.github/actions/dependencies/install-yq
 
     # Setup OpenJDK 17
-    - uses: actions/setup-java@6a0805fcefea3d4657a47ac4c165951e33482018 # v4.2.2
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+    - name: Setup Java and Maven
+      uses: ./.github/actions/dependencies/setup-java
 
     # Setup Maven cache
     - name: Restore Maven cache
