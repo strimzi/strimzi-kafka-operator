@@ -80,6 +80,9 @@
 :MavenCentral: https://mvnrepository.com/repos/central[Maven Central repository^]
 :CronExpression: link:https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
 
+// Kubernetes containers and images
+:K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Updating images^]
+
 // Kubernetes documentation
 :kubernetes-docs: link:https://kubernetes.io/docs/home/[Kubernetes documentation^]
 :KubeTools: link:https://kubernetes.io/docs/tasks/tools/[Install Tools^]
