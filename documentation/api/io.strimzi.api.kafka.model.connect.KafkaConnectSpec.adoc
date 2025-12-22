@@ -25,12 +25,13 @@ spec:
 
 These fields are required in the `v1` CRD API version.
 In the `v1beta2` version, these properties are optional.
-If not set, the following default values apply:
 
-* `groupId` will default value `connect-cluster`
-* `configStorageTopic` will default to `connect-cluster-configs`
-* `offsetStorageTopic` will default to `connect-cluster-offsets`
-* `statusStorageTopic` will default to `connect-cluster-status`
+If you do not set them, the following default values apply:
+
+* `groupId` defaults to `connect-cluster`
+* `configStorageTopic` defaults to `connect-cluster-configs`
+* `offsetStorageTopic` defaults to `connect-cluster-offsets`
+* `statusStorageTopic` defaults to `connect-cluster-status`
 
 [id='property-kafka-connect-additional-configuration-{context}']
 = Additional configuration

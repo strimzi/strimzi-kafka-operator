@@ -134,16 +134,19 @@ For more information, see xref:assembly-loading-config-with-providers-{context}[
 
 === Authenticating brokers to protected authorization-server endpoints
 
-Some authorization servers expose the JWKS endpoint publicly but require authentication when accessing protected endpoints such as the introspection endpoint.
+Some authorization servers expose the JWKS endpoint publicly but require authentication when accessing protected endpoints, such as the introspection endpoint.
 
-When a protected endpoint is used, the Kafka broker must authenticate to the authorization server.
+When the broker accesses a protected endpoint, it must authenticate to the authorization server.
 
 To configure HTTP Basic authentication, set the following properties:
 
 * `oauth.client.id`
 * `oauth.client.secret`
 
-For HTTP Bearer authentication, set one of the following properties:
+To configure HTTP Bearer authentication, set one of the following properties:
 
-* `oauth.server.bearer.token.location` to specify the file path on disk containing the bearer token.
+* `oauth.server.bearer.token.location` to specify the file path that contains the bearer token.
 * `oauth.server.bearer.token` to specify the bearer token in clear text.
+
+NOTE: In production environments, avoid storing credentials or bearer tokens in clear text. 
+Use a secure mechanism to provide these values to the broker.

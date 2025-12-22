@@ -9,7 +9,7 @@ Strimzi supports OAuth 2.0 token-based authentication and authorization for secu
 With OAuth 2.0 integration you can:
 
 * Enable token-based authentication on Kafka brokers  
-* Configure Kafka components, such as Kafka Connect, MirrorMaker 2, and the Kafka Bridge, to authenticate using access tokens  
+* Configure Kafka components, such as Kafka Connect, MirrorMaker 2, and the HTTP Bridge, to authenticate using access tokens  
 * Use token claims or Keycloak Authorization Services to perform fine-grained authorization
 
 OAuth 2.0 provides centralized identity and access control using access tokens issued by an authorization server.
