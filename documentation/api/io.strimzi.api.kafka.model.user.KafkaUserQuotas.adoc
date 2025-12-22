@@ -13,4 +13,4 @@ spec:
     controllerMutationRate: 10
 ----
 
-For more information, see the link:{ApacheKafkaDocsBase}/design/design/[Apache Kafka design documentation^].
+For more information, see the link:{ApacheKafkaDocsBase}design/design/[Apache Kafka design documentation^].
