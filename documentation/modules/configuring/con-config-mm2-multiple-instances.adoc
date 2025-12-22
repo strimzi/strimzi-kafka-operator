@@ -8,8 +8,20 @@
 = Configuring MirrorMaker 2 using a shared target Kafka cluster
 
 [role="_abstract"]
-The group ID and names of the internal topics used by the Kafka Connect framework that MirrorMaker 2 runs on are configured in the `.spec.target` section. 
-When running multiple instances of MirrorMaker 2, and they share the same target cluster, you must use unique values to make sure the MirrorMaker 2 clusters operate independently.
+MirrorMaker 2 runs on the Kafka Connect framework and uses internal Kafka topics to store configuration, offsets, and status information.
+When running multiple MirrorMaker 2 instances that share the same target Kafka cluster, you must configure unique Kafka Connect worker settings so that each instance operates independently.
+
+Kafka Connect identifies a worker cluster by its group ID and by the names of the internal topics it uses.
+If multiple MirrorMaker 2 instances use the same values, they form a single Kafka Connect cluster and share internal state.
+
+When deploying multiple MirrorMaker 2 instances against the same target Kafka cluster, configure unique values for the following Kafka Connect worker properties in each Kafka Connect deployment:
+
+* `group.id`
+* `config.storage.topic`
+* `offset.storage.topic`
+* `status.storage.topic`
+
+These settings are configured in the `.spec.target` section. 
 
 [source,yaml,subs="attributes+"]
 ----
@@ -33,13 +45,12 @@ spec:
 <3> Kafka topic that stores connector and task status configurations.
 <4> Kafka topic that stores connector and task status updates.
 
-NOTE: Values for the three topics must be the same for all instances with the same `group.id`.
+NOTE: All workers that belong to the same Kafka Connect cluster must use the same values for these properties.
 
-The `target` cluster specifies the target Kafka cluster used by Kafka Connect for its internal topics. 
-As a result, modifications to the `target`, group ID, and internal topic naming configuration are specific to the target Kafka cluster. 
-You don't need to make changes if two MirrorMaker 2 instances are using the same source Kafka cluster or in an active-active mode where each MirrorMaker 2 instance has a different target cluster.
+If multiple MirrorMaker 2 instances are deployed with the same worker group ID and internal topic names, they form a single Kafka Connect cluster and share internal topics.
+This can result in unexpected behavior and replication errors.
 
-However, if multiple MirrorMaker 2 instances share the same `target`, each instance connecting to the same target Kafka cluster is deployed with the same values. 
-In practice, this means all instances form a cluster and use the same internal topics.
+You do not need to change these settings when:
 
-Multiple instances attempting to use the same internal topics will cause unexpected errors, so you must change the values of these properties for each instance.
+* Multiple MirrorMaker 2 instances use the same source Kafka cluster but different target Kafka clusters
+* Deploying active-active replication where each MirrorMaker 2 instance uses a different target Kafka cluster

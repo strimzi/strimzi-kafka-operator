@@ -11,10 +11,10 @@
 MirrorMaker 2 can synchronize topic ACL rules from source to target clusters. 
 Enable this feature by configuring the `MirrorSourceConnector`.
 
-With `simple` authorization:
+When using simple ACL-based authorization:
 
 * ACL rules apply to both source and target topics
-* Users with source topic access automatically get equivalent target topic access
+* Users with access to source topics automatically receive equivalent access to replicated target topics
 
 IMPORTANT: This feature is not compatible with the User Operator, so disable by setting `sync.topic.acls.enabled` to `false`.
 When using OAuth 2.0 authorization, the setting has no effect.

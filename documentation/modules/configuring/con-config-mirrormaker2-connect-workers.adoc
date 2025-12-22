@@ -8,7 +8,10 @@
 = Tuning Kafka Connect worker settings
 
 [role="_abstract"]
-Adjust Kafka Connect worker behavior for MirrorMaker 2 by adding configuration to your target cluster's `config` section.
+Adjust Kafka Connect worker runtime behavior for MirrorMaker 2 by configuring worker properties on the Kafka Connect cluster that runs the MirrorMaker 2 connectors.
+
+Kafka Connect workers run against a single target Kafka cluster.
+The worker configuration specifies Kafka Connect runtime settings, such as task rebalance behavior, shutdown handling, and how frequently offsets are written to internal topics.
 
 .Example Kafka Connect configuration
 [source,yaml,subs="+quotes,attributes"]
@@ -28,9 +31,12 @@ spec:
     offsetStorageTopic: my-mirror-maker2-offset
     statusStorageTopic: my-mirror-maker2-status
     config: # <2>
+      # Worker shutdown and rebalance behavior
       task.shutdown.graceful.timeout.ms: 30000
       scheduled.rebalance.max.delay.ms: 300000
+      # Offset flush interval
       offset.flush.interval.ms: 10000
+      # Kafka Connect internal topic replication
       config.storage.replication.factor: 1
       offset.storage.replication.factor: 1
       status.storage.replication.factor: 1

@@ -67,15 +67,15 @@ A value of -1 uses the broker’s default replication factor, which is typically
 <7> Replication factor for the internal checkpoints topic that stores the last committed offsets for each consumer group. 
 A value of -1 uses the broker’s default replication factor, which is typically set to provide resilience (for example, 3).
 
-TIP: If you have an application written in Java, you can use the `RemoteClusterUtils.java` utility to fetch offsets through the application. 
-The utility fetches remote offsets for a consumer group from the `checkpoints` topic.
+TIP: Java applications can use the `RemoteClusterUtils` utility to fetch remote offsets for a consumer group from the checkpoints topic.
 
-== Changing the location of the consumer group offsets topic
+== Changing the location of the offset synchronization topic
 
-The location of the `offset-syncs` topic is the `source` cluster by default.
-You can use the `offset-syncs.topic.location` connector configuration to change this to the `target` cluster.
-You need read/write access to the cluster that contains the topic.
-Using the target cluster as the location of the `offset-syncs` topic allows you to use MirrorMaker 2 even if you have only read access to the source cluster.
+By default, the `offset-syncs` topic is created in the source cluster.
+You can change this behavior by setting the `offset-syncs.topic.location` connector configuration to `target`.
+
+Changing the location of the topic allows MirrorMaker 2 to operate when the connector has read-only access to the source cluster.
+In this case, the connector must have read and write access to the target cluster.
 
 == Listing the offsets of connectors
 

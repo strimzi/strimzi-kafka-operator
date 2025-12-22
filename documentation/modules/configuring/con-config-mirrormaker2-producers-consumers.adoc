@@ -9,7 +9,7 @@
 
 [role="_abstract"]
 MirrorMaker 2 connectors use internal producers and consumers.
-If needed, you can configure these producers and consumers to override the default settings. 
+If required, you can configure these producers and consumers to override the default settings. 
 
 For example, you can increase the `batch.size` for the source producer that sends topics to the target Kafka cluster to better accommodate large volumes of messages.
 
@@ -18,7 +18,7 @@ IMPORTANT: Producer and consumer configuration options depend on the MirrorMaker
 The following tables describe the producers and consumers for each of the connectors and where you can add configuration. 
 
 .Source connector producers and consumers
-[cols="1,1a,3m",options="header"]
+[cols="1,2a,2m",options="header"]
 |===
 
 |Type
@@ -26,20 +26,22 @@ The following tables describe the producers and consumers for each of the connec
 |Configuration
 
 |Producer
-|Sends topic messages to the target Kafka cluster. Consider tuning the configuration of this producer when it is handling large volumes of data. 
-|mirrors.sourceConnector.config: producer.override.*
+|Sends replicated topic messages to the target Kafka cluster.
+Tune this producer when handling large volumes of data.
+|`producer.override.*`
 
 |Producer
-|Writes to the `offset-syncs` topic, which maps the source and target offsets for replicated topic partitions. 
-|mirrors.sourceConnector.config: producer.*
+|Writes to the `offset-syncs` topic, which maps source and target offsets.
+|`producer.*`
 
 |Consumer
-|Retrieves topic messages from the source Kafka cluster.
-|mirrors.sourceConnector.config: consumer.* 
+|Consumes topic messages from the source Kafka cluster.
+|`consumer.*`
+
 |===
 
 .Checkpoint connector producers and consumers
-[cols="1,1a,3m",options="header"]
+[cols="1,2a,2m",options="header"]
 |===
 
 |Type
@@ -47,12 +49,12 @@ The following tables describe the producers and consumers for each of the connec
 |Configuration
 
 |Producer
-|Emits consumer offset checkpoints.
-|mirrors.checkpointConnector.config: producer.override.* 
+|Emits consumer group offset checkpoints.
+|`producer.override.*`
 
 |Consumer
-|Loads the `offset-syncs` topic.
-|mirrors.checkpointConnector.config: consumer.*
+|Consumes data from the `offset-syncs` topic.
+|`consumer.*`
 
 |===
 
