@@ -35,7 +35,7 @@ The values can be one of the following JSON types:
 
 *Exceptions*
 
-You can specify and configure the options listed in the {ApacheKafkaBrokerConfig}.
+You can specify and configure the options listed in the link:{ApacheKafkaDocsBase}configuration/broker-configs/[Kafka broker configuration documentation^].
 
 However, Strimzi takes care of configuring and managing options related to the following, which cannot be changed:
 

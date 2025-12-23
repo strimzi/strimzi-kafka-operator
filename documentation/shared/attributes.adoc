@@ -52,59 +52,99 @@
 :keycloak-docs: link:https://www.keycloak.org/documentation[Keycloak documentation^]
 :oauth-project: link:https://github.com/strimzi/strimzi-kafka-oauth[Strimzi Kafka OAuth project documentation^]
 
+// -----------------------------------------------------------------------------
+// Apache Kafka links
+// -----------------------------------------------------------------------------
+
+// Apache Kafka documentation links (versioned)
+// Add an attribute here only if the link target is used more than once.
+// For single-use links, use {ApacheKafkaDocsBase} directly and define the link text inline.
+:ApacheKafkaDocsVersion: 41
+:ApacheKafkaDocsBase: https://kafka.apache.org/{ApacheKafkaDocsVersion}/
+:ApacheKafkaHome: link:https://kafka.apache.org/[Apache Kafka^]
+:kafkaDoc: link:{ApacheKafkaDocsBase}[Apache Kafka documentation^]
+:ApacheKafkaConsumerConfig: link:{ApacheKafkaDocsBase}configuration/consumer-configs/[Apache Kafka configuration documentation for consumers^]
+:ApacheKafkaProducerConfig: link:{ApacheKafkaDocsBase}configuration/producer-configs/[Apache Kafka configuration documentation for producers^]
+:ApacheKafkaTieredStorageLimitations: link:{ApacheKafkaDocsBase}operations/tiered-storage/#limitations[known limitations^]
+
+//Apache logging services
+:ApacheLoggers: link:https://logging.apache.org/[Apache logging services^]
+
+// -----------------------------------------------------------------------------
 // External links
+// -----------------------------------------------------------------------------
+
+// Java and CLI tools
 :JavaServiceProvider: link:https://www.baeldung.com/java-spi[Java Service Provider Interface^]
 :JQTool: link:https://github.com/jqlang/jq[command line JSON parser tool^]
-:kubernetes-docs: link:https://kubernetes.io/docs/home/
-:kafkaDoc: link:https://kafka.apache.org/documentation/[Apache Kafka documentation^]
+:MavenCentral: https://mvnrepository.com/repos/central[Maven Central repository^]
+:CronExpression: link:https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
+
+// Kubernetes containers and images
+:K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Updating images^]
+
+// Kubernetes documentation
+:kubernetes-docs: link:https://kubernetes.io/docs/home/[Kubernetes documentation^]
+:KubeTools: link:https://kubernetes.io/docs/tasks/tools/[Install Tools^]
+
+// Kubernetes scheduling and placement
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
-:K8sDownwardAPI: link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Downward API^]
 :K8sTolerations: link:https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/[Kubernetes taints and tolerations^]
 :K8sTopologySpreadConstraints: link:https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints^]
+
+// Kubernetes storage
 :K8sEmptyDir: link:https://kubernetes.io/docs/concepts/storage/volumes/#emptydir[emptyDir^]
 :K8sPersistentVolumeClaims: link:https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/[Persistent Volume Claims^]
 :K8sLocalPersistentVolumes: link:https://kubernetes.io/docs/concepts/storage/volumes/#local[local persistent volumes^]
 :K8SStorageClass: link:https://kubernetes.io/docs/concepts/storage/storage-classes/[StorageClass^]
+:K8sResizingPersistentVolumesUsingKubernetes: link:https://kubernetes.io/blog/2018/07/12/resizing-persistent-volumes-using-kubernetes/[Resizing Persistent Volumes using Kubernetes^]
+
+// Kubernetes configuration and resources
+:K8sDownwardAPI: link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Downward API^]
 :K8SJsonPath: link:https://kubernetes.io/docs/reference/kubectl/jsonpath/[JSONPath support^]
+:K8sCRDs: link:https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/[Extend the Kubernetes API with CustomResourceDefinitions^]
+:HelmCustomResourceDefinitions: link:https://helm.sh/docs/chart_best_practices/custom_resource_definitions/[Custom Resource Definitions for Helm^]
+
+// Kubernetes compute and health
 :K8sMeaningOfCpu: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu[Meaning of CPU^]
 :K8sMeaningOfMemory: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory[Meaning of memory^]
 :K8sManagingComputingResources: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/[Managing Compute Resources for Containers^]
 :K8sLivenessReadinessProbes: link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Configure Liveness and Readiness Probes^]
+
+// Kubernetes networking and security
 :K8sNetworkPolicyPeerAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer API reference^]
-:K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Disruptions^]
-:K8sCRDs: link:https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/[Extend the Kubernetes API with CustomResourceDefinitions^]
-:K8sResizingPersistentVolumesUsingKubernetes: link:https://kubernetes.io/blog/2018/07/12/resizing-persistent-volumes-using-kubernetes/[Resizing Persistent Volumes using Kubernetes^]
+:K8sServiceDiscovery: link:https://kubernetes.io/docs/concepts/services-networking/service/#discovering-services[Discovering services^]
 :K8sSecurityContext: link:https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security context^]
 :K8sSecurityStandards: link:https://kubernetes.io/docs/concepts/security/pod-security-standards/[Pod security standards^]
-:K8sServiceDiscovery: https://kubernetes.io/docs/concepts/services-networking/service/#discovering-services[Discovering services^]
 :K8sWellKnownLabelsAnnotationsAndTaints: link:https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/[Well-Known Labels, Annotations and Taints^]
 :K8sZoneLabel: link:https://kubernetes.io/docs/reference/labels-annotations-taints/#topologykubernetesiozone[topology.kubernetes.io/zone^]
 :K8sDockerSecret: link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials[Create a Secret based on existing Docker credentials^]
-:MavenCentral: https://mvnrepository.com/repos/central[Maven Central repository^]
-:KubeTools: link:https://kubernetes.io/docs/tasks/tools/[Install Tools^]
+
+// Ingress and DNS
 :NginxIngressController: link:https://github.com/kubernetes/ingress-nginx[Ingress NGINX Controller for Kubernetes^]
-:NginxIngressControllerTLSPassthrough: link:https://kubernetes.github.io/ingress-nginx/user-guide/tls/#ssl-passthrough[TLS passthrough documentation]
+:NginxIngressControllerTLSPassthrough: link:https://kubernetes.github.io/ingress-nginx/user-guide/tls/#ssl-passthrough[TLS passthrough documentation^]
 :KubernetesExternalDNS: link:https://github.com/kubernetes-incubator/external-dns[External DNS^]
-:ApacheKafkaBrokerConfig: link:https://kafka.apache.org/documentation/#brokerconfigs[Apache Kafka documentation^]
-:ApacheKafkaConnectConfig: link:https://kafka.apache.org/documentation/#connectconfigs[Apache Kafka documentation^]
-:ApacheKafkaConnectAPI: link:https://kafka.apache.org/documentation#connect_rest[Apache Kafka Connect API documentation^]
-:ApacheKafkaConsumerConfig: link:https://kafka.apache.org/documentation/#consumerconfigs[Apache Kafka configuration documentation for consumers^]
-:ApacheKafkaProducerConfig: link:https://kafka.apache.org/documentation/#producerconfigs[Apache Kafka configuration documentation for producers^]
-:ApacheKafkaFileSystem: link:https://kafka.apache.org/documentation/#filesystems[Filesystem Selection^]
-:ApacheLoggers: link:https://logging.apache.org/[Apache logging services^]
+
+// Cruise Control
 :CruiseControlProject: https://github.com/linkedin/cruise-control[Cruise Control^]
 :CruiseControlConfigDocs: link:https://github.com/linkedin/cruise-control/wiki/Configurations[Cruise Control documentation^]
 :CruiseControlSensorsDocs: link:https://github.com/linkedin/cruise-control/wiki/Sensors[Cruise Control documentation^]
 :CruiseControlApiDocs: https://github.com/linkedin/cruise-control/wiki/REST-APIs[REST APIs in the Cruise Control Wiki^]
-:CronExpression: link:http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/tutorial-lesson-06.html[cron expression^]
+
+// Operators and platform services
 :OperatorHub: link:https://operatorhub.io/operator/strimzi-kafka-operator[OperatorHub.io^]
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
 :OLMOperatorDocs: link:https://olm.operatorframework.io/docs/[Operator Lifecycle Manager documentation^]
+
+// Security, policy, and specs
 :OPAAuthorizer: link:https://github.com/anderseknert/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
 :external-cors-link: link:https://fetch.spec.whatwg.org/[Fetch CORS specification^]
-:HelmCustomResourceDefinitions: link:https://helm.sh/docs/chart_best_practices/custom_resource_definitions/[Custom Resource Definitions for Helm^]
+
+// Certificate management
 :CertManagerProject: link:https://cert-manager.io/docs/[cert-manager project^]
 :CertManagerPrivateKeyEncoding: link:https://cert-manager.io/docs/reference/api-docs/#cert-manager.io/v1.PrivateKeyEncoding[key encoding^]
+
+// -----------------------------------------------------------------------------
 
 //distributed tracing versions and links
 :OpenTelemetryAlphaVersion: 1.34.1-alpha

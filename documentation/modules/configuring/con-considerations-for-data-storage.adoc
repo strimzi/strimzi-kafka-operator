@@ -29,7 +29,7 @@ Kafka uses a file system for storing messages.
 Strimzi is compatible with the XFS and ext4 file systems, which are commonly used with Kafka.
 Consider the underlying architecture and requirements of your deployment when choosing and setting up your file system.
 
-For more information, refer to {ApacheKafkaFileSystem} in the Kafka documentation.
+For more information, see the link:{ApacheKafkaDocsBase}operations/hardware-and-os/#filesystem-selection[Apache Kafka filesystem selection documentation^].
 
 == Tiered storage
 

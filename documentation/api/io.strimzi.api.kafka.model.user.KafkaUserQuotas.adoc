@@ -13,4 +13,4 @@ spec:
     controllerMutationRate: 10
 ----
 
-For more information about Kafka user quotas, refer to the http://kafka.apache.org/documentation/#design_quotas[Apache Kafka documentation^].
+For more information, see the link:{ApacheKafkaDocsBase}design/design/[Apache Kafka design documentation^].

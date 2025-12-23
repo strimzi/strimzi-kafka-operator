@@ -9,7 +9,7 @@
 
 //standard introduction
 [role="_abstract"]
-Strimzi simplifies the process of running link:https://kafka.apache.org/[Apache Kafka^] within a Kubernetes cluster.
+Strimzi simplifies the process of running {ApacheKafkaHome} within a Kubernetes cluster.
 
 This guide serves as an introduction to Strimzi, outlining key Kafka concepts that are central to operating Strimzi. 
 It briefly explains Kafka's components, their purposes, and configuration points, including security and monitoring options. 

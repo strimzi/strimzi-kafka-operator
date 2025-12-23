@@ -32,7 +32,7 @@ For further information, refer to the resources of those projects.
 * {PrometheusConfig}
 * {kafka-exporter-project}
 * {GrafanaHome}
-* link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring^]
+* link:{ApacheKafkaDocsBase}operations/monitoring/[Apache Kafka Monitoring^]
 * link:https://github.com/kubernetes/kube-state-metrics/[kube-state-metrics^]
 
 //Example metrics files
