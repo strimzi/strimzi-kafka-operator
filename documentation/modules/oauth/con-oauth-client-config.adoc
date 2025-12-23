@@ -46,7 +46,7 @@ Each component requires:
 * `OAUTHBEARER` SASL settings to authenticate to Kafka brokers
 
 The following example shows a simplified OAuth configuration for the HTTP Bridge. 
-The same structure applies to Kafka Connect and MirrorMaker 2.
+The same configuration pattern applies to Kafka Connect and MirrorMaker 2.
 
 [source,yaml]
 ----

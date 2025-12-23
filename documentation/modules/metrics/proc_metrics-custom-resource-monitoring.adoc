@@ -51,6 +51,6 @@ kubectl apply -f ksm.yaml
 +
 Metrics are scraped from the `strimzi-kube-state-metrics` service using the `ServiceMonitor` configured for the KSM deployment.
 +
-For alerting on these metrics, check the provided `PrometheusRule` resources:
+For alerting on these metrics, check the provided `PrometheusRule` resource:
 +
-* `examples/metrics/kube-state-metrics/prometheus-rules/*.yaml`
+* `examples/metrics/kube-state-metrics/prometheus-rules.yaml`
