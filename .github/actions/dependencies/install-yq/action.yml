@@ -13,4 +13,4 @@ runs:
     - name: Install yq
       shell: bash
       run: |
-        .azure/scripts/install_yq.sh "${{ inputs.architecture }}"
+        ${{ github.action_path }}/../../../../.azure/scripts/install_yq.sh "${{ inputs.architecture }}"

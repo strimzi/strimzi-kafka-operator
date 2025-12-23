@@ -13,4 +13,4 @@ runs:
     - name: Install shellcheck
       shell: bash
       run: |
-        .azure/scripts/setup_shellcheck.sh "${{ inputs.architecture }}"
+        ${{ github.action_path }}/../../../../.azure/scripts/setup_shellcheck.sh "${{ inputs.architecture }}"
