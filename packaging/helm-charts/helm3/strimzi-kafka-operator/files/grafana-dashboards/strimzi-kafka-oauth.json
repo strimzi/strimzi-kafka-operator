@@ -153,7 +153,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "exemplar": true,
-          "expr": "irate(strimzi_oauth_http_requests_count{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval]) * 30",
+          "expr": "irate(strimzi_oauth_http_requests_count_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval]) * 30",
           "format": "time_series",
           "instant": false,
           "interval": "60s",
@@ -249,7 +249,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "exemplar": true,
-          "expr": "irate(strimzi_oauth_validation_requests_count{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval]) * 30",
+          "expr": "irate(strimzi_oauth_validation_requests_count_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval]) * 30",
           "format": "time_series",
           "instant": false,
           "interval": "60s",
@@ -344,7 +344,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "exemplar": true,
-          "expr": "strimzi_oauth_http_requests_count{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}",
+          "expr": "strimzi_oauth_http_requests_count_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}",
           "format": "time_series",
           "instant": false,
           "interval": "60s",
@@ -439,7 +439,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "exemplar": true,
-          "expr": "strimzi_oauth_validation_requests_count{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}",
+          "expr": "strimzi_oauth_validation_requests_count_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}",
           "format": "time_series",
           "instant": false,
           "interval": "60s",
@@ -534,7 +534,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "exemplar": true,
-          "expr": "irate(strimzi_oauth_http_requests_totaltimems{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval]) / irate(strimzi_oauth_http_requests_count{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval])",
+          "expr": "irate(strimzi_oauth_http_requests_totaltimems_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval]) / irate(strimzi_oauth_http_requests_count_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval])",
           "format": "time_series",
           "instant": false,
           "interval": "60s",
@@ -630,7 +630,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "exemplar": true,
-          "expr": "irate(strimzi_oauth_validation_requests_totaltimems{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval]) / irate(strimzi_oauth_validation_requests_count{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval])\n",
+          "expr": "irate(strimzi_oauth_validation_requests_totaltimems_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval]) / irate(strimzi_oauth_validation_requests_count_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\"}[$__rate_interval])\n",
           "format": "time_series",
           "instant": false,
           "interval": "60s",
