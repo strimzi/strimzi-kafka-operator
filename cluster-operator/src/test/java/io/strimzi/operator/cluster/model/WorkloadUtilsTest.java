@@ -435,8 +435,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 null,
                 null,
-                null
-        );
+                null,
+                null);
 
         assertThat(pod.getMetadata().getName(), is(NAME + "-0"));
         assertThat(pod.getMetadata().getNamespace(), is(NAMESPACE));
@@ -485,8 +485,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 VolumeUtils.createPodSetVolumes(NAME + "-0", DEFAULT_STORAGE, false),
                 List.of(new LocalObjectReference("some-pull-secret")),
-                DEFAULT_POD_SECURITY_CONTEXT
-        );
+                DEFAULT_POD_SECURITY_CONTEXT,
+                null);
 
         assertThat(pod.getMetadata().getName(), is(NAME + "-0"));
         assertThat(pod.getMetadata().getNamespace(), is(NAMESPACE));
@@ -537,8 +537,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 VolumeUtils.createPodSetVolumes(NAME + "-0", DEFAULT_STORAGE, false),
                 List.of(new LocalObjectReference("some-pull-secret")),
-                DEFAULT_POD_SECURITY_CONTEXT
-        );
+                DEFAULT_POD_SECURITY_CONTEXT,
+                null);
 
         assertThat(pod.getMetadata().getName(), is(NAME + "-0"));
         assertThat(pod.getMetadata().getNamespace(), is(NAMESPACE));
@@ -608,8 +608,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 VolumeUtils.createPodSetVolumes(NAME + "-0", DEFAULT_STORAGE, false),
                 List.of(new LocalObjectReference("some-pull-secret")),
-                DEFAULT_POD_SECURITY_CONTEXT
-        );
+                DEFAULT_POD_SECURITY_CONTEXT,
+                null);
 
         assertThat(pod.getMetadata().getName(), is(NAME + "-0"));
         assertThat(pod.getMetadata().getNamespace(), is(NAMESPACE));
@@ -659,8 +659,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 null,
                 null,
-                null
-        );
+                null,
+                null);
 
         assertThat(pod.getMetadata().getLabels(), is(LABELS.toMap()));
         assertThat(pod.getMetadata().getAnnotations(), is(Map.of()));
@@ -697,8 +697,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 VolumeUtils.createPodSetVolumes(NAME + "-0", DEFAULT_STORAGE, false),
                 List.of(new LocalObjectReference("some-pull-secret")),
-                DEFAULT_POD_SECURITY_CONTEXT
-        );
+                DEFAULT_POD_SECURITY_CONTEXT,
+                null);
 
         assertThat(pod.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("default-label", "default-value")).toMap()));
         assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
@@ -736,8 +736,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 VolumeUtils.createPodSetVolumes(NAME + "-0", DEFAULT_STORAGE, false),
                 List.of(new LocalObjectReference("some-pull-secret")),
-                DEFAULT_POD_SECURITY_CONTEXT
-        );
+                DEFAULT_POD_SECURITY_CONTEXT,
+                null);
 
         assertThat(pod.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("default-label", "default-value")).toMap()));
         assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
@@ -792,8 +792,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 VolumeUtils.createPodSetVolumes(NAME + "-0", DEFAULT_STORAGE, false),
                 List.of(new LocalObjectReference("some-pull-secret")),
-                DEFAULT_POD_SECURITY_CONTEXT
-        );
+                DEFAULT_POD_SECURITY_CONTEXT,
+                null);
 
         assertThat(pod.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("default-label", "default-value", "label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(pod.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2")));
@@ -837,8 +837,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 null,
                 null,
-                null
-        );
+                null,
+                null);
 
         assertThat(pod.getMetadata().getName(), is(NAME));
         assertThat(pod.getMetadata().getNamespace(), is(NAMESPACE));
@@ -880,8 +880,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 VolumeUtils.createPodSetVolumes(NAME + "-0", DEFAULT_STORAGE, false),
                 List.of(new LocalObjectReference("some-pull-secret")),
-                DEFAULT_POD_SECURITY_CONTEXT
-        );
+                DEFAULT_POD_SECURITY_CONTEXT,
+                null);
 
         assertThat(pod.getMetadata().getName(), is(NAME));
         assertThat(pod.getMetadata().getNamespace(), is(NAMESPACE));
@@ -924,8 +924,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 VolumeUtils.createPodSetVolumes(NAME + "-0", DEFAULT_STORAGE, false),
                 List.of(new LocalObjectReference("some-pull-secret")),
-                DEFAULT_POD_SECURITY_CONTEXT
-        );
+                DEFAULT_POD_SECURITY_CONTEXT,
+                null);
 
         assertThat(pod.getMetadata().getName(), is(NAME));
         assertThat(pod.getMetadata().getNamespace(), is(NAMESPACE));
@@ -985,8 +985,8 @@ public class WorkloadUtilsTest {
                 List.of(new ContainerBuilder().withName("container").build()),
                 VolumeUtils.createPodSetVolumes(NAME + "-0", DEFAULT_STORAGE, false),
                 List.of(new LocalObjectReference("some-pull-secret")),
-                DEFAULT_POD_SECURITY_CONTEXT
-        );
+                DEFAULT_POD_SECURITY_CONTEXT,
+                null);
 
         assertThat(pod.getMetadata().getName(), is(NAME));
         assertThat(pod.getMetadata().getNamespace(), is(NAMESPACE));

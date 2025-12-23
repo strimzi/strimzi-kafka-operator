@@ -65,7 +65,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -496,6 +495,7 @@ public class KafkaBridgeClusterTest {
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
                             .withVolumes(additionalVolumes)
+                            .withHostUsers(false)
                         .endPod()
                         .withNewBridgeContainer()
                             .withVolumeMounts(additionalVolumeMounts)
@@ -541,6 +541,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
         assertThat(getVolume(dep, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
         assertThat(getVolume(dep, "secret-volume-name").getSecret(), is(secret));
         assertThat(getVolumeMount(dep.getSpec().getTemplate().getSpec().getContainers().get(0), "secret-volume-name"), is(additionalVolumeMounts.get(0)));
@@ -689,13 +690,14 @@ public class KafkaBridgeClusterTest {
     }
 
     @Test
-    public void testRestrictedSecurityContext() {
+    public void testSecurityProvider() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        kbc.securityProvider = new RestrictedPodSecurityProvider();
+        kbc.securityProvider = new TestPodSecurityProvider();
         kbc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
         Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));

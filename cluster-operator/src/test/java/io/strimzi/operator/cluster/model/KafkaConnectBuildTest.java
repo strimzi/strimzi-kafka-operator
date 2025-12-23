@@ -23,10 +23,12 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -454,6 +456,7 @@ public class KafkaConnectBuildTest {
                             .withSchedulerName("my-scheduler")
                             .withEnableServiceLinks(false)
                             .withVolumes(additionalVolume)
+                            .withHostUsers(false)
                         .endBuildPod()
                         .withNewBuildContainer()
                             .withEnv(new ContainerEnvVarBuilder().withName("TEST_ENV_VAR").withValue("testValue").build())
@@ -484,6 +487,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getPriorityClassName(), is("top-priority"));
         assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
+        assertThat(pod.getSpec().getHostUsers(), is(false));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(env -> "TEST_ENV_VAR".equals(env.getName())).findFirst().orElseThrow().getValue(), is("testValue"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMount));
         assertThat(pod.getSpec().getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
@@ -752,5 +756,20 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getEnv().get(0).getValue(), is("/build/.docker/config.json"));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().get(1).getName(), is("MY_ENV"));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().get(1).getValue(), is("value"));
+    }
+
+    @Test
+    public void testSecurityProvider() {
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME), RESOURCE, VERSIONS, SHARED_ENV_PROVIDER, false);
+        build.securityProvider = new TestPodSecurityProvider();
+        build.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        Pod pod = build.generateBuilderPod(false, false, ImagePullPolicy.IFNOTPRESENT, null, "");
+        assertThat(pod.getSpec().getSecurityContext(), is(nullValue()));
+        assertThat(pod.getSpec().getHostUsers(), is(false));
+        assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
+        assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
+        assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
+        assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
     }
 }

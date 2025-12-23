@@ -24,4 +24,11 @@ public interface PodSecurityProviderContext {
      * @return  User-supplied Pod security context
      */
     PodSecurityContext userSuppliedSecurityContext();
+
+    /**
+     * Returns the hostUsers flag configured by the user in the corresponding `template` section
+     *
+     * @return  User-supplied hostUsers flag
+     */
+    Boolean userSuppliedHostUsers();
 }

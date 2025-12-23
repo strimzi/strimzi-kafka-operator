@@ -1150,6 +1150,8 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      hostUsers:
+                        type: boolean
                   apiService:
                     type: object
                     properties:
@@ -2135,6 +2137,8 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      hostUsers:
+                        type: boolean
                   buildContainer:
                     type: object
                     properties:
@@ -3969,6 +3973,8 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      hostUsers:
+                        type: boolean
                   apiService:
                     type: object
                     properties:
@@ -4954,6 +4960,8 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      hostUsers:
+                        type: boolean
                   buildContainer:
                     type: object
                     properties:

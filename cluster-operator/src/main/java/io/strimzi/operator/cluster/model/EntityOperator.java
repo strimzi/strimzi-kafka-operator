@@ -30,6 +30,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -169,6 +170,8 @@ public class EntityOperator extends AbstractModel {
      * @return  Kubernetes Deployment with the Entity Operator
      */
     public Deployment generateDeployment(Map<String, String> podAnnotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+        PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -189,8 +192,8 @@ public class EntityOperator extends AbstractModel {
                         createContainers(imagePullPolicy),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.entityOperatorPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-                )
+                        securityProvider.entityOperatorPodSecurityContext(podSecurityProviderContext),
+                        securityProvider.entityOperatorHostUsers(podSecurityProviderContext))
         );
     }
 

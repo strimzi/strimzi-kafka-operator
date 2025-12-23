@@ -3,6 +3,7 @@
 ## 0.50.0
 
 * Use Java 21 as the runtime and language level
+* Support for Linux user namespaces in Strimzi Pods through the `hostUsers` Pod option
 
 ### Major changes, deprecations, and removals
 
