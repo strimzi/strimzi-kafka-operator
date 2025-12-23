@@ -7,8 +7,6 @@ docker_tag:
 all: docker_build docker_push
 
 clean: java_clean
-	rm ../cluster-operator/src/main/resources/kafka-*-config-model.json || true
-	./build-config-models.sh clean
 
 include ../Makefile.maven
 
