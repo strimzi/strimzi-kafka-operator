@@ -79,6 +79,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -627,6 +628,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                         ImagePullPolicy imagePullPolicy,
                                         List<LocalObjectReference> imagePullSecrets,
                                         String customContainerImage) {
+        PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
         return WorkloadUtils.createPodSet(
                 componentName,
                 namespace,
@@ -652,8 +655,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         List.of(createContainer(imagePullPolicy, customContainerImage)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-                )
+                        securityProvider.kafkaConnectPodSecurityContext(podSecurityProviderContext),
+                        securityProvider.kafkaConnectHostUsers(podSecurityProviderContext))
         );
     }
 

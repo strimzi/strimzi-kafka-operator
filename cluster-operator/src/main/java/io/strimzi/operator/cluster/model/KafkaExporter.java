@@ -33,6 +33,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -179,6 +180,8 @@ public class KafkaExporter extends AbstractModel {
      * @return  Generated deployment
      */
     public Deployment generateDeployment(Map<String, String> podAnnotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+        PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -199,8 +202,8 @@ public class KafkaExporter extends AbstractModel {
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.kafkaExporterPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-                )
+                        securityProvider.kafkaExporterPodSecurityContext(podSecurityProviderContext),
+                        securityProvider.kafkaExporterHostUsers(podSecurityProviderContext))
         );
     }
 

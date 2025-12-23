@@ -39,7 +39,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
     "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig", 
-    "enableServiceLinks", "tmpDirSizeLimit", "volumes"})
+    "enableServiceLinks", "tmpDirSizeLimit", "volumes", "hostUsers"})
 @EqualsAndHashCode
 @ToString
 @DescriptionFile
@@ -59,6 +59,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private Boolean enableServiceLinks;
     private String tmpDirSizeLimit;
     private List<AdditionalVolume> volumes;
+    private Boolean hostUsers;
     private Map<String, Object> additionalProperties;
 
     @Description("Metadata applied to the resource.")
@@ -233,6 +234,21 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
 
     public void setVolumes(List<AdditionalVolume> volumes) {
         this.volumes = volumes;
+    }
+
+    @Description("Use the host's user namespace. " +
+            "Optional: Default to true. " +
+            "If set to true or not present, the pod will be run in the host user namespace, useful for when the pod needs a feature only available to the host user namespace, such as loading a kernel module with CAP_SYS_MODULE. " +
+            "When set to false, a new userns is created for the pod. " +
+            "Setting false is useful for mitigating container breakout vulnerabilities even allowing users to run their containers as root without actually having root privileges on the host. " +
+            "This field is alpha-level and is only honored by servers that enable the UserNamespacesSupport feature.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getHostUsers() {
+        return hostUsers;
+    }
+
+    public void setHostUsers(Boolean hostUsers) {
+        this.hostUsers = hostUsers;
     }
 
     @Override

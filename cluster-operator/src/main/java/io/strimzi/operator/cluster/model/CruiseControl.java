@@ -54,6 +54,7 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -362,6 +363,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * @return  Cruise Control Kubernetes Deployment
      */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+        PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -382,8 +385,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.cruiseControlPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-                )
+                        securityProvider.cruiseControlPodSecurityContext(podSecurityProviderContext),
+                        securityProvider.cruiseControlHostUsers(podSecurityProviderContext))
         );
     }
 

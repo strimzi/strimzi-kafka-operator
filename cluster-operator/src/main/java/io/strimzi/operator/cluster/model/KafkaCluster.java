@@ -91,6 +91,7 @@ import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusUtils;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.server.common.MetadataVersion;
@@ -1185,6 +1186,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<StrimziPodSet> podSets = new ArrayList<>();
 
         for (KafkaPool pool : nodePools)    {
+            PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(pool.storage, pool.templatePod);
+
             podSets.add(WorkloadUtils.createPodSet(
                     pool.componentName,
                     namespace,
@@ -1210,8 +1213,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             List.of(createContainer(imagePullPolicy, pool)),
                             getPodSetVolumes(node, pool.storage, pool.templatePod, isOpenShift),
                             imagePullSecrets,
-                            securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(pool.storage, pool.templatePod))
-                    )
+                            securityProvider.kafkaPodSecurityContext(podSecurityProviderContext),
+                            securityProvider.kafkaHostUsers(podSecurityProviderContext))
             ));
         }
 
