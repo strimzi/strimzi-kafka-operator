@@ -10,13 +10,31 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
+import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CertUtilsTest {
     @Test
@@ -290,5 +308,127 @@ public class CertUtilsTest {
                 .build();
 
         assertThat(CertUtils.trustedCertsEnvVar(List.of(cert1, cert2, cert3, cert4, cert5)), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt;third-certificate/*.crt;first-certificate/*.pem"));
+    }
+
+    @Test
+    public void testCertIsTrust() throws IOException, CertificateException {
+        OpenSslCertManager ssl = new OpenSslCertManager();
+        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+
+        File rootKey = Files.createTempFile("key-", ".key").toFile();
+        File rootCert = Files.createTempFile("crt-", ".crt").toFile();
+        File alternateRootKey = Files.createTempFile("key-", ".key").toFile();
+        File alternateRootCert = Files.createTempFile("crt-", ".crt").toFile();
+        File key = Files.createTempFile("key-", ".key").toFile();
+        File csr = Files.createTempFile("csr-", ".csr").toFile();
+        File cert = Files.createTempFile("crt-", ".crt").toFile();
+
+        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+
+        try {
+
+            // Generate a root cert
+            Instant now = Instant.now();
+            ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+
+            // Generate alternate root cert
+            ssl.generateRootCaCert(rootSubject, alternateRootKey, alternateRootCert, notBefore, notAfter, 1);
+
+            Subject subject = new Subject.Builder()
+                    .withCommonName("MyCommonName")
+                    .withOrganizationName("MyOrganization")
+                    .addDnsName("example1.com")
+                    .addDnsName("example2.com").build();
+
+            // Generate cert
+            ssl.generateCsr(key, csr, subject);
+            ssl.generateCert(csr, rootKey, rootCert, cert, subject, 1);
+
+            X509Certificate x509RootCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(rootCert));
+            X509Certificate x509AlternateRootCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(alternateRootCert));
+            X509Certificate x509Cert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(cert));
+
+            assertTrue(CertUtils.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, x509Cert, x509RootCert));
+            assertFalse(CertUtils.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, x509Cert, x509AlternateRootCert));
+
+        } finally {
+            rootKey.delete();
+            rootCert.delete();
+            alternateRootKey.delete();
+            alternateRootCert.delete();
+            key.delete();
+            csr.delete();
+            cert.delete();
+        }
+    }
+
+    @Test
+    public void testCertChainWithIntermediateIsTrusted() throws IOException, CertificateException {
+        OpenSslCertManager ssl = new OpenSslCertManager();
+        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+
+        File rootKey = Files.createTempFile("key-", ".key").toFile();
+        File rootCert = Files.createTempFile("crt-", ".crt").toFile();
+        File intermediateKey = Files.createTempFile("key-", ".key").toFile();
+        File intermediateCert = Files.createTempFile("crt-", ".crt").toFile();
+        File leafKey = Files.createTempFile("key-", ".key").toFile();
+        File csr = Files.createTempFile("csr-", ".csr").toFile();
+        File leafCert = Files.createTempFile("crt-", ".crt").toFile();
+        File combinedPem = Files.createTempFile("combined-", ".pem").toFile();
+
+        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+
+        try {
+
+            // Generate a root cert
+            Instant now = Instant.now();
+            ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+
+            // Generate an intermediate cert
+            Subject intermediateSubject = new Subject.Builder().withCommonName("IntermediateCn").withOrganizationName("MyOrganization").build();
+            ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, notBefore, notAfter, 1);
+
+            Subject subject = new Subject.Builder()
+                    .withCommonName("MyCommonName")
+                    .withOrganizationName("MyOrganization")
+                    .addDnsName("example1.com")
+                    .addDnsName("example2.com").build();
+
+            // Generate leaf cert
+            ssl.generateCsr(leafKey, csr, subject);
+            ssl.generateCert(csr, intermediateKey, intermediateCert, leafCert, subject, 1);
+
+            X509Certificate x509RootCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(rootCert));
+            X509Certificate x509LeafCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(leafCert));
+
+            assertFalse(CertUtils.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, x509LeafCert, x509RootCert));
+
+            // Construct combined pem to validate
+            try (FileInputStream intCertFis = new FileInputStream(intermediateCert);
+                 FileInputStream leafCertFis = new FileInputStream(leafCert);
+                 FileOutputStream combinedFos = new FileOutputStream(combinedPem)) {
+                String combined = String.join("\n",
+                        new String(intCertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                        new String(leafCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+                combinedFos.write(combined.getBytes(StandardCharsets.US_ASCII));
+                X509Certificate combinedCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(combinedPem));
+
+                assertTrue(CertUtils.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, combinedCert, x509RootCert));
+            }
+
+        } finally {
+            rootKey.delete();
+            rootCert.delete();
+            intermediateKey.delete();
+            intermediateCert.delete();
+            leafKey.delete();
+            csr.delete();
+            leafCert.delete();
+            combinedPem.delete();
+        }
     }
 }
