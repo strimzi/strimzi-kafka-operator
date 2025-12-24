@@ -408,8 +408,8 @@ public class KafkaBrokerConfigurationBuilder {
         String certConfigProviderValue;
         String keyConfigProviderValue;
         if (serverCertificate != null)  {
-            certConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), serverCertificate.getSecretName(), serverCertificate.getCertificate());
-            keyConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), serverCertificate.getSecretName(), serverCertificate.getKey());
+            certConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), listenerNameInProperty + ".crt");
+            keyConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), listenerNameInProperty + ".key");
         } else {
             certConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt");
             keyConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key");
