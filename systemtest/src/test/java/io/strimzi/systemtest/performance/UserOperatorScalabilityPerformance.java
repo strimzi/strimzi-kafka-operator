@@ -22,7 +22,7 @@ import io.strimzi.systemtest.metrics.UserOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.UserOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.schedulers.UserOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.UserOperatorPerformanceReporter;
-import io.strimzi.systemtest.performance.report.parser.UserOperatorMetricsParser;
+import io.strimzi.systemtest.performance.report.parser.BasePerformanceMetricsParser;
 import io.strimzi.systemtest.performance.utils.UserOperatorPerformanceUtils;
 import io.strimzi.systemtest.performance.utils.UserOperatorPerformanceUtils.LatencyMetrics;
 import io.strimzi.systemtest.resources.CrdClients;
@@ -297,6 +297,6 @@ public class UserOperatorScalabilityPerformance extends AbstractST {
     @AfterAll
     void tearDown() {
         // show tables with metrics
-        UserOperatorMetricsParser.main(new String[]{PerformanceConstants.USER_OPERATOR_PARSER});
+        BasePerformanceMetricsParser.main(new String[]{PerformanceConstants.USER_OPERATOR_PARSER});
     }
 }
