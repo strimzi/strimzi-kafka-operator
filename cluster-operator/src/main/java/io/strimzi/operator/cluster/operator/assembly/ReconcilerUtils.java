@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
@@ -623,7 +624,23 @@ public class ReconcilerUtils {
 
     private static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthenticationTls auth) {
         return getValidatedSecret(secretOperator, namespace, auth.getCertificateAndKey().getSecretName(), auth.getCertificateAndKey().getCertificate(), auth.getCertificateAndKey().getKey())
+                //TODO: shouldn't this be decoded since we encode again? Otherwise encoded value gets encoded again for calculating the hash.
                 .compose(secret -> Future.succeededFuture(new CertAndKey(secret.getData().get(auth.getCertificateAndKey().getKey()).getBytes(StandardCharsets.UTF_8), secret.getData().get(auth.getCertificateAndKey().getCertificate()).getBytes(StandardCharsets.UTF_8))));
+    }
+
+    /**
+     * Extracts certificate and key from the given Secret source.
+     *
+     * @param secretOperator            Secrets operator
+     * @param namespace                 namespace to get Secret in
+     * @param certAndKeySecretSource    Secret source for certificate and key
+     * @return  Certificate and Key extracted from the Secret source and decoded
+     */
+    public static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, CertAndKeySecretSource certAndKeySecretSource) {
+        return getValidatedSecret(secretOperator, namespace, certAndKeySecretSource.getSecretName(), certAndKeySecretSource.getCertificate(), certAndKeySecretSource.getKey())
+                .compose(secret -> Future.succeededFuture(new CertAndKey(
+                        Util.decodeBytesFromBase64(secret.getData().get(certAndKeySecretSource.getKey())),
+                        Util.decodeBytesFromBase64(secret.getData().get(certAndKeySecretSource.getCertificate())))));
     }
 
     private static Future<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
