@@ -2418,4 +2418,29 @@ public class KafkaConnectClusterTest {
         assertThat(rb.getRoleRef().getKind(), is("Role"));
         assertThat(rb.getRoleRef().getName(), is(kc.componentName));
     }
+
+    @Test
+    public void testDefaultMetricsConfigurationDoesNotIncludeMM2Metrics() {
+        // Test that Kafka Connect default metrics do not include MM2-specific metrics
+        MetricsConfig metrics = new StrimziMetricsReporterBuilder().build();
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(RESOURCE)
+                .editSpec()
+                    .withMetricsConfig(metrics)
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS, SHARED_ENV_PROVIDER);
+
+        assertThat(kc.metrics(), is(notNullValue()));
+        String allowList = ((StrimziMetricsReporterModel) kc.metrics()).getAllowList();
+        
+        // Verify MM2 metrics are NOT included in Kafka Connect default configuration
+        assertThat(allowList, not(containsString("mirrorcheckpointconnector")));
+        assertThat(allowList, not(containsString("mirrorsourceconnector")));
+        
+        // Verify Connect metrics ARE included
+        assertThat(allowList, containsString("kafka_connect_connector_metrics"));
+        assertThat(allowList, containsString("kafka_connect_connect_worker_metrics_"));
+    }
 }
