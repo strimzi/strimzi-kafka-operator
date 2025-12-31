@@ -91,7 +91,7 @@ operatorNetworkPolicy:
   # The operator must communicate with DNS, the Kubernetes API server,
   # and all managed Kafka components.
   #
-  # Kafka components use numerous, configurable ports and may exist in
+  # The operands use numerous ports that differ per component and may exist in
   # "arbitrary" namespaces. This makes a generic egress NetworkPolicy
   # impractical to define. Thus we set `{}` an unrestrictred value.
   #
