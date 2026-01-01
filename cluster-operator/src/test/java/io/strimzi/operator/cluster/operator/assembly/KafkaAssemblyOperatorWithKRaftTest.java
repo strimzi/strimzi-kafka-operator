@@ -1586,6 +1586,9 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq("bar"))).thenReturn(Future.succeededFuture(bar));
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
+        CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
+        when(mockKafkaNodePoolOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+
         AtomicBoolean fooReconciled = new AtomicBoolean(false);
         AtomicBoolean barReconciled = new AtomicBoolean(false);
 
@@ -1657,6 +1660,9 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockKafkaOps.getAsync(eq("namespace1"), eq("foo"))).thenReturn(Future.succeededFuture(foo));
         when(mockKafkaOps.getAsync(eq("namespace2"), eq("bar"))).thenReturn(Future.succeededFuture(bar));
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+
+        CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
+        when(mockKafkaNodePoolOps.listAsync(eq("*"), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         AtomicBoolean fooReconciled = new AtomicBoolean(false);
         AtomicBoolean barReconciled = new AtomicBoolean(false);
