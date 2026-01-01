@@ -47,7 +47,9 @@ import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
@@ -129,6 +131,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.metrics = new KafkaAssemblyOperatorMetricsHolder(Kafka.RESOURCE_KIND, config.getCustomResourceSelector(), supplier.metricsProvider);
         this.clock = Clock.systemUTC();
+    }
+
+    @Override
+    public void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
+        super.reconcileThese(trigger, desiredNames, namespace, ignore -> {
+            nodePoolOperator.listAsync(namespace, selector())
+                    .onComplete(ar -> {
+                        if (ar.succeeded()) {
+                            metrics.resetNodePoolCounters(namespace);
+                            ar.result().forEach(nodePool ->
+                                    metrics.nodePoolResourceCounter(nodePool.getMetadata().getNamespace()).incrementAndGet());
+                            handler.handle(Future.succeededFuture());
+                        } else {
+                            handler.handle(ar.map((Void) null));
+                        }
+                    });
+        });
     }
 
     @Override
