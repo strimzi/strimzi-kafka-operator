@@ -28,7 +28,5 @@ spec:
 <3> Kafka topic that stores connector offsets.
 <4> Kafka topic that stores connector and task status updates.
 
-NOTE: Values for the three topics must be the same for all instances with the same `group.id`.
-
 Unless you use different settings for each instance, all instances form a cluster and use the same internal topics.
 Multiple instances attempting to use the same internal topics will cause unexpected errors, so you must change the values of these properties for each instance.
