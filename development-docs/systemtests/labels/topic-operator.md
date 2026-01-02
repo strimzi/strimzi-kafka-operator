@@ -7,6 +7,7 @@ They verify topic creation, updates, deletion behavior, quota enforcement, and m
 
 <!-- generated part -->
 **Tests:**
+- [testCapacity](../io.strimzi.systemtest.performance.TopicOperatorPerformance.md)
 - [testCreateDeleteCreate](../io.strimzi.systemtest.operators.topic.TopicST.md)
 - [testCreateTopicAfterUnsupportedOperation](../io.strimzi.systemtest.operators.topic.TopicST.md)
 - [testDeleteTopicEnableFalse](../io.strimzi.systemtest.operators.topic.TopicST.md)
@@ -18,5 +19,6 @@ They verify topic creation, updates, deletion behavior, quota enforcement, and m
 - [testMoreReplicasThanAvailableBrokersWithFreshKafkaTopic](../io.strimzi.systemtest.operators.topic.TopicReplicasChangeST.md)
 - [testRecoveryOfReplicationChangeDuringCcCrash](../io.strimzi.systemtest.operators.topic.TopicReplicasChangeST.md)
 - [testRecoveryOfReplicationChangeDuringEoCrash](../io.strimzi.systemtest.operators.topic.TopicReplicasChangeST.md)
+- [testScalability](../io.strimzi.systemtest.performance.TopicOperatorScalabilityPerformance.md)
 - [testSendingMessagesToNonExistingTopic](../io.strimzi.systemtest.operators.topic.TopicST.md)
 - [testTopicWithoutLabels](../io.strimzi.systemtest.operators.topic.TopicST.md)
