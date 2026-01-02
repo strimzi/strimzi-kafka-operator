@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -54,6 +55,16 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "entity-topic-operator-metrics-and-logging";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/topic-operator/custom-config/";
 
+    // Certificates for the Entity Topic Operator
+    /* test */ static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
+    /* test */ static final String ETO_CERTS_VOLUME_MOUNT = "/etc/eto-certs/";
+    /* test */ static final String ETO_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
+    /* test */ static final String ETO_CA_CERTS_VOLUME_MOUNT = "/etc/cluster-ca-certs/";
+
+    // Cruise Control API credentials for the Entity Topic Operator
+    /* test */ static final String ETO_CC_API_VOLUME_NAME = "eto-cc-api";
+    /* test */ static final String ETO_CC_API_VOLUME_MOUNT = "/etc/eto-cc-api/";
+
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
@@ -69,7 +80,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /* test */ static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
 
     // Volume name of the temporary volume used by the TO container
-    // Because the container shares the pod with other containers, it needs to have unique name
+    // Because the container shares the pod with other containers, it needs to have a unique name
     /* test */ static final String TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-to-tmp";
     
     /* test */ static final String ENV_VAR_CRUISE_CONTROL_ENABLED = "STRIMZI_CRUISE_CONTROL_ENABLED";
@@ -108,7 +119,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     }
 
     /**
-     * Create an Entity Topic Operator from given desired resource. When Topic Operator (Or Entity Operator) are not
+     * Create an Entity Topic Operator from a given desired resource. When Topic Operator (Or Entity Operator) is not
      * enabled, it returns null.
      *
      * @param reconciliation                The reconciliation marker
@@ -199,8 +210,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         }
 
         // Add environment variables required for Cruise Control integration
-        if (this.cruiseControlEnabled) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_ENABLED, Boolean.toString(cruiseControlEnabled)));
+        if (cruiseControlEnabled) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_ENABLED, "true"));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_RACK_ENABLED, Boolean.toString(rackAwarenessEnabled)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_HOSTNAME, String.format("%s-cruise-control.%s.svc", cluster, namespace)));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_PORT, String.valueOf(CRUISE_CONTROL_API_PORT)));
@@ -219,18 +230,29 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         return varList;
     }
 
-    protected List<Volume> getVolumes() {
-        return List.of(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.entityTopicOperatorLoggingConfigMapName(cluster)));
+    protected List<Volume> getVolumes(PodTemplate templatePod, boolean isOpenShift) {
+        List<Volume> volumeList = new ArrayList<>();
+
+        volumeList.add(VolumeUtils.createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
+        volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.entityTopicOperatorLoggingConfigMapName(cluster)));
+        volumeList.add(VolumeUtils.createSecretVolume(ETO_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, KafkaResources.entityTopicOperatorSecretName(cluster), isOpenShift));
+
+        if (cruiseControlEnabled) {
+            volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster), isOpenShift));
+        }
+
+        return volumeList;
     }
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> result = new ArrayList<>();
         result.add(VolumeUtils.createTempDirVolumeMount(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         result.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
-        result.add(VolumeUtils.createVolumeMount(EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT));
-        result.add(VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
+        result.add(VolumeUtils.createVolumeMount(ETO_CERTS_VOLUME_NAME, ETO_CERTS_VOLUME_MOUNT));
+        result.add(VolumeUtils.createVolumeMount(ETO_CA_CERTS_VOLUME_NAME, ETO_CA_CERTS_VOLUME_MOUNT));
         if (this.cruiseControlEnabled) {
-            result.add(VolumeUtils.createVolumeMount(EntityOperator.ETO_CC_API_VOLUME_NAME, EntityOperator.ETO_CC_API_VOLUME_MOUNT));
+            result.add(VolumeUtils.createVolumeMount(ETO_CC_API_VOLUME_NAME, ETO_CC_API_VOLUME_MOUNT));
         }
         TemplateUtils.addAdditionalVolumeMounts(result, templateContainer);
 
@@ -240,8 +262,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /**
      * Generates the Topic Operator Role Binding
      *
-     * @param namespace         Namespace where the Topic Operator is deployed
-     * @param watchedNamespace  Namespace which the Topic Operator is watching
+     * @param namespace         Namespace, where the Topic Operator is deployed
+     * @param watchedNamespace  Namespace, which the Topic Operator is watching
      *
      * @return  Role Binding for the Topic Operator
      */
@@ -271,7 +293,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     /**
      * Generate the Secret containing the Entity Topic Operator certificate signed by the cluster CA certificate used
-     * for TLS based internal communication with Kafka.
+     * for TLS-based internal communication with Kafka.
      *
      * @param clusterCa                             The cluster CA.
      * @param existingSecret                        The existing secret with Kafka certificates
@@ -299,9 +321,9 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     
     private static Map<String, String> generateCruiseControlApiCredentials(Secret oldSecret) {
         if (oldSecret != null) {
-            // The credentials should not change with every reconciliation
-            // So if the secret with credentials already exists, we re-use the values
-            // But we use the new secret to update labels etc. if needed
+            // The credentials should not change with every reconciliation.
+            // So if the secret with credentials already exists, we re-use the values.
+            // But we use the new secret to update labels etc. if needed.
             var data = oldSecret.getData();
             var username = data.get(TOPIC_OPERATOR_USERNAME_KEY);
             var password = data.get(TOPIC_OPERATOR_PASSWORD_KEY);

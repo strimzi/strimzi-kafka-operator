@@ -33,7 +33,7 @@ if [ "$STRIMZI_PUBLIC_CA" != "true" ]; then
     echo "Preparing trust store certificates for internal communication"
     STORE=/tmp/topic-operator/replication.truststore.p12
     rm -f "$STORE"
-    for CRT in /etc/tls-sidecar/cluster-ca-certs/*.crt; do
+    for CRT in /etc/cluster-ca-certs/*.crt; do
         ALIAS=$(basename "$CRT" .crt)
         echo "Adding $CRT to truststore $STORE with alias $ALIAS"
         create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
@@ -48,7 +48,7 @@ if [ "$STRIMZI_TLS_AUTH_ENABLED" != "false" ]; then
     create_keystore_without_ca_file "$STORE" "$CERTS_STORE_PASSWORD" \
         /etc/eto-certs/entity-operator.crt \
         /etc/eto-certs/entity-operator.key \
-        /etc/tls-sidecar/cluster-ca-certs/ca.crt \
+        /etc/cluster-ca-certs/ca.crt \
         entity-operator
     echo "Preparing key store certificates for internal communication is completed"
 fi

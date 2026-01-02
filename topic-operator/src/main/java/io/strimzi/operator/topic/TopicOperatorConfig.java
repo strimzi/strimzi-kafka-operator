@@ -96,7 +96,7 @@ public class TopicOperatorConfig {
     /** Cruise Control: whether authentication is enabled. */
     public static final ConfigParameter<Boolean> CRUISE_CONTROL_AUTH_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_AUTH_ENABLED", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** Cruise Control: CA certificate file location. */
-    public static final ConfigParameter<String> CRUISE_CONTROL_CRT_FILE_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_CRT_FILE_PATH", ConfigParameterParser.STRING, "/etc/tls-sidecar/cluster-ca-certs/ca.crt", CONFIG_VALUES);
+    public static final ConfigParameter<String> CRUISE_CONTROL_CRT_FILE_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_CRT_FILE_PATH", ConfigParameterParser.STRING, "/etc/cluster-ca-certs/ca.crt", CONFIG_VALUES);
     /** Cruise Control: username file location. */
     public static final ConfigParameter<String> CRUISE_CONTROL_API_USER_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_USER_PATH", ConfigParameterParser.STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY, CONFIG_VALUES);
     /** Cruise Control: password file location. */

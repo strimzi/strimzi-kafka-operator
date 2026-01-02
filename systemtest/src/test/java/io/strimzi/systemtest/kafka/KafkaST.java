@@ -256,23 +256,21 @@ class KafkaST extends AbstractST {
 
         String eoPod = eoPods.keySet().toArray()[0].toString();
         KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(testStorage.getNamespaceName()).withName(eoPod).get().getSpec().getContainers().forEach(container -> {
-            if (!container.getName().equals("tls-sidecar")) {
-                LOGGER.info("Check if -D java options are present in {}", container.getName());
+            LOGGER.info("Check if -D java options are present in {}", container.getName());
 
-                String javaSystemProp = container.getEnv().stream().filter(envVar ->
-                    envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().orElseThrow().getValue();
-                String javaOpts = container.getEnv().stream().filter(envVar ->
-                    envVar.getName().equals("STRIMZI_JAVA_OPTS")).findFirst().orElseThrow().getValue();
+            String javaSystemProp = container.getEnv().stream().filter(envVar ->
+                envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().orElseThrow().getValue();
+            String javaOpts = container.getEnv().stream().filter(envVar ->
+                envVar.getName().equals("STRIMZI_JAVA_OPTS")).findFirst().orElseThrow().getValue();
 
-                assertThat(javaSystemProp, is("-Djavax.net.debug=verbose"));
+            assertThat(javaSystemProp, is("-Djavax.net.debug=verbose"));
 
-                if (container.getName().equals("topic-operator")) {
-                    assertThat(javaOpts, is("-Xms1024M -Xmx2G"));
-                }
+            if (container.getName().equals("topic-operator")) {
+                assertThat(javaOpts, is("-Xms1024M -Xmx2G"));
+            }
 
-                if (container.getName().equals("user-operator")) {
-                    assertThat(javaOpts, is("-Xms512M -Xmx1G"));
-                }
+            if (container.getName().equals("user-operator")) {
+                assertThat(javaOpts, is("-Xms512M -Xmx1G"));
             }
         });
 

@@ -248,8 +248,8 @@ public class EntityTopicOperatorTest {
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
                 EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                 "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
-                EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
-                EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT)));
+                EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CA_CERTS_VOLUME_MOUNT,
+                EntityTopicOperator.ETO_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CERTS_VOLUME_MOUNT)));
     }
 
     @Test
@@ -316,9 +316,9 @@ public class EntityTopicOperatorTest {
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
             EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
             "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
-            EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
-            EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT,
-            EntityOperator.ETO_CC_API_VOLUME_NAME, EntityOperator.ETO_CC_API_VOLUME_MOUNT
+            EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CA_CERTS_VOLUME_MOUNT,
+            EntityTopicOperator.ETO_CERTS_VOLUME_NAME, EntityTopicOperator.ETO_CERTS_VOLUME_MOUNT,
+            EntityTopicOperator.ETO_CC_API_VOLUME_NAME, EntityTopicOperator.ETO_CC_API_VOLUME_MOUNT
         )));
     }
 
