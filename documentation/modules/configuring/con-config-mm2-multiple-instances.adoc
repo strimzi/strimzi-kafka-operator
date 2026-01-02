@@ -45,8 +45,6 @@ spec:
 <3> Kafka topic that stores connector and task status configurations.
 <4> Kafka topic that stores connector and task status updates.
 
-NOTE: All workers that belong to the same Kafka Connect cluster must use the same values for these properties.
-
 If multiple MirrorMaker 2 instances are deployed with the same worker group ID and internal topic names, they form a single Kafka Connect cluster and share internal topics.
 This can result in unexpected behavior and replication errors.
 
