@@ -71,11 +71,11 @@ TIP: Java applications can use the `RemoteClusterUtils` utility to fetch remote 
 
 == Changing the location of the offset synchronization topic
 
-By default, the `offset-syncs` topic is created in the source cluster.
+By default, the `offset-syncs` topic used by the `MirrorCheckpointConnector` is created in the source cluster.
 You can change this behavior by setting the `offset-syncs.topic.location` connector configuration to `target`.
 
-Changing the location of the topic allows MirrorMaker 2 to operate when the connector has read-only access to the source cluster.
-In this case, the connector must have read and write access to the target cluster.
+Placing the `offset-syncs` topic on the target cluster allows the `MirrorCheckpointConnector` to run when it has read-only access to the source cluster.
+The connector must still have read and write access to the `offset-syncs` topic on the cluster where the topic is located.
 
 == Listing the offsets of connectors
 

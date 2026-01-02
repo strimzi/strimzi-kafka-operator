@@ -52,5 +52,5 @@ This can result in unexpected behavior and replication errors.
 
 You do not need to change these settings when:
 
-* Multiple MirrorMaker 2 instances use the same source Kafka cluster but different target Kafka clusters
-* Deploying active-active replication where each MirrorMaker 2 instance uses a different target Kafka cluster
+* Multiple MirrorMaker 2 instances use the same source Kafka cluster but different target Kafka clusters.
+* Deploying active-active replication, where each MirrorMaker 2 instance uses a different target Kafka cluster.

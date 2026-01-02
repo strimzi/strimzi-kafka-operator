@@ -13,13 +13,17 @@ Enable this feature by configuring the `MirrorSourceConnector`.
 
 When using simple ACL-based authorization:
 
-* ACL rules apply to both source and target topics
-* Users with access to source topics automatically receive equivalent access to replicated target topics
+* Topic ACL rules can be synchronized between source and target topics
+* MirrorMaker 2 copies topic-related ACL rules from the source cluster to the target cluster
 
-IMPORTANT: This feature is not compatible with the User Operator, so disable by setting `sync.topic.acls.enabled` to `false`.
+Copying ACL rules does not guarantee equivalent access for all operations on the target cluster.
+Additional ACL rules may still be required to allow producers or consumers to operate as expected on the target cluster.
+
+IMPORTANT: This feature is not compatible with the User Operator. 
+If you use the User Operator, set `sync.topic.acls.enabled` to `false`.
 When using OAuth 2.0 authorization, the setting has no effect.
 
-.Example configuration to enable offset synchronization
+.Example configuration to enable ACL synchronization
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -34,4 +38,4 @@ metadata:
         config:
           sync.topic.acls.enabled: "true" # <1>
 ----
-<1> Replicates all source topic ACLs to the target cluster.
+<1> Copies topic-related ACL rules from the source cluster to the target cluster.
