@@ -30,7 +30,7 @@ runs:
         ARCH: ${{ inputs.runnerArch }}
 
     - name: Install Cosign
-      uses: sigstore/cosign-installer@v3.10.0
+      uses: sigstore/cosign-installer@v4.0.0
 
     - name: Install Docker
       uses: ./.github/actions/dependencies/install-docker
@@ -42,7 +42,7 @@ runs:
 
     - name: Download container artifact
       if: ${{ inputs.buildRunId != '' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         pattern: containers-*
         path: ./
@@ -52,7 +52,7 @@ runs:
 
     - name: Download container artifact
       if: ${{ inputs.buildRunId == '' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         pattern: containers-*
         path: ./
@@ -125,7 +125,7 @@ runs:
       run: tar -z -C ./sbom/ -cvpf sbom.tar.gz ./
 
     - name: Upload SBOM artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: SBOMs-${{ env.DOCKER_TAG }}
         path: sbom.tar.gz

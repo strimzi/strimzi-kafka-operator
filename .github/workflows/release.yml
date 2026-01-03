@@ -22,6 +22,10 @@ on:
         required: true
         type: string
 
+# Declare default permissions as read only
+permissions:
+  contents: read
+
 jobs:
   # Prepare release artifacts - builds release files, documentation, and pushes to Maven Central
   prepare-release-artifacts:
@@ -29,7 +33,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build/release-artifacts
         with:
           releaseVersion: ${{ inputs.releaseVersion }}
@@ -47,13 +51,13 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup ORAS
         uses: oras-project/setup-oras@v1
 
       - name: Download strimzi binaries from source build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: strimzi-binaries.tar
           run-id: ${{ inputs.sourceBuildRunId }}
@@ -79,15 +83,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       id-token: write
     env:
       DOCKER_REGISTRY: "quay.io"
       DOCKER_ORG: "strimzi"
       DOCKER_TAG: "${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }}"
     steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/containers-push
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build/push-containers
         with:
           architectures: "amd64,arm64,ppc64le,s390x"
           runnerArch: "amd64"
@@ -104,24 +107,23 @@ jobs:
       - prepare-release-artifacts
     # Run if push-containers-with-suffix succeeded/skipped and we're on a release branch
     if: |-
-      ${{ always() && startsWith(github.ref, 'refs/heads/release-') && 
-        needs.prepare-release-artifacts.result == 'success' &&  
+      ${{ always() && startsWith(github.ref, 'refs/heads/release-') &&
+        needs.prepare-release-artifacts.result == 'success' &&
         needs.push-java-artifacts-to-ghcr.result == 'success' &&
-        (needs.push-containers-with-suffix.result == 'success' || 
-        needs.push-containers-with-suffix.result == 'skipped') 
+        (needs.push-containers-with-suffix.result == 'success' ||
+        needs.push-containers-with-suffix.result == 'skipped')
       }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       id-token: write
     env:
       DOCKER_REGISTRY: "quay.io"
       DOCKER_ORG: "strimzi"
       DOCKER_TAG: "${{ inputs.releaseVersion }}"
     steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/containers-push
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build/push-containers
         with:
           architectures: "amd64,arm64,ppc64le,s390x"
           runnerArch: "amd64"
@@ -142,7 +144,7 @@ jobs:
       }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build/publish-helm-chart
         with:
           releaseVersion: ${{ inputs.releaseVersion }}

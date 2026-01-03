@@ -19,7 +19,7 @@ runs:
   steps:
     - name: Add comment
       id: comment-and-check
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         MESSAGE: ${{ inputs.commentMessage }}
         COMMENT_ID: ${{ inputs.commentId }}

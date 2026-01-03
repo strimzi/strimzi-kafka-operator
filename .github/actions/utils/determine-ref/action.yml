@@ -14,7 +14,7 @@ runs:
   steps:
     - name: Determine ref and SHA
       id: determine
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const {owner, repo} = context.repo;

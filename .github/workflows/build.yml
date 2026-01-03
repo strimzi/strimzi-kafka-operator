@@ -9,6 +9,10 @@ on:
     branches:
       - "*"
 
+# Declare default permissions as read only
+permissions:
+  contents: read
+
 # Cancel previous builds on the same branch/PR
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,7 +24,7 @@ jobs:
     name: Build Strimzi
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Build workflow trigger via pull_request will have merge commit sha in github.sha
       - name: Store build commit sha
@@ -29,7 +33,7 @@ jobs:
           echo "Stored commit SHA: ${{ github.sha }}"
 
       - name: Upload build metadata
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: commit-sha.txt
           path: commit-sha.txt
@@ -46,7 +50,7 @@ jobs:
       - build-strimzi
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build/test-strimzi
         with:
           runnerArch: "amd64"
@@ -61,7 +65,7 @@ jobs:
       - build-strimzi
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build/build-docs
         with:
           artifactName: "documentation.tar"
@@ -81,8 +85,8 @@ jobs:
           - ppc64le
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/containers-build
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build/build-containers
         with:
           architecture: ${{ matrix.architecture }}
           runnerArch: "amd64"
@@ -99,7 +103,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
       # Required for keyless signing with GitHub OIDC
       id-token: write
     env:
@@ -107,8 +110,8 @@ jobs:
       DOCKER_ORG: "strimzi"
       DOCKER_TAG: "latest"
     steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/containers-push
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build/push-containers
         with:
           architectures: "amd64,arm64,ppc64le,s390x"
           runnerArch: "amd64"
@@ -126,7 +129,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build/publish-docs
         with:
           artifactName: "documentation.tar"
@@ -143,7 +146,7 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build/deploy-java
         with:
           runnerArch: "amd64"

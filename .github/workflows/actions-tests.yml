@@ -15,8 +15,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: docker://rhysd/actionlint:latest
+      - uses: actions/checkout@v6
+      - uses: docker://rhysd/actionlint:1.7.10
         with:
           args: -color
 
@@ -25,7 +25,7 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Install dependencies
       - name: Install act
@@ -86,7 +86,7 @@ jobs:
             # Run act with the scenario
             echo "▶️  Running test..."
             
-            if eval "act '$event' -W '$WORKFLOW' -e '$fixture' -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false $env_args $token_args"; then
+            if eval "act '$event' -W '$WORKFLOW' -e '$fixture' -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 --pull=false $env_args $token_args"; then
               echo "✅ $id passed"
             else
               echo "❌ $id failed"
@@ -109,7 +109,7 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Install dependencies
       - name: Install act
@@ -179,7 +179,7 @@ jobs:
             actor_args="--env GITHUB_ACTOR=\"$actor\""
             token_args="-s GITHUB_TOKEN=\"${{ secrets.GITHUB_TOKEN }}\""
             
-            if eval "act '$event' -W '$WORKFLOW' -e '$fixture' -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false $env_args $actor_args $token_args"; then
+            if eval "act '$event' -W '$WORKFLOW' -e '$fixture' -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 --pull=false $env_args $actor_args $token_args"; then
               echo "✅ $id completed"
             else
               echo "❌ $id failed"
@@ -203,7 +203,7 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Install dependencies
       - name: Install act
@@ -264,7 +264,7 @@ jobs:
             
             token_args="-s GITHUB_TOKEN=\"${{ secrets.GITHUB_TOKEN }}\""
             
-            if eval "act '$event' -W '$WORKFLOW' -e '$fixture' -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false $env_args $token_args"; then
+            if eval "act '$event' -W '$WORKFLOW' -e '$fixture' -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 --pull=false $env_args $token_args"; then
               echo "✅ $id completed"
             else
               echo "❌ $id failed"
@@ -288,7 +288,7 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Install dependencies
       - name: Install act
@@ -359,7 +359,7 @@ jobs:
             
             token_args="-s GITHUB_TOKEN=\"${{ secrets.GITHUB_TOKEN }}\""
             
-            if eval "act '$event' -W '$WORKFLOW' -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false $env_args $token_args"; then
+            if eval "act '$event' -W '$WORKFLOW' -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 --pull=false $env_args $token_args"; then
               echo "✅ $id completed"
             else
               echo "❌ $id failed"
@@ -383,7 +383,7 @@ jobs:
       - lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Install dependencies
       - name: Install act
@@ -445,7 +445,7 @@ jobs:
             echo "▶️  Running test..."
 
             if act "$event" -W "$WORKFLOW" -e "$EVENT_FILE" \
-                -P ubuntu-latest=catthehacker/ubuntu:act-latest \
+                -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-22.04 \
                 --pull=false \
                 --env EXPECTED_OUTPUT_FILE="$expected_file" \
                 --env EXPECTED_HAS_RESULTS="$expected_has_results" \

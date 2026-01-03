@@ -17,7 +17,7 @@ Usage example can be like this:
     name: build-artifacts
     runs-on: oracle-2cpu-8gb-arm64
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
@@ -25,7 +25,7 @@ Usage example can be like this:
 
 ## Build images
 In the same manner as on Azure we build multi-arch images as part of our workflows.
-To build the images we use [containers-build](../actions/build/containers-build) action that produce container images for each specific architecture.
+To build the images we use [build-containers](../actions/build/build-containers) action that produce container images for each specific architecture.
 This actions has to be called separately for each architecture with matrix strategy you can see bellow:
 
 ```yaml
@@ -36,8 +36,8 @@ This actions has to be called separately for each architecture with matrix strat
         architecture: [amd64, arm64]
     runs-on: oracle-vm-2cpu-8gb-arm64
     steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/containers-build
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build/build-containers
         with:
           architecture: ${{ matrix.architecture }}
 ```
@@ -54,22 +54,27 @@ Environment preparation actions:
 - [install-helm](../actions/dependencies/install-helm)
 - [install-shellcheck](../actions/dependencies/install-shellcheck)
 - [install-yq](../actions/dependencies/install-yq)
+- [setup-java](../actions/dependencies/setup-java)
 - [setup-kind](../actions/dependencies/setup-kind)
-- [setup-minikube](../actions/dependencies/setup-kind)
+- [setup-minikube](../actions/dependencies/setup-minikube)
 
 Build process actions:
 - [build-strimzi-binaries](../actions/build/build-strimzi-binaries)
-- [containers-build](../actions/build/containers-build)
-- [containers-load](../actions/build/containers-load)
-- [download-build-artifacts](../actions/build/download-build-artifacts)
+- [build-containers](../actions/build/build-containers)
+- [load-containers](../actions/build/load-containers)
+- [push-containers](../actions/build/push-containers)
 - [build-docs](../actions/build/build-docs)
 - [publish-docs](../actions/build/publish-docs)
+- [publish-helm-chart](../actions/build/publish-helm-chart)
+- [deploy-java](../actions/build/deploy-java)
+- [release-artifacts](../actions/build/release-artifacts)
 - [test-strimzi](../actions/build/test-strimzi)
 
 System tests execution actions:
 - [generate-matrix](../actions/systemtests/generate-matrix)
 - [parse-comment](../actions/systemtests/parse-comment)
 - [validate-matrix](../actions/systemtests/validate-matrix)
+- [run-perf-report](../actions/systemtests/run-perf-report)
 
 Utils actions:
 - [check-permissions](../actions/utils/check-permissions)
@@ -78,6 +83,25 @@ Utils actions:
 - [set-defaults](../actions/utils/set-defaults)
 - [log-variables](../actions/utils/log-variables)
 - [determine-ref](../actions/utils/determine-ref)
+- [compare-merge-commit](../actions/utils/compare-merge-commit)
+
+## Workflows
+The repository contains several GitHub Actions workflows for different purposes:
+
+### Build and Test Workflows
+- [build.yml](../workflows/build.yml) - Main build workflow for building and testing Strimzi
+- [actions-tests.yml](../workflows/actions-tests.yml) - Tests for GitHub Actions and workflows
+- [pre-commit.yml](../workflows/pre-commit.yml) - Pre-commit checks and validations
+
+### System Tests Workflows
+- [system-tests.yml](../workflows/system-tests.yml) - Triggers and orchestrates system tests
+- [run-system-tests.yml](../workflows/run-system-tests.yml) - Executes system tests with specific configurations
+
+### Release and Security Workflows
+- [release.yml](../workflows/release.yml) - Handles release process and artifact publishing
+- [cve-rebuild.yml](../workflows/cve-rebuild.yml) - Rebuilds images when CVEs are detected
+- [scorecards.yml](../workflows/scorecards.yml) - OpenSSF Scorecard security analysis
+- [codeql-analysis.yml](../workflows/codeql-analysis.yml) - CodeQL security scanning
 
 ## Running system tests
 With GitHub Actions we are now able to propagate a specific parameters to our e2e jobs.

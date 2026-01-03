@@ -14,7 +14,7 @@ runs:
       uses: ./.github/actions/dependencies/setup-java
 
     - name: Restore Maven cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: ~/.m2/repository
         key: maven-${{ hashFiles('**/pom.xml') }}

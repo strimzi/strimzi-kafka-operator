@@ -80,7 +80,7 @@ jobs:
     steps:
       - uses: strimzi/strimzi-kafka-operator/.github/actions/utils/check-permissions@main
       # In case the user has proper rights, print comment with build link and set status
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
 
@@ -102,7 +102,7 @@ jobs:
       buildMetadataSha: ${{ steps.verify.outputs.buildMetadataSha }}
       commentId: ${{ steps.initial-comment.outputs.commentId }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add initial comment
@@ -148,7 +148,7 @@ jobs:
       message: ${{ steps.validate.outputs.message }}
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - name: Generate Matrix for Validation
@@ -210,7 +210,7 @@ jobs:
       }}
     runs-on: oracle-2cpu-8gb-arm64
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - uses: ./.github/actions/build/build-strimzi-binaries
@@ -241,10 +241,10 @@ jobs:
         architecture: [amd64, arm64]
     runs-on: oracle-vm-2cpu-8gb-arm64
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
-      - uses: ./.github/actions/build/containers-build
+      - uses: ./.github/actions/build/build-containers
         with:
           architecture: ${{ matrix.architecture }}
           runnerArch: "arm64"
@@ -306,7 +306,7 @@ jobs:
       pull-requests: write
       statuses: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - name: Add comment
@@ -347,7 +347,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-params.outputs.ref }}
       - uses: ./.github/actions/systemtests/run-perf-report

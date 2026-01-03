@@ -1,5 +1,11 @@
 name: Run System Tests
 
+# Permissions has to have at least the following permissions for the job to work properly
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
 on:
   workflow_call:
     inputs:
@@ -69,7 +75,7 @@ jobs:
       KUBE_VERSION: ${{ inputs.kubeVersion }}
     # Job steps
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -138,7 +144,7 @@ jobs:
       - name: Download container images from Build workflow
         id: download-containers
         if: ${{ inputs.buildRunId != '' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: "containers-${{ matrix.config.arch }}.tar"
           run-id: ${{ inputs.buildRunId }}
@@ -147,20 +153,20 @@ jobs:
       - name: Download container images from this build
         id: download-containers-local
         if: ${{ inputs.buildRunId == '' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: "containers-${{ matrix.config.arch }}.tar"
 
       # Load Strimzi images from Build workflow
       - name: Load Strimzi images
         if: ${{ env.DOCKER_TAG == 'latest' && inputs.ref != 'refs/heads/main' }}
-        uses: ./.github/actions/build/containers-load
+        uses: ./.github/actions/build/load-containers
         with:
           architecture: ${{ matrix.config.arch }}
           registry: "kind"
 
       - name: Restore Maven cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}
@@ -265,21 +271,21 @@ jobs:
 
       - name: Archive JUnit test results
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: junit-results-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest/target/failsafe-reports/**/TEST-*.xml
 
       - name: Archive systemtest logs
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: systemtest-logs-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest-logs
 
       - name: Archive performance results
         if: ${{ always() && matrix.config.profile == 'performance' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: performance-results-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest/target/performance

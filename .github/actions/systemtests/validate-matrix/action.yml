@@ -19,7 +19,7 @@ runs:
   steps:
     - name: Validate Matrix
       id: validate
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const matrix = JSON.parse(process.env.MATRIX || '[]');
