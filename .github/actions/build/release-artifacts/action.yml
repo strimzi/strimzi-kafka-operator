@@ -45,7 +45,7 @@ runs:
       uses: ./.github/actions/dependencies/setup-java
 
     - name: Restore Maven cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: ~/.m2/repository
         key: maven-${{ hashFiles('**/pom.xml') }}
@@ -74,7 +74,7 @@ runs:
       run: tar -cvpf release.tar ./*${{ inputs.releaseVersion }}*
 
     - name: Upload release archives
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: release.tar
         path: release.tar
@@ -90,7 +90,7 @@ runs:
       run: tar -cvpf documentation.tar ./documentation/html ./documentation/htmlnoheader ./documentation/pdf
 
     - name: Upload documentation
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: documentation.tar
         path: documentation.tar

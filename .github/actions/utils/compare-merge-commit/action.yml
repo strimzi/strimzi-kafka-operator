@@ -38,7 +38,7 @@ runs:
   steps:
     - name: Find Build Workflow Run
       id: find-build
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         INPUT_SHA: ${{ inputs.commitSha }}
         WAIT_FOR_BUILD: ${{ inputs.waitForBuild }}
@@ -139,7 +139,7 @@ runs:
     - name: Download build metadata
       id: download-metadata
       continue-on-error: true
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: commit-sha.txt
         run-id: ${{ steps.find-build.outputs.run_id }}
@@ -148,7 +148,7 @@ runs:
 
     - name: Compare commit SHA
       id: compare-sha
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         BUILD_RUN_ID: ${{ steps.find-build.outputs.run_id }}
         MERGE_COMMIT_SHA: ${{ inputs.mergeCommitSha }}

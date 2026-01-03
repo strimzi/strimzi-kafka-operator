@@ -31,13 +31,13 @@ runs:
 
     - name: Download Strimzi binaries from this workflow
       if: ${{ inputs.buildRunId == '' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: strimzi-binaries.tar
 
     - name: Download Strimzi binaries from external build
       if: ${{ inputs.buildRunId != '' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: strimzi-binaries.tar
         run-id: ${{ inputs.buildRunId }}
@@ -61,7 +61,7 @@ runs:
       run: "tar -cvpf containers-${{ inputs.architecture }}.tar ./docker-images/container-archives"
 
     - name: Upload containers artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: containers-${{ inputs.architecture }}.tar
         path: containers-${{ inputs.architecture }}.tar

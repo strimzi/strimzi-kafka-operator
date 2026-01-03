@@ -24,7 +24,7 @@ runs:
   steps:
     - name: Cache registry Docker image
       id: cache-registry
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /tmp/registry-image.tar
         key: registry-image

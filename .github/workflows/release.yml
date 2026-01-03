@@ -33,7 +33,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build/release-artifacts
         with:
           releaseVersion: ${{ inputs.releaseVersion }}
@@ -51,13 +51,13 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup ORAS
         uses: oras-project/setup-oras@v1
 
       - name: Download strimzi binaries from source build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: strimzi-binaries.tar
           run-id: ${{ inputs.sourceBuildRunId }}
@@ -89,8 +89,8 @@ jobs:
       DOCKER_ORG: "strimzi"
       DOCKER_TAG: "${{ inputs.releaseVersion }}-${{ inputs.releaseSuffix }}"
     steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/containers-push
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build/push-containers
         with:
           architectures: "amd64,arm64,ppc64le,s390x"
           runnerArch: "amd64"
@@ -122,8 +122,8 @@ jobs:
       DOCKER_ORG: "strimzi"
       DOCKER_TAG: "${{ inputs.releaseVersion }}"
     steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/build/containers-push
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/build/push-containers
         with:
           architectures: "amd64,arm64,ppc64le,s390x"
           runnerArch: "amd64"
@@ -144,7 +144,7 @@ jobs:
       }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/build/publish-helm-chart
         with:
           releaseVersion: ${{ inputs.releaseVersion }}
