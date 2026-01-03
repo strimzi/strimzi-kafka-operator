@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.metrics.CertificateMetricKey;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
@@ -72,5 +74,38 @@ class KafkaAssemblyOperatorMetricsHolderTest {
 
     private boolean matchCaTypes(String actual, CertificateMetricKey.Type expected) {
         return actual.equals(expected.getDisplayName().toLowerCase(Locale.ROOT));
+    }
+
+    @Test
+    @DisplayName("Should return correct resource counter for node pool")
+    void shouldReturnCorrectResourceCounterForNodePool() {
+        AtomicInteger counter = metricsHolder.nodePoolResourceCounter("TestNamespace");
+
+        assertEquals(0, counter.get(), "Initial counter value should be 0");
+
+        counter.incrementAndGet();
+        assertEquals(1, counter.get(), "Counter should be incremented to 1");
+    }
+
+    @Test
+    @DisplayName("Should reset node pool counters for specific namespace")
+    void shouldResetNodePoolCountersForSpecificNamespace() {
+        metricsHolder.nodePoolResourceCounter("TestNamespace").set(5);
+
+        metricsHolder.resetNodePoolCounters("TestNamespace");
+
+        assertEquals(0, metricsHolder.nodePoolResourceCounter("TestNamespace").get(), "Counter should be reset to 0");
+    }
+
+    @Test
+    @DisplayName("Should reset node pool counters for all namespaces")
+    void shouldResetNodePoolCountersForAllNamespaces() {
+        metricsHolder.nodePoolResourceCounter("Namespace1").set(3);
+        metricsHolder.nodePoolResourceCounter("Namespace2").set(7);
+
+        metricsHolder.resetNodePoolCounters(ConfigParameter.ANY_NAMESPACE);
+
+        assertEquals(0, metricsHolder.nodePoolResourceCounter("Namespace1").get(), "Counter for Namespace1 should be reset to 0");
+        assertEquals(0, metricsHolder.nodePoolResourceCounter("Namespace2").get(), "Counter for Namespace2 should be reset to 0");
     }
 }
