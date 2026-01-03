@@ -1,0 +1,21 @@
+{{- if .Values.operatorNetworkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: strimzi-cluster-operator-network-policy
+spec:
+  egress:
+    {{- with .Values.operatorNetworkPolicy.egress }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  ingress:
+    {{- with .Values.operatorNetworkPolicy.ingress }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  podSelector:
+    matchLabels:
+      name: strimzi-cluster-operator
+  policyTypes:
+  - Egress
+  - Ingress
+{{- end }}
