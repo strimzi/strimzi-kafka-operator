@@ -117,8 +117,20 @@ public class EntityOperatorTest {
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
     public void testGenerateDeployment(boolean cruiseControlEnabled) {
-        ENTITY_OPERATOR.cruiseControlEnabled = cruiseControlEnabled;
-        Deployment dep = ENTITY_OPERATOR.generateDeployment(Map.of(), true, null, null);
+        Kafka kafka;
+        if (cruiseControlEnabled) {
+            kafka = new KafkaBuilder(KAFKA)
+                    .editSpec()
+                        .withNewCruiseControl()
+                        .endCruiseControl()
+                    .endSpec()
+                    .build();
+        } else {
+            kafka = KAFKA;
+        }
+
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", "Kafka", NAMESPACE, CLUSTER_NAME), kafka, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        Deployment dep = eo.generateDeployment(Map.of(), true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -135,10 +147,10 @@ public class EntityOperatorTest {
         List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
-        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME)).findFirst().isEmpty(), is(false));
+        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.ETO_CA_CERTS_VOLUME_NAME)).findFirst().isEmpty(), is(false));
         
         if (cruiseControlEnabled) {
-            assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.ETO_CC_API_VOLUME_NAME)).findFirst().isEmpty(), is(false));
+            assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.ETO_CC_API_VOLUME_NAME)).findFirst().isEmpty(), is(false));
         }
     }
 

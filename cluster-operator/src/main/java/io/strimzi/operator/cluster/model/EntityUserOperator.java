@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -66,7 +67,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /* test */ static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
 
     // Volume name of the temporary volume used by the UO container
-    // Because the container shares the pod with other containers, it needs to have unique name
+    // Because the container shares the pod with other containers, it needs to have a unique name
     /*test*/ static final String USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-uo-tmp";
 
     /* test */ final String kafkaBootstrapServers;
@@ -101,7 +102,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     }
 
     /**
-     * Create an Entity User Operator from given desired resource. When User Operator (Or Entity Operator) are not
+     * Create an Entity User Operator from a given desired resource. When User Operator (Or Entity Operator) is not
      * enabled, it returns null.
      *
      * @param reconciliation                The reconciliation
@@ -229,16 +230,17 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         return varList;
     }
 
-    protected List<Volume> getVolumes() {
-        return List.of(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.entityUserOperatorLoggingConfigMapName(cluster)));
+    protected List<Volume> getVolumes(PodTemplate templatePod) {
+        return List.of(
+                VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.entityUserOperatorLoggingConfigMapName(cluster)),
+                VolumeUtils.createTempDirVolume(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod)
+        );
     }
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMounts = new ArrayList<>();
         volumeMounts.add(VolumeUtils.createTempDirVolumeMount(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         volumeMounts.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
-        volumeMounts.add(VolumeUtils.createVolumeMount(EntityOperator.EUO_CERTS_VOLUME_NAME, EntityOperator.EUO_CERTS_VOLUME_MOUNT));
-        volumeMounts.add(VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
 
         TemplateUtils.addAdditionalVolumeMounts(volumeMounts, templateContainer);
 
@@ -248,8 +250,8 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /**
      * Generates the User Operator Role Binding
      *
-     * @param namespace         Namespace where the User Operator is deployed
-     * @param watchedNamespace  Namespace which the User Operator is watching
+     * @param namespace         Namespace, where the User Operator is deployed
+     * @param watchedNamespace  Namespace, which the User Operator is watching
      *
      * @return  Role Binding for the User Operator
      */
@@ -279,7 +281,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
     /**
      * Generate the Secret containing the Entity User Operator certificate signed by the cluster CA certificate used for
-     * TLS based internal communication with Kafka.
+     * TLS-based internal communication with Kafka.
      *
      * @param clusterCa                             The cluster CA.
      * @param existingSecret                        The existing secret with Kafka certificates

@@ -43,8 +43,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.RECREATE;
-import static io.strimzi.operator.cluster.model.EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME;
-import static io.strimzi.operator.cluster.model.EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME;
 import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
 
 /**
@@ -56,23 +54,10 @@ public class EntityOperator extends AbstractModel {
      */
     public static final String COMPONENT_TYPE = "entity-operator";
 
-    // Certificates for the Entity Topic Operator
-    protected static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
-    protected static final String ETO_CERTS_VOLUME_MOUNT = "/etc/eto-certs/";
-    // Cruise Control API credentials for the Entity Topic Operator
-    protected static final String ETO_CC_API_VOLUME_NAME = "eto-cc-api";
-    protected static final String ETO_CC_API_VOLUME_MOUNT = "/etc/eto-cc-api/";
-    // Certificates for the Entity User Operator
-    protected static final String EUO_CERTS_VOLUME_NAME = "euo-certs";
-    protected static final String EUO_CERTS_VOLUME_MOUNT = "/etc/euo-certs/";
-    
-    protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
-    protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
-
     protected static final String CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS = "STRIMZI_CUSTOM_ENTITY_OPERATOR_LABELS";
 
     /**
-     * Default healthcheck options used by the Topic and User operators
+     * Default health check options used by the Topic and User operators
      */
     protected static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new io.strimzi.api.kafka.model.common.ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(10).build();
 
@@ -105,7 +90,7 @@ public class EntityOperator extends AbstractModel {
     }
 
     /**
-     * Create an Entity Operator from given desired resource
+     * Create an Entity Operator from a given desired resource
      *
      * @param reconciliation                The reconciliation marker
      * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity Operator one
@@ -219,37 +204,29 @@ public class EntityOperator extends AbstractModel {
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>(8);
+        List<Volume> volumeList = new ArrayList<>();
 
         if (topicOperator != null) {
-            volumeList.addAll(topicOperator.getVolumes());
-            volumeList.add(VolumeUtils.createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
-            volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, KafkaResources.entityTopicOperatorSecretName(cluster), isOpenShift));
-            if (cruiseControlEnabled) {
-                volumeList.add(VolumeUtils.createSecretVolume(ETO_CC_API_VOLUME_NAME, KafkaResources.entityTopicOperatorCcApiSecretName(cluster), isOpenShift));
-            }
+            volumeList.addAll(topicOperator.getVolumes(templatePod, isOpenShift));
         }
 
         if (userOperator != null) {
-            volumeList.addAll(userOperator.getVolumes());
-            volumeList.add(VolumeUtils.createTempDirVolume(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
-            volumeList.add(VolumeUtils.createSecretVolume(EUO_CERTS_VOLUME_NAME, KafkaResources.entityUserOperatorSecretName(cluster), isOpenShift));
+            volumeList.addAll(userOperator.getVolumes(templatePod));
         }
         
         addAdditionalVolumes(templatePod, volumeList);
-        
-        volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+
         return volumeList;
     }
 
     /**
-     * Read the entity operator ClusterRole, and use the rules to create a new Role.
+     * Read the entity operator ClusterRole and use the rules to create a new Role.
      * This is done to avoid duplication of the rules set defined in source code.
-     * If the namespace of the role is not the same as the namespace of the parent resource (Kafka CR), we do not set
+     * If the namespace of the role is different from the namespace of the parent resource (Kafka CR), we do not set
      * the owner reference.
      *
      * @param ownerNamespace        The namespace of the parent resource (the Kafka CR)
-     * @param namespace             The namespace this role will be located
+     * @param namespace             The namespace of this role will be located
      *
      * @return role for the entity operator
      */
