@@ -28,6 +28,7 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -63,6 +64,19 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         if (value != null) {
             DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
+    }
+
+    /**
+     * Default Strimzi Metrics Reporter allowlist for MirrorMaker 2.
+     * Inherits from Kafka Connect metrics and adds MM2-specific metrics.
+     * Check example dashboard compatibility in case of changes to existing regexes.
+     */
+    private static final List<String> DEFAULT_METRICS_ALLOW_LIST;
+    static {
+        List<String> list = new ArrayList<>(KafkaConnectCluster.DEFAULT_METRICS_ALLOW_LIST);
+        list.add("kafka_connect_mirror_mirrorcheckpointconnector.*");
+        list.add("kafka_connect_mirror_mirrorsourceconnector.*");
+        DEFAULT_METRICS_ALLOW_LIST = Collections.unmodifiableList(list);
     }
 
     private KafkaMirrorMaker2Connectors connectors;
@@ -449,5 +463,16 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      */
     public Collection<KafkaMirrorMaker2ClusterSpec> clusters() {
         return clusters;
+    }
+
+    /**
+     * Override the default metrics allow list to include MM2-specific metrics.
+     * MirrorMaker 2 needs both Kafka Connect metrics and MM2-specific metrics.
+     *
+     * @return List of default metrics allow list patterns for MirrorMaker 2
+     */
+    @Override
+    protected List<String> getDefaultMetricsAllowList() {
+        return DEFAULT_METRICS_ALLOW_LIST;
     }
 }

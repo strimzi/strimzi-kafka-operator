@@ -2547,4 +2547,29 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(rb.getRoleRef().getKind(), is("Role"));
         assertThat(rb.getRoleRef().getName(), is(kmm2.componentName));
     }
+
+    @Test
+    public void testDefaultMetricsConfigurationIncludesBothConnectAndMM2Metrics() {
+        // Test that MirrorMaker 2 default metrics include both Connect and MM2-specific metrics
+        MetricsConfig metrics = new StrimziMetricsReporterBuilder().build();
+
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(RESOURCE)
+                .editSpec()
+                    .withMetricsConfig(metrics)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaMirrorMaker2, VERSIONS, SHARED_ENV_PROVIDER);
+
+        assertThat(kmm2.metrics(), is(notNullValue()));
+        String allowList = ((StrimziMetricsReporterModel) kmm2.metrics()).getAllowList();
+        
+        // Verify MM2 metrics ARE included in MirrorMaker 2 default configuration
+        assertThat(allowList, containsString("mirrorcheckpointconnector"));
+        assertThat(allowList, containsString("mirrorsourceconnector"));
+        
+        // Verify Connect metrics ARE also included
+        assertThat(allowList, containsString("kafka_connect_connector_metrics"));
+        assertThat(allowList, containsString("kafka_connect_connect_worker_metrics_"));
+    }
 }

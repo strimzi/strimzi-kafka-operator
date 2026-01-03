@@ -92,18 +92,16 @@ import java.util.Map;
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     /**
-     * Default Strimzi Metrics Reporter allowlist.
+     * Default Strimzi Metrics Reporter allowlist for Kafka Connect.
      * Check example dashboard compatibility in case of changes to existing regexes.
      */
-    private static final List<String> DEFAULT_METRICS_ALLOW_LIST = List.of(
+    protected static final List<String> DEFAULT_METRICS_ALLOW_LIST = List.of(
             "kafka_admin_client_admin_client_metrics_connection_count",
             "kafka_connect_connect_coordinator_metrics.*",
             "kafka_connect_connector_metrics.*",
             "kafka_connect_connector_task_metrics.*",
             "kafka_connect_connect_worker_metrics_.*",
             "kafka_connect_connect_worker_rebalance.*",
-            "kafka_connect_mirror_mirrorcheckpointconnector.*",
-            "kafka_connect_mirror_mirrorsourceconnector.*",
             "kafka_connect_task_error_metrics.*",
             "kafka_consumer_consumer_coordinator_metrics.*",
             "kafka_consumer_consumer_fetch_manager_metrics.*",
@@ -112,6 +110,16 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             "kafka_producer_producer_node_metrics_incoming_byte",
             "kafka_producer_producer_topic.*"
     );
+
+    /**
+     * Returns the default metrics allow list for this component.
+     * Can be overridden by subclasses to provide component-specific defaults.
+     *
+     * @return List of default metrics allow list patterns
+     */
+    protected List<String> getDefaultMetricsAllowList() {
+        return DEFAULT_METRICS_ALLOW_LIST;
+    }
 
     /**
      * Port of the Kafka Connect REST API
@@ -287,7 +295,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         if (spec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
             result.metrics = new JmxPrometheusExporterModel(spec);
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
-            result.metrics = new StrimziMetricsReporterModel(spec, DEFAULT_METRICS_ALLOW_LIST);
+            result.metrics = new StrimziMetricsReporterModel(spec, result.getDefaultMetricsAllowList());
         }
 
         result.logging = new LoggingModel(spec, result.getClass().getSimpleName());
