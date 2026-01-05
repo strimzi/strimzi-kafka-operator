@@ -45,7 +45,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
@@ -495,7 +494,7 @@ public class ReconcilerUtils {
             } else if (auth instanceof KafkaClientAuthenticationTls) {
                 // custom cert can be used (and changed)
                 return ((KafkaClientAuthenticationTls) auth).getCertificateAndKey() == null ? tlsFuture :
-                        tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, (KafkaClientAuthenticationTls) auth)
+                        tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, ((KafkaClientAuthenticationTls) auth).getCertificateAndKey())
                                 .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
                 List<Future<Integer>> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
@@ -620,12 +619,6 @@ public class ReconcilerUtils {
                         throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
                     }
                 });
-    }
-
-    private static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthenticationTls auth) {
-        return getValidatedSecret(secretOperator, namespace, auth.getCertificateAndKey().getSecretName(), auth.getCertificateAndKey().getCertificate(), auth.getCertificateAndKey().getKey())
-                //TODO: shouldn't this be decoded since we encode again? Otherwise encoded value gets encoded again for calculating the hash.
-                .compose(secret -> Future.succeededFuture(new CertAndKey(secret.getData().get(auth.getCertificateAndKey().getKey()).getBytes(StandardCharsets.UTF_8), secret.getData().get(auth.getCertificateAndKey().getCertificate()).getBytes(StandardCharsets.UTF_8))));
     }
 
     /**
