@@ -13,7 +13,7 @@ runs:
   using: composite
   steps:
     - name: Download performance results
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         pattern: ${{ inputs.artifacts-pattern }}
         path: ${{ inputs.artifacts-path }}
@@ -27,7 +27,7 @@ runs:
 
     - name: Generate performance report
       id: generate_report
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         PERF_DIR: ${{ inputs.artifacts-path }}
       with:

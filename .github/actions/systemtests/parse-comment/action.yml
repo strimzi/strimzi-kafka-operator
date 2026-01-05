@@ -64,7 +64,7 @@ runs:
   steps:
     - name: Should Run
       id: should_run
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const ev = context.eventName;
@@ -92,7 +92,7 @@ runs:
 
     - name: Build Comment
       id: build_comment
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         INPUT_PIPELINE: ${{ inputs.pipeline }}
         INPUT_KAFKA_VERSION: ${{ inputs.kafkaVersion }}
@@ -108,7 +108,7 @@ runs:
 
     - name: Parse Comment
       id: parse_comment
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         INPUT_RELEASE_VERSION: ${{ inputs.releaseVersion }}
         BUILT_COMMENT: ${{ steps.build_comment.outputs.builtComment }}

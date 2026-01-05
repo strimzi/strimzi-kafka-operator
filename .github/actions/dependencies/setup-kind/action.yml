@@ -28,7 +28,7 @@ runs:
   steps:
     - name: Cache registry Docker image
       id: cache-registry
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /tmp/registry-image-${{ inputs.architecture }}.tar
         key: registry-image
@@ -48,7 +48,7 @@ runs:
 
     - name: Cache cloud-provider-kind container image
       id: cache-cloud-provider-kind
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /tmp/cloud-provider-kind-image-${{ inputs.architecture }}.tar
         key: cloud-provider-kind

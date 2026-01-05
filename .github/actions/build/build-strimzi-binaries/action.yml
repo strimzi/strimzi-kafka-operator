@@ -29,14 +29,14 @@ runs:
 
     # Caches for Maven and Kafka
     - name: Restore Maven cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: ~/.m2/repository
         key: maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           maven-
     - name: Cache Kafka binaries
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: docker-images/artifacts/binaries/kafka/archives
         key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
@@ -101,7 +101,7 @@ runs:
       run: "tar -cvpf strimzi-binaries.tar ./docker-images/artifacts/binaries"
 
     - name: Upload containers artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: strimzi-binaries.tar
         path: strimzi-binaries.tar
@@ -118,7 +118,7 @@ runs:
     # Save maven cache for main branches
     - name: Save Maven cache
       if: github.ref == 'refs/heads/main'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: ~/.m2/repository
         key: maven-${{ hashFiles('**/pom.xml') }}

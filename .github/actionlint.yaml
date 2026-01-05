@@ -1,4 +1,4 @@
-# Configuration for GitHub actions linting - docker://rhysd/actionlint:latest
+# Configuration for GitHub actions linting - docker://rhysd/actionlint:1.7.10
 # For more info see https://github.com/rhysd/actionlint/blob/main/docs/config.md
 
 # Configuration related to self-hosted runner.
