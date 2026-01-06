@@ -14,6 +14,8 @@ You can run multiple MirrorMaker 2 connectors in a single Kafka Connect cluster,
 
 When running multiple Kafka Connect clusters that replicate data to the same target Kafka cluster, you must configure unique Kafka Connect worker settings so that each cluster operates independently.
 
+This requirement applies across all Kafka Connect–based deployments, including Kafka Connect and  MirrorMaker 2 instances that target the same Kafka cluster.
+
 Kafka Connect identifies a worker cluster by its group ID and by the names of the internal topics it uses.
 If multiple Kafka Connect clusters use the same values, they form a single Kafka Connect cluster and share internal state.
 
