@@ -15,9 +15,10 @@ When using simple ACL-based authorization:
 
 * Topic ACL rules can be synchronized between source and target topics
 * MirrorMaker 2 copies topic-related ACL rules from the source cluster to the target cluster
+* The `ALLOW ALL` topic ACL is not copied
 
 Copying ACL rules does not guarantee equivalent access for all operations on the target cluster.
-Additional ACL rules may still be required to allow producers or consumers to operate as expected on the target cluster.
+Additional ACL rules may still be required to allow producers or consumers to operate as expected on the target cluster, for example, ACLs for other resource types such as consumer groups or transactional IDs.
 
 IMPORTANT: This feature is not compatible with the User Operator. 
 If you use the User Operator, set `sync.topic.acls.enabled` to `false`.

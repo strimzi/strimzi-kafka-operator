@@ -9,12 +9,15 @@
 
 [role="_abstract"]
 MirrorMaker 2 runs on the Kafka Connect framework and uses internal Kafka topics to store configuration, offsets, and status information.
-When running multiple MirrorMaker 2 instances that share the same target Kafka cluster, you must configure unique Kafka Connect worker settings so that each instance operates independently.
+
+You can run multiple MirrorMaker 2 connectors in a single Kafka Connect cluster, for example to replicate data from multiple source Kafka clusters to the same target Kafka cluster.
+
+When running multiple Kafka Connect clusters that replicate data to the same target Kafka cluster, you must configure unique Kafka Connect worker settings so that each cluster operates independently.
 
 Kafka Connect identifies a worker cluster by its group ID and by the names of the internal topics it uses.
-If multiple MirrorMaker 2 instances use the same values, they form a single Kafka Connect cluster and share internal state.
+If multiple Kafka Connect clusters use the same values, they form a single Kafka Connect cluster and share internal state.
 
-When deploying multiple MirrorMaker 2 instances against the same target Kafka cluster, configure unique values for the following Kafka Connect worker properties in each Kafka Connect deployment:
+When deploying multiple Kafka Connect clusters against the same target Kafka cluster, configure unique values for the following Kafka Connect worker properties in each deployment:
 
 * `group.id`
 * `config.storage.topic`
@@ -45,10 +48,11 @@ spec:
 <3> Kafka topic that stores connector and task status configurations.
 <4> Kafka topic that stores connector and task status updates.
 
-If multiple MirrorMaker 2 instances are deployed with the same worker group ID and internal topic names, they form a single Kafka Connect cluster and share internal topics.
+If multiple Kafka Connect clusters are deployed with the same worker group ID and internal topic names, they form a single Kafka Connect cluster and share internal state.
 This can result in unexpected behavior and replication errors.
 
 You do not need to change these settings when:
 
-* Multiple MirrorMaker 2 instances use the same source Kafka cluster but different target Kafka clusters.
-* Deploying active-active replication, where each MirrorMaker 2 instance uses a different target Kafka cluster.
+* Running multiple MirrorMaker 2 connectors in a single Kafka Connect cluster
+* Replicating data from the same source Kafka cluster to different target Kafka clusters by using separate Kafka Connect clusters
+* Deploying active-active replication, where each Kafka Connect cluster targets a different Kafka cluster

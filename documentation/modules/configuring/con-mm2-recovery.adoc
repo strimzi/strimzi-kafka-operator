@@ -13,7 +13,7 @@ To support this, the Kafka cluster should also be monitored for health and perfo
 
 If failover occurs, which can be automated, operations switch from the active cluster to the passive cluster when the active cluster becomes unavailable.
 The original active cluster is typically considered permanently lost.
-The passive cluster is promoted to active status, taking over as the source for all application traffic.
+The passive cluster is promoted to active status, taking over as the source and target for all application traffic.
 In this state, MirrorMaker 2 no longer replicates data from the original active cluster while it remains unavailable.
 
 Failback, or restoring operations to the original active cluster, requires careful planning.
