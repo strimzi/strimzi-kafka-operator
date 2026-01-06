@@ -28,6 +28,6 @@ Because it produces heartbeat records to the source Kafka cluster, the `MirrorHe
 
 For a full list of supported MirrorMaker 2 connector properties, including common configuration and connector-specific options, see the {kafkaDoc}.
 
-WARNING: Configure the following properties with the *same values in both the source and checkpoint connectors*:
+WARNING: Configure the following properties with the same values in both the `MirrorSourceConnector` and `MirrorCheckpointConnector`:
 `replication.policy.class`, `replication.policy.separator`, `offset-syncs.topic.location`, and `topic.filter.class`.
 If these properties do not match, replication or offset synchronization can fail.

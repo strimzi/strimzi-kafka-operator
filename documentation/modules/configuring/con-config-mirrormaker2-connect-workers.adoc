@@ -10,7 +10,7 @@
 [role="_abstract"]
 Adjust Kafka Connect worker runtime behavior for MirrorMaker 2 by configuring worker properties on the Kafka Connect cluster that runs the MirrorMaker 2 connectors.
 
-Kafka Connect workers run against a single target Kafka cluster.
+Kafka Connect workers running MirrorMaker 2 connectors are configured to store their internal state in a single target Kafka cluster.
 The worker configuration specifies Kafka Connect runtime settings, such as task rebalance behavior, shutdown handling, and how frequently offsets are written to internal topics.
 
 .Example Kafka Connect configuration

@@ -19,8 +19,8 @@ The following tables describe the producers and consumers for each of the connec
 
 Configuration can be applied as follows:
 
-* Overriding the configuration used by the internal producer or consumer by using the `producer.override.*` or `consumer.override.*` properties.
-* Configuring the internal producer or consumer directly in the connector by using the `producer.*` or `consumer.*` properties.
+* Overriding the configuration used by the internal producer or consumer by using the `producer.override.` or `consumer.override.` properties.
+* Configuring the internal producer or consumer directly in the connector by using the `producer.` or `consumer.` properties.
 
 .Source connector producers and consumers
 [cols="1,2a,2m",options="header"]
