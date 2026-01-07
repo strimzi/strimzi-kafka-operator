@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -86,7 +85,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRebalance() throws IOException, URISyntaxException {
+    public void testCCRebalance()  {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
         this.ccRebalance(0, options, CruiseControlEndpoints.REBALANCE, result -> {
             assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
@@ -94,7 +93,7 @@ public class CruiseControlClientTest {
         });
     }
     @Test
-    public void testCCRebalanceVerbose() throws IOException, URISyntaxException {
+    public void testCCRebalanceVerbose()  {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().withVerboseResponse().build();
         this.ccRebalanceVerbose(0, options, CruiseControlEndpoints.REBALANCE,
                 result -> {
@@ -104,7 +103,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRebalanceNotEnoughValidWindowsException() throws IOException, URISyntaxException {
+    public void testCCRebalanceNotEnoughValidWindowsException()  {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
         this.ccRebalanceNotEnoughValidWindowsException(options, CruiseControlEndpoints.REBALANCE,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
@@ -112,7 +111,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRebalanceProposalNotReady() throws IOException, URISyntaxException {
+    public void testCCRebalanceProposalNotReady()  {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
         this.ccRebalanceProposalNotReady(1, options, CruiseControlEndpoints.REBALANCE,
                 result ->  assertThat(result.isProposalStillCalculating(), is(true))
@@ -120,7 +119,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCGetRebalanceUserTask() throws IOException, URISyntaxException {
+    public void testCCGetRebalanceUserTask()  {
 
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
@@ -134,7 +133,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCAddBroker() throws IOException, URISyntaxException {
+    public void testCCAddBroker()  {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
@@ -146,7 +145,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCAddBrokerVerbose() throws IOException, URISyntaxException {
+    public void testCCAddBrokerVerbose()  {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withVerboseResponse()
                 .withBrokers(List.of(3))
@@ -159,7 +158,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCAddBrokerNotEnoughValidWindowsException() throws IOException, URISyntaxException {
+    public void testCCAddBrokerNotEnoughValidWindowsException()  {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
@@ -169,7 +168,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCAddBrokerProposalNotReady() throws IOException, URISyntaxException {
+    public void testCCAddBrokerProposalNotReady()  {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
@@ -179,7 +178,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCAddBrokerDoesNotExist() throws IOException, URISyntaxException {
+    public void testCCAddBrokerDoesNotExist()  {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
@@ -191,7 +190,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBroker() throws IOException, URISyntaxException {
+    public void testCCRemoveBroker()  {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
@@ -203,7 +202,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBrokerDisks() throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerDisks()  {
         BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
                 .withBrokerId(0)
                 .withVolumeIds(1, 2, 3)
@@ -220,7 +219,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCMoveReplicasOffVolumesProposalNotReady() throws IOException, URISyntaxException {
+    public void testCCMoveReplicasOffVolumesProposalNotReady()  {
         BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
@@ -235,7 +234,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCMoveReplicasOffVolumesNotEnoughValidWindowsException() throws IOException, URISyntaxException {
+    public void testCCMoveReplicasOffVolumesNotEnoughValidWindowsException()  {
         BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
@@ -250,7 +249,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCMoveReplicasOffVolumesBrokerDoesNotExist() throws IOException, URISyntaxException {
+    public void testCCMoveReplicasOffVolumesBrokerDoesNotExist()  {
         BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
@@ -267,7 +266,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBrokerVerbose() throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerVerbose()  {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withVerboseResponse()
                 .withBrokers(List.of(3))
@@ -280,7 +279,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBrokerNotEnoughValidWindowsException() throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerNotEnoughValidWindowsException()  {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
@@ -290,7 +289,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBrokerProposalNotReady() throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerProposalNotReady()  {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
@@ -300,7 +299,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBrokerDoesNotExist() throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerDoesNotExist()  {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
@@ -311,7 +310,7 @@ public class CruiseControlClientTest {
                 });
     }
 
-    private void ccRebalance(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
+    private void ccRebalance(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, null);
         } else {
@@ -346,7 +345,7 @@ public class CruiseControlClientTest {
         }
     }
 
-    private void ccRebalanceVerbose(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
+    private void ccRebalanceVerbose(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
         cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, "true");
 
         CruiseControlApi client = cruiseControlClientProvider();
@@ -372,7 +371,7 @@ public class CruiseControlClientTest {
         }
     }
 
-    private void ccRebalanceNotEnoughValidWindowsException(AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
+    private void ccRebalanceNotEnoughValidWindowsException(AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint, null);
         } else {
@@ -409,7 +408,7 @@ public class CruiseControlClientTest {
         }
     }
 
-    private void ccRebalanceProposalNotReady(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
+    private void ccRebalanceProposalNotReady(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion)  {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, null);
         } else {
@@ -440,7 +439,7 @@ public class CruiseControlClientTest {
         }
     }
 
-    private void ccBrokerDoesNotExist(AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion) throws IOException, URISyntaxException {
+    private void ccBrokerDoesNotExist(AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion)  {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCBrokerDoesNotExist(endpoint, null);
         } else {
@@ -468,27 +467,27 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCUserTaskNoDelay() throws IOException, URISyntaxException {
+    public void testCCUserTaskNoDelay()  {
         runTest(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 0);
     }
 
     @Test
-    public void testCCUserTaskNoDelayVerbose() throws IOException, URISyntaxException {
+    public void testCCUserTaskNoDelayVerbose()  {
         runTest(MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 0);
     }
 
     @Test
-    public void testCCUserTaskDelay() throws IOException, URISyntaxException {
+    public void testCCUserTaskDelay()  {
         runTest(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 3);
     }
 
     @Test
-    public void testCCUserTaskDelayVerbose() throws IOException, URISyntaxException {
+    public void testCCUserTaskDelayVerbose()  {
         runTest(MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 3);
     }
 
     @Test
-    public void testMockCCServerPendingCallsOverride() throws IOException, URISyntaxException {
+    public void testMockCCServerPendingCallsOverride()  {
         CruiseControlApi client = cruiseControlClientProvider();
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
@@ -516,12 +515,8 @@ public class CruiseControlClientTest {
         });
 
         statusFuture = statusFuture.thenCompose(response -> {
-            try {
-                cruiseControlServer.reset();
-                cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls2);
-            } catch (IOException | URISyntaxException e) {
-                return CompletableFuture.failedFuture(e);
-            }
+            cruiseControlServer.reset();
+            cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls2);
             return CompletableFuture.completedFuture(null);
         });
 
@@ -544,7 +539,7 @@ public class CruiseControlClientTest {
         }).join();
     }
 
-    private void runTest(String userTaskID, int pendingCalls) throws IOException, URISyntaxException {
+    private void runTest(String userTaskID, int pendingCalls)  {
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls);
 
         CruiseControlApi client = cruiseControlClientProvider();
