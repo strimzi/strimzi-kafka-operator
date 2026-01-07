@@ -18,6 +18,7 @@
     <properties>
         <cruise-control.version>2.5.146</cruise-control.version>
         <log4j.version>2.17.2</log4j.version>
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
     </properties>
 
     <repositories>
@@ -38,6 +39,24 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-layout-template-json</artifactId>
             <version>${log4j.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- Cruise Control overrides the Beanutils dependency to 1.11.0 to avoid CVE-2025-48734 in its Gradle build.
+             But this change is incorrectly propagated into the Maven pom.xml. So we have to workaround it here and add
+             commons-beanutils as a direct dependency.
+
+             This PR fixes this alignment and uses the same 1.11.0 version as Cruise Control 2.5.146 does. While we, in
+             general, do not override Cruise Control dependencies as we are unable to fully test it, in this case,
+             Cruise Control is actually released with commons-beanutils 1.11.0. But it is not properly added to its
+             pom.xml file. So in this case, we are just aligning properly with Cruise Control rather than changing its
+             dependencies.
+
+             More details can be found in https://github.com/strimzi/strimzi-kafka-operator/issues/12284.
+             -->
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>${commons-beanutils.version}</version>
             <scope>runtime</scope>
         </dependency>
     </dependencies>
