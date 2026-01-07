@@ -28,13 +28,14 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"port", "cors"})
+@JsonPropertyOrder({"port", "tls", "cors"})
 @EqualsAndHashCode
 @ToString
 public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
     public static final int HTTP_DEFAULT_PORT = 8080;
     public static final String HTTP_DEFAULT_HOST = "0.0.0.0";
     private int port = HTTP_DEFAULT_PORT;
+    private KafkaBridgeHttpTls tls;
     private KafkaBridgeHttpCors cors;
     private Map<String, Object> additionalProperties;
 
@@ -54,6 +55,16 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    @Description("TLS configuration for clients connections to the HTTP Bridge.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public KafkaBridgeHttpTls getTls() {
+        return tls;
+    }
+
+    public void setTls(KafkaBridgeHttpTls tls) {
+        this.tls = tls;
     }
 
     @Description("CORS configuration for the HTTP Bridge.")
