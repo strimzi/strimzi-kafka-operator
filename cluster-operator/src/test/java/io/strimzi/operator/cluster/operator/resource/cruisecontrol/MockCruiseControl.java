@@ -44,6 +44,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlHeaders.USER_TASK_ID_HEADER;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.ACTIVE;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.COMPLETED;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.COMPLETED_WITH_ERROR;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus.IN_EXECUTION;
 
 /**
@@ -274,12 +275,13 @@ public class MockCruiseControl {
                     : USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID;
 
             CruiseControlUserTaskStatus effectiveStatus = taskStatus != null ? taskStatus : COMPLETED;
+            boolean effectiveVerbose = (effectiveStatus == COMPLETED_WITH_ERROR) ? false : verbose;
 
             server.stubFor(request
                     .willReturn(aResponse()
                             .withStatus(200)
                             .withHeader("User-Task-ID", userTaskId)
-                            .withBody(userTaskResponseJson(effectiveStatus, verbose))));
+                            .withBody(userTaskResponseJson(effectiveStatus, effectiveVerbose))));
         }
     }
 
