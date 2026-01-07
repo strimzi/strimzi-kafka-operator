@@ -50,6 +50,7 @@ public class CruiseControlHandlerTest {
 
     private static TopicOperatorMetricsHolder metricsHolder;
     private static int serverPort;
+    private static int httpsPort;
     private static File tlsCrtFile;
     private static File apiUserFile;
     private static File apiPassFile;
@@ -61,6 +62,7 @@ public class CruiseControlHandlerTest {
             new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         
         serverPort = TestUtils.getFreePort();
+        httpsPort = serverPort + 1;
         File tlsKeyFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".key");
         tlsCrtFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".crt");
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
@@ -132,7 +134,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
             entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+            entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath()),
@@ -160,7 +162,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
             entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+            entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath()),
@@ -187,7 +189,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
             entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+            entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath()),
@@ -311,7 +313,7 @@ public class CruiseControlHandlerTest {
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
                 entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
-                entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+                entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath()),
@@ -333,7 +335,7 @@ public class CruiseControlHandlerTest {
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
                 entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
-                entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
+                entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(httpsPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "false"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), tlsCrtFile.getAbsolutePath())
