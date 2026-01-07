@@ -21,7 +21,7 @@ RUN microdnf update -y \
     && microdnf reinstall -y tzdata \
     && microdnf clean all -y
 
-ENV JAVA_HOME=/usr/lib/jvm/jre-21
+ENV JAVA_HOME=/usr/lib/jvm/jre-${JAVA_VERSION}
 
 #####
 # Add Tini
