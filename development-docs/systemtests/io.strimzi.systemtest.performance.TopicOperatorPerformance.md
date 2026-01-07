@@ -16,7 +16,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka cluster with Topic Operator configured with specified batch size and linger time. | Kafka cluster with Topic Operator is deployed and ready. |
+| 1. | Deploy a Kafka cluster with the Topic Operator configured with specified batch size and linger time. | Kafka cluster with Topic Operator is deployed and ready. |
 | 2. | Start collecting Topic Operator metrics. | Metrics collection is running. |
 | 3. | Create KafkaTopics in batches of 100, each with 12 partitions and 3 replicas. | Topics are created and reach Ready state. |
 | 4. | Continue creating topic batches until the Topic Operator fails to reconcile. | Maximum capacity is reached and failure is detected. |

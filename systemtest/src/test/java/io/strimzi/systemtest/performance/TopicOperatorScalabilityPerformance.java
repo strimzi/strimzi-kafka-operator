@@ -72,7 +72,6 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
     @TestDoc(
         description = @Desc("This test measures throughput (time to process N topics in parallel), NOT latency (response time for a single topic)."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with Topic Operator configured with more resources to handle load.", expected = "Kafka cluster with Topic Operator is deployed and ready."),
             @Step(value = "For each configured number of topics (10, 100, 500, 1000), spawn one thread per KafkaTopic to perform its full lifecycle concurrently.", expected = "N concurrent threads are created, each responsible for one KafkaTopic full lifecycle (create, modify, delete)."),
             @Step(value = "Each thread performs CREATE: Creates KafkaTopic with specified partitions and replicas.", expected = "KafkaTopic is created and ready."),
             @Step(value = "Each thread performs MODIFY: Updates topic configuration.", expected = "KafkaTopic is updated and reconciled."),
