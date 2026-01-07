@@ -44,7 +44,7 @@ import static io.strimzi.systemtest.TestTags.SCALABILITY;
 @SuiteDoc(
     description = @Desc("Test suite for measuring Topic Operator scalability under concurrent topic operations."),
     beforeTestSteps = {
-        @Step(value = "Deploy Kafka cluster with Topic Operator configured with specific resource limits and batch settings.", expected = "Kafka cluster with Topic Operator is deployed and ready.")
+        @Step(value = "Deploy a Kafka cluster with the Topic Operator configured with specific resource limits and batch settings.", expected = "Kafka cluster with Topic Operator is deployed and ready.")
     },
     labels = {
         @Label(TestDocsLabels.TOPIC_OPERATOR)
@@ -78,7 +78,7 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
             @Step(value = "Each thread performs MODIFY: Updates topic configuration.", expected = "KafkaTopic is updated and reconciled."),
             @Step(value = "Each thread performs DELETE: Deletes the KafkaTopic.", expected = "KafkaTopic is deleted from the cluster."),
             @Step(value = "Wait for all threads to complete their full lifecycle operations and measure total elapsed time.", expected = "All KafkaTopics have completed create-modify-delete lifecycle. Total time represents THROUGHPUT capacity (time for all N topics to complete), not individual topic LATENCY."),
-            @Step(value = "Clean up any remaining topics and collect performance metrics (e.g., total time to complete all topic lifecycles) i.e., reconciliation time.", expected = "Namespace is cleaned, performance data is persisted to topic-operator report directory for analysis.")
+            @Step(value = "Clean up any remaining topics and collect performance metrics, including total reconciliation time.", expected = "Namespace is cleaned, performance data is persisted to topic-operator report directory for analysis.")
         },
         labels = {
             @Label(TestDocsLabels.TOPIC_OPERATOR)

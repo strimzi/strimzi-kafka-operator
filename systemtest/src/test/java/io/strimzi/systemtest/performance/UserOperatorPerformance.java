@@ -107,10 +107,10 @@ public class UserOperatorPerformance extends AbstractST {
     @TestDoc(
         description = @Desc("This test measures the maximum capacity of KafkaUsers that can be managed by the User Operator by incrementally creating users until failure."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with User Operator configured with specified thread pool sizes, cache refresh interval, and batch settings.", expected = "Kafka cluster with User Operator is deployed and ready."),
+            @Step(value = "Deploy Kafka cluster with User Operator configured with specified thread pool sizes, cache refresh intervals, and batch settings.", expected = "Kafka cluster with User Operator is deployed and ready."),
             @Step(value = "Start collecting User Operator metrics.", expected = "Metrics collection is running."),
             @Step(value = "Create KafkaUsers with TLS authentication in batches of 100.", expected = "Users are created and reach Ready state."),
-            @Step(value = "Continue creating user batches until the User Operator fails to reconcile.", expected = "Maximum capacity is reached."),
+            @Step(value = "Continue creating user batches until the User Operator fails to reconcile.", expected = "Maximum capacity is reached and failure is detected."),
             @Step(value = "Collect logs from User Operator and Kafka pods for analysis.", expected = "Logs are collected for identifying bottlenecks."),
             @Step(value = "Clean up all KafkaUsers and persist performance metrics.", expected = "Namespace is cleaned and performance data is saved to user-operator report directory.")
         },

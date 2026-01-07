@@ -94,7 +94,7 @@ public class TopicOperatorPerformance extends AbstractST {
     @TestDoc(
         description = @Desc("This test measures the maximum capacity of KafkaTopics that can be managed by the Topic Operator by incrementally creating topics until failure."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with Topic Operator configured with specified batch size and linger time.", expected = "Kafka cluster with Topic Operator is deployed and ready."),
+            @Step(value = "Deploy a Kafka cluster with the Topic Operator configured with specified batch size and linger time.", expected = "Kafka cluster with Topic Operator is deployed and ready."),
             @Step(value = "Start collecting Topic Operator metrics.", expected = "Metrics collection is running."),
             @Step(value = "Create KafkaTopics in batches of 100, each with 12 partitions and 3 replicas.", expected = "Topics are created and reach Ready state."),
             @Step(value = "Continue creating topic batches until the Topic Operator fails to reconcile.", expected = "Maximum capacity is reached and failure is detected."),
