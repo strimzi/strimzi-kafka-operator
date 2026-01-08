@@ -9,7 +9,6 @@ import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
-import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
@@ -151,13 +150,8 @@ public class MockCruiseControl {
         keystoreFile.deleteOnExit();
 
         try {
-            // Generate CSR with the server key
             certManager.generateCsr(serverKeyFile, csrFile, subject);
-
-            // Sign the CSR with the CA to create the server certificate
             certManager.generateCert(csrFile, caKeyFile, caCertFile, serverCertFile, subject, 365);
-
-            // Create PKCS12 keystore with the server key and certificate
             certManager.addKeyAndCertToKeyStore(serverKeyFile, serverCertFile, "server", keystoreFile, KEYSTORE_PASSWORD);
 
             return keystoreFile;
@@ -481,10 +475,6 @@ public class MockCruiseControl {
     public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls) {
         for (boolean verbose : new boolean[]{false, true}) {
             String scenarioName = verbose ? USER_TASKS_VERBOSE_SCENARIO : USER_TASKS_SCENARIO;
-            String userTaskId = verbose
-                    ? REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID
-                    : REBALANCE_NO_GOALS_RESPONSE_UTID;
-
             MappingBuilder baseRequest = userTasksRequestMatcher(verbose);
             String responseUserTaskId = verbose
                     ? USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID
@@ -597,12 +587,5 @@ public class MockCruiseControl {
                         .withStatus(200)
                         .withHeader("User-Task-ID", "stopped")
                         .withBody(jsonStop)));
-    }
-
-    private static String convertToHeaderValue(HTTPHeader httpHeader) {
-        if (httpHeader == null) {
-            return null;
-        }
-        return httpHeader.getValue();
     }
 }
