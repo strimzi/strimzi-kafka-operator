@@ -523,6 +523,8 @@ public class KafkaAutoRebalancingReconciler {
     record ScalingNodes(Set<Integer> blocked, Set<Integer> added) {
 
         /**
+         * Checks if both blocked and added node collections are empty.
+         *
          * @return true if both blocked scaled down or added on scale up nodes collections are empty, false otherwise
          */
         public boolean isEmpty() {

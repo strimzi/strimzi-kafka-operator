@@ -85,6 +85,8 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     private LoggingModel logging;
 
     /**
+     * Constructs a new EntityUserOperator.
+     *
      * @param reconciliation   The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      * @param sharedEnvironmentProvider Shared environment provider
@@ -296,6 +298,8 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     }
 
     /**
+     * Gets the namespace watched by the User Operator.
+     *
      * @return Returns the namespace watched by the Topic Operator
      */
     public String watchedNamespace() {
@@ -322,6 +326,8 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     }
 
     /**
+     * Gets the logging model instance for configuring logging.
+     *
      * @return  Logging Model instance for configuring logging
      */
     public LoggingModel logging()   {

@@ -50,6 +50,8 @@ public abstract class AbstractConnectorSpec extends Spec {
     private AlterOffsets alterOffsets;
 
     /**
+     * Gets the maximum number of tasks.
+     *
      * @return  Max number of tasks
      */
     @Description("The maximum number of tasks for the Kafka Connector")
@@ -68,6 +70,8 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
+     * Gets the version or version range for the Kafka Connector.
+     *
      * @return Version or version range for the Kafka Connector
      */
     @Description("Desired version or version range to respect when starting the Kafka Connector. This is only supported when using Kafka Connect version 4.1.0 and higher.")
@@ -86,6 +90,8 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
+     * Gets the Kafka Connector configuration.
+     *
      * @return  Connector configuration
      */
     @Description("The Kafka Connector configuration. The following properties cannot be set: " + FORBIDDEN_PARAMETERS)
@@ -104,6 +110,8 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
+     * Gets the flag indicating whether the connector should be paused.
+     *
      * @return  Flag indicating whether the connector should paused or not
      */
     @Description("Whether the connector should be paused. Defaults to false.")
@@ -125,6 +133,8 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
+     * Gets the auto-restart configuration of this connector.
+     *
      * @return  Auto-restart configuration of this connector
      */
     @Description("Automatic restart of connector and tasks configuration")
@@ -143,6 +153,8 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
+     * Gets the state of the connector.
+     *
      * @return The state of the connector
      */
     @Description("The state the connector should be in. Defaults to running.")
@@ -160,6 +172,8 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
+     * Gets the listOffsets configuration.
+     *
      * @return The listOffsets configuration.
      */
     @Description("Configuration for listing offsets")
@@ -177,6 +191,8 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
+     * Gets the alterOffsets configuration.
+     *
      * @return The alterOffsets configuration.
      */
     @Description("Configuration for altering offsets")

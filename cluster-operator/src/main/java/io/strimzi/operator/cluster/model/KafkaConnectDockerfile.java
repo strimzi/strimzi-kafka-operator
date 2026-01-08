@@ -442,6 +442,8 @@ public class KafkaConnectDockerfile {
     }
 
     /**
+     * Ensures the string ends with a slash.
+     *
      * @param checked The string to check whether contains the slash as the last character
      * @return The string with slash ('/') as the last character
      */

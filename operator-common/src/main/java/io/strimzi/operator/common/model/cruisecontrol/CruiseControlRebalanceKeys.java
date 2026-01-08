@@ -51,6 +51,8 @@ public enum CruiseControlRebalanceKeys {
     }
 
     /**
+     * Gets the key as a String.
+     *
      * @return  The key as a String
      */
     public String getKey() {

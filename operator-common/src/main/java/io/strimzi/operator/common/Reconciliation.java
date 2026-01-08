@@ -49,6 +49,8 @@ public class Reconciliation {
     }
 
     /**
+     * Returns the kind of the reconciled resource.
+     *
      * @return  Kind of the reconciled resource
      */
     public String kind() {
@@ -56,6 +58,8 @@ public class Reconciliation {
     }
 
     /**
+     * Returns the namespace of the reconciled resource.
+     *
      * @return  Namespace of the reconciled resource
      */
     public String namespace() {
@@ -63,6 +67,8 @@ public class Reconciliation {
     }
 
     /**
+     * Returns the name of the reconciled resource.
+     *
      * @return  Name of the reconciled resource
      */
     public String name() {
@@ -70,6 +76,8 @@ public class Reconciliation {
     }
 
     /**
+     * Returns the logging marker.
+     *
      * @return  The logging marker
      */
     public Marker getMarker() {

@@ -25,6 +25,8 @@ public class CruiseControlResponse {
     }
 
     /**
+     * Gets the user task ID from the response.
+     *
      * @return  User task ID
      */
     public String getUserTaskId() {
@@ -32,6 +34,8 @@ public class CruiseControlResponse {
     }
 
     /**
+     * Gets the JSON data of the response.
+     *
      * @return  The JSON data of the response
      */
     public JsonNode getJson() {

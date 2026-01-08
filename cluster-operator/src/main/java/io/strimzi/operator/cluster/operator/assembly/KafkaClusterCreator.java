@@ -83,6 +83,8 @@ public class KafkaClusterCreator {
     }
 
     /**
+     * Gets the nodes blocked for scaling down to be considered for auto-rebalancing before removal.
+     *
      * @return the nodes blocked for scaling down to be considered for an auto-rebalancing,
      * before they are actually removed from the cluster
      */

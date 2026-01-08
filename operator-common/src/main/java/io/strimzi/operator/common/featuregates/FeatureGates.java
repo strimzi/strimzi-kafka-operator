@@ -99,6 +99,8 @@ public class FeatureGates {
     // }
 
     /**
+     * Checks if the ServerSideApplyPhase1 feature gate is enabled.
+     *
      * @return  Returns true when the ServerSideApplyPhase1 feature gate is enabled
      */
     public boolean serverSideApplyPhase1Enabled() {
@@ -106,6 +108,8 @@ public class FeatureGates {
     }
 
     /**
+     * Checks if the UseConnectBuildWithBuildah feature gate is enabled.
+     *
      * @return  Returns if `UseConnectBuildWithBuildah` is enabled or not.
      */
     public boolean useConnectBuildWithBuildahEnabled() {
@@ -135,6 +139,8 @@ public class FeatureGates {
     }
 
     /**
+     * Generates the environment variable value for configuring feature gates in other operators.
+     *
      * @return  Generates the value for the environment variable that can be passed to the other operators to configure
      *          the feature gates exactly as they are set in this instance.
      */
@@ -193,6 +199,8 @@ public class FeatureGates {
         }
 
         /**
+         * Gets the name of the feature gate.
+         *
          * @return  The name of the feature gate
          */
         public String getName() {
@@ -200,6 +208,8 @@ public class FeatureGates {
         }
 
         /**
+         * Checks if the value for this feature gate is already set.
+         *
          * @return  Returns true if the value for this feature gate is already set or false if it is still null
          */
         public boolean isSet() {
@@ -216,6 +226,8 @@ public class FeatureGates {
         }
 
         /**
+         * Checks if the feature gate is enabled.
+         *
          * @return  True if the feature gate is enabled. False otherwise.
          */
         public boolean isEnabled() {
@@ -223,6 +235,8 @@ public class FeatureGates {
         }
 
         /**
+         * Checks if this feature gate is enabled by default.
+         *
          * @return  Returns True if this feature gate is enabled by default. False otherwise.
          */
         public boolean isEnabledByDefault() {

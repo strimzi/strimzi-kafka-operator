@@ -73,6 +73,8 @@ public class PodSecurityProviderFactory {
     }
 
     /**
+     * Gets the initialized PodSecurityProvider instance.
+     *
      * @return Returns the initialized PodSecurityProvider instance
      */
     public static PodSecurityProvider getProvider()  {

@@ -54,6 +54,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     private final boolean isPodDisruptionBudgetGeneration;
 
     /**
+     * Constructs a new KafkaBridgeAssemblyOperator.
+     *
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
      * @param certManager Certificate manager

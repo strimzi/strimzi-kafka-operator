@@ -44,6 +44,8 @@ public class NetworkPolicyOperator extends AbstractNamespacedResourceOperator<Ku
     }
 
     /**
+     * Gets the pattern for matching paths which can be ignored in the NetworkPolicy resource diff.
+     *
      * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
      */
     @Override

@@ -192,6 +192,8 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     }
 
     /**
+     * Checks if OpenShift Routes are supported on this cluster.
+     *
      * @return  True if OpenShift Routes are supported on this cluster
      */
     public boolean hasRoutes() {
@@ -203,6 +205,8 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     }
 
     /**
+     * Checks if OpenShift Builds are supported on this cluster.
+     *
      * @return  True if OpenShift Builds are supported on this cluster
      */
     public boolean hasBuilds() {
@@ -214,6 +218,8 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     }
 
     /**
+     * Checks if OpenShift ImageStreams are supported on this cluster.
+     *
      * @return  True if OpenShift ImageStreams are supported on this cluster
      */
     public boolean hasImages() {
@@ -225,6 +231,8 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     }
 
     /**
+     * Checks if OpenShift S2I (Builds and Images) are supported on this cluster.
+     *
      * @return  True if OpenShift S2I (Builds and Images) are supported on this cluster
      */
     public boolean supportsS2I() {

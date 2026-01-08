@@ -27,6 +27,8 @@ public class CruiseControlStateResponse extends CruiseControlResponse {
     }
 
     /**
+     * Gets the executor status from the Cruise Control response.
+     *
      * @return Executor status
      */
     public ExecutorStatus getExecutorStatus() {

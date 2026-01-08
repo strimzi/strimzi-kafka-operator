@@ -23,6 +23,8 @@ public class NamespaceAndName {
     }
 
     /**
+     * Gets the namespace.
+     *
      * @return  Namespace
      */
     public String getNamespace() {
@@ -30,6 +32,8 @@ public class NamespaceAndName {
     }
 
     /**
+     * Gets the name.
+     *
      * @return  NAme
      */
     public String getName() {

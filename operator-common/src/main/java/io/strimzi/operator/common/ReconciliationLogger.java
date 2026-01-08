@@ -8402,6 +8402,8 @@ public class ReconciliationLogger implements Serializable {
     }
 
     /**
+     * Checks if fatal logging is enabled.
+     *
      * @return  True if fatal logging is enabled. False otherwise.
      */
     public boolean isFatalEnabled() {
@@ -8409,6 +8411,8 @@ public class ReconciliationLogger implements Serializable {
     }
 
     /**
+     * Checks if error logging is enabled.
+     *
      * @return  True if error logging is enabled. False otherwise.
      */
     public boolean isErrorEnabled() {
@@ -8416,6 +8420,8 @@ public class ReconciliationLogger implements Serializable {
     }
 
     /**
+     * Checks if warning logging is enabled.
+     *
      * @return  True if warning logging is enabled. False otherwise.
      */
     public boolean isWarnEnabled() {
@@ -8423,6 +8429,8 @@ public class ReconciliationLogger implements Serializable {
     }
 
     /**
+     * Checks if info logging is enabled.
+     *
      * @return  True if info logging is enabled. False otherwise.
      */
     public boolean isInfoEnabled() {
@@ -8430,6 +8438,8 @@ public class ReconciliationLogger implements Serializable {
     }
 
     /**
+     * Checks if debug logging is enabled.
+     *
      * @return  True if debug logging is enabled. False otherwise.
      */
     public boolean isDebugEnabled() {
@@ -8437,6 +8447,8 @@ public class ReconciliationLogger implements Serializable {
     }
 
     /**
+     * Checks if trace logging is enabled.
+     *
      * @return  True if trace logging is enabled. False otherwise.
      */
     public boolean isTraceEnabled() {

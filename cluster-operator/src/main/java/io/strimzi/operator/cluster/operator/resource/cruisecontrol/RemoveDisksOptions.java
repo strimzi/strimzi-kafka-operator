@@ -16,6 +16,8 @@ public class RemoveDisksOptions extends AbstractRebalanceOptions {
     private final List<BrokerAndVolumeIds> brokerAndVolumeIds;
 
     /**
+     * Gets the list of brokers and volume IDs for the remove-disks endpoint.
+     *
      * @return  List of brokers and volume IDs which will be used by remove-disks endpoint
      */
     public List<BrokerAndVolumeIds> getBrokersandVolumeIds() {

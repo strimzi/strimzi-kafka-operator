@@ -1753,6 +1753,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the list of Kafka listeners configured for this cluster.
+     *
      * @return The listeners
      */
     public List<GenericKafkaListener> getListeners() {
@@ -1888,6 +1890,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the Kafka version for this cluster.
+     *
      * @return  Kafka version
      */
     public KafkaVersion getKafkaVersion() {
@@ -1895,6 +1899,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the Kafka metadata version for this cluster.
+     *
      * @return  Kafka's desired metadata version
      */
     public String getMetadataVersion() {
@@ -1902,6 +1908,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the JMX model instance for configuring JMX access.
+     *
      * @return  JMX Model instance for configuring JMX access
      */
     public JmxModel jmx()   {
@@ -1909,6 +1917,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the metrics model instance for configuring Prometheus metrics.
+     *
      * @return  Metrics Model instance for configuring Prometheus metrics
      */
     public MetricsModel metrics()   {
@@ -1916,6 +1926,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the logging model instance for configuring logging.
+     *
      * @return  Logging Model instance for configuring logging
      */
     public LoggingModel logging()   {
@@ -1923,6 +1935,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the quotas plugin instance for configuring quotas.
+     *
      * @return  QuotasPlugin instance for configuring quotas
      */
     public QuotasPlugin quotas() {
@@ -1930,6 +1944,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the map of storage configurations by node pool name.
+     *
      * @return A Map with the storage configuration used by the different node pools. The key in the map is the name of
      *         the node pool and the value is the storage configuration from the custom resource. The map includes the
      *         storage for both broker and controller pools as it is used also for Storage validation.
@@ -1945,6 +1961,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the map of resource requirements for broker node pools by pool name.
+     *
      * @return A Map with the resources configuration used by the different node pool with brokers. the key in the map
      *         is the name of the node pool and the value is the ResourceRequirements configuration from the custom
      *         resource. The map includes only pools with broker role. Controller-only node pools are not included.
@@ -1962,6 +1980,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Gets the list of warning conditions set by this model.
+     *
      * @return  Returns a list of warning conditions set by the model and the pool models. Returns an empty list if no
      *          warning conditions were set.
      */

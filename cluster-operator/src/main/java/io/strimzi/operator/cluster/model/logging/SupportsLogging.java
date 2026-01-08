@@ -9,6 +9,8 @@ package io.strimzi.operator.cluster.model.logging;
  */
 public interface SupportsLogging {
     /**
+     * Gets the logging model.
+     *
      * @return  Logging model
      */
     LoggingModel logging();

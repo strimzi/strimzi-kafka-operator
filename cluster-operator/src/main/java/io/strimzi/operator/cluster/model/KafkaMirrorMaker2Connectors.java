@@ -102,6 +102,8 @@ public class KafkaMirrorMaker2Connectors {
     }
 
     /**
+     * Generates the list of connector definitions for this Mirror Maker 2 cluster.
+     *
      * @return  List with connector definitions for this Mirror Maker 2 cluster
      */
     public List<KafkaConnector> generateConnectorDefinitions()    {

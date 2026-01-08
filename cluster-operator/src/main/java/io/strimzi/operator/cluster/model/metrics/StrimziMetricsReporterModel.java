@@ -41,6 +41,8 @@ public class StrimziMetricsReporterModel implements MetricsModel {
     }
 
     /**
+     * Gets the comma-separated list of allow regex expressions.
+     *
      * @return Comma separated list of allow regex expressions.
      */
     public String getAllowList() {

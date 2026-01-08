@@ -148,6 +148,8 @@ public class TopicOperatorMain implements Liveness, Readiness {
     }
 
     /**
+     * Main entry point for the Topic Operator.
+     *
      * @param args Command line args.
      */
     public static void main(String[] args) {

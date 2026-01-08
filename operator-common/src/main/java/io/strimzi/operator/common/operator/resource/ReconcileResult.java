@@ -179,6 +179,8 @@ public abstract class ReconcileResult<R> {
     }
 
     /**
+     * Gets the resource which was reconciled as an Optional instance.
+     *
      * @return  The resource which was reconciled as an Optional instance
      */
     public Optional<R> resourceOpt() {
@@ -186,6 +188,8 @@ public abstract class ReconcileResult<R> {
     }
 
     /**
+     * Gets the resource which was reconciled.
+     *
      * @return  The resource which was reconciled
      */
     public R resource() {
@@ -193,6 +197,8 @@ public abstract class ReconcileResult<R> {
     }
 
     /**
+     * Gets the type of the ReconcileResult.
+     *
      * @return Type of the ReconsileResult
      */
     public abstract Type getType();

@@ -222,6 +222,8 @@ public interface Conversion<T> {
     }
 
     /**
+     * Creates a conversion which replaces an object at a given path.
+     *
      * @param path        The path to replace.
      * @param replacement A function for computing the replacement for the object at the given path.
      * @param <T>         The type of resource.

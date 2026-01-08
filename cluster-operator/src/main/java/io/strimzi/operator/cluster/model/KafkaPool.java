@@ -262,6 +262,8 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
+     * Gets the set with node references belonging to this pool.
+     *
      * @return  Set with node references belonging to this pool
      */
     public Set<NodeRef> nodes()   {
@@ -272,6 +274,8 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
+     * Gets the set of Kafka nodes that are going to be removed from the Kafka cluster.
+     *
      * @return  Set of Kafka nodes that are going to be removed from the Kafka cluster
      */
     public Set<NodeRef> scaledDownNodes() {
@@ -282,6 +286,8 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
+     * Gets the set of Kafka nodes that are going to be added to the Kafka cluster.
+     *
      * @return  Set of Kafka nodes that are going to be added to the Kafka cluster
      */
     public Set<NodeRef> scaleUpNodes() {
@@ -314,6 +320,8 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
+     * Checks if this node pool has the broker role assigned.
+     *
      * @return  True if this node pool has the broker role assigned. False otherwise.
      */
     public boolean isBroker()   {
@@ -321,6 +329,8 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
+     * Checks if this node pool has the controller role assigned.
+     *
      * @return  True if this node pool has the controller role assigned. False otherwise.
      */
     public boolean isController()   {
@@ -346,6 +356,8 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
+     * Gets the set of Kafka node IDs that used to have the broker role but do not have it anymore.
+     *
      * @return  the set of Kafka node IDs that used to have the broker role but do not have it anymore.
      */
     public Set<Integer> usedToBeBrokerNodes() {

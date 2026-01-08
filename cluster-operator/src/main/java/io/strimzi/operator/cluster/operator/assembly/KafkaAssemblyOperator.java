@@ -108,6 +108,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     protected Clock clock;
 
     /**
+     * Constructs a new KafkaAssemblyOperator.
+     *
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
      * @param certManager Certificate manager
@@ -663,6 +665,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
+         * Checks if autorebalance is enabled in the Cruise Control configuration.
+         *
          * @return true if the autorebalance is enabled within the Cruise Control configuration, false otherwise
          */
         boolean isAutoRebalancingEnabled() {

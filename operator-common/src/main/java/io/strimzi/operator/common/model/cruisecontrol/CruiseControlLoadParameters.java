@@ -82,6 +82,8 @@ public enum CruiseControlLoadParameters {
     }
 
     /**
+     * Gets the parameter key.
+     *
      * @return  The parameter key
      */
     public String getCruiseControlKey() {
@@ -89,6 +91,8 @@ public enum CruiseControlLoadParameters {
     }
 
     /**
+     * Gets the status key.
+     *
      * @return  The status key
      */
     public String getKafkaRebalanceStatusKey() {
@@ -106,6 +110,8 @@ public enum CruiseControlLoadParameters {
     }
 
     /**
+     * Gets the list of all integer parameters.
+     *
      * @return  List with all integer parameters
      */
     public static List<CruiseControlLoadParameters> getIntegerParameters() {
@@ -113,6 +119,8 @@ public enum CruiseControlLoadParameters {
     }
 
     /**
+     * Gets the list of all double parameters.
+     *
      * @return  List with all double parameters
      */
     public static List<CruiseControlLoadParameters> getDoubleParameters() {

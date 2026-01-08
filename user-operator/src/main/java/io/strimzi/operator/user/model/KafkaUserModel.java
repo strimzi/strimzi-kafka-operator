@@ -484,6 +484,8 @@ public class KafkaUserModel {
     }
 
     /**
+     * Gets the name of the user.
+     *
      * @return The name of the user.
      */
     public String getName() {
@@ -647,6 +649,8 @@ public class KafkaUserModel {
     }
 
     /**
+     * Gets the SCRAM-SHA-512 user password.
+     *
      * @return  Returns the SCRAM-SHA-512 user password
      */
     public String getScramSha512Password() {

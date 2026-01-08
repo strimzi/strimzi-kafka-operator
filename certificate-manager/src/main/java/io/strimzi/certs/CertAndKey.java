@@ -45,6 +45,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the key as a byte array.
+     *
      * @return The key as a byte array
      */
     public byte[] key() {
@@ -52,6 +54,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the key as a base64 encoded String.
+     *
      * @return  The key as base64 encoded String
      */
     public String keyAsBase64String() {
@@ -59,6 +63,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the certificate as a byte array.
+     *
      * @return  The cert as a byte array
      */
     public byte[] cert() {
@@ -66,6 +72,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the certificate as a base64 encoded String.
+     *
      * @return  The cert as base64 encoded String
      */
     public String certAsBase64String() {
@@ -73,6 +81,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the truststore as a byte array.
+     *
      * @return  The truststore as a byte array
      */
     public byte[] trustStore() {
@@ -80,6 +90,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the truststore as a base64 encoded String.
+     *
      * @return  The truststore as base64 encoded String
      */
     public String trustStoreAsBase64String() {
@@ -87,6 +99,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the keystore as a byte array.
+     *
      * @return  The keystore as a byte array
      */
     public byte[] keyStore() {
@@ -94,6 +108,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the keystore as a base64 encoded String.
+     *
      * @return  The keystore as base64 encoded String
      */
     public String keyStoreAsBase64String() {
@@ -101,6 +117,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the store password.
+     *
      * @return  The store password
      */
     public String storePassword() {
@@ -108,6 +126,8 @@ public class CertAndKey {
     }
 
     /**
+     * Gets the store password as a base64 encoded String.
+     *
      * @return  The store password as base64 encoded String
      */
     public String storePasswordAsBase64String() {

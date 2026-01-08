@@ -49,6 +49,8 @@ public class JmxPrometheusExporterModel implements MetricsModel {
     }
 
     /**
+     * Gets the name of the ConfigMap with the metrics configuration.
+     *
      * @return  The name of the ConfigMap with the metrics configuration
      */
     public String getConfigMapName() {
@@ -56,6 +58,8 @@ public class JmxPrometheusExporterModel implements MetricsModel {
     }
 
     /**
+     * Gets the key under which the metrics configuration is stored in the ConfigMap.
+     *
      * @return  The key under which the metrics configuration is stored in the ConfigMap
      */
     public String getConfigMapKey() {

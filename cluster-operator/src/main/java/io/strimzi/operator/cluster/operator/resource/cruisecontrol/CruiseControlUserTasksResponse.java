@@ -26,6 +26,8 @@ public class CruiseControlUserTasksResponse extends CruiseControlResponse {
     }
 
     /**
+     * Checks if the maximum number of active user tasks that can run concurrently has been reached.
+     *
      * @return  True If the maximum number of active user tasks that can run concurrently has reached
      */
     public boolean isMaxActiveUserTasksReached() {

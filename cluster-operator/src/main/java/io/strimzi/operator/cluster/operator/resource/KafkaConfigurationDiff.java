@@ -210,6 +210,8 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
     }
 
     /**
+     * Checks if the configuration can be updated dynamically.
+     *
      * @return  Returns true if the configuration can be updated dynamically
      */
     protected boolean canBeUpdatedDynamically() {
@@ -233,6 +235,8 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
     }
 
     /**
+     * Gets the number of broker configs which are different.
+     *
      * @return The number of broker configs which are different.
      */
     protected int getDiffSize() {
@@ -359,6 +363,8 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
     }
 
     /**
+     * Checks whether the current config and the desired config are identical.
+     *
      * @return whether the current config and the desired config are identical (thus, no update is necessary).
      */
     @Override
@@ -367,6 +373,8 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
     }
 
     /**
+     * Checks if the entry matches the specified scope.
+     *
      * @param entry tested ConfigEntry
      * @param scope scope to test
      * @return true if the entry matches the scope

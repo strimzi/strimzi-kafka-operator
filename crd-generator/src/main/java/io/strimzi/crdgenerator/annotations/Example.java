@@ -16,6 +16,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Example {
     /**
+     * Gets an example of how the value can be used.
+     *
      * @return  Example of how the value can be used
      */
     String value();

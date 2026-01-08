@@ -62,6 +62,8 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     /**
+     * Gets the default timeout for deleting resources.
+     *
      * @return  Default timeout for deleting resources
      */
     protected long deleteTimeoutMs() {
@@ -69,6 +71,8 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     /**
+     * Returns the Pattern for matching paths which can be ignored in the resource diff.
+     *
      * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
      */
     protected Pattern ignorablePaths() {

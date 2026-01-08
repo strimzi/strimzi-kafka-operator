@@ -116,6 +116,8 @@ public class Subject {
         }
 
         /**
+         * Builds and returns a new Subject instance based on this builder configuration.
+         *
          * @return  Instance of the Subject class created based on this builder
          */
         public Subject build() {
@@ -142,6 +144,8 @@ public class Subject {
     }
 
     /**
+     * Gets the organization name.
+     *
      * @return  Organization name
      */
     @JsonProperty
@@ -150,6 +154,8 @@ public class Subject {
     }
 
     /**
+     * Gets the common name.
+     *
      * @return  Common name
      */
     @JsonProperty
@@ -158,6 +164,8 @@ public class Subject {
     }
 
     /**
+     * Gets the X500Principal based on this subject.
+     *
      * @return  X500Principal based on this subject
      */
     public X500Principal principal() {
@@ -177,6 +185,8 @@ public class Subject {
     }
 
     /**
+     * Gets the set of DNS names.
+     *
      * @return  Set of DNS names
      */
     @JsonProperty
@@ -185,6 +195,8 @@ public class Subject {
     }
 
     /**
+     * Gets the set of IP addresses.
+     *
      * @return  Set of IP addresses
      */
     @JsonProperty
@@ -219,6 +231,8 @@ public class Subject {
     }
 
     /**
+     * Gets the map with the Subject Alternative Names (SANs).
+     *
      * @return  Map with the SANs
      */
     public Map<String, String> subjectAltNames() {
@@ -235,6 +249,8 @@ public class Subject {
     }
 
     /**
+     * Checks if any SANs are present in this subject.
+     *
      * @return  True if any SANs are present. False otherwise.
      */
     public boolean hasSubjectAltNames() {
@@ -242,6 +258,8 @@ public class Subject {
     }
 
     /**
+     * Gets the Distinguished Name (DN) in the format understood by OpenSSL.
+     *
      * @return The DN in the format understood by {@code openssl}.
      */
     public String opensslDn() {

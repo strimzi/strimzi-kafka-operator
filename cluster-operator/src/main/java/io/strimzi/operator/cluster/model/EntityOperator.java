@@ -141,6 +141,8 @@ public class EntityOperator extends AbstractModel {
     }
 
     /**
+     * Gets the Topic Operator model.
+     *
      * @return  The Topic Operator model
      */
     public EntityTopicOperator topicOperator() {
@@ -148,6 +150,8 @@ public class EntityOperator extends AbstractModel {
     }
 
     /**
+     * Gets the User Operator model.
+     *
      * @return  The User Operator model
      */
     public EntityUserOperator userOperator() {

@@ -18,6 +18,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.TYPE})
 public @interface PresentInVersions {
     /**
+     * Gets the versions in which the annotated property is present.
+     *
      * @return The versions in which the annotated property is present
      */
     String value();

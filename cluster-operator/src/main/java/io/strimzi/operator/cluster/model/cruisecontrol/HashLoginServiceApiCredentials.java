@@ -86,6 +86,8 @@ public class HashLoginServiceApiCredentials {
     }
 
     /**
+     * Gets the user-managed API credentials secret name.
+     *
      * @return Returns user-managed API credentials secret name
      */
     public String getUserManagedApiSecretName() {
@@ -93,6 +95,8 @@ public class HashLoginServiceApiCredentials {
     }
 
     /**
+     * Gets the user-managed API credentials secret key.
+     *
      * @return Returns user-managed API credentials secret key
      */
     /* test */ String getUserManagedApiSecretKey() {
