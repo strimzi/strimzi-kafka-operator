@@ -2,7 +2,7 @@
 
 ## 0.50.0
 
-* Use Java 21
+* Use Java 21 as the runtime and language level
 
 ### Major changes, deprecations, and removals
 
