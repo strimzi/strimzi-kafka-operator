@@ -2,10 +2,15 @@
 
 ## 0.50.0
 
-* Nothing here yet, but we will surely develop something new pretty soon 😉
+* Use Java 21 as the runtime and language level
 
 ### Major changes, deprecations, and removals
 
+* Strimzi Operators are now using Java 21 as the runtime and language level.
+  The only exceptions are the `api`, `test`, `crd-annotations`, and `crd-generator` modules which use Java 11 as the language level for compatibility with older java versions.
+  These modules will remain using the Java 11 language level up to and including Strimzi 0.51.
+  They will move to Java 21 language level in Strimzi 1.0.0.
+  If you use one of these modules as a dependency in your Java project, you will need to upgrade to Java 21 as well. 
 * `connector.plugin.version` option is now forbidden in `KafkaConnect` CR in `.spec.config` and in `KafkaMirrorMaker2` CR in `.spec.mirrors[].sourceConnector.config` and `.spec.mirrors[].checkpointConnector.config`. Please use the dedicated `version` field instead.
 
 ## 0.49.1
