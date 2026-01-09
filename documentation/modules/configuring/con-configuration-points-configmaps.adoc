@@ -80,7 +80,7 @@ For example, if the custom `ConfigMap` has the same name as the `ConfigMap` for 
 [role="_additional-resources"]
 .Additional resources
 * xref:ref-list-of-kafka-cluster-resources-str[List of Kafka cluster resources] (including config maps)
-* xref:external-logging_str[Logging configuration]
+* xref:assembly-logging-configuration-{context}[Logging configuration]
 * link:{BookURLConfiguring}#con-common-configuration-prometheus-reference[`metricsConfig`^]
 * link:{BookURLConfiguring}#type-ContainerTemplate-reference[`ContainerTemplate` schema reference^]
 * xref:assembly-loading-config-with-providers-{context}[Loading configuration values from external sources]

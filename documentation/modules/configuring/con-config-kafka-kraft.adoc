@@ -10,28 +10,37 @@
 [role="_abstract"]
 Configure your Kafka deployment by updating the `spec` properties of the `Kafka` custom resource.
 
-You can also configure Strimzi components and features that support the deployment:
+Start with a minimal configuration that defines the core requirements for running a Kafka cluster.
+Extend it with optional settings to support the following:
 
-* Topic Operator and User Operator for managing topics and clients
-* Cruise Control for cluster rebalancing
-* Kafka Exporter for lag metrics
-* Listeners for authenticated client access
-* Data storage
-* Rack awareness
+* Securing client connections using TLS and authentication
+* Configuring authorization
+* Configuring broker behavior for durability and availability
+* Capturing consumer lag metrics using Kafka Exporter
+* Automating Kafka cluster balancing and resource distribution using Cruise Control
+* Controlling throughput and storage usage using quotas
+* Recovering from broker storage issues
+* Using node pools to define broker groups
+* xref:con-common-config-{context}[Common configuration], including setting resource limits and requests (recommended), JVM tuning, and metrics
+* xref:assembly-logging-configuration-{context}[Logging configuration]
 
-Specify the metadata version for KRaft using `.spec.kafka.metadataVersion`. 
-It must be compatible with `.spec.kafka.version`. 
-If not set, the Cluster Operator applies the default for the Kafka version.  
+Certain settings, though optional, are recommended for production deployments.
+These include security, resource allocation, and broker replication settings.
 
-Kafka clusters use node pools. 
-Use `KafkaNodePool` resources to configure distinct groups of nodes within a Kafka cluster.
+For details of all available properties, see the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
-For a deeper understanding of the Kafka cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+NOTE: Kafka clusters use node pools.
+At least one `KafkaNodePool` resource is required.
+Node pools can define controller and broker roles separately or in combination.
+Using separate node pools is recommended for most production deployments.
+For details, see xref:config-node-pools-{context}[Configuring node pools].
 
-NOTE: The oldest supported metadata version is 3.3. 
-Older versions may disable certain features.
+== Minimal configuration for a Kafka cluster
 
-.Example `Kafka` custom resource configuration
+A Kafka cluster requires a `Kafka` resource and at least one `KafkaNodePool` resource.
+The `Kafka` resource defines cluster-wide configuration such as listeners and broker settings.
+
+.Minimal configuration for Kafka
 [source,yaml,subs="+attributes"]
 ----
 # Basic configuration (required)
@@ -42,142 +51,44 @@ metadata:
 # Deployment specifications
 spec:
   kafka:
-    # Listener configuration (required)
-    listeners: # <1>
-      - name: plain # <2>
-        port: 9092 # <3>
-        type: internal # <4>
-        tls: false # <5>
-        configuration:
-          useServiceDnsDomain: true # <6>
-      - name: tls
-        port: 9093
-        type: internal
-        tls: true
-        authentication: # <7>
-          type: tls
-      - name: external1 # <8>
-        port: 9094
-        type: route
-        tls: true
-        configuration:
-          brokerCertChainAndKey: # <9>
-            secretName: my-secret
-            certificate: my-certificate.crt
-            key: my-key.key
-    # Kafka version (recommended)
-    version: {DefaultKafkaVersion} # <10>
-    # KRaft metadata version (recommended)
-    metadataVersion: {DefaultKafkaMetadataVersion} # <11>
-    # Kafka configuration (recommended)
-    config: # <12>
-      auto.create.topics.enable: "false"
+    # Broker configuration for replication (recommended)
+    config:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-    # Logging configuration (optional)
-    logging: # <13>
-      type: inline
-      loggers:
-        # Kafka 4.0+ uses Log4j2
-        rootLogger.level: INFO
-    # Readiness probe (optional)
-    readinessProbe: # <14>
-      initialDelaySeconds: 15
-      timeoutSeconds: 5
-    # Liveness probe (optional)  
-    livenessProbe:
-      initialDelaySeconds: 15
-      timeoutSeconds: 5
-    # JVM options (optional)
-    jvmOptions: # <15>
-      -Xms: 8192m
-      -Xmx: 8192m
-    # Custom image (optional)  
-    image: my-org/my-image:latest # <16>
-    # Authorization (optional)
-    authorization: # <17>
-      type: simple
-    # Rack awareness (optional) 
-    rack: # <18>
-      topologyKey: topology.kubernetes.io/zone
-    # Metrics configuration (optional)
-    metricsConfig: # <19>
-      type: jmxPrometheusExporter
-      valueFrom:
-        configMapKeyRef: # <20>
-          name: my-config-map
-          key: my-key
+    # Listener configuration (required)
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+    # Kafka version (recommended)
+    version: {DefaultKafkaVersion}
+    # KRaft metadata version (recommended)
+    metadataVersion: {DefaultKafkaMetadataVersion}
   # Entity Operator (recommended)
-  entityOperator: # <21>
-    topicOperator:
-      watchedNamespace: my-topic-namespace
-      reconciliationIntervalMs: 60000
-      # Resources requests and limits (recommended)
-      resources:
-        requests:
-          memory: 512Mi
-          cpu: "1"
-        limits:
-          memory: 512Mi
-          cpu: "1"
-      # Logging configuration (optional)
-      logging: # <22>
-        type: inline
-        loggers:
-          rootLogger.level: INFO
-    userOperator:
-      watchedNamespace: my-topic-namespace
-      reconciliationIntervalMs: 60000
-      # Resources requests and limits (recommended)
-      resources:
-        requests:
-          memory: 512Mi
-          cpu: "1"
-        limits:
-          memory: 512Mi
-          cpu: "1"
-      # Logging configuration (optional)
-      logging: # <23>
-        type: inline
-        loggers:
-          rootLogger.level: INFO
-  # Kafka Exporter (optional)
-  kafkaExporter: # <24>
-    # ...
-  # Cruise Control (optional)
-  cruiseControl: # <25>
-    # ...
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
 ----
-<1> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are configured as _internal_ or _external_ listeners for connection from inside or outside the Kubernetes cluster.
-<2> Name to identify the listener. Must be unique within the Kafka cluster.
-<3> Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
-<4> Listener type specified as `internal` or `cluster-ip` (to expose Kafka using per-broker `ClusterIP` services), or for external listeners, as `route` (OpenShift only), `loadbalancer`, `nodeport` or `ingress` (Kubernetes only).
-<5> Enables or disables TLS encryption for each listener. For `route` and `ingress` type listeners, TLS encryption must always be enabled by setting it to `true`.
-<6> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
-<7> Listener authentication mechanism specified as mTLS, SCRAM-SHA-512, or custom.
-<8> External listener configuration specifies how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`.
-<9> Optional configuration for a Kafka listener certificate managed by an external CA (certificate authority). The `brokerCertChainAndKey` specifies a `Secret` that contains a server certificate and a private key. You can configure Kafka listener certificates on any listener with enabled TLS encryption.
-<10> Kafka version, which can be changed to a supported version by following the upgrade procedure.
-<11> Kafka metadata version, which can be changed to a supported version by following the upgrade procedure.
-<12> Broker configuration. Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
-<13> Kafka loggers and log levels added directly (`inline`) or indirectly (`external`) through a `ConfigMap`. Custom Log4j configuration must be placed under the `log4j2.properties` key in the `ConfigMap`. You can set log levels to `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
-<14> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
-<15> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka.
-<16> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
-<17> Authorization enables simple and custom authorization on the Kafka broker. Simple authorization uses the `StandardAuthorizer` Kafka plugin.
-<18> Rack awareness configuration to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label.
-Use rack awareness together with custom `topologySpreadConstraint` or `affinity` rules to distribute Kafka broker pods (replicas) across zones.
-<19> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
-<20> Rules for exporting metrics in Prometheus format to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
-<21> Entity Operator configuration, which specifies the configuration for the Topic Operator and User Operator.
-<22> Specified Topic Operator loggers and log levels. This example uses `inline` logging.
-<23> Specified User Operator loggers and log levels.
-<24> Kafka Exporter configuration. Kafka Exporter is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data. For Kafka Exporter to be able to work properly, consumer groups need to be in use.
-<25> Optional configuration for Cruise Control, which is used to rebalance the Kafka cluster.
 
-WARNING: If you remove the `min.insync.replicas` property from `.spec.kafka.config` in the `Kafka` resource, the Cluster Operator
-forces Kafka to fall back to the default value (`1`), regardless of whether ELR (Eligible Leader Replicas) is enabled or disabled.
-To ensure durability of the cluster, explicitly define `min.insync.replicas` with a value higher than 1.
+* `spec.kafka.config` defines broker-level configuration.
+In this example, replication and ISR settings are configured to provide durable replication for internal topics.
+* `spec.kafka.listeners` defines how clients connect to the Kafka cluster.
+At least one listener is required.
+* `spec.kafka.version` specifies the Kafka version for the cluster.
+Change this value only by following the xref:proc-upgrade-kafka-kraft-str[Kafka upgrade procedure].
+* `spec.kafka.metadataVersion` specifies the metadata version for KRaft-based clusters.
+The value must be compatible with the Kafka version.
+* `spec.entityOperator` deploys the Topic Operator and User Operator using default settings.
+For more information, see xref:ref-kafka-entity-operator-{context}[Configuring the Entity Operator]
+
+WARNING: If you remove the `min.insync.replicas` property from `spec.kafka.config`,
+the Cluster Operator forces Kafka to fall back to the default value of `1`.
+To ensure durability, explicitly set `min.insync.replicas` to a value greater than `1`.

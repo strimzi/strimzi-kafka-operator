@@ -1,0 +1,45 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-kafka-recovering-brokers-{context}']
+= Recovering from broker storage issues
+
+[role="_abstract"]
+Broker storage issues typically present as one or more of the following symptoms:
+
+* Broker pods repeatedly restarting or failing to start
+* Errors indicating full disks or insufficient storage
+* Failed volume mounts or PVC-related errors
+* Partitions remaining under-replicated due to unavailable brokers
+
+== Recovery approach
+
+To address these issues, consider the following actions to preserve broker data and minimize the risk of data loss:
+
+* Free disk space or increase available storage capacity.
+* Review topic retention and compaction settings to reduce disk usage.
+* Review quota settings to limit producer throughput and prevent disks from filling too quickly.
+
+Recovering persistent volumes::
+If the issue involves persistent volumes or PVCs, such as failed mounts or unavailable volumes, see the information on xref:assembly-cluster-recovery-volume-{context}[cluster recovery from persistent volumes].
+
+Replacing brokers::
+If a broker cannot be recovered and its storage must be reset, replace the broker by deleting its pod and associated PVC.
++
+This is a destructive operation and can result in permanent data loss.
+Use this option only when non-destructive recovery actions are not possible.
++
+For more information, see
+xref:proc-manual-delete-pod-pvc-kafka-{context}[Deleting Kafka nodes using annotations].
+
+When recovery actions are complete, confirm that broker pods are stable, partitions are fully replicated, and continue monitoring logs and storage usage to ensure ongoing health.
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:assembly-storage-{context}[Storage considerations for brokers]
+* xref:con-choosing-a-quota-plugin-{context}[Choosing a quota plugin]
+* xref:proc-setting-broker-limits-{context}[Setting throughput and storage limits on brokers]

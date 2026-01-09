@@ -1,0 +1,89 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-kafka-authorization-{context}']
+= Configuring authorization
+
+[role="_abstract"]
+Control what authenticated clients can do in a Kafka cluster by enabling authorization on Kafka brokers.
+Authorization is configured in the `Kafka` custom resource and enforced by the Kafka broker.
+
+Authorization is separate from listener authentication.
+Authentication verifies a client identity.
+Authorization controls which operations the client is allowed to perform.
+
+Kafka supports the following authorization types:
+
+* `simple`
+* `custom`
+
+The `simple` authorization type uses the Kafka `StandardAuthorizer` plugin.
+
+The following examples show how to enable authorization on Kafka brokers.
+
+== Enabling simple authorization
+
+Simple authorization enables ACL-based access control using Kafka’s built-in authorizer.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  kafka:
+    # Authorization (optional)
+    authorization:
+      type: simple
+----
+
+* `spec.kafka.authorization.type: simple` enables ACL-based authorization using the Kafka `StandardAuthorizer`.
+* Access to Kafka resources is controlled using ACL rules.
+
+== Configuring super users
+
+You can define super users that are allowed to perform all operations, regardless of ACL rules.
+Use super users for Kafka administrator identities and internal components that must always be able to operate.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  kafka:
+    # Authorization (optional)
+    authorization:
+      type: simple
+      superUsers:
+        - CN=kafka-admin
+        - CN=my-team-admin
+----
+
+* `spec.kafka.authorization.superUsers` defines super user identities.
+* The identity format must match the principal used by your authentication mechanism.
+
+== Enabling custom authorization
+
+Custom authorization allows the use of a custom authorizer implementation.
+Use custom authorization when you need to integrate Kafka with an external authorization system.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  kafka:
+    # Authorization (optional)
+    authorization:
+      type: custom
+      authorizerClass: com.example.CustomAuthorizer
+----
+
+* `spec.kafka.authorization.type: custom` enables a custom authorization implementation.
+* `spec.kafka.authorization.authorizerClass` specifies the fully qualified class name of the custom authorizer.
+
+Authorization configuration enables enforcement of access control on the Kafka broker.
+User identities, credentials, and ACL rules are configured separately.
+
+For step-by-step procedures and examples for configuring authorized access, see
+xref:assembly-securing-access-{context}[Securing access to a Kafka cluster].
+
+For details of authorization configuration options, see the
+link:{BookURLConfiguring}#type-Kafka-authorization-simple-reference[`KafkaAuthorizationSimple` schema reference^] and
+link:{BookURLConfiguring}#type-Kafka-authorization-custom-reference[`KafkaAuthorizationCustom` schema reference^].
