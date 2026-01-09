@@ -288,7 +288,7 @@ public class KafkaReconciler {
         Set<Integer> addedBrokers = kafka.addedNodes().stream().filter(NodeRef::broker).map(NodeRef::nodeId).collect(Collectors.toSet());
 
         // if added brokers list contains all desired, it's a newly created cluster so there are no actual scaled up brokers.
-        // when added brokers list has fewer nodes than desired, it actually containers the new ones for scaling up
+        // when added brokers list has fewer nodes than desired, it actually contains the new ones for scaling up
         Set<Integer> scaledUpBrokerNodes = addedBrokers.containsAll(desiredBrokers) ? Set.of() : addedBrokers;
 
         KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, kafkaAutoRebalanceStatus, scaledUpBrokerNodes);
@@ -758,7 +758,7 @@ public class KafkaReconciler {
     protected Future<Void> certificateSecrets(Clock clock) {
         return secretOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziComponentType(KafkaCluster.COMPONENT_TYPE))
                 .compose(existingSecrets -> getDesiredCertSecrets(clock, existingSecrets))
-                .compose(this::addCustomCertsToDesiredCertSecrets)
+                .compose(this::addListenerCustomCertsToDesiredCertSecrets)
                 .compose(this::updateCertificateSecrets)
                 .mapEmpty();
 
@@ -780,15 +780,21 @@ public class KafkaReconciler {
         return Future.succeededFuture(desiredCertSecrets);
     }
 
-    private Future<List<Secret>> addCustomCertsToDesiredCertSecrets(List<Secret> desiredCertSecrets) {
-        return collectCustomCerts()
+    /**
+     * Collect custom certificates configured for each TLS listener and
+     * add them to the list of Secrets to copy into the Secrets with the node certificates.
+     *
+     * @return Updated list of Secrets
+     */
+    private Future<List<Secret>> addListenerCustomCertsToDesiredCertSecrets(List<Secret> desiredCertSecrets) {
+        return collectListenerCustomCerts()
                 .map(customCertsData -> {
                     desiredCertSecrets.forEach(s -> s.getData().putAll(customCertsData));
                     return desiredCertSecrets;
                 });
     }
 
-    private Future<Map<String, String>> collectCustomCerts() {
+    private Future<Map<String, String>> collectListenerCustomCerts() {
         Map<String, String> customCertsData = new HashMap<>();
         List<Future<Object>> futures = kafka.getListeners().stream()
                 .filter(l -> l.isTls() && l.getConfiguration() != null)
