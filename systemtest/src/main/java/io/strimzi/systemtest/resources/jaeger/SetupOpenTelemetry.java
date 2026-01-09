@@ -47,6 +47,9 @@ public class SetupOpenTelemetry {
     private static final String CERT_MANAGER = "cert-manager";
     private static final String JAEGER = "jaeger";
 
+
+    private SetupOpenTelemetry() {
+    }
     /**
      * Delete Jaeger instance
      */

@@ -21,6 +21,9 @@ import static org.mockito.Mockito.when;
 public class StorageClassOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient,
         StorageClass, StorageClassList, Resource<StorageClass>> {
 
+    private StorageClassOperatorTest() {
+    }
+
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         V1StorageAPIGroupDSL mockV1Storage = mock(V1StorageAPIGroupDSL.class);

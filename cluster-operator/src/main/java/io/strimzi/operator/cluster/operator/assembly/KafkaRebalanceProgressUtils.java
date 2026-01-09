@@ -12,6 +12,9 @@ import java.time.Instant;
  */
 public class KafkaRebalanceProgressUtils {
 
+    private for() {
+    }
+
     /**
      * Estimates the number of minutes it will take an ongoing partition rebalance to complete.
      *

@@ -30,6 +30,9 @@ import java.util.Map;
 public class NodePoolUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(NodePoolUtils.class.getName());
 
+
+    private NodePoolUtils() {
+    }
     /**
      * Generates KafkaPool instances from Kafka and KafkaNodePool resources.
      *

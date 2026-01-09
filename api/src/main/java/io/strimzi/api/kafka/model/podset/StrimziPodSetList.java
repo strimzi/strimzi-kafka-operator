@@ -13,4 +13,7 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class StrimziPodSetList extends DefaultKubernetesResourceList<StrimziPodSet> {
     private static final long serialVersionUID = 1L;
+
+    private StrimziPodSetList() {
+    }
 }

@@ -16,6 +16,9 @@ import io.strimzi.systemtest.TestConstants;
 import java.time.Duration;
 
 public class ResourceOperation {
+
+    private ResourceOperation() {
+    }
     public static long getTimeoutForResourceReadiness() {
         return getTimeoutForResourceReadiness("default");
     }

@@ -33,6 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class StrimziPodSetCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "strimzipodset-crd-it";
 
+
+    private StrimziPodSetCrdIT() {
+    }
     @Test
     void testStrimziPodSetMinimal() {
         createDeleteCustomResource("StrimziPodSet.yaml");

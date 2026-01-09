@@ -25,6 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaTopicCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "topiccrd-it";
 
+
+    private KafkaTopicCrdIT() {
+    }
     @Test
     void testKafkaTopicV1alpha1() {
         createDeleteCustomResource("KafkaTopicV1alpha1.yaml");

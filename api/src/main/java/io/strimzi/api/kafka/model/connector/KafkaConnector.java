@@ -101,6 +101,9 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
     @SuppressWarnings({"UnusedDeclaration"})
     private String kind;
 
+
+    private used() {
+    }
     public KafkaConnector() {
         super();
     }

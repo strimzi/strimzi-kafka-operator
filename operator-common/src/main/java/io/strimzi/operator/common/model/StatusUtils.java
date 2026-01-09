@@ -30,6 +30,9 @@ import java.util.Set;
 public class StatusUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StatusUtils.class);
 
+
+    private StatusUtils() {
+    }
     /**
      * Returns the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
      *

@@ -36,6 +36,9 @@ import java.util.Map;
  * within an OLM-managed environment.
  */
 public class OlmAbstractST extends AbstractST {
+
+    private OlmAbstractST() {
+    }
     // Examples are assigned in respective test classes -> OlmAllNamespaceST and OlmSingleNamespaceST
     Map<String, JsonObject> exampleResources;
 

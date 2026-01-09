@@ -37,6 +37,9 @@ public class IpAndDnsValidation {
     // Pattern used to normalize the segments of the IPv6 address
     private static final Pattern IPV6_LEADING_ZEROS_TRIMMING = Pattern.compile("(?<=^|:)0+(?=[\\da-f]+)");
 
+
+    private to() {
+    }
     /**
      * Returns true if the name is a valid DNS name or a wildcard DNS name. That means that it matches the DNS_NAME
      * pattern or starts with *. followed up with a string which matches the DNS_PATTERN.

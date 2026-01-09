@@ -45,6 +45,9 @@ public class DefaultKafkaQuotasManager {
     private static final String REQUEST_PERCENTAGE_QUOTA = "request_percentage";
     private static final String CONTROLLER_MUTATION_RATE_QUOTA = "controller_mutation_rate";
 
+
+    private DefaultKafkaQuotasManager() {
+    }
     /**
      * Returns empty instance of the {@link QuotasPluginKafka}
      * This is used in case when we need to reset the default Kafka quotas

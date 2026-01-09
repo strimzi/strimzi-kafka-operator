@@ -16,6 +16,9 @@ import java.util.Set;
  * Utils for working with Kafka Quotas
  */
 public class QuotaUtils {
+
+    private QuotaUtils() {
+    }
     /**
      * Returns a KafkaUserQuotas instance from a map of quotas key-value pairs
      *

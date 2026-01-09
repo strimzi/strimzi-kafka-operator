@@ -11,6 +11,9 @@ import java.util.Collections;
 
 public class ConfigMapTemplates {
 
+    private ConfigMapTemplates() {
+    }
+
     /**
      * Creates a ConfigMap in a specified Kubernetes namespace.
      *

@@ -27,6 +27,9 @@ public class ClusterRoleOperatorIT extends AbstractNonNamespacedResourceOperator
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient,
             ClusterRole, ClusterRoleList, Resource<ClusterRole>> operator() {
+
+        private ClusterRoleOperatorIT() {
+        }
         return new ClusterRoleOperator(vertx, client);
     }
 

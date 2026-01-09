@@ -39,6 +39,9 @@ public class Util {
      */
     public static final int HASH_STUB_LENGTH = 8;
 
+
+    private Util() {
+    }
     /**
      * Returns the cause when the given Throwable is a {@link CompletionException}.
      * Otherwise, the error is returned unchanged.

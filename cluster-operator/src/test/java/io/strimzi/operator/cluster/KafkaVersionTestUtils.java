@@ -48,6 +48,9 @@ public class KafkaVersionTestUtils {
 
     public static final KafkaVersionChange DEFAULT_KRAFT_VERSION_CHANGE = new KafkaVersionChange(getKafkaVersionLookup().defaultVersion(), getKafkaVersionLookup().defaultVersion(), null, null, getKafkaVersionLookup().defaultVersion().metadataVersion());
 
+
+    private KafkaVersionTestUtils() {
+    }
     private static Map<String, String> getKafkaImageMap() {
         return getImageMap(KAFKA_IMAGE_STR);
     }

@@ -9,6 +9,9 @@ package io.strimzi.tracing.agent;
  */
 public class TracingAgent {
 
+    private TracingAgent() {
+    }
+
     /**
      * Agent entry point
      *

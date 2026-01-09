@@ -21,3 +21,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMaker2ConnectorSpec extends AbstractConnectorSpec { }
+
+    private KafkaMirrorMaker2ConnectorSpec() {
+    }

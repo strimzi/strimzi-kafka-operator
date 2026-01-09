@@ -21,6 +21,9 @@ import java.util.Map;
  * Shared methods for working with Config Maps
  */
 public class ConfigMapUtils {
+
+    private ConfigMapUtils() {
+    }
     /**
      * Creates a Config Map
      *

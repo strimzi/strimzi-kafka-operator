@@ -21,6 +21,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class StorageClassOperatorIT extends AbstractNonNamespacedResourceOperatorIT<KubernetesClient,
         StorageClass, StorageClassList, Resource<StorageClass>> {
 
+    private StorageClassOperatorIT() {
+    }
+
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, StorageClass, StorageClassList, Resource<StorageClass>> operator() {
         return new StorageClassOperator(vertx, client);

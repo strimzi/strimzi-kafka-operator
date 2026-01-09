@@ -38,6 +38,9 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
 
     public static final String NAMESPACE = "olm-namespace";
 
+
+    private OlmSingleNamespaceST() {
+    }
     @Test
     @Order(1)
     @TestDoc(

@@ -19,6 +19,9 @@ import java.util.Collection;
  * Various utility methods useful during the conversion
  */
 public class Utils {
+
+    private Utils() {
+    }
     /**
      * Returns Generic Kubernetes Resource Operation for a given resource
      *

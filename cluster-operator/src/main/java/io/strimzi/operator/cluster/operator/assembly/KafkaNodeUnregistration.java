@@ -30,6 +30,9 @@ import java.util.Set;
 public class KafkaNodeUnregistration {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaNodeUnregistration.class.getName());
 
+
+    private KafkaNodeUnregistration() {
+    }
     /**
      * Unregisters Kafka broker nodes from a KRaft-based Kafka cluster
      *

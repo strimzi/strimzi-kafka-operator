@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
  * Util methods for working with Kafka listeners
  */
 public class ListenersUtils {
+
+    private ListenersUtils() {
+    }
     /*test*/ static final String BACKWARDS_COMPATIBLE_PLAIN_PORT_NAME = "tcp-clients";
     /*test*/ static final String BACKWARDS_COMPATIBLE_TLS_PORT_NAME = "tcp-clientstls";
     /*test*/ static final String BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME = "tcp-external";

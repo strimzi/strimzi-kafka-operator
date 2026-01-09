@@ -30,6 +30,9 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, Set<String>> {
     @Override
     AdminApiOperator<Set<SimpleAclRule>, Set<String>> operator() {
+
+        private SimpleAclOperatorIT() {
+        }
         return new SimpleAclOperator(adminClient, ResourceUtils.createUserOperatorConfig(), Executors.newSingleThreadExecutor());
     }
 

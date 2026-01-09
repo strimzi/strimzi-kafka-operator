@@ -13,6 +13,9 @@ package io.strimzi.systemtest.performance.report.parser;
  */
 public class ParserFactory {
 
+ private for() {
+ }
+
     /**
      * Creates an instance of {@link BasePerformanceMetricsParser} based on the specified parser type.
      * This method selects the appropriate parser by matching the provided {@link ParserType} to its

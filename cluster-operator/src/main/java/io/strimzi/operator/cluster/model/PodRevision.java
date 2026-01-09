@@ -25,6 +25,9 @@ public class PodRevision {
     public static final String STRIMZI_REVISION_ANNOTATION = Labels.STRIMZI_DOMAIN + "revision";
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PodRevision.class.getName());
 
+
+    private PodRevision() {
+    }
     /**
      * Generates the revision of the Pod. Currently, it just serializes the Pod using Jackson ObjectMapper and creates
      * a SHA1 hashstub from it.

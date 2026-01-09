@@ -23,6 +23,9 @@ import static org.mockito.Mockito.when;
 public class BuildConfigOperatorTest extends AbstractNamespacedResourceOperatorTest<OpenShiftClient, BuildConfig,
         BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> {
 
+    private BuildConfigOperatorTest() {
+    }
+
     @Override
     protected void mocker(OpenShiftClient mockClient, MixedOperation mockCms) {
         when(mockClient.buildConfigs()).thenReturn(mockCms);

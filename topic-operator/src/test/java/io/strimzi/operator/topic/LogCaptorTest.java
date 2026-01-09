@@ -17,6 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class LogCaptorTest {
     private static final Logger LOGGER = LogManager.getLogger(LogCaptorTest.class);
 
+
+    private LogCaptorTest() {
+    }
     @Test
     void shouldCaptureInfo() throws InterruptedException, TimeoutException {
         try (var ignored = LogCaptor.logEventMatches(LOGGER, Level.INFO,

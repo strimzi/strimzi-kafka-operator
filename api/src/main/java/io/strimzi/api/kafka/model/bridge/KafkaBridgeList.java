@@ -11,4 +11,7 @@ import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
  */
 public class KafkaBridgeList extends DefaultKubernetesResourceList<KafkaBridge> {
     private static final long serialVersionUID = 1L;
+
+    private KafkaBridgeList() {
+    }
 }

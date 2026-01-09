@@ -25,6 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaConnectorCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkaconnector-crd-it";
 
+
+    private KafkaConnectorCrdIT() {
+    }
     @Test
     void testKafkaConnector() {
         createDeleteCustomResource("KafkaConnector.yaml");

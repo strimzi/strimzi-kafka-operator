@@ -25,6 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaUserCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkausercrd-it";
 
+
+    private KafkaUserCrdIT() {
+    }
     @Test
     void testKafkaUserV1alpha1() {
         createDeleteCustomResource("KafkaUserV1alpha1.yaml");

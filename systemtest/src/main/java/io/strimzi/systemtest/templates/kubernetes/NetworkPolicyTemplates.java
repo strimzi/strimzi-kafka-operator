@@ -12,6 +12,9 @@ import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 
 public class NetworkPolicyTemplates {
 
+    private NetworkPolicyTemplates() {
+    }
+
     public static NetworkPolicyBuilder networkPolicyBuilder(String namespace, String name, LabelSelector labelSelector) {
         return new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")

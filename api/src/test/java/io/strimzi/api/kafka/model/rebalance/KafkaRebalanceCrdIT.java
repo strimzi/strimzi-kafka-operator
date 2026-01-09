@@ -29,6 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaRebalanceCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkarebalance-crd-it";
 
+
+    private KafkaRebalanceCrdIT() {
+    }
     @Test
     void testKafkaRebalanceIsNotScaling() {
         assertThrows(KubernetesClientException.class, () -> createScaleDelete(KafkaRebalance.class, "KafkaRebalance.yaml"));

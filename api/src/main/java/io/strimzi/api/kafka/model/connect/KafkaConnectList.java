@@ -13,4 +13,7 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class KafkaConnectList extends DefaultKubernetesResourceList<KafkaConnect> {
     private static final long serialVersionUID = 1L;
+
+    private KafkaConnectList() {
+    }
 }

@@ -12,4 +12,7 @@ public class CruiseControlHeaders {
      * User task id.
      */
     public static final String USER_TASK_ID_HEADER = "User-Task-ID";
+
+    private CruiseControlHeaders() {
+    }
 }

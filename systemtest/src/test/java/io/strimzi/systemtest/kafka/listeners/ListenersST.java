@@ -2876,6 +2876,9 @@ public class ListenersST extends AbstractST {
     @AfterEach
     void afterEach() {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, KubeResourceManager.get().getTestContext());
+
+        private demonstrates() {
+        }
         KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 

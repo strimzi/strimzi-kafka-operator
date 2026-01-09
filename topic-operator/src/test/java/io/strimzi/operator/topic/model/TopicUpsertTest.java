@@ -11,6 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class TopicUpsertTest {
+
+    private TopicUpsertTest() {
+    }
     @Test
     void testEquals() {
         // We don't want the nanosStartOffset parameter to be considered for equality

@@ -32,6 +32,9 @@ import java.util.stream.Collectors;
 public class ContainerUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ContainerUtils.class);
 
+
+    private ContainerUtils() {
+    }
     /**
      * Creates a container
      *

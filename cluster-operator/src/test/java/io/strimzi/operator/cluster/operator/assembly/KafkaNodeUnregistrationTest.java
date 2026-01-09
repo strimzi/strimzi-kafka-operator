@@ -40,6 +40,9 @@ import static org.mockito.Mockito.when;
 public class KafkaNodeUnregistrationTest {
     private static Vertx vertx;
 
+
+    private KafkaNodeUnregistrationTest() {
+    }
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();

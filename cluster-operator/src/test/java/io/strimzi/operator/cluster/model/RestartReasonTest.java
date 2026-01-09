@@ -13,6 +13,9 @@ import static org.hamcrest.Matchers.is;
 
 class RestartReasonTest {
 
+    private RestartReasonTest() {
+    }
+
     @Test
     void testPascalCasedReason() {
         assertThat(CA_CERT_HAS_OLD_GENERATION.pascalCased(), is("CaCertHasOldGeneration"));

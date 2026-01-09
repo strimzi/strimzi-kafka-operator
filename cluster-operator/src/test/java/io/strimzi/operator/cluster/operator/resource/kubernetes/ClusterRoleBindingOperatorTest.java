@@ -20,6 +20,9 @@ import static org.mockito.Mockito.when;
 public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient,
         ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> {
 
+    private ClusterRoleBindingOperatorTest() {
+    }
+
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         RbacAPIGroupDSL mockRbac = mock(RbacAPIGroupDSL.class);

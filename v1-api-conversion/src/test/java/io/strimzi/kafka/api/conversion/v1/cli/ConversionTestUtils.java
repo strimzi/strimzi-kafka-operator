@@ -54,6 +54,9 @@ public class ConversionTestUtils {
     public static final String CRD_V1_KAFKA_NODE_POOL = USER_PATH + "/../api/src/test/resources/crds/v1/045-Crd-kafkanodepool.yaml";
     public static final String CRD_V1_STRIMZI_POD_SET = USER_PATH + "/../api/src/test/resources/crds/v1/042-Crd-strimzipodset.yaml";
 
+
+    private ConversionTestUtils() {
+    }
     /**
      * Creates all Strimzi v1beta2 CRDs in the Kubernetes cluster
      *

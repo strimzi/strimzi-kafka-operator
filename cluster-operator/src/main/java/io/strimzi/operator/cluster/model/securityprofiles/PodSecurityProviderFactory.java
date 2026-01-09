@@ -24,6 +24,9 @@ public class PodSecurityProviderFactory {
 
     // The default value is set for Unit Tests which might be run without the factory being initialized
     private static PodSecurityProvider provider;
+
+    private PodSecurityProviderFactory() {
+    }
     static {
         initialize();
     }

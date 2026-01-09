@@ -13,5 +13,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class KafkaList extends DefaultKubernetesResourceList<Kafka> {
     private static final long serialVersionUID = 1L;
+
+    private KafkaList() {
+    }
 }
 

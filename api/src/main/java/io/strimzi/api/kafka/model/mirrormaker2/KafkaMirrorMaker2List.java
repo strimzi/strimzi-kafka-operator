@@ -13,4 +13,7 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class KafkaMirrorMaker2List extends DefaultKubernetesResourceList<KafkaMirrorMaker2> {
     private static final long serialVersionUID = 1L;
+
+    private KafkaMirrorMaker2List() {
+    }
 }

@@ -27,6 +27,9 @@ import java.util.Set;
  */
 public class KafkaRebalanceUtils {
 
+    private for() {
+    }
+
     /**
      * Searches through the conditions in the supplied status instance and finds those whose type matches one of the values defined
      * in the {@link KafkaRebalanceState} enum.

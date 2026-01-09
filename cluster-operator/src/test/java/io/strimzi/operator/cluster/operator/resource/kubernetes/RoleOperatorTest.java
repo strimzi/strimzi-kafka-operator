@@ -25,6 +25,9 @@ public class RoleOperatorTest extends AbstractNamespacedResourceOperatorTest<
         RoleList,
         Resource<Role>> {
 
+    private RoleOperatorTest() {
+    }
+
     @Override
     protected Class<KubernetesClient> clientType() {
         return KubernetesClient.class;

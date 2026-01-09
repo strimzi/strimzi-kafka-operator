@@ -6,6 +6,9 @@ package io.strimzi.systemtest.performance;
 
 public class OperationTimer {
 
+    private OperationTimer() {
+    }
+
     /**
      * Executes an operation and measures its execution time.
      *

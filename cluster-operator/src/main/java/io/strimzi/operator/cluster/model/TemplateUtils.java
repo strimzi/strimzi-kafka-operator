@@ -29,6 +29,9 @@ public class TemplateUtils {
      * It is used to prevent the creation of volumes outside this path.
      */
     protected static final String ALLOWED_MOUNT_PATH = "/mnt";
+
+    private TemplateUtils() {
+    }
     /**
      * This Pattern defines a regex for validating volume names with the following criteria:
      * Length: Must contain at most 63 characters.

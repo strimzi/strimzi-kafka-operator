@@ -17,6 +17,9 @@ import static org.mockito.Mockito.when;
 
 public class PodOperatorTest extends
         AbstractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, PodResource> {
+
+    private PodOperatorTest() {
+    }
     @Override
     protected Class clientType() {
         return KubernetesClient.class;

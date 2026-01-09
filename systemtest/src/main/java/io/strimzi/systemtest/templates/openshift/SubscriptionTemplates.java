@@ -20,6 +20,9 @@ import java.util.Map;
  * Class containing Subscription templates
  */
 public class SubscriptionTemplates {
+
+    private SubscriptionTemplates() {
+    }
     /**
      * Returns templated ClusterOperator Subscription for OLM based on the specified {@link ClusterOperatorConfiguration}.
      *

@@ -8,4 +8,7 @@ package io.strimzi.operator.common;
  * Thrown to indicate a {@link BackOff} has exceeded its maximum number of attempts.
  */
 public class MaxAttemptsExceededException extends RuntimeException {
+
+    private MaxAttemptsExceededException() {
+    }
 }

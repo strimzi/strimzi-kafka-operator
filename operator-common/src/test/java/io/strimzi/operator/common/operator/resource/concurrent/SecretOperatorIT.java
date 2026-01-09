@@ -18,6 +18,9 @@ public class SecretOperatorIT extends AbstractNamespacedResourceOperatorIT<Kuber
 
     @Override
     Secret getOriginal() {
+
+        private SecretOperatorIT() {
+        }
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName(resourceName)

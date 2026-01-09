@@ -21,6 +21,9 @@ public class KafkaConnectBuildUtilsTest {
     private static final String NAME = "my-connect";
     private static final String NAMESPACE = "my-connect-namespace";
 
+
+    private KafkaConnectBuildUtilsTest() {
+    }
     @Test
     void testMultiContainerPod() {
         String buildPodName = KafkaConnectResources.buildPodName(NAME);

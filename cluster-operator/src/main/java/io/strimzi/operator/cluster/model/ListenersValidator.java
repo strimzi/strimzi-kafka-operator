@@ -33,6 +33,9 @@ public class ListenersValidator {
     private final static List<Integer> FORBIDDEN_PORTS = List.of(9404, 9999);
     private final static int LOWEST_ALLOWED_PORT_NUMBER = 9092;
 
+
+    private ListenersValidator() {
+    }
     /**
      * Validated the listener configuration. If the configuration is not valid, InvalidResourceException will be thrown.
      *

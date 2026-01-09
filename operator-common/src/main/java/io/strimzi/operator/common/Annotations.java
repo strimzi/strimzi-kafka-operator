@@ -76,6 +76,9 @@ public class Annotations extends ResourceAnnotations {
      */
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
 
+
+    private Annotations() {
+    }
     private static Map<String, String> annotations(ObjectMeta metadata) {
         Map<String, String> annotations = metadata.getAnnotations();
         if (annotations == null) {

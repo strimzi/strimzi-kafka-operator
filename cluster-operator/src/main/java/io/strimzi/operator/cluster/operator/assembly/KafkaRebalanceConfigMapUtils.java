@@ -103,6 +103,9 @@ public class KafkaRebalanceConfigMapUtils {
         }
     }
 
+    private for() {
+    }
+
     /**
      * Updates the KafkaRebalance {@link ConfigMap} with relevant state information depending on the current
      * {@link KafkaRebalanceState}.

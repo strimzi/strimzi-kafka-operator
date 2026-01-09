@@ -72,6 +72,9 @@ public class LeaderElectionST extends AbstractST {
 
     private static final String LEADER_MESSAGE = "I'm the new leader";
 
+
+    private LeaderElectionST() {
+    }
     @IsolatedTest
     @TestDoc(
         description = @Desc("This test verifies that leader election works correctly when running the Cluster Operator with multiple replicas. It tests leader failover by causing the current leader to crash and verifying that a new leader is elected."),

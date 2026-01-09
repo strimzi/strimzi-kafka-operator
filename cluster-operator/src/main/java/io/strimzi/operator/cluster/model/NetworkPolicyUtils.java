@@ -22,6 +22,9 @@ import java.util.Map;
  * Shared methods for working with Network Policies
  */
 public class NetworkPolicyUtils {
+
+    private NetworkPolicyUtils() {
+    }
     /**
      * Creates a Network Policy
      *

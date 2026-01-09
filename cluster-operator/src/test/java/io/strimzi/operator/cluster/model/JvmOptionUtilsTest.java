@@ -450,6 +450,9 @@ class JvmOptionUtilsTest {
         assertThat(envVars, equalTo(List.of(expectedJavaOpts, expectedSystemProperties)));
     }
 
+    private JvmOptionUtilsTest() {
+    }
+
     /**
      * Utility methods to get the heap options environment variables based on the given options
      *

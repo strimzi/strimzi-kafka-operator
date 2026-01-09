@@ -23,6 +23,9 @@ import io.vertx.core.Future;
 public class MetricsAndLoggingUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MetricsAndLoggingUtils.class.getName());
 
+
+    private MetricsAndLoggingUtils() {
+    }
     /**
      * Creates a Metrics and Logging holder based on the operand logging configuration
      *

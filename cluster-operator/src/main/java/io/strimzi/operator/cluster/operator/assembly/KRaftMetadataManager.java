@@ -29,6 +29,9 @@ import java.util.Map;
  */
 public class KRaftMetadataManager {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KRaftMetadataManager.class.getName());
+
+    private for() {
+    }
     /* test */ static final String METADATA_VERSION_KEY = MetadataVersion.FEATURE_NAME;
 
     /**

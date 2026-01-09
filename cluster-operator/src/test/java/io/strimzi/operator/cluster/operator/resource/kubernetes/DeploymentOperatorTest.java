@@ -39,6 +39,9 @@ import static org.mockito.Mockito.when;
 public class DeploymentOperatorTest extends
         ScalableResourceOperatorTest<KubernetesClient, Deployment, DeploymentList, RollableScalableResource<Deployment>> {
 
+    private DeploymentOperatorTest() {
+    }
+
     @Override
     protected Class<KubernetesClient> clientType() {
         return KubernetesClient.class;

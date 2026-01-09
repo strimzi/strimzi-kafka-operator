@@ -22,4 +22,7 @@ public class StrimziMetricsReporterConfig {
 
     /** Set a comma separated list of regexes. */
     public static final String ALLOW_LIST = "prometheus.metrics.reporter.allowlist";
+
+    private holds() {
+    }
 }

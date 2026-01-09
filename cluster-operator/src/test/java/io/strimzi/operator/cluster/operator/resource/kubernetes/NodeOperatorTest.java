@@ -18,6 +18,9 @@ import static org.mockito.Mockito.when;
 public class NodeOperatorTest extends AbstractNonNamespacedResourceOperatorTest<KubernetesClient,
         Node, NodeList, Resource<Node>> {
 
+    private NodeOperatorTest() {
+    }
+
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         when(mockClient.nodes()).thenReturn(op);
