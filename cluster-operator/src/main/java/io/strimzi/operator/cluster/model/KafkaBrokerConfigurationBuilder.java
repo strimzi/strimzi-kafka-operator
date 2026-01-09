@@ -296,7 +296,7 @@ public class KafkaBrokerConfigurationBuilder {
                         customServerCert = listener.getConfiguration().getBrokerCertChainAndKey();
                     }
 
-                    configureTls(listenerName, customServerCert);
+                    configureTlsOnListener(listenerName, customServerCert);
                 }
 
                 writer.println();
@@ -400,14 +400,14 @@ public class KafkaBrokerConfigurationBuilder {
      * Configures TLS for a specific listener. This method is used only internally.
      *
      * @param listenerName  The name of the listener under which it is used in the Kafka broker configuration file
-     * @param serverCertificate The custom certificate configuration (null if not specified by the user in the Kafka CR)
+     * @param customServerCertificate The custom certificate configuration (null if not specified by the user in the Kafka CR)
      */
-    private void configureTls(String listenerName, CertAndKeySecretSource serverCertificate) {
+    private void configureTlsOnListener(String listenerName, CertAndKeySecretSource customServerCertificate) {
         final String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
 
         String certConfigProviderValue;
         String keyConfigProviderValue;
-        if (serverCertificate != null)  {
+        if (customServerCertificate != null)  {
             certConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), listenerNameInProperty + ".crt");
             keyConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), listenerNameInProperty + ".key");
         } else {
