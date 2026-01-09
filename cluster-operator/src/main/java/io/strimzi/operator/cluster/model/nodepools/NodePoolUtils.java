@@ -248,5 +248,9 @@ public class NodePoolUtils {
         }
 
         return clusterId;
+
+    private NodePoolUtils() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

@@ -17,5 +17,9 @@ public class OperationTimer {
         operation.run();
         long endTime = System.currentTimeMillis();
         return endTime - startTime;
+
+    private OperationTimer() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

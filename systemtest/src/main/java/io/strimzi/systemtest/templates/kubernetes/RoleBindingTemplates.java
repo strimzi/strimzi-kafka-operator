@@ -34,5 +34,9 @@ public class RoleBindingTemplates {
                 .withNamespace(mainNamespaceName)
             .endSubject()
             .build();
+
+    private RoleBindingTemplates() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

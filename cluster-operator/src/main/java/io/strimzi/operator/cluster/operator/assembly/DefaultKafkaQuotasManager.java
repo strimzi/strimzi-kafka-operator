@@ -228,5 +228,9 @@ public class DefaultKafkaQuotasManager {
         }
 
         return false;
+
+    private DefaultKafkaQuotasManager() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

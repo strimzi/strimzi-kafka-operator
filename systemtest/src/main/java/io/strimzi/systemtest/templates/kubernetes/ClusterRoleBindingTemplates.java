@@ -108,5 +108,9 @@ public class ClusterRoleBindingTemplates {
                 .withNamespace(namespaceName)
             .endSubject()
             .build();
+
+    private ClusterRoleBindingTemplates() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

@@ -20,5 +20,9 @@ public class CrdUtils {
     public static boolean isCrdPresent(final String resourcePluralName, final String resourceApiGroupName) {
         final String fullyQualifiedCrdName = resourcePluralName + "." + resourceApiGroupName;
         return KubeResourceManager.get().kubeCmdClient().exec(false, "get", "crd", fullyQualifiedCrdName).returnCode() == 0;
+
+    private CrdUtils() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

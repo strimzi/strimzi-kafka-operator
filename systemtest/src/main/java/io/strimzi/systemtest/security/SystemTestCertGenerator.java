@@ -197,5 +197,9 @@ public class SystemTestCertGenerator {
             e.printStackTrace();
         }
         return false;
+
+    private SystemTestCertGenerator() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

@@ -77,5 +77,9 @@ public class PodSecurityProviderFactory {
      */
     public static PodSecurityProvider getProvider()  {
         return provider;
+
+    private PodSecurityProviderFactory() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

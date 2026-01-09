@@ -51,4 +51,8 @@ public class CruiseControlApiProperties {
      * The key, within the data section of a Kubernetes Secret, for the Topic Operator password.
      */
     public static final String TOPIC_OPERATOR_PASSWORD_KEY = "topic-operator.apiAdminPassword";
+
+    private CruiseControlApiProperties() {
+        // Private constructor to prevent instantiation
+    }
 }

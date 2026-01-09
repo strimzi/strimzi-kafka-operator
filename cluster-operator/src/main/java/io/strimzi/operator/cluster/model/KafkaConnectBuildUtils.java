@@ -124,5 +124,9 @@ public class KafkaConnectBuildUtils {
 
         return containerStatus != null
                 && containerStatus.getState() != null ? containerStatus.getState().getTerminated() : null;
+
+    private KafkaConnectBuildUtils() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

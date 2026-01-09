@@ -91,5 +91,9 @@ public class CruiseControlResources {
      */
     public static String networkPolicyName(String clusterName) {
         return clusterName + "-network-policy-cruise-control";
+
+    private CruiseControlResources() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

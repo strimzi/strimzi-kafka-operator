@@ -76,5 +76,9 @@ public class ConfigMapUtils {
         }
 
         return data;
+
+    private ConfigMapUtils() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

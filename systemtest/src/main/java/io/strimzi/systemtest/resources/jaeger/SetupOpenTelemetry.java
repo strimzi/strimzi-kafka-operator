@@ -193,5 +193,9 @@ public class SetupOpenTelemetry {
 
         NetworkPolicyUtils.allowNetworkPolicyBetweenScraperPodAndMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-allow", Map.of(TestConstants.APP_KUBERNETES_NAME_LABEL, JAEGER_COLLECTOR_NAME));
         NetworkPolicyUtils.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, JAEGER_INSTANCE_NAME + "-traces-allow", Map.of(TestConstants.APP_KUBERNETES_NAME_LABEL, JAEGER_COLLECTOR_NAME));
+
+    private SetupOpenTelemetry() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

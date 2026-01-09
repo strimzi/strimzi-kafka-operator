@@ -34,5 +34,9 @@ public class UserControllerUtils {
         status.setObservedGeneration(user.getStatus() != null ? user.getStatus().getObservedGeneration() : 0);
 
         return status;
+
+    private UserControllerUtils() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

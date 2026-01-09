@@ -84,5 +84,9 @@ public class NamespaceUtils {
         return namespaceStatus != null
             && namespaceStatus.getConditions() != null
             && namespaceStatus.getConditions().stream().anyMatch(condition -> condition.getReason().contains("SomeFinalizersRemain"));
+
+    private NamespaceUtils() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

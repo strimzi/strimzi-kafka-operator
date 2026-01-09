@@ -28,5 +28,9 @@ public class RoleTemplates {
                 .withNamespace(namespaceName)
             .endMetadata()
             .build();
+
+    private RoleTemplates() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

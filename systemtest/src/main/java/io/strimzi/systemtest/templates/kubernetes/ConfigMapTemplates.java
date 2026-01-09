@@ -29,5 +29,9 @@ public class ConfigMapTemplates {
             .endMetadata()
             .withData(Collections.singletonMap(dataKey, dataValue))
             .build();
+
+    private ConfigMapTemplates() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

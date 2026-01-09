@@ -120,4 +120,8 @@ public class ResourceAnnotations {
      * Annotation used to skip the check on broker scale-down
      */
     public static final String ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK = STRIMZI_DOMAIN + "skip-broker-scaledown-check";
+
+    private ResourceAnnotations() {
+        // Private constructor to prevent instantiation
+    }
 }

@@ -87,5 +87,9 @@ public class SetupAccessOperator {
                 }
             }
         });
+
+    private SetupAccessOperator() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

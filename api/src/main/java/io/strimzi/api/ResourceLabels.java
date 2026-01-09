@@ -45,4 +45,8 @@ public class ResourceLabels {
      * Name of the component to which given resource belongs. This typically consists of the cluster name and component.
      */
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
+
+    private ResourceLabels() {
+        // Private constructor to prevent instantiation
+    }
 }

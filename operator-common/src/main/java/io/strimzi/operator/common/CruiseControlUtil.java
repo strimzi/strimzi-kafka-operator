@@ -22,5 +22,9 @@ public class CruiseControlUtil {
     public static String buildBasicAuthValue(String username, String password) {
         String credentials = join(":", username, password);
         return format("Basic %s", Util.encodeToBase64(credentials));
+
+    private CruiseControlUtil() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

@@ -152,5 +152,9 @@ public class SetupSeaweedFS {
             "echo 's3.bucket.create --name " + bucketName + "' | weed shell");
 
         LOGGER.debug(execResult.toString());
+
+    private SetupSeaweedFS() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

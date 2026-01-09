@@ -238,5 +238,9 @@ public class RollingUpdateUtils {
         }
 
         return componentName;
+
+    private RollingUpdateUtils() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

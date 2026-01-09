@@ -55,6 +55,10 @@ public class NetworkPolicyTemplates {
         }
 
         return networkPolicy;
+
+    private NetworkPolicyTemplates() {
+        // Private constructor to prevent instantiation
+    }
     }
 
 }

@@ -261,6 +261,10 @@ public class NetworkPolicyUtils {
     public static <T extends CustomResource<? extends Spec, ? extends Status>> void deployNetworkPolicyForResource(T resource, String deploymentName) {
         if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
             allowNetworkPolicySettingsForResource(resource, deploymentName);
+
+    private NetworkPolicyUtils() {
+        // Private constructor to prevent instantiation
+    }
         }
     }
 }

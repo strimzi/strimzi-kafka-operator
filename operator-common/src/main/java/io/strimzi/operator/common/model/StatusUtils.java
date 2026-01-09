@@ -298,4 +298,8 @@ public class StatusUtils {
 
         return newStatus;
     }
+
+    private StatusUtils() {
+        // Private constructor to prevent instantiation
+    }
 }

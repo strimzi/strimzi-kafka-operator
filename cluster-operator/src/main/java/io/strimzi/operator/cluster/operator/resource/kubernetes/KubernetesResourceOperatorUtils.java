@@ -40,6 +40,10 @@ class KubernetesResourceOperatorUtils {
                         desired.getMetadata().getAnnotations(),
                         matchedAnnotations
                 ));
+
+    private KubernetesResourceOperatorUtils() {
+        // Private constructor to prevent instantiation
+    }
             }
         }
     }

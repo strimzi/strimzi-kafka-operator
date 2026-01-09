@@ -190,5 +190,9 @@ public class ImageBuild {
             .build();
 
         KubeResourceManager.get().createResourceWithWait(configMap);
+
+    private ImageBuild() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

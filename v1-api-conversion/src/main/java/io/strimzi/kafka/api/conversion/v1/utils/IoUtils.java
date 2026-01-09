@@ -115,5 +115,9 @@ public class IoUtils {
             count += n;
         }
         return count;
+
+    private IoUtils() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

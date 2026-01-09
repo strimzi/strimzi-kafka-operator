@@ -103,5 +103,9 @@ public class PodRevision {
      */
     private static String getRevisionFromAnnotations(Pod pod)  {
         return Annotations.stringAnnotation(pod, STRIMZI_REVISION_ANNOTATION, null);
+
+    private PodRevision() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

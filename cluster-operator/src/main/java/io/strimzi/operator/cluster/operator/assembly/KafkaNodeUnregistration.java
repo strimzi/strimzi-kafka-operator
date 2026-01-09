@@ -132,5 +132,9 @@ public class KafkaNodeUnregistration {
                 .onFailure(t -> {
                     LOGGER.warnCr(reconciliation, "Failed to unregister node {} from the Kafka cluster", nodeIdToUnregister, t);
                 });
+
+    private KafkaNodeUnregistration() {
+        // Private constructor to prevent instantiation
+    }
     }
 }

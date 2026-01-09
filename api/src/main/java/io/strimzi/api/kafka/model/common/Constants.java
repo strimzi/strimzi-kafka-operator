@@ -21,4 +21,8 @@ public class Constants {
     public static final String FABRIC8_KUBERNETES_API = "io.fabric8.kubernetes.api.builder";
 
     public static final String MEMORY_REGEX = "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$";
+
+    private Constants() {
+        // Private constructor to prevent instantiation
+    }
 }
