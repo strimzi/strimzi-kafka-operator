@@ -2312,7 +2312,7 @@
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
-          "expr": "sum by (kubernetes_pod_name) (rate(kafka_server_kafkarequesthandlerpool_requesthandleravgidlepercent_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[5m]) / 1e9 * 100)",
+          "expr": "sum(irate(kafka_server_kafkarequesthandlerpool_requesthandleravgidlepercent_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[5m]) / 1e9 * 100) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
