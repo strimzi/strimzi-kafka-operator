@@ -75,7 +75,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
             + "broker.session.timeout.ms, broker.heartbeat.interval.ms, controller.socket.timeout.ms, "
             + "controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms"; // KRaft options
 
-    public static final String ALLOWED_PER_LISTENER_CONFIGS  = "connections.max.reauth.ms";
+    public static final String ALLOWED_PER_LISTENER_CONFIGS  = "connections.max.reauth.ms, max.connections";
 
     protected Storage storage;
     private String version;
