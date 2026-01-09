@@ -85,7 +85,8 @@ public class KafkaConfiguration extends AbstractConfiguration {
         super(reconciliation, configuration, forbiddenPrefixes, List.of(), List.of(), DEFAULTS);
     }
 
-    private static List<String> modifyWithListeners(List<GenericKafkaListener> listeners) {
+
+    /* test */ static List<String> modifyWithListeners(List<GenericKafkaListener> listeners) {
         List<String> exceptions = new ArrayList<>();
         listeners.stream().map(ListenersUtils::identifier).forEach(l -> ALLOWED_PER_LISTENER_CONFIGURATIONS.forEach(c -> exceptions.add(String.format(PER_LISTENER_CONFIG_FORMAT, l, c))));
         exceptions.addAll(FORBIDDEN_PREFIX_EXCEPTIONS);
