@@ -288,7 +288,7 @@ public class KafkaReconciler {
         Set<Integer> addedBrokers = kafka.addedNodes().stream().filter(NodeRef::broker).map(NodeRef::nodeId).collect(Collectors.toSet());
 
         // if added brokers list contains all desired, it's a newly created cluster so there are no actual scaled up brokers.
-        // when added brokers list has fewer nodes than desired, it actually containes the new ones for scaling up
+        // when added brokers list has fewer nodes than desired, it actually contains the new ones for scaling up
         Set<Integer> scaledUpBrokerNodes = addedBrokers.containsAll(desiredBrokers) ? Set.of() : addedBrokers;
 
         KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, kafkaAutoRebalanceStatus, scaledUpBrokerNodes);
@@ -757,21 +757,56 @@ public class KafkaReconciler {
      */
     protected Future<Void> certificateSecrets(Clock clock) {
         return secretOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziComponentType(KafkaCluster.COMPONENT_TYPE))
-                .compose(existingSecrets -> {
-                    List<Secret> desiredCertSecrets = kafka.generateCertificatesSecrets(clusterCa, clientsCa, existingSecrets,
-                            listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames,
-                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
+                .compose(existingSecrets -> getDesiredCertSecrets(clock, existingSecrets))
+                .compose(this::addListenerCustomCertsToDesiredCertSecrets)
+                .compose(this::updateCertificateSecrets)
+                .mapEmpty();
 
-                    List<String> desiredCertSecretNames = desiredCertSecrets.stream().map(secret -> secret.getMetadata().getName()).toList();
-                    existingSecrets.forEach(secret -> {
-                        String secretName = secret.getMetadata().getName();
-                        // Don't delete desired secrets or jmx secrets
-                        if (!desiredCertSecretNames.contains(secretName) && !KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)) {
-                            secretsToDelete.add(secretName);
-                        }
-                    });
-                    return updateCertificateSecrets(desiredCertSecrets);
-                }).mapEmpty();
+    }
+
+    private Future<List<Secret>> getDesiredCertSecrets(Clock clock, List<Secret> existingSecrets) {
+        List<Secret> desiredCertSecrets = kafka.generateCertificatesSecrets(clusterCa, clientsCa, existingSecrets,
+                listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames,
+                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
+
+        List<String> desiredCertSecretNames = desiredCertSecrets.stream().map(secret -> secret.getMetadata().getName()).toList();
+        existingSecrets.forEach(secret -> {
+            String secretName = secret.getMetadata().getName();
+            // Don't delete desired secrets or jmx secrets
+            if (!desiredCertSecretNames.contains(secretName) && !KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)) {
+                secretsToDelete.add(secretName);
+            }
+        });
+        return Future.succeededFuture(desiredCertSecrets);
+    }
+
+    /**
+     * Collect custom certificates configured for each TLS listener and
+     * add them to the list of Secrets to copy into the Secrets with the node certificates.
+     *
+     * @return Updated list of Secrets
+     */
+    private Future<List<Secret>> addListenerCustomCertsToDesiredCertSecrets(List<Secret> desiredCertSecrets) {
+        return collectListenerCustomCerts()
+                .map(customCertsData -> {
+                    desiredCertSecrets.forEach(s -> s.getData().putAll(customCertsData));
+                    return desiredCertSecrets;
+                });
+    }
+
+    private Future<Map<String, String>> collectListenerCustomCerts() {
+        Map<String, String> customCertsData = new HashMap<>();
+        List<Future<Object>> futures = kafka.getListeners().stream()
+                .filter(l -> l.isTls() && l.getConfiguration() != null)
+                .map(l ->
+                        ReconcilerUtils.getCertificateAndKeyAsync(secretOperator, reconciliation.namespace(), l.getConfiguration().getBrokerCertChainAndKey())
+                                .onSuccess(certAndKey -> {
+                                    customCertsData.putAll(CertUtils.buildSecretData(ListenersUtils.identifier(l), certAndKey));
+                                })
+                                .mapEmpty()
+                ).toList();
+        return Future.all(futures)
+                .map(f -> customCertsData);
     }
 
     /**
