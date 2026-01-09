@@ -32,6 +32,10 @@ import static io.strimzi.api.ResourceLabels.STRIMZI_NAME_LABEL;
 public class NetworkPolicyUtils {
     private static final Logger LOGGER = LogManager.getLogger(NetworkPolicyUtils.class);
 
+
+    private NetworkPolicyUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Method for allowing network policies for Cluster Operator
      */

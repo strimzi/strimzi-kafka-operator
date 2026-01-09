@@ -9,6 +9,10 @@ package io.strimzi.api.kafka.model.kafka.cruisecontrol;
  * {@code CruiseControl} cluster.
  */
 public class CruiseControlResources {
+
+    private CruiseControlResources() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Returns the name of the Cruise Control {@code Deployment} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.

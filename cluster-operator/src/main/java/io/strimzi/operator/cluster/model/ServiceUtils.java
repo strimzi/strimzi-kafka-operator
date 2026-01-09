@@ -24,6 +24,10 @@ import java.util.stream.Collectors;
  * Shared methods for working with Services
  */
 public class ServiceUtils {
+
+    private ServiceUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Creates a ClusterIP Service
      *

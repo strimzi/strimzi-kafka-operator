@@ -35,6 +35,10 @@ import java.util.Objects;
 public class DefaultKafkaQuotasManager {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(DefaultKafkaQuotasManager.class.getName());
 
+
+    private DefaultKafkaQuotasManager() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * {@link ClientQuotaEntity} for the default users entity
      * When `null` is set for the ClientQuotaEntity with type USER, the default quotas for all users are used/configured

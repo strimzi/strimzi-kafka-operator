@@ -19,6 +19,10 @@ import io.strimzi.operator.common.model.Labels;
  * a bit simple.
  */
 public class PodRevision {
+
+    private PodRevision() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Annotation for tracking pod revisions
      */

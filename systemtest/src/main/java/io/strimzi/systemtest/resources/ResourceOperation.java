@@ -16,6 +16,10 @@ import io.strimzi.systemtest.TestConstants;
 import java.time.Duration;
 
 public class ResourceOperation {
+
+    private ResourceOperation() {
+        // Private constructor to prevent instantiation
+    }
     public static long getTimeoutForResourceReadiness() {
         return getTimeoutForResourceReadiness("default");
     }

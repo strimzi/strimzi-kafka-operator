@@ -16,6 +16,10 @@ import java.nio.charset.StandardCharsets;
  */
 public class IoUtils {
     @SuppressWarnings("SpellCheckingInspection")
+
+    private IoUtils() {
+        // Private constructor to prevent instantiation
+    }
     private static ByteArrayOutputStream toBaos(InputStream stream) throws IOException {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         copy(stream, result);

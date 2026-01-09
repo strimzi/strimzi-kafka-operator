@@ -8,6 +8,10 @@ package io.strimzi.api;
  * An immutable set of labels
  */
 public class ResourceLabels {
+
+    private ResourceLabels() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Strimzi domain used for the Strimzi labels
      */

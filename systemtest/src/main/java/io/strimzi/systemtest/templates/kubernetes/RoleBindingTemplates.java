@@ -13,6 +13,10 @@ import io.strimzi.test.ReadWriteUtils;
  */
 public class RoleBindingTemplates {
 
+
+    private RoleBindingTemplates() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * It reads the RoleBinding object from the {@param pathToFile}, then it returns the RoleBinding with first subject updated
      * with the Namespace name set to {@param mainNamespaceName} - where it should point - and creation Namespace updated to {@param creationNamespace}.

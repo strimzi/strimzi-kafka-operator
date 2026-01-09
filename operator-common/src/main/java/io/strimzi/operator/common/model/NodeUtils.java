@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
 public class NodeUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(NodeUtils.class);
 
+
+    private NodeUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Tries to find the right address of the node. The different addresses has different priorities:
      *      1. ExternalDNS

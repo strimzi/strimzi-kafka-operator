@@ -12,6 +12,10 @@ package io.strimzi.operator.common.model.cruisecontrol;
  * for accessing Cruise Control API.
  */
 public class CruiseControlApiProperties {
+
+    private CruiseControlApiProperties() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Rebalance Operator username for Cruise Control API.
      */

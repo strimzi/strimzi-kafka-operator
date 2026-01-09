@@ -27,6 +27,10 @@ import java.util.Optional;
 public class LoggingUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(LoggingUtils.class.getName());
 
+
+    private LoggingUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * The refresh interval which will be set in Log4j2 logging configurations to automatically refresh the logging
      * configuration.

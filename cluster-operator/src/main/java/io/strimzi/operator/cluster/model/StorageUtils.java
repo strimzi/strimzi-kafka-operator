@@ -14,6 +14,10 @@ import io.strimzi.operator.common.model.InvalidResourceException;
  * Shared methods for working with Storage - for example comparing volume sizes
  */
 public class StorageUtils {
+
+    private StorageUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Parse a K8S-style representation of a quantity of memory, such as {@code 512Mi}, into the equivalent number in
      * the specified units. For example, a memory value of "100Gb" and a unit value of "Mb" will return 100000. This

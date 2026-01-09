@@ -17,6 +17,10 @@ import java.util.Set;
  * Various utility methods used by the UserOperatorController to make leaner and easier to read
  */
 public class UserControllerUtils {
+
+    private UserControllerUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Creates a new KafkaUSer status which indicates that the resource reconciliation is paused
      *

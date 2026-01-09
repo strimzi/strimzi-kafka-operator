@@ -32,6 +32,10 @@ public class SetupSeaweedFS {
     public static final int SEAWEEDFS_PORT = 8333;
     private static final String SEAWEEDFS_IMAGE = "mirror.gcr.io/chrislusf/seaweedfs:3.99";
 
+
+    private SetupSeaweedFS() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Deploy SeaweedFS to a specific namespace, creates service for it and init bucket
      * @param namespace where SeaweedFS will be installed to

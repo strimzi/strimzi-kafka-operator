@@ -23,6 +23,10 @@ import java.util.List;
  * Shared methods for working with RBAC resources
  */
 public class RbacUtils {
+
+    private RbacUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Creates a Role with rules passed as parameter
      *

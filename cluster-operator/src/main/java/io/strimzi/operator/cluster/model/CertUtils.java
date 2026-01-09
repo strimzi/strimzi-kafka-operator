@@ -34,6 +34,10 @@ import static java.util.Collections.emptyMap;
 public class CertUtils {
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CertUtils.class.getName());
 
+
+    private CertUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Generates a short SHA1-hash (a hash stub) of the certificate which is used to track when the certificate changes and rolling update needs to be triggered.
      *

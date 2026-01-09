@@ -22,6 +22,10 @@ public class PodSetUtils {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final TypeReference<Map<String, Object>> POD_TYPE = new TypeReference<>() { };
 
+
+    private PodSetUtils() {
+        // Private constructor to prevent instantiation
+    }
     static {
         MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     }

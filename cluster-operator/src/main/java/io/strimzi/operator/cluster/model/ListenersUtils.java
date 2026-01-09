@@ -30,6 +30,10 @@ public class ListenersUtils {
     /*test*/ static final String BACKWARDS_COMPATIBLE_TLS_PORT_NAME = "tcp-clientstls";
     /*test*/ static final String BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME = "tcp-external";
 
+
+    private ListenersUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Finds out if any of the listeners has OAuth authentication enabled
      *

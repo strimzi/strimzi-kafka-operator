@@ -12,6 +12,10 @@ import io.strimzi.test.ReadWriteUtils;
  * Class containing Role templates
  */
 public class RoleTemplates {
+
+    private RoleTemplates() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * It reads the Role object from the {@param pathToFile}, then it returns the Role with updated creation Namespace (in metadata.namespace).
      *

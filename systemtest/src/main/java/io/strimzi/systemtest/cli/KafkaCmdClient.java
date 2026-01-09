@@ -11,6 +11,10 @@ import java.util.List;
 
 public class KafkaCmdClient {
 
+
+    private KafkaCmdClient() {
+        // Private constructor to prevent instantiation
+    }
     public static List<String> listTopicsUsingPodCli(String namespaceName, String podName, String bootstrapServer) {
         return Arrays.asList(KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c",
             "bin/kafka-topics.sh --list --bootstrap-server " + bootstrapServer).out().split("\\s+"));

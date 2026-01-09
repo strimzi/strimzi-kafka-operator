@@ -36,6 +36,10 @@ public class SystemTestCertGenerator {
     static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
     static final String STRIMZI_END_SUBJECT = "C=CZ, L=Prague, O=Strimzi, CN=kafka.strimzi.io";
 
+
+    private SystemTestCertGenerator() {
+        // Private constructor to prevent instantiation
+    }
     public static CertAndKey generateRootCaCertAndKey() {
         return rootCaCertBuilder()
                 .withIssuerDn(STRIMZI_ROOT_CA)

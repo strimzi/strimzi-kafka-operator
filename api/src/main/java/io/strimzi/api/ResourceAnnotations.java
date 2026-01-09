@@ -8,6 +8,10 @@ package io.strimzi.api;
  * Class for holding some annotation keys.
  */
 public class ResourceAnnotations {
+
+    private ResourceAnnotations() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * The Strimzi domain used in all annotations
      */

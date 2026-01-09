@@ -21,6 +21,10 @@ import java.util.Map;
  * Shared methods for working with Config Maps
  */
 public class ConfigMapUtils {
+
+    private ConfigMapUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Creates a Config Map
      *

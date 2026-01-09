@@ -21,6 +21,10 @@ import java.util.stream.Collectors;
 public class RbacUtils {
     private static final Logger LOGGER = LogManager.getLogger(RbacUtils.class);
 
+
+    private RbacUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Replace all references to ClusterRole to Role.
      * This includes ClusterRoles themselves as well as RoleBindings that reference them.

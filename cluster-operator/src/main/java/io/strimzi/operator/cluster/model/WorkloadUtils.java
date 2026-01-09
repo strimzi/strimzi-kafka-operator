@@ -40,6 +40,10 @@ import java.util.function.Function;
  * Shared methods for creating Workload resources (Deployments, StatefulSets, StrimziPodSets)
  */
 public class WorkloadUtils {
+
+    private WorkloadUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Create a Kubernetes Deployment with the Pod template passed as a parameter
      *

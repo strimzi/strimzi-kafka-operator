@@ -18,6 +18,10 @@ public class ClusterRoleBindingTemplates {
 
     private static final Logger LOGGER = LogManager.getLogger(ClusterRoleBindingTemplates.class);
 
+
+    private ClusterRoleBindingTemplates() {
+        // Private constructor to prevent instantiation
+    }
     public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespaceName) {
         LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
         return clusterRoleBindingsForAllNamespaces(namespaceName, "strimzi-cluster-operator");

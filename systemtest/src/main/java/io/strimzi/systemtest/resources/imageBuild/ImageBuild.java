@@ -32,6 +32,10 @@ import java.nio.file.Paths;
 
 public class ImageBuild {
 
+
+    private ImageBuild() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Build a specific image from passed Dockerfile and push it into internal registry.
      * It will use OpenShift build on OpenShift like clusters and Kaniko on other distributions.

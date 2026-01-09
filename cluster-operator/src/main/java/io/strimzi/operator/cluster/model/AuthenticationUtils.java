@@ -32,6 +32,10 @@ import java.util.stream.Collectors;
  * Utils for working with different authentication types
  */
 public class AuthenticationUtils {
+
+    private AuthenticationUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Key for a SASL username
      */

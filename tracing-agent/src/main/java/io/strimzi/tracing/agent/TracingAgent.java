@@ -9,6 +9,10 @@ package io.strimzi.tracing.agent;
  */
 public class TracingAgent {
 
+
+    private TracingAgent() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Agent entry point
      *

@@ -16,6 +16,10 @@ import java.util.concurrent.TimeoutException;
 public class InformerUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(InformerUtils.class);
 
+
+    private InformerUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Synchronously stops one or more informers. It will stop them and then wait for up to the specified timeout for
      * each of them to actually stop.

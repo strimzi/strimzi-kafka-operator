@@ -24,6 +24,10 @@ import java.util.Map;
  * Class containing methods for operations around Leases
  */
 public class LeaseUtils {
+
+    private LeaseUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * It takes the path to the resource (specified in {@param yamlPath}) and changes the file to correspond to particular
      * Lease name specified in `STRIMZI_LEADER_ELECTION_LEASE_NAME` (one of the environment variables in {@param envVars}).

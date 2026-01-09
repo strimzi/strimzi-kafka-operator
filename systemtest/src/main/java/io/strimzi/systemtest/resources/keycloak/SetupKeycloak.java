@@ -56,6 +56,10 @@ public class SetupKeycloak {
 
     private static final Logger LOGGER = LogManager.getLogger(SetupKeycloak.class);
 
+
+    private SetupKeycloak() {
+        // Private constructor to prevent instantiation
+    }
     public static void deployKeycloakOperator(final String deploymentNamespace, final String watchNamespace) {
         LOGGER.info("Preparing Keycloak Operator in Namespace: {} while watching Namespace: {}", deploymentNamespace, watchNamespace);
 

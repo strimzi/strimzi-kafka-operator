@@ -8,6 +8,10 @@ import io.skodjob.testframe.resources.KubeResourceManager;
 
 public class CrdUtils {
 
+
+    private CrdUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Checks if a given Custom Resource Definition (CRD) is present in the Kubernetes cluster.
      * This method constructs the fully qualified name of the CRD using its resource plural name

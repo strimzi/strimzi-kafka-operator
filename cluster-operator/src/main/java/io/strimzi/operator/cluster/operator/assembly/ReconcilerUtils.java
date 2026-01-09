@@ -62,6 +62,10 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HA
 public class ReconcilerUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ReconcilerUtils.class.getName());
 
+
+    private ReconcilerUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * In some cases, when the ClusterRoleBinding reconciliation fails with RBAC error and the desired object is null,
      * we want to ignore the error and return success. This is used to let Strimzi work without some Cluster-wide RBAC

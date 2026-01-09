@@ -22,6 +22,10 @@ public class NamespaceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(NamespaceUtils.class);
 
+
+    private NamespaceUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Takes the Namespaces from {@param namespacesToBeCreated} and runs {@link #createNamespaceAndPrepare(String)}
      * method for each.

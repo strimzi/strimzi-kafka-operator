@@ -29,6 +29,10 @@ import java.util.Set;
  * Shared methods for working with Persistent Volume Claims
  */
 public class PersistentVolumeClaimUtils {
+
+    private PersistentVolumeClaimUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Creates list of PersistentVolumeClaims required by stateful deployments (Kafka). This method calls itself
      * recursively to handle volumes inside JBOD storage. When it calls itself to handle the volumes inside JBOD array,

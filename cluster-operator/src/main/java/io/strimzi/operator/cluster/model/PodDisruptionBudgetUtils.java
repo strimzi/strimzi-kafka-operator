@@ -18,6 +18,10 @@ import io.strimzi.operator.common.model.Labels;
 public class PodDisruptionBudgetUtils {
     private static final int DEFAULT_MAX_UNAVAILABLE = 1;
 
+
+    private PodDisruptionBudgetUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Creates the PodDisruptionBudget
      *

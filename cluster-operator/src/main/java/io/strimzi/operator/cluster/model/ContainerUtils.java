@@ -32,6 +32,10 @@ import java.util.stream.Collectors;
 public class ContainerUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ContainerUtils.class);
 
+
+    private ContainerUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Creates a container
      *

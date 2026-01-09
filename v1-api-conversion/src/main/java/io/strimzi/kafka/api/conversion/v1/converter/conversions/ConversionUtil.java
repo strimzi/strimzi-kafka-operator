@@ -24,6 +24,10 @@ import java.util.stream.Collectors;
 public class ConversionUtil {
     private static final JsonMapper JSON_MAPPER = new JsonMapper();
 
+
+    private ConversionUtil() {
+        // Private constructor to prevent instantiation
+    }
     static List<String> pathTokens(String xpath) {
         return Arrays.stream(xpath.split("/")).filter(s -> !s.isEmpty()).collect(Collectors.toList());
     }

@@ -24,6 +24,10 @@ import java.util.regex.Pattern;
  * Shared methods for working with Strimzi API templates
  */
 public class TemplateUtils {
+
+    private TemplateUtils() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * This is a constant that represents an allowed mountable path in the file system.
      * It is used to prevent the creation of volumes outside this path.

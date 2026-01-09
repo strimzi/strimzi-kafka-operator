@@ -29,6 +29,10 @@ public class SetupAccessOperator {
     public static final String PATH_TO_KAO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/access-operator/";
     private static final Logger LOGGER = LogManager.getLogger(SetupAccessOperator.class);
 
+
+    private SetupAccessOperator() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Method for installing Kafka Access Operator into the specified Namespace.
      *

@@ -6,6 +6,10 @@ package io.strimzi.systemtest.performance;
 
 public class OperationTimer {
 
+
+    private OperationTimer() {
+        // Private constructor to prevent instantiation
+    }
     /**
      * Executes an operation and measures its execution time.
      *
