@@ -44,9 +44,9 @@ public class ContainerRuntimeUtils {
      */
     public static String getRuntime() {
         return RUNTIME;
+    }
 
     private ContainerRuntimeUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }
