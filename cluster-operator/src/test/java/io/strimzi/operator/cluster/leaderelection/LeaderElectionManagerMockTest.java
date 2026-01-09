@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -76,7 +77,10 @@ public class LeaderElectionManagerMockTest {
         // the lease, which is verified by the stopLeadershipCallback being called.
         // We accept either an empty/null holder identity or the last leader's identity.
         Lease finalLease = getLease();
-        String holderIdentity = finalLease != null && finalLease.getSpec() != null ? finalLease.getSpec().getHolderIdentity() : null;
+        String holderIdentity = Optional.ofNullable(finalLease)
+                .map(Lease::getSpec)
+                .map(spec -> spec.getHolderIdentity())
+                .orElse(null);
         // The lease should either be cleared or still show the last leader (le-2) who has released it
         assertThat("Lease should be released (empty/null) or show last leader who released it",
                 holderIdentity, anyOf(is(""), nullValue(), is("le-2")));
