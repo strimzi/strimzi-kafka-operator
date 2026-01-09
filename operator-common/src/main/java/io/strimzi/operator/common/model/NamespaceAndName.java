@@ -34,7 +34,7 @@ public class NamespaceAndName {
     /**
      * Gets the name.
      *
-     * @return  NAme
+     * @return  Name
      */
     public String getName() {
         return name;

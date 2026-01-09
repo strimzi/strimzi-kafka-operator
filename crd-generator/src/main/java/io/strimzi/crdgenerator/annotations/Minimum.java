@@ -38,7 +38,7 @@ public @interface Minimum {
     @Target({ElementType.METHOD, ElementType.FIELD})
     @interface List {
         /**
-         * Gets the list of minimum values.\n
+         * Gets the list of minimum values.
          *
          * @return  List of minimum values
          */

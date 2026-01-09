@@ -45,7 +45,7 @@ public @interface Pattern {
     @Target({ElementType.METHOD, ElementType.FIELD})
     @interface List {
         /**
-         * Gets the list of patterns.\n
+         * Gets the list of patterns.
          *
          * @return  List of patterns
          */

@@ -38,7 +38,7 @@ public @interface Description {
     @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
     @interface List {
         /**
-         * Gets the list of descriptions.\n
+         * Gets the list of descriptions.
          *
          * @return  List of descriptions
          */
