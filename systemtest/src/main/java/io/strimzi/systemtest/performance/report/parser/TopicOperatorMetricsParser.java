@@ -48,7 +48,7 @@ import java.util.Set;
  *
  * @see BasePerformanceMetricsParser Base class for handling basic parsing operations and environment setup.
  */
-public class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
+class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMetricsParser.class);
 
@@ -144,7 +144,7 @@ public class TopicOperatorMetricsParser extends BasePerformanceMetricsParser {
 
     @Override
     public void parseMetrics() throws IOException {
-        this.parseLatestMetrics();
+        this.parseLatestMetrics(PerformanceConstants.TOPIC_OPERATOR_PARSER);
     }
 
     @Override

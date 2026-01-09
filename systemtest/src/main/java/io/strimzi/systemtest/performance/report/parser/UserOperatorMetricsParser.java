@@ -47,7 +47,7 @@ import java.util.Set;
  *     <li>{@link #showMetrics()} - Displays the formatted metrics data.</li>
  * </ul>
  */
-public class UserOperatorMetricsParser extends BasePerformanceMetricsParser {
+class UserOperatorMetricsParser extends BasePerformanceMetricsParser {
 
     private static final Logger LOGGER = LogManager.getLogger(UserOperatorMetricsParser.class);
 
@@ -136,7 +136,7 @@ public class UserOperatorMetricsParser extends BasePerformanceMetricsParser {
 
     @Override
     public void parseMetrics() throws IOException {
-        this.parseLatestMetrics();
+        this.parseLatestMetrics(PerformanceConstants.USER_OPERATOR_PARSER);
     }
 
     @Override

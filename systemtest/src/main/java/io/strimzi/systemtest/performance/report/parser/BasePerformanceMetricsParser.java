@@ -104,23 +104,24 @@ public abstract class BasePerformanceMetricsParser {
     }
 
     /**
-     * Parses the latest metrics from the structured directory, assuming that each parser knows
-     * which components to parse.
+     * Parses the latest metrics from the structured directory for a specific component.
      *
-     * @throws IOException          If an I/O error occurs while accessing the filesystem.
+     * @param componentDirName  The name of the component directory to parse (e.g., "topic-operator", "user-operator").
+     * @throws IOException      If an I/O error occurs while accessing the filesystem.
      */
-    protected void parseLatestMetrics() throws IOException {
+    protected void parseLatestMetrics(String componentDirName) throws IOException {
         final Path basePath = findLatestDirectory();
         if (basePath == null) {
             LOGGER.error("No directories found in the specified path.");
             return;
         }
 
-        // Assuming each parser knows which components to parse.
         final File[] componentDirs = basePath.toFile().listFiles(File::isDirectory);
         if (componentDirs != null) {
             for (File componentDir : componentDirs) {
-                parseComponentMetrics(componentDir);
+                if (componentDir.getName().equals(componentDirName)) {
+                    parseComponentMetrics(componentDir);
+                }
             }
         }
     }
