@@ -702,9 +702,9 @@ public class ListenersValidator {
      */
     private static List<String> getNames(List<GenericKafkaListener> listeners)    {
         return listeners.stream().map(GenericKafkaListener::getName).distinct().collect(Collectors.toList());
+    }
 
     private ListenersValidator() {
         // Private constructor to prevent instantiation
-    }
     }
 }

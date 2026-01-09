@@ -70,9 +70,9 @@ public class SubscriptionTemplates {
         }
 
         return subscriptionBuilder.build();
+    }
 
     private SubscriptionTemplates() {
         // Private constructor to prevent instantiation
-    }
     }
 }

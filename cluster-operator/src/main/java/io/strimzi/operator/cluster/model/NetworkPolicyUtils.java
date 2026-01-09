@@ -129,10 +129,10 @@ public class NetworkPolicyUtils {
         } else {
             // They are in the dame namespace => we do not want to set any namespace selector and allow communication only within the same namespace
             return null;
+        }
+    }
 
     private NetworkPolicyUtils() {
         // Private constructor to prevent instantiation
-    }
-        }
     }
 }

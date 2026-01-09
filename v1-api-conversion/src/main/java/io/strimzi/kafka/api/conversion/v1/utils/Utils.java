@@ -52,12 +52,12 @@ public class Utils {
             for (ApiVersion apiVersion : apiVersions) {
                 if (crd.getSpec().getVersions().stream().noneMatch(v -> apiVersion.toString().equals(v.getName()))) {
                     throw new RuntimeException("CRD " + crdName + " is missing at least one of the required API versions " + Arrays.toString(apiVersions));
-
-    private Utils() {
-        // Private constructor to prevent instantiation
-    }
                 }
             }
         }
+    }
+
+    private Utils() {
+        // Private constructor to prevent instantiation
     }
 }

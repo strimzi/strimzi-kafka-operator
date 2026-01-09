@@ -60,9 +60,9 @@ public class NodeUtils {
         }
 
         return null;
+    }
 
     private NodeUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

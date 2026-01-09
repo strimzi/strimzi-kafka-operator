@@ -41,9 +41,9 @@ public class ServiceAccountUtils {
                     .withAnnotations(TemplateUtils.annotations(template))
                 .endMetadata()
                 .build();
+    }
 
     private ServiceAccountUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

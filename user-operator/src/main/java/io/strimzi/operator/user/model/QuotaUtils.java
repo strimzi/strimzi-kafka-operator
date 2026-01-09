@@ -70,9 +70,9 @@ public class QuotaUtils {
                 Objects.equals(kuq1.getConsumerByteRate(), kuq2.getConsumerByteRate()) &&
                 Objects.equals(kuq1.getRequestPercentage(), kuq2.getRequestPercentage()) &&
                 Objects.equals(kuq1.getControllerMutationRate(), kuq2.getControllerMutationRate());
+    }
 
     private QuotaUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

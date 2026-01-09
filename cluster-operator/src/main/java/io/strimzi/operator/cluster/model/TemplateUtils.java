@@ -169,9 +169,9 @@ public class TemplateUtils {
      */
     public static DeploymentStrategy deploymentStrategy(DeploymentTemplate template, DeploymentStrategy defaultValue) {
         return template != null && template.getDeploymentStrategy() != null ? template.getDeploymentStrategy() : defaultValue;
+    }
 
     private TemplateUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

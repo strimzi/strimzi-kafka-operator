@@ -247,9 +247,9 @@ public class ServiceUtils {
                 .withNewTargetPort(targetPortName)
                 .withNodePort(nodePort)
                 .build();
+    }
 
     private ServiceUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

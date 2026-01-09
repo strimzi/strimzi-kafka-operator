@@ -71,9 +71,9 @@ public class ResourceOperation {
                     -> Duration.ofMinutes(5).toMillis();
             default -> Duration.ofMinutes(2).toMillis();
         };
+    }
 
     private ResourceOperation() {
         // Private constructor to prevent instantiation
-    }
     }
 }

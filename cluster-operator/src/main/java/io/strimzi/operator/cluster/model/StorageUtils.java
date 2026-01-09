@@ -197,10 +197,10 @@ public class StorageUtils {
     private static void checkPersistentStorageSizeIsValid(PersistentClaimStorage storage, String path)   {
         if (storage.getSize() == null || storage.getSize().isEmpty()) {
             throw new InvalidResourceException("The size is mandatory for a persistent-claim storage (" + path + ")");
+        }
+    }
 
     private StorageUtils() {
         // Private constructor to prevent instantiation
-    }
-        }
     }
 }

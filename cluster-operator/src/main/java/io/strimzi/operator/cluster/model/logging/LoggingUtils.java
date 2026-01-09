@@ -33,10 +33,6 @@ public class LoggingUtils {
      */
     private static final String LOG4J2_MONITOR_INTERVAL_SECONDS = "30";
 
-    private LoggingUtils() {
-        // Private constructor to prevent instantiation
-    }
-
     /**
      * Generates the logging configuration as a String. The configuration is generated based on the default logging
      * configuration files from resources, the (optional) inline logging configuration from the custom resource
@@ -252,5 +248,9 @@ public class LoggingUtils {
         }
         sb.append(value.substring(endIdx + 1));
         return sb.toString();
+    }
+
+    private LoggingUtils() {
+        // Private constructor to prevent instantiation
     }
 }

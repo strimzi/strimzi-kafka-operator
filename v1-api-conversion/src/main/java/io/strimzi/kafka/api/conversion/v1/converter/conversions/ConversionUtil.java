@@ -101,10 +101,10 @@ public class ConversionUtil {
 
             set(node, fromPath, null);
             set(node, toPath, value);
+        }
+    }
 
     private ConversionUtil() {
         // Private constructor to prevent instantiation
-    }
-        }
     }
 }

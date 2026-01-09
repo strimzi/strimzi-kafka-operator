@@ -36,10 +36,10 @@ public class InformerUtils {
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
             // We just log the error as we are anyway shutting down
             LOGGER.warnOp("Failed to wait for the informers to stop", e);
+        }
+    }
 
     private InformerUtils() {
         // Private constructor to prevent instantiation
-    }
-        }
     }
 }

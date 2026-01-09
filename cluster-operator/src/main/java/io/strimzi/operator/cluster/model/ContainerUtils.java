@@ -277,9 +277,9 @@ public class ContainerUtils {
      */
     public static List<Container> listOrNull(Container container)   {
         return container != null ? List.of(container) : null;
+    }
 
     private ContainerUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

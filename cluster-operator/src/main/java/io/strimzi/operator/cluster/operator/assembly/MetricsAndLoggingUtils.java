@@ -63,11 +63,11 @@ public class MetricsAndLoggingUtils {
             }
         } else {
             return Future.succeededFuture(null);
+        }
+    }
+
 
     private MetricsAndLoggingUtils() {
         // Private constructor to prevent instantiation
     }
-        }
-    }
-
 }

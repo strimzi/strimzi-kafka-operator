@@ -96,9 +96,9 @@ public class RbacUtils {
                 .withSubjects(subjects)
                 .withRoleRef(roleRef)
                 .build();
+    }
 
     private RbacUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

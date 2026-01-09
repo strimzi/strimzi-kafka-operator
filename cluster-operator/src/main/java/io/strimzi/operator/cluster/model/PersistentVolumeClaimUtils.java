@@ -126,9 +126,9 @@ public class PersistentVolumeClaimUtils {
         }
 
         return pvc;
+    }
 
     private PersistentVolumeClaimUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

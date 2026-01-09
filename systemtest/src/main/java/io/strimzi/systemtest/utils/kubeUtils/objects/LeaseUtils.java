@@ -93,10 +93,10 @@ public class LeaseUtils {
             }
         } else {
             return yamlPath;
+        }
+    }
 
     private LeaseUtils() {
         // Private constructor to prevent instantiation
-    }
-        }
     }
 }

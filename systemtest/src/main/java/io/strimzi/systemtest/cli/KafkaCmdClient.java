@@ -60,9 +60,9 @@ public class KafkaCmdClient {
     public static String describeFeaturesUsingPodCli(String namespaceName, String podName, String bootstrapServer) {
         return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c", "bin/kafka-features.sh --bootstrap-server "
                 + bootstrapServer + " describe").out();
+    }
 
     private KafkaCmdClient() {
         // Private constructor to prevent instantiation
-    }
     }
 }

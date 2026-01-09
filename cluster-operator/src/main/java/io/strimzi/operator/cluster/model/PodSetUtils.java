@@ -111,9 +111,9 @@ public class PodSetUtils {
     public static boolean isInTerminalState(Pod pod)   {
         return pod.getStatus() != null
                 && ("Failed".equals(pod.getStatus().getPhase()) || "Succeeded".equals(pod.getStatus().getPhase()));
+    }
 
     private PodSetUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

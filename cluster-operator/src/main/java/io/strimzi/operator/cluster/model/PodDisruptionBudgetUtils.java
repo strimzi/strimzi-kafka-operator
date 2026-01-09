@@ -89,9 +89,9 @@ public class PodDisruptionBudgetUtils {
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(labels.strimziSelectorLabels().toMap()).build())
                 .endSpec()
                 .build();
+    }
 
     private PodDisruptionBudgetUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

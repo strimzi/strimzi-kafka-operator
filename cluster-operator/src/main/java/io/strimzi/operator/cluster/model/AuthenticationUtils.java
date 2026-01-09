@@ -505,9 +505,9 @@ public class AuthenticationUtils {
             }
         }
         return moduleName + " required " + joiner + ";";
+    }
 
     private AuthenticationUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

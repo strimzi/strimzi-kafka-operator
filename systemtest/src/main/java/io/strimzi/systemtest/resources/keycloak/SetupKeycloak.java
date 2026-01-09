@@ -194,9 +194,9 @@ public class SetupKeycloak {
         KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).delete(POSTGRES_FILE_PATH);
         SecretUtils.deleteSecretWithWait(namespaceName, POSTGRES_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, "postgres");
+    }
 
     private SetupKeycloak() {
         // Private constructor to prevent instantiation
-    }
     }
 }

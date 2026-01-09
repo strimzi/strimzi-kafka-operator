@@ -781,9 +781,9 @@ public class ListenersUtils {
         return listener.getConfiguration() != null ?
                 listener.getConfiguration().getAllocateLoadBalancerNodePorts() :
                 null;
+    }
 
     private ListenersUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

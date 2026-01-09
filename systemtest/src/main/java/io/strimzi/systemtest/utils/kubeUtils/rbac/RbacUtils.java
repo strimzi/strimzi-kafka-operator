@@ -45,10 +45,10 @@ public class RbacUtils {
             }
         } else {
             return oldFile;
+        }
+    }
 
     private RbacUtils() {
         // Private constructor to prevent instantiation
-    }
-        }
     }
 }

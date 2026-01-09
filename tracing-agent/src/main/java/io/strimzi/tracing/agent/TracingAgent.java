@@ -26,9 +26,9 @@ public class TracingAgent {
                 break;
         }
         tracing.initialize();
+    }
 
     private TracingAgent() {
         // Private constructor to prevent instantiation
-    }
     }
 }

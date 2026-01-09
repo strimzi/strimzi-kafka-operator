@@ -463,9 +463,9 @@ public class WorkloadUtils {
      */
     /* test */ static List<LocalObjectReference> imagePullSecrets(PodTemplate template, List<LocalObjectReference> defaultValue)  {
         return template != null && template.getImagePullSecrets() != null ? template.getImagePullSecrets() : defaultValue;
+    }
 
     private WorkloadUtils() {
         // Private constructor to prevent instantiation
-    }
     }
 }

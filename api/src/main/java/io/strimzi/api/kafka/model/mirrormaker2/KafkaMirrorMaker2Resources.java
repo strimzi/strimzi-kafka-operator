@@ -90,9 +90,9 @@ public class KafkaMirrorMaker2Resources {
      */
     public static String mm2RoleBindingName(String clusterName) {
         return componentName(clusterName) + "-role";
+    }
 
     private KafkaMirrorMaker2Resources() {
         // Private constructor to prevent instantiation
-    }
     }
 }

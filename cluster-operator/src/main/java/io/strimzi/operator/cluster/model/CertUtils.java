@@ -363,10 +363,10 @@ public class CertUtils {
             }
 
             return certsAndKeys;
+        }
+    }
 
     private CertUtils() {
         // Private constructor to prevent instantiation
-    }
-        }
     }
 }
