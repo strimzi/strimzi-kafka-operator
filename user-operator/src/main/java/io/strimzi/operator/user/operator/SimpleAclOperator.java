@@ -306,6 +306,8 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
     }
 
     /**
+     * Gets all usernames which have some ACLs set.
+     *
      * @return Set with all usernames which have some ACLs set
      */
     @Override

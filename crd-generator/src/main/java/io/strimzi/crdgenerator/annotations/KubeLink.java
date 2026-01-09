@@ -16,16 +16,22 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface KubeLink {
     /**
+     * Gets the API group to which the link should point.
+     *
      * @return  API group to which the link should point
      */
     String group();
 
     /**
+     * Gets the API version to which the link should point.
+     *
      * @return  APi version to which the link should point
      */
     String version();
 
     /**
+     * Gets the kind to which the link should point.
+     *
      * @return  Kind to which the link should point
      */
     String kind();

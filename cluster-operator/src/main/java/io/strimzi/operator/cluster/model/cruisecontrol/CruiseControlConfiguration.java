@@ -174,8 +174,9 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         String s = getConfigOption(s1, s2);
         return Boolean.parseBoolean(s);
     }
-
     /**
+     * Checks if API authentication is enabled in the configuration.
+     *
      * @return  True if API authentication is enabled. False otherwise.
      */
     public boolean isApiAuthEnabled() {
@@ -183,6 +184,8 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Checks if TLS is enabled in the configuration.
+     *
      * @return  True if TLS is enabled. False otherwise.
      */
     public boolean isApiSslEnabled() {

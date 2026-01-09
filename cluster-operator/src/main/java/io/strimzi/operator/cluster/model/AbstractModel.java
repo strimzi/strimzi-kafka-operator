@@ -123,6 +123,8 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Gets the default Kubernetes resource name.
+     *
      * @return the default Kubernetes resource name.
      */
     public String getComponentName() {
@@ -130,6 +132,8 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Gets the selector labels as an instance of the Labels object.
+     *
      * @return The selector labels as an instance of the Labels object.
      */
     public Labels getSelectorLabels() {
@@ -137,6 +141,8 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Gets the image name.
+     *
      * @return The image name.
      */
     public String getImage() {
@@ -144,6 +150,8 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Gets the cluster name.
+     *
      * @return the cluster name.
      */
     public String getCluster() {
@@ -151,6 +159,8 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Gets the name of the Cluster CA certificate secret.
+     *
      * @param cluster The cluster name
      * @return The name of the Cluster CA certificate secret.
      */
@@ -159,6 +169,8 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Gets the name of the Cluster CA key secret.
+     *
      * @param cluster The cluster name
      * @return The name of the Cluster CA key secret.
      */
@@ -167,6 +179,8 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Generates the Kubernetes service account.
+     *
      * @return The service account.
      */
     public ServiceAccount generateServiceAccount() {

@@ -26,6 +26,8 @@ public class InvalidConfigParameterException extends InvalidResourceException {
     }
 
     /**
+     * Gets the key which was invalid.
+     *
      * @return  Return the key which was invalid
      */
     public String getKey() {

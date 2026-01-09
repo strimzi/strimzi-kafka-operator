@@ -35,6 +35,8 @@ public abstract class TopicOperatorException extends Exception {
     private final Reason reason;
 
     /**
+     * Constructs a new TopicOperatorException with the given reason and message.
+     *
      * @param reason Error reason.
      * @param message Error message.
      */
@@ -44,6 +46,8 @@ public abstract class TopicOperatorException extends Exception {
     }
 
     /**
+     * Constructs a new TopicOperatorException from a Kafka API exception.
+     *
      * @param cause The error cause.
      */
     public TopicOperatorException(ApiException cause) {
@@ -52,6 +56,8 @@ public abstract class TopicOperatorException extends Exception {
     }
 
     /**
+     * Gets the error reason.
+     *
      * @return The error reason as string.
      */
     public String reason() {
@@ -63,6 +69,8 @@ public abstract class TopicOperatorException extends Exception {
      */
     public static class ResourceConflict extends TopicOperatorException {
         /**
+         * Constructs a new ResourceConflict exception.
+         *
          * @param message The error message.
          */
         public ResourceConflict(String message) {
@@ -75,6 +83,8 @@ public abstract class TopicOperatorException extends Exception {
      */
     public static class KafkaError extends TopicOperatorException {
         /**
+         * Constructs a new KafkaError exception from a Kafka API exception.
+         *
          * @param cause The Kafka API exception.
          */
         public KafkaError(ApiException cause) {
@@ -87,6 +97,8 @@ public abstract class TopicOperatorException extends Exception {
      */
     public static class InternalError extends TopicOperatorException {
         /**
+         * Constructs a new InternalError exception.
+         *
          * @param throwable The throwable.
          */
         public InternalError(Throwable throwable) {
@@ -99,6 +111,8 @@ public abstract class TopicOperatorException extends Exception {
      */
     public static class NotSupported extends TopicOperatorException {
         /**
+         * Constructs a new NotSupported exception.
+         *
          * @param message The error message.
          */
         public NotSupported(String message) {

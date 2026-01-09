@@ -320,6 +320,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the set of configuration key names.
+     *
      * @return Set of configuration key/names
      */
     public static Set<String> keyNames() {
@@ -443,6 +445,8 @@ public class ClusterOperatorConfig {
 
 
     /**
+     * Gets the namespaces in which the operator runs and creates resources.
+     *
      * @return  namespaces in which the operator runs and creates resources
      */
     public Set<String> getNamespaces() {
@@ -450,6 +454,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the time interval in milliseconds for full reconciliation.
+     *
      * @return  how many milliseconds the reconciliation runs
      */
     public long getReconciliationIntervalMs() {
@@ -457,6 +463,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the timeout in milliseconds for Kubernetes operations.
+     *
      * @return  how many milliseconds should we wait for Kubernetes operations
      */
     public long getOperationTimeoutMs() {
@@ -464,6 +472,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the timeout in milliseconds for Kafka Connect build completion.
+     *
      * @return  How many milliseconds should we wait for Kafka Connect build to complete
      */
     public long getConnectBuildTimeoutMs() {
@@ -471,6 +481,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Checks whether Network policies should be generated.
+     *
      * @return  Indicates whether Network policies should be generated
      */
     public boolean isNetworkPolicyGeneration() {
@@ -478,6 +490,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the supported Kafka versions and information about them.
+     *
      * @return  Supported Kafka versions and information about them
      */
     public KafkaVersion.Lookup versions() {
@@ -485,6 +499,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the user-configured image pull policy.
+     *
      * @return  The user-configure image pull policy. Null if it was not configured.
      */
     public ImagePullPolicy getImagePullPolicy() {
@@ -492,6 +508,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the list of configured ImagePullSecrets.
+     *
      * @return The list of configured ImagePullSecrets. Null if no secrets were configured.
      */
     public List<LocalObjectReference> getImagePullSecrets() {
@@ -499,6 +517,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the name of the namespace where the operator runs.
+     *
      * @return Returns the name of the namespace where the operator runs or null if not configured
      */
     public String getOperatorNamespace() {
@@ -506,6 +526,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the labels of the namespace where the operator runs.
+     *
      * @return Returns the labels of the namespace where the operator runs or null if not configured
      */
     public Labels getOperatorNamespaceLabels() {
@@ -513,6 +535,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the labels used for filtering custom resources.
+     *
      * @return Labels used for filtering custom resources
      */
     public Labels getCustomResourceSelector() {
@@ -520,6 +544,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the feature gates configuration.
+     *
      * @return  Feature gates configuration
      */
     public FeatureGates featureGates()  {
@@ -527,6 +553,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the thread pool size for operator reconciliation operations.
+     *
      * @return Thread Pool size to be used by the operator to do operations like reconciliation
      */
     public int getOperationsThreadPoolSize() {
@@ -534,6 +562,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the DNS cache TTL in seconds for successful lookups.
+     *
      * @return Number of seconds to cache a successful DNS name lookup
      */
     public int getDnsCacheTtlSec() {
@@ -541,6 +571,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Checks if this operator instance should reconcile only StrimziPodSet resources.
+     *
      * @return Indicates whether this Cluster Operator instance should reconcile only the StrimziPodSet resources or not
      */
     public boolean isPodSetReconciliationOnly() {
@@ -548,6 +580,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the size of the StrimziPodSetController work queue.
+     *
      * @return Returns the size of the StrimziPodSetController work queue
      */
     public int getPodSetControllerWorkQueueSize() {
@@ -555,6 +589,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the name of this operator.
+     *
      * @return  The name of this operator
      */
     public String getOperatorName() {
@@ -562,6 +598,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the Pod Security Provider class name.
+     *
      * @return Returns the Pod Security Provider class
      */
     public String getPodSecurityProviderClass() {
@@ -569,6 +607,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Gets the Leader Election Manager configuration.
+     *
      * @return Returns the Leader Election Manager configuration
      */
     public LeaderElectionManagerConfig getLeaderElectionConfig() {
@@ -580,6 +620,8 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Checks whether Pod Disruption Budgets should be generated.
+     *
      * @return  Indicates whether Pod Disruption Budgets should be generated
      */
     public boolean isPodDisruptionBudgetGeneration() {

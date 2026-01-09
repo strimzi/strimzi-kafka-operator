@@ -33,6 +33,8 @@ public class ConfigModel {
     private boolean caseInsensitive = false;
 
     /**
+     * Gets the scope of the parameter.
+     *
      * @return The scope of the parameter.
      */
     public Scope getScope() {
@@ -49,6 +51,8 @@ public class ConfigModel {
     }
 
     /**
+     * Gets the type of the parameter.
+     *
      * @return  Type of the parameter
      */
     public Type getType() {
@@ -65,6 +69,8 @@ public class ConfigModel {
     }
 
     /**
+     * Gets the inclusive minimum value for a parameter of numeric type.
+     *
      * @return Inclusive minimum for a parameter of numeric type.
      */
     public Number getMinimum() {
@@ -81,6 +87,8 @@ public class ConfigModel {
     }
 
     /**
+     * Gets the inclusive maximum value for a parameter of numeric type.
+     *
      * @return Inclusive maximum for a parameter of numeric type.
      */
     public Number getMaximum() {
@@ -97,6 +105,8 @@ public class ConfigModel {
     }
 
     /**
+     * Gets the allowed items for the parameter value.
+     *
      * @return The allowed items for the parameter value, for parameters of list type.
      */
     public List<String> getItems() {
@@ -113,6 +123,8 @@ public class ConfigModel {
     }
 
     /**
+     * Gets the allowed values for the parameter value.
+     *
      * @return The allowed values for the parameter value, for parameters of string type.
      */
     public List<String> getValues() {
@@ -129,6 +141,8 @@ public class ConfigModel {
     }
 
     /**
+     * Gets the regular expression which values must match.
+     *
      * @return A regular expression which values must match, for parameters of string type.
      */
     public String getPattern() {
@@ -145,6 +159,8 @@ public class ConfigModel {
     }
 
     /**
+     * Gets whether the option is case insensitive.
+     *
      * @return  Flag indicating whether the option is case sensitive ot not
      */
     public boolean getCaseInsensitive() {

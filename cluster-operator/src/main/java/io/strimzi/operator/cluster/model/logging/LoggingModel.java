@@ -54,6 +54,8 @@ public class LoggingModel {
     }
 
     /**
+     * Gets the logging configuration from the custom resource.
+     *
      * @return  The logging configuration from the custom resource
      */
     public Logging getLogging() {
@@ -61,6 +63,8 @@ public class LoggingModel {
     }
 
     /**
+     * Gets the base of the file name with the default logging configuration.
+     *
      * @return  Base of the file name with the default logging configuration
      */
     public String getDefaultLogConfigBaseName() {

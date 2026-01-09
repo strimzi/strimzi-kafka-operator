@@ -45,6 +45,8 @@ public abstract class AbstractConverter<T extends HasMetadata> {
     }
 
     /**
+     * Gets the class of the custom resource to convert.
+     *
      * @return  Returns the class of the custom resource to convert
      */
     public abstract Class<T> crClass();

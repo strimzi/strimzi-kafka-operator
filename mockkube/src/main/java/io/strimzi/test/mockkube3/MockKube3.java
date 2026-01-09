@@ -81,6 +81,8 @@ public class MockKube3 {
     }
 
     /**
+     * Gets the Kubernetes client connected to this Mock Kube server.
+     *
      * @return  Returns the Kubernetes client connected to this Mock Kube server
      */
     public KubernetesClient client()   {

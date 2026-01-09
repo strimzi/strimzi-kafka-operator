@@ -298,6 +298,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
+     * Generates a Kubernetes Service for Cruise Control.
+     *
      * @return  Generates a Kubernetes Service for Cruise Control
      */
     public Service generateService() {
@@ -500,6 +502,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
+     * Gets the API Credentials Model instance for configuring Cruise Control API users.
+     *
      * @return Api Credentials Model instance for configuring Cruise Control API users
      */
     public HashLoginServiceApiCredentials apiCredentials() {
@@ -507,6 +511,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
+     * Gets the metrics model instance for configuring Prometheus metrics.
+     *
      * @return  Metrics Model instance for configuring Prometheus metrics
      */
     public MetricsModel metrics()   {
@@ -514,6 +520,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
+     * Gets the logging model instance for configuring logging.
+     *
      * @return  Logging Model instance for configuring logging
      */
     public LoggingModel logging()   {

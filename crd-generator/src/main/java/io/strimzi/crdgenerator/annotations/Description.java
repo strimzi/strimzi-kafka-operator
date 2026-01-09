@@ -17,10 +17,18 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
 public @interface Description {
-    /** @return The description, in Asciidoc format. */
+    /**
+     * Gets the description in Asciidoc format.
+     *
+     * @return The description, in Asciidoc format.
+     */
     String value();
 
-    /** @return The api versions that this description applies to. */
+    /**
+     * Gets the API versions that this description applies to.
+     *
+     * @return The api versions that this description applies to.
+     */
     String apiVersions() default "all";
 
     /**
@@ -30,6 +38,8 @@ public @interface Description {
     @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
     @interface List {
         /**
+         * Gets the list of descriptions.
+         *
          * @return  List of descriptions
          */
         Description[] value();

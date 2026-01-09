@@ -675,6 +675,8 @@ public abstract class Ca {
     }
 
     /**
+     * Gets the CA certificate data, which contains both the current CA cert and also previous, still valid certs.
+     *
      * @return the CA cert data, which contains both the current CA cert and also previous, still valid certs.
      */
     public Map<String, String> caCertData() {
@@ -682,6 +684,8 @@ public abstract class Ca {
     }
 
     /**
+     * Gets the CA key data, which contains the current CA private key.
+     *
      * @return the CA key data, which contains the current CA private key.
      */
     public Map<String, String> caKeyData() {
@@ -689,6 +693,8 @@ public abstract class Ca {
     }
 
     /**
+     * Gets the current CA certificate as bytes.
+     *
      * @return The current CA certificate as bytes.
      */
     public byte[] currentCaCertBytes() {
@@ -696,6 +702,8 @@ public abstract class Ca {
     }
 
     /**
+     * Gets the base64 encoded bytes of the current CA certificate.
+     *
      * @return The base64 encoded bytes of the current CA certificate.
      */
     public String currentCaCertBase64() {
@@ -715,6 +723,8 @@ public abstract class Ca {
     }
 
     /**
+     * Gets the current CA key as bytes.
+     *
      * @return The current CA key as bytes.
      */
     public byte[] currentCaKey() {
@@ -749,6 +759,8 @@ public abstract class Ca {
     }
 
     /**
+     * Checks if the key was newly created.
+     *
      * @return  Returns true if the key was newly created
      */
     public boolean keyCreated() {
@@ -756,6 +768,8 @@ public abstract class Ca {
     }
 
     /**
+     * Checks if the renewal or replacement was postponed.
+     *
      * @return Returns true if the renewal or replacement was postponed
      */
     public boolean postponed() {
@@ -763,6 +777,8 @@ public abstract class Ca {
     }
 
     /**
+     * Gets the generation of the current CA certificate.
+     *
      * @return the generation of the current CA certificate
      */
     public int caCertGeneration() {
@@ -770,6 +786,8 @@ public abstract class Ca {
     }
 
     /**
+     * Gets the generation of the current CA certificate as an annotation.
+     *
      * @return the generation of the current CA certificate as an annotation
      */
     public Map.Entry<String, String> caCertGenerationFullAnnotation() {
@@ -777,6 +795,8 @@ public abstract class Ca {
     }
 
     /**
+     * Gets the generation of the current CA key.
+     *
      * @return the generation of the current CA key
      */
     public int caKeyGeneration() {
@@ -1025,6 +1045,8 @@ public abstract class Ca {
     }
 
     /**
+     * Gets the name of the annotation bringing the generation of the specific CA certificate type.
+     *
      * @return the name of the annotation bringing the generation of the specific CA certificate type (cluster or clients)
      *         on the Secrets containing certificates signed by that CA (i.e. Kafka brokers, ...)
      */

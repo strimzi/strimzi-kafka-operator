@@ -14,6 +14,8 @@ public class RebalanceOptions extends AbstractRebalanceOptions {
     private final int concurrentIntraBrokerPartitionMovements;
 
     /**
+     * Checks if intra-broker rebalance is enabled.
+     *
      * @return  True if intra-broker rebalance is enabled. False otherwise.
      */
     public boolean isRebalanceDisk() {
@@ -21,6 +23,8 @@ public class RebalanceOptions extends AbstractRebalanceOptions {
     }
 
     /**
+     * Gets the upper bound of concurrent intra-broker partition movements.
+     *
      * @return  Number of concurrent intra-broker partition movements
      */
     public int getConcurrentIntraBrokerPartitionMovements() {

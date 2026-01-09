@@ -227,6 +227,8 @@ public class StatusUtils {
     }
 
     /**
+     * Creates a paused reconciliation condition.
+     *
      * @return  Creates a paused reconciliation condition
      */
     public static Condition getPausedCondition() {

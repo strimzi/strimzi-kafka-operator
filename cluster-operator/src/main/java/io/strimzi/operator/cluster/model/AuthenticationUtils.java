@@ -372,6 +372,8 @@ public class AuthenticationUtils {
     }
 
     /**
+     * Gets the OAuth JAAS configuration options.
+     *
      * @param oauth The client OAuth authentication configuration.
      * @return The OAuth JAAS configuration options.
      */

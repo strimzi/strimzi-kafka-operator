@@ -34,6 +34,8 @@ public class ControllerQueue {
     }
 
     /**
+     * Takes the next item from the queue, blocking if empty.
+     *
      * @return  Takes the next item from the queue. Blocks if the queue is empty.
      *
      * @throws InterruptedException InterruptedException is thrown if interrupted while waiting to get the next resource from the queue (e.g. when the queue is empty)

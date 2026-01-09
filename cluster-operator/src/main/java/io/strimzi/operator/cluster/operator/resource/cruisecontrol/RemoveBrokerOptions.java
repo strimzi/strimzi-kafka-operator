@@ -14,6 +14,8 @@ public class RemoveBrokerOptions extends AbstractRebalanceOptions {
     private final List<Integer> brokers;
 
     /**
+     * Gets the list of brokers which will be removed.
+     *
      * @return  List of brokers which will be removed
      */
     public List<Integer> getBrokers() {

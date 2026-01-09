@@ -38,6 +38,8 @@ public class Results {
     }
 
     /**
+     * Adds successful results from a stream.
+     *
      * @param ok Success stream.
      */
     public void addRightResults(Stream<? extends Pair<ReconcilableTopic, ?>> ok) {
@@ -45,6 +47,8 @@ public class Results {
     }
 
     /**
+     * Adds successful results from a collection.
+     *
      * @param ok Success stream.
      */
     public void addRightResults(Collection<ReconcilableTopic> ok) {
@@ -52,6 +56,8 @@ public class Results {
     }
 
     /**
+     * Adds error results from a stream.
+     *
      * @param errors Error stream.
      */
     public void addLeftResults(Stream<Pair<ReconcilableTopic, TopicOperatorException>> errors) {
@@ -75,6 +81,8 @@ public class Results {
     }
 
     /**
+     * Gets the number of reconciliations.
+     *
      * @return Number of reconciliations.
      */
     public int size() {
@@ -82,6 +90,8 @@ public class Results {
     }
 
     /**
+     * Performs an action for each successful result.
+     *
      * @param action Success action.
      */
     public void forEachRightResult(BiConsumer<ReconcilableTopic, Object> action) {
@@ -93,6 +103,8 @@ public class Results {
     }
 
     /**
+     * Performs an action for each error result.
+     *
      * @param action Error action.
      */
     public void forEachLeftResult(BiConsumer<ReconcilableTopic, TopicOperatorException> action) {
@@ -127,6 +139,8 @@ public class Results {
     }
 
     /**
+     * Gets the status conditions for a reconcilable topic.
+     *
      * @param reconcilableTopic Reconcilable topic.
      * @return Status conditions for this reconcilable topic.
      */
@@ -139,6 +153,8 @@ public class Results {
     }
 
     /**
+     * Adds conditions for a reconcilable topic.
+     *
      * @param reconcilableTopic Reconcilable topic.
      * @param conditions Conditions.
      */
@@ -147,6 +163,8 @@ public class Results {
     }
     
     /**
+     * Adds a single condition for a reconcilable topic.
+     *
      * @param reconcilableTopic Reconcilable topic.
      * @param condition Condition.
      */
@@ -155,6 +173,8 @@ public class Results {
     }
 
     /**
+     * Gets all replicas change statuses.
+     *
      * @return Replicas change statuses.
      */
     public Map<ReconcilableTopic, ReplicasChangeStatus> getReplicasChanges() {
@@ -162,6 +182,8 @@ public class Results {
     }
 
     /**
+     * Gets the replicas change status for a reconcilable topic.
+     *
      * @param reconcilableTopic Reconcilable topic.
      * @return Replicas change status.
      */
@@ -170,6 +192,8 @@ public class Results {
     }
     
     /**
+     * Adds multiple replicas change statuses.
+     *
      * @param replicasChangeStatus Replicas change status.
      */
     public void addReplicasChanges(Map<ReconcilableTopic, ReplicasChangeStatus> replicasChangeStatus) {
@@ -177,6 +201,8 @@ public class Results {
     }
     
     /**
+     * Adds a replicas change status for a reconcilable topic.
+     *
      * @param reconcilableTopic Reconcilable topic.
      * @param replicasChangeStatus Replicas change status.
      */
@@ -185,6 +211,8 @@ public class Results {
     }
 
     /**
+     * Gets all alter config operations.
+     *
      * @return All alter config ops.
      */
     public List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> getConfigChanges() {
@@ -192,6 +220,8 @@ public class Results {
     }
 
     /**
+     * Replaces all configuration changes.
+     *
      * @param configChanges Alter config ops.
      */
     public void replaceConfigChanges(List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> configChanges) {

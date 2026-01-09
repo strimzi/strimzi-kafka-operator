@@ -60,6 +60,8 @@ public enum CruiseControlEndpoints {
     }
 
     /**
+     * Gets the value as a String.
+     *
      * @return  Value as a String
      */
     public String toString() {

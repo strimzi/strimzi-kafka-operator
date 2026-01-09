@@ -137,172 +137,308 @@ public class TopicOperatorConfig {
         return (T) map.get(value.key());
     }
 
-    /** @return Value of {@link #NAMESPACE} configuration. */
+    /**
+     * Gets the namespace configuration value.
+     *
+     * @return Value of {@link #NAMESPACE} configuration.
+     */
     public String namespace() {
         return get(NAMESPACE);
     }
 
-    /** @return Value of {@link #RESOURCE_LABELS} configuration. */
+    /**
+     * Gets the resource labels configuration value.
+     *
+     * @return Value of {@link #RESOURCE_LABELS} configuration.
+     */
     public Labels resourceLabels() {
         return get(RESOURCE_LABELS);
     }
 
-    /** @return Value of {@link #BOOTSTRAP_SERVERS} configuration. */
+    /**
+     * Gets the bootstrap servers configuration value.
+     *
+     * @return Value of {@link #BOOTSTRAP_SERVERS} configuration.
+     */
     public String bootstrapServers() {
         return get(BOOTSTRAP_SERVERS);
     }
 
-    /** @return Value of {@link #CLIENT_ID} configuration. */
+    /**
+     * Gets the client ID configuration value.
+     *
+     * @return Value of {@link #CLIENT_ID} configuration.
+     */
     public String clientId() {
         return get(CLIENT_ID);
     }
 
-    /** @return Value of {@link #FULL_RECONCILIATION_INTERVAL_MS} configuration. */
+    /**
+     * Gets the full reconciliation interval configuration value.
+     *
+     * @return Value of {@link #FULL_RECONCILIATION_INTERVAL_MS} configuration.
+     */
     public long fullReconciliationIntervalMs() {
         return get(FULL_RECONCILIATION_INTERVAL_MS);
     }
 
-    /** @return Value of {@link #TLS_ENABLED} configuration. */
+    /**
+     * Gets the TLS enabled configuration value.
+     *
+     * @return Value of {@link #TLS_ENABLED} configuration.
+     */
     public boolean tlsEnabled() {
         return get(TLS_ENABLED);
     }
 
-    /** @return Value of {@link #TRUSTSTORE_LOCATION} configuration. */
+    /**
+     * Gets the truststore location configuration value.
+     *
+     * @return Value of {@link #TRUSTSTORE_LOCATION} configuration.
+     */
     public String truststoreLocation() {
         return get(TRUSTSTORE_LOCATION);
     }
 
-    /** @return Value of {@link #TRUSTSTORE_PASSWORD} configuration. */
+    /**
+     * Gets the truststore password configuration value.
+     *
+     * @return Value of {@link #TRUSTSTORE_PASSWORD} configuration.
+     */
     public String truststorePassword() {
         return get(TRUSTSTORE_PASSWORD);
     }
 
-    /** @return Value of {@link #KEYSTORE_LOCATION} configuration. */
+    /**
+     * Gets the keystore location configuration value.
+     *
+     * @return Value of {@link #KEYSTORE_LOCATION} configuration.
+     */
     public String keystoreLocation() {
         return get(KEYSTORE_LOCATION);
     }
 
-    /** @return Value of {@link #KEYSTORE_PASSWORD} configuration. */
+    /**
+     * Gets the keystore password configuration value.
+     *
+     * @return Value of {@link #KEYSTORE_PASSWORD} configuration.
+     */
     public String keystorePassword() {
         return get(KEYSTORE_PASSWORD);
     }
 
-    /** @return Value of {@link #SSL_ENDPOINT_IDENTIFICATION_ALGORITHM} configuration. */
+    /**
+     * Gets the SSL endpoint identification algorithm configuration value.
+     *
+     * @return Value of {@link #SSL_ENDPOINT_IDENTIFICATION_ALGORITHM} configuration.
+     */
     public String sslEndpointIdentificationAlgorithm() {
         return get(SSL_ENDPOINT_IDENTIFICATION_ALGORITHM);
     }
 
-    /** @return Value of {@link #SASL_ENABLED} configuration. */
+    /**
+     * Gets the SASL enabled configuration value.
+     *
+     * @return Value of {@link #SASL_ENABLED} configuration.
+     */
     public boolean saslEnabled() {
         return get(SASL_ENABLED);
     }
 
-    /** @return Value of {@link #SASL_MECHANISM} configuration. */
+    /**
+     * Gets the SASL mechanism configuration value.
+     *
+     * @return Value of {@link #SASL_MECHANISM} configuration.
+     */
     public String saslMechanism() {
         return get(SASL_MECHANISM);
     }
 
-    /** @return Value of {@link #SASL_CUSTOM_CONFIG_JSON} configuration. */
+    /**
+     * Gets the SASL custom configuration JSON value.
+     *
+     * @return Value of {@link #SASL_CUSTOM_CONFIG_JSON} configuration.
+     */
     public String saslCustomConfigJson() {
         return get(SASL_CUSTOM_CONFIG_JSON);
     }
 
-    /** @return Value of {@link #SASL_USERNAME} configuration. */
+    /**
+     * Gets the SASL username configuration value.
+     *
+     * @return Value of {@link #SASL_USERNAME} configuration.
+     */
     public String saslUsername() {
         return get(SASL_USERNAME);
     }
 
-    /** @return Value of {@link #SASL_PASSWORD} configuration. */
+    /**
+     * Gets the SASL password configuration value.
+     *
+     * @return Value of {@link #SASL_PASSWORD} configuration.
+     */
     public String saslPassword() {
         return get(SASL_PASSWORD);
     }
 
-    /** @return Value of {@link #SECURITY_PROTOCOL} configuration. */
+    /**
+     * Gets the security protocol configuration value.
+     *
+     * @return Value of {@link #SECURITY_PROTOCOL} configuration.
+     */
     public String securityProtocol() {
         return get(SECURITY_PROTOCOL);
     }
 
-    /** @return Value of {@link #USE_FINALIZERS} configuration. */
+    /**
+     * Gets the use finalizers configuration value.
+     *
+     * @return Value of {@link #USE_FINALIZERS} configuration.
+     */
     public boolean useFinalizer() {
         return get(USE_FINALIZERS);
     }
 
-    /** @return Value of {@link #MAX_QUEUE_SIZE} configuration. */
+    /**
+     * Gets the maximum queue size configuration value.
+     *
+     * @return Value of {@link #MAX_QUEUE_SIZE} configuration.
+     */
     public int maxQueueSize() {
         return get(MAX_QUEUE_SIZE);
     }
 
-    /** @return Value of {@link #MAX_BATCH_SIZE} configuration. */
+    /**
+     * Gets the maximum batch size configuration value.
+     *
+     * @return Value of {@link #MAX_BATCH_SIZE} configuration.
+     */
     public int maxBatchSize() {
         return get(MAX_BATCH_SIZE);
     }
 
-    /** @return Value of {@link #MAX_BATCH_LINGER_MS} configuration. */
+    /**
+     * Gets the maximum batch linger time configuration value.
+     *
+     * @return Value of {@link #MAX_BATCH_LINGER_MS} configuration.
+     */
     public long maxBatchLingerMs() {
         return get(MAX_BATCH_LINGER_MS);
     }
 
-    /** @return Value of {@link #ENABLE_ADDITIONAL_METRICS} configuration. */
+    /**
+     * Gets the enable additional metrics configuration value.
+     *
+     * @return Value of {@link #ENABLE_ADDITIONAL_METRICS} configuration.
+     */
     public boolean enableAdditionalMetrics() {
         return get(ENABLE_ADDITIONAL_METRICS);
     }
 
-    /** @return Value of {@link #ALTERABLE_TOPIC_CONFIG} configuration. */
+    /**
+     * Gets the alterable topic configuration value.
+     *
+     * @return Value of {@link #ALTERABLE_TOPIC_CONFIG} configuration.
+     */
     public String alterableTopicConfig() {
         return get(ALTERABLE_TOPIC_CONFIG);
     }
 
-    /** @return Value of {@link #SKIP_CLUSTER_CONFIG_REVIEW} configuration. */
+    /**
+     * Gets the skip cluster config review configuration value.
+     *
+     * @return Value of {@link #SKIP_CLUSTER_CONFIG_REVIEW} configuration.
+     */
     public boolean skipClusterConfigReview() {
         return get(SKIP_CLUSTER_CONFIG_REVIEW);
     }
 
-    /** @return Value of {@link #FEATURE_GATES} configuration. */
+    /**
+     * Gets the feature gates configuration value.
+     *
+     * @return Value of {@link #FEATURE_GATES} configuration.
+     */
     public FeatureGates featureGates() {
         return get(FEATURE_GATES);
     }
 
-    /** @return Value of {@link #CRUISE_CONTROL_ENABLED} configuration. */
+    /**
+     * Gets the Cruise Control enabled configuration value.
+     *
+     * @return Value of {@link #CRUISE_CONTROL_ENABLED} configuration.
+     */
     public boolean cruiseControlEnabled() {
         return get(CRUISE_CONTROL_ENABLED);
     }
 
-    /** @return Value of {@link #CRUISE_CONTROL_RACK_ENABLED} configuration. */
+    /**
+     * Gets the Cruise Control rack enabled configuration value.
+     *
+     * @return Value of {@link #CRUISE_CONTROL_RACK_ENABLED} configuration.
+     */
     public boolean cruiseControlRackEnabled() {
         return get(CRUISE_CONTROL_RACK_ENABLED);
     }
 
-    /** @return Value of {@link #CRUISE_CONTROL_HOSTNAME} configuration. */
+    /**
+     * Gets the Cruise Control hostname configuration value.
+     *
+     * @return Value of {@link #CRUISE_CONTROL_HOSTNAME} configuration.
+     */
     public String cruiseControlHostname() {
         return get(CRUISE_CONTROL_HOSTNAME);
     }
 
-    /** @return Value of {@link #CRUISE_CONTROL_PORT} configuration. */
+    /**
+     * Gets the Cruise Control port configuration value.
+     *
+     * @return Value of {@link #CRUISE_CONTROL_PORT} configuration.
+     */
     public int cruiseControlPort() {
         return get(CRUISE_CONTROL_PORT);
     }
 
-    /** @return Value of {@link #CRUISE_CONTROL_SSL_ENABLED} configuration. */
+    /**
+     * Gets the Cruise Control SSL enabled configuration value.
+     *
+     * @return Value of {@link #CRUISE_CONTROL_SSL_ENABLED} configuration.
+     */
     public boolean cruiseControlSslEnabled() {
         return get(CRUISE_CONTROL_SSL_ENABLED);
     }
 
-    /** @return Value of {@link #CRUISE_CONTROL_AUTH_ENABLED} configuration. */
+    /**
+     * Gets the Cruise Control authentication enabled configuration value.
+     *
+     * @return Value of {@link #CRUISE_CONTROL_AUTH_ENABLED} configuration.
+     */
     public boolean cruiseControlAuthEnabled() {
         return get(CRUISE_CONTROL_AUTH_ENABLED);
     }
 
-    /** @return Value of {@link #CRUISE_CONTROL_CRT_FILE_PATH} configuration. */
+    /**
+     * Gets the Cruise Control certificate file path configuration value.
+     *
+     * @return Value of {@link #CRUISE_CONTROL_CRT_FILE_PATH} configuration.
+     */
     public String cruiseControlCrtFilePath() {
         return get(CRUISE_CONTROL_CRT_FILE_PATH);
     }
 
-    /** @return Value of {@link #CRUISE_CONTROL_API_USER_PATH} configuration. */
+    /**
+     * Gets the Cruise Control API user path configuration value.
+     *
+     * @return Value of {@link #CRUISE_CONTROL_API_USER_PATH} configuration.
+     */
     public String cruiseControlApiUserPath() {
         return get(CRUISE_CONTROL_API_USER_PATH);
     }
 
-    /** @return Value of {@link #CRUISE_CONTROL_API_PASS_PATH} configuration. */
+    /**
+     * Gets the Cruise Control API password path configuration value.
+     *
+     * @return Value of {@link #CRUISE_CONTROL_API_PASS_PATH} configuration.
+     */
     public String cruiseControlApiPassPath() {
         return get(CRUISE_CONTROL_API_PASS_PATH);
     }

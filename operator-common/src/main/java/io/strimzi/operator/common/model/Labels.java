@@ -113,6 +113,8 @@ public class Labels extends ResourceLabels {
     private final Map<String, String> labels;
 
     /**
+     * Creates a Labels instance from the given map.
+     *
      * @param additionalLabels The labels
      * @return A {@code Labels} instance from the given map
      */
@@ -134,6 +136,8 @@ public class Labels extends ResourceLabels {
     }
 
     /**
+     * Returns a new Labels instance with the given additional labels.
+     *
      * @param additionalLabels The labels to add.
      * @return A new instances with the given {@code additionalLabels} added to the labels in this instance.
      */
@@ -150,6 +154,8 @@ public class Labels extends ResourceLabels {
     }
 
     /**
+     * Creates a Labels instance from a Kubernetes resource.
+     *
      * @param resource The resource to get the labels of.
      * @return A new instance with filtered labels added from the given {@code resource}.
      */
@@ -168,6 +174,8 @@ public class Labels extends ResourceLabels {
     }
 
     /**
+     * Creates a Labels instance from a map.
+     *
      * @param labels The map of labels.
      * @return A labels instance from Map.
      */
@@ -391,6 +399,8 @@ public class Labels extends ResourceLabels {
     }
 
     /**
+     * Gets an unmodifiable map of the labels.
+     *
      * @return an unmodifiable map of the labels.
      */
     public Map<String, String> toMap() {
@@ -398,6 +408,8 @@ public class Labels extends ResourceLabels {
     }
 
     /**
+     * Gets a label selector string for Kubernetes.
+     *
      * @return A string which can be used as the Kubernetes label selector (e.g. key1=value1,key2=value2).
      */
     public String toSelectorString() {
@@ -405,6 +417,8 @@ public class Labels extends ResourceLabels {
     }
 
     /**
+     * Creates a Labels instance for a Strimzi cluster.
+     *
      * @param cluster The cluster.
      * @return A singleton instance with the given {@code cluster} for the {@code strimzi.io/cluster} key.
      */
@@ -413,6 +427,8 @@ public class Labels extends ResourceLabels {
     }
 
     /**
+     * Creates a Labels instance for a Strimzi kind.
+     *
      * @param kind The kind.
      * @return A singleton instance with the given {@code kind} for the {@code strimzi.io/kind} key.
      */
@@ -421,6 +437,8 @@ public class Labels extends ResourceLabels {
     }
 
     /**
+     * Gets a Labels instance containing only the Strimzi selector labels.
+     *
      * @return A new instances containing just the strimzi.io selector labels present in this instance.
      */
     public Labels strimziSelectorLabels() {

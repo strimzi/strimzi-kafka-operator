@@ -106,6 +106,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     private Probe startupProbeOptions;
 
     /**
+     * Constructs a new EntityTopicOperator.
+     *
      * @param reconciliation   The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      * @param sharedEnvironmentProvider Shared environment provider
@@ -343,6 +345,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     }
 
     /**
+     * Gets the namespace watched by the Topic Operator.
+     *
      * @return Returns the namespace watched by the Topic Operator
      */
     public String watchedNamespace() {
@@ -369,6 +373,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     }
 
     /**
+     * Gets the logging model instance for configuring logging.
+     *
      * @return  Logging Model instance for configuring logging
      */
     public LoggingModel logging()   {

@@ -191,6 +191,8 @@ public class PathBuilder {
     }
 
     /**
+     * Builds and returns the Cruise Control API path.
+     *
      * @return  Builds and returns the path
      */
     public String build() {

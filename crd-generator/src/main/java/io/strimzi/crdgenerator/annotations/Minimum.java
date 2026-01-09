@@ -17,10 +17,18 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Minimum {
-    /** @return The inclusive minimum */
+    /**
+     * Gets the inclusive minimum value.
+     *
+     * @return The inclusive minimum
+     */
     int value();
 
-    /** @return The api versions that this description applies to. */
+    /**
+     * Gets the API versions that this minimum constraint applies to.
+     *
+     * @return The api versions that this description applies to.
+     */
     String apiVersions() default "all";
 
     /**
@@ -30,6 +38,8 @@ public @interface Minimum {
     @Target({ElementType.METHOD, ElementType.FIELD})
     @interface List {
         /**
+         * Gets the list of minimum values.
+         *
          * @return  List of minimum values
          */
         Minimum[] value();

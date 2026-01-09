@@ -119,6 +119,8 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     protected abstract Class<? extends Resource> resourceType();
 
     /**
+     * Gets a new resource with the default name for testing.
+     *
      * @return  New resource with the default name
      */
     protected T resource()  {
@@ -135,6 +137,8 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
     protected abstract T resource(String name);
 
     /**
+     * Gets a modified resource with the default name for testing.
+     *
      * @return  Modified resource with the default name
      */
     protected T modifiedResource()  {
