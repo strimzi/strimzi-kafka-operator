@@ -1,0 +1,63 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-kafka-broker-configuration-{context}']
+= Configuring Kafka broker operation
+
+[role="_abstract"]
+Control how Kafka brokers operate by configuring broker properties in the `Kafka` custom resource.
+Broker configuration affects availability and performance of the cluster.
+
+Broker configuration is applied using the `spec.kafka.config` property.
+Only Kafka configuration properties that are not managed directly by Strimzi can be set.
+Strimzi validates and applies these properties during reconciliation.
+
+Use broker configuration to:
+
+* Replicate topics for high availability
+* Improve throughput or request handling
+* Optimize performance for high-latency or high-bandwidth networks
+* Control disk usage and log retention behavior
+* Reduce unnecessary rebalances or leadership changes
+
+Broker configuration options must be used in the correct combinations to meet your availability and fault-tolerance requirements.
+Kafka provides many additional broker properties for more granular configuration.
+However, certain properties are managed directly by Strimzi and cannot be set within this config property.
+For more information, see the link:{BookURLConfiguring}#type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference^].
+
+Broker tuning is workload-dependent.
+Test changes in a non-production environment before applying them to a production cluster.
+A practical approach is to adjust configuration incrementally and monitor the impact using broker and client metrics.
+For detailed guidance on selecting and tuning broker configuration properties, see
+xref:con-broker-config-properties-{context}[Kafka broker configuration tuning].
+
+== Adding broker configuration
+
+Kafka broker configuration is defined as key-value pairs under `spec.kafka.config`.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  kafka:
+    # Kafka configuration (recommended)
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+----
+
+* `spec.kafka.config` defines Kafka broker properties as key-value pairs.
+* `offsets.topic.replication.factor` sets the replication factor for the consumer offsets topic.
+* `transaction.state.log.replication.factor` sets the replication factor for the transaction state log.
+* `transaction.state.log.min.isr` sets the minimum number of in-sync replicas (ISR) required for the transaction state log.
+* `default.replication.factor` sets the default replication factor for topics that do not specify one.
+* `min.insync.replicas` sets the minimum number of in-sync replicas (ISR) required to acknowledge writes.
+
+WARNING: If you remove the `min.insync.replicas` property from `spec.kafka.config`,
+the Cluster Operator forces Kafka to fall back to the default value of `1`.
+To ensure fault tolerance, explicitly set `min.insync.replicas` to a value greater than `1`.

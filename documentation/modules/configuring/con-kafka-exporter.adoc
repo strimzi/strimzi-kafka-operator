@@ -1,0 +1,36 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-kafka-exporter-{context}']
+= Capturing consumer lag metrics
+
+[role="_abstract"]
+Capture consumer group lag metrics to monitor whether consumers are keeping up with message production.
+Consumer lag metrics help you detect slow or stalled consumers and diagnose processing issues.
+
+Kafka Exporter exposes consumer group lag metrics that are not available through broker JMX metrics.
+These metrics are typically scraped by Prometheus and visualized in monitoring dashboards.
+
+Enable Kafka Exporter when you need to do the following:
+
+* Monitor consumer group lag
+* Track consumer progress over time
+* Alert on slow consumers
+
+Enable Kafka Exporter by adding a `kafkaExporter` section to the `Kafka` custom resource.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  # Kafka Exporter (optional)
+  kafkaExporter:
+    # Configuration for metrics selection 
+    # and exposure
+    # ...
+----
+
+For configuration details, metrics, and dashboards, see
+xref:con-metrics-kafka-exporter-lag-{context}[Consumer lag monitoring].

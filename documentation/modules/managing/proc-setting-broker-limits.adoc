@@ -5,56 +5,10 @@
 // assembly-config.adoc
 
 [id='proc-setting-broker-limits-{context}']
-
 = Setting throughput and storage limits on brokers
 
 [role="_abstract"]
-This procedure describes how to set throughput and storage limits on brokers in your Kafka cluster.
-Enable a quota plugin and configure limits using `quotas` properties in the `Kafka` resource.
-
-There are two types of quota plugins available:
-
-* The `strimzi` type enables the _Strimzi Quotas_ plugin.
-* The `kafka` type enables the built-in Kafka plugin. 
-
-Only one quota plugin can be enabled at a time. 
-The built-in `kafka` plugin is enabled by default.
-Enabling the `strimzi` plugin automatically disables the built-in plugin.
-
-.`strimzi` plugin
-
-The `strimzi` plugin provides storage utilization quotas and dynamic distribution of throughput limits.
-
-* Storage quotas throttle Kafka producers based on disk storage utilization. 
-Limits can be specified in bytes (`minAvailableBytesPerVolume`) or percentage (`minAvailableRatioPerVolume`) of available disk space, applying to each disk individually. 
-When any broker in the cluster exceeds the configured disk threshold, clients are throttled to prevent disks from filling up too quickly and exceeding capacity.
-* A total throughput limit is distributed dynamically across all clients.
-For example, if you set a 40 MBps producer byte-rate threshold, the distribution across two producers is not static. 
-If one producer is using 10 MBps, the other can use up to 30 MBps.
-* Specific users (clients) can be excluded from the restrictions.
-
-NOTE: With the `strimzi` plugin, you see only aggregated quota metrics, not per-client metrics.
-
-.`kafka` plugin
-
-The `kafka` plugin applies throughput limits on a per-user, per-broker basis and includes additional CPU and operation rate limits.
-
-* Limits are applied per user and per broker. 
-For example, setting a 20 MBps producer byte-rate threshold limits each user to 20 MBps on a per-broker basis across all producer connections for that user. 
-There is no total throughput limit as there is in the `strimzi` plugin.
-Limits can be overridden by xref:con-configuring-client-quotas-str[user-specific quota configurations].
-* CPU utilization limits for each client can be set as a percentage of the network threads and I/O threads on a per-broker basis.
-* The number of concurrent partition creation and deletion operations (mutations) allowed per second can be set on a per-broker basis.
-
-When using the default Kafka quotas plugin, the default quotas (if set) are applied to all users. 
-This includes internal users such as the Topic Operator and Cruise Control, which may impact their operations.
-To avoid unduly limiting internal users, consider tuning the quotas effectively.
-
-For example, a quota automatically applied to the Topic Operator by the Kafka quotas plugin could constrain the controller mutation rate, potentially throttling topic creation or deletion operations. 
-Therefore, it is important to understand the minimal quotas required by the Topic Operator to function correctly and explicitly set appropriate quotas to avoid such issues. 
-Monitoring relevant controller and broker metrics can help track and optimize the rate of operations on topics.
-Cruise Control and its metrics reporter also require sufficient produce and fetch rates to conduct rebalances, depending on the scale and configuration of the Kafka cluster.
-To prevent issues for Cruise Control, you might start with a rate of at least 1 KB/s for its producers and consumers in small clusters, such as three brokers with moderate traffic, and adjust as needed for larger or more active clusters.
+Configure throughput and storage limits on Kafka brokers by enabling a quota plugin and defining limits in the `Kafka` custom resource.
 
 .Prerequisites
 
@@ -62,10 +16,12 @@ To prevent issues for Cruise Control, you might start with a rate of at least 1 
 
 .Procedure
 
-. Add the plugin configuration to the `quotas` section of the `Kafka` resource.
+. Add quota configuration to the `quotas` section of the `Kafka` resource.
+Configure either the `strimzi` or `kafka` quota plugin.
 +
 --
-.Example `strimzi` plugin configuration
+Example `strimzi` quota plugin configuration:
+
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -77,22 +33,23 @@ spec:
     # ...
     quotas:
       type: strimzi
-      producerByteRate: 1000000 # <1>
-      consumerByteRate: 1000000 # <2>
-      minAvailableBytesPerVolume: 500000000000 # <3>
-      excludedPrincipals: # <4>
+      producerByteRate: 1000000
+      consumerByteRate: 1000000
+      minAvailableBytesPerVolume: 500000000000
+      excludedPrincipals:
         - my-user
 ----
-<1> Sets a producer byte-rate threshold of 1 MBps.
-<2> Sets a consumer byte-rate threshold of 1 MBps.
-<3> Sets an available bytes limit for storage of 500 GB.
-<4> Excludes `my-user` from the restrictions.
+* `producerByteRate` and `consumerByteRate` set total throughput limits across all clients.
+* `minAvailableBytesPerVolume` protects broker disk capacity by throttling producers when available storage drops below the configured byte threshold on any volume. You can also use `minAvailableRatioPerVolume` to set the threshold as a percentage of total volume size.
+* `excludedPrincipals` excludes specified users from quota enforcement.
 
 `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume` are mutually exclusive.
-Only configure one of these parameters.
+Configure only one of these properties.
 --
 +
-.Example `kafka` plugin configuration
+--
+Example `kafka` quota plugin configuration:
+
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -106,16 +63,23 @@ spec:
       type: kafka
       producerByteRate: 1000000
       consumerByteRate: 1000000
-      requestPercentage: 55 # <1>
-      controllerMutationRate: 50 # <2>
+      requestPercentage: 55
+      controllerMutationRate: 50
 ----
-<1> Sets the CPU utilization limit to 55%.
-<2> Sets the controller mutation rate to 50 operations per second.
+* `producerByteRate` and `consumerByteRate` apply throughput limits per user and per broker.
+* `requestPercentage` limits CPU usage for client requests.
+* `controllerMutationRate` limits the number of operations per second .
+--
++
+NOTE: Default `kafka` quotas apply to internal users, including the Topic Operator and Cruise Control.
+To prevent the Topic Operator from being throttled, monitor controller metrics and explicitly set a `controllerMutationRate` that accommodates your topic operations.
+For Cruise Control and its metrics reporter, ensure sufficient throughput for rebalances.
+A rate of at least 1 KB/s is recommended for small clusters (three brokers), which should be increased for larger or more active clusters.
 
 . Apply the changes to the `Kafka` configuration.
 
-NOTE: Additional options can be configured in the `spec.kafka.config` section.
-The full list of supported options can be found in the https://github.com/strimzi/kafka-quotas-plugin?tab=readme-ov-file#properties-and-their-defaults[plugin documentation].
+NOTE: Additional quota properties are available for both quota plugins.
+For a complete list of supported options, see the https://github.com/strimzi/kafka-quotas-plugin?tab=readme-ov-file#properties-and-their-defaults[plugin documentation].
 
 [role="_additional-resources"]
 .Additional resources

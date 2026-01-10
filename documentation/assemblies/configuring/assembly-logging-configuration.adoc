@@ -5,7 +5,7 @@
 // assembly-config.adoc
 
 :_mod-docs-content-type: ASSEMBLY
-[id='external-logging_{context}']
+[id='assembly-logging-configuration-{context}']
 = Configuring logging
 
 [role="_abstract"]

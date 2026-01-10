@@ -48,11 +48,24 @@ This provides a convenient mechanism for resources to be labeled as required.
 //How to access examples
 include::../../modules/configuring/con-config-examples.adoc[leveloffset=+1]
 
-//`Kafka` resource config
+//`Kafka` resource core config
 include::../../modules/configuring/con-config-kafka-kraft.adoc[leveloffset=+1]
-//setting static broker limits
+// Securing client connections
+include::../../modules/configuring/con-config-kafka-securing-client-connections.adoc[leveloffset=+2]
+// Configuring authorization
+include::../../modules/configuring/con-config-kafka-authorization.adoc[leveloffset=+2]
+// Configuring Kafka broker behavior
+include::../../modules/configuring/con-config-kafka-broker-configuration.adoc[leveloffset=+2]
+// Automating Kafka resource distribution and storage management
+include::../../modules/configuring/con-kafka-cruise-control.adoc[leveloffset=+2]
+// Capturing consumer lag metrics
+include::../../modules/configuring/con-kafka-exporter.adoc[leveloffset=+2]
+// Controlling throughput and storage usage
+include::../../modules/managing/con-choosing-a-quota-plugin.adoc[leveloffset=+2]
 include::../../modules/managing/proc-setting-broker-limits.adoc[leveloffset=+2]
-//Delete kafka nodes using annotations
+// Recovering from broker storage issues
+include::../../modules/configuring/con-kafka-recovering-brokers.adoc[leveloffset=+2]
+// Deleting Kafka nodes using annotations
 include::../../modules/configuring/proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+2]
 
 //configuring node pools

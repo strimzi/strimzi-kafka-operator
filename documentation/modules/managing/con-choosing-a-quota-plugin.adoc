@@ -1,0 +1,48 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-choosing-a-quota-plugin-{context}']
+= Choosing a quota plugin
+
+[role="_abstract"]
+Control throughput and protect broker storage by applying quotas to Kafka brokers.
+Kafka supports the following quota plugin types:
+
+* `strimzi`
+* `kafka`
+
+Only one quota plugin can be enabled at a time.
+The built-in `kafka` plugin is enabled by default.
+Enabling the `strimzi` plugin disables the built-in plugin.
+
+== When to use the `strimzi` quota plugin
+
+Use the `strimzi` quota plugin to protect the Kafka cluster as a whole using aggregate limits.
+
+The `strimzi` plugin is suitable when you need to:
+
+* Prevent brokers from running out of disk space (limits apply to each disk volume individually)
+* Apply total throughput limits across all clients
+* Dynamically share throughput limits between active clients
+* Exclude specific users from quota enforcement
+
+The `strimzi` plugin distributes the total throughput limit dynamically.
+For example, if you set a 40 MBps producer limit, it is not statically divided.
+If one producer is using only 10 MBps, the remaining 30 MBps is automatically available to other producers.
+
+NOTE: With the `strimzi` plugin, you see only aggregated quota metrics, not per-client metrics.
+
+== When to use the `kafka` quota plugin
+
+Use the `kafka` quota plugin to control individual client behavior using static limits.
+
+The `kafka` plugin is suitable when you need to:
+
+* Apply per-broker and per-user limits (broker-level limits can be overridden by xref:con-configuring-client-quotas-str[user-specific quotas])
+* Control CPU usage for client requests
+* Limit the rate of mutations accepted for create topic, create partition, and delete topic requests
+
+Default quotas apply to all users, including internal components.

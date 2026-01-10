@@ -1,0 +1,132 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-securing-kafka-client-connections-{context}']
+= Securing Kafka client connections
+
+[role="_abstract"]
+Secure Kafka client connections by configuring Kafka listeners with TLS encryption and client authentication.
+Listeners control how clients connect to the Kafka cluster from inside or outside the Kubernetes cluster.
+
+Internal listeners allow for in-cluster access.
+To allow access from outside the Kubernetes cluster, configure an external listener.
+Add TLS encryption and authentication as required by your access and security requirements.
+
+Listener options include:
+
+* `name`: Identifies the listener.
+The name must be unique within the Kafka cluster.
+* `port`: Port used by Kafka brokers.
+** Must be `9092` or higher.
+** Ports `9404` and `9999` are reserved for Prometheus and JMX.
+* `type`: How the listener is exposed.
+** Internal types include `internal` and `cluster-ip`.
+** External types include `route` (OpenShift only), `loadbalancer`, `nodeport`, and `ingress`.
+* `tls`: Enables TLS encryption.
+TLS is required for `route` and `ingress` listener types.
+* `authentication`: Client authentication mechanism.
+** Supported types include TLS (mTLS), SCRAM-SHA-512, and custom authentication.
+* `configuration.useServiceDnsDomain`: Uses fully qualified DNS names for bootstrap addresses.
+* `configuration.brokerCertChainAndKey`: Uses a server certificate managed by an external certificate authority.
+
+Listener configuration controls how clients connect to Kafka.
+Client credentials and authorization are configured separately.
+
+NOTE: Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
+
+The following examples show listener configuration to enable TLS and authentication.
+
+== Internal listener without TLS
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  kafka:
+    # Listener configuration (required)
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+        configuration:
+          useServiceDnsDomain: true
+----
+
+* `spec.kafka.listeners[].type: internal` exposes Kafka only inside the Kubernetes cluster.
+* `spec.kafka.listeners[].tls: false` disables TLS encryption.
+* `spec.kafka.listeners[].configuration.useServiceDnsDomain: true` uses fully qualified DNS names that include the cluster service suffix.
+
+== Internal listener with TLS and mTLS authentication
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  kafka:
+    # Listener configuration (required)
+    listeners:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+----
+
+* `spec.kafka.listeners[].tls: true` enables TLS encryption.
+* `spec.kafka.listeners[].authentication.type: tls` enables mutual TLS (mTLS) authentication.
+Clients must present a trusted client certificate when connecting.
+
+== External listener with TLS
+
+The listener type determines how Kafka is exposed outside the Kubernetes cluster.
+For example, on OpenShift you can use the `route` listener type.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  kafka:
+    # Listener configuration (required)
+    listeners:
+      - name: external
+        port: 9094
+        type: route
+        tls: true
+----
+
+* `spec.kafka.listeners[].type: route` exposes Kafka outside the cluster using OpenShift routes.
+* `spec.kafka.listeners[].tls: true` is required for `route` listeners.
+
+== Using externally managed listener certificates
+
+By default, Strimzi manages listener certificates when TLS is enabled.
+If you use an external certificate authority (CA), you can configure Strimzi to use a listener certificate and private key stored in a `Secret`.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  kafka:
+    # Listener configuration (required)
+    listeners:
+      - name: external
+        port: 9094
+        type: route
+        tls: true
+        configuration:
+          brokerCertChainAndKey:
+            secretName: my-secret
+            certificate: my-certificate.crt
+            key: my-key.key
+----
+
+* `spec.kafka.listeners[].configuration.brokerCertChainAndKey` references a `Secret` containing a server certificate and private key.
+* Use this option when listener certificates are managed outside Strimzi.
+
+For step-by-step procedures and examples for securing client access, see
+xref:assembly-securing-access-{context}[Securing access to a Kafka cluster].
+
+For details of listener configuration options, see the
+link:{BookURLConfiguring}#type-Kafka-reference[`Kafka` schema reference^] and
+link:{BookURLConfiguring}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference^].
