@@ -41,11 +41,20 @@ public class ConvertFileCommand extends AbstractConversionCommand {
     Exclusive exclusive;
 
     static class Exclusive {
+        Exclusive() { }
+
         @CommandLine.Option(names = {"-o", "--output"}, description = "Creates an output YAML file for the converted custom resource")
         File outputFile;
 
         @CommandLine.Option(names = {"--in-place"}, description = "Applies the changes directly to the input file specified by --file", defaultValue = "false")
         boolean inPlace;
+    }
+
+    /**
+     * Constructor
+     */
+    public ConvertFileCommand() {
+        super();
     }
 
     /**

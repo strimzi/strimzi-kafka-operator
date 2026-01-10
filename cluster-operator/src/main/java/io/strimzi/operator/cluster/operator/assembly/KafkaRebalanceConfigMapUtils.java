@@ -42,6 +42,8 @@ public class KafkaRebalanceConfigMapUtils {
     /* test */ static final String BYTE_MOVEMENT_ZERO = "0";
     /* test */ static final String BYTE_MOVEMENT_COMPLETED = "100";
 
+    private KafkaRebalanceConfigMapUtils() { }
+
     /**
      * Updates the given KafkaRebalance ConfigMap with progress fields based on the progress of the Kafka rebalance operation.
      *

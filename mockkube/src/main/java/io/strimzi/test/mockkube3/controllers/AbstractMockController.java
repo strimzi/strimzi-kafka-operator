@@ -16,8 +16,7 @@ public abstract class AbstractMockController {
     /**
      * Constructs the mock Kubernetes controller
      */
-    public AbstractMockController() {
-    }
+    public AbstractMockController() { }
 
     /**
      * Starts the mock controller

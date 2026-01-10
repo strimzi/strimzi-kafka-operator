@@ -16,6 +16,8 @@ import java.util.List;
  */
 @SuppressWarnings("deprecation")
 public class UserConversions {
+    private UserConversions() { }
+
     /**
      * Converts the operation field to operations in KafkaUser resources
      *

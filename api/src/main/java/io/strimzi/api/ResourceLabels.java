@@ -7,7 +7,13 @@ package io.strimzi.api;
 /**
  * An immutable set of labels
  */
+@SuppressWarnings("HideUtilityClassConstructor") // We extend this class latest in the CO module, that is why it cannot have a private constructor
 public class ResourceLabels {
+    /**
+     * Constructor
+     */
+    public ResourceLabels() { }
+
     /**
      * Strimzi domain used for the Strimzi labels
      */

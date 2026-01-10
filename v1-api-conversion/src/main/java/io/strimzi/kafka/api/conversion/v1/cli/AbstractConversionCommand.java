@@ -80,6 +80,13 @@ public abstract class AbstractConversionCommand extends AbstractCommand {
         CONVERTERS.put(StrimziPodSet.class, spsc);
     }
 
+    /**
+     * Constructor
+     */
+    public AbstractConversionCommand() {
+        super();
+    }
+
     @SuppressWarnings({"rawtypes"})
     protected static AbstractConverter getConverter(Object key) {
         AbstractConverter<?> converter = CONVERTERS.get(key);

@@ -32,6 +32,11 @@ public class Subject {
         private Set<String> ipAddresses = null;
 
         /**
+         * Constructor
+         */
+        public Builder() { }
+
+        /**
          * Sets the Common Name
          *
          * @param commonName    Common Name

@@ -53,6 +53,8 @@ public class VerificationUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(VerificationUtils.class);
 
+    private VerificationUtils() { }
+
     /**
      * Verifies expected and current resources requests inside selected pods container
      *

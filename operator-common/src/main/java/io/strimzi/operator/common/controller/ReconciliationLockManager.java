@@ -25,6 +25,11 @@ public class ReconciliationLockManager {
     /*test*/ final ConcurrentHashMap<String, ReconciliationLock> locks = new ConcurrentHashMap<>();
 
     /**
+     * Constructor
+     */
+    public ReconciliationLockManager() { }
+
+    /**
      * Tries to lock the lock for given key. The key is either obtained from the map if it already exists or created.
      * When getting the existing lock from the map, it increases the counter of the interested parties directly in the
      * locks.compute(...) method to ensure atomicity.
@@ -76,6 +81,8 @@ public class ReconciliationLockManager {
     public static class ReconciliationLock    {
         private final Lock lock = new ReentrantLock();
         /*test*/ final AtomicInteger lockQueue = new AtomicInteger(1); // Initializes at 1, because it is created as part of an tryLock() call
+
+        private ReconciliationLock() { }
 
         private ReconciliationLock incrementQueueAndGet()   {
             lockQueue.incrementAndGet();

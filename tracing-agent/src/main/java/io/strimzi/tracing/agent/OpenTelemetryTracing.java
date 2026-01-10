@@ -12,8 +12,12 @@ import org.slf4j.LoggerFactory;
  * Distributed tracing initialization based on OpenTelemetry
  */
 public class OpenTelemetryTracing implements Tracing {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenTelemetryTracing.class);
+
+    /**
+     * Constructor
+     */
+    public OpenTelemetryTracing() { }
 
     @Override
     public void initialize() {

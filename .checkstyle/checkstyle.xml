@@ -72,6 +72,9 @@
         <module name="StaticVariableName"/>
         <module name="TypeName"/>
         <module name="AvoidStarImport"/>
+        <module name="HideUtilityClassConstructor"/>
+        <module name="MissingCtor"/>
+
 
         <!-- dependencies and import control -->
         <module name="ImportControl">

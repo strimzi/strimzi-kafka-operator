@@ -43,8 +43,7 @@ public class AclRule implements UnknownPropertyPreserving {
     private List<AclOperation> operations;
     private Map<String, Object> additionalProperties;
 
-    public AclRule() {
-    }
+    public AclRule() { }
 
     public AclRule(AclRuleType type, AclRuleResource resource, String host, List<AclOperation> operations) {
         this.type = type;

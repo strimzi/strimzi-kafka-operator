@@ -26,6 +26,7 @@ import java.util.Set;
  * Utility class for handling KafkaRebalance custom resource
  */
 public class KafkaRebalanceUtils {
+    private KafkaRebalanceUtils() { }
 
     /**
      * Searches through the conditions in the supplied status instance and finds those whose type matches one of the values defined

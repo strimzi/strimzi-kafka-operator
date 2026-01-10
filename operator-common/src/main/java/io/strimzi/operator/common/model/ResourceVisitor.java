@@ -24,6 +24,8 @@ import java.util.Map;
 public class ResourceVisitor {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceVisitor.class);
 
+    private ResourceVisitor() { }
+
     /**
      * Interface defining the visitor
      */

@@ -14,6 +14,8 @@ import io.strimzi.operator.common.model.Labels;
  * Shared methods for working with Service Account
  */
 public class ServiceAccountUtils {
+    private ServiceAccountUtils() { }
+
     /**
      * Creates a Service Account
      *

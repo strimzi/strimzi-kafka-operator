@@ -169,6 +169,10 @@ public abstract class AbstractControllerLoop {
      */
     private class Runner implements Runnable {
         /**
+         * Constructor
+         */
+        private Runner() { }
+        /**
          * The run loop of the controller loop thread. It picks reconciliations from the work queue and executes them.
          */
         @Override

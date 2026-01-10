@@ -38,6 +38,8 @@ public class TemplateUtils {
      **/
     /* test */ final static Pattern VOLUME_NAME_REGEX = Pattern.compile("^(?=.{0,63}$)[a-zA-Z0-9][a-zA-Z0-9-._]*[a-zA-Z0-9]$");
 
+    private TemplateUtils() { }
+
     /**
      * Extracts custom labels configured through the Strimzi API resource templates. This method deals the null checks
      * and makes the code using it more easy to read.

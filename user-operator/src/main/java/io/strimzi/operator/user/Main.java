@@ -55,6 +55,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class);
 
+    private Main() { }
+
     /**
      * Main method which starts the webserver with healthchecks and metrics and the UserController which is responsible
      * for handling users
@@ -195,6 +197,8 @@ public class Main {
 
     private static class OperatorWorkThreadFactory implements ThreadFactory {
         private final AtomicInteger threadCounter = new AtomicInteger(0);
+
+        private OperatorWorkThreadFactory() { }
 
         @Override
         public Thread newThread(Runnable r) {
