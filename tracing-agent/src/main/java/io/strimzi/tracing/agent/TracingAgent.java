@@ -8,6 +8,7 @@ package io.strimzi.tracing.agent;
  * A very simple Java agent which initializes the distributed tracing if requested
  */
 public class TracingAgent {
+    private TracingAgent() { }
 
     /**
      * Agent entry point

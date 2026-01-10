@@ -11,6 +11,8 @@ import static java.lang.String.join;
  * Class with various utility methods for Cruise Control.
  */
 public class CruiseControlUtil {
+    private CruiseControlUtil() { }
+
     /**
      * Build basic HTTP authentication header value.
      *

@@ -12,6 +12,7 @@ import picocli.CommandLine;
  * The converter cli entry point
  */
 @SuppressFBWarnings("ISC_INSTANTIATE_STATIC_CLASS")
+@SuppressWarnings("HideUtilityClassConstructor") // This is not a pure utility class given the PicoCLI annotation. we instantiate it in tests.
 @CommandLine.Command(
         name = "bin/v1-api-conversion.sh",
         description = "v1 API Conversion tool for Strimzi Custom Resources",
@@ -25,6 +26,8 @@ import picocli.CommandLine;
         }
 )
 class EntryCommand {
+    public EntryCommand() { }
+
     public static void main(String[] args) {
         CommandLine cmd = new CommandLine(new EntryCommand());
         cmd.registerConverter(Level.class, Level::toLevel);

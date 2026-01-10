@@ -47,6 +47,8 @@ public class AuthenticationUtils {
     private static final String SASL_PASSWORD_FILE = "SASL_PASSWORD_FILE";
     private static final String OAUTH_CONFIG = "OAUTH_CONFIG";
 
+    private AuthenticationUtils() { }
+
     /**
      * Validates Kafka client authentication for all components based on Apache Kafka clients.
      *

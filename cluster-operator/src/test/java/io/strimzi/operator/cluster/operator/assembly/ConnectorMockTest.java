@@ -2656,6 +2656,5 @@ public class ConnectorMockTest {
     }
 
     // Utility record used during tests
-    record ConnectorStatus(ConnectorState state, JsonObject config) {
-    }
+    record ConnectorStatus(ConnectorState state, JsonObject config) { }
 }

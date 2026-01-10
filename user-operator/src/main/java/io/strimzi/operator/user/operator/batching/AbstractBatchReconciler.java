@@ -121,6 +121,8 @@ public abstract class AbstractBatchReconciler<T> {
      * it as a public method.
      */
     private class Runner implements Runnable {
+        private Runner() { }
+
         /**
          * The run loop of the batch reconciler thread. It picks up the queued Kafka Admin API requests and sends them
          * to Kafka.

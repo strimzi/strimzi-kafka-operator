@@ -33,14 +33,24 @@
     <suppress checks="UnnecessaryParentheses"
               files="io[/\\]strimzi[/\\].*"/>
 
-    <!-- Skip Javadoc checks for tests-->
+    <!-- Skip Javadoc checks for tests -->
     <suppress checks="(JavadocMethod|JavadocType|JavadocVariable|MissingJavadocType|MissingJavadocMethod)" files="src[/\\]test[/\\]java[/\\].*"/>
 
-    <!-- The api module is currently not ready or Javadoc checks-->
+    <!-- Do not require constructors in test classes -->
+    <suppress checks="(MissingCtor|HideUtilityClassConstructor)" files="src[/\\]test[/\\]java[/\\].*"/>
+
+    <!-- The api module is currently not ready for Javadoc checks -->
     <suppress checks="(JavadocMethod|JavadocType|JavadocVariable|MissingJavadocType|MissingJavadocMethod)" files="api[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
 
-    <!-- The systemtest module is currently not ready or Javadoc checks-->
+    <!-- The api module is currently not ready for constructor checks -->
+    <suppress checks="(MissingCtor|HideUtilityClassConstructor)" files="api[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
+
+    <!-- The systemtest module is currently not ready for Javadoc checks -->
     <suppress checks="(JavadocMethod|JavadocType|JavadocVariable|MissingJavadocType|MissingJavadocMethod|JavadocStyle)" files="systemtest[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
     <suppress checks="(JavadocStyle)" files="systemtest[/\\]src[/\\]test[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
+
+    <!-- The systemtest module is currently not ready for Constructor checks-->
+    <suppress checks="(MissingCtor|HideUtilityClassConstructor)" files="systemtest[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
+    <suppress checks="(MissingCtor|HideUtilityClassConstructor)" files="systemtest[/\\]src[/\\]test[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
 
 </suppressions>

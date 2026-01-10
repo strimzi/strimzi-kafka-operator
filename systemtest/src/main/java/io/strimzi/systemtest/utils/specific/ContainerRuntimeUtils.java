@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 public class ContainerRuntimeUtils {
     private static final String RUNTIME = detectRuntime();
 
+    private ContainerRuntimeUtils() { }
+
     private static String detectRuntime() {
         if (isCommandAvailable(TestConstants.PODMAN)) {
             return TestConstants.PODMAN;

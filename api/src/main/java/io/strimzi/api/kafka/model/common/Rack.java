@@ -33,8 +33,7 @@ public class Rack implements UnknownPropertyPreserving {
     private String topologyKey;
     private Map<String, Object> additionalProperties;
 
-    public Rack() {
-    }
+    public Rack() { }
 
     public Rack(String topologyKey) {
         this.topologyKey = topologyKey;

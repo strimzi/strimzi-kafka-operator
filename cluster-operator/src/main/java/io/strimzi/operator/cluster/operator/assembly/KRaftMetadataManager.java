@@ -31,6 +31,8 @@ public class KRaftMetadataManager {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KRaftMetadataManager.class.getName());
     /* test */ static final String METADATA_VERSION_KEY = MetadataVersion.FEATURE_NAME;
 
+    private KRaftMetadataManager() { }
+
     /**
      * Utility method for managing the KRaft metadata version.
      *

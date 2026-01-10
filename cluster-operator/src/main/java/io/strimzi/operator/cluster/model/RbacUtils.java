@@ -23,6 +23,8 @@ import java.util.List;
  * Shared methods for working with RBAC resources
  */
 public class RbacUtils {
+    private RbacUtils() { }
+
     /**
      * Creates a Role with rules passed as parameter
      *

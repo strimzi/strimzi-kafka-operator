@@ -33,6 +33,11 @@ public class BrokersInUseCheck {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(BrokersInUseCheck.class.getName());
 
     /**
+     * Constructor
+     */
+    public BrokersInUseCheck() { }
+
+    /**
      * Checks if broker contains any partition replicas when scaling down
      *
      * @param reconciliation        Reconciliation marker

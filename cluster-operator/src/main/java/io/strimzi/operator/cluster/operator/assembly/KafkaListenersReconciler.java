@@ -810,6 +810,11 @@ public class KafkaListenersReconciler {
      */
     public static class ReconciliationResult {
         /**
+         * Constructor
+         */
+        public ReconciliationResult() { }
+
+        /**
          * List of ListenerStatus objects for the Kafka custom resource status
          */
         public final List<ListenerStatus> listenerStatuses = new ArrayList<>();

@@ -116,6 +116,13 @@ public class HealthCheckAndMetricsServer {
      * Handler responsible for the liveness check
      */
     class HealthyHandler extends Handler.Abstract {
+        /**
+         * Constructor
+         */
+        public HealthyHandler() {
+            super();
+        }
+
         @Override
         public boolean handle(Request request, Response response, Callback callback) throws Exception {
             response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/json; charset=UTF-8");
@@ -138,6 +145,13 @@ public class HealthCheckAndMetricsServer {
      * Handler responsible for the readiness check
      */
     class ReadyHandler extends Handler.Abstract {
+        /**
+         * Constructor
+         */
+        public ReadyHandler() {
+            super();
+        }
+
         @Override
         public boolean handle(Request request, Response response, Callback callback) throws Exception {
             response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/json; charset=UTF-8");
@@ -160,6 +174,13 @@ public class HealthCheckAndMetricsServer {
      * Handler responsible for the metrics
      */
     class MetricsHandler extends Handler.Abstract {
+        /**
+         * Constructor
+         */
+        public MetricsHandler() {
+            super();
+        }
+
         @Override
         public boolean handle(Request request, Response response, Callback callback) throws Exception {
             if (prometheusMeterRegistry != null) {

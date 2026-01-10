@@ -35,6 +35,8 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
     ConvertResourceCommand.Exclusive exclusive;
 
     static class Exclusive {
+        Exclusive() { }
+
         @CommandLine.Option(names = {"-n", "--namespace"}, description = "Specifies a Kubernetes namespace or OpenShift project, or uses the current namespace if not specified")
         String namespace;
 
@@ -46,6 +48,13 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
     String name;
 
     private KubernetesClient client;
+
+    /**
+     * Constructor
+     */
+    public ConvertResourceCommand() {
+        super();
+    }
 
     /**
      * Gets resources of a given kind from one or all namespaces

@@ -30,8 +30,7 @@ import java.util.function.Predicate;
  * </pre>
  */
 public class CustomResourceConditions {
-    private CustomResourceConditions() {
-    }
+    private CustomResourceConditions() { }
 
     /**
      * Returns a predicate that determines if CRD is ready. A CRD is
