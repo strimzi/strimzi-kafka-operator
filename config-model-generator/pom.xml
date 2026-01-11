@@ -70,6 +70,10 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -98,6 +102,8 @@
                                     <ignoredUnusedDeclaredDependencies>
                                         <!-- Mot used directly because of differences between Kafka versions. But needed in the classpath. -->
                                         <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-raft</ignoredUnusedDeclaredDependency>
+                                        <!-- Needed for logging using the Kafka Clients (uses SLF4J) -->
+                                        <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j2-impl</ignoredUnusedDeclaredDependency>
                                     </ignoredUnusedDeclaredDependencies>
                                 </configuration>
                             </execution>
@@ -154,6 +160,8 @@
                                     <ignoredUnusedDeclaredDependencies>
                                         <!-- Mot used directly because of differences between Kafka versions. But needed in the classpath. -->
                                         <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-raft</ignoredUnusedDeclaredDependency>
+                                        <!-- Needed for logging using the Kafka Clients (uses SLF4J) -->
+                                        <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j2-impl</ignoredUnusedDeclaredDependency>
                                     </ignoredUnusedDeclaredDependencies>
                                 </configuration>
                             </execution>

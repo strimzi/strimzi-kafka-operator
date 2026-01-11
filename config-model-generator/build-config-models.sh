@@ -9,7 +9,7 @@ get_kafka_versions
 
 # Always delete existing files so when kafka-versions changes we remove
 # models for unsupported versions
-rm ../cluster-operator/src/main/resources/kafka-*-config-model.json || true
+rm -f ../cluster-operator/src/main/resources/kafka-*-config-model.json || true
 
 if [ "$1" = "build" ]
 then
