@@ -38,11 +38,13 @@ import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -385,6 +388,7 @@ public class KafkaExporterTest {
                                 .withTopologySpreadConstraints(tsc1, tsc2)
                                 .withEnableServiceLinks(false)
                                 .withVolumes(additionalVolumeConfigMap)
+                                .withHostUsers(false)
                             .endPod()
                             .withNewContainer()
                                 .withVolumeMounts(additionalVolumeMountConfigMap)
@@ -421,6 +425,7 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
         assertThat(getVolume(dep.getSpec().getTemplate().getSpec(), additionalVolumeConfigMap.getName()).getConfigMap(), is(configMap));
         assertThat(getVolumeMount(dep.getSpec().getTemplate().getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
 
@@ -459,6 +464,21 @@ public class KafkaExporterTest {
     public void testNetworkPolicy() {
         NetworkPolicy np = KE.generateNetworkPolicy();
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(MetricsModel.METRICS_PORT))).findFirst().orElse(null), is(notNullValue()));
+    }
+
+    @Test
+    public void testSecurityProvider() {
+        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
+        ke.securityProvider = new TestPodSecurityProvider();
+        ke.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        Deployment dep = ke.generateDeployment(emptyMap(), true, null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
     }
 
     ////////////////////

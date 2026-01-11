@@ -90,7 +90,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -1002,6 +1001,7 @@ public class KafkaConnectClusterTest {
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
                             .withVolumes(additionalVolumeSecret, additionalVolumeEmptyDir, additionalVolumeConfigMap)
+                            .withHostUsers(false)
                         .endPod()
                         .withNewConnectContainer()
                             .withVolumeMounts(additionalVolumeMountSecret, additionalVolumeMountEmptyDir)
@@ -1055,7 +1055,7 @@ public class KafkaConnectClusterTest {
             assertThat(pod.getSpec().getDnsConfig(), is(dnsConfig));
             assertThat(pod.getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
-
+            assertThat(pod.getSpec().getHostUsers(), is(false));
 
             assertThat(pod.getSpec().getVolumes().size(), is(6));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
@@ -1563,15 +1563,16 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
-    public void testRestrictedSecurityContext() {
+    public void testSecurityProvider() {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, RESOURCE, VERSIONS, SHARED_ENV_PROVIDER);
-        kc.securityProvider = new RestrictedPodSecurityProvider();
+        kc.securityProvider = new TestPodSecurityProvider();
         kc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
         // Check PodSet
         StrimziPodSet podSet = kc.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getSecurityContext(), is(nullValue()));
+            assertThat(pod.getSpec().getHostUsers(), is(false));
             assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
             assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
             assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));

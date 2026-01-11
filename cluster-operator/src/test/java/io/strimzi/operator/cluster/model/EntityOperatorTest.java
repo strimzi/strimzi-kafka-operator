@@ -43,10 +43,12 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -292,6 +295,7 @@ public class EntityOperatorTest {
                                 .withTopologySpreadConstraints(tsc1, tsc2)
                                 .withEnableServiceLinks(false)
                                 .withVolumes(additionalVolumes)
+                                .withHostUsers(false)
                             .endPod()
                             .withNewTopicOperatorContainer()
                                 .withVolumeMounts(additionalVolumeMounts)
@@ -336,6 +340,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(toleration)));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMounts.get(0)));
@@ -825,6 +830,17 @@ public class EntityOperatorTest {
 
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("+ServerSideApplyPhase1"));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("+ServerSideApplyPhase1"));
+    }
+
+    @Test
+    public void testSecurityProvider() {
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        eo.securityProvider = new TestPodSecurityProvider();
+        eo.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        Deployment dep = eo.generateDeployment(emptyMap(), true, null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getHostUsers(), is(false));
     }
 
     ////////////////////

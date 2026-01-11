@@ -15,6 +15,7 @@ import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 public class PodSecurityProviderContextImpl implements PodSecurityProviderContext {
     private final Storage storage;
     private final PodSecurityContext userSuppliedSecurityContext;
+    private final Boolean hostUsers;
 
     /**
      * Constructor which can be used when only the user-supplied security context is set, but no storage is used.
@@ -35,6 +36,7 @@ public class PodSecurityProviderContextImpl implements PodSecurityProviderContex
     public PodSecurityProviderContextImpl(Storage storage, PodTemplate podTemplate) {
         this.storage = storage;
         this.userSuppliedSecurityContext = podTemplate != null ? podTemplate.getSecurityContext() : null;
+        this.hostUsers = podTemplate != null ? podTemplate.getHostUsers() : null;
     }
 
     @Override
@@ -45,5 +47,10 @@ public class PodSecurityProviderContextImpl implements PodSecurityProviderContex
     @Override
     public PodSecurityContext userSuppliedSecurityContext() {
         return userSuppliedSecurityContext;
+    }
+
+    @Override
+    public Boolean userSuppliedHostUsers() {
+        return hostUsers;
     }
 }

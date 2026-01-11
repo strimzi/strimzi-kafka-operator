@@ -234,6 +234,8 @@ public class WorkloadUtils {
      * @param volumes                 List of volumes
      * @param defaultImagePullSecrets Default image pull secrets
      * @param podSecurityContext      Pod security context
+     * @param hostUsers               HostUsers flag
+     *
      * @return Created Pod for use with StrimziPodSet
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
@@ -253,8 +255,8 @@ public class WorkloadUtils {
             List<Container> containers,
             List<Volume> volumes,
             List<LocalObjectReference> defaultImagePullSecrets,
-            PodSecurityContext podSecurityContext
-    ) {
+            PodSecurityContext podSecurityContext,
+            Boolean hostUsers) {
         Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -276,6 +278,7 @@ public class WorkloadUtils {
                     .withTerminationGracePeriodSeconds(template != null ? (long) template.getTerminationGracePeriodSeconds() : 30L)
                     .withImagePullSecrets(imagePullSecrets(template, defaultImagePullSecrets))
                     .withSecurityContext(podSecurityContext)
+                    .withHostUsers(hostUsers)
                     .withPriorityClassName(template != null ? template.getPriorityClassName() : null)
                     .withSchedulerName(template != null && template.getSchedulerName() != null ? template.getSchedulerName() : "default-scheduler")
                     .withHostAliases(template != null ? template.getHostAliases() : null)
@@ -306,6 +309,7 @@ public class WorkloadUtils {
      * @param volumes                   List of volumes
      * @param defaultImagePullSecrets   Default image pull secrets
      * @param podSecurityContext        Pod security context
+     * @param hostUsers                 HostUsers flag
      *
      * @return  Created Pod template for use with StatefulSet or Deployment
      */
@@ -320,8 +324,8 @@ public class WorkloadUtils {
             List<Container> containers,
             List<Volume> volumes,
             List<LocalObjectReference> defaultImagePullSecrets,
-            PodSecurityContext podSecurityContext
-    )   {
+            PodSecurityContext podSecurityContext,
+            Boolean hostUsers)   {
         return new PodTemplateSpecBuilder()
                 .withNewMetadata()
                     .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(defaultPodLabels, TemplateUtils.labels(template))).toMap())
@@ -338,6 +342,7 @@ public class WorkloadUtils {
                     .withTerminationGracePeriodSeconds(template != null ? (long) template.getTerminationGracePeriodSeconds() : 30L)
                     .withImagePullSecrets(imagePullSecrets(template, defaultImagePullSecrets))
                     .withSecurityContext(podSecurityContext)
+                    .withHostUsers(hostUsers)
                     .withPriorityClassName(template != null ? template.getPriorityClassName() : null)
                     .withSchedulerName(template != null && template.getSchedulerName() != null ? template.getSchedulerName() : "default-scheduler")
                     .withHostAliases(template != null ? template.getHostAliases() : null)
@@ -365,9 +370,11 @@ public class WorkloadUtils {
      * @param volumes                   List of volumes
      * @param defaultImagePullSecrets   Default image pull secrets
      * @param podSecurityContext        Pod security context
+     * @param hostUsers                 HostUsers flag
      *
      * @return  Created Pod which can be used on its own
      */
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
     public static Pod createPod(
             String name,
             String namespace,
@@ -381,8 +388,8 @@ public class WorkloadUtils {
             List<Container> containers,
             List<Volume> volumes,
             List<LocalObjectReference> defaultImagePullSecrets,
-            PodSecurityContext podSecurityContext
-    )   {
+            PodSecurityContext podSecurityContext,
+            Boolean hostUsers)   {
         return new PodBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -403,6 +410,7 @@ public class WorkloadUtils {
                     .withTerminationGracePeriodSeconds(template != null ? (long) template.getTerminationGracePeriodSeconds() : 30L)
                     .withImagePullSecrets(imagePullSecrets(template, defaultImagePullSecrets))
                     .withSecurityContext(podSecurityContext)
+                    .withHostUsers(hostUsers)
                     .withPriorityClassName(template != null ? template.getPriorityClassName() : null)
                     .withSchedulerName(template != null && template.getSchedulerName() != null ? template.getSchedulerName() : "default-scheduler")
                     .withHostAliases(template != null ? template.getHostAliases() : null)

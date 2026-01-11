@@ -86,7 +86,6 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
@@ -1219,6 +1218,7 @@ public class KafkaMirrorMaker2ClusterTest {
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
                             .withVolumes(additionalVolumeConfigMap, additionalVolumePvc)
+                            .withHostUsers(false)
                         .endPod()
                         .withNewInitContainer()
                             .withVolumeMounts(additionalVolumeMountPvc)
@@ -1271,6 +1271,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getDnsPolicy(), is(DnsPolicy.NONE.toValue()));
             assertThat(pod.getSpec().getDnsConfig(), is(dnsConfig));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
+            assertThat(pod.getSpec().getHostUsers(), is(false));
 
             assertThat(pod.getSpec().getVolumes().size(), is(5));
             assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
@@ -1705,15 +1706,16 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @Test
-    public void testRestrictedSecurityContext() {
+    public void testSecurityProvider() {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, RESOURCE, VERSIONS, SHARED_ENV_PROVIDER);
-        kmm2.securityProvider = new RestrictedPodSecurityProvider();
+        kmm2.securityProvider = new TestPodSecurityProvider();
         kmm2.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
         // Check PodSet
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             assertThat(pod.getSpec().getSecurityContext(), is(nullValue()));
+            assertThat(pod.getSpec().getHostUsers(), is(false));
             assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
             assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
             assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
