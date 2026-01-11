@@ -25,10 +25,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
@@ -39,14 +36,8 @@ public class UserOperatorPerformanceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(UserOperatorPerformanceUtils.class);
 
-    private static ExecutorService executorService = getCustomThreadPool();
-
     // ensuring that object can not be created outside of class
     private UserOperatorPerformanceUtils() {}
-
-    private static ExecutorService getCustomThreadPool() {
-        return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 10);
-    }
 
     public static void alterAllUsersInList(final TestStorage testStorage, final List<KafkaUser> listOfUsers, final String usersPrefix) {
         LOGGER.info("Altering {} KafkaUsers", listOfUsers.size());
@@ -136,9 +127,9 @@ public class UserOperatorPerformanceUtils {
     }
 
     /**
-     * Manages the full lifecycle of Kafka users concurrently using a cached thread pool.
+     * Manages the full lifecycle of Kafka users concurrently using a fixed thread pool.
      * This method processes creation, modification, and deletion for each user in separate threads,
-     * allowing unlimited concurrent operations which is optimal for I/O-bound Kubernetes API calls.
+     * allowing concurrent operations which is optimal for I/O-bound Kubernetes API calls.
      *
      * @param testStorage           An instance of TestStorage containing configuration and state needed for user operations.
      * @param numberOfUsers         The number of Kafka users to be processed.
@@ -148,44 +139,20 @@ public class UserOperatorPerformanceUtils {
      * @return                      The total time taken to complete all user lifecycles in milliseconds.
      */
     public static long processAllUsersConcurrently(TestStorage testStorage, int numberOfUsers, int spareEvents, int warmUpTasksToProcess) {
-        if (executorService.isShutdown() || executorService.isTerminated()) {
-            executorService = getCustomThreadPool();
-            LOGGER.info("Reinitialized ExecutorService for new test run.");
-        }
+        return PerformanceTestExecutor.processResourcesConcurrently(
+            numberOfUsers,
+            spareEvents,
+            warmUpTasksToProcess,
+            (userIndex, extensionContext) -> performFullLifecycle(userIndex, testStorage, extensionContext),
+            "KafkaUser"
+        );
+    }
 
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        ExtensionContext extensionContext = KubeResourceManager.get().getTestContext();
-
-        long startTime = System.nanoTime();
-
-        for (int userIndex = warmUpTasksToProcess; userIndex < numberOfUsers + warmUpTasksToProcess; userIndex++) {
-            final int startIndex = userIndex;
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(startIndex,  testStorage, extensionContext), executorService);
-            futures.add(future);
-        }
-
-        // consume spare events
-        for (int j = 0; j < spareEvents; j++) {
-            futures.add(j, CompletableFuture.completedFuture(null));
-        }
-
-        // Wait for all users to complete their lifecycle
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        LOGGER.info("All KafkaUser lifecycles completed.");
-
-        long allTasksTimeMs = Duration.ofNanos(System.nanoTime() - startTime).toMillis();
-
-        if (warmUpTasksToProcess != 0) {
-            // boundary between tests => less likelihood that tests would influence each other
-            LOGGER.info("Cooling down");
-            try {
-                Thread.sleep(5_000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        return allTasksTimeMs;
+    /**
+     * Stops the shared executor service gracefully.
+     */
+    public static void stopExecutor() {
+        PerformanceTestExecutor.stopExecutor();
     }
 
     /**
