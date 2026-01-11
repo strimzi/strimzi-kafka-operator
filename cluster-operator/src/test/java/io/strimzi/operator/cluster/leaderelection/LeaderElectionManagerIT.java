@@ -57,21 +57,25 @@ public class LeaderElectionManagerIT {
         le1.start();
         le1Leader.await();
         assertThat(getLease().getSpec().getHolderIdentity(), is("le-1"));
+        assertThat(getLease().getSpec().getLeaseDurationSeconds(), is(2));
 
         // Start the second member => leadership should not change
         le2.start();
         assertThat(getLease().getSpec().getHolderIdentity(), is("le-1"));
+        assertThat(getLease().getSpec().getLeaseDurationSeconds(), is(2));
 
         // Stop the first member => leadership should change
         le1.stop();
         le1NotLeader.await();
         le2Leader.await();
         assertThat(getLease().getSpec().getHolderIdentity(), is("le-2"));
+        assertThat(getLease().getSpec().getLeaseDurationSeconds(), is(2));
 
-        // Stop the second member => the leadership should be released
+        // Stop the second member => the holder identity remains set, but the lease duration is reset to 1
         le2.stop();
         le2NotLeader.await();
-        assertThat(getLease().getSpec().getHolderIdentity(), is(""));
+        assertThat(getLease().getSpec().getHolderIdentity(), is("le-2"));
+        assertThat(getLease().getSpec().getLeaseDurationSeconds(), is(1));
     }
 
     private LeaderElectionManager createLeaderElectionManager(String identity, Runnable startLeadershipCallback, Consumer<Boolean> stopLeadershipCallback)   {
@@ -79,8 +83,8 @@ public class LeaderElectionManagerIT {
         envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), LEASE_NAME);
         envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), NAMESPACE);
         envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), identity);
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS.key(), "1000");
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS.key(), "800");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS.key(), "2000");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS.key(), "1000");
         envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_RETRY_PERIOD_MS.key(), "200");
 
         return new LeaderElectionManager(
