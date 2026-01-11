@@ -11,6 +11,10 @@ import io.strimzi.operator.common.auth.TlsPemIdentity;
  * Class to provide the real KafkaAgentClient which connects to actual Kafka Agent
  */
 public class DefaultKafkaAgentClientProvider implements KafkaAgentClientProvider {
+    /**
+     * Constructor
+     */
+    public DefaultKafkaAgentClientProvider() { }
 
     @Override
     public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, TlsPemIdentity tlsPemIdentity) {

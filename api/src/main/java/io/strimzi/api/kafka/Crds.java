@@ -59,8 +59,7 @@ public class Crds {
         KafkaNodePool.class
     };
 
-    private Crds() {
-    }
+    private Crds() { }
 
     @SuppressWarnings({"checkstyle:JavaNCSS"})
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls) {

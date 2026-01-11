@@ -7,7 +7,13 @@ package io.strimzi.api;
 /**
  * Class for holding some annotation keys.
  */
+@SuppressWarnings("HideUtilityClassConstructor") // We extend this class latest in the CO module, that is why it cannot have a private constructor
 public class ResourceAnnotations {
+    /**
+     * Constructor
+     */
+    public ResourceAnnotations() { }
+
     /**
      * The Strimzi domain used in all annotations
      */

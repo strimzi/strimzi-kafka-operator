@@ -267,6 +267,8 @@ public class UserController implements Liveness, Readiness {
      * credentials and queues them for reconciliation.
      */
     class PeriodicReconciliation implements Runnable  {
+        PeriodicReconciliation() { }
+
         @Override
         public void run() {
             LOGGER.infoOp("Triggering periodic reconciliation of {} resources for namespace {}", RESOURCE_KIND, watchedNamespace);
@@ -290,6 +292,8 @@ public class UserController implements Liveness, Readiness {
      * Event handler used in the KafkaUser informer which decides what to do with the incoming events.
      */
     private class KafkaUserEventHandler implements ResourceEventHandler<KafkaUser> {
+        private KafkaUserEventHandler() { }
+
         @Override
         public void onAdd(KafkaUser user) {
             metrics.resourceCounter(watchedNamespace).incrementAndGet(); // increases the resource counter
@@ -332,6 +336,8 @@ public class UserController implements Liveness, Readiness {
      * Event handler used in the Secret informer which decides what to do with the incoming events.
      */
     private class SecretEventHandler implements ResourceEventHandler<Secret> {
+        private SecretEventHandler() { }
+
         @Override
         public void onAdd(Secret secret) {
             enqueueUserSecret(secret, "ADDED");

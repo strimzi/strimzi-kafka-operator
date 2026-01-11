@@ -371,7 +371,9 @@ public abstract class AbstractOperator<
      * The exception by which Futures returned by {@link #withLock(Reconciliation, long, Callable)} are failed when
      * the lock cannot be acquired within the timeout.
      */
-    static class UnableToAcquireLockException extends TimeoutException { }
+    static class UnableToAcquireLockException extends TimeoutException {
+        UnableToAcquireLockException() { }
+    }
 
     /**
      * Acquire the lock for the resource implied by the {@code reconciliation}

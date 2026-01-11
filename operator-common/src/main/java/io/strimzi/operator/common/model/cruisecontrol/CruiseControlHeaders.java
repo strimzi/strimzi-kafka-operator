@@ -8,6 +8,8 @@ package io.strimzi.operator.common.model.cruisecontrol;
  * Cruise Control headers.
  */
 public class CruiseControlHeaders {
+    private CruiseControlHeaders() { }
+
     /**
      * User task id.
      */

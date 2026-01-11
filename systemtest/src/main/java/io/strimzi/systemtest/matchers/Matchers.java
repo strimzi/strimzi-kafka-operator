@@ -12,8 +12,7 @@ import java.util.List;
 
 public class Matchers {
 
-    private Matchers() {
-    }
+    private Matchers() { }
 
     /**
      * A matcher checks that examined object has a full match of reasons for actual events.

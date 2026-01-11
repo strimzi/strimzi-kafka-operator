@@ -181,6 +181,8 @@ class CrdGenerator {
     }
 
     public static class DefaultReporter implements Reporter {
+        public DefaultReporter() { }
+
         public void err(String s) {
             System.err.println("CrdGenerator: error: " + s);
         }
@@ -202,7 +204,7 @@ class CrdGenerator {
     }
 
     public static class NoneConversionStrategy implements ConversionStrategy {
-
+        public NoneConversionStrategy() { }
     }
 
     public static class WebhookConversionStrategy implements ConversionStrategy {

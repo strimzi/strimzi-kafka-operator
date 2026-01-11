@@ -26,6 +26,13 @@ public class CrdUpgradeCommand extends AbstractCommand {
     private KubernetesClient client;
 
     /**
+     * Constructor
+     */
+    public CrdUpgradeCommand() {
+        super();
+    }
+
+    /**
      * Touches all Strimzi custom resources of a given kind to make sure they are stored under the new version. It is
      * using the replace command to make sure this happens.
      *

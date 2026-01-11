@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
  * Class with various utility methods for generating KeyStore and TrustStore for KafkaAgent
  */
 public class KafkaAgentUtils {
+    private KafkaAgentUtils() { }
 
     /**
      * Creates TrustStore to use for TLS connections from the given Secret. This also validates each one is a valid certificate and

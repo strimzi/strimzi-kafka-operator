@@ -14,6 +14,8 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
  * Utility methods for Kafka Connect Build
  */
 public class KafkaConnectBuildUtils {
+    private KafkaConnectBuildUtils() { }
+
     /**
      * Checks if Pod already completed
      *

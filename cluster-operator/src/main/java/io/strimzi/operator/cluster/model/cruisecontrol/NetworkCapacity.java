@@ -18,6 +18,11 @@ public abstract class NetworkCapacity {
     protected boolean isUserConfigured;
 
     /**
+     * Constructor
+     */
+    public NetworkCapacity() { }
+
+    /**
      * Parse Strimzi representation of throughput, such as {@code 10000KB/s},
      * into the equivalent number of kibibytes represented as a String.
      *

@@ -18,6 +18,8 @@ import java.util.Map;
  */
 @SuppressWarnings("deprecation")
 public class ConnectAndConnectorConversions {
+    private ConnectAndConnectorConversions() { }
+
     /**
      * Restructures the KafkaConnect resource
      *

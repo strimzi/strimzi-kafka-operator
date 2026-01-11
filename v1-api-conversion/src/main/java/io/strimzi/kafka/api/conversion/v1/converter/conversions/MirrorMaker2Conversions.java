@@ -22,6 +22,8 @@ import java.util.Map;
  */
 @SuppressWarnings("deprecation")
 public class MirrorMaker2Conversions {
+    private MirrorMaker2Conversions() { }
+
     /**
      * Checks for the presence of OAuth authentication in the KafkaMirrorMaker2 resource and its clusters. If OAuth
      * authentication is found, an error is raised and the user has to convert it manually.

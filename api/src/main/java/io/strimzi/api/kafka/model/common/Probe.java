@@ -35,8 +35,7 @@ public class Probe implements UnknownPropertyPreserving {
     private Integer failureThreshold;
     private Map<String, Object> additionalProperties;
 
-    public Probe() {
-    }
+    public Probe() { }
 
     public Probe(int initialDelaySeconds, int timeoutSeconds) {
         this.initialDelaySeconds = initialDelaySeconds;

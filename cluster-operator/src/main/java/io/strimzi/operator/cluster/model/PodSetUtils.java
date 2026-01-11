@@ -26,6 +26,8 @@ public class PodSetUtils {
         MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     }
 
+    private PodSetUtils() { }
+
     /**
      * Converts Pod to Map for storing it in StrimziPodSets
      *

@@ -28,6 +28,8 @@ public class PodSecurityProviderFactory {
         initialize();
     }
 
+    private PodSecurityProviderFactory() { }
+
     /**
      * Finds the configured provider or throws an exception if it is not found
      *

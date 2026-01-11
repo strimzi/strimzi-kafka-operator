@@ -19,6 +19,8 @@ import io.strimzi.kafka.api.conversion.v1.converter.ApiConversionFailedException
  */
 @SuppressWarnings("deprecation")
 public class SharedConversions {
+    private SharedConversions() { }
+
     /**
      * Conversion for deleting the `type: jaeger` tracing
      *

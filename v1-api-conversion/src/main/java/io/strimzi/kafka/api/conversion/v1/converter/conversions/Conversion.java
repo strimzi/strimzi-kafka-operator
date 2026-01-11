@@ -207,6 +207,11 @@ public interface Conversion<T> {
     abstract class DefaultConversionFunction<T> implements ConversionFunction<T> {
         abstract Class<T> convertedType();
 
+        /**
+         * Constructor
+         */
+        public DefaultConversionFunction() { }
+
         @Override
         public JsonNode apply(JsonNode node, JsonNodeCreator creator) {
             if (node != null && !node.isNull()) {
