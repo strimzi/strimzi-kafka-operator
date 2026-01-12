@@ -91,7 +91,7 @@ public final class PerformanceTestExecutor {
      * @param warmUpTasksToProcess  The number of warmup tasks for JIT optimization (used as offset).
      * @param lifecycleAction       A BiConsumer that performs the full lifecycle for a given resource index.
      *                              First parameter is the resource index, second is the ExtensionContext.
-     * @param resourceTypeName      Name of the resource type for logging (e.g., "topic", "user").
+     * @param resourceTypeName      Name of the resource type for logging (e.g., "KafkaTopic", "KafkaUser").
      *
      * @return                      The total time taken to complete all lifecycles in milliseconds.
      */

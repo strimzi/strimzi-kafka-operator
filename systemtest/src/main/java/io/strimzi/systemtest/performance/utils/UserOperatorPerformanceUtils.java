@@ -144,7 +144,7 @@ public class UserOperatorPerformanceUtils {
             spareEvents,
             warmUpTasksToProcess,
             (userIndex, extensionContext) -> performFullLifecycle(userIndex, testStorage, extensionContext),
-            "KafkaUser"
+            KafkaUser.RESOURCE_KIND
         );
     }
 

@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.performance.utils;
 
 import io.skodjob.testframe.resources.KubeResourceManager;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicSpecBuilder;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
@@ -199,7 +200,7 @@ public class TopicOperatorPerformanceUtils {
             spareEvents,
             warmUpTasksToProcess,
             (topicIndex, extensionContext) -> performFullLifecycle(topicIndex, testStorage, extensionContext),
-            "topic"
+            KafkaTopic.RESOURCE_KIND
         );
     }
 
