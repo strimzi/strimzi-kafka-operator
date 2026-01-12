@@ -43,7 +43,7 @@ spec:
       # Kafka Connect internal topic replication
       config.storage.replication.factor: -1
       offset.storage.replication.factor: -1
-      status.storage.replication.factor: 1
+      status.storage.replication.factor: -1
 ----
 <1> The target cluster configuration. The target cluster is always used to store Kafka Connect's internal topics.
 <2> These properties configure the Kafka Connect workers created by this `KafkaMirrorMaker2` resource.
