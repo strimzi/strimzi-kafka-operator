@@ -33,7 +33,7 @@
 :BridgeVersion: 0.33.1
 
 // Drain Cleaner Version
-:DrainCleanerVersion: 1.4.0
+:DrainCleanerVersion: 1.5.0
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub releases page^]

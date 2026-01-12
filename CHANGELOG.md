@@ -3,6 +3,7 @@
 ## 0.50.0
 
 * Use Java 21 as the runtime and language level
+* Strimzi Drain Cleaner updated to 1.5.0 (included in the Strimzi installation files)
 
 ### Major changes, deprecations, and removals
 
