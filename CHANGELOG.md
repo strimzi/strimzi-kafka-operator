@@ -9,6 +9,7 @@
 * Use Java 21 as the runtime and language level
 * Strimzi Drain Cleaner updated to 1.5.0 (included in the Strimzi installation files)
 * Support for Linux user namespaces in Strimzi Pods through the `hostUsers` Pod option
+* Allow setting the following configurations with the listener prefix (e.g. `listener.name.listener1-9900.`): `connections.max.reauth.ms`, `max.connections*` and `max.connection.creation.rate`.
 
 ### Major changes, deprecations, and removals
 

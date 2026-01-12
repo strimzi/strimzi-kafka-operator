@@ -1902,6 +1902,8 @@ public class KafkaClusterTest {
                         "listener.name.plain-9092.max.connections", 1000,
                         "listener.name.plain-9092.connections.max.reauth.ms", 1000,
                         "listener.name.plain-9092.connections.max.idle.ms", 100000,
+                        "listener.name.CONTROLPLANE-9090.max.connections", 1000,
+                        "listener.name.REPLICATION-9091.connections.max.reauth.ms", 1000,
                         "listener.name.does-not-exist.connections.max.reauth.ms", 1000))
                 .endKafka()
                 .endSpec()
@@ -1910,15 +1912,22 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster cluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
+        // configurations that are in the exception list
         assertThat(cluster.configuration.getConfiguration(), CoreMatchers.containsString("listener.name.tls-9093.connections.max.reauth.ms=1000"));
-        assertThat(cluster.configuration.getConfiguration(), CoreMatchers.containsString("listener.name.plain-9092.connections.max.reauth.ms=1000"));
-        assertThat(cluster.configuration.getConfiguration(), not(CoreMatchers.containsString("listener.name.does-not-exist.connections.max.reauth.ms=1000")));
-
         assertThat(cluster.configuration.getConfiguration(), CoreMatchers.containsString("listener.name.tls-9093.max.connections=1000"));
+        assertThat(cluster.configuration.getConfiguration(), CoreMatchers.containsString("listener.name.plain-9092.connections.max.reauth.ms=1000"));
         assertThat(cluster.configuration.getConfiguration(), CoreMatchers.containsString("listener.name.plain-9092.max.connections=1000"));
 
-        assertThat(cluster.configuration.getConfiguration(), not(CoreMatchers.containsString("listener.name.tls-9093.connections.max.idle.ms=100000")));
-        assertThat(cluster.configuration.getConfiguration(), not(CoreMatchers.containsString("listener.name.plain-9092.connections.max.idle.ms=100000")));
+        // configuration that is not in the exception
+        assertThat(cluster.configuration.getConfiguration(), not(CoreMatchers.containsString("listener.name.plain-9092.connections.max.idle.ms")));
+        assertThat(cluster.configuration.getConfiguration(), not(CoreMatchers.containsString("listener.name.tls-9093.connections.max.idle.ms")));
+
+        // configuration for a listener that does not exist
+        assertThat(cluster.configuration.getConfiguration(), not(CoreMatchers.containsString("listener.name.does-not-exist.connections.max.reauth.ms")));
+
+        // configurations for internal interfaces
+        assertThat(cluster.configuration.getConfiguration(), not(CoreMatchers.containsString("listener.name.REPLICATION-9091.connections.max.reauth.ms")));
+        assertThat(cluster.configuration.getConfiguration(), not(CoreMatchers.containsString("listener.name.CONTROLPLANE-9090.max.connections")));
     }
 
     @Test
