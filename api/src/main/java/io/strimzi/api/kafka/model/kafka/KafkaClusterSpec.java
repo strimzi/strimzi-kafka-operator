@@ -75,7 +75,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
             + "broker.session.timeout.ms, broker.heartbeat.interval.ms, controller.socket.timeout.ms, "
             + "controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms"; // KRaft options
 
-    public static final String ALLOWED_PER_LISTENER_CONFIGS  = "connections.max.reauth.ms, max.connections";
+    public static final String ALLOWED_PER_LISTENER_CONFIGS  = "connections.max.reauth.ms, max.connections, max.connection.creation.rate";
 
     protected Storage storage;
     private String version;
@@ -121,7 +121,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.metadataVersion = metadataVersion;
     }
 
-    @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
+    @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ", and the following properties with listener prefix: " + ALLOWED_PER_LISTENER_CONFIGS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
