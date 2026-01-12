@@ -24,14 +24,16 @@ Configuring the `MirrorCheckpointConnector` to emit periodic offset checkpoints 
 * Failover recovery as consumers switch to the target cluster at the correct position
 
 Offset synchronization occurs at regular intervals.
-The `MirrorCheckpointConnector` emits checkpoints for all consumer groups.
+The `MirrorCheckpointConnector` emits checkpoints for all consumer groups enabled by the group configuration.
 However, applying those checkpoints in the target cluster requires the target group to be inactive.
-If consumers switch to the target cluster between checkpoints, they might reprocess some messages because the last synchronized offset lags behind the source.
+If consumers switch to the target cluster between checkpoints, they might reprocess some messages because offset synchronization is asynchronous and the last synchronized offset lags behind the source.
 This duplication is expected.
 
 NOTE: The connector continues to emit checkpoints to the checkpoints topic even if the target consumer group is active. 
-However, the offsets cannot be committed while the group has active members. 
+However, the offsets cannot be committed while the consumer group has active members. 
 In this case, the connector logs a warning and the offsets are not synchronized.
+
+Each connector is configured separately.
 
 .Example configuration to enable offset synchronization
 [source,yaml,subs="+quotes,attributes"]
@@ -67,15 +69,15 @@ A value of -1 uses the broker’s default replication factor, which is typically
 <7> Replication factor for the internal checkpoints topic that stores the last committed offsets for each consumer group. 
 A value of -1 uses the broker’s default replication factor, which is typically set to provide resilience (for example, 3).
 
-TIP: If you have an application written in Java, you can use the `RemoteClusterUtils.java` utility to fetch offsets through the application. 
-The utility fetches remote offsets for a consumer group from the `checkpoints` topic.
+TIP: Java applications can use the `RemoteClusterUtils` utility to fetch remote offsets for a consumer group from the checkpoints topic.
 
-== Changing the location of the consumer group offsets topic
+== Changing the location of the offset synchronization topic
 
-The location of the `offset-syncs` topic is the `source` cluster by default.
-You can use the `offset-syncs.topic.location` connector configuration to change this to the `target` cluster.
-You need read/write access to the cluster that contains the topic.
-Using the target cluster as the location of the `offset-syncs` topic allows you to use MirrorMaker 2 even if you have only read access to the source cluster.
+By default, the `offset-syncs` topic used by the `MirrorSourceConnector` is created in the source cluster.
+You can change this behavior by setting the `offset-syncs.topic.location` connector configuration to `target`.
+
+Placing the `offset-syncs` topic on the target cluster allows the `MirrorSourceConnector` to run when it has read-only access to the source cluster.
+The connector must still have read and write access to the `offset-syncs` topic on the cluster where the topic is located.
 
 == Listing the offsets of connectors
 
@@ -170,5 +172,5 @@ data:
 To provide a custom owner reference, create the `ConfigMap` in advance and set the owner reference.
 <2> The `.json` property uses the connector name. Since `&#45;&#62;` characters are not allowed in `ConfigMap` keys, `&#45;&#62;` is changed to `--` in the connector name.
 
-NOTE: It is possible to use configuration to xref:proc-altering-connector-offsets-{context}[alter] or xref:proc-resetting-connector-offsets-{context}[reset] connector offsets, though this is rarely necessary.
-
+NOTE: It is possible to use configuration to xref:proc-altering-connector-offsets-{context}[alter] or xref:proc-resetting-connector-offsets-{context}[reset] connector offsets. 
+This should be done with caution.
