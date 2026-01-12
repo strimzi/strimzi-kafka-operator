@@ -6,7 +6,9 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.metrics.CertificateMetricKey;
 import io.strimzi.operator.common.metrics.MetricKey;
 import io.strimzi.operator.common.metrics.MetricsUtils;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
@@ -31,6 +34,7 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
     public static final String METRICS_CERTIFICATE_EXPIRATION_MS = METRICS_PREFIX + "certificate.expiration.timestamp.ms";
 
     protected final Map<MetricKey, AtomicLong> certificateExpirationMap = new ConcurrentHashMap<>(1);
+    protected final Map<MetricKey, AtomicInteger> nodePoolResourceCounterMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the operator metrics holder
@@ -96,5 +100,32 @@ public class KafkaAssemblyOperatorMetricsHolder extends OperatorMetricsHolder {
                 });
 
         removedKeys.forEach(certificateExpirationMap::remove);
+    }
+
+    /**
+     * Counter metric for number of KafkaNodePool resources.
+     *
+     * @param namespace     Namespace of the resources being reconciled
+     *
+     * @return  Metrics gauge
+     */
+    public AtomicInteger nodePoolResourceCounter(String namespace) {
+        return getGauge(new MetricKey(KafkaNodePool.RESOURCE_KIND, namespace), METRICS_RESOURCES,
+                "Number of custom resources the operator sees",
+                Optional.of(getLabelSelectorValues()), nodePoolResourceCounterMap);
+    }
+
+    /**
+     * Resets all values in the node pool resource counter map to 0. This is used to
+     * handle removed node pool resources from various namespaces during the periodical reconciliation.
+     *
+     * @param namespace Namespace for which should the metrics be reset to 0
+     */
+    public void resetNodePoolCounters(String namespace) {
+        if (namespace.equals(ConfigParameter.ANY_NAMESPACE)) {
+            nodePoolResourceCounterMap.forEach((key, counter) -> counter.set(0));
+        } else {
+            nodePoolResourceCounter(namespace).set(0);
+        }
     }
 }
