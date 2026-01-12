@@ -26,33 +26,30 @@ import java.util.function.BiConsumer;
 public final class PerformanceTestExecutor {
 
     private static final Logger LOGGER = LogManager.getLogger(PerformanceTestExecutor.class);
-    // Concurrency hint for batching strategies.
     private static final int CONCURRENCY_HINT = Runtime.getRuntime().availableProcessors() * 10;
     private static final long COOLDOWN_PERIOD_MS = 5_000;
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = 5;
 
-    private static ExecutorService executorService = createVirtualThreadExecutor();
+    private static ExecutorService executorService = createFixedThreadPool();
 
     private PerformanceTestExecutor() { } // Prevent instantiation
 
     /**
-     * Creates a new virtual thread per task executor.
-     * Each submitted task runs in its own virtual thread, which is lightweight
-     * and scheduled by the JVM on carrier (platform) threads during CPU-bound operations.
+     * Creates a new fixed thread pool executor.
+     * The pool size is based on the concurrency hint to provide predictable
+     * resource usage during performance tests.
      *
-     * @return a new ExecutorService using virtual threads
+     * @return a new ExecutorService using a fixed thread pool
      */
-    private static ExecutorService createVirtualThreadExecutor() {
-        LOGGER.info("Creating virtual thread executor");
-        return Executors.newVirtualThreadPerTaskExecutor();
+    private static ExecutorService createFixedThreadPool() {
+        LOGGER.info("Creating fixed thread pool with {} threads", CONCURRENCY_HINT);
+        return Executors.newFixedThreadPool(CONCURRENCY_HINT);
     }
 
     /**
-     * Gets the concurrency hint used for batching strategies.
-     * This value is useful for partitioning work even though virtual threads
-     * don't have a fixed pool size limit.
+     * Gets the thread pool size used for concurrent execution.
      *
-     * @return the recommended concurrency level for batching
+     * @return the thread pool size
      */
     public static int getThreadPoolSize() {
         return CONCURRENCY_HINT;
@@ -60,14 +57,13 @@ public final class PerformanceTestExecutor {
 
     /**
      * Gets the current ExecutorService, reinitializing if necessary.
-     * Returns a virtual thread executor that creates a new virtual thread for each task.
      *
      * @return the active ExecutorService
      */
     public static ExecutorService getExecutorService() {
         if (executorService.isShutdown() || executorService.isTerminated()) {
-            executorService = createVirtualThreadExecutor();
-            LOGGER.info("Reinitialized virtual thread ExecutorService for new test run.");
+            executorService = createFixedThreadPool();
+            LOGGER.info("Reinitialized fixed thread pool ExecutorService for new test run.");
         }
         return executorService;
     }
@@ -89,9 +85,9 @@ public final class PerformanceTestExecutor {
     }
 
     /**
-     * Processes resources concurrently using virtual threads.
+     * Processes resources concurrently using a fixed thread pool.
      * This method handles the common pattern of processing creation, modification, and deletion
-     * for each resource in its own lightweight virtual thread.
+     * for each resource concurrently.
      *
      * @param numberOfResources     The number of resources to be processed.
      * @param spareEvents           The number of spare events to be consumed during the process.
