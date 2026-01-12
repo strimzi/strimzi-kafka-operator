@@ -10,7 +10,7 @@ if [ "$ARCH" == "arm64" ]; then
     ARCH="aarch64"
 fi
 
-readonly VERSION="0.9.0"
+readonly VERSION="0.11.0"
 wget https://github.com/koalaman/shellcheck/releases/download/v$VERSION/shellcheck-v$VERSION.linux.$ARCH.tar.xz -O shellcheck.tar.xz
 tar xf shellcheck.tar.xz -C /tmp --strip-components 1
 chmod +x /tmp/shellcheck
