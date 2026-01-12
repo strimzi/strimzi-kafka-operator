@@ -8,7 +8,7 @@
 = Configuring MirrorMaker 2 connectors
 
 [role="_abstract"]
-MirrorMaker 2 uses a set of connectors to synchronize data between Kafka clusters. 
+MirrorMaker 2 comprises a set of connectors to synchronize data between Kafka clusters. 
 You configure these connectors in the `KafkaMirrorMaker2` custom resource.
 
 MirrorMaker 2 consists of the following connectors:
@@ -24,7 +24,7 @@ These connectors run in the Kafka Connect cluster associated with the target Kaf
 
 `MirrorHeartbeatConnector` is not configurable through the `KafkaMirrorMaker2` custom resource.
 To run a `MirrorHeartbeatConnector`, use a separate `KafkaConnect` and `KafkaConnector` custom resource.
-Because it produces heartbeat records to the source Kafka cluster, the `MirrorHeartbeatConnector` typically runs in a Kafka Connect cluster that has write access to the source cluster.
+Because it produces heartbeat records to the source Kafka cluster, the `MirrorHeartbeatConnector` typically runs in a Kafka Connect cluster that stores its state in the source cluster.
 
 For a full list of supported MirrorMaker 2 connector properties, including common configuration and connector-specific options, see the {kafkaDoc}.
 
