@@ -18,7 +18,7 @@ Add TLS encryption and authentication as required by your access and security re
 Listener options include:
 
 * `name`: Identifies the listener.
-The name must be unique within the Kafka cluster.
+The listener name must be unique within the Kafka cluster.
 * `port`: Port used by Kafka brokers.
 ** Must be `9092` or higher.
 ** Ports `9404` and `9999` are reserved for Prometheus and JMX.

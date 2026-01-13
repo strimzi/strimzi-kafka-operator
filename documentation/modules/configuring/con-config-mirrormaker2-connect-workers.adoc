@@ -36,4 +36,6 @@ spec:
       status.storage.replication.factor: 1
 ----
 <1> The target cluster configuration. The target cluster is always used to store Kafka Connect's internal topics.
-<2> These properties configure the Kafka Connect workers in this cluster. However, certain properties are managed directly by Strimzi and cannot be set within this config property. For more information, see the link:{BookURLConfiguring}#type-KafkaMirrorMaker2TargetClusterSpec-reference[`KafkaMirrorMaker2TargetClusterSpec` schema reference^].
+<2> These properties configure the Kafka Connect workers in this cluster. 
+
+Certain properties are managed directly by Strimzi and cannot be set within the `config` property. For more information, see the link:{BookURLConfiguring}#type-KafkaMirrorMaker2TargetClusterSpec-reference[`KafkaMirrorMaker2TargetClusterSpec` schema reference^].

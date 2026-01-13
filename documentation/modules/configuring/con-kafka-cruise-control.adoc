@@ -24,8 +24,7 @@ Enable Cruise Control by adding a `cruiseControl` section to the `Kafka` custom 
 spec:
   # Cruise Control (optional)
   cruiseControl:
-    # Configuration for balancing goals 
-    # and capacity limits
+    # Configuration for balancing goals and capacity limits
     # ...
 ----
 

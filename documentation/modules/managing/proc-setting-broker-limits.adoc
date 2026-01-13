@@ -68,13 +68,13 @@ spec:
 ----
 * `producerByteRate` and `consumerByteRate` apply throughput limits per user and per broker.
 * `requestPercentage` limits CPU usage for client requests.
-* `controllerMutationRate` limits the number of operations per second .
+* `controllerMutationRate` limits the number of create topic, create partition, and delete topic requests per second.
 --
 +
 NOTE: Default `kafka` quotas apply to internal users, including the Topic Operator and Cruise Control.
 To prevent the Topic Operator from being throttled, monitor controller metrics and explicitly set a `controllerMutationRate` that accommodates your topic operations.
 For Cruise Control and its metrics reporter, ensure sufficient throughput for rebalances.
-A rate of at least 1 KB/s is recommended for small clusters (three brokers), which should be increased for larger or more active clusters.
+A minimum rate of at least 1 KB/s is recommended for producer and consumer quotas in small clusters (three brokers), which should be increased for larger or more active clusters.
 
 . Apply the changes to the `Kafka` configuration.
 

@@ -87,7 +87,7 @@ Change this value only by following the xref:proc-upgrade-kafka-kraft-str[Kafka 
 * `spec.kafka.metadataVersion` specifies the metadata version for KRaft-based clusters.
 The value must be compatible with the Kafka version.
 * `spec.entityOperator` deploys the Topic Operator and User Operator using default settings.
-For more information, see xref:ref-kafka-entity-operator-{context}[Configuring the Entity Operator]
+For more information, see xref:ref-kafka-entity-operator-{context}[Configuring the Entity Operator].
 
 WARNING: If you remove the `min.insync.replicas` property from `spec.kafka.config`,
 the Cluster Operator forces Kafka to fall back to the default value of `1`.

@@ -29,13 +29,13 @@ If the issue involves persistent volumes or PVCs, such as failed mounts or unava
 Replacing brokers::
 If a broker cannot be recovered and its storage must be reset, replace the broker by deleting its pod and associated PVC.
 +
-This is a destructive operation and can result in permanent data loss.
+This is a destructive operation that can result in permanent data loss.
 Use this option only when non-destructive recovery actions are not possible.
 +
 For more information, see
 xref:proc-manual-delete-pod-pvc-kafka-{context}[Deleting Kafka nodes using annotations].
 
-When recovery actions are complete, confirm that broker pods are stable, partitions are fully replicated, and continue monitoring logs and storage usage to ensure ongoing health.
+When recovery actions are complete, confirm that broker pods are stable and partitions are fully replicated, and continue to monitor logs and storage usage to ensure ongoing health.
 
 [role="_additional-resources"]
 .Additional resources

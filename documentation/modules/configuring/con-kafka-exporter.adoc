@@ -27,8 +27,7 @@ Enable Kafka Exporter by adding a `kafkaExporter` section to the `Kafka` custom 
 spec:
   # Kafka Exporter (optional)
   kafkaExporter:
-    # Configuration for metrics selection 
-    # and exposure
+    # Configuration for metrics selection and exposure
     # ...
 ----
 
