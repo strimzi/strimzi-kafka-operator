@@ -139,7 +139,8 @@ class LogSettingST extends AbstractST {
     private static final Map<String, String> OPERATORS_LOGGERS = new HashMap<>() {
         {
             put("rootLogger.level", DEBUG);
-            put("test.operator.logger.level", DEBUG);
+            put("logger.operator.name", "io.strimzi.operator");
+            put("logger.operator.level", DEBUG);
         }
     };
 
