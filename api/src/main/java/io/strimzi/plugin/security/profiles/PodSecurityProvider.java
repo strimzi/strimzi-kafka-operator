@@ -90,8 +90,8 @@ public interface PodSecurityProvider {
 
     /**
      * Configures the hostUsers flag in the Kafka Pod configuration. The hostUsers flag controls whether the Pod
-     * containers run in the host's user namespace user-namespace (when set to true) or in a new user namespace created
-     * for this Pod (true). The default implementation just returns the flag configured by the user in the Pod template
+     * containers run in the host's user namespace (when set to true) or in a new user namespace created for this Pod 
+     * (when set to false). The default implementation just returns the flag configured by the user in the Pod template
      * section or null (leaves the default to Kubernetes).
      *
      * @param context   Provides the context which can be used to configure the hostUsers flag
@@ -154,8 +154,8 @@ public interface PodSecurityProvider {
 
     /**
      * Configures the hostUsers flag in the Entity Operator Pod configuration. The hostUsers flag controls whether the
-     * Pod containers run in the host's user namespace user-namespace (when set to true) or in a new user namespace
-     * created for this Pod (true). The default implementation just returns the flag configured by the user in the Pod
+     * Pod containers run in the host's user namespace (when set to true) or in a new user namespace created for this 
+     * Pod (when set to false). The default implementation just returns the flag configured by the user in the Pod
      * template section or null (leaves the default to Kubernetes).
      *
      * @param context   Provides the context which can be used to configure the hostUsers flag
@@ -192,8 +192,8 @@ public interface PodSecurityProvider {
 
     /**
      * Configures the hostUsers flag in the Kafka Exporter Pod configuration. The hostUsers flag controls whether the
-     * Pod containers run in the host's user namespace user-namespace (when set to true) or in a new user namespace
-     * created for this Pod (true). The default implementation just returns the flag configured by the user in the Pod
+     * Pod containers run in the host's user namespace (when set to true) or in a new user namespace created for this 
+     * Pod (when set to false). The default implementation just returns the flag configured by the user in the Pod
      * template section or null (leaves the default to Kubernetes).
      *
      * @param context   Provides the context which can be used to configure the hostUsers flag
@@ -230,8 +230,8 @@ public interface PodSecurityProvider {
 
     /**
      * Configures the hostUsers flag in the Cruise Control Pod configuration. The hostUsers flag controls whether the
-     * Pod containers run in the host's user namespace user-namespace (when set to true) or in a new user namespace
-     * created for this Pod (true). The default implementation just returns the flag configured by the user in the Pod
+     * Pod containers run in the host's user namespace (when set to true) or in a new user namespace created for this 
+     * Pod (when set to false). The default implementation just returns the flag configured by the user in the Pod
      * template section or null (leaves the default to Kubernetes).
      *
      * @param context   Provides the context which can be used to configure the hostUsers flag
@@ -310,8 +310,8 @@ public interface PodSecurityProvider {
 
     /**
      * Configures the hostUsers flag in the Kafka Connect Pod configuration. The hostUsers flag controls whether the
-     * Pod containers run in the host's user namespace user-namespace (when set to true) or in a new user namespace
-     * created for this Pod (true). The default implementation just returns the flag configured by the user in the Pod
+     * Pod containers run in the host's user namespace (when set to true) or in a new user namespace created for this 
+     * Pod (when set to false). The default implementation just returns the flag configured by the user in the Pod
      * template section or null (leaves the default to Kubernetes).
      *
      * @param context   Provides the context which can be used to configure the hostUsers flag
@@ -348,8 +348,8 @@ public interface PodSecurityProvider {
 
     /**
      * Configures the hostUsers flag in the Kafka Connect Build Pod configuration. The hostUsers flag controls whether
-     * the Pod containers run in the host's user namespace user-namespace (when set to true) or in a new user namespace
-     * created for this Pod (true). The default implementation just returns the flag configured by the user in the Pod
+     * the Pod containers run in the host's user namespace (when set to true) or in a new user namespace created for
+     * this Pod (when set to false). The default implementation just returns the flag configured by the user in the Pod
      * template section or null (leaves the default to Kubernetes).
      *
      * @param context   Provides the context which can be used to configure the hostUsers flag
@@ -426,8 +426,8 @@ public interface PodSecurityProvider {
 
     /**
      * Configures the hostUsers flag in the Bridge Pod configuration. The hostUsers flag controls whether the
-     * Pod containers run in the host's user namespace user-namespace (when set to true) or in a new user namespace
-     * created for this Pod (true). The default implementation just returns the flag configured by the user in the Pod
+     * Pod containers run in the host's user namespace (when set to true) or in a new user namespace created for this 
+     * Pod (when set to false). The default implementation just returns the flag configured by the user in the Pod
      * template section or null (leaves the default to Kubernetes).
      *
      * @param context   Provides the context which can be used to configure the hostUsers flag
@@ -479,10 +479,6 @@ public interface PodSecurityProvider {
      */
     @SuppressFBWarnings({"NP_BOOLEAN_RETURN_NULL"}) // We intentionally return null in this method in otder to default to Kubernetes's own default
     private Boolean hostUsersOrNull(PodSecurityProviderContext context) {
-        if (context != null)   {
-            return context.userSuppliedHostUsers();
-        } else {
-            return null;
-        }
+        return context != null ? context.userSuppliedHostUsers() : null;
     }
 }
