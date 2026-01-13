@@ -59,7 +59,7 @@ spec:
 * `spec.kafka.listeners[].tls: false` disables TLS encryption.
 * `spec.kafka.listeners[].configuration.useServiceDnsDomain: true` uses fully qualified DNS names that include the cluster service suffix.
 
-== Internal listener with TLS and mTLS authentication
+== Internal listener with TLS encryption and mTLS authentication
 
 [source,yaml,subs="+attributes"]
 ----

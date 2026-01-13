@@ -54,11 +54,14 @@ spec:
       type: simple
       superUsers:
         - CN=kafka-admin
-        - CN=my-team-admin
+        - my-team-admin
 ----
 
 * `spec.kafka.authorization.superUsers` defines super user identities.
 * The identity format must match the principal used by your authentication mechanism.
+
+The `CN=` prefix shown in the example applies to mTLS authentication, where the principal is derived from the certificate subject.
+Other authentication mechanisms, such as SASL-based authentication, use different principal formats.
 
 == Enabling custom authorization
 

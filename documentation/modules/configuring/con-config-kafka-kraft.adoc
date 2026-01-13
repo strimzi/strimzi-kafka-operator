@@ -17,7 +17,7 @@ Extend it with optional settings to support the following:
 * Configuring authorization
 * Configuring broker behavior for durability and availability
 * Capturing consumer lag metrics using Kafka Exporter
-* Automating Kafka cluster balancing and resource distribution using Cruise Control
+* Kafka cluster balancing and resource distribution using Cruise Control
 * Controlling throughput and storage usage using quotas
 * Recovering from broker storage issues
 * Using node pools to define broker groups

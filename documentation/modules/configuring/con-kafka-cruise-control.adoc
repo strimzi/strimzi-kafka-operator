@@ -5,7 +5,7 @@
 // assembly-config.adoc
 
 [id='con-kafka-cruise-control-{context}']
-= Automating Kafka cluster balancing
+= Kafka cluster balancing with Cruise Control
 
 [role="_abstract"]
 Automate Kafka cluster balancing by enabling Cruise Control.
