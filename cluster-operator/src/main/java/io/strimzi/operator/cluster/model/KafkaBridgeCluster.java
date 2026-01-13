@@ -56,6 +56,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -355,6 +356,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * @return  Generated Kubernetes Deployment resource
      */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+        PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -375,8 +378,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.bridgePodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-                )
+                        securityProvider.bridgePodSecurityContext(podSecurityProviderContext),
+                        securityProvider.bridgeHostUsers(podSecurityProviderContext))
         );
     }
 

@@ -21,9 +21,11 @@ import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -357,6 +359,19 @@ public class EntityTopicOperatorTest {
         assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(new SecretBuilder().withData(Map.of()).build()));
         assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, " ", TOPIC_OPERATOR_PASSWORD_KEY, password)).build()));
         assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name, TOPIC_OPERATOR_PASSWORD_KEY, " ")).build()));
+    }
+
+    @Test
+    public void testSecurityProvider() {
+        EntityTopicOperator eto = EntityTopicOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        eto.securityProvider = new TestPodSecurityProvider();
+        eto.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        Container cont = eto.createContainer(ImagePullPolicy.IFNOTPRESENT);
+        assertThat(cont.getSecurityContext().getAllowPrivilegeEscalation(), is(false));
+        assertThat(cont.getSecurityContext().getRunAsNonRoot(), is(true));
+        assertThat(cont.getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
+        assertThat(cont.getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
     }
 
     ////////////////////

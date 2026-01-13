@@ -1048,6 +1048,9 @@ spec:
                               csi: {}
                               image: {}
                         description: Additional volumes that can be mounted to the pod.
+                      hostUsers:
+                        type: boolean
+                        description: "Use the host user namespace. Optional. Defaults to `true`. When `true` or not set, the pod runs in the host user namespace. This is required when the pod needs features available only in the host namespace, such as loading kernel modules with `CAP_SYS_MODULE`.When set to `false`, the pod runs in a new user namespace. Setting `false` helps mitigate container breakout vulnerabilities and allows containers to run as `root` without granting `root` privileges on the host. This property is alpha-level in Kubernetes and is supported only by Kubernetes clusters that enable the `UserNamespacesSupport` feature."
                     description: Template for Kafka Connect `Pods`.
                   apiService:
                     type: object
@@ -2103,6 +2106,9 @@ spec:
                               csi: {}
                               image: {}
                         description: Additional volumes that can be mounted to the pod.
+                      hostUsers:
+                        type: boolean
+                        description: "Use the host user namespace. Optional. Defaults to `true`. When `true` or not set, the pod runs in the host user namespace. This is required when the pod needs features available only in the host namespace, such as loading kernel modules with `CAP_SYS_MODULE`.When set to `false`, the pod runs in a new user namespace. Setting `false` helps mitigate container breakout vulnerabilities and allows containers to run as `root` without granting `root` privileges on the host. This property is alpha-level in Kubernetes and is supported only by Kubernetes clusters that enable the `UserNamespacesSupport` feature."
                     description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                   buildContainer:
                     type: object

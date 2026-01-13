@@ -24,8 +24,10 @@ import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.platform.KubernetesVersion;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -384,6 +386,19 @@ public class EntityUserOperatorTest {
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
 
         assertThat(entityUserOperator.watchedNamespace(), is("some-other-namespace"));
+    }
+
+    @Test
+    public void testSecurityProvider() {
+        EntityUserOperator euo = EntityUserOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, ResourceUtils.dummyClusterOperatorConfig());
+        euo.securityProvider = new TestPodSecurityProvider();
+        euo.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        Container cont = euo.createContainer(ImagePullPolicy.IFNOTPRESENT);
+        assertThat(cont.getSecurityContext().getAllowPrivilegeEscalation(), is(false));
+        assertThat(cont.getSecurityContext().getRunAsNonRoot(), is(true));
+        assertThat(cont.getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
+        assertThat(cont.getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
     }
 
     ////////////////////

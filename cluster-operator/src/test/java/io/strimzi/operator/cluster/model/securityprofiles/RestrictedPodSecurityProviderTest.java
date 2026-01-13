@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model.securityprofiles;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.plugin.security.profiles.PodSecurityProvider;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import org.hamcrest.CoreMatchers;
@@ -197,5 +198,47 @@ public class RestrictedPodSecurityProviderTest extends BaselinePodSecurityProvid
         assertThat(provider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(EPHEMERAL, CUSTOM_CONTAINER_SECURITY_CONTEXT)), CoreMatchers.is(CUSTOM_CONTAINER_SECURITY_CONTEXT.getSecurityContext()));
         assertThat(provider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(PERSISTENT, CUSTOM_CONTAINER_SECURITY_CONTEXT)), CoreMatchers.is(CUSTOM_CONTAINER_SECURITY_CONTEXT.getSecurityContext()));
         assertThat(provider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(JBOD, CUSTOM_CONTAINER_SECURITY_CONTEXT)), CoreMatchers.is(CUSTOM_CONTAINER_SECURITY_CONTEXT.getSecurityContext()));
+    }
+
+    @Test
+    public void testDefaultHostUsers() {
+        PodSecurityProvider provider = createProvider();
+        provider.configure(ON_KUBERNETES);
+
+        assertThat(provider.kafkaHostUsers(new PodSecurityProviderContextImpl(EPHEMERAL, null)), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.entityOperatorHostUsers(new PodSecurityProviderContextImpl(null, null)), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.kafkaExporterHostUsers(new PodSecurityProviderContextImpl(null, null)), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.cruiseControlHostUsers(new PodSecurityProviderContextImpl(null, null)), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.kafkaConnectHostUsers(new PodSecurityProviderContextImpl(null, null)), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.kafkaConnectBuildHostUsers(new PodSecurityProviderContextImpl(null, null)), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.bridgeHostUsers(new PodSecurityProviderContextImpl(null, null)), CoreMatchers.is(CoreMatchers.nullValue()));
+    }
+
+    @Test
+    public void testDefaultHostUsersWithCustomTemplate() {
+        PodSecurityProvider provider = createProvider();
+        provider.configure(ON_KUBERNETES);
+
+        assertThat(provider.kafkaHostUsers(new PodSecurityProviderContextImpl(EPHEMERAL, CUSTOM_POD_TEMPALTE)), CoreMatchers.is(CUSTOM_POD_TEMPALTE.getHostUsers()));
+        assertThat(provider.entityOperatorHostUsers(new PodSecurityProviderContextImpl(null, CUSTOM_POD_TEMPALTE)), CoreMatchers.is(CUSTOM_POD_TEMPALTE.getHostUsers()));
+        assertThat(provider.kafkaExporterHostUsers(new PodSecurityProviderContextImpl(null, CUSTOM_POD_TEMPALTE)), CoreMatchers.is(CUSTOM_POD_TEMPALTE.getHostUsers()));
+        assertThat(provider.cruiseControlHostUsers(new PodSecurityProviderContextImpl(null, CUSTOM_POD_TEMPALTE)), CoreMatchers.is(CUSTOM_POD_TEMPALTE.getHostUsers()));
+        assertThat(provider.kafkaConnectHostUsers(new PodSecurityProviderContextImpl(null, CUSTOM_POD_TEMPALTE)), CoreMatchers.is(CUSTOM_POD_TEMPALTE.getHostUsers()));
+        assertThat(provider.kafkaConnectBuildHostUsers(new PodSecurityProviderContextImpl(null, CUSTOM_POD_TEMPALTE)), CoreMatchers.is(CUSTOM_POD_TEMPALTE.getHostUsers()));
+        assertThat(provider.bridgeHostUsers(new PodSecurityProviderContextImpl(null, CUSTOM_POD_TEMPALTE)), CoreMatchers.is(CUSTOM_POD_TEMPALTE.getHostUsers()));
+    }
+
+    @Test
+    public void testDefaultHostUsersWithEmptyCustomTemplate() {
+        PodSecurityProvider provider = createProvider();
+        provider.configure(ON_KUBERNETES);
+
+        assertThat(provider.kafkaHostUsers(new PodSecurityProviderContextImpl(EPHEMERAL, new PodTemplate())), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.entityOperatorHostUsers(new PodSecurityProviderContextImpl(null, new PodTemplate())), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.kafkaExporterHostUsers(new PodSecurityProviderContextImpl(null, new PodTemplate())), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.cruiseControlHostUsers(new PodSecurityProviderContextImpl(null, new PodTemplate())), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.kafkaConnectHostUsers(new PodSecurityProviderContextImpl(null, new PodTemplate())), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.kafkaConnectBuildHostUsers(new PodSecurityProviderContextImpl(null, new PodTemplate())), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(provider.bridgeHostUsers(new PodSecurityProviderContextImpl(null, new PodTemplate())), CoreMatchers.is(CoreMatchers.nullValue()));
     }
 }
