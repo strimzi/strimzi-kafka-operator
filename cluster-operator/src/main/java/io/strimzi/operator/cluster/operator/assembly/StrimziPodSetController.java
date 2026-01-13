@@ -572,7 +572,7 @@ public class StrimziPodSetController implements Runnable {
         int readyPods = 0;
         int currentPods = 0;
 
-        PodCounter()    { }
+        PodCounter() { }
     }
 
     /**
