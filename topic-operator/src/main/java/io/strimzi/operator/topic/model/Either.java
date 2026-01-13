@@ -51,6 +51,8 @@ public class Either<L, R> {
     }
 
     /**
+     * Maps the right value using the provided function.
+     *
      * @param fn Map function to apply.
      * @return Either with updated right value.
      * @param <R2> New right value type.
@@ -65,6 +67,8 @@ public class Either<L, R> {
     }
 
     /**
+     * Flat maps the right value using the provided function.
+     *
      * @param fn Flat map function to apply.
      * @return Either with updated right value.
      * @param <R2> New right value type.
@@ -101,6 +105,8 @@ public class Either<L, R> {
     }
 
     /**
+     * Checks whether this is a right value.
+     *
      * @return Whether is right.
      */
     public boolean isRight() {
@@ -108,6 +114,8 @@ public class Either<L, R> {
     }
 
     /**
+     * Checks whether this is a right value equal to the given value.
+     *
      * @param b Some value.
      * @return Whether is right and equal.
      */
@@ -116,6 +124,8 @@ public class Either<L, R> {
     }
 
     /**
+     * Gets the left value.
+     *
      * @return Left value.
      */
     @SuppressWarnings("unchecked")
@@ -127,6 +137,8 @@ public class Either<L, R> {
     }
 
     /**
+     * Gets the right value.
+     *
      * @return Right value.
      */
     @SuppressWarnings("unchecked")

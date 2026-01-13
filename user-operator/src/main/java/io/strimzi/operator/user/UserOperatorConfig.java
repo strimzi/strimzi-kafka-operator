@@ -175,6 +175,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the set of configuration key names.
+     *
      * @return Set of configuration key/names
      */
     public static Set<String> keyNames() {
@@ -231,6 +233,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the namespace in which the operator runs and creates resources.
+     *
      * @return  namespace in which the operator runs and creates resources
      */
     public String getNamespace() {
@@ -238,6 +242,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the reconciliation interval in milliseconds.
+     *
      * @return how many milliseconds the reconciliation runs
      */
 
@@ -246,6 +252,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the labels which should be used as selector.
+     *
      * @return The labels which should be used as selector
      */
     public Labels getLabels() {
@@ -253,6 +261,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the name of the secret with the Client CA certificate.
+     *
      * @return The name of the secret with the Client CA
      */
     public String getCaCertSecretName() {
@@ -260,6 +270,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the name of the secret with the Client CA key.
+     *
      * @return The name of the secret with the Client CA
      */
     public String getCaKeySecretName() {
@@ -267,6 +279,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the name of the secret with the Cluster CA certificate.
+     *
      * @return The name of the secret with the Cluster CA
      */
     public String getClusterCaCertSecretName() {
@@ -274,6 +288,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the name of the secret with Entity User Operator key and certificate.
+     *
      * @return The name of the secret with Entity User Operator key and certificate
      */
     public String getEuoKeySecretName() {
@@ -281,6 +297,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the name of the Entity Operator key.
+     *
      * @return The name of the Entity Operator key
      */
     public String getEuoKeyName() {
@@ -288,6 +306,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the name of the Entity Operator certificate.
+     *
      * @return The name of the Entity Operator certificate
      */
     public String getEuoCertName() {
@@ -295,6 +315,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the namespace of the Client CA or the operator's namespace if not set.
+     *
      * @return The namespace of the Client CA if not null or empty, else it will return namespace
      */
     public String getCaNamespaceOrNamespace() {
@@ -306,6 +328,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the Kafka bootstrap servers list.
+     *
      * @return Kafka bootstrap servers list
      */
     public String getKafkaBootstrapServers() {
@@ -313,6 +337,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the prefix for Kafka user secrets.
+     *
      * @return The prefix that will be prepended to the name of the created kafka user secrets.
      */
     public String getSecretPrefix() {
@@ -320,6 +346,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the length used for SCRAM-SHA password generation.
+     *
      * @return The length used for Scram-Sha Password
      */
     public int getScramPasswordLength() {
@@ -327,6 +355,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Checks if the Kafka Admin API for managing ACLs is supported.
+     *
      * @return Indicates whether the Kafka Admin API for managing ACLs is supported by the Kafka cluster or not
      */
     public boolean isAclsAdminApiSupported() {
@@ -334,6 +364,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the list of maintenance windows.
+     *
      * @return List of maintenance windows. Null if no maintenance windows were specified.
      */
     public List<String> getMaintenanceWindows() {
@@ -341,6 +373,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the Kafka Admin Client configuration.
+     *
      * @return Properties object with the user-supplied configuration for the Kafka Admin Client
      */
     public Properties getKafkaAdminClientConfiguration() {
@@ -348,6 +382,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the operation timeout in milliseconds.
+     *
      * @return The timeout after which operations are considered as failed
      */
     public long getOperationTimeoutMs() {
@@ -355,6 +391,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the User Controller work queue size.
+     *
      * @return  The size of the User Controller work queue
      */
     public int getWorkQueueSize() {
@@ -362,6 +400,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the controller thread pool size for reconciling users.
+     *
      * @return  Size of the pool of the controller threads used to reconcile the users
      */
     public int getControllerThreadPoolSize() {
@@ -369,6 +409,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the cache refresh interval in milliseconds.
+     *
      * @return  Refresh interval for the cache storing the resources from the Kafka Admin API
      */
     public long getCacheRefresh() {
@@ -376,6 +418,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the batch queue size for micro-batching.
+     *
      * @return  Maximal queue for requests when micro-batching the Kafka Admin API requests
      */
     public int getBatchQueueSize() {
@@ -383,6 +427,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the maximum batch size for micro-batching.
+     *
      * @return  Maximal batch size for micro-batching the Kafka Admin API requests
      */
     public int getBatchMaxBlockSize() {
@@ -390,6 +436,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the maximum batch time for micro-batching in milliseconds.
+     *
      * @return  Maximal batch time for micro-batching the Kafka Admin API requests
      */
     public int getBatchMaxBlockTime() {
@@ -397,6 +445,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the thread pool size for user operations.
+     *
      * @return Size of the thread pool for user operations done by KafkaUserOperator and the classes used by it
      */
     public int getUserOperationsThreadPoolSize() {
@@ -404,6 +454,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the number of certificate validity days.
+     *
      * @return The number of certificates validity days.
      */
     public int getClientsCaValidityDays() {
@@ -411,6 +463,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the number of certificate renewal days.
+     *
      * @return The number of certificates renewal days.
      */
     public int getClientsCaRenewalDays() {
@@ -418,6 +472,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the feature gates configuration.
+     *
      * @return  Feature gates configuration
      */
     public FeatureGates featureGates()  {
@@ -425,6 +481,8 @@ public class UserOperatorConfig {
     }
 
     /**
+     * Gets the pattern for matching ignored users.
+     *
      * @return  Pattern for matching ignored users
      */
     public Pattern ignoredUsersPattern()  {

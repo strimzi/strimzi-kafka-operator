@@ -119,6 +119,8 @@ public class NodeIdAssignor {
     }
 
     /**
+     * Gets all node assignments.
+     *
      * @return  Returns all node assignments
      */
     public Map<String, NodeIdAssignment> assignments()   {

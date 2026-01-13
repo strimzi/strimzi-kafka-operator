@@ -11,6 +11,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public class UncheckedInterruptedException extends RuntimeException {
     /**
+     * Constructs a new UncheckedInterruptedException wrapping the given cause.
+     *
      * @param cause The cause.
      */
     public UncheckedInterruptedException(InterruptedException cause) {

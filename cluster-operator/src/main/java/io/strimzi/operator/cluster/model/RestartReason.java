@@ -89,6 +89,8 @@ public enum RestartReason {
     }
 
     /**
+     * Gets the default note for the reason.
+     *
      * @return  The default note
      */
     public String getDefaultNote() {
@@ -96,6 +98,8 @@ public enum RestartReason {
     }
 
     /**
+     * Gets the pascal-cased variant of the reason (this is used by Kubernetes and Golang).
+     *
      * @return  The pascal-cased variant of the reason (this is used by Kubernetes and Golang)
      */
     public String pascalCased() {

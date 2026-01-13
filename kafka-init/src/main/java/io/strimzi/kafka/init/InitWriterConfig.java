@@ -43,6 +43,8 @@ public class InitWriterConfig {
     private final Map<String, Object> map;
 
     /**
+     * Gets the set of configuration key names.
+     *
      * @return Set of configuration key/names
      */
     public static Set<String> keyNames() {
@@ -79,6 +81,8 @@ public class InitWriterConfig {
     }
 
     /**
+     * Gets the Kubernetes cluster node name from which to get the rack related label.
+     *
      * @return Kubernetes cluster node name from which getting the rack related label
      */
     public String getNodeName() {
@@ -86,6 +90,8 @@ public class InitWriterConfig {
     }
 
     /**
+     * Gets the Kubernetes cluster node label to use as topology key for rack definition.
+     *
      * @return the Kubernetes cluster node label to use as topology key for rack definition
      */
     public String getRackTopologyKey() {
@@ -93,6 +99,8 @@ public class InitWriterConfig {
     }
 
     /**
+     * Gets the folder where the rack ID file is written.
+     *
      * @return folder where the rackid file is written
      */
     public String getInitFolder() {
@@ -100,6 +108,8 @@ public class InitWriterConfig {
     }
 
     /**
+     * Checks whether external address should be acquired.
+     *
      * @return Return whether external address should be acquired
      */
     public boolean isExternalAddress() {
@@ -107,6 +117,8 @@ public class InitWriterConfig {
     }
 
     /**
+     * Gets the address type which should be preferred in the selection.
+     *
      * @return The address type which should be preferred in the selection
      */
     public String getAddressType() {

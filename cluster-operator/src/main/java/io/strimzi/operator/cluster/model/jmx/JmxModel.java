@@ -104,6 +104,8 @@ public class JmxModel {
     }
 
     /**
+     * Gets the name of the JMX Secret.
+     *
      * @return  The name of the JMX Secret
      */
     public String secretName()   {
@@ -111,6 +113,8 @@ public class JmxModel {
     }
 
     /**
+     * Gets the JMX service ports if JMX is enabled.
+     *
      * @return  Returns a JMX Service port if JMX is enabled. Returns empty list otherwise.
      */
     public List<ServicePort> servicePorts()    {
@@ -122,6 +126,8 @@ public class JmxModel {
     }
 
     /**
+     * Gets the JMX container ports if JMX is enabled.
+     *
      * @return  Returns a JMX Container port if JMX is enabled. Returns empty list otherwise.
      */
     public List<ContainerPort> containerPorts()    {
@@ -133,6 +139,8 @@ public class JmxModel {
     }
 
     /**
+     * Gets the JMX environment variables if JMX is enabled.
+     *
      * @return  Returns a list of JMX environment variables if JMX is enabled. Returns empty list otherwise.
      */
     public List<EnvVar> envVars()   {
@@ -151,6 +159,8 @@ public class JmxModel {
     }
 
     /**
+     * Gets the JMX network policy ingress rules if JMX is enabled.
+     *
      * @return  Returns a JMX network policy ingress rule if JMX is enabled. Returns empty list otherwise.
      */
     public List<NetworkPolicyIngressRule> networkPolicyIngresRules()   {

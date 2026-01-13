@@ -9,6 +9,8 @@ package io.strimzi.operator.cluster.model.jmx;
  */
 public interface SupportsJmx {
     /**
+     * Gets the JMX model.
+     *
      * @return  Jmx model
      */
     JmxModel jmx();

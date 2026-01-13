@@ -17,10 +17,18 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Maximum {
-    /** @return In inclusive maximum */
+    /**
+     * Gets the inclusive maximum value.
+     *
+     * @return In inclusive maximum
+     */
     int value();
 
-    /** @return The api versions that this description applies to. */
+    /**
+     * Gets the API versions that this maximum constraint applies to.
+     *
+     * @return The api versions that this description applies to.
+     */
     String apiVersions() default "all";
 
     /**
@@ -30,6 +38,8 @@ public @interface Maximum {
     @Target({ElementType.METHOD, ElementType.FIELD})
     @interface List {
         /**
+         * Gets the list of maximal values.
+         *
          * @return  List of maximal values
          */
         Maximum[] value();

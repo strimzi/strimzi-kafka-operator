@@ -102,6 +102,8 @@ public class LeaderElectionManagerConfig {
     }
 
     /**
+     * Gets the set of configuration key names.
+     *
      * @return Set of configuration key/names
      */
     public static Set<String> keyNames() {
@@ -109,6 +111,8 @@ public class LeaderElectionManagerConfig {
     }
 
     /**
+     * Gets the configuration values map.
+     *
      * @return  Configuration values map
      */
     public static Map<String, ConfigParameter<?>> configValues() {
@@ -122,6 +126,8 @@ public class LeaderElectionManagerConfig {
 
 
     /**
+     * Gets the name of the Kubernetes Lease resource.
+     *
      * @return  Returns the name of the Kubernetes Lease resource
      */
     public String getLeaseName() {
@@ -129,6 +135,8 @@ public class LeaderElectionManagerConfig {
     }
 
     /**
+     * Gets the namespace of the Kubernetes Lease resource.
+     *
      * @return  Returns the namespace of the Kubernetes Lease resource
      */
     public String getNamespace() {
@@ -136,6 +144,8 @@ public class LeaderElectionManagerConfig {
     }
 
     /**
+     * Gets the identity of this operator instance.
+     *
      * @return  Returns the identity of this instance of the operator
      */
     public String getIdentity() {
@@ -143,6 +153,8 @@ public class LeaderElectionManagerConfig {
     }
 
     /**
+     * Gets the duration for which the acquired lease is valid.
+     *
      * @return  Returns the duration for which the acquired lease is valid
      */
     public Duration getLeaseDuration() {
@@ -150,6 +162,8 @@ public class LeaderElectionManagerConfig {
     }
 
     /**
+     * Gets the duration for which the leader should retry to maintain leadership.
+     *
      * @return  Returns the duration for which should the leader retry to maintain the leadership
      */
     public Duration getRenewDeadline() {
@@ -157,6 +171,8 @@ public class LeaderElectionManagerConfig {
     }
 
     /**
+     * Gets how often the leader updates the lease lock.
+     *
      * @return  Returns how often does the leader update the lease lock
      */
     public Duration getRetryPeriod() {

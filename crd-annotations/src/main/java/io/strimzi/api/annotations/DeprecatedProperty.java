@@ -15,16 +15,24 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DeprecatedProperty {
-    /** @return The API version in which this property is scheduled to be removed. */
+    /**
+     * Gets the API version in which this property is scheduled to be removed.
+     *
+     * @return The API version in which this property is scheduled to be removed.
+     */
     String removalVersion() default "";
 
     /**
+     * Gets the new path if this property has moved.
+     *
      * @return If this property has moved to a different location in the Custom Resource this is
      * the path it has moved to.
      */
     String movedToPath() default "";
 
     /**
+     * Gets the description of how to configure the functionality if the property has not moved.
+     *
      * @return If this property has <strong>not</strong> moved to a different location in the Custom Resource this is
      * a description of how the functionality can now be configured.
      */

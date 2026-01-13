@@ -56,6 +56,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -240,6 +241,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     /**
+     * Generates and returns the Kubernetes service for the Kafka Bridge.
+     *
      * @return  Generates and returns the Kubernetes service for the Kafka Bridge
      */
     public Service generateService() {
@@ -353,6 +356,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * @return  Generated Kubernetes Deployment resource
      */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+        PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -373,8 +378,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.bridgePodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-                )
+                        securityProvider.bridgePodSecurityContext(podSecurityProviderContext),
+                        securityProvider.bridgeHostUsers(podSecurityProviderContext))
         );
     }
 
@@ -502,6 +507,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     /**
+     * Gets the HTTP configuration of the Bridge.
+     *
      * @return  The HTTP configuration of the Bridge
      */
     public KafkaBridgeHttpConfig getHttp() {
@@ -591,6 +598,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     /**
+     * Gets the number of replicas.
+     *
      * @return The number of replicas
      */
     public int getReplicas() {
@@ -598,6 +607,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     /**
+     * Gets the logging model instance for configuring logging.
+     *
      * @return  Logging Model instance for configuring logging
      */
     public LoggingModel logging()   {
@@ -605,6 +616,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     }
 
     /**
+     * Gets the metrics model instance for configuring Prometheus metrics.
+     *
      * @return Metrics Model instance for configuring Prometheus metrics
      */
     public MetricsModel metrics() {

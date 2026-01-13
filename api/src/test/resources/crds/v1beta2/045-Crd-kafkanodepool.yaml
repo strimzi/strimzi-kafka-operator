@@ -821,6 +821,8 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      hostUsers:
+                        type: boolean
                   perPodService:
                     type: object
                     properties:
@@ -2009,6 +2011,8 @@ spec:
                               persistentVolumeClaim: {}
                               csi: {}
                               image: {}
+                      hostUsers:
+                        type: boolean
                   perPodService:
                     type: object
                     properties:

@@ -15,7 +15,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 public @interface OneOf {
-    /** @return List of alternatives */
+    /**
+     * Gets the list of alternatives.
+     *
+     * @return List of alternatives
+     */
     Alternative[] value();
 
     /**
@@ -26,13 +30,26 @@ public @interface OneOf {
          * Defines the alternative property / field
          */
         @interface Property {
-            /** @return The name of a property */
+            /**
+             * Gets the name of the property.
+             *
+             * @return The name of a property
+             */
             String value();
-            /** @return Whether this property is required */
+
+            /**
+             * Gets whether this property is required.
+             *
+             * @return Whether this property is required
+             */
             boolean required() default true;
         }
 
-        /** @return Properties in this alternative */
+        /**
+         * Gets the properties in this alternative.
+         *
+         * @return Properties in this alternative
+         */
         Property[] value();
     }
 }

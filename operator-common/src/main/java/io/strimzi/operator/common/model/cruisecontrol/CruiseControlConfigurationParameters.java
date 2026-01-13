@@ -249,6 +249,8 @@ public enum CruiseControlConfigurationParameters {
     }
 
     /**
+     * Gets the string value of the Enum.
+     *
      * @return String value of the Enum
      */
     public String getValue() {

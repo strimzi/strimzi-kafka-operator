@@ -68,6 +68,8 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
     }
 
     /**
+     * Gets the pattern for matching paths which can be ignored in the Service resource diff.
+     *
      * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
      */
     protected Pattern ignorablePaths() {

@@ -12,7 +12,7 @@ You can configure specific loggers for Kafka components and Strimzi operators.
 Kafka components::
 * link:{BookURLConfiguring}#property-kafka-logging-reference[Kafka loggers^]
 * link:{BookURLConfiguring}#property-kafka-connect-logging-reference[Kafka Connect and MirrorMaker 2 loggers^]
-* link:{BookURLConfiguring}#property-kafka-bridge-logging-reference[HTTP Bridge loggers^]
+* link:{BookURLConfiguring}#property-http-bridge-logging-reference[HTTP Bridge loggers^]
 * link:{BookURLConfiguring}#property-cruise-control-logging-reference[Cruise Control loggers^]
 
 Strimzi operators::

@@ -23,7 +23,7 @@ runs:
       shell: bash
       run: |
         echo "Downloaded artifacts:"
-        find "${{ inputs.artifacts-path }}" -type f | head -n 20
+        (find "${{ inputs.artifacts-path }}" -type f || true) | head -n 20
 
     - name: Generate performance report
       id: generate_report

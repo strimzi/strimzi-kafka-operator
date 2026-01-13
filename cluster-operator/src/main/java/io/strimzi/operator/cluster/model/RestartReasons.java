@@ -20,6 +20,8 @@ public class RestartReasons implements Iterable<RestartReason> {
     private final EnumMap<RestartReason, Set<String>> reasons = new EnumMap<>(RestartReason.class);
 
     /**
+     * Creates an empty restart reasons instance.
+     *
      * @return  Empty restart reasons instance
      */
     public static RestartReasons empty() {
@@ -63,6 +65,8 @@ public class RestartReasons implements Iterable<RestartReason> {
     }
 
     /**
+     * Gets all restart reasons.
+     *
      * @return  Set with all restart reasons
      */
     public Set<RestartReason> getReasons() {
@@ -70,6 +74,8 @@ public class RestartReasons implements Iterable<RestartReason> {
     }
 
     /**
+     * Checks if the component should be restarted based on these restart reasons.
+     *
      * @return  True if component should be restarts (there are some restart reasons). False otherwise.
      */
     public boolean shouldRestart() {

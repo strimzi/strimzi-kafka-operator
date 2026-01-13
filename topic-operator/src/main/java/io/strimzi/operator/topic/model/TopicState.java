@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
  */
 public record TopicState(TopicDescription description, Config configs) {
     /**
+     * Gets the topic ID.
+     *
      * @return The topic id.
      */
     public String topicId() {
@@ -26,6 +28,8 @@ public record TopicState(TopicDescription description, Config configs) {
     }
     
     /**
+     * Gets the number of partitions.
+     *
      * @return The number of partitions.
      */
     public int numPartitions() {
@@ -33,6 +37,8 @@ public record TopicState(TopicDescription description, Config configs) {
     }
 
     /**
+     * Gets the unique replication factor for all partitions.
+     *
      * @return The unique replication factor for all partitions of this topic, or
      * {@link Integer#MIN_VALUE} if there is no unique replication factor.
      */
@@ -49,6 +55,8 @@ public record TopicState(TopicDescription description, Config configs) {
     }
 
     /**
+     * Gets the partitions with a different replication factor than the specified value.
+     *
      * @param rf Known replication factor.
      * @return Partition with different RF.
      */

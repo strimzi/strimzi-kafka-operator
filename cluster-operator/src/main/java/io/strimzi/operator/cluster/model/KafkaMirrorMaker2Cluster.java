@@ -286,6 +286,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     /**
+     * Gets the name of the ClusterRoleBinding for the init container.
+     *
      * @return  Name of the ClusterRoleBinding
      */
     @Override
@@ -294,6 +296,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     /**
+     * Gets the name of the RoleBinding for Mirror Maker 2.
+     *
      * @return  Name of the RoleBinding
      */
     @Override
@@ -452,6 +456,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     /**
+     * Gets the Mirror Maker 2 Connectors model.
+     *
      * @return  Returns the Mirror Maker 2 Connectors model
      */
     public KafkaMirrorMaker2Connectors connectors() {
@@ -459,6 +465,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     /**
+     * Gets the collection of Mirror Maker 2 cluster specifications.
+     *
      * @return  Returns the Mirror Maker 2 Clusters
      */
     public Collection<KafkaMirrorMaker2ClusterSpec> clusters() {

@@ -1311,6 +1311,9 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 |volumes
 |xref:type-AdditionalVolume-{context}[`AdditionalVolume`] array
 |Additional volumes that can be mounted to the pod.
+|hostUsers
+|boolean
+|Use the host user namespace. Optional. Defaults to `true`. When `true` or not set, the pod runs in the host user namespace. This is required when the pod needs features available only in the host namespace, such as loading kernel modules with `CAP_SYS_MODULE`.When set to `false`, the pod runs in a new user namespace. Setting `false` helps mitigate container breakout vulnerabilities and allows containers to run as `root` without granting `root` privileges on the host. This property is alpha-level in Kubernetes and is supported only by Kubernetes clusters that enable the `UserNamespacesSupport` feature.
 |====
 
 [id='type-AdditionalVolume-{context}']

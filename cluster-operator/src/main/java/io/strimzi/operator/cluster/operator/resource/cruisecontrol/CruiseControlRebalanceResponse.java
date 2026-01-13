@@ -30,6 +30,8 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
     }
 
     /**
+     * Checks if there is enough data to generate a proposal.
+     *
      * @return  True if there is not enough data to generate a proposal. False otherwise.
      */
     public boolean isNotEnoughDataForProposal() {
@@ -41,6 +43,8 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
     }
 
     /**
+     * Checks if the proposal is still being calculated.
+     *
      * @return  True if the proposal is still being calculated. False otherwise.
      */
     public boolean isProposalStillCalculating() {

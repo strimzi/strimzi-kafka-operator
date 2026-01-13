@@ -48,7 +48,7 @@ jobs:
     - name: Install yq
       uses: ./.github/actions/dependencies/install-yq
 
-    # Setup OpenJDK 17
+    # Setup OpenJDK 21
     - name: Setup Java and Maven
       uses: ./.github/actions/dependencies/setup-java
 

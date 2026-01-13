@@ -48,6 +48,8 @@ public class ExecutorStatus {
     }
 
     /**
+     * Gets the executor status as a JSON node.
+     *
      * @return Executor status JSON
      */
     public JsonNode getJson() {
@@ -55,6 +57,8 @@ public class ExecutorStatus {
     }
 
     /**
+     * Checks if the executor is in progress state.
+     *
      * @return true if in progress state
      */
     public boolean isInProgressState() {
@@ -62,6 +66,8 @@ public class ExecutorStatus {
     }
 
     /**
+     * Gets the executor state value from the status JSON.
+     *
      * @return the value of the "state" field from the Executor status JSON.
      */
     public CruiseControlExecutorState getState() {
@@ -69,6 +75,8 @@ public class ExecutorStatus {
     }
 
     /**
+     * Gets the total data to move from the executor status.
+     *
      * @return the value of the "totalDataToMove" field from the Executor status JSON.
      */
     public int getTotalDataToMove() {
@@ -76,6 +84,8 @@ public class ExecutorStatus {
     }
 
     /**
+     * Gets the amount of data movement that has finished.
+     *
      * @return the value of the "finishedDataMovement" field from the Executor status JSON.
      */
     public int getFinishedDataMovement() {
@@ -83,6 +93,8 @@ public class ExecutorStatus {
     }
 
     /**
+     * Gets the task start time as an Instant object.
+     *
      * @return the task start time as an Instant object.
      */
     public Instant getTaskStartTime() {

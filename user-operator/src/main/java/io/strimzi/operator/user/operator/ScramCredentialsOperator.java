@@ -166,6 +166,8 @@ public class ScramCredentialsOperator implements AdminApiOperator<String, Set<St
     }
 
     /**
+     * Gets all usernames which have some SCRAM credentials set.
+     *
      * @return List with all usernames which have some scram credentials set
      */
     @Override

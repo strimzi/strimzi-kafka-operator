@@ -16,6 +16,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Type {
     /**
+     * Gets the type of the field.
+     *
      * @return  The type of the field
      */
     String value();

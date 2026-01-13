@@ -145,6 +145,8 @@ public class KafkaConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Checks if the configuration is empty.
+     *
      * @return  True if the configuration is empty. False otherwise.
      */
     public boolean isEmpty() {

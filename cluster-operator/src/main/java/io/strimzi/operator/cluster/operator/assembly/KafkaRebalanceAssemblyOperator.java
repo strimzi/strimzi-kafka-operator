@@ -162,6 +162,8 @@ public class KafkaRebalanceAssemblyOperator
     private final int cruiseControlPort;
 
     /**
+     * Constructs a new KafkaRebalanceAssemblyOperator with default Cruise Control port.
+     *
      * @param vertx The Vertx instance
      * @param supplier Supplies the operators for different resources
      * @param config Cluster Operator configuration
@@ -173,6 +175,8 @@ public class KafkaRebalanceAssemblyOperator
     }
     
     /**
+     * Constructs a new KafkaRebalanceAssemblyOperator with custom Cruise Control port.
+     *
      * @param vertx The Vertx instance
      * @param supplier Supplies the operators for different resources
      * @param config Cluster Operator configuration

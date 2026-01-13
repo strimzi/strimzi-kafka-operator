@@ -9,6 +9,8 @@ package io.strimzi.operator.cluster.model.metrics;
  */
 public interface SupportsMetrics {
     /**
+     * Gets the metrics model.
+     *
      * @return  Metrics model
      */
     MetricsModel metrics();

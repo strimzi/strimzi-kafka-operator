@@ -16,6 +16,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface RequiredInVersions {
     /**
+     * Gets the versions in which the annotated property is required.
+     *
      * @return The versions in which the annotated property is required
      */
     String value();

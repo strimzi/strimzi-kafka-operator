@@ -116,6 +116,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         }
 
         /**
+         * Gets the default Kafka version.
+         *
          * @return  The default Kafka version
          */
         public KafkaVersion defaultVersion() {
@@ -180,6 +182,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         }
 
         /**
+         * Gets the set of supported Kafka versions.
+         *
          * @return  Set of supported Kafka versions
          */
         public Set<String> supportedVersions() {
@@ -409,6 +413,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     }
 
     /**
+     * Gets the Kafka version.
+     *
      * @return  Kafka version
      */
     public String version() {
@@ -416,6 +422,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     }
 
     /**
+     * Gets the KRaft metadata version.
+     *
      * @return  KRaft metadata version
      */
     public String metadataVersion() {
@@ -423,6 +431,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     }
 
     /**
+     * Checks if this Kafka version is the default.
+     *
      * @return  True if this Kafka version is the default. False otherwise.
      */
     public boolean isDefault() {
@@ -430,6 +440,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     }
 
     /**
+     * Checks if this Kafka version is supported.
+     *
      * @return  True if this Kafka version is supported. False otherwise.
      */
     public boolean isSupported() {
@@ -437,6 +449,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     }
 
     /**
+     * Gets the unsupported Kafka features.
+     *
      * @return  Unsupported Kafka versions
      */
     public String unsupportedFeatures() {

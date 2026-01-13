@@ -16,6 +16,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface AddedIn {
     /**
+     * Gets the Strimzi version in which the API field was added.
+     *
      * @return  Strimzi version in which the API field was added
      */
     String value();

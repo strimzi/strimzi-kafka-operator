@@ -14,6 +14,8 @@ public class ConfigModels {
     private Map<String, ConfigModel> configs;
 
     /**
+     * Gets the version of the Kafka broker.
+     *
      * @return The version of the Kafka broker.
      */
     public String getVersion() {
@@ -30,6 +32,8 @@ public class ConfigModels {
     }
 
     /**
+     * Gets a map from configuration parameter name to its model.
+     *
      * @return A map from configuration parameter name to its model.
      */
     public Map<String, ConfigModel> getConfigs() {

@@ -18,11 +18,15 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface MinimumItems {
     /**
+     * Gets the API versions that this description applies to.
+     *
      * @return The api versions that this description applies to.
      **/
     String apiVersions() default "all";
 
     /**
+     * Gets the minimum number of items in this list or array.
+     *
      * @return  Minimum number of items in this list / array
      */
     int value();
@@ -34,6 +38,8 @@ public @interface MinimumItems {
     @Target({ElementType.METHOD, ElementType.FIELD})
     @interface List {
         /**
+         * Gets the list of minimum number of items.
+         *
          * @return  List of minimum number of items
          */
         MinimumItems[] value();

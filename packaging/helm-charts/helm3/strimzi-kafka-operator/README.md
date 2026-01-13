@@ -43,7 +43,7 @@ You can access the CRDs from our [GitHub release page](https://github.com/strimz
 For example, when upgrading to Strimzi 0.49.0, you can do:
 
 ```bash
-kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.49.0/strimzi-crds-0.49.0.yaml 
+kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.49.0/strimzi-crds-0.49.0.yaml
 ```
 
 The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
@@ -207,6 +207,7 @@ the documentation for more details.
 | `featureGates`                                   | Feature Gates configuration                                                     | `nil`                        |
 | `tmpDirSizeLimit`                                | Set the `sizeLimit` for the tmp dir volume used by the operator                 | `1Mi`                        |
 | `labelsExclusionPattern`                         | Override the exclude pattern for exclude some labels                            | `""`                         |
+| `operatorNetworkPolicy.enabled`                  | Generate a networkPolicy for the strimzi-operator (operator not Kafka)          | `false`                      |
 | `generateNetworkPolicy`                          | Controls whether Strimzi generates network policy resources                     | `true`                       |
 | `connectBuildTimeoutMs`                          | Overrides the default timeout value for building new Kafka Connect              | `300000`                     |
 | `mavenBuilder.image.registry`                    | Override default Maven Builder image registry                                   | `nil`                        |

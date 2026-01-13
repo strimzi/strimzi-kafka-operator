@@ -65,6 +65,8 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected long operationTimeoutMs;
 
     /**
+     * Constructs a new AbstractAssemblyOperator.
+     *
      * @param vertx The Vertx instance
      * @param pfa Properties with features availability
      * @param kind The kind of watched resource

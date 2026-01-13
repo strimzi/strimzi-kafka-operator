@@ -54,6 +54,8 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
     }
 
     /**
+     * Gets the pattern for matching paths which can be ignored in the PVC resource diff.
+     *
      * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
      */
     @Override

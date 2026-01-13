@@ -38,6 +38,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -275,6 +276,8 @@ public class KafkaConnectBuild extends AbstractModel {
      * @return  Pod which will build the new container image
      */
     public Pod generateBuilderPod(boolean isOpenShift, boolean isBuildahBuild, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, String newBuildRevision) {
+        PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
         return WorkloadUtils.createPod(
                 componentName,
                 namespace,
@@ -288,8 +291,8 @@ public class KafkaConnectBuild extends AbstractModel {
                 List.of(createContainer(imagePullPolicy, isBuildahBuild)),
                 getVolumes(isOpenShift),
                 imagePullSecrets,
-                securityProvider.kafkaConnectBuildPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-        );
+                securityProvider.kafkaConnectBuildPodSecurityContext(podSecurityProviderContext),
+                securityProvider.kafkaConnectBuildHostUsers(podSecurityProviderContext));
     }
 
     /**

@@ -33,6 +33,8 @@ public abstract class AbstractRebalanceOptions {
     private final List<String> replicaMovementStrategies;
 
     /**
+     * Checks if this is a dry-run only operation.
+     *
      * @return  True if this is dry-run only. False otherwise.
      */
     public boolean isDryRun() {
@@ -40,6 +42,8 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * Checks if the rebalance should use verbose response.
+     *
      * @return  True if the rebalance should use verbose response. False otherwise.
      */
     public boolean isVerbose() {
@@ -47,6 +51,8 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * Checks if hard-goals check should be skipped.
+     *
      * @return  True if hard-goals check should be skipped. False otherwise.
      */
     public boolean isSkipHardGoalCheck() {
@@ -54,6 +60,8 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * Gets the list of rebalancing goals.
+     *
      * @return  List of goals
      */
     public List<String> getGoals() {
@@ -61,6 +69,8 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * Checks if the response should be in JSON format.
+     *
      * @return  True if response should be in the JSON format. False otherwise.
      */
     public boolean isJson() {
@@ -68,6 +78,8 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * Gets the excluded topics for the rebalance.
+     *
      * @return  Excludes topics
      */
     public String getExcludedTopics() {
@@ -75,6 +87,8 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * Gets the number of concurrent partition movements per broker.
+     *
      * @return  Number of concurrent partition movements per broker
      */
     public int getConcurrentPartitionMovementsPerBroker() {
@@ -82,6 +96,8 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * Gets the number of concurrent leader movements.
+     *
      * @return  Number of concurrent movements
      */
     public int getConcurrentLeaderMovements() {
@@ -89,6 +105,8 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * Gets the replication throttle in bytes per second.
+     *
      * @return  Replication throttle
      */
     public long getReplicationThrottle() {
@@ -96,6 +114,8 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * Gets the list of configured replica movement strategies.
+     *
      * @return  List of configured replica movement strategies
      */
     public List<String> getReplicaMovementStrategies() {
@@ -149,6 +169,8 @@ public abstract class AbstractRebalanceOptions {
         protected abstract B self();
 
         /**
+         * Builds and returns the rebalance options.
+         *
          * @return  Builds the rebalance options and returns them
          */
         public abstract T build();

@@ -20,6 +20,8 @@ import java.util.stream.Stream;
 public record PartitionedByError<K, V>(List<Pair<K, Either<TopicOperatorException, V>>> okList,
                                        List<Pair<K, Either<TopicOperatorException, V>>> errorsList) {
     /**
+     * Gets the stream of successful results.
+     *
      * @return Success result list.
      */
     public Stream<Pair<K, V>> ok() {
@@ -27,6 +29,8 @@ public record PartitionedByError<K, V>(List<Pair<K, Either<TopicOperatorExceptio
     }
 
     /**
+     * Gets the stream of error results.
+     *
      * @return Error result list.
      */
     public Stream<Pair<K, TopicOperatorException>> errors() {

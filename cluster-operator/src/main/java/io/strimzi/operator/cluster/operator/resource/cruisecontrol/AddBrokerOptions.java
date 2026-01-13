@@ -14,6 +14,8 @@ public class AddBrokerOptions extends AbstractRebalanceOptions {
     private final List<Integer> brokers;
 
     /**
+     * Gets the list of broker IDs which should be added.
+     *
      * @return  List of broker IDs which should be added
      */
     public List<Integer> getBrokers() {

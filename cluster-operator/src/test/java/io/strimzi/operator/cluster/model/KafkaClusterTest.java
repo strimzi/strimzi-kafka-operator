@@ -97,7 +97,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.hamcrest.CoreMatchers;
@@ -3309,10 +3308,10 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testRestrictedSecurityContext() {
+    public void testSecurityProvider() {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-        kc.securityProvider = new RestrictedPodSecurityProvider();
+        kc.securityProvider = new TestPodSecurityProvider();
         kc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
         // Test generated SPS
@@ -3324,6 +3323,7 @@ public class KafkaClusterTest {
             List<Pod> pods = PodSetUtils.podSetToPods(podSet);
             for (Pod pod : pods) {
                 assertThat(pod.getSpec().getSecurityContext().getFsGroup(), is(0L));
+                assertThat(pod.getSpec().getHostUsers(), is(false));
                 assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
                 assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
                 assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
@@ -3705,6 +3705,7 @@ public class KafkaClusterTest {
                                 .withImagePullSecrets(secret1, secret2)
                                 .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
                                 .withVolumes(additionalVolume)
+                                .withHostUsers(false)
                             .endPod()
                             .withNewKafkaContainer()
                                 .withEnv(envVar1, envVar2, envVar3)
@@ -3753,6 +3754,7 @@ public class KafkaClusterTest {
                 assertThat(pod.getSpec().getSecurityContext().getRunAsUser(), is(789L));
                 assertThat(pod.getSpec().getAffinity(), is(affinity));
                 assertThat(pod.getSpec().getTolerations(), is(toleration));
+                assertThat(pod.getSpec().getHostUsers(), is(false));
 
                 assertThat(pod.getSpec().getVolumes().size(), is(5));
                 assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));

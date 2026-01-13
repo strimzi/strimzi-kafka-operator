@@ -36,6 +36,8 @@ public class VersionConversion<T extends HasMetadata> extends ListConversion<T, 
     }
 
     /**
+     * Gets the source API version.
+     *
      * @return  From API version
      */
     public ApiVersion from() {
@@ -43,6 +45,8 @@ public class VersionConversion<T extends HasMetadata> extends ListConversion<T, 
     }
 
     /**
+     * Gets the target API version.
+     *
      * @return  To API version
      */
     public ApiVersion to() {
@@ -90,6 +94,8 @@ public class VersionConversion<T extends HasMetadata> extends ListConversion<T, 
         }
 
         /**
+         * Gets the source API version.
+         *
          * @return  From API version
          */
         public ApiVersion from() {
@@ -97,6 +103,8 @@ public class VersionConversion<T extends HasMetadata> extends ListConversion<T, 
         }
 
         /**
+         * Gets the target API version.
+         *
          * @return  To API version
          */
         public ApiVersion to() {

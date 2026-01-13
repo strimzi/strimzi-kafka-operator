@@ -257,6 +257,8 @@ class CrdGenerator {
     private int numErrors;
 
     /**
+     * Creates a new CRD generator with the specified configuration.
+     *
      * @param targetKubeVersions The targeted version(s) of Kubernetes.
      * @param crdApiVersion The version of the CRD API for which to generate the CRD.
      * @param mapper The object mapper.

@@ -54,6 +54,7 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -298,6 +299,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
+     * Generates a Kubernetes Service for Cruise Control.
+     *
      * @return  Generates a Kubernetes Service for Cruise Control
      */
     public Service generateService() {
@@ -360,6 +363,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * @return  Cruise Control Kubernetes Deployment
      */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+        PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -380,8 +385,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.cruiseControlPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-                )
+                        securityProvider.cruiseControlPodSecurityContext(podSecurityProviderContext),
+                        securityProvider.cruiseControlHostUsers(podSecurityProviderContext))
         );
     }
 
@@ -500,6 +505,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
+     * Gets the API Credentials Model instance for configuring Cruise Control API users.
+     *
      * @return Api Credentials Model instance for configuring Cruise Control API users
      */
     public HashLoginServiceApiCredentials apiCredentials() {
@@ -507,6 +514,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
+     * Gets the metrics model instance for configuring Prometheus metrics.
+     *
      * @return  Metrics Model instance for configuring Prometheus metrics
      */
     public MetricsModel metrics()   {
@@ -514,6 +523,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
+     * Gets the logging model instance for configuring logging.
+     *
      * @return  Logging Model instance for configuring logging
      */
     public LoggingModel logging()   {

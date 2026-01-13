@@ -62,6 +62,8 @@ public class BackOff {
     }
 
     /**
+     * Gets the maximum number of attempts.
+     *
      * @return The maximum number of attempts.
      */
     public int maxAttempts() {
@@ -69,6 +71,8 @@ public class BackOff {
     }
 
     /**
+     * Gets the maximum number of delays.
+     *
      * @return The maximum number of delays.
      */
     public int maxNumDelays() {
@@ -89,6 +93,8 @@ public class BackOff {
     }
 
     /**
+     * Checks whether the next call to {@link #delayMs()} will throw MaxAttemptsExceededException.
+     *
      * @return Whether the next call to {@link #delayMs()} will throw MaxAttemptsExceededException.
      */
     public boolean done() {
@@ -96,6 +102,8 @@ public class BackOff {
     }
 
     /**
+     * Calculates the delay for attempt n.
+     *
      * @return How much delay for attempt n?
      */
     private long delay(int n) {
@@ -121,6 +129,8 @@ public class BackOff {
     }
 
     /**
+     * Gets the cumulative delay issued by {@link #delayMs()} so far.
+     *
      * @return The cumulative delay issued by {@link #delayMs()} so far.
      */
     public long cumulativeDelayMs() {

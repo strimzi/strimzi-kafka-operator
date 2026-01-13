@@ -16,11 +16,15 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DeprecatedType {
     /**
+     * Gets the replacement type.
+     *
      * @return The type which should be used as replacement
      */
     Class<?> replacedWithType();
 
     /**
+     * Gets the API version in which this type is scheduled to be removed.
+     *
      * @return The API version in which this property is scheduled to be removed.
      */
     String removalVersion() default "";

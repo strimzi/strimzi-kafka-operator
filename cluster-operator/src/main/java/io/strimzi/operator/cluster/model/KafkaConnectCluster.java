@@ -79,6 +79,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -389,6 +390,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the Kubernetes service name for Kafka Connect.
+     *
      * @return The Kubernetes service name.
      */
     public String getServiceName() {
@@ -396,6 +399,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Generates the Kafka Connect service.
+     *
      * @return  Generates the Kafka Connect service
      */
     public Service generateService() {
@@ -623,6 +628,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                         ImagePullPolicy imagePullPolicy,
                                         List<LocalObjectReference> imagePullSecrets,
                                         String customContainerImage) {
+        PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
         return WorkloadUtils.createPodSet(
                 componentName,
                 namespace,
@@ -648,8 +655,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         List.of(createContainer(imagePullPolicy, customContainerImage)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-                )
+                        securityProvider.kafkaConnectPodSecurityContext(podSecurityProviderContext),
+                        securityProvider.kafkaConnectHostUsers(podSecurityProviderContext))
         );
     }
 
@@ -840,6 +847,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the name of the ClusterRoleBinding for the Connect init container.
+     *
      * @return  Name of the ClusterRoleBinding for the Connect init container
      */
     public String getInitContainerClusterRoleBindingName() {
@@ -916,6 +925,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the list of Secrets the Pods need to access through the Kubernetes API.
+     *
      * @return  The list of Secrets the Pods will need access to through Kubernetes API to load their values using
      *          configuration providers.
      */
@@ -987,6 +998,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the name of the RoleBinding for the Kafka Connect.
+     *
      * @return The name of the RoleBinding for the Kafka Connect
      */
     public String getRoleBindingName() {
@@ -1059,6 +1072,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the number of replicas for Kafka Connect.
+     *
      * @return The number of replicas
      */
     public int getReplicas() {
@@ -1066,6 +1081,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the JMX model instance for configuring JMX access.
+     *
      * @return  JMX Model instance for configuring JMX access
      */
     public JmxModel jmx() {
@@ -1073,6 +1090,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the metrics model instance for configuring Prometheus metrics.
+     *
      * @return  Metrics Model instance for configuring Prometheus metrics
      */
     public MetricsModel metrics()   {
@@ -1080,6 +1099,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Gets the logging model instance for configuring logging.
+     *
      * @return  Logging Model instance for configuring logging
      */
     public LoggingModel logging()   {

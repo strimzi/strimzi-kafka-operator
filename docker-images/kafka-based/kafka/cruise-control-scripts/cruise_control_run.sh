@@ -41,7 +41,7 @@ if [ "$CRUISE_CONTROL_JMX_EXPORTER_ENABLED" = "true" ]; then
 fi
 
 # Set Debug options if enabled
-if [ "x$KAFKA_DEBUG" != "x" ]; then
+if [ -n "$KAFKA_DEBUG" ]; then
 
     # Use default ports
     DEFAULT_JAVA_DEBUG_PORT="5005"

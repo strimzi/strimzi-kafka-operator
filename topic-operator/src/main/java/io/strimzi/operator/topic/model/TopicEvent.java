@@ -12,16 +12,37 @@ import java.util.Objects;
  * Represents a change in Kube relating to a KafkaTopic
  */
 public sealed interface TopicEvent permits TopicEvent.TopicUpsert, TopicEvent.TopicDelete {
-    /** @return Resource age in nanoseconds. */
+    /**
+     * Gets the resource age in nanoseconds.
+     *
+     * @return Resource age in nanoseconds.
+     */
     long ageNs();
-    /** @return Resource namespace. */
+
+    /**
+     * Gets the resource namespace.
+     *
+     * @return Resource namespace.
+     */
     String namespace();
-    /** @return Resource name. */
+
+    /**
+     * Gets the resource name.
+     *
+     * @return Resource name.
+     */
     String name();
-    /** @return Resource version. */
+
+    /**
+     * Gets the resource version.
+     *
+     * @return Resource version.
+     */
     String resourceVersion();
 
     /**
+     * Gets the Kubernetes reference for this topic event.
+     *
      * @return The Kube reference.
      */
     default KubeRef toRef() {

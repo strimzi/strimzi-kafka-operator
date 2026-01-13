@@ -19,6 +19,8 @@ public class MultipartConversions {
     }
 
     /**
+     * Gets the MultipartConversions instance for the current thread.
+     *
      * @return  Get the MultipartConversions instance for the current thread
      */
     public static MultipartConversions get() {
@@ -33,6 +35,8 @@ public class MultipartConversions {
     }
 
     /**
+     * Gets the list of resources created during conversion.
+     *
      * @return  The list of resources which were created during the conversion
      */
     public List<MultipartResource> getResources() {

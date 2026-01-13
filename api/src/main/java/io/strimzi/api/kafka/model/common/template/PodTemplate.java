@@ -39,7 +39,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
     "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig", 
-    "enableServiceLinks", "tmpDirSizeLimit", "volumes"})
+    "enableServiceLinks", "tmpDirSizeLimit", "volumes", "hostUsers"})
 @EqualsAndHashCode
 @ToString
 @DescriptionFile
@@ -59,6 +59,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private Boolean enableServiceLinks;
     private String tmpDirSizeLimit;
     private List<AdditionalVolume> volumes;
+    private Boolean hostUsers;
     private Map<String, Object> additionalProperties;
 
     @Description("Metadata applied to the resource.")
@@ -233,6 +234,21 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
 
     public void setVolumes(List<AdditionalVolume> volumes) {
         this.volumes = volumes;
+    }
+
+    @Description("Use the host user namespace. " +
+            "Optional. Defaults to `true`. " +
+            "When `true` or not set, the pod runs in the host user namespace. This is required when the pod needs features available only in the host namespace, such as loading kernel modules with `CAP_SYS_MODULE`." +
+            "When set to `false`, the pod runs in a new user namespace. " +
+            "Setting `false` helps mitigate container breakout vulnerabilities and allows containers to run as `root` without granting `root` privileges on the host. " +
+            "This property is alpha-level in Kubernetes and is supported only by Kubernetes clusters that enable the `UserNamespacesSupport` feature.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getHostUsers() {
+        return hostUsers;
+    }
+
+    public void setHostUsers(Boolean hostUsers) {
+        this.hostUsers = hostUsers;
     }
 
     @Override

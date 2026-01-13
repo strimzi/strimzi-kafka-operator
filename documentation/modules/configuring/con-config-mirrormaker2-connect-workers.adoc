@@ -8,7 +8,11 @@
 = Tuning Kafka Connect worker settings
 
 [role="_abstract"]
-Adjust Kafka Connect worker behavior for MirrorMaker 2 by adding configuration to your target cluster's `config` section.
+Adjust Kafka Connect worker runtime behavior for MirrorMaker 2 by configuring worker properties on the Kafka Connect cluster that runs the MirrorMaker 2 connectors.
+
+Kafka Connect workers running MirrorMaker 2 connectors are configured to store their internal state in a single target Kafka cluster.
+The worker configuration specifies Kafka Connect runtime settings, such as task rebalance behavior, shutdown handling, and how frequently offsets are written to internal topics.
+To preserve records without modification, configure byte array converters for record keys and values.
 
 .Example Kafka Connect configuration
 [source,yaml,subs="+quotes,attributes"]
@@ -28,14 +32,19 @@ spec:
     offsetStorageTopic: my-mirror-maker2-offset
     statusStorageTopic: my-mirror-maker2-status
     config: # <2>
+      # Key and value converters
+      key.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+      value.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+      # Worker shutdown and rebalance behavior
       task.shutdown.graceful.timeout.ms: 30000
       scheduled.rebalance.max.delay.ms: 300000
+      # Offset flush interval
       offset.flush.interval.ms: 10000
-      config.storage.replication.factor: 1
-      offset.storage.replication.factor: 1
-      status.storage.replication.factor: 1
+      # Kafka Connect internal topic replication
+      config.storage.replication.factor: -1
+      offset.storage.replication.factor: -1
+      status.storage.replication.factor: -1
 ----
 <1> The target cluster configuration. The target cluster is always used to store Kafka Connect's internal topics.
-<2> These properties configure the Kafka Connect workers in this cluster. 
-
-Certain properties are managed directly by Strimzi and cannot be set within the `config` property. For more information, see the link:{BookURLConfiguring}#type-KafkaMirrorMaker2TargetClusterSpec-reference[`KafkaMirrorMaker2TargetClusterSpec` schema reference^].
+<2> These properties configure the Kafka Connect workers created by this `KafkaMirrorMaker2` resource.
+The settings apply to all MirrorMaker 2 connectors managed by the resource.

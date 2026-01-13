@@ -23,6 +23,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface CelValidation {
     /**
+     * Gets the CEL validation rules that should be applied to this type.
+     *
      * @return  CEL validation rules that should be applied to this type
      */
     CelValidationRule[] rules() default {};
@@ -32,31 +34,43 @@ public @interface CelValidation {
      */
     @interface CelValidationRule {
         /**
+         * Gets the validation rule.
+         *
          * @return  Validation rule
          */
         String rule();
 
         /**
+         * Gets the error message.
+         *
          * @return  Error message
          */
         String message() default "";
 
         /**
+         * Gets the error message expression.
+         *
          * @return  Error message expression
          */
         String messageExpression() default "";
 
         /**
+         * Gets the error reason.
+         *
          * @return  Error reason
          */
         String reason() default "";
 
         /**
+         * Gets the field path.
+         *
          * @return  Return fieldPath
          */
         String fieldPath() default "";
 
         /**
+         * Gets the versions in which this validation rule is used.
+         *
          * @return The versions in which this validation rule is used
          */
         String versions() default "";
