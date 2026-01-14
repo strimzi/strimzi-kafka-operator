@@ -103,7 +103,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
         this.selector = selector;
     }
 
-    @Description("Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed. " +
+    @Description("Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. " +
             "Optional. Defaults to `false`.")
     @JsonProperty(defaultValue = "false")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
