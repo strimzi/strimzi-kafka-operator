@@ -33,6 +33,11 @@ public class ConfigModel {
     private boolean caseInsensitive = false;
 
     /**
+     * Constructor
+     */
+    public ConfigModel() { }
+
+    /**
      * Gets the scope of the parameter.
      *
      * @return The scope of the parameter.

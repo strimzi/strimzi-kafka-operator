@@ -6,6 +6,8 @@
 package io.strimzi.api.kafka.model.common;
 
 public class Constants {
+    private Constants() { }
+
     public static final String RESOURCE_GROUP_NAME = "kafka.strimzi.io";
     public static final String RESOURCE_CORE_GROUP_NAME = "core.strimzi.io";
 

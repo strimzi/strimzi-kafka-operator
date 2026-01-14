@@ -11,6 +11,7 @@ import java.time.Instant;
  * Utility class for handling progress fields of KafkaRebalance custom resource.
  */
 public class KafkaRebalanceProgressUtils {
+    private KafkaRebalanceProgressUtils() { }
 
     /**
      * Estimates the number of minutes it will take an ongoing partition rebalance to complete.

@@ -26,7 +26,12 @@ public class Results {
     private final Map<ReconcilableTopic, Collection<Condition>> conditions = new HashMap<>();
     private final Map<ReconcilableTopic, ReplicasChangeStatus> replicasChanges = new HashMap<>();
     private final List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> configChanges = new ArrayList<>();
-    
+
+    /**
+     * Constructor
+     */
+    public Results() { }
+
     /**
      * Adds given results, except for topics which already have an error recorded.
      * 

@@ -72,6 +72,11 @@ public abstract class AbstractCommand implements Runnable {
     Level level;
 
     /**
+     * Constructor
+     */
+    public AbstractCommand() { }
+
+    /**
      * Prints the value to the standard output using PicoCLI. It is important to use this instead of regular
      * System.out.println to be able to easily capture the output in tests.
      *

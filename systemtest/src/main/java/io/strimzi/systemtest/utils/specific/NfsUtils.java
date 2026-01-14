@@ -17,8 +17,7 @@ public class NfsUtils {
     private static final String NFS_POD_NAME_PREFIX = "test-nfs-server-provisioner";
     public static final String NFS_PVC_NAME = "nfs-pvc";
 
-    private NfsUtils() {
-    }
+    private NfsUtils() { }
 
     private static String getNfsVolumeName(String namespaceName) {
         return KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).withName(NFS_PVC_NAME).get().getSpec().getVolumeName();

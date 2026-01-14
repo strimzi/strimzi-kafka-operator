@@ -15,6 +15,8 @@ import org.apache.logging.log4j.Logger;
 public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class);
 
+    private Main() { }
+
     /**
      * The main method
      *

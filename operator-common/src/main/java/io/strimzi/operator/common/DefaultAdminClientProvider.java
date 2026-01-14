@@ -16,6 +16,11 @@ import java.util.Properties;
  * Provides the default Kafka Admin client
  */
 public class DefaultAdminClientProvider implements AdminClientProvider {
+    /**
+     * Constructor
+     */
+    public DefaultAdminClientProvider() { }
+
     @Override
     public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity) {
         return createAdminClient(bootstrapHostnames, kafkaCaTrustSet, authIdentity, new Properties());

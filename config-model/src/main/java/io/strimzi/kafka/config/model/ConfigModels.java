@@ -14,6 +14,11 @@ public class ConfigModels {
     private Map<String, ConfigModel> configs;
 
     /**
+     * Constructor
+     */
+    public ConfigModels() { }
+
+    /**
      * Gets the version of the Kafka broker.
      *
      * @return The version of the Kafka broker.

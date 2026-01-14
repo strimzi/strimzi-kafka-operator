@@ -13,6 +13,11 @@ import org.junit.jupiter.api.extension.ParameterResolver;
  * Extension context parameter resolver used in the Test separator
  */
 public class ExtensionContextParameterResolver implements ParameterResolver {
+    /**
+     * Constructor
+     */
+    public ExtensionContextParameterResolver() { }
+
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         return parameterContext.getParameter().getType() == ExtensionContext.class;

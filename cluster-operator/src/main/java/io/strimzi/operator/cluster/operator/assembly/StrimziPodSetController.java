@@ -571,6 +571,8 @@ public class StrimziPodSetController implements Runnable {
         int pods = 0;
         int readyPods = 0;
         int currentPods = 0;
+
+        PodCounter() { }
     }
 
     /**
@@ -638,6 +640,8 @@ public class StrimziPodSetController implements Runnable {
      * Event handler used in the StrimziPodSet informer which decides what to do with the incoming events.
      */
     private class PodSetEventHandler implements ResourceEventHandler<StrimziPodSet> {
+        private PodSetEventHandler() { }
+
         @Override
         public void onAdd(StrimziPodSet podSet) {
             if (matchesCrSelector(podSet)) {
@@ -667,6 +671,8 @@ public class StrimziPodSetController implements Runnable {
      * Event handler used in the Pod informer which decides what to do with the incoming events.
      */
     private class PodEventHandler implements ResourceEventHandler<Pod> {
+        private PodEventHandler() { }
+
         @Override
         public void onAdd(Pod pod) {
             enqueuePod(pod, "ADDED");

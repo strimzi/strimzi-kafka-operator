@@ -25,6 +25,13 @@ public class MockPvcController extends AbstractMockController {
 
     private Watch watch;
 
+    /**
+     * Constructor
+     */
+    public MockPvcController() {
+        super();
+    }
+
     @Override
     @SuppressFBWarnings({"SIC_INNER_SHOULD_BE_STATIC_ANON"}) // Just a test util, no need to complicate the code bay factoring the anonymous watcher class out
     public void start(KubernetesClient client) {

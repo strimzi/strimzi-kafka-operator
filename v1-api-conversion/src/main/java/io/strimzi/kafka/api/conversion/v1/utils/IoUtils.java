@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
  * Utility methods for working with files and streams
  */
 public class IoUtils {
+    private IoUtils() { }
+
     @SuppressWarnings("SpellCheckingInspection")
     private static ByteArrayOutputStream toBaos(InputStream stream) throws IOException {
         ByteArrayOutputStream result = new ByteArrayOutputStream();

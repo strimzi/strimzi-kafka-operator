@@ -23,6 +23,8 @@ import io.strimzi.kafka.api.conversion.v1.converter.ApiConversionFailedException
  */
 @SuppressWarnings("deprecation")
 public class KafkaConversions {
+    private KafkaConversions() { }
+
     /**
      * Checks for the presence of Keycloak authorization and raises an exception if it is used.
      *

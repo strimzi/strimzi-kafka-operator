@@ -28,6 +28,8 @@ import java.util.function.BooleanSupplier;
 public class RollingUpdateUtils {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateUtils.class);
 
+    private RollingUpdateUtils() { }
+
     /**
      * Method to check that all Pods for expected component (StrimziPodSet, Deployment) were rolled
      * @param namespaceName     Namespace name

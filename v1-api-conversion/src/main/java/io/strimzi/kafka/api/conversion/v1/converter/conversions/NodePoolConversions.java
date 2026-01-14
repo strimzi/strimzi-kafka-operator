@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
  */
 @SuppressWarnings("deprecation")
 public class NodePoolConversions {
+    private NodePoolConversions() { }
+
     /**
      * Removes the storage overrides in KafkaNodePool
      *

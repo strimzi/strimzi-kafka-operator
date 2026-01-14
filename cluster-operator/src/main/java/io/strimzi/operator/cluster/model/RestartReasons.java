@@ -20,6 +20,11 @@ public class RestartReasons implements Iterable<RestartReason> {
     private final EnumMap<RestartReason, Set<String>> reasons = new EnumMap<>(RestartReason.class);
 
     /**
+     * Constructor
+     */
+    public RestartReasons() { }
+
+    /**
      * Creates an empty restart reasons instance.
      *
      * @return  Empty restart reasons instance

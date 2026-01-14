@@ -18,6 +18,10 @@ public interface Tracing {
      * Implementation for having no distributed tracing
      */
     class NoTracing implements Tracing {
+        /**
+         * Constructor
+         */
+        public NoTracing() { }
 
         @Override
         public void initialize() {

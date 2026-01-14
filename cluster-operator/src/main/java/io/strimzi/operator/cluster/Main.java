@@ -49,6 +49,8 @@ public class Main {
     private static final int HEALTH_SERVER_PORT = 8080;
     private static final long SHUTDOWN_TIMEOUT = 10_000L;
 
+    private Main() { }
+
     /**
      * The main method used to run the Cluster Operator
      *

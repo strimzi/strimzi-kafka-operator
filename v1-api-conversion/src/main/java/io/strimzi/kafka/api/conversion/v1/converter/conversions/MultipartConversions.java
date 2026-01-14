@@ -15,8 +15,7 @@ public class MultipartConversions {
 
     private final List<MultipartResource> resources = new ArrayList<>();
 
-    private MultipartConversions() {
-    }
+    private MultipartConversions() { }
 
     /**
      * Gets the MultipartConversions instance for the current thread.

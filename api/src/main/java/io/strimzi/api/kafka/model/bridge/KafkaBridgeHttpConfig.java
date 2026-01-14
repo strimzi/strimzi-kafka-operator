@@ -38,8 +38,7 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving {
     private KafkaBridgeHttpCors cors;
     private Map<String, Object> additionalProperties;
 
-    public KafkaBridgeHttpConfig() {
-    }
+    public KafkaBridgeHttpConfig() { }
 
     public KafkaBridgeHttpConfig(int port) {
         this.port = port;

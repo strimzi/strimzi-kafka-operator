@@ -25,8 +25,12 @@ import java.util.regex.Pattern;
  * A Set of insertion ordered Name/Value pairs.
  */
 public class OrderedProperties {
-
     private final Map<String, String> pairs = new LinkedHashMap<>();
+
+    /**
+     * Constructor
+     */
+    public OrderedProperties() { }
 
     /**
      * Filter key/value pairs

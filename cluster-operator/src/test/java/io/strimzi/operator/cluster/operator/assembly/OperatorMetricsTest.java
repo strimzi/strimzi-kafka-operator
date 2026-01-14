@@ -496,8 +496,7 @@ public class OperatorMetricsTest {
         return metrics;
     }
 
-    protected abstract static class MyResource extends CustomResource {
-    }
+    protected abstract static class MyResource extends CustomResource { }
 
     protected AbstractWatchableStatusedNamespacedResourceOperator resourceOperatorWithExistingResource(Labels selectorLabels)    {
         return new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {

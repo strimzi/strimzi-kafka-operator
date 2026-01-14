@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
  * Static utility methods for working with Kubernetes resources
  */
 class KubernetesResourceOperatorUtils {
+    private KubernetesResourceOperatorUtils() { }
+
     /**
      * Finds annotations managed by some other entities (for example by Rancher cattle agents), and merge them with
      * the annotations from the Strimzi desired resource.

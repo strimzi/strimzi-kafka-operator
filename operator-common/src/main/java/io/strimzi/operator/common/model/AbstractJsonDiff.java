@@ -20,6 +20,11 @@ public abstract class AbstractJsonDiff {
             .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
             .configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
 
+    /**
+     * Constructor
+     */
+    public AbstractJsonDiff() { }
+
     protected static JsonNode lookupPath(JsonNode source, String path) {
         JsonNode s = source;
         for (String component : path.substring(1).split("/")) {

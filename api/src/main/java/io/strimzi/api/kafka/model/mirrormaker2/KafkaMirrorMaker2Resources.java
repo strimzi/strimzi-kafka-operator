@@ -9,6 +9,7 @@ package io.strimzi.api.kafka.model.mirrormaker2;
  * {@code KafkaMirrorMaker2} cluster.
  */
 public class KafkaMirrorMaker2Resources {
+    private KafkaMirrorMaker2Resources() { }
     
     /**
      * Returns the name of the Kafka MirrorMaker 2 {@code Deployment} for a {@code KafkaMirrorMaker2} cluster of the given name.
