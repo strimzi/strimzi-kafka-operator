@@ -6,11 +6,11 @@ See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
 
-**This release introduces new API version `v1` to all Strimzi custom resources.**
+**Strimzi 0.49.0 introduced new API version `v1` to all Strimzi custom resources.**
 **Make sure to [upgrade the CRDs](#upgrading-your-clusters) as part of the Strimzi upgrade as well.**
 **The old API versions (`v1alpha1`, `v1beta1`, and `v1beta2`) will continue to be supported until Strimzi 1.0.0 / 0.52.0.**
 **Before upgrading to Strimzi 0.49.0 or newer, make sure that you update your `KafkaUser` resources to [use the `.spec.authorization.acls[]operations` field instead of the deprecated `.spec.authorization.acls[]operation`](https://strimzi.io/docs/operators/0.49.0/deploying.html#con-api-conversion-v1-str).**
-For more details about the migration to the `v1` API and CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.49.0/deploying.html#assembly-api-conversion-str).
+For more details about the migration to the `v1` API and CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.50.0/deploying.html#assembly-api-conversion-str).
 
 ## Introduction
 
@@ -40,10 +40,10 @@ To upgrade the Strimzi operator, you can use the `helm upgrade` command.
 **The `helm upgrade` command does not upgrade the [Custom Resource Definitions](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/).**
 **Update the CRDs manually after upgrading the Cluster Operator.**
 You can access the CRDs from our [GitHub release page](https://github.com/strimzi/strimzi-kafka-operator/releases) or find them in the `crd` subdirectory inside the Helm Chart.
-For example, when upgrading to Strimzi 0.49.0, you can do:
+For example, when upgrading to Strimzi 0.50.0, you can do:
 
 ```bash
-kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.49.0/strimzi-crds-0.49.0.yaml
+kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.0/strimzi-crds-0.50.0.yaml
 ```
 
 The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
@@ -104,7 +104,7 @@ the documentation for more details.
 | `watchAnyNamespace`                              | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                      |
 | `defaultImageRegistry`                           | Default image registry for all the images                                       | `quay.io`                    |
 | `defaultImageRepository`                         | Default image registry for all the images                                       | `strimzi`                    |
-| `defaultImageTag`                                | Default image tag for all the images except Kafka Bridge                        | `latest`                     |
+| `defaultImageTag`                                | Default image tag for all the images except Kafka Bridge                        | `0.50.0`                     |
 | `deploymentAnnotations`                          | Annotations for the operator deployment                                         | `{}`                         |
 | `image.registry`                                 | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                               | Override default Cluster Operator image repository                              | `nil`                        |
