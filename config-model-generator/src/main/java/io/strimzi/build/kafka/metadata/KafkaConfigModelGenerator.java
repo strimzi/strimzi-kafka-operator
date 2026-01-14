@@ -17,7 +17,6 @@ import kafka.server.DynamicBrokerConfig$;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.server.common.MetadataVersion;
-import org.apache.kafka.server.common.MetadataVersionValidator;
 
 import java.io.File;
 import java.io.IOException;
@@ -104,15 +103,6 @@ public class KafkaConfigModelGenerator {
             } else if (key.validator instanceof ConfigDef.CaseInsensitiveValidString) {
                 descriptor.setCaseInsensitive(true);
                 descriptor.setValues(caseInsensitiveEnumer(key.validator));
-            } else if (key.validator instanceof MetadataVersionValidator) {
-                Iterator<MetadataVersion> iterator = Arrays.stream(MetadataVersion.VERSIONS).iterator();
-                LinkedHashSet<String> versions = new LinkedHashSet<>();
-                while (iterator.hasNext()) {
-                    MetadataVersion next = iterator.next();
-                    versions.add(Pattern.quote(next.shortVersion()) + "(\\.[0-9]+)*");
-                    versions.add(Pattern.quote(next.version()));
-                }
-                descriptor.setPattern(String.join("|", versions));
             } else if (key.validator != null && "class kafka.api.ApiVersionValidator$".equals(key.validator.getClass().toString())) {
                 Iterator<MetadataVersion> iterator = Arrays.stream(MetadataVersion.VERSIONS).iterator();
                 LinkedHashSet<String> versions = new LinkedHashSet<>();
