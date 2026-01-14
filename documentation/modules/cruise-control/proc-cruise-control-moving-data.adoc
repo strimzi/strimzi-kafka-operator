@@ -369,6 +369,8 @@ spec:
 
 .. Delete the unused PVCs.
 +
+Unless `deleteClaim: true` is set in the volume configuration, the PVCs are not deleted automatically when the node pool configuration is updated, and you have to delete them manually.
++
 PVCs are named using the format `data-<id>-<kafka_cluster_name>-kafka-<pod_id>`. 
 You can list them using:
 +
@@ -384,7 +386,7 @@ Then delete the unused PVCs:
 kubectl delete pvc data-<id>-<kafka_cluster_name>-kafka-<pod_id> -n my-project
 ----
 +
-NOTE: Deleting a PVC removes the underlying storage unless `deleteClaim: false` is set in the volume configuration.
+NOTE: Deleting a PVC removes the underlying storage.
 
 .. (Optional) Delete the helper pod used earlier:
 +

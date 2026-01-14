@@ -69,7 +69,7 @@ spec:
                     description: The storage class to use for dynamic volume allocation.
                   deleteClaim:
                     type: boolean
-                    description: Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+                    description: Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. Optional. Defaults to `false`.
                   id:
                     type: integer
                     minimum: 0
@@ -111,7 +111,7 @@ spec:
                           description: The storage class to use for dynamic volume allocation.
                         deleteClaim:
                           type: boolean
-                          description: Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+                          description: Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. Optional. Defaults to `false`.
                         id:
                           type: integer
                           minimum: 0
@@ -1353,7 +1353,7 @@ spec:
                     description: The storage class to use for dynamic volume allocation.
                   deleteClaim:
                     type: boolean
-                    description: Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+                    description: Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. Optional. Defaults to `false`.
                   id:
                     type: integer
                     minimum: 0
@@ -1407,7 +1407,7 @@ spec:
                           description: The storage class to use for dynamic volume allocation.
                         deleteClaim:
                           type: boolean
-                          description: Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+                          description: Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. Optional. Defaults to `false`.
                         id:
                           type: integer
                           minimum: 0

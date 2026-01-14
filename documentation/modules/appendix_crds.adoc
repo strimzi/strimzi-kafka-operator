@@ -689,7 +689,7 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
 |deleteClaim
 |boolean
-|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+|Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. Optional. Defaults to `false`.
 |overrides
 |xref:type-PersistentClaimStorageOverride-{context}[`PersistentClaimStorageOverride`] array
 |**The `overrides` property has been deprecated.** The storage overrides for individual brokers are not supported anymore since Strimzi 0.46.0. As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored.
