@@ -5,7 +5,7 @@ metadata:
   labels:
     app: my-mm2-cluster
 spec:
-  version: 4.1.1
+  version: 4.2.0
   replicas: 1
   target:
     alias: cluster-b

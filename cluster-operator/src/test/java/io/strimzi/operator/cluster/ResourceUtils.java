@@ -289,7 +289,7 @@ public class ResourceUtils {
             Constructor<FinalizedVersionRange> declaredConstructor3 = FinalizedVersionRange.class.getDeclaredConstructor(Short.TYPE, Short.TYPE);
             declaredConstructor3.setAccessible(true);
 
-            short metadataLevel = MetadataVersion.fromVersionString(KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion().metadataVersion()).featureLevel();
+            short metadataLevel = MetadataVersion.fromVersionString(KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion().metadataVersion(), false).featureLevel();
             FinalizedVersionRange finalizedVersionRange = declaredConstructor3.newInstance(metadataLevel, metadataLevel);
             FeatureMetadata featureMetadata = declaredConstructor2.newInstance(Map.of(MetadataVersion.FEATURE_NAME, finalizedVersionRange), Optional.empty(), Map.of());
             KafkaFuture<FeatureMetadata> kafkaFuture = KafkaFutureImpl.completedFuture(featureMetadata);

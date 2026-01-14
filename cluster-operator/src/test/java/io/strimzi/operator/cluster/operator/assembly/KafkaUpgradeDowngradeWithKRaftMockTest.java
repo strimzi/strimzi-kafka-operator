@@ -257,7 +257,7 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
      * @return  Short based metadata level
      */
     private short metadataVersionToLevel(String metadataVersion)    {
-        return MetadataVersion.fromVersionString(metadataVersion).featureLevel();
+        return MetadataVersion.fromVersionString(metadataVersion, false).featureLevel();
     }
 
     /**
