@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.51.0
+
+* Nothing here yet, but we will surely develop something new pretty soon 😉
+
 ## 0.50.0
 
 * Use Java 21 as the runtime and language level
