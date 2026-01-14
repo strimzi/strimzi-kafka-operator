@@ -1021,7 +1021,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     public void testUpdateLoggingWithoutConnectorsWithLog4j2(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT)
                 .editSpec()
-                    .withVersion("4.0.0")
+                    .withVersion("4.2.0")
                     .withNewInlineLogging()
                         .addToLoggers(Map.of("logger.mypackage.name", "io.mydomain.mypackage", "logger.mypackage.level", "WARN"))
                     .endInlineLogging()
