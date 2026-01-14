@@ -29,7 +29,8 @@ The listener name must be unique within the Kafka cluster.
 TLS is required for `route` and `ingress` listener types.
 * `authentication`: Client authentication mechanism.
 ** Supported types include TLS (mTLS), SCRAM-SHA-512, and custom authentication.
-* `configuration.useServiceDnsDomain`: Uses fully qualified DNS names for bootstrap addresses.
+* `configuration`: Listener-specific settings.
+** Examples include `useServiceDnsDomain` for `internal` and `cluster-ip` listeners, and `host` for `route` and `ingress` listeners.
 * `configuration.brokerCertChainAndKey`: Uses a server certificate managed by an external certificate authority.
 
 Listener configuration controls how clients connect to Kafka.
@@ -51,13 +52,10 @@ spec:
         port: 9092
         type: internal
         tls: false
-        configuration:
-          useServiceDnsDomain: true
 ----
 
 * `spec.kafka.listeners[].type: internal` exposes Kafka only inside the Kubernetes cluster.
 * `spec.kafka.listeners[].tls: false` disables TLS encryption.
-* `spec.kafka.listeners[].configuration.useServiceDnsDomain: true` uses fully qualified DNS names that include the cluster service suffix.
 
 == Internal listener with TLS encryption and mTLS authentication
 
