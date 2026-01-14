@@ -18,8 +18,8 @@ Extend it with optional settings to support the following:
 * Synchronizing consumer group offsets
 * Synchronizing ACL rules
 * Tuning Kafka Connect worker settings
-* xref:con-common-config-{context}[common configuration] +
-Common configuration includes setting resource limits and requests (recommended), JVM tuning, and metrics.
+* xref:con-common-config-{context}[Common configuration], including setting resource limits and requests (recommended), JVM tuning, and metrics
+* xref:assembly-logging-configuration-{context}[Logging configuration]
 
 Certain settings, though optional, are recommended for production deployments, such as security and resource allocation.
 
@@ -40,7 +40,7 @@ To reduce load on the cluster and avoid replicating unnecessary data, specify wh
 * `topicsPattern`: A regex to select topics for replication.
 * `groupsPattern`: A regex to select consumer groups for offset synchronization.
 
-.Minimal configuration for MirrorMaker 2
+.Minimal configuration for KafkaMirrorMaker2
 [source,yaml,subs="+quotes,attributes"]
 ----
 # Basic configuration (required)

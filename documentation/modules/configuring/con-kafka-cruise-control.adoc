@@ -1,0 +1,35 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-kafka-cruise-control-{context}']
+= Kafka cluster balancing with Cruise Control
+
+[role="_abstract"]
+Automate Kafka cluster balancing by enabling Cruise Control.
+Cruise Control monitors broker workloads and helps redistribute partitions to keep the cluster balanced as usage changes.
+
+Enable Cruise Control when you need to do the following:
+
+* Rebalance partitions across brokers
+* Redistribute replicas across JBOD disks
+* Support broker scaling and maintenance operations
+
+Enable Cruise Control by adding a `cruiseControl` section to the `Kafka` custom resource.
+
+[source,yaml,subs="+attributes"]
+----
+spec:
+  # Cruise Control (optional)
+  cruiseControl:
+    # Configuration for balancing goals and capacity limits
+    # ...
+----
+
+For more information on how to configure and use Cruise Control, see:
+
+* xref:cruise-control-concepts-{context}[Using Cruise Control for cluster rebalancing]
+* xref:proc-cruise-control-topic-replication-{context}[Using Cruise Control to modify topic replication factor]
+* xref:proc-cruise-control-moving-data-{context}[Using Cruise Control to reassign partitions on JBOD disks]
