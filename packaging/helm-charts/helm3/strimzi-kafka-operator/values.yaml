@@ -45,6 +45,7 @@ deploymentAnnotations: {}
 deploymentStrategy: {}
 priorityClassName: ""
 
+hostUsers: NULL
 podSecurityContext: {}
 securityContext: {}
 rbac:
