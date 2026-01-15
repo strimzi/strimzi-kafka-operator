@@ -322,13 +322,15 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         }
 
         if (http != null && http.getTls() != null) {
-            if (http.getTls().getCertificateAndKey() == null) {
+            if (http.getTls().getCertificateAndKey() != null) {
+                String secretName = http.getTls().getCertificateAndKey().getSecretName();
+                // skipping if a volume mount with same Secret name was already added
+                if (volumeList.stream().noneMatch(v -> v.getName().equals(secretName))) {
+                    volumeList.add(VolumeUtils.createSecretVolume(secretName, secretName, isOpenShift));
+                }
+            } else {
                 LOGGER.warnCr(reconciliation, "The spec.http.tls.certificateAndKey property is missing. This is required when TLS is enabled for HTTP Bridge.");
                 throw new InvalidResourceException("The TLS configuration for the HTTP is not specified.");
-            }
-            // skipping if a volume mount with same Secret name was already added
-            if (volumeList.stream().noneMatch(v -> v.getName().equals(http.getTls().getCertificateAndKey().getSecretName()))) {
-                volumeList.add(VolumeUtils.createSecretVolume(http.getTls().getCertificateAndKey().getSecretName(), http.getTls().getCertificateAndKey().getSecretName(), isOpenShift));
             }
         }
 
@@ -354,14 +356,16 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         }
 
         if (http != null && http.getTls() != null) {
-            if (http.getTls().getCertificateAndKey() == null) {
+            if (http.getTls().getCertificateAndKey() != null) {
+                String secretName = http.getTls().getCertificateAndKey().getSecretName();
+                // skipping if a volume mount with same Secret name was already added
+                if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(secretName))) {
+                    volumeMountList.add(VolumeUtils.createVolumeMount(secretName,
+                            HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + secretName));
+                }
+            } else {
                 LOGGER.warnCr(reconciliation, "The spec.http.tls.certificateAndKey property is missing. This is required when TLS is enabled for HTTP Bridge.");
                 throw new InvalidResourceException("The TLS configuration for the HTTP is not specified.");
-            }
-            // skipping if a volume mount with same Secret name was already added
-            if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(http.getTls().getCertificateAndKey().getSecretName()))) {
-                volumeMountList.add(VolumeUtils.createVolumeMount(http.getTls().getCertificateAndKey().getSecretName(),
-                        HTTP_SERVER_CERTS_BASE_VOLUME_MOUNT + http.getTls().getCertificateAndKey().getSecretName()));
             }
         }
 
