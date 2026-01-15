@@ -36,13 +36,20 @@ public class ConnectCluster {
         return this;
     }
 
+    ConnectCluster addPluginPath(String path) {
+        this.pluginPath.add(path);
+        return this;
+    }
+
     public void startup() throws InterruptedException {
         for (int i = 0; i < numNodes; i++) {
             int port = TestUtils.getFreePort();
 
             Map<String, String> workerProps = new HashMap<>();
             workerProps.put("listeners", "http://localhost:" + port);
-            workerProps.put("plugin.path", String.join(",", pluginPath));
+            if (!pluginPath.isEmpty()) {
+                workerProps.put("plugin.path", String.join(",", pluginPath));
+            }
             workerProps.put("group.id", toString());
             workerProps.put("key.converter", "org.apache.kafka.connect.json.JsonConverter");
             workerProps.put("key.converter.schemas.enable", "false");
