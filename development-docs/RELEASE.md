@@ -16,6 +16,7 @@ The release process should normally look like this:
    * Update the product version in the `documentation/shared/attributes.adoc` file to the next version by setting the `ProductVersion` variable and also the previous version to the one you are releasing by setting the `ProductVersionPrevious` variable.
      Also check that the `BridgeVersion` and `OAuthVersion` variables have the correct values with the HTTP bridge and OAuth library currently in use.
    * Add a header for the next release to the `CHANGELOG.md` file
+   * Update the project [roadmap](https://github.com/orgs/strimzi/projects/4) (add the next version to the planned releases, make sure the current release is up to date, etc.)
 3. Move to the release branch and run `make clean`
 4. Run `RELEASE_VERSION=<desired version> make release`, for example `RELEASE_VERSION=0.45.0 make release`
    * For `RELEASE_VERISON` always use the GA version here (e.g. `0.45.0`) and not the RC version (e.g `0.45.0-rc1`)
