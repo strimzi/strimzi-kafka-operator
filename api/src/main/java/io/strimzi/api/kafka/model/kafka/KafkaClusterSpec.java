@@ -121,7 +121,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.metadataVersion = metadataVersion;
     }
 
-    @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ", and the following properties with listener prefix: " + ALLOWED_PER_LISTENER_CONFIGS + ").")
+    @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ", " +  ALLOWED_PER_LISTENER_CONFIGS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
