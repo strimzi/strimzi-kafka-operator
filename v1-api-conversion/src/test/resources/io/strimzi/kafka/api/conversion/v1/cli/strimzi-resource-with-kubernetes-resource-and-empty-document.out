@@ -1,0 +1,62 @@
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Read
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Describe
+    - resource:
+        type: group
+        name: my-group
+      operations:
+      - Read
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Write
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Create
+    - resource:
+        type: topic
+        name: my-topic
+      operations:
+      - Describe
+    - resource:
+        type: transactionalId
+        name: schema-registry-
+        patternType: prefix
+      operations:
+      - Describe
+    - resource:
+        type: transactionalId
+        name: schema-registry-
+        patternType: prefix
+      operations:
+      - Write
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connector-configuration
+data:
+  hello: world
