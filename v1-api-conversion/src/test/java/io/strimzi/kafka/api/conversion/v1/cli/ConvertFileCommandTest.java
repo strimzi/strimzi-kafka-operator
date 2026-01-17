@@ -171,7 +171,11 @@ public class ConvertFileCommandTest {
                 Arguments.of("mm2-many-mirrors.yaml", "mm2-many-mirrors.out"),
                 Arguments.of("kafka-v1beta2.yaml", "kafka-v1beta2.out"),
                 Arguments.of("kafka-all-out.yaml", "kafka-all-out.out"),
-                Arguments.of("kafka-up-to-date.yaml", "kafka-up-to-date.out")
+                Arguments.of("kafka-up-to-date.yaml", "kafka-up-to-date.out"),
+                Arguments.of("empty-yaml.yaml", "empty-yaml.out"),
+                Arguments.of("empty-yaml-with-doc-marker.yaml", "empty-yaml-with-doc-marker.out"),
+                Arguments.of("strimzi-resource-with-empty-document.yaml", "strimzi-resource-with-empty-document.out"),
+                Arguments.of("strimzi-resource-with-kubernetes-resource-and-empty-document.yaml", "strimzi-resource-with-kubernetes-resource-and-empty-document.out")
         );
     }
 

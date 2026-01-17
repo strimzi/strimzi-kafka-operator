@@ -94,7 +94,9 @@ public class ConvertFileCommand extends AbstractConversionCommand {
         for (JsonNode doc : docs)   {
             JsonNode result;
 
-            if (isStrimziResource(doc)) {
+            if (doc.isNull() || doc.isEmpty()) {
+                continue;
+            } else if (isStrimziResource(doc)) {
                 result = run(doc);
             } else {
                 result = doc;
