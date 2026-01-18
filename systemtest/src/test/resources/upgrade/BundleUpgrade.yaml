@@ -32,11 +32,11 @@
 #  toKafka: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, to which we are doing the upgrade
 #  --- Structure ---
 
-- fromVersion: 0.49.1
-  fromExamples: strimzi-0.49.1
+- fromVersion: 0.50.0
+  fromExamples: strimzi-0.50.0
   deployKafkaVersion: 4.1.1
-  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.49.1/strimzi-0.49.1.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.49.1/kafka-versions.yaml
+  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.0/strimzi-0.50.0.zip
+  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.50.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
     kafka: strimzi/kafka:latest-kafka-4.1.1
@@ -54,11 +54,11 @@
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
     toKafka: "/examples/kafka/kafka-persistent.yaml"
-- fromVersion: 0.49.1
-  fromExamples: strimzi-0.49.1
+- fromVersion: 0.50.0
+  fromExamples: strimzi-0.50.0
   deployKafkaVersion: 4.1.1
-  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.49.1/strimzi-0.49.1.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.49.1/kafka-versions.yaml
+  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.0/strimzi-0.50.0.zip
+  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.50.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
     kafka: strimzi/kafka:latest-kafka-4.1.1
@@ -76,11 +76,11 @@
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
     toKafka: "/examples/kafka/kafka-persistent.yaml"
-- fromVersion: 0.49.1
-  fromExamples: strimzi-0.49.1
+- fromVersion: 0.50.0
+  fromExamples: strimzi-0.50.0
   deployKafkaVersion: 4.1.1
-  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.49.1/strimzi-0.49.1.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.49.1/kafka-versions.yaml
+  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.50.0/strimzi-0.50.0.zip
+  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.50.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
     kafka: strimzi/kafka:latest-kafka-4.1.1
