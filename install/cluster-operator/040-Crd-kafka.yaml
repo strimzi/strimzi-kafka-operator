@@ -30,13 +30,17 @@ spec:
       description: The state of the custom resource
       jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
       type: string
-    - name: Metadata State
-      description: The state of the cluster metadata
-      jsonPath: .status.kafkaMetadataState
-      type: string
     - name: Warnings
       description: Warnings related to the custom resource
       jsonPath: ".status.conditions[?(@.type==\"Warning\")].status"
+      type: string
+    - name: Kafka version
+      description: The Kafka version used by the cluster
+      jsonPath: .status.kafkaVersion
+      type: string
+    - name: Metadata version
+      description: The Kafka metadata version used by the cluster
+      jsonPath: .status.kafkaMetadataVersion
       type: string
     schema:
       openAPIV3Schema:
@@ -1066,6 +1070,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       bootstrapService:
                         type: object
                         properties:
@@ -2539,6 +2545,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       topicOperatorContainer:
                         type: object
                         properties:
@@ -3675,6 +3683,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       apiService:
                         type: object
                         properties:
@@ -4699,6 +4709,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       container:
                         type: object
                         properties:
@@ -4966,13 +4978,17 @@ spec:
       description: The state of the custom resource
       jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
       type: string
-    - name: Metadata State
-      description: The state of the cluster metadata
-      jsonPath: .status.kafkaMetadataState
-      type: string
     - name: Warnings
       description: Warnings related to the custom resource
       jsonPath: ".status.conditions[?(@.type==\"Warning\")].status"
+      type: string
+    - name: Kafka version
+      description: The Kafka version used by the cluster
+      jsonPath: .status.kafkaVersion
+      type: string
+    - name: Metadata version
+      description: The Kafka metadata version used by the cluster
+      jsonPath: .status.kafkaMetadataVersion
       type: string
     schema:
       openAPIV3Schema:
@@ -6331,6 +6347,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       bootstrapService:
                         type: object
                         properties:
@@ -7757,6 +7775,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       clientService:
                         type: object
                         properties:
@@ -9013,6 +9033,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       topicOperatorContainer:
                         type: object
                         properties:
@@ -10363,6 +10385,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       apiService:
                         type: object
                         properties:
@@ -11521,6 +11545,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       container:
                         type: object
                         properties:
@@ -12395,6 +12421,8 @@ spec:
                                   persistentVolumeClaim: {}
                                   csi: {}
                                   image: {}
+                          hostUsers:
+                            type: boolean
                       service:
                         type: object
                         properties:
