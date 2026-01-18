@@ -139,7 +139,7 @@ kind: ConfigMap
 metadata:
   name: game-demo
 data:
-  player_initial_lives: 3
+  player_initial_lives: "3"
   ui_properties_file_name: user-interface.properties
   game.properties: |
     enemy.types=aliens,monsters

@@ -47,10 +47,10 @@ spec:
       resources:
         limits:
           memory: 256Mi
-          cpu: 500m
+          cpu: "0.5"
         requests:
           memory: 256Mi
-          cpu: 200m
+          cpu: "0.2"
     userOperator:
       reconciliationIntervalMs: 30000
       resources:

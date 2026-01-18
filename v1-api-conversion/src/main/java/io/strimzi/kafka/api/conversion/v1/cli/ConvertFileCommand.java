@@ -85,7 +85,10 @@ public class ConvertFileCommand extends AbstractConversionCommand {
      */
     protected String run(byte[] data) throws IOException {
         YAMLFactory yamlFactory = new YAMLFactory();
-        YAMLMapper yamlMapper = new YAMLMapper(yamlFactory.enable(YAMLGenerator.Feature.MINIMIZE_QUOTES));
+        yamlFactory.enable(YAMLGenerator.Feature.MINIMIZE_QUOTES);
+        yamlFactory.enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS);
+
+        YAMLMapper yamlMapper = new YAMLMapper(yamlFactory);
         YAMLParser yamlParser = yamlFactory.createParser(data);
         List<JsonNode> docs = yamlMapper.readValues(yamlParser, JSON_NODE_TYPE_REFERENCE).readAll();
 
