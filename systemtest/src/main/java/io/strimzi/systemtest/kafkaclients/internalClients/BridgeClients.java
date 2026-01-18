@@ -4,12 +4,15 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
@@ -128,6 +131,20 @@ public class BridgeClients extends KafkaClients {
         return this.defaultProducerStrimziBridge().build();
     }
 
+    public Job producerTlsStrimziBridge(final String clusterName) {
+        return defaultProducerStrimziBridge()
+                .editSpec()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .addToEnv(this.getCaCertEnv(clusterName))
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .build();
+    }
+
     public JobBuilder defaultConsumerStrimziBridge() {
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", this.getConsumerName());
@@ -193,8 +210,36 @@ public class BridgeClients extends KafkaClients {
                 .endTemplate()
             .endSpec();
     }
-
     public Job consumerStrimziBridge() {
         return this.defaultConsumerStrimziBridge().build();
+    }
+
+    public Job consumerTlsStrimziBridge(final String clusterName) {
+        return defaultConsumerStrimziBridge()
+                .editSpec()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .addToEnv(this.getCaCertEnv(clusterName))
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .build();
+    }
+
+    protected EnvVar getCaCertEnv(String clusterName) {
+        final String caSecretName = this.getCaCertSecretName() == null || this.getCaCertSecretName().isEmpty() ?
+                KafkaBridgeResources.serviceName(clusterName) : this.getCaCertSecretName();
+
+        return new EnvVarBuilder()
+                .withName("CA_CRT")
+                .withNewValueFrom()
+                .withNewSecretKeyRef()
+                .withName(caSecretName)
+                .withKey("ca.crt")
+                .endSecretKeyRef()
+                .endValueFrom()
+                .build();
     }
 }
