@@ -50,6 +50,23 @@ tests:
           path: spec.template.spec.containers[0].image
           pattern: 'quay.io/strimzi/operator:(latest|[0-9]+\.[0-9]+\.[0-9]+)'
 
+  - it: should not set hostUsers by default
+    asserts:
+      - isKind:
+          of: Deployment
+      - notExists:
+          path: spec.template.spec.hostUsers
+
+  - it: should allow override of hostUsers to true
+    set:
+      hostUsers: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.hostUsers
+          value: true
+
   - it: should have custom image if details are provided
     set:
       image:

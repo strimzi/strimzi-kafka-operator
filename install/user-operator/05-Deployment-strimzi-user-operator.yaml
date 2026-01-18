@@ -22,7 +22,7 @@ spec:
             sizeLimit: 5Mi
       containers:
         - name: strimzi-user-operator
-          image: quay.io/strimzi/operator:0.49.1
+          image: quay.io/strimzi/operator:0.50.0
           args:
             - /opt/strimzi/bin/user_operator_run.sh
           volumeMounts:

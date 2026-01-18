@@ -10,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.49.1
+defaultImageTag: 0.50.0
 
 image:
   registry: ""
@@ -45,6 +45,7 @@ deploymentAnnotations: {}
 deploymentStrategy: {}
 priorityClassName: ""
 
+hostUsers: NULL
 podSecurityContext: {}
 securityContext: {}
 rbac:
@@ -77,6 +78,27 @@ podDisruptionBudget:
   minAvailable: 1
   maxUnavailable:
   unhealthyPodEvictionPolicy: IfHealthyBudget
+
+operatorNetworkPolicy:
+  # If enabled, this will generate a networkPolicy for the strimzi-operator.
+  # This flag DOES NOT control operator generated networkPolicies!
+  # This flag ONLY controls access for the strimzi-operator deployment.
+  enabled: false
+  # For ingress we permit access to the metrics endpoint
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: http
+  # The operator must communicate with DNS, the Kubernetes API server,
+  # and all managed Kafka components.
+  #
+  # The operands use numerous ports that differ per component and may exist in
+  # "arbitrary" namespaces. This makes a generic egress NetworkPolicy
+  # impractical to define. Thus we set `{}` an unrestrictred value.
+  #
+  # Any meaningful network restrictions must be defined per cluster,
+  # with a full knowledge of the Kafka topology and port configuration.
+  egress: {}
 
 # If you are using the grafana dashboard sidecar,
 # you can import some default dashboards here
