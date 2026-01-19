@@ -100,10 +100,10 @@ spec:
       resources:
         requests:
           memory: 256Mi
-          cpu: 200m
+          cpu: "0.2"
         limits:
           memory: 256Mi
-          cpu: 500m
+          cpu: "0.5"
     userOperator:
       reconciliationIntervalSeconds: 30
       zookeeperSessionTimeoutSeconds: 15
