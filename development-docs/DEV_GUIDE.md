@@ -383,6 +383,7 @@ The build can be customised by:
 Other build options:
 
 - [Local build on Minikube](#local-build-on-minikube)
+- [Local build on Kind](#local-build-on-kind)
 
 #### Kafka versions
 
