@@ -19,6 +19,7 @@ This document gives a detailed breakdown of the various build processes and opti
    - [Docker build options](#docker-build-options)
    - [Build customization](#build-customization)
    - [Local build on Minikube](#local-build-on-minikube)
+   - [Local build on Kind](#local-build-on-kind)
 - [Helm Chart](#helm-chart)
 - [Running system tests](#running-system-tests)
 - [DCO Signoff](#dco-signoff)
@@ -422,6 +423,69 @@ This labels your latest container build as `strimzi/operator:latest` and you can
 changing the image targets. However, this will only work if all instances of the `imagePullPolicy:` setting are set
 to `IfNotPresent` or `Never`. If not, then the cluster nodes will go to the upstream registry (Docker Hub by default)
 and pull the official images instead of using your freshly built image.
+
+### Local build on Kind
+
+[Kind](https://kind.sigs.k8s.io/) (Kubernetes in Docker) is another option for local development. 
+Kind can be configured with a local registry, which allows you to push images directly without needing an external registry.
+
+#### Setting up Kind with a local registry
+
+Follow the [Kind documentation for local registry](https://kind.sigs.k8s.io/docs/user/local-registry/) to create
+a cluster with an integrated registry.
+This typically creates a registry accessible at `localhost:5001` from your host machine.
+
+Alternatively, you can use the [kind-script](https://github.com/see-quick/kind-script) utility which provides an idempotent
+Kind cluster setup with additional features:
+- Local container registry with insecure registry configuration (`--configure-insecure`)
+- Docker and Podman support (`--docker-cmd podman`)
+- IPv4/IPv6/dual-stack networking (`--ip-family`)
+- Cloud provider for LoadBalancer support
+- Configurable number of control plane and worker nodes
+
+Example:
+```bash
+./kind-cluster.sh create --configure-insecure --workers 3
+```
+
+Once the registry is running, determine its IP address on the Kind network:
+
+```bash
+docker inspect -f '{{.NetworkSettings.Networks.kind.IPAddress}}' kind-registry
+```
+
+Set environment variables for the registry:
+
+```bash
+export KIND_REGISTRY_CLUSTER=<registry-ip>:5000    # For pulling from cluster nodes
+```
+
+#### Building and pushing images to the local registry
+
+1. Build the Java artifacts:
+
+        mvn clean install -DskipTests -DskipITs
+
+2. Build the Docker images:
+
+        make docker_build
+
+   For Apple Silicon (arm64), set the architecture:
+
+        DOCKER_ARCHITECTURE=arm64 make docker_build
+
+3. Tag and push to the local registry:
+
+        docker tag strimzi/operator:latest ${KIND_REGISTRY_CLUSTER}/strimzi/operator:latest
+        docker push ${KIND_REGISTRY_CLUSTER}/strimzi/operator:latest
+
+   Repeat for other images as needed (e.g., `strimzi/kafka`).
+
+#### Configuring the cluster to use local images
+
+Update `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` to use your local
+registry. 
+Replace image references from `quay.io/strimzi/...` to `${KIND_REGISTRY_CLUSTER}/strimzi/...`.
 
 ## Helm Chart
 
