@@ -23,7 +23,7 @@ import java.util.function.BiConsumer;
  * Provides common ExecutorService management and concurrent processing patterns
  * used by both TopicOperator and UserOperator performance tests.
  */
-public final class PerformanceTestExecutor {
+public final class PerformanceTestExecutorService {
 
     private static final Logger LOGGER = LogManager.getLogger(PerformanceTestExecutor.class);
     private static final int CONCURRENCY_HINT = Runtime.getRuntime().availableProcessors() * 10;
