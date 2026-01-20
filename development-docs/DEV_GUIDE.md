@@ -444,7 +444,7 @@ Kind cluster setup with additional features:
 - Cloud provider for LoadBalancer support
 - Configurable number of control plane and worker nodes
 
-Example:
+Example using `kind-script.sh`:
 ```bash
 ./kind-cluster.sh create --configure-insecure --workers 3
 ```
@@ -458,35 +458,30 @@ docker inspect -f '{{.NetworkSettings.Networks.kind.IPAddress}}' kind-registry
 Set environment variables for the registry:
 
 ```bash
-export KIND_REGISTRY_CLUSTER=<registry-ip>:5000    # For pulling from cluster nodes
+export DOCKER_REGISTRY=<registry-ip>:5000    # For pulling from cluster nodes
 ```
 
 #### Building and pushing images to the local registry
 
-1. Build the Java artifacts:
+Build and push all images to the local registry using:
 
-        mvn clean install -DskipTests -DskipITs
+```bash
+make all
+```
 
-2. Build the Docker images:
+For Apple Silicon (arm64), set the architecture:
 
-        make docker_build
+```bash
+DOCKER_ARCHITECTURE=arm64 make all
+```
 
-   For Apple Silicon (arm64), set the architecture:
-
-        DOCKER_ARCHITECTURE=arm64 make docker_build
-
-3. Tag and push to the local registry:
-
-        docker tag strimzi/operator:latest ${KIND_REGISTRY_CLUSTER}/strimzi/operator:latest
-        docker push ${KIND_REGISTRY_CLUSTER}/strimzi/operator:latest
-
-   Repeat for other images as needed (e.g., `strimzi/kafka`).
+This builds all Java artifacts and Docker images, then tags and pushes them to the registry specified by `DOCKER_REGISTRY`.
 
 #### Configuring the cluster to use local images
 
 Update `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` to use your local
 registry. 
-Replace image references from `quay.io/strimzi/...` to `${KIND_REGISTRY_CLUSTER}/strimzi/...`.
+Replace image references from `quay.io/strimzi/...` to `${DOCKER_REGISTRY}/strimzi/...`.
 
 ## Helm Chart
 
