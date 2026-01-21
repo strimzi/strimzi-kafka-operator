@@ -474,7 +474,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "violations",
+            "axisLabel": "violations/sec",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -544,17 +544,17 @@
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
-          "expr": "round(max_over_time(increase(kafka_cruisecontrol_anomalydetector_goal_violation_rate_count{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-cruise-control-.*\"}[5m])[1m:]))",
+          "expr": "sum(irate(kafka_cruisecontrol_anomalydetector_goal_violation_rate_count{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-cruise-control-.*\"}[5m]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "Goal Violations",
+          "legendFormat": "Goal Violation Rate",
           "refId": "A"
         }
       ],
-      "title": "Goal Violations",
+      "title": "Goal Violation Rate",
       "type": "timeseries"
     },
     {
