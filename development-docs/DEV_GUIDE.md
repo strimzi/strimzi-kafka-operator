@@ -441,7 +441,7 @@ Kind cluster setup with additional features:
 - Local container registry with insecure registry configuration (`--configure-insecure`)
 - Docker and Podman support (`--docker-cmd podman`)
 - IPv4/IPv6/dual-stack networking (`--ip-family`)
-- Cloud provider for LoadBalancer support
+- Cloud provider for LoadBalancer support (note: the containerized version [only works with Docker](https://github.com/kubernetes-sigs/cloud-provider-kind/issues/221), not Podman)
 - Configurable number of control plane and worker nodes
 
 Example using `kind-script.sh`:
