@@ -139,7 +139,7 @@ public class UserOperatorPerformanceUtils {
      * @return                      The total time taken to complete all user lifecycles in milliseconds.
      */
     public static long processAllUsersConcurrently(TestStorage testStorage, int numberOfUsers, int spareEvents, int warmUpTasksToProcess) {
-        return PerformanceTestExecutor.processResourcesConcurrently(
+        return PerformanceTestExecutorService.processResourcesConcurrently(
             numberOfUsers,
             spareEvents,
             warmUpTasksToProcess,
@@ -152,7 +152,7 @@ public class UserOperatorPerformanceUtils {
      * Stops the shared executor service gracefully.
      */
     public static void stopExecutor() {
-        PerformanceTestExecutor.stopExecutor();
+        PerformanceTestExecutorService.stopExecutor();
     }
 
     /**

@@ -25,14 +25,14 @@ import java.util.function.BiConsumer;
  */
 public final class PerformanceTestExecutorService {
 
-    private static final Logger LOGGER = LogManager.getLogger(PerformanceTestExecutor.class);
+    private static final Logger LOGGER = LogManager.getLogger(PerformanceTestExecutorService.class);
     private static final int CONCURRENCY_HINT = Runtime.getRuntime().availableProcessors() * 10;
     private static final long COOLDOWN_PERIOD_MS = 5_000;
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT_SECONDS = 5;
 
     private static ExecutorService executorService = createFixedThreadPool();
 
-    private PerformanceTestExecutor() { } // Prevent instantiation
+    private PerformanceTestExecutorService() { } // Prevent instantiation
 
     /**
      * Creates a new fixed thread pool executor.

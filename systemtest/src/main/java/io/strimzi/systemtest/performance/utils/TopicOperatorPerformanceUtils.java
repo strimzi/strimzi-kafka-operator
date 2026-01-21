@@ -66,7 +66,7 @@ public class TopicOperatorPerformanceUtils {
      * @param numberOfTopics The total number of Kafka topics to process.
      */
     public static void processKafkaTopicBatchesAsync(TestStorage testStorage, int numberOfTopics) {
-        final int threadPoolSize = PerformanceTestExecutor.getThreadPoolSize();
+        final int threadPoolSize = PerformanceTestExecutorService.getThreadPoolSize();
         final int topicsPerBatch = (numberOfTopics + threadPoolSize - 1) / threadPoolSize; // Ensures all topics are covered
 
         final ExtensionContext currentContext = KubeResourceManager.get().getTestContext();
@@ -96,9 +96,9 @@ public class TopicOperatorPerformanceUtils {
      */
     private static CompletableFuture<Void> processBatch(int start, int end, ExtensionContext currentContext,
                                                         TestStorage testStorage) {
-        return CompletableFuture.runAsync(() -> performCreationWithWait(start, end, currentContext, testStorage), PerformanceTestExecutor.getExecutorService())
-            .thenRunAsync(() -> performModificationWithWait(start, end, currentContext, testStorage, KAFKA_TOPIC_CONFIG_TO_MODIFY), PerformanceTestExecutor.getExecutorService())
-            .thenRunAsync(() -> performDeletionWithWait(start, end, currentContext, testStorage), PerformanceTestExecutor.getExecutorService())
+        return CompletableFuture.runAsync(() -> performCreationWithWait(start, end, currentContext, testStorage), PerformanceTestExecutorService.getExecutorService())
+            .thenRunAsync(() -> performModificationWithWait(start, end, currentContext, testStorage, KAFKA_TOPIC_CONFIG_TO_MODIFY), PerformanceTestExecutorService.getExecutorService())
+            .thenRunAsync(() -> performDeletionWithWait(start, end, currentContext, testStorage), PerformanceTestExecutorService.getExecutorService())
             .exceptionally(ex -> {
                 LOGGER.error("Error processing batch from {} to {}: {}", start, end, ex.getMessage(), ex);
                 return null;
@@ -195,7 +195,7 @@ public class TopicOperatorPerformanceUtils {
      * @return                      The total time taken to complete all topic lifecycles in milliseconds.
      */
     public static long processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics, int spareEvents, int warmUpTasksToProcess) {
-        return PerformanceTestExecutor.processResourcesConcurrently(
+        return PerformanceTestExecutorService.processResourcesConcurrently(
             numberOfTopics,
             spareEvents,
             warmUpTasksToProcess,
@@ -208,7 +208,7 @@ public class TopicOperatorPerformanceUtils {
      * Stops the shared executor service gracefully.
      */
     public static void stopExecutor() {
-        PerformanceTestExecutor.stopExecutor();
+        PerformanceTestExecutorService.stopExecutor();
     }
 
     /**
