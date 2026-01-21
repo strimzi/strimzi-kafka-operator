@@ -469,13 +469,11 @@ Build and push all images to the local registry using:
 make all
 ```
 
-For Apple Silicon (arm64), set the architecture:
-
-```bash
-DOCKER_ARCHITECTURE=arm64 make all
-```
-
 This builds all Java artifacts and Docker images, then tags and pushes them to the registry specified by `DOCKER_REGISTRY`.
+
+> [!NOTE]
+> When using a Kind cluster with an insecure registry, you may encounter the error `http: server gave HTTP response to HTTPS client` during the build process.
+> To resolve this, either push images using the `--tls-verify=false` option, or configure your Kind cluster with a secure registry (i.e., using HTTPS instead HTTP).
 
 #### Configuring the cluster to use local images
 
