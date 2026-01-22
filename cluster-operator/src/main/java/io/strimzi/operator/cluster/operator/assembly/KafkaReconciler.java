@@ -467,7 +467,6 @@ public class KafkaReconciler {
     ) {
         return new KafkaRoller(
                     reconciliation,
-                    vertx,
                     podOperator,
                     1_000,
                     operationTimeoutMs,

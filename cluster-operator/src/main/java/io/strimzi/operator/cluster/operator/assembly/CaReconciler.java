@@ -496,7 +496,6 @@ public class CaReconciler {
 
     /* test */ KafkaRoller createKafkaRoller(Set<NodeRef> nodes, TlsPemIdentity coTlsPemIdentity) {
         return new KafkaRoller(reconciliation,
-                vertx,
                 podOperator,
                 1_000,
                 operationTimeoutMs,
