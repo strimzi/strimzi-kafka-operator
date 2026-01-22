@@ -17,13 +17,12 @@ import java.util.List;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.oneOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KafkaConfigurationTests {
 
@@ -156,13 +155,10 @@ public class KafkaConfigurationTests {
                 .withType(KafkaListenerType.INTERNAL)
                 .build();
 
-        var modifiedExceptionList = KafkaConfiguration.modifyWithListeners(List.of(listener1));
+        List<String> modifiedExceptionList = KafkaConfiguration.modifyWithListeners(List.of(listener1));
 
-        assertTrue(modifiedExceptionList.contains("listener.name.listener1-9900.connections.max.reauth.ms"));
-        modifiedExceptionList.remove("listener.name.listener1-9900.connections.max.reauth.ms");
-        assertTrue(modifiedExceptionList.contains("listener.name.listener1-9900.max.connections"));
-        modifiedExceptionList.remove("listener.name.listener1-9900.max.connections");
-
-        assertThat(modifiedExceptionList.toString(), not(containsString(" listener.name.")));
+        assertThat(modifiedExceptionList, hasItems("listener.name.listener1-9900.connections.max.reauth.ms",
+                "listener.name.listener1-9900.max.connections",
+                "listener.name.listener1-9900.max.connection.creation.rate"));
     }
 }

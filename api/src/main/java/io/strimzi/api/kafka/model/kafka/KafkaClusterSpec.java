@@ -80,7 +80,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     /* When ALLOWED_PER_LISTENER_CONFIGS is updated, documentation/api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc must be updated accordingly. */
     public static final String ALLOWED_PER_LISTENER_CONFIGS  = "connections.max.reauth.ms, max.connections, max.connection.creation.rate";
 
-    protected Storage storage;
+    private Storage storage;
     private String version;
     private String metadataVersion;
     private Map<String, Object> config = new HashMap<>(0);
@@ -124,7 +124,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.metadataVersion = metadataVersion;
     }
 
-    @Description("Kafka broker config properties with the certain prefixes cannot be set unless it is in the exception list. Consult the documentation for the list of forbidden prefixes and exceptions")
+    @Description("Kafka broker config properties with certain prefixes cannot be set unless it is in the exception list. Consult the documentation for the list of forbidden prefixes and exceptions")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;

@@ -379,7 +379,7 @@ spec:
                   config:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object
-                    description: Kafka broker config properties with the certain prefixes cannot be set unless it is in the exception list. Consult the documentation for the list of forbidden prefixes and exceptions.
+                    description: Kafka broker config properties with certain prefixes cannot be set unless it is in the exception list. Consult the documentation for the list of forbidden prefixes and exceptions.
                   authorization:
                     type: object
                     properties:

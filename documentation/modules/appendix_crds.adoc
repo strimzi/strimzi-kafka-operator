@@ -89,7 +89,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |Configures listeners to provide access to Kafka brokers.
 |config
 |map
-|Kafka broker config properties with the certain prefixes cannot be set unless it is in the exception list. Consult the documentation for the list of forbidden prefixes and exceptions.
+|Kafka broker config properties with certain prefixes cannot be set unless it is in the exception list. Consult the documentation for the list of forbidden prefixes and exceptions.
 |storage
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
 |**The `storage` property has been deprecated.** Use `KafkaNodePool` resources. Storage is now configured in the `KafkaNodePool` resources and this option is ignored.
