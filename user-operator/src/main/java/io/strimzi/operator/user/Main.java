@@ -84,6 +84,9 @@ public class Main {
         Admin adminClient = createAdminClient(config, secretOperator, new DefaultAdminClientProvider());
         var kafkaUserCrdOperator = new CrdOperator<>(kafkaUserOperatorExecutor, client, KafkaUser.class, KafkaUserList.class, "KafkaUser");
 
+        String kubeVersion = Util.getKubernetesVersion(client);
+        LOGGER.info("Connected to Kubernetes API server, version={}", kubeVersion);
+
         KafkaUserOperator kafkaUserOperator = new KafkaUserOperator(
                 config,
                 new OpenSslCertManager(),

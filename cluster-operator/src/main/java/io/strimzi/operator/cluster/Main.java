@@ -83,6 +83,9 @@ public class Main {
         MetricsProvider metricsProvider = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-cluster-operator", strimziVersion).build();
 
+        String kubeVersion = Util.getKubernetesVersion(client);
+        LOGGER.info("Connected to Kubernetes API server, version={}", kubeVersion);
+
         startHealthServer(vertx, metricsProvider)
                 .compose(i -> leaderElection(vertx, client, config, shutdownHook))
                 .compose(i -> createPlatformFeaturesAvailability(vertx, client))

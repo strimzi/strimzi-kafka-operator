@@ -5,6 +5,8 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import org.quartz.CronExpression;
@@ -119,6 +121,23 @@ public class Util {
         }
 
         LOGGER.infoOp("Using config:\n" + sb);
+    }
+
+    /**
+     * Returns the Kubernetes API server Git version.
+     * Useful as a sanity check to confirm connectivity.
+     *
+     * @param client Fabric8 Kubernetes client
+     * @return Kubernetes Git version (e.g. v1.29.1)
+     */
+    public static String getKubernetesVersion(KubernetesClient client) {
+        VersionInfo version = client.getVersion();
+
+        if (version == null || version.getGitVersion() == null) {
+            throw new IllegalStateException("Failed to retrieve Kubernetes version from API server");
+        }
+
+        return version.getGitVersion();
     }
 
     /**
@@ -264,7 +283,7 @@ public class Util {
     public static String encodeToBase64(String data)  {
         return Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.US_ASCII));
     }
-    
+
     /**
      * Decodes a byte[] from Base64.
      *
@@ -275,7 +294,7 @@ public class Util {
     public static byte[] decodeBytesFromBase64(String data)  {
         return Base64.getDecoder().decode(data);
     }
-    
+
     /**
      * Decodes a byte[] from Base64.
      *
@@ -297,7 +316,7 @@ public class Util {
     public static String decodeFromBase64(String data)  {
         return decodeFromBase64(data, StandardCharsets.US_ASCII);
     }
-    
+
     /**
      * Decodes a String from Base64.
      *
