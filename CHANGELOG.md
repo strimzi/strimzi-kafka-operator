@@ -4,6 +4,11 @@
 
 * Nothing here yet, but we will surely develop something new pretty soon 😉
 
+### Major changes, deprecations, and removals
+
+* **From Strimzi 0.51 on, we support only Kubernetes 1.30 and newer.**
+  Kubernetes 1.27, 1.28, and 1.29 are not supported anymore.
+
 ## 0.50.0
 
 * Use Java 21 as the runtime and language level

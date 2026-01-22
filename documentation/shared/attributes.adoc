@@ -18,7 +18,7 @@
 :ProductVersionPrevious: 0.50.0
 
 // Kubernetes versions
-:KubernetesVersion: 1.27 and later
+:KubernetesVersion: 1.30 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
 :DefaultKafkaVersion: 4.1.1
@@ -112,7 +112,7 @@
 :K8sLivenessReadinessProbes: link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Configure Liveness and Readiness Probes^]
 
 // Kubernetes networking and security
-:K8sNetworkPolicyPeerAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer API reference^]
+:K8sNetworkPolicyPeerAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer API reference^]
 :K8sServiceDiscovery: link:https://kubernetes.io/docs/concepts/services-networking/service/#discovering-services[Discovering services^]
 :K8sSecurityContext: link:https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security context^]
 :K8sSecurityStandards: link:https://kubernetes.io/docs/concepts/security/pod-security-standards/[Pod security standards^]

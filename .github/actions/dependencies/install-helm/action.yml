@@ -9,5 +9,5 @@ runs:
       run: "${{ github.action_path }}/../../../../.azure/scripts/setup-helm.sh"
       env:
         # TODO - update versions in the upcoming PRs
-        TEST_HELM3_VERSION: v3.15.4
-        TEST_HELM_UNITTEST_VERSION: v0.5.2
+        TEST_HELM3_VERSION: v3.20.0
+        TEST_HELM_UNITTEST_VERSION: v1.0.3

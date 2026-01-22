@@ -3,11 +3,11 @@ set -xe
 
 rm -rf ~/.kube
 
-KIND_VERSION=${KIND_VERSION:-"v0.29.0"}
-KIND_CLOUD_PROVIDER_VERSION=${KIND_CLOUD_PROVIDER_VERSION:-"v0.6.0"}
+KIND_VERSION=${KIND_VERSION:-"v0.31.0"}
+KIND_CLOUD_PROVIDER_VERSION=${KIND_CLOUD_PROVIDER_VERSION:-"v0.10.0"}
 # To properly upgrade Kind version check the releases in github https://github.com/kubernetes-sigs/kind/releases and use proper image based on Kind version
-KIND_LATEST_DEFAULT_IMAGE="kindest/node:v1.33.1@sha256:050072256b9a903bd914c0b2866828150cb229cea0efe5892e2b644d5dd3b34f"
-KIND_OLDEST_DEFAULT_IMAGE="kindest/node:v1.27.16@sha256:2d21a61643eafc439905e18705b8186f3296384750a835ad7a005dceb9546d20"
+KIND_LATEST_DEFAULT_IMAGE="kindest/node:v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f"
+KIND_OLDEST_DEFAULT_IMAGE="kindest/node:v1.30.13@sha256:397209b3d947d154f6641f2d0ce8d473732bd91c87d9575ade99049aa33cd648"
 KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-$KIND_LATEST_DEFAULT_IMAGE}
 # Replace latest as one special version
 if [[ "${KIND_NODE_IMAGE}" == "latest" ]]; then
