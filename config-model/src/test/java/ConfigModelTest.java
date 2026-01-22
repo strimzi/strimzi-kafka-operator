@@ -114,8 +114,24 @@ public class ConfigModelTest {
                 is(singletonList("test contains values [baz] which are not in the allowed items [foo, bar]")));
         assertThat(cm.validate("test", " foo , bar, baz "),
                 is(singletonList("test contains values [baz] which are not in the allowed items [foo, bar]")));
+        // " foo , bar,," contains duplicate empty strings, so duplicate check triggers first
         assertThat(cm.validate("test", " foo , bar,,"),
-                is(singletonList("test contains values [] which are not in the allowed items [foo, bar]")));
+                is(singletonList("test contains duplicate values")));
+        // Test empty items list, should allow any values (Kafka 4.2.0+ behavior with ValidList.anyNonDuplicateValues)
+        cm.setItems(emptyList());
+        assertThat(cm.validate("test", "foo"), is(emptyList()));
+        assertThat(cm.validate("test", "foo,bar,baz"), is(emptyList()));
+        assertThat(cm.validate("test", "TLSv1.1,TLSv1.2,TLSv1.3"), is(emptyList()));
+        // Test duplicate values, should be rejected (Kafka 4.2.0+ behavior with ValidList.anyNonDuplicateValues rejects duplicates)
+        assertThat(cm.validate("test", "foo,bar,foo"),
+                is(singletonList("test contains duplicate values")));
+        assertThat(cm.validate("test", "TLSv1.2,TLSv1.2"),
+                is(singletonList("test contains duplicate values")));
+        // Test empty individual values, should be rejected (Kafka's ValidList rejects empty values)
+        assertThat(cm.validate("test", "foo,,bar"),
+                is(singletonList("test contains empty values")));
+        assertThat(cm.validate("test", "TLSv1.2,,TLSv1.3"),
+                is(singletonList("test contains empty values")));
     }
 
     @Test
