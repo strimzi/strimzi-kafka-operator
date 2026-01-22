@@ -112,7 +112,7 @@ spec:
   *claimRef:*
     *apiVersion: v1*
     *kind: PersistentVolumeClaim*
-    *name: data-0-my-cluster-kafka-2*
+    *name: data-0-my-cluster-broker-0*
     *namespace: myproject*
     *resourceVersion: "39113"*
     *uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea*
@@ -140,7 +140,7 @@ In the example, the following properties are deleted:
 claimRef:
   apiVersion: v1
   kind: PersistentVolumeClaim
-  name: data-0-my-cluster-broker-2
+  name: data-0-my-cluster-broker-0
   namespace: myproject
   resourceVersion: "39113"
   uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea
@@ -184,7 +184,7 @@ Otherwise, you can retrieve it from one of the volumes by spinning up a temporar
 +
 [source,shell]
 ----
-PVC_NAME="data-0-my-cluster-kafka-0"
+PVC_NAME="data-0-my-cluster-broker-0"
 COMMAND="grep cluster.id /disk/kafka-log*/meta.properties | awk -F'=' '{print \$2}'"
 kubectl run tmp -itq --rm --restart "Never" --image "foo" --overrides "{\"spec\":
   {\"containers\":[{\"name\":\"busybox\",\"image\":\"busybox\",\"command\":[\"/bin/sh\",
