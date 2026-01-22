@@ -464,7 +464,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Goal Violations",
+      "description": "Goal violations per anomaly detector execution. The 5-minute window matches the detector’s default run interval to preserve discrete per run counts",
       "fieldConfig": {
         "defaults": {
           "color": {
