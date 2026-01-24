@@ -11,8 +11,10 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.VersionInfo;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
@@ -36,6 +38,7 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.CrdUtils;
@@ -46,6 +49,7 @@ import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -186,6 +190,10 @@ public class StrimziPodSetControllerIT {
                                 .withImage("quay.io/scholzj/busybox:latest") // Quay.io is used to avoid Docker Hub limits
                                 .withCommand("sleep", "3600")
                                 .withImagePullPolicy("IfNotPresent")
+                                .withNewResources()
+                                    .withRequests(Map.of("cpu", new Quantity("50m"), "memory", new Quantity("50Mi")))
+                                    .withLimits(Map.of("cpu", new Quantity("70m"), "memory", new Quantity("70Mi")))
+                                .endResources()
                                 .build())
                         .withRestartPolicy("Always")
                         .withTerminationGracePeriodSeconds(0L)
@@ -193,6 +201,7 @@ public class StrimziPodSetControllerIT {
                     .build();
 
         pod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, PodRevision.getRevision(Reconciliation.DUMMY_RECONCILIATION, pod));
+        pod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, PodRevision.getResourceRevision(Reconciliation.DUMMY_RECONCILIATION, pod));
 
         return pod;
     }
@@ -662,6 +671,109 @@ public class StrimziPodSetControllerIT {
         } finally {
             podSetOp().inNamespace(NAMESPACE).withName(podSetName).delete();
             client.pods().inNamespace(NAMESPACE).withName(podName).delete();
+        }
+    }
+
+    /**
+     * Tests in-place updates to Kubernetes resources
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testInPlacePodResizing(VertxTestContext context) {
+        VersionInfo version = client.getKubernetesVersion();
+        System.out.println("Kubernetes version: " + version.getMajor() + "." + version.getMinor());
+        Assumptions.assumeTrue(Integer.parseInt(version.getMajor()) >= 1 && Integer.parseInt(version.getMinor()) >= 35);
+
+        String podSetName = "pod-resizing";
+        String podName = podSetName + "-0";
+
+        try {
+            Pod originalPod = pod(podName, KAFKA_NAME, podSetName);
+            StrimziPodSet originalPodSet = new StrimziPodSetBuilder(podSet(podSetName, KAFKA_NAME, originalPod))
+                    .editMetadata()
+                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true")
+                    .endMetadata()
+                    .build();
+            podSetOp().inNamespace(NAMESPACE).resource(originalPodSet).create();
+
+            // Wait until the pod is ready
+            TestUtils.waitFor(
+                    "Wait for Pod to be ready",
+                    100,
+                    10_000,
+                    () -> client.pods().inNamespace(NAMESPACE).withName(podName).isReady(),
+                    () -> context.failNow("Test timed out waiting for pod readiness!"));
+
+            // Check status of the PodSet
+            TestUtils.waitFor(
+                    "Wait for StrimziPodSetStatus",
+                    100,
+                    10_000,
+                    () -> {
+                        StrimziPodSet podSet = podSetOp().inNamespace(NAMESPACE).withName(podSetName).get();
+                        return podSet.getStatus().getCurrentPods() == 1
+                                && podSet.getStatus().getReadyPods() == 1
+                                && podSet.getStatus().getPods() == 1;
+                    },
+                    () -> context.failNow("Pod stats do not match"));
+
+            // Update the pod with a new resources and resource revision
+            Pod updatedPod = new PodBuilder(pod(podName, KAFKA_NAME, podSetName))
+                    .editMetadata()
+                        .removeFromAnnotations(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION)
+                        .addToAnnotations(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "new-revision")
+                    .endMetadata()
+                    .editSpec()
+                        .editFirstContainer()
+                            .withNewResources()
+                                .withRequests(Map.of("cpu", new Quantity("50m"), "memory", new Quantity("50Mi")))
+                                .withLimits(Map.of("cpu", new Quantity("75m"), "memory", new Quantity("75Mi")))
+                            .endResources()
+                        .endContainer()
+                    .endSpec()
+                    .build();
+            StrimziPodSet updatedPodSet = new StrimziPodSetBuilder(podSet(podSetName, KAFKA_NAME, updatedPod))
+                    .editMetadata()
+                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true")
+                    .endMetadata()
+                    .build();
+            podSetOp().inNamespace(NAMESPACE).resource(updatedPodSet).update();
+
+            // Wait or the Pod to be resized
+            TestUtils.waitFor(
+                    "Wait for Pod update",
+                    100,
+                    10_000,
+                    () -> {
+                        Pod pod = client.pods().inNamespace(NAMESPACE).withName(podName).get();
+                        return "new-revision".equals(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION));
+                    },
+                    () -> context.failNow("Pod revisions do not match"));
+
+            // Wait or the Pod to be resized
+            TestUtils.waitFor(
+                    "Wait for Pod resizing",
+                    100,
+                    10_000,
+                    () -> {
+                        Pod pod = client.pods().inNamespace(NAMESPACE).withName(podName).get();
+                        return new Quantity("75m").equals(pod.getStatus().getContainerStatuses().get(0).getResources().getLimits().get("cpu"))
+                                && new Quantity("75Mi").equals(pod.getStatus().getContainerStatuses().get(0).getResources().getLimits().get("memory"));
+                    },
+                    () -> context.failNow("Pod status resources do not match"));
+
+            // Check the pod was resized
+            Pod actualPod = client.pods().inNamespace(NAMESPACE).withName(podName).get();
+            assertThat(actualPod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION), is("new-revision"));
+            assertThat(actualPod.getSpec().getContainers().get(0).getResources().getRequests(), is(Map.of("cpu", new Quantity("50m"), "memory", new Quantity("50Mi"))));
+            assertThat(actualPod.getSpec().getContainers().get(0).getResources().getLimits(), is(Map.of("cpu", new Quantity("75m"), "memory", new Quantity("75Mi"))));
+            assertThat(actualPod.getStatus().getContainerStatuses().get(0).getResources().getRequests(), is(Map.of("cpu", new Quantity("50m"), "memory", new Quantity("50Mi"))));
+            assertThat(actualPod.getStatus().getContainerStatuses().get(0).getResources().getLimits(), is(Map.of("cpu", new Quantity("75m"), "memory", new Quantity("75Mi"))));
+
+            context.completeNow();
+        } finally {
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).delete();
         }
     }
 }

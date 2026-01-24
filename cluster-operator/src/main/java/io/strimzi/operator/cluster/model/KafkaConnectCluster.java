@@ -64,6 +64,7 @@ import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -141,6 +142,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     private String initImage;
     protected String serviceName;
     protected String connectConfigMapName;
+    private final boolean inPlaceResizing;
+    private final boolean inPlaceResizingWaitForDeferred;
 
     protected String bootstrapServers;
     protected String groupId;
@@ -199,6 +202,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
         this.serviceName = KafkaConnectResources.serviceName(cluster);
         this.connectConfigMapName = KafkaConnectResources.configMapName(cluster);
+        this.inPlaceResizing = InPlacePodResizingUtils.inPlaceResizingEnabled(resource);
+        this.inPlaceResizingWaitForDeferred = InPlacePodResizingUtils.inPlaceResizingWaitForDeferred(resource);
     }
 
     /**
@@ -493,6 +498,14 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                         List<LocalObjectReference> imagePullSecrets,
                                         String customContainerImage) {
         PodSecurityProviderContext podSecurityProviderContext = new PodSecurityProviderContextImpl(templatePod);
+
+        if (inPlaceResizing) {
+            podSetAnnotations.put(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true");
+        }
+
+        if (inPlaceResizingWaitForDeferred) {
+            podSetAnnotations.put(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "true");
+        }
 
         return WorkloadUtils.createPodSet(
                 componentName,

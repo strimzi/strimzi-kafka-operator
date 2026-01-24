@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.cluster.model.InPlacePodResizingUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -185,6 +186,7 @@ public class ReconcilerUtils {
      *
      * @return empty RestartReasons if restart is not needed, non-empty RestartReasons otherwise
      */
+    @SuppressWarnings("NPathComplexity")
     public static RestartReasons reasonsToRestartPod(Reconciliation reconciliation, StrimziPodSet podSet, Pod pod, Set<String> fsResizingRestartRequest, boolean nodeCertsChange, Ca... cas) {
         RestartReasons restartReasons = RestartReasons.empty();
 
@@ -194,9 +196,12 @@ public class ReconcilerUtils {
             return restartReasons;
         }
 
-        if (PodRevision.hasChanged(pod, podSet)) {
+        if (PodRevision.hasChanged(pod, podSet, PodRevision.STRIMZI_REVISION_ANNOTATION)) {
             restartReasons.add(RestartReason.POD_HAS_OLD_REVISION);
         }
+
+        // Adds any reasons to restart related to in-place Pod resizing
+        InPlacePodResizingUtils.reasonsToRestart(reconciliation, restartReasons, podSet, pod);
 
         for (Ca ca: cas) {
             if (ca.certRenewed()) {

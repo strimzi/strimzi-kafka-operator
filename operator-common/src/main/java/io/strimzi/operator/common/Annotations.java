@@ -72,6 +72,16 @@ public class Annotations extends ResourceAnnotations {
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = STRIMZI_DOMAIN + "delete-claim";
 
     /**
+     * Annotation for enabling in-place resizing
+     */
+    public static final String ANNO_STRIMZI_IO_IN_PLACE_RESIZING = STRIMZI_DOMAIN + "in-place-resizing";
+
+    /**
+     * Annotation for indicating if deferred in-place resizing should lead to restart or to waiting
+     */
+    public static final String ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED = STRIMZI_DOMAIN + "in-place-resizing-wait-for-deferred";
+
+    /**
      * Annotation for tracking Deployment revisions
      */
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";

@@ -292,6 +292,7 @@ public class WorkloadUtils {
 
         // Set the pod revision annotation
         pod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, PodRevision.getRevision(reconciliation, pod));
+        pod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, PodRevision.getResourceRevision(reconciliation, pod));
 
         return pod;
     }

@@ -3333,6 +3333,8 @@ public class KafkaClusterTest {
         assertThat(podSet.getSpec().getSelector().getMatchLabels(), is(KC.getSelectorLabels().withStrimziPoolName("controllers").toMap()));
         assertThat(podSet.getMetadata().getLabels().entrySet().containsAll(KC.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(false).build()).build())));
+        assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING), is(nullValue()));
+        assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED), is(nullValue()));
 
         // We need to loop through the pods to make sure they have the right values
         List<Pod> pods = PodSetUtils.podSetToPods(podSet);
@@ -3340,8 +3342,9 @@ public class KafkaClusterTest {
 
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(KC.labels.withStrimziPodName(pod.getMetadata().getName()).withStrimziPodSetController(CLUSTER + "-controllers").toMap().entrySet()), is(true));
-            assertThat(pod.getMetadata().getAnnotations().size(), is(2));
+            assertThat(pod.getMetadata().getAnnotations().size(), is(3));
             assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue()));
+            assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION), is(notNullValue()));
             assertThat(pod.getMetadata().getAnnotations().get("test-anno"), is("test-value"));
 
             assertThat(pod.getSpec().getHostname(), is(pod.getMetadata().getName()));
@@ -3387,6 +3390,8 @@ public class KafkaClusterTest {
         assertThat(podSet.getSpec().getSelector().getMatchLabels(), is(KC.getSelectorLabels().withStrimziPoolName("mixed").toMap()));
         assertThat(podSet.getMetadata().getLabels().entrySet().containsAll(KC.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(false).build()).build())));
+        assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING), is(nullValue()));
+        assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED), is(nullValue()));
 
         // We need to loop through the pods to make sure they have the right values
         pods = PodSetUtils.podSetToPods(podSet);
@@ -3394,8 +3399,9 @@ public class KafkaClusterTest {
 
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(KC.labels.withStrimziPodName(pod.getMetadata().getName()).withStrimziPodSetController(CLUSTER + "-mixed").toMap().entrySet()), is(true));
-            assertThat(pod.getMetadata().getAnnotations().size(), is(2));
+            assertThat(pod.getMetadata().getAnnotations().size(), is(3));
             assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue()));
+            assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION), is(notNullValue()));
             assertThat(pod.getMetadata().getAnnotations().get("test-anno"), is("test-value"));
 
             assertThat(pod.getSpec().getHostname(), is(pod.getMetadata().getName()));
@@ -3441,6 +3447,8 @@ public class KafkaClusterTest {
         assertThat(podSet.getSpec().getSelector().getMatchLabels(), is(KC.getSelectorLabels().withStrimziPoolName("brokers").toMap()));
         assertThat(podSet.getMetadata().getLabels().entrySet().containsAll(KC.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(false).build()).build())));
+        assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING), is(nullValue()));
+        assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED), is(nullValue()));
 
         // We need to loop through the pods to make sure they have the right values
         pods = PodSetUtils.podSetToPods(podSet);
@@ -3448,8 +3456,9 @@ public class KafkaClusterTest {
 
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(KC.labels.withStrimziPodName(pod.getMetadata().getName()).withStrimziPodSetController(CLUSTER + "-brokers").toMap().entrySet()), is(true));
-            assertThat(pod.getMetadata().getAnnotations().size(), is(2));
+            assertThat(pod.getMetadata().getAnnotations().size(), is(3));
             assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue()));
+            assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION), is(notNullValue()));
             assertThat(pod.getMetadata().getAnnotations().get("test-anno"), is("test-value"));
 
             assertThat(pod.getSpec().getHostname(), is(pod.getMetadata().getName()));
@@ -4439,5 +4448,36 @@ public class KafkaClusterTest {
         assertThat(statuses.get("brokers").getNodeIds(), hasItems(5, 6, 7));
         assertThat(statuses.get("brokers").getRoles().size(), is(1));
         assertThat(statuses.get("brokers").getRoles(), hasItems(ProcessRoles.BROKER));
+    }
+
+    @Test
+    public void testResourceResizingPodSetAnnotations()   {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "false")
+                .endMetadata()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(null, null, node -> Map.of("test-anno", "test-value"));
+        podSets.forEach(podSet -> {
+            assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING), is("true"));
+            assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED), is(nullValue()));
+        });
+
+        kafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "false")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "true")
+                .endMetadata()
+                .build();
+        kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
+
+        podSets = kc.generatePodSets(null, null, node -> Map.of("test-anno", "test-value"));
+        podSets.forEach(podSet -> {
+            assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING), is(nullValue()));
+            assertThat(podSet.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED), is("true"));
+        });
     }
 }

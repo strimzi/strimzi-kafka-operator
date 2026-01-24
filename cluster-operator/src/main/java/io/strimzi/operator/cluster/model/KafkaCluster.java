@@ -219,6 +219,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private LoggingModel logging;
     private QuotasPlugin quotas;
     /* test */ KafkaConfiguration configuration;
+    private final boolean inPlaceResizing;
+    private final boolean inPlaceResizingWaitForDeferred;
 
     /**
      * Warning conditions generated from the Custom Resource
@@ -260,6 +262,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         super(reconciliation, resource, KafkaResources.kafkaComponentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
+        this.inPlaceResizing = InPlacePodResizingUtils.inPlaceResizingEnabled(resource);
+        this.inPlaceResizingWaitForDeferred = InPlacePodResizingUtils.inPlaceResizingWaitForDeferred(resource);
     }
 
     /**
@@ -1136,11 +1140,19 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return  Map with all annotations which should be used for thr controller resource
      */
     private Map<String, String> preparePodSetAnnotations(Storage storage)   {
-        Map<String, String> controllerAnnotations = new HashMap<>(2);
-        controllerAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
-        controllerAnnotations.put(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+        Map<String, String> podSetAnnotations = new HashMap<>();
+        podSetAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
+        podSetAnnotations.put(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
 
-        return controllerAnnotations;
+        if (inPlaceResizing) {
+            podSetAnnotations.put(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true");
+        }
+
+        if (inPlaceResizingWaitForDeferred) {
+            podSetAnnotations.put(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING_WAIT_FOR_DEFERRED, "true");
+        }
+
+        return podSetAnnotations;
     }
 
     /**

@@ -8,6 +8,9 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
@@ -20,11 +23,16 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpecBuilder;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.model.PodRevision;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -40,6 +48,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -773,6 +782,67 @@ public class ReconcilerUtilsTest {
             assertThat(res.getMessage(), is("Failed to load certificate from Secret cert-secret from namespace namespace"));
             async.flag();
         }));
+    }
+
+    @Test
+    public void testInPlaceResizingRollingUpdate()   {
+        // More tests are in InPlacePodResizingUtilsTest where the main method is. This test mainly checks that it is
+        // plugged into the Kafka Connect roller.
+
+        ResourceRequirements resources = new ResourceRequirementsBuilder()
+                .withRequests(Map.of("cpu", new Quantity("1"), "memory", new Quantity("1024Mi")))
+                .withLimits(Map.of("cpu", new Quantity("2")))
+                .build();
+        ResourceRequirements resources2 = new ResourceRequirementsBuilder()
+                .withRequests(Map.of("cpu", new Quantity("1"), "memory", new Quantity("1024Mi")))
+                .withLimits(Map.of("cpu", new Quantity("3")))
+                .build();
+
+        Pod pod1 = new PodBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                    .withAnnotations(Map.of(PodRevision.STRIMZI_REVISION_ANNOTATION, "avfc1874", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "ucl1982"))
+                .endMetadata()
+                .withNewSpec()
+                    .addNewContainer()
+                        .withName("c1")
+                        .withResources(resources)
+                    .endContainer()
+                .endSpec()
+                .withNewStatus()
+                    .withPhase("Running")
+                .endStatus()
+                .build();
+
+        Pod pod2 = new PodBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                    .withAnnotations(Map.of(PodRevision.STRIMZI_REVISION_ANNOTATION, "avfc1874", PodRevision.STRIMZI_RESOURCE_REVISION_ANNOTATION, "mol2025"))
+                .endMetadata()
+                .withNewSpec()
+                    .addNewContainer()
+                        .withName("c1")
+                        .withResources(resources2)
+                    .endContainer()
+                .endSpec()
+                .withNewStatus()
+                    .withPhase("Running")
+                .endStatus()
+                .build();
+
+        @SuppressWarnings("unchecked")
+        StrimziPodSet podSet = new StrimziPodSetBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_IN_PLACE_RESIZING, "true"))
+                .endMetadata()
+                .withNewSpec()
+                    .withPods(PodSetUtils.podToMap(pod1))
+                .endSpec()
+                .build();
+
+        assertThat(ReconcilerUtils.reasonsToRestartPod(Reconciliation.DUMMY_RECONCILIATION, podSet, pod1, Set.of(), false).shouldRestart(), is(false));
+        assertThat(ReconcilerUtils.reasonsToRestartPod(Reconciliation.DUMMY_RECONCILIATION, podSet, pod2, Set.of(), false).shouldRestart(), is(false));
     }
 
     static class MockJmxCluster implements SupportsJmx {

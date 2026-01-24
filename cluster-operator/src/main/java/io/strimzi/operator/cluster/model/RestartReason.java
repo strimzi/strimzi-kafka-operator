@@ -59,6 +59,16 @@ public enum RestartReason {
     POD_HAS_OLD_REVISION("Pod has old revision"),
 
     /**
+     * Pod has an old resource revision
+     */
+    POD_HAS_OLD_RESOURCE_REVISION("Pod resource configuration changed"),
+
+    /**
+     * Pod has an old revision
+     */
+    POD_RESOURCES_CHANGED("Pod resources changed and cannot be updated in-place"),
+
+    /**
      * Pod is stuck
      */
     POD_STUCK("Pod needs to be restarted, because it seems to be stuck and restart might help"),

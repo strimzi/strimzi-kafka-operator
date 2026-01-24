@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.operator.cluster.model.InPlacePodResizingUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -156,16 +157,22 @@ public class KafkaConnectRoller {
      * Checks if the Pod needs a rolling restart. This method is used in regular rolling updates and checks if the Pod
      * matches the PodSet or not.
      *
-     * @param podSet    PodSet with the desired Pod definition
-     * @param pod       The current definition of the Pod
+     * @param reconciliation    Reconciliation marker
+     * @param podSet            PodSet with the desired Pod definition
+     * @param pod               The current definition of the Pod
      *
      * @return  RestartReasons object indicating whether a restart is needed and why.
      */
-    public static RestartReasons needsRollingRestart(StrimziPodSet podSet, Pod pod) {
-        if (PodRevision.hasChanged(pod, podSet)) {
-            return RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION);
-        } else {
-            return RestartReasons.empty();
+    public static RestartReasons needsRollingRestart(Reconciliation reconciliation, StrimziPodSet podSet, Pod pod) {
+        RestartReasons restartReasons = RestartReasons.empty();
+
+        if (PodRevision.hasChanged(pod, podSet, PodRevision.STRIMZI_REVISION_ANNOTATION)) {
+            restartReasons.add(RestartReason.POD_HAS_OLD_REVISION);
         }
+
+        // Adds any reasons to restart related to in-place Pod resizing
+        InPlacePodResizingUtils.reasonsToRestart(reconciliation, restartReasons, podSet, pod);
+
+        return restartReasons;
     }
 }
