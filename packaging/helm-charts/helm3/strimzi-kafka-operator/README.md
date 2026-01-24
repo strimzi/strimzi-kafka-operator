@@ -6,6 +6,9 @@ See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
 
+**From Strimzi 0.51 on, we support only Kubernetes 1.30 and newer.**
+**Kubernetes 1.27, 1.28, and 1.29 are not supported anymore.**
+
 **Strimzi 0.49.0 introduced new API version `v1` to all Strimzi custom resources.**
 **Make sure to [upgrade the CRDs](#upgrading-your-clusters) as part of the Strimzi upgrade as well.**
 **The old API versions (`v1alpha1`, `v1beta1`, and `v1beta2`) will continue to be supported until Strimzi 1.0.0 / 0.52.0.**
@@ -67,7 +70,7 @@ Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/s
 
 ## Prerequisites
 
-- Kubernetes 1.27+
+- Kubernetes 1.30+
 
 ## Installing the Chart
 
