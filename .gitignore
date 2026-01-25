@@ -58,3 +58,8 @@ hs_err_pid*
 
 # Cluster operator config models
 **/cluster-operator/src/main/resources/kafka-*-config-model.json
+
+# Claude configuration
+.claude/
+CLAUDE.md
+.mcp.json
