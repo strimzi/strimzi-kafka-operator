@@ -84,6 +84,12 @@ All other supported options are forwarded to Kafka, including the following exce
 ** `controller.quorum.election.backoff.max.ms`
 ** `controller.quorum.election.timeout.ms`
 ** `controller.quorum.fetch.timeout.ms`
+* Listener properties (which are configured in the following format: `listener.name.listener1-9900.connections.max.reauth.ms` where `listener1-9900` is the listener name and port joined by `-`):
+** `connections.max.reauth.ms`
+** `max.connections`
+** `max.connections.per.ip`
+** `max.connections.per.ip.overrides`
+** `max.connection.creation.rate`
 
 [id='property-kafka-brokerRackInitImage-{context}']
 = Configuring rack awareness and init container images

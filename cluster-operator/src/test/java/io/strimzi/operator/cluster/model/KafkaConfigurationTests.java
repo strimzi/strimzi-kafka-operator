@@ -4,14 +4,20 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -139,5 +145,20 @@ public class KafkaConfigurationTests {
         assertConfigError("remote.log.manager.expiration.thread.pool.size", "-1", "remote.log.manager.expiration.thread.pool.size has value -1 which less than the minimum value 1");
         assertConfigError("remote.log.manager.expiration.thread.pool.size", "0", "remote.log.manager.expiration.thread.pool.size has value 0 which less than the minimum value 1");
         assertConfigError("remote.log.manager.expiration.thread.pool.size", "-5", "remote.log.manager.expiration.thread.pool.size has value -5 which less than the minimum value 1");
+    }
+
+    @Test
+    public void testModifyWithListeners() {
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .build();
+
+        List<String> modifiedExceptionList = KafkaConfiguration.modifyWithListeners(List.of(listener1));
+
+        assertThat(modifiedExceptionList, hasItems("listener.name.listener1-9900.connections.max.reauth.ms",
+                "listener.name.listener1-9900.max.connections",
+                "listener.name.listener1-9900.max.connection.creation.rate"));
     }
 }

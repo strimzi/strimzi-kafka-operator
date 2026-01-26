@@ -58,6 +58,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasReadinessProbe, HasLivenessProbe, UnknownPropertyPreserving {
+    /* When FORBIDDEN_PREFIXES is updated, documentation/api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc must be updated accordingly. */
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
             + "inter.broker.listener.name, sasl., ssl., security., password., log.dir, "
             + "zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, "
@@ -67,6 +68,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
             + "client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list, "
             + "prometheus.metrics.reporter.";
 
+    /* When FORBIDDEN_PREFIX_EXCEPTIONS is updated, documentation/api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc must be updated accordingly. */
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, sasl.server.max.receive.size, "
             + "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, "
             + "cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, "
@@ -74,6 +76,9 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
             + "cruise.control.metrics.topic.min.insync.replicas, "
             + "broker.session.timeout.ms, broker.heartbeat.interval.ms, controller.socket.timeout.ms, "
             + "controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms"; // KRaft options
+
+    /* When ALLOWED_PER_LISTENER_CONFIGS is updated, documentation/api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc must be updated accordingly. */
+    public static final String ALLOWED_PER_LISTENER_CONFIGS  = "connections.max.reauth.ms, max.connections, max.connection.creation.rate";
 
     private Storage storage;
     private String version;
@@ -119,7 +124,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.metadataVersion = metadataVersion;
     }
 
-    @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
+    @Description("Kafka broker config properties with certain prefixes cannot be set unless it is in the exception list. Consult the documentation for the list of forbidden prefixes and exceptions")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;

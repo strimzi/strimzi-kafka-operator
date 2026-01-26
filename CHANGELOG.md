@@ -2,7 +2,7 @@
 
 ## 0.51.0
 
-* Nothing here yet, but we will surely develop something new pretty soon 😉
+* Allow setting the following configurations with the listener prefix (e.g. `listener.name.listener1-9900.`): `connections.max.reauth.ms`, `max.connections*` and `max.connection.creation.rate`.
 
 ### Major changes, deprecations, and removals
 
