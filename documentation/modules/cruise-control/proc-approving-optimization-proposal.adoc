@@ -14,7 +14,7 @@ Cruise Control then rebalances the Kafka cluster based on the configured optimiz
 
 Perform the following steps to approve an optimization proposal and run a cluster rebalance.
 
-CAUTION: CAUTION: *This action triggers a cluster rebalance.*
+CAUTION: *This action triggers a cluster rebalance.*
 The optimization proposal is a snapshot of the expected impact of the rebalance operation on the Kafka cluster.
 When you approve a proposal, Cruise Control re-evaluates the cluster state and may recompute the optimization before executing the rebalance.
 
