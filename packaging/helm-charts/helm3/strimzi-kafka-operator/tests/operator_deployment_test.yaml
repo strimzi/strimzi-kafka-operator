@@ -119,7 +119,7 @@ tests:
           value: STRIMZI_NAMESPACE
       - equal:
           path: spec.template.spec.containers[0].env[0].value
-          value: "test-namespace,test-namespace2,strimzi-test-namespace"
+          value: "strimzi-test-namespace,test-namespace,test-namespace2"
 
   - it: should construct all kafka images from default image registry if not provided
     asserts:
