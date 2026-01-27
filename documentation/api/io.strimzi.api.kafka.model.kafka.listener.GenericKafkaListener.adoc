@@ -126,6 +126,9 @@ spec:
 ----
 ingress:: Configures an external listener to expose Kafka using Kubernetes `Ingress` and the {NginxIngressController}.
 +
+NOTE: The `ingress` listener type is deprecated as the {NginxIngressController} is archived since March 2026.
+There is currently no plan to remove the code from the Strimzi code base, but we do not plan any further improvements.
++
 A dedicated `Ingress` resource is created for every Kafka broker pod.
 An additional `Ingress` resource is created to serve as a Kafka bootstrap address.
 Kafka clients can use these `Ingress` resources to connect to Kafka on port 443.
