@@ -61,3 +61,12 @@ To use, add the following key/value pairs to the scope:
 {{- end -}}
 {{- join "," $pluckedList -}}
 {{- end -}}
+
+{{/*
+ Create a list of comma-separated namespaces the operators should watch.
+*/}}
+{{- define "strimzi.watchNamespacesList" -}}
+{{- $namespacesList := .Values.watchNamespaces | default (list) -}}
+{{- $returnList := append $namespacesList .Release.Namespace | sortAlpha | uniq -}}
+{{- toYaml $returnList -}}
+{{- end -}}

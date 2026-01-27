@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -88,10 +89,8 @@ spec:
               {{- if .Values.watchAnyNamespace }}
               value: "*"
               {{- else }}
-              {{- if .Values.watchNamespaces -}}
-              {{- $ns := .Values.watchNamespaces -}}
-              {{- $ns := append $ns .Release.Namespace }}
-              value: "{{ join "," $ns }}"
+              {{- if .Values.watchNamespaces }}
+              value: "{{ include "strimzi.watchNamespacesList" . | fromYamlArray | join "," }}"
               {{- else }}
               valueFrom:
                 fieldRef:
@@ -137,7 +136,8 @@ spec:
             - name: STRIMZI_IMAGE_PULL_POLICY
               value: {{ .Values.image.imagePullPolicy }}
             {{- end }}
-            {{ if ne .Values.kubernetesServiceDnsDomain "cluster.local" }}- name: KUBERNETES_SERVICE_DNS_DOMAIN
+            {{ if ne .Values.kubernetesServiceDnsDomain "cluster.local" }}
+            - name: KUBERNETES_SERVICE_DNS_DOMAIN
               value: {{ .Values.kubernetesServiceDnsDomain | quote }}{{ end }}
             - name: STRIMZI_FEATURE_GATES
               value: {{ .Values.featureGates | quote }}
