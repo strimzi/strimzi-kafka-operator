@@ -4,14 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -66,13 +62,16 @@ import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiPro
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNotNull;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -132,13 +131,11 @@ public class CruiseControlReconcilerTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         PasswordGenerator mockPasswordGenerator = new PasswordGenerator(10, "a", "a");
         PodDisruptionBudgetOperator mockPodDisruptionBudget = supplier.podDisruptionBudgetOperator;
-        
-        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), any())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         if (apiUsersEnabled) {
             Secret userManagedApiSecret = mock(Secret.class);
@@ -152,22 +149,17 @@ public class CruiseControlReconcilerTest {
             when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorCcApiSecretName(NAME)))).thenReturn(Future.succeededFuture(topicOperatorApiSecret));
         }
 
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<Deployment> deployCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), deployCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPodDisruptionBudget.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPodDisruptionBudget.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -229,24 +221,20 @@ public class CruiseControlReconcilerTest {
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(notNullValue()));
-                    
-                    assertThat(secretCaptor.getAllValues().size(), is(2));
-                    assertThat(secretCaptor.getAllValues().get(0), is(notNullValue()));
-                    assertThat(secretCaptor.getAllValues().get(1), is(notNullValue()));
+                    verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), isNotNull());
 
-                    assertThat(serviceCaptor.getAllValues().size(), is(1));
-                    assertThat(serviceCaptor.getValue(), is(notNullValue()));
+                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), isNotNull());
+                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNotNull());
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
+                    verify(mockServiceOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), isNotNull());
 
-                    assertThat(cmCaptor.getAllValues().size(), is(1));
-                    assertThat(cmCaptor.getValue(), is(notNullValue()));
+                    verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), isNotNull());
+
+                    verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), isNotNull());
 
                     // Verify deployment
-                    assertThat(deployCaptor.getAllValues().size(), is(1));
+                    ArgumentCaptor<Deployment> deployCaptor = ArgumentCaptor.forClass(Deployment.class);
+                    verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), deployCaptor.capture());
                     assertThat(deployCaptor.getValue(), is(notNullValue()));
                     assertThat(deployCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
                     assertThat(deployCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
@@ -262,7 +250,9 @@ public class CruiseControlReconcilerTest {
                     } else {
                         assertThat(deployCaptor.getAllValues().get(0).getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("5a188d9a"));
                     }
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+
+                    ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+                    verify(mockPodDisruptionBudget, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), pdbCaptor.capture());
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
                     assertThat(pdbCaptor.getValue().getMetadata().getName(), is(CruiseControlResources.componentName(NAME)));
                     assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
@@ -282,29 +272,22 @@ public class CruiseControlReconcilerTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         PodDisruptionBudgetOperator mockPodDisruptionBudget = supplier.podDisruptionBudgetOperator;
 
-        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), any())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPodDisruptionBudget.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPodDisruptionBudget.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         ClusterCa clusterCa = new ClusterCa(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -331,27 +314,20 @@ public class CruiseControlReconcilerTest {
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(nullValue()));
+                    verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), isNull());
 
-                    assertThat(secretCaptor.getAllValues().size(), is(2));
-                    assertThat(secretCaptor.getAllValues().get(0), is(nullValue()));
-                    assertThat(secretCaptor.getAllValues().get(1), is(nullValue()));
+                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), isNull());
+                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), isNull());
 
-                    assertThat(serviceCaptor.getAllValues().size(), is(1));
-                    assertThat(serviceCaptor.getValue(), is(nullValue()));
+                    verify(mockServiceOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), isNull());
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(nullValue()));
+                    verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), isNull());
 
-                    assertThat(cmCaptor.getAllValues().size(), is(1));
-                    assertThat(cmCaptor.getValue(), is(nullValue()));
+                    verify(mockCmOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.configMapName(NAME)), isNull());
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(nullValue()));
+                    verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), isNull());
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+                    verify(mockPodDisruptionBudget, times(1)).reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), isNull());
 
                     async.flag();
                 })));

@@ -45,12 +45,14 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNotNull;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -100,27 +102,22 @@ public class KafkaExporterReconcilerTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
-        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)))).thenReturn(Future.succeededFuture());
-        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
-        ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -141,26 +138,28 @@ public class KafkaExporterReconcilerTest {
         Checkpoint async = context.checkpoint();
         reconciler.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(notNullValue()));
+                    verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNotNull());
 
-                    assertThat(secretCaptor.getAllValues().size(), is(1));
-                    assertThat(secretCaptor.getAllValues().get(0), is(notNullValue()));
+                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), isNotNull());
 
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+                    ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+                    verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), netPolicyCaptor.capture());
                     assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
                     assertThat(netPolicyCaptor.getValue().getSpec().getIngress().size(), is(1));
                     assertThat(netPolicyCaptor.getValue().getSpec().getIngress().get(0).getPorts().size(), is(1));
                     assertThat(netPolicyCaptor.getValue().getSpec().getIngress().get(0).getPorts().get(0).getPort().getIntVal(), is(9404));
                     assertThat(netPolicyCaptor.getValue().getSpec().getIngress().get(0).getFrom(), is(List.of()));
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
+                    ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
+                    verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), depCaptor.capture());
                     assertThat(depCaptor.getValue(), is(notNullValue()));
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION), is("0"));
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION), is("0"));
                     assertThat(depCaptor.getValue().getSpec().getTemplate().getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH), is("4d715cdd"));
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+
+                    ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+                    verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture());
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
                     assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
 
@@ -179,26 +178,21 @@ public class KafkaExporterReconcilerTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
-        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)))).thenReturn(Future.succeededFuture());
-        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -220,18 +214,20 @@ public class KafkaExporterReconcilerTest {
         Checkpoint async = context.checkpoint();
         reconciler.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
+                    ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
+                    verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), saCaptor.capture());
                     assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(secretCaptor.getAllValues().size(), is(1));
+                    ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
+                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture());
                     assertThat(secretCaptor.getAllValues().get(0), is(notNullValue()));
 
                     verify(mockNetPolicyOps, never()).reconcile(any(), eq(NAMESPACE), any(), any());
 
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(notNullValue()));
+                    verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNotNull());
 
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
+                    ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+                    verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture());
                     assertThat(pdbCaptor.getValue(), is(notNullValue()));
                     assertThat(pdbCaptor.getValue().getSpec().getMinAvailable(), is(new IntOrString(0)));
 
@@ -248,26 +244,21 @@ public class KafkaExporterReconcilerTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
-        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         SecretOperator mockSecretOps = supplier.secretOperations;
-        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
-        ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         KafkaExporterReconciler reconciler = new KafkaExporterReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -281,20 +272,11 @@ public class KafkaExporterReconcilerTest {
         Checkpoint async = context.checkpoint();
         reconciler.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(nullValue()));
-
-                    assertThat(secretCaptor.getAllValues().size(), is(1));
-                    assertThat(secretCaptor.getAllValues().get(0), is(nullValue()));
-
-                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(nullValue()));
-
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(nullValue()));
-
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+                    verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
+                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), isNull());
+                    verify(mockNetPolicyOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
+                    verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
+                    verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
 
                     async.flag();
                 })));
@@ -310,25 +292,21 @@ public class KafkaExporterReconcilerTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
-        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         PodDisruptionBudgetOperator mockPodDisruptionBudgetOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPodDisruptionBudgetOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), any())).thenReturn(Future.succeededFuture());
 
         KafkaExporterReconciler reconciler = new KafkaExporterReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -343,19 +321,11 @@ public class KafkaExporterReconcilerTest {
         Checkpoint async = context.checkpoint();
         reconciler.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(saCaptor.getAllValues().size(), is(1));
-                    assertThat(saCaptor.getValue(), is(nullValue()));
-
-                    assertThat(secretCaptor.getAllValues().size(), is(1));
-                    assertThat(secretCaptor.getAllValues().get(0), is(nullValue()));
-
+                    verify(mockSaOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
+                    verify(mockSecretOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), isNull());
                     verify(mockNetPolicyOps, never()).reconcile(any(), eq(NAMESPACE), any(), any());
-
-                    assertThat(depCaptor.getAllValues().size(), is(1));
-                    assertThat(depCaptor.getValue(), is(nullValue()));
-
-                    assertThat(pdbCaptor.getAllValues().size(), is(1));
-                    assertThat(pdbCaptor.getValue(), is(nullValue()));
+                    verify(mockDepOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
+                    verify(mockPodDisruptionBudgetOps, times(1)).reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.componentName(NAME)), isNull());
 
                     async.flag();
                 })));
