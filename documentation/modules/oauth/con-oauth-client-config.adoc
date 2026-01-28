@@ -96,8 +96,7 @@ Clients obtain an access token from the authorization server and present the tok
 Client configuration requires:
 
 * The `OAUTHBEARER` SASL mechanism  
-* TLS trust configuration for Kafka broker communication  
-* OAuth settings that match the broker's validation method (JWKS or introspection)  
+* TLS trust configuration for Kafka broker communication   
 * A mechanism to retrieve, refresh, or supply access tokens at runtime  
 
 The following example shows a minimal Java client configuration:
@@ -152,7 +151,7 @@ The broker validates the token by calling the authorization server's introspecti
 
 Client credentials with local validation:: 
 The client requests a short-lived JWT access token using a client ID and credentials.  
-The broker validates the token locally using a JWKS endpoint.
+The broker validates the token locally using a cached response of the JWKS endpoint.
 
 Long-lived access token with remote validation::  
 The client is issued a long-lived opaque token outside the application (for example, by a CI/CD system).  
@@ -161,7 +160,7 @@ Token refresh is the responsibility of the application.
 
 Long-lived JWT token with local validation::
 The client is issued a long-lived JWT outside the application.  
-The broker validates the token locally against the JWKS endpoint.  
+The broker validates the token locally using a cached response of the JWKS endpoint. 
 The token cannot be refreshed, so the connection fails after expiry.
 
 Strimzi does not manage token acquisition for external applications.  

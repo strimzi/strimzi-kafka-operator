@@ -12,7 +12,7 @@ The configuration specifies how Kafka brokers validate tokens.
 Strimzi supports OAuth 2.0 for both server-side and client-side authentication. 
 Kafka brokers validate tokens using the OAuth configuration defined on the listener, and Kafka components, such as Kafka Connect, MirrorMaker 2, and the HTTP Bridge authenticate as OAuth clients when connecting to Kafka.
 
-You can also enable authorization based on token claims when using an OAuth-compatible authorization service, such as Keycloak Authorization Services.
+If using Keycloak as an authorization server, you can also enable authorization via Authorization Services, which provides fine-grained policy-based permissions management for Kafka resources.
 For more information, see xref:con-oauth-authz-config-{context}[Enabling authorization on Kafka brokers].
 
 The following sections describe the minimal configuration required for:
