@@ -73,6 +73,7 @@ public class KafkaSpecChecker {
         checkKafkaMetadataVersion(warnings);
         checkInterBrokerProtocolVersionInKRaft(warnings);
         checkLogMessageFormatVersionInKRaft(warnings);
+        checkIngressListeners(warnings);
 
         return warnings;
     }
@@ -197,6 +198,20 @@ public class KafkaSpecChecker {
         if (interBrokerProtocolVersion != null) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaLogMessageFormatVersionInKRaft",
                     "log.message.format.version is not used in KRaft-based Kafka clusters and should be removed from the Kafka custom resource."));
+        }
+    }
+
+    /**
+     * Checks whether any 'tpe: ingress' listeners are used, and in case they are, it raises a deprecation warning. This
+     * is done here in the KafkaSpecChecker because GenericKafkaListener is not a typed API class, and we cannot
+     * deprecate just a single type. Therefore, the automatic warnings are not raised for it.
+     *
+     * @param warnings List to add a warning to, if appropriate.
+     */
+    private void checkIngressListeners(List<Condition> warnings) {
+        if (ListenersUtils.hasIngressListener(kafkaCluster.getListeners())) {
+            warnings.add(StatusUtils.buildWarningCondition("DeprecatedObjects",
+                    "ingress type listeners are deprecated."));
         }
     }
 }
