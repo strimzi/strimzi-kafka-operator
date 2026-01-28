@@ -41,7 +41,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create KafkaUser with name matching the configured superuser. | Admin KafkaUser is ready. |
+| 1. | Create KafkaUser with TLS certificate CN matching the configured superuser DN. | Admin KafkaUser is ready. |
 | 2. | Deploy Kafka clients using admin KafkaUser. | Producer and consumer complete successfully. |
 
 **Labels:**

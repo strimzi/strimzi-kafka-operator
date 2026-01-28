@@ -80,7 +80,7 @@ public class CustomCaST extends AbstractST {
             @Step(value = "Replace the old cluster CA key pair with the new one, while retaining the old certificate.", expected = "CA secrets are updated with new key pair."),
             @Step(value = "Resume reconciliation and wait for rolling updates to complete.", expected = "All components roll to trust the new CA and use new certificates."),
             @Step(value = "Verify message production works with renewed certificates.", expected = "Producer successfully sends messages."),
-            @Step(value = "Remove outdated certificate and trigger manual rolling update.", expected = "Cluster no longer trusts old certificates.")
+            @Step(value = "Remove outdated certificate and trigger manual rolling update using 'strimzi.io/manual-rolling-update' annotation.", expected = "Cluster no longer trusts old certificates.")
         },
         labels = {
             @Label(value = TestDocsLabels.SECURITY)
