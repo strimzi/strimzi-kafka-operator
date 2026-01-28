@@ -33,7 +33,7 @@ see xref:ref-kafka-entity-operator-str[Configuring the Entity Operator].
 
 . Edit the `entityOperator` properties of the `Kafka` resource to include `topicOperator`:
 +
-[source,yaml,subs="+quotes,attributes"]
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
@@ -42,9 +42,10 @@ metadata:
 spec:
   #...
   entityOperator:
-    *topicOperator: {}*
+    topicOperator: {}
     userOperator: {}
 ----
+
 . Configure the Topic Operator `spec` using the properties described in the link:{BookURLConfiguring}#type-EntityTopicOperatorSpec-reference[`EntityTopicOperatorSpec` schema reference^].
 +
 Use an empty object (`{}`) if you want all properties to use their default values.
