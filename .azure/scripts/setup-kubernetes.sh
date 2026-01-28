@@ -3,7 +3,7 @@ set -xe
 
 rm -rf ~/.kube
 
-KUBE_VERSION=${KUBE_VERSION:-1.30.0}
+KUBE_VERSION=${KUBE_VERSION:-1.30.14}
 MINIKUBE_REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
@@ -23,9 +23,9 @@ fi
 
 function install_kubectl {
     if [ "${TEST_KUBECTL_VERSION:-latest}" = "latest" ]; then
-        TEST_KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
+        TEST_KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
     fi
-    curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${TEST_KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl && chmod +x kubectl
+    curl -Lo kubectl https://dl.k8s.io/release/${TEST_KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl && chmod +x kubectl
     sudo cp kubectl /usr/local/bin
 }
 

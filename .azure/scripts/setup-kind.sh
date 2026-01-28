@@ -43,9 +43,9 @@ function is_podman() {
 
 function install_kubectl {
     if [ "${TEST_KUBECTL_VERSION:-latest}" = "latest" ]; then
-        TEST_KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
+        TEST_KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
     fi
-    curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${TEST_KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl && chmod +x kubectl
+    curl -Lo kubectl https://dl.k8s.io/release/${TEST_KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl && chmod +x kubectl
     sudo cp kubectl /usr/local/bin
 
     if is_podman; then
