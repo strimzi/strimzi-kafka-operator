@@ -1,8 +1,8 @@
-# **Security**
+# Security
 
 ## Description
 
-These tests validate security-related functionality within the Strimzi ecosystem.
+These tests validate security-related functionality in the Strimzi ecosystem.
 They cover authentication and authorization mechanisms (OAuth, ACLs, OPA integration), TLS configuration, custom Certificate Authority (CA) management, network policies, and pod security profiles.
 
 <!-- generated part -->

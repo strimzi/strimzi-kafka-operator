@@ -40,9 +40,9 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test suite for verifying custom authorization functionality using ACLs (Access Control Lists) with simple authorization and TLS listener."),
+    description = @Desc("Test suite for verifying custom authorization using ACLs (Access Control Lists) with simple authorization and a TLS listener."),
     beforeTestSteps = {
-        @Step(value = "Deploy Kafka cluster with custom authorization, TLS listener, and configured superuser.", expected = "Kafka cluster is deployed and ready.")
+        @Step(value = "Deploy Kafka cluster configured with custom authorization, TLS listener, and a superuser.", expected = "Kafka cluster is deployed and ready.")
     },
     labels = {
         @Label(value = TestDocsLabels.SECURITY)
@@ -55,12 +55,12 @@ public class CustomAuthorizerST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("This test case verifies Access Control Lists with simple authorization and TLS listener."),
+        description = @Desc("This test case verifies access control lists (ACLs) with simple authorization and a TLS listener."),
         steps = {
-            @Step(value = "Create first KafkaUser with ACLs to write and describe specific topic.", expected = "KafkaUser authorized to produce into specific topic is ready."),
-            @Step(value = "Create second KafkaUser with ACLs to read and describe specific topic.", expected = "KafkaUser authorized to consume from specific topic is ready."),
-            @Step(value = "Deploy Kafka clients using first KafkaUser authorized to produce data into specific topic.", expected = "Producer completes successfully whereas consumer times out."),
-            @Step(value = "Deploy Kafka clients using second KafkaUser authorized to consume data from specific topic.", expected = "Consumer completes successfully."),
+            @Step(value = "Create a KafkaUser with ACLs to write to and describe a specific topic.", expected = "KafkaUser authorized to produce to the topic is ready."),
+            @Step(value = "Create a second KafkaUser with ACLs to read from and describe the same topic.", expected = "KafkaUser authorized to consume from the topic is ready."),
+            @Step(value = "Deploy Kafka clients using the first KafkaUser to produce data to the topic.", expected = "The producer completes successfully, and the consumer times out."),
+            @Step(value = "Deploy Kafka clients using the second KafkaUser to consume data from the topic.", expected = "The consumer completes successfully."),
             @Step(value = "Verify that KafkaUser with read-only ACLs cannot produce messages.", expected = "Producer times out.")
         },
         labels = {
@@ -138,10 +138,10 @@ public class CustomAuthorizerST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("This test case verifies that a superuser can produce and consume messages without explicit ACL rules."),
+        description = @Desc("This test verifies that a superuser can produce and consume messages without explicit ACL rules."),
         steps = {
-            @Step(value = "Create KafkaUser with name matching the configured superuser.", expected = "Admin KafkaUser is ready."),
-            @Step(value = "Deploy Kafka clients using admin KafkaUser.", expected = "Producer and consumer complete successfully.")
+            @Step(value = "Create KafkaUser with name matching the configured superuser.", expected = "The KafkaUser representing the superuser is ready."),
+            @Step(value = "Deploy Kafka clients using the superuser KafkaUser. | The producer and consumer complete successfully.")
         },
         labels = {
             @Label(value = TestDocsLabels.SECURITY)

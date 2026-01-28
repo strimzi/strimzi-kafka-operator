@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test suite for verifying custom CA (Certificate Authority) key-pair manipulation, including replacing cluster and clients key-pairs to invoke renewal process."),
+    description = @Desc("Test suite for verifying custom certificate authority (CA) key pair manipulation, including replacing cluster and clients key pairs to trigger the renewal process."),
     labels = {
         @Label(value = TestDocsLabels.SECURITY)
     }
@@ -73,11 +73,11 @@ public class CustomCaST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test verifies manual renewal of custom cluster CA by replacing the cluster CA key-pair and triggering certificate renewal through rolling updates."),
+        description = @Desc("This test verifies manual renewal of a custom cluster CA by replacing the cluster CA key pair and triggering certificate renewal through rolling updates."),
         steps = {
-            @Step(value = "Create custom cluster CA and deploy Kafka cluster with it.", expected = "Kafka cluster is deployed with custom cluster CA."),
-            @Step(value = "Generate a new cluster CA key-pair.", expected = "New cluster CA is created."),
-            @Step(value = "Replace the old cluster CA key-pair with the new one while retaining the old certificate.", expected = "CA secrets are updated with new key-pair."),
+            @Step(value = "Create a custom cluster CA and deploy Kafka cluster with it.", expected = "Kafka cluster is deployed with custom cluster CA."),
+            @Step(value = "Generate a new cluster CA key pair.", expected = "New cluster CA is created."),
+            @Step(value = "Replace the old cluster CA key pair with the new one, while retaining the old certificate.", expected = "CA secrets are updated with new key pair."),
             @Step(value = "Resume reconciliation and wait for rolling updates to complete.", expected = "All components roll to trust the new CA and use new certificates."),
             @Step(value = "Verify message production works with renewed certificates.", expected = "Producer successfully sends messages."),
             @Step(value = "Remove outdated certificate and trigger manual rolling update.", expected = "Cluster no longer trusts old certificates.")
@@ -156,11 +156,11 @@ public class CustomCaST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test verifies manual renewal of custom clients CA by replacing the clients CA key-pair and triggering certificate renewal through rolling updates. Only Kafka pods should roll, Entity Operator must not roll."),
+        description = @Desc("This test verifies manual renewal of a custom clients CA by replacing the clients CA key pair and triggering certificate renewal through rolling updates. Only Kafka pods should roll, Entity Operator must not roll."),
         steps = {
             @Step(value = "Create custom clients CA and deploy Kafka cluster with it.", expected = "Kafka cluster is deployed with custom clients CA."),
             @Step(value = "Generate a new clients CA key-pair.", expected = "New clients CA is created."),
-            @Step(value = "Replace the old clients CA key-pair with the new one while retaining the old certificate.", expected = "CA secrets are updated with new key-pair."),
+            @Step(value = "Replace the old clients CA key pair with the new one while retaining the old certificate.", expected = "CA secrets are updated with new key pair."),
             @Step(value = "Resume reconciliation and wait for Kafka pods to roll.", expected = "Kafka pods roll to trust the new CA and use new certificates."),
             @Step(value = "Verify Entity Operator does not roll.", expected = "Entity Operator pods remain unchanged."),
             @Step(value = "Verify message production works with renewed certificates.", expected = "Producer successfully sends messages.")
@@ -212,12 +212,12 @@ public class CustomCaST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test verifies the functionality of custom cluster and clients CAs. Custom CAs are created and deployed as secrets before Kafka deployment, forcing Kafka to use them instead of generating its own certificate authorities."),
+        description = @Desc("This test verifies the use of custom cluster and clients CAs. Custom CAs are created and deployed as secrets before Kafka deployment, which forces Kafka to use them instead of generating its own certificate authorities."),
         steps = {
-            @Step(value = "Create custom cluster CA and clients CA and deploy them as secrets.", expected = "Both CA secrets are created."),
+            @Step(value = "Create custom cluster and clients CAs and deploy them as secrets.", expected = "Both CA secrets are created."),
             @Step(value = "Deploy Kafka cluster configured to use custom CAs.", expected = "Kafka cluster is deployed using the custom CAs."),
-            @Step(value = "Verify Kafka broker certificates are signed by the custom cluster CA.", expected = "Broker certificates have correct issuer."),
-            @Step(value = "Create KafkaUser and verify its certificate is signed by the custom clients CA.", expected = "User certificate has correct issuer."),
+            @Step(value = "Verify that Kafka broker certificates are signed by the custom cluster CA.", expected = "Broker certificates have the correct issuer."),
+            @Step(value = "Create a KafkaUser and verify that its certificate is signed by the custom clients CA.", expected = "User certificate has the correct issuer."),
             @Step(value = "Send and receive messages over TLS.", expected = "Messages are successfully produced and consumed.")
         },
         labels = {
@@ -288,7 +288,7 @@ public class CustomCaST extends AbstractST {
     @TestDoc(
         description = @Desc("This test verifies that changing certificate validity and renewal days triggers renewal of cluster certificates without renewing the cluster CA itself."),
         steps = {
-            @Step(value = "Create custom cluster CA and deploy Kafka cluster with it.", expected = "Kafka cluster is deployed with custom cluster CA."),
+            @Step(value = "Create a custom cluster CA and deploy Kafka cluster with it.", expected = "Kafka cluster is deployed with custom cluster CA."),
             @Step(value = "Record initial CA and broker certificate dates.", expected = "Certificate dates are captured."),
             @Step(value = "Pause Kafka reconciliation and update validity and renewal days for cluster CA.", expected = "CA configuration is updated."),
             @Step(value = "Resume reconciliation and wait for components to roll.", expected = "Controllers, brokers, and Entity Operator roll."),
@@ -383,9 +383,9 @@ public class CustomCaST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test verifies that changing certificate validity and renewal days triggers renewal of user certificates without renewing the clients CA itself."),
+        description = @Desc("This test verifies that changing certificate validity and renewal days triggers renewal of user certificates without renewing the clients CA."),
         steps = {
-            @Step(value = "Create custom clients CA, deploy Kafka cluster, and create KafkaUser.", expected = "Kafka cluster and user are deployed with custom clients CA."),
+            @Step(value = "Create a custom clients CA, deploy a Kafka cluster, and create a KafkaUser.", expected = "Kafka cluster and user are deployed with custom clients CA."),
             @Step(value = "Record initial CA and user certificate dates.", expected = "Certificate dates are captured."),
             @Step(value = "Pause Kafka reconciliation and update validity and renewal days for clients CA.", expected = "CA configuration is updated."),
             @Step(value = "Resume reconciliation and wait for Entity Operator to roll.", expected = "Entity Operator rolls to apply new configuration."),
