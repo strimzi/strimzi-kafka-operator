@@ -22,7 +22,7 @@
         <cruise-control.version>2.5.146</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.4.0</kafka-quotas-plugin.version>
-        <kafka-kubernetes-config-provider.version>1.2.1</kafka-kubernetes-config-provider.version>
+        <kafka-kubernetes-config-provider.version>1.2.2</kafka-kubernetes-config-provider.version>
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>1.34.1-alpha</opentelemetry-alpha.version>
         <opentelemetry.instrumentation.version>1.32.0-alpha</opentelemetry.instrumentation.version>
