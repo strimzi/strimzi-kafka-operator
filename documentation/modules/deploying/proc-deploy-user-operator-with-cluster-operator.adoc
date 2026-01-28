@@ -32,7 +32,7 @@ For more information about configuring the `entityOperator` and `userOperator` p
 
 . Edit the `entityOperator` properties of the `Kafka` resource to include `userOperator`:
 +
-[source,yaml,subs="+quotes,attributes"]
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
@@ -42,8 +42,9 @@ spec:
   #...
   entityOperator:
     topicOperator: {}
-    *userOperator: {}*
+    userOperator: {}
 ----
+
 . Configure the User Operator `spec` using the properties described in link:{BookURLConfiguring}#type-EntityUserOperatorSpec-reference[`EntityUserOperatorSpec` schema reference^].
 +
 Use an empty object (`{}`) if you want all properties to use their default values.

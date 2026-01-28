@@ -30,31 +30,37 @@ You can create your own Prometheus configuration or use the xref:assembly-metric
 These files contain the necessary configuration, and are a good starting point for trying Prometheus with Strimzi.
 
 This procedure shows how to deploy example Prometheus metrics configuration to the `Kafka` resource.
+The same approach applies to other Strimzi components using their corresponding example files.
 
 .Procedure
 
-. Deploy the example custom resource with the Prometheus configuration.
+. Choose one of the following methods to configure metrics for your `Kafka` resource:
+
+.. **Option A: Apply the example configuration file**.
 +
-For example, for each `Kafka` resource you can apply the `kafka-metrics.yaml` file.
+Apply the `kafka-metrics.yaml` file for each `Kafka` resource you want to monitor:
 +
-.Deploying the example configuration
 [source,shell,subs="+attributes"]
 ----
 kubectl apply -f kafka-metrics.yaml
 ----
 +
-Alternatively, copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource.
+This creates or updates the `Kafka` resource with the necessary `metricsConfig` configuration to enable Strimzi Metrics Reporter.
+
+.. **Option B: Copy the example configuration into an existing `Kafka` resource**
 +
-.Copying the example configuration
-[source,shell]
+Edit the existing `Kafka` resource:
++
+[source,shell,subs="+attributes"]
 ----
-kubectl edit kafka <kafka_configuration_file>
+kubectl edit kafka <name_of_custom_resource>
 ----
 +
-Copy the `metricsConfig` property to your `Kafka` resource.
+Copy the `metricsConfig` property from `kafka-metrics.yaml` into the `spec.kafka` section of your `Kafka` resource.
 +
-.Example metrics configuration for Kafka
-[source,yaml,subs="+quotes,attributes"]
+For example, to enable and collect metrics related to Kafka logs and network activity, use the following patterns:
++
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
@@ -67,6 +73,9 @@ spec:
       type: strimziMetricsReporter
       values:
         allowList:
-          - "kafka_log.*"
-          - "kafka_network.*"
+          - "kafka.log.*"
+          - "kafka.network.*"
 ----
+
+* `metricsConfig`: Enables metrics collection for the Kafka cluster using the Strimzi Metrics Reporter.
+* `metricsConfig.values.allowList`: Comma-separated list of regular expression patterns that filter the metrics to collect. The default value is `.*`, which allows all metrics.

@@ -32,9 +32,8 @@ For more information, see xref:assembly-storage-{context}[].
 kubectl get pv
 ----
 +
-Information is presented for PVs with data.
+Example PV output:
 +
-.Example PV output
 [source,shell,subs="+quotes,attributes"]
 ----
 NAME                                          RECLAIMPOLICY  CLAIM
@@ -61,8 +60,9 @@ Here, we recreate the `myproject` namespace.
 
 . Recreate the original PVC resource specifications, linking the PVCs to the appropriate PV:
 +
-.Example PVC resource specification
-[source,shell,subs="+quotes,attributes"]
+Example PVC resource specification:
++
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -76,13 +76,14 @@ spec:
       storage: 100Gi
   storageClassName: gp2-retain
   volumeMode: Filesystem
-  volumeName: *pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c*
+  volumeName: pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c
 ----
 
 . Edit the PV specifications to delete the `claimRef` properties that bound the original PVC.
 +
-.Example PV specification
-[source,shell,subs="+quotes,attributes"]
+Example PV specification:
++
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: v1
 kind: PersistentVolume
@@ -91,7 +92,7 @@ metadata:
     kubernetes.io/createdby: aws-ebs-dynamic-provisioner
     pv.kubernetes.io/bound-by-controller: "yes"
     pv.kubernetes.io/provisioned-by: kubernetes.io/aws-ebs
-  creationTimestamp: "<date>"
+  creationTimestamp: "<date_time>"
   finalizers:
   - kubernetes.io/pv-protection
   labels:
@@ -109,12 +110,12 @@ spec:
     volumeID: aws://eu-west-1c/vol-09db3141656d1c258
   capacity:
     storage: 100Gi
-  *claimRef:*
-    *apiVersion: v1*
-    *kind: PersistentVolumeClaim*
-    *name: data-0-my-cluster-broker-0*
-    *namespace: myproject*
-    *resourceVersion: "39113"*
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: data-0-my-cluster-broker-0
+    namespace: myproject
+    resourceVersion: "39113"
     *uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea*
   nodeAffinity:
     required:
@@ -215,7 +216,8 @@ kubectl annotate kafka my-cluster strimzi.io/pause-reconciliation=false \
 kubectl get kafkatopics -o wide -w -n myproject
 ----
 +
-.Kafka topic status
+Example Kafka topic status:
++
 [source,shell,subs="+quotes"]
 ----
 NAME         CLUSTER     PARTITIONS  REPLICATION FACTOR READY
@@ -233,7 +235,8 @@ my-topic-3   my-cluster  10          3                  True
 kubectl get kafkausers -o wide -w -n myproject
 ----
 +
-.Kafka user status
+Example Kafka user status:
++
 [source,shell,subs="+quotes"]
 ----
 NAME       CLUSTER     AUTHENTICATION  AUTHORIZATION READY

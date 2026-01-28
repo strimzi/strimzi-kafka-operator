@@ -41,7 +41,7 @@ To reduce load on the cluster and avoid replicating unnecessary data, specify wh
 * `groupsPattern`: A regex to select consumer groups for offset synchronization.
 
 .Minimal configuration for KafkaMirrorMaker2
-[source,yaml,subs="+quotes,attributes"]
+[source,yaml,subs="+attributes"]
 ----
 # Basic configuration (required)
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -52,36 +52,35 @@ spec:
   # Kafka version (recommended)
   version: {DefaultKafkaVersion}
   # Replicas (required)
-  replicas: 3 # <1>
+  replicas: 3
   # Target / Connect cluster configuration (required)
-  target: # <2>
+  target:
     alias: "my-cluster-target"
     bootstrapServers: my-cluster-target-kafka-bootstrap:9092
     groupId: my-mirror-maker2-group
     configStorageTopic: my-mirror-maker2-config
     offsetStorageTopic: my-mirror-maker2-offset
     statusStorageTopic: my-mirror-maker2-status
-  # Mirroring configurations (required)  
-  mirrors: # <3>
+  # Mirroring configurations (required)
+  mirrors:
   - source:
-      alias: "my-cluster-source" # <4>
+      alias: "my-cluster-source"
       bootstrapServers: my-cluster-source-kafka-bootstrap:9092
-    # Source connector configuration (required) # <5>
+    # Source connector configuration (required)
     sourceConnector: {}
     # Topic and group patterns (required)
-      topicsPattern: "topic1.*|topic2.*" # <6>
-      groupsPattern: "group1.*|group2-[0-9]{2}" # <7>
+    topicsPattern: "topic1.*|topic2.*"
+    groupsPattern: "group1.*|group2-[0-9]{2}"
 ----
-<1> Number of Kafka Connect worker replicas to run.
-<2> Configuration of the Kafka cluster used as the target cluster. The cluster is also used by Kafka Connect to store internal topics.
-<3> Defines replication between the source and target clusters. 
-<4> Source cluster configuration must define a unique alias and a bootstrap address. The bootstrap address takes the format `<cluster_name>-kafka-bootstrap:<port>`.
-<5> Configuration for the source connector that replicates topics. At a minimum, you can add an empty `sourceConnector` property to use the default configuration.
-<6> Replicates only topics starting with `topic1` or `topic2`.
-<7> Replicates consumer groups starting with `group1` or `group2` followed by two digits. 
+
+* `replicas`: Number of Kafka Connect worker replicas to run.
+* `target`: Configuration of the Kafka cluster used as the target cluster. Kafka Connect uses this cluster to store internal topics.
+* `mirrors`: Defines replication between the source and target clusters.
+* `source.alias`: Unique identifier for the source Kafka cluster.
+* `source.bootstrapServers`: Bootstrap address of the source cluster. Use the format `<cluster_name>-kafka-bootstrap:<port>`.
+* `sourceConnector`: Configuration for the source connector that replicates topics. An empty object uses the default configuration.
+* `topicsPattern`: Replicates only topics that start with `topic1` or `topic2`.
+* `groupsPattern`: Replicates consumer groups that start with `group1` or `group2` followed by two digits.
 
 NOTE: The Kafka clusters do not need to be managed by Strimzi or run on Kubernetes.
-
-
-
 
