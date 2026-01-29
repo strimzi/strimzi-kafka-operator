@@ -202,7 +202,7 @@ public class KafkaSpecChecker {
     }
 
     /**
-     * Checks whether any 'tpe: ingress' listeners are used, and in case they are, it raises a deprecation warning. This
+     * Checks whether any 'type: ingress' listeners are used, and in case they are, it raises a deprecation warning. This
      * is done here in the KafkaSpecChecker because GenericKafkaListener is not a typed API class, and we cannot
      * deprecate just a single type. Therefore, the automatic warnings are not raised for it.
      *
