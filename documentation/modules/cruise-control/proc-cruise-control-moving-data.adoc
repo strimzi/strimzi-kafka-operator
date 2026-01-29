@@ -60,15 +60,12 @@ spec:
       - id: 0
         type: persistent-claim
         size: 2000Gi
-        deleteClaim: false
       - id: 1
         type: persistent-claim
         size: 2000Gi
-        deleteClaim: false
       - id: 2
         type: persistent-claim
         size: 2000Gi
-        deleteClaim: false
   # ...
 ----
 

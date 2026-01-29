@@ -142,7 +142,6 @@ spec:
       - id: 0
         type: persistent-claim
         size: 100Gi
-        deleteClaim: false
   # ...
 ----
 +

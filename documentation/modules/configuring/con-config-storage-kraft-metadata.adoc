@@ -35,11 +35,9 @@ spec:
     - id: 0
       type: persistent-claim
       size: 100Gi
-      deleteClaim: false
     - id: 1
       type: persistent-claim
       size: 100Gi
       kraftMetadata: shared
-      deleteClaim: false
   # ...
 ----

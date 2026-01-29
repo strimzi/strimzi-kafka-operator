@@ -34,7 +34,6 @@ spec:
       - id: 0
         type: persistent-claim
         size: 20Gi
-        deleteClaim: false
   # ...
 ----
 
@@ -82,7 +81,6 @@ spec:
       - id: 0
         type: persistent-claim
         size: 100Gi
-        deleteClaim: false
   # ...
 ----
 +
@@ -152,7 +150,6 @@ spec:
       - id: 0
         type: persistent-claim
         size: 20Gi
-        deleteClaim: false
   # ...
 ----
 
