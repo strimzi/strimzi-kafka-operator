@@ -4,7 +4,7 @@
 = Before you begin configuring OAuth 2.0
 
 [role="_abstract"]
-Strimzi enables OAuth 2.0 for Kafka using the Strimzi Kafka OAuth libraries to handle authentication and authorization. 
+Strimzi enables OAuth 2.0 for Kafka using the Strimzi OAuth libraries to handle authentication and authorization. 
 This section describes only the configuration that is required when deploying OAuth with Strimzi.
 
 For reference information, advanced configuration options, and platform-specific examples, see the {oauth-project}.
