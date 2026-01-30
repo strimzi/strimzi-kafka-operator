@@ -78,4 +78,5 @@ spec:
 ----
 
 * `metricsConfig`: Enables metrics collection for the Kafka cluster using the Strimzi Metrics Reporter.
-* `metricsConfig.values.allowList`: Comma-separated list of regular expression patterns that filter the metrics to collect. The default value is `.*`, which allows all metrics.
+* `metricsConfig.values.allowList`: List of regular expression patterns that filter the metrics to collect. 
+The default value is `.*`, which allows all metrics.

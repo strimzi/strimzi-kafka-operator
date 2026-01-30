@@ -116,7 +116,7 @@ spec:
     name: data-0-my-cluster-broker-0
     namespace: myproject
     resourceVersion: "39113"
-    *uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea*
+    uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea
   nodeAffinity:
     required:
       nodeSelectorTerms:
