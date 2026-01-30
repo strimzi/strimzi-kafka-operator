@@ -50,7 +50,7 @@
 
 //OAuth attributes and links
 :keycloak-docs: link:https://www.keycloak.org/documentation[Keycloak documentation^]
-:oauth-project: link:https://github.com/strimzi/strimzi-kafka-oauth[Strimzi Kafka OAuth project documentation^]
+:oauth-project: link:https://github.com/strimzi/strimzi-kafka-oauth[Strimzi OAuth project documentation^]
 
 // -----------------------------------------------------------------------------
 // Apache Kafka links
