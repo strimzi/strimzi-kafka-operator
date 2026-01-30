@@ -10,7 +10,7 @@ metadata:
     component: deployment
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    {{- .Values.deploymentLabels | nindent 6 }}
+    {{- .Values.deploymentLabels | nindent 4 }}
   {{- with .Values.deploymentAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
