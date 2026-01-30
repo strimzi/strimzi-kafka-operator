@@ -74,10 +74,11 @@ spec:
 ----
 
 * `replicas`: Number of Kafka Connect worker replicas to run.
-* `target`: Configuration of the Kafka cluster used as the target cluster. Kafka Connect uses this cluster to store internal topics.
+* `target`: Configuration for the target Kafka cluster. Kafka Connect uses this cluster to store internal topics.
+* `target.alias` and `target.bootstrapServers`: Configuration used to identify the target Kafka cluster and specify its bootstrap addresses (host:port). For a Strimzi-managed cluster, you can use the bootstrap service name, for example `<cluster_name>-kafka-bootstrap:<port>`.
 * `mirrors`: Defines replication between the source and target clusters.
-* `source.alias`: Unique identifier for the source Kafka cluster.
-* `source.bootstrapServers`: Bootstrap address of the source cluster. Use the format `<cluster_name>-kafka-bootstrap:<port>`.
+* `source`: Configuration for the source Kafka cluster.
+* `source.alias` and `source.bootstrapServers`: Configuration used to identify the source Kafka cluster and specify its bootstrap addresses (host:port). For a Strimzi-managed cluster, you can use the bootstrap service name, for example `<cluster_name>-kafka-bootstrap:<port>`.
 * `sourceConnector`: Configuration for the source connector that replicates topics. An empty object uses the default configuration.
 * `topicsPattern`: Replicates only topics that start with `topic1` or `topic2`.
 * `groupsPattern`: Replicates consumer groups that start with `group1` or `group2` followed by two digits.
