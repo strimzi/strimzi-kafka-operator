@@ -15,7 +15,6 @@ spec:
         type: persistent-claim
         size: 100Gi
         kraftMetadata: shared
-        deleteClaim: false
 ---
 
 apiVersion: kafka.strimzi.io/v1
@@ -36,11 +35,9 @@ spec:
         size: 100Gi
         # Indicates that this directory will be used to store Kraft metadata log
         kraftMetadata: shared
-        deleteClaim: false
       - id: 1
         type: persistent-claim
         size: 100Gi
-        deleteClaim: false
 ---
 
 apiVersion: kafka.strimzi.io/v1
