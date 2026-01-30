@@ -8,8 +8,8 @@
 
 * **From Strimzi 0.51 on, we support only Kubernetes 1.30 and newer.**
   Kubernetes 1.27, 1.28, and 1.29 are not supported anymore.
-* The `ingress` listener type is deprecated as the [Ingress NGINX Controller for Kubernetes](https://github.com/kubernetes/ingress-nginx) will be archived since March 2026.
-  There is currently no plan to remove the code from the Strimzi code base, but we do not plan any further improvements.
+* The `ingress` listener type is deprecated due to the archiving of the [Ingress NGINX Controller for Kubernetes](https://github.com/kubernetes/ingress-nginx) (March 2026).
+  The code remains in the Strimzi codebase, but no further improvements or development are planned.
 
 ## 0.50.0
 

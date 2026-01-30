@@ -164,7 +164,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.a
 * `route` type uses OpenShift Routes to expose Kafka.
 * `loadbalancer` type uses LoadBalancer type services to expose Kafka.
 * `nodeport` type uses NodePort type services to expose Kafka.
-* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough (deprecated).
+* `ingress` (deprecated) type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.
 * `cluster-ip` type uses a per-broker `ClusterIP` service.
 
 |tls
