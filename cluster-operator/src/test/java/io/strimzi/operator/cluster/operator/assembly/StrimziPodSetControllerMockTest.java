@@ -796,4 +796,196 @@ public class StrimziPodSetControllerMockTest {
             podSetOp().inNamespace(namespace).withName(podSetName).delete();
         }
     }
+
+    /**
+     * Tests that metadata-only changes (labels and annotations) are patched in-place
+     * without recreating the pod. This verifies the selective pod metadata patching feature.
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testMetadataOnlyPatch(VertxTestContext context) {
+        String podSetName = "metadata-patch-test";
+        String podName = podSetName + "-0";
+
+        try {
+            Pod originalPod = pod(namespace, podName, KAFKA_NAME, podSetName, "Kafka");
+            podSetOp().inNamespace(namespace).resource(podSet(namespace, podSetName, KAFKA_NAME, "Kafka", originalPod)).create();
+
+            // Wait until the pod is ready
+            TestUtils.waitFor(
+                    "Wait for Pod to be ready",
+                    100,
+                    10_000,
+                    () -> client.pods().inNamespace(namespace).withName(podName).isReady(),
+                    () -> context.failNow("Test timed out waiting for pod readiness!"));
+
+            // Check status of the PodSet
+            TestUtils.waitFor(
+                    "Wait for StrimziPodSetStatus",
+                    100,
+                    10_000,
+                    () -> {
+                        StrimziPodSet podSet = podSetOp().inNamespace(namespace).withName(podSetName).get();
+                        return podSet.getStatus().getCurrentPods() == 1
+                                && podSet.getStatus().getReadyPods() == 1
+                                && podSet.getStatus().getPods() == 1;
+                    },
+                    () -> context.failNow("Pod stats do not match"));
+
+            // Get the original pod's resource version - this should NOT change after metadata patch
+            Pod initialPod = client.pods().inNamespace(namespace).withName(podName).get();
+            String originalResourceVersion = initialPod.getMetadata().getResourceVersion();
+
+            // Create an updated pod with new labels and annotations but same revision (same spec)
+            Pod updatedPod = pod(namespace, podName, KAFKA_NAME, podSetName, "Kafka");
+            // Add new labels
+            Map<String, String> newLabels = new HashMap<>(updatedPod.getMetadata().getLabels());
+            newLabels.put("environment", "production");
+            newLabels.put("tier", "backend");
+            updatedPod.getMetadata().setLabels(newLabels);
+            // Add new annotations (but keep the same revision)
+            Map<String, String> newAnnotations = new HashMap<>(updatedPod.getMetadata().getAnnotations());
+            newAnnotations.put("prometheus.io/scrape", "true");
+            newAnnotations.put("prometheus.io/port", "9404");
+            updatedPod.getMetadata().setAnnotations(newAnnotations);
+
+            // Update the PodSet with the modified pod (metadata changes only)
+            podSetOp().inNamespace(namespace).resource(podSet(namespace, podSetName, KAFKA_NAME, "Kafka", updatedPod)).update();
+
+            // Wait for the metadata to be patched
+            TestUtils.waitFor(
+                    "Wait for metadata to be patched",
+                    100,
+                    10_000,
+                    () -> {
+                        Pod p = client.pods().inNamespace(namespace).withName(podName).get();
+                        return p != null
+                                && "production".equals(p.getMetadata().getLabels().get("environment"))
+                                && "true".equals(p.getMetadata().getAnnotations().get("prometheus.io/scrape"));
+                    },
+                    () -> context.failNow("Metadata was not patched!"));
+
+            // Verify pod was patched but NOT recreated (resource version changes on patch, but UID stays same)
+            Pod patchedPod = client.pods().inNamespace(namespace).withName(podName).get();
+            
+            // Verify new labels were added
+            assertThat(patchedPod.getMetadata().getLabels().get("environment"), is("production"));
+            assertThat(patchedPod.getMetadata().getLabels().get("tier"), is("backend"));
+            
+            // Verify new annotations were added
+            assertThat(patchedPod.getMetadata().getAnnotations().get("prometheus.io/scrape"), is("true"));
+            assertThat(patchedPod.getMetadata().getAnnotations().get("prometheus.io/port"), is("9404"));
+            
+            // Verify original labels are still present
+            assertThat(patchedPod.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
+            assertThat(patchedPod.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(KAFKA_NAME));
+
+            // Verify the pod is still current (same revision = spec unchanged)
+            TestUtils.waitFor(
+                    "Wait for StrimziPodSetStatus after patch",
+                    100,
+                    10_000,
+                    () -> {
+                        StrimziPodSet podSet = podSetOp().inNamespace(namespace).withName(podSetName).get();
+                        return podSet.getStatus().getCurrentPods() == 1
+                                && podSet.getStatus().getReadyPods() == 1
+                                && podSet.getStatus().getPods() == 1;
+                    },
+                    () -> context.failNow("Pod stats do not match after patch"));
+
+            context.completeNow();
+        } finally {
+            podSetOp().inNamespace(namespace).withName(podSetName).delete();
+        }
+    }
+
+    /**
+     * Tests that spec changes (requiring rolling update) do not trigger immediate pod recreation
+     * by the controller. The controller leaves rolling updates to the dedicated rollers.
+     * This is similar to testPodUpdates but specifically validates the behavior when
+     * both spec AND metadata change together.
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testSpecChangeDoesNotPatch(VertxTestContext context) {
+        String podSetName = "spec-change-test";
+        String podName = podSetName + "-0";
+
+        try {
+            Pod originalPod = pod(namespace, podName, KAFKA_NAME, podSetName, "Kafka");
+            podSetOp().inNamespace(namespace).resource(podSet(namespace, podSetName, KAFKA_NAME, "Kafka", originalPod)).create();
+
+            // Wait until the pod is ready
+            TestUtils.waitFor(
+                    "Wait for Pod to be ready",
+                    100,
+                    10_000,
+                    () -> client.pods().inNamespace(namespace).withName(podName).isReady(),
+                    () -> context.failNow("Test timed out waiting for pod readiness!"));
+
+            // Check status of the PodSet
+            TestUtils.waitFor(
+                    "Wait for StrimziPodSetStatus",
+                    100,
+                    10_000,
+                    () -> {
+                        StrimziPodSet podSet = podSetOp().inNamespace(namespace).withName(podSetName).get();
+                        return podSet.getStatus().getCurrentPods() == 1
+                                && podSet.getStatus().getReadyPods() == 1
+                                && podSet.getStatus().getPods() == 1;
+                    },
+                    () -> context.failNow("Pod stats do not match"));
+
+            // Get the original pod's resource version and revision
+            Pod initialPod = client.pods().inNamespace(namespace).withName(podName).get();
+            String originalResourceVersion = initialPod.getMetadata().getResourceVersion();
+            String originalRevision = initialPod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION);
+
+            // Create a pod with BOTH spec changes (new revision) AND metadata changes
+            Pod updatedPod = pod(namespace, podName, KAFKA_NAME, podSetName, "Kafka");
+            // Change the spec (this will result in a different revision hash)
+            updatedPod.getSpec().setTerminationGracePeriodSeconds(30L);
+            // Also add new labels
+            Map<String, String> newLabels = new HashMap<>(updatedPod.getMetadata().getLabels());
+            newLabels.put("updated", "true");
+            updatedPod.getMetadata().setLabels(newLabels);
+            // Set a new revision to simulate spec change
+            updatedPod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, "new-spec-revision");
+
+            // Update the PodSet
+            podSetOp().inNamespace(namespace).resource(podSet(namespace, podSetName, KAFKA_NAME, "Kafka", updatedPod)).update();
+
+            // Wait for the PodSet status to show pod is no longer current (due to spec change)
+            TestUtils.waitFor(
+                    "Wait for StrimziPodSetStatus to show non-current pod",
+                    100,
+                    10_000,
+                    () -> {
+                        StrimziPodSet podSet = podSetOp().inNamespace(namespace).withName(podSetName).get();
+                        return podSet.getStatus().getCurrentPods() == 0
+                                && podSet.getStatus().getReadyPods() == 1
+                                && podSet.getStatus().getPods() == 1;
+                    },
+                    () -> context.failNow("Pod stats do not match - pod should be marked non-current"));
+
+            // Verify the pod was NOT recreated (controller leaves this to rolling updater)
+            Pod actualPod = client.pods().inNamespace(namespace).withName(podName).get();
+            assertThat(actualPod.getMetadata().getResourceVersion(), is(originalResourceVersion));
+            
+            // Verify the pod still has original spec
+            assertThat(actualPod.getSpec().getTerminationGracePeriodSeconds(), is(0L));
+            
+            // Verify the pod still has original revision
+            assertThat(actualPod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(originalRevision));
+            
+            // Verify the metadata was NOT patched (because spec also changed)
+            assertThat(actualPod.getMetadata().getLabels().get("updated"), is(nullValue()));
+
+            context.completeNow();
+        } finally {
+            podSetOp().inNamespace(namespace).withName(podSetName).delete();
+        }
+    }
 }

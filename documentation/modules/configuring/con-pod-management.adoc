@@ -14,4 +14,13 @@ You must not create, update, or delete `StrimziPodSet` resources.
 The `StrimziPodSet` custom resource is used internally and resources are managed solely by the Cluster Operator.
 As a consequence, the Cluster Operator must be running properly to avoid the possibility of pods not starting and Kafka clusters not being available.
 
+== Selective pod metadata patching
+
+The `StrimziPodSetController` supports in-place patching of pod metadata (labels and annotations) without requiring a rolling restart.
+When you update labels or annotations in your Kafka, Kafka Connect, or MirrorMaker 2 custom resources, the Cluster Operator detects whether these are metadata-only changes.
+If a change affects only the pod metadata and not the pod specification, the controller applies the update directly using a strategic merge patch instead of triggering a rolling update.
+This optimization improves operational efficiency by avoiding unnecessary pod restarts for common operational changes like adding monitoring labels or updating annotations.
+
+NOTE: Changes to the pod specification (such as container images, resource limits, or volumes) still require a rolling restart to apply.
+
 NOTE: Kubernetes `Deployment` resources are used for creating and managing the pods of other components.
