@@ -41,6 +41,7 @@ annotations: {}
 labels: {}
 nodeSelector: {}
 deploymentAnnotations: {}
+deploymentLabels: {}
 deploymentStrategy: {}
 priorityClassName: ""
 
