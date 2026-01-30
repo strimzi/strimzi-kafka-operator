@@ -73,15 +73,15 @@ spec:
     groupsPattern: "group1.*|group2-[0-9]{2}"
 ----
 
-* `replicas`: Number of Kafka Connect worker replicas to run.
-* `target`: Configuration for the target Kafka cluster. Kafka Connect uses this cluster to store internal topics.
-* `target.alias` and `target.bootstrapServers`: Configuration used to identify the target Kafka cluster and specify its bootstrap addresses (host:port). For a Strimzi-managed cluster, you can use the bootstrap service name, for example `<cluster_name>-kafka-bootstrap:<port>`.
-* `mirrors`: Defines replication between the source and target clusters.
-* `source`: Configuration for the source Kafka cluster.
-* `source.alias` and `source.bootstrapServers`: Configuration used to identify the source Kafka cluster and specify its bootstrap addresses (host:port). For a Strimzi-managed cluster, you can use the bootstrap service name, for example `<cluster_name>-kafka-bootstrap:<port>`.
-* `sourceConnector`: Configuration for the source connector that replicates topics. An empty object uses the default configuration.
-* `topicsPattern`: Replicates only topics that start with `topic1` or `topic2`.
-* `groupsPattern`: Replicates consumer groups that start with `group1` or `group2` followed by two digits.
+* `replicas` specifies the number of Kafka Connect worker replicas to run.
+* `target` provides configuration for the target Kafka cluster. Kafka Connect uses this cluster to store internal topics.
+* `target.alias` and `target.bootstrapServers` provide configuration used to identify the target Kafka cluster and specify its bootstrap addresses (host:port). For a Strimzi-managed cluster, you can use the bootstrap service name, for example `<cluster_name>-kafka-bootstrap:<port>`.
+* `mirrors` defines replication between the source and target clusters.
+* `source` provides configuration for the source Kafka cluster.
+* `source.alias` and `source.bootstrapServers` provide configuration used to identify the source Kafka cluster and specify its bootstrap addresses (host:port). For a Strimzi-managed cluster, you can use the bootstrap service name, for example `<cluster_name>-kafka-bootstrap:<port>`.
+* `sourceConnector` provides configuration for the source connector that replicates topics. An empty object uses the default configuration.
+* `topicsPattern` configures replication for topics that start with `topic1` or `topic2`.
+* `groupsPattern` configures replication for consumer groups that start with `group1` or `group2` followed by two digits.
 
 NOTE: The Kafka clusters do not need to be managed by Strimzi or run on Kubernetes.
 

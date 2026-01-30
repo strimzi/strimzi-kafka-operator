@@ -93,7 +93,7 @@ data:
     # _metrics configuration..._
 ----
 
-* `metricsConfig`: Enables metrics collection for the Kafka cluster and references a ConfigMap that contains the JMX Exporter configuration.
-* `ConfigMap`: Defines the JMX Exporter configuration used to expose Kafka metrics.
+* `metricsConfig` enables metrics collection for the Kafka cluster and references a ConfigMap that contains the JMX Exporter configuration.
+* `ConfigMap` defines the JMX Exporter configuration used to expose Kafka metrics.
 
 
