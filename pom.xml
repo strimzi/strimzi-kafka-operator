@@ -130,8 +130,8 @@
         <fasterxml.jackson-annotations.version>2.16.2</fasterxml.jackson-annotations.version>
         <fasterxml.jackson-datatype.version>2.16.2</fasterxml.jackson-datatype.version>
         <fasterxml.jackson-jaxrs.version>2.16.2</fasterxml.jackson-jaxrs.version>
-        <vertx.version>4.5.23</vertx.version>
-        <vertx-junit5.version>4.5.23</vertx-junit5.version>
+        <vertx.version>4.5.24</vertx.version>
+        <vertx-junit5.version>4.5.24</vertx-junit5.version>
         <kafka.version>3.9.1</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <zookeeper.version>3.8.5</zookeeper.version>
