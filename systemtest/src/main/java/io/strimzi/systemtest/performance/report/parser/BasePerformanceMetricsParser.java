@@ -163,6 +163,9 @@ public abstract class BasePerformanceMetricsParser {
                         ExperimentMetrics experimentMetrics = new ExperimentMetrics();
                         File[] metricFiles = experimentFile.listFiles();
                         if (metricFiles != null) {
+                            // Sort metric files alphabetically to ensure consistent column order across
+                            // different architectures and filesystems
+                            Arrays.sort(metricFiles, Comparator.comparing(File::getName));
                             for (File metricFile : metricFiles) {
                                 processMetricsFile(metricFile, experimentMetrics);
                             }
