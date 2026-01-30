@@ -33,6 +33,8 @@ Please let us know by adding your company name and, if you want, a description o
 * [AppsFlyer](https://www.appsflyer.com/)
   * Running dozens of high-throughput clusters, handling tens of millions of messages per second, relying on the local ephemeral storage.
 * [Feedzai](https://www.feedzai.com/)
+* [Pattern](https://www.pattern.com)
+    * Use Strimzi to run Kafka and Kafka Connect as part of the data platform for queueing, event notifications, logging, and CDC pipelines.
 
 ### Vendors
 
