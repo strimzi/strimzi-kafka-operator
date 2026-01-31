@@ -288,7 +288,7 @@ public class KafkaReconciler {
         Set<Integer> addedBrokers = kafka.addedNodes().stream().filter(NodeRef::broker).map(NodeRef::nodeId).collect(Collectors.toSet());
 
         // if added brokers list contains all desired, it's a newly created cluster so there are no actual scaled up brokers.
-        // when added brokers list has fewer nodes than desired, it actually containes the new ones for scaling up
+        // when added brokers list has fewer nodes than desired, it actually contains the new ones for scaling up
         Set<Integer> scaledUpBrokerNodes = addedBrokers.containsAll(desiredBrokers) ? Set.of() : addedBrokers;
 
         KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, kafkaAutoRebalanceStatus, scaledUpBrokerNodes);
@@ -314,7 +314,7 @@ public class KafkaReconciler {
     /**
      * Initialize the TrustSet and PemAuthIdentity to be used by TLS clients during reconciliation
      *
-     * @return Completes when the TrustStore and PemAuthIdentity have been created and stored in a record
+     * @return Completes when the TrustSet and PemAuthIdentity have been created and stored in a record
      */
     protected Future<Void> initClientAuthenticationCertificates() {
         return ReconcilerUtils.coTlsPemIdentity(reconciliation, secretOperator)
