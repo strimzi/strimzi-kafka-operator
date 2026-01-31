@@ -109,6 +109,7 @@ the documentation for more details.
 | `defaultImageRepository`                         | Default image registry for all the images                                       | `strimzi`                    |
 | `defaultImageTag`                                | Default image tag for all the images except Kafka Bridge                        | `latest`                     |
 | `deploymentAnnotations`                          | Annotations for the operator deployment                                         | `{}`                         |
+| `deploymentLabels`                               | Labels for the operator deployment                                              | `{}`                         |
 | `image.registry`                                 | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                               | Override default Cluster Operator image repository                              | `nil`                        |
 | `image.name`                                     | Cluster Operator image name                                                     | `operator`                   |
