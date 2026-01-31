@@ -8,7 +8,10 @@
 = Accessing Kafka using an Ingress NGINX Controller for Kubernetes
 
 [role="_abstract"]
-Use an {NginxIngressController} to access a Kafka cluster from clients outside the Kubernetes cluster. 
+Use an {NginxIngressController} to access a Kafka cluster from clients outside the Kubernetes cluster.
+
+IMPORTANT: The `ingress` listener type is deprecated because the {NginxIngressController} has been archived since March 2026.
+Although the related code remains in the Strimzi codebase, it is no longer maintained, and no further enhancements or development are planned.
 
 To be able to use an Ingress NGINX Controller for Kubernetes, add configuration for an `ingress` type listener in the `Kafka` custom resource. 
 When applied, the configuration creates a dedicated ingress and service for an external bootstrap and each broker in the cluster. 

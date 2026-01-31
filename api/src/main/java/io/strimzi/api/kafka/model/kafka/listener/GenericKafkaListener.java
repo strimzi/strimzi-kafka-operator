@@ -82,7 +82,7 @@ public class GenericKafkaListener implements UnknownPropertyPreserving {
             "* `route` type uses OpenShift Routes to expose Kafka.\n" +
             "* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n" +
             "* `nodeport` type uses NodePort type services to expose Kafka.\n" +
-            "* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.\n" +
+            "* `ingress` (deprecated) type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.\n" +
             "* `cluster-ip` type uses a per-broker `ClusterIP` service.\n")
     @JsonProperty(required = true)
     public KafkaListenerType getType() {

@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
@@ -725,5 +726,47 @@ public class KafkaSpecCheckerTest {
 
         warnings = checker.run();
         assertThat(warnings, hasSize(0));
+    }
+
+    @Test
+    public void checkIngressDeprecationWarning() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("ingress")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INGRESS)
+                                .withTls()
+                                .withNewConfiguration()
+                                        .withNewBootstrap()
+                                            .withHost("bootstrap")
+                                        .endBootstrap()
+                                        .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                                        .withBroker(0)
+                                                        .withHost("kafka-0")
+                                                        .build(),
+                                                new GenericKafkaListenerConfigurationBrokerBuilder()
+                                                        .withBroker(1)
+                                                        .withHost("kafka-1")
+                                                        .build(),
+                                                new GenericKafkaListenerConfigurationBrokerBuilder()
+                                                        .withBroker(2)
+                                                        .withHost("kafka-2")
+                                                        .build())
+                                    .endConfiguration()
+                                .build())
+                    .endKafka()
+                .endSpec()
+            .build();
+
+        KafkaSpecChecker checker = generateChecker(kafka, List.of(MIXED), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
+        List<Condition> warnings = checker.run();
+        assertThat(warnings, hasSize(1));
+
+        Condition warning = warnings.get(0);
+        assertThat(warning.getReason(), is("DeprecatedObjects"));
+        assertThat(warning.getStatus(), is("True"));
+        assertThat(warning.getMessage(), is("ingress type listeners are deprecated."));
     }
 }
