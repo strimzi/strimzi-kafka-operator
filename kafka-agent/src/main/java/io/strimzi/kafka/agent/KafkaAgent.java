@@ -89,10 +89,10 @@ public class KafkaAgent {
     /**
      * Constructor of the KafkaAgent
      *
-     * @param client       Keystore containing the broker certificate
-     * @param caCertSecretName       Password for keystore
-     * @param nodeCertSecretName     Truststore containing CA certs for authenticating clients
-     * @param namespace     Password for truststore
+     * @param client                Kubernetes client instance
+     * @param caCertSecretName      CA certificate Secret name
+     * @param nodeCertSecretName    Node certificate Secret name
+     * @param namespace             Namespace where the Kafka cluster is running
      */
     /* test */ KafkaAgent(KubernetesClient client, String caCertSecretName, String nodeCertSecretName, String namespace) {
         this.caCertSecret = getKubernetesSecret(client, caCertSecretName, namespace);
@@ -106,6 +106,8 @@ public class KafkaAgent {
     /**
      * Constructor of the KafkaAgent
      *
+     * @param caCertSecret                  CA certificate Secret
+     * @param nodeCertSecret                Node certificate Secret
      * @param brokerState                   Current state of the broker
      * @param remainingLogsToRecover        Number of remaining logs to recover
      * @param remainingSegmentsToRecover    Number of remaining segments to recover
