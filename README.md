@@ -42,7 +42,7 @@ You can join our regular community meetings:
 Resources:
 * [Meeting minutes, agenda and Zoom link](https://docs.google.com/document/d/1V1lMeMwn6d2x1LKxyydhjo2c_IFANveelLD880A6bYc/edit#heading=h.vgkvn1hr5uor)
 * [Recordings](https://youtube.com/playlist?list=PLpI4X8PMthYfONZopcRd4X_stq1C14Rtn)
-* [Calendar](https://calendar.google.com/calendar/embed?src=c_m9pusj5ce1b4hr8c92hsq50i00%40group.calendar.google.com) ([Subscribe to the calendar](https://calendar.google.com/calendar/u/0?cid=Y19tOXB1c2o1Y2UxYjRocjhjOTJoc3E1MGkwMEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t))
+* [Calendar](https://zoom-lfx.platform.linuxfoundation.org/meetings/strimzi) ([Subscribe to the calendar](https://webcal.prod.itx.linuxfoundation.org/lfx/a092M00001JWrBrQAL))
 
 ## Contributing
 
