@@ -7,12 +7,14 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -160,5 +162,12 @@ public class KafkaConfigurationTests {
         assertThat(modifiedExceptionList, hasItems("listener.name.listener1-9900.connections.max.reauth.ms",
                 "listener.name.listener1-9900.max.connections",
                 "listener.name.listener1-9900.max.connection.creation.rate"));
+    }
+
+    @Test
+    public void testIsDouble() {
+        Map<String, ConfigModel> model = KafkaConfiguration.readConfigModel(KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion());
+        assertThat(KafkaConfiguration.isDouble("compression.type", model), is(false));
+        assertThat(KafkaConfiguration.isDouble("log.cleaner.io.max.bytes.per.second", model), is(true));
     }
 }
