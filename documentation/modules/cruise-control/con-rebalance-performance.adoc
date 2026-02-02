@@ -5,7 +5,7 @@
 // assembly-cruise-control-concepts.adoc
 
 [id='con-rebalance-{context}']
-= Tuning options for rebalances
+= Tuning rebalance performance
 
 [role="_abstract"]
 Configuration options allow you to fine-tune cluster rebalance performance. 

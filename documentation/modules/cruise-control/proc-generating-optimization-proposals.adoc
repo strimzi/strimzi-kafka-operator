@@ -9,8 +9,9 @@
 
 [role="_abstract"]
 When you create or update a `KafkaRebalance` resource, Cruise Control generates an optimization proposal for the Kafka cluster based on a set of optimization goals.
-Analyze the information in the optimization proposal and decide whether to approve it.
-You can use the results of the optimization proposal to rebalance your Kafka cluster.
+Review the optimization proposal to assess the expected impact of a cluster rebalance and decide whether to proceed.
+The proposal reflects the state of the Kafka cluster at the time it is generated.
+The executed rebalance might differ from the proposal if cluster conditions change before approval.
 
 This procedure covers using the following modes for generating optimization proposals related to rebalances:
 
@@ -193,7 +194,7 @@ kubectl get kafkarebalance -o wide -w -n _<namespace>_
 `ProposalReady`:: A `ProposalReady` status means the optimization proposal is ready for review and approval.
 --
 +
-When the status changes to `ProposalReady`, the optimization proposal is ready to approve.
+When the status changes to `ProposalReady`, the optimization proposal is ready for review and approval.
 
 . Review the optimization proposal.
 +
@@ -229,7 +230,7 @@ Status:
   Session Id:                             05539377-ca7b-45ef-b359-e13564f1458c
 ----
 +
-The properties in the `Optimization Result` section describe the pending cluster rebalance operation.
+The properties in the `Optimization Result` section describe the expected scope of a cluster rebalance.
 For descriptions of each property, see xref:contents-optimization-proposals[Contents of optimization proposals].
 
 .Insufficient CPU capacity
