@@ -5,15 +5,15 @@
 // assembly-config.adoc
 
 [id='proc-configuring-kafka-connect-user-authorization-{context}']
-= Configuring Kafka Connect user authorization
+= Granting Kafka Connect access to Kafka resources
 
 [role="_abstract"]
-When using authorization in Kafka, a Kafka Connect user requires read/write access to the cluster group and internal topics of Kafka Connect. 
-This procedure outlines how access is granted using `simple` authorization and ACLs.
+When Kafka authorization is enabled, grant a Kafka Connect user access to the internal topics and consumer group used by Kafka Connect.
+This procedure shows how to configure ACLs using simple authorization.
 
-Properties for the Kafka Connect cluster group ID and internal topics are configured by Strimzi by default. 
+By default, Strimzi configures the Kafka Connect cluster group ID and internal topic names.
 Alternatively, you can define them explicitly in the `spec` of the `KafkaConnect` resource. 
-This is useful when xref:con-config-kafka-connect-multiple-instances-{context}[configuring Kafka Connect for multiple instances], as the values for the group ID and topics must differ when running multiple Kafka Connect instances.
+This is useful when xref:con-config-kafka-connect-multiple-instances-{context}[running multiple Kafka Connect instances], as the values for the group ID and topics must differ when running multiple Kafka Connect instances.
 
 Simple authorization uses ACL rules managed by the Kafka `StandardAuthorizer` plugin to ensure appropriate access levels.
 For more information on configuring a `KafkaUser` resource to use simple authorization, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
@@ -28,7 +28,7 @@ For more information on configuring a `KafkaUser` resource to use simple authori
 . Edit the `authorization` property in the `KafkaUser` resource to provide access rights to the user.
 +
 Access rights are configured for the Kafka Connect topics and cluster group using `literal` name values.
-The following table shows the default names configured for the topics and cluster group ID. 
+The following table shows the default names used for the topics and cluster group ID. 
 +
 .Names for the access rights configuration 
 [table,stripes=none]
@@ -112,4 +112,4 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-USER-CONFIG-FILE_
+kubectl apply -f <kafka_user_configuration_file>

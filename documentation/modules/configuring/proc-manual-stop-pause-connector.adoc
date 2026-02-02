@@ -5,16 +5,15 @@
 // assembly-config.adoc
 
 [id='proc-manual-stop-pause-connector-{context}']
-= Manually stopping or pausing Kafka Connect connectors
+= Stopping or pausing Kafka Connect connectors
 
 [role="_abstract"]
-If you are using `KafkaConnector` resources to configure connectors, use the `state` configuration to either stop or pause a connector.
-In contrast to the paused state, where the connector and tasks remain instantiated, stopping a connector retains only the configuration, with no active processes.
-Stopping a connector from running may be more suitable for longer durations than just pausing.
-While a paused connector is quicker to resume, a stopped connector has the advantages of freeing up memory and resources.
+[role="_abstract"]
+If you are using `KafkaConnector` resources to manage connectors, use the `state` property to stop or pause a connector.
 
-NOTE: The `state` configuration replaces the (deprecated) `pause` configuration in the `KafkaConnectorSpec` schema, which allows pauses on connectors. 
-If you were previously using the `pause` configuration to pause connectors, we encourage you to transition to using the `state` configuration only to avoid conflicts.
+Pausing a connector keeps the connector and tasks instantiated, allowing it to resume quickly.
+Stopping a connector retains only the configuration and stops all running tasks.
+Stopping is more suitable for longer periods, as it frees up memory and resources.
 
 .Prerequisites
 
@@ -31,7 +30,8 @@ kubectl get KafkaConnector
 
 . Edit the `KafkaConnector` resource to stop or pause the connector.
 +
-.Example configuration for stopping a Kafka Connect connector
+Example configuration to stop a Kafka Connect connector:
++
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaConnectApiVersion}
@@ -54,9 +54,9 @@ Change the `state` configuration to `stopped` or `paused`.
 The default state for the connector when this property is not set is `running`.  
 
 . Apply the changes to the `KafkaConnector` configuration.
-+
-You can resume the connector by changing `state` to `running` or removing the configuration.
 
-NOTE: Alternatively, you can xref:con-exposing-kafka-connect-api-str[expose the Kafka Connect API] and use the `stop` and `pause` endpoints to stop a connector from running.
+. To resume the connector, change `state` to `running` or remove the `state` property.
++
+NOTE: Alternatively, you can xref:con-exposing-kafka-connect-api-str[expose the Kafka Connect API] and use the `stop` and `pause` endpoints.
 For example, `PUT /connectors/<connector_name>/stop`.
-You can then use the `resume` endpoint to restart it. 
+Use the `resume` endpoint to restart the connector.
