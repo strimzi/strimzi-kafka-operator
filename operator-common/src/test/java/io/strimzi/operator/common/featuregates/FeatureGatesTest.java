@@ -118,7 +118,7 @@ public class FeatureGatesTest {
     @Test
     public void testEnvironmentVariable()   {
         assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
-        assertThat(new FeatureGates("+ServerSideApplyPhase1").toEnvironmentVariable(), is("+ServerSideApplyPhase1"));
-        assertThat(new FeatureGates("-ServerSideApplyPhase1").toEnvironmentVariable(), is(""));
+        assertThat(new FeatureGates("+ServerSideApplyPhase1").toEnvironmentVariable(), is(""));
+        assertThat(new FeatureGates("-ServerSideApplyPhase1").toEnvironmentVariable(), is("-ServerSideApplyPhase1"));
     }
 }

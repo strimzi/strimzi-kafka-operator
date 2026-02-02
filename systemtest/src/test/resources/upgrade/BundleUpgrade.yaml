@@ -72,7 +72,7 @@
     flakyEnvVariable: none
     reason: Test is working on environment, where k8s server version is < 1.22
   fromFeatureGates: ""
-  toFeatureGates: "+ServerSideApplyPhase1"
+  toFeatureGates: "-ServerSideApplyPhase1"
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
     toKafka: "/examples/kafka/kafka-persistent.yaml"
@@ -94,7 +94,7 @@
     flakyEnvVariable: none
     reason: Test is working on environment, where k8s server version is < 1.22
   fromFeatureGates: "+ServerSideApplyPhase1"
-  toFeatureGates: "+ServerSideApplyPhase1"
+  toFeatureGates: ""
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
     toKafka: "/examples/kafka/kafka-persistent.yaml"

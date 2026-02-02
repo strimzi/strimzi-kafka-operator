@@ -141,7 +141,7 @@ runs:
           const DEFAULTS = {
             pipelines:    '',
             profiles:     '',
-            featureGate:  '+ServerSideApplyPhase1,+UseConnectBuildWithBuildah',
+            featureGate:  '-ServerSideApplyPhase1,+UseConnectBuildWithBuildah',
             rbacScope:    'CLUSTER',
             installType:  'yaml',
             parallel:     '1',

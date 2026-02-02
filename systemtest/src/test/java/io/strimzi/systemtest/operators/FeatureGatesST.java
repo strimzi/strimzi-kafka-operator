@@ -90,7 +90,7 @@ public class FeatureGatesST extends AbstractST {
         LOGGER.info("Deploying CO with SSA Phase 1 disabled");
 
         // Firstly deploy CO without SSA enabled to check that changes to the resources will be re-written
-        setupClusterOperatorWithFeatureGate("");
+        setupClusterOperatorWithFeatureGate(SERVER_SIDE_APPLY_PHASE_1_DISABLED);
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -101,7 +101,7 @@ public class FeatureGatesST extends AbstractST {
         annotateResourcesAndCheckIfPresent(testStorage, false);
 
         LOGGER.info("Enabling Server Side Apply Phase 1");
-        changeFeatureGatesAndWaitForCoRollingUpdate(SERVER_SIDE_APPLY_PHASE_1_ENABLED);
+        changeFeatureGatesAndWaitForCoRollingUpdate("");
 
         annotateResourcesAndCheckIfPresent(testStorage, true);
 
