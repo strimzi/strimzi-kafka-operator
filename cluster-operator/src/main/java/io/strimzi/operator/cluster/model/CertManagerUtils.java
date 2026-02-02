@@ -22,6 +22,9 @@ import java.util.Objects;
  */
 public class CertManagerUtils {
     private static final String CERT_MANAGER_SECRET_SUFFIX = "-cm";
+
+    private CertManagerUtils() { }
+
     /**
      * Get the name of the Secret managed by cert-manager, given a Strimzi managed Secret
      *

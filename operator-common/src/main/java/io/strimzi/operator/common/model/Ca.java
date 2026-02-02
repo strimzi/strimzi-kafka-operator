@@ -794,6 +794,8 @@ public abstract class Ca {
     public abstract void updateCertAndIncrementGenerations(String newCaCertData, X509Certificate endEntityCertificate);
 
     /**
+     * Gets the certificate manager type.
+     *
      * @return the CertificateManagerType of this Ca.
      */
     public CertificateManagerType getType() {
@@ -837,7 +839,9 @@ public abstract class Ca {
     }
 
     /**
-     * @return The current CA certificate as an X509Certificate
+     * Gets the current CA certificates as an X509Certificate.
+     *
+     * @return The current CA certificate as an X509Certificate.
      */
     public X509Certificate currentCaCertX509() {
         if (caCertData.get(CA_CRT) != null) {
