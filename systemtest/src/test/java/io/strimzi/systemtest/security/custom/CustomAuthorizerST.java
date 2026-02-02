@@ -141,7 +141,7 @@ public class CustomAuthorizerST extends AbstractST {
         description = @Desc("This test verifies that a superuser can produce and consume messages without explicit ACL rules."),
         steps = {
             @Step(value = "Create KafkaUser with TLS certificate CN matching the configured superuser DN.", expected = "The KafkaUser representing the superuser is ready."),
-            @Step(value = "Deploy Kafka clients using the superuser KafkaUser. | The producer and consumer complete successfully.")
+            @Step(value = "Deploy Kafka clients using the superuser KafkaUser.", expected = "The producer and consumer complete successfully.")
         },
         labels = {
             @Label(value = TestDocsLabels.SECURITY)
