@@ -42,7 +42,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create KafkaUser with TLS certificate CN matching the configured superuser DN. | The KafkaUser representing the superuser is ready. |
-| 2. | Deploy Kafka clients using the superuser KafkaUser. | The producer and consumer complete successfully. |  |
+| 2. | Deploy Kafka clients using the superuser KafkaUser. | The producer and consumer complete successfully. |
 
 **Labels:**
 

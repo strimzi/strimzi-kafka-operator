@@ -100,7 +100,7 @@
 | 3. | Replace the old cluster CA key pair with the new one, while retaining the old certificate. | CA secrets are updated with new key pair. |
 | 4. | Resume reconciliation and wait for rolling updates to complete. | All components roll to trust the new CA and use new certificates. |
 | 5. | Verify message production works with renewed certificates. | Producer successfully sends messages. |
-| 6. | Remove outdated certificate and trigger manual rolling update using 'strimzi.io/manual-rolling-update' annotation. | Cluster no longer trusts old certificates. |
+| 6. | Remove outdated certificate and trigger manual rolling update using `strimzi.io/manual-rolling-update` annotation. | Cluster no longer trusts old certificates. |
 
 **Labels:**
 
