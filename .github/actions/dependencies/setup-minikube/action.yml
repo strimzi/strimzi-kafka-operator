@@ -9,7 +9,7 @@ inputs:
   minikubeVersion:
     description: "Minikube version to install"
     required: false
-    default: "v1.36.0"
+    default: "v1.38.0"
   architecture:
     description: "Architecture"
     required: false
