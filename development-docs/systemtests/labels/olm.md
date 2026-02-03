@@ -3,7 +3,7 @@
 ## Description
 
 These tests focus on verifying the Strimzi Kafka operator's functionality when deployed and managed via the Operator Lifecycle Manager (OLM).
-This includes the end-to-end lifecycle of Strimzi components such as Kafka, KafkaConnect, KafkaBridge, and KafkaMirrorMaker2.
+This includes the end-to-end lifecycle of Strimzi components such as Kafka, KafkaConnect, HTTP Bridge, and KafkaMirrorMaker2.
 
 <!-- generated part -->
 **Tests:**

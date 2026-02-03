@@ -213,12 +213,12 @@ public class StrimziMetricsReporterST extends AbstractST {
     @Tag(BRIDGE)
     @Tag(ACCEPTANCE)
     @TestDoc(
-        description = @Desc("This test case checks several metrics exposed by KafkaBridge."),
+        description = @Desc("This test case checks several metrics exposed by HTTP Bridge."),
         steps = {
-            @Step(value = "Deploy KafkaBridge into {@namespace}.", expected = "KafkaBridge is deployed and Ready"),
-            @Step(value = "Attach producer and consumer clients to KafkaBridge", expected = "Clients are up and running, continuously producing and pooling messages"),
-            @Step(value = "Collect metrics from KafkaBridge pod", expected = "Metrics are collected"),
-            @Step(value = "Check that specific metric is available in collected metrics from KafkaBridge pods", expected = "Metric is available with expected value")
+            @Step(value = "Deploy HTTP Bridge into {@namespace}.", expected = "HTTP Bridge is deployed and Ready"),
+            @Step(value = "Attach producer and consumer clients to HTTP Bridge", expected = "Clients are up and running, continuously producing and pooling messages"),
+            @Step(value = "Collect metrics from HTTP Bridge pod", expected = "Metrics are collected"),
+            @Step(value = "Check that specific metric is available in collected metrics from HTTP Bridge pods", expected = "Metric is available with expected value")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),

@@ -26,14 +26,14 @@
 
 ## testDeployExampleKafkaBridge
 
-**Description:** Verifies the deployment of a KafkaBridge using the OLM example when the operator watches all namespaces.
+**Description:** Verifies the deployment of a HTTP Bridge using the OLM example when the operator watches all namespaces.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy KafkaBridge CR using the OLM example. | KafkaBridge CR is created in Kubernetes. |
-| 2. | Wait for readiness of the KafkaBridge, meaning that the operator (watching all namespaces) manages the KafkaBridge in the designated test namespace. | KafkaBridge is operational and managed by the operator. |
+| 2. | Wait for readiness of the HTTP Bridge, meaning that the operator (watching all namespaces) manages the HTTP Bridge in the designated test namespace. | HTTP Bridge is operational and managed by the operator. |
 
 **Labels:**
 

@@ -16,17 +16,17 @@
 
 ## testConfigureDeploymentStrategy
 
-**Description:** Test verifies KafkaBridge deployment strategy configuration and label updates with RECREATE and ROLLING_UPDATE strategies.
+**Description:** Test verifies HTTP Bridge deployment strategy configuration and label updates with RECREATE and ROLLING_UPDATE strategies.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create KafkaBridge resource with deployment strategy RECREATE | KafkaBridge resource is created in RECREATE strategy |
-| 2. | Add a label to KafkaBridge resource | KafkaBridge resource is recreated with new label |
+| 1. | Create HTTP Bridge resource with deployment strategy RECREATE | KafkaBridge resource is created in RECREATE strategy |
+| 2. | Add a label to HTTP Bridge resource | HTTP Bridge resource is recreated with new label |
 | 3. | Check that observed generation is 1 and the label is present | Observed generation is 1 and label 'some=label' is present |
 | 4. | Change deployment strategy to ROLLING_UPDATE | Deployment strategy is changed to ROLLING_UPDATE |
-| 5. | Add another label to KafkaBridge resource | Pods are rolled with new label |
+| 5. | Add another label to HTTP Bridge resource | Pods are rolled with new label |
 | 6. | Check that observed generation is 2 and the new label is present | Observed generation is 2 and label 'another=label' is present |
 
 **Labels:**
@@ -42,10 +42,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create a HTTP Bridge resource with initial configuration. | HTTP Bridge is created and deployed with the specified initial configuration. |
+| 1. | Create a KafkaBridge resource with initial configuration. | HTTP Bridge is created and deployed with the specified initial configuration. |
 | 2. | Remove an environment variable that is in use. | Environment variable TEST_ENV_1 is removed from the initial configuration. |
 | 3. | Verify initial probe values and environment variables. | The probe values and environment variables match the initial configuration. |
-| 4. | Update HTTP Bridge resource with new configuration. | HTTP Bridge is updated and redeployed with the new configuration. |
+| 4. | Update KafkaBridge resource with new configuration. | HTTP Bridge is updated and redeployed with the new configuration. |
 | 5. | Verify updated probe values and environment variables. | The probe values and environment variables match the updated configuration. |
 | 6. | Verify HTTP Bridge configurations for producer and consumer. | Producer and consumer configurations match the updated settings. |
 
@@ -113,14 +113,14 @@
 
 ## testScaleBridgeSubresource
 
-**Description:** Test checks the scaling of a KafkaBridge subresource and verifies the scaling operation.
+**Description:** Test checks the scaling of a HTTP Bridge subresource and verifies the scaling operation.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize the KafkaBridge resource. | KafkaBridge resource is created in the specified namespace. |
-| 2. | Scale the KafkaBridge resource to the desired replicas. | KafkaBridge resource is scaled to the expected number of replicas. |
+| 1. | Initialize the HTTP Bridge resource. | KafkaBridge resource is created in the specified namespace. |
+| 2. | Scale the HTTP Bridge resource to the desired replicas. | HTTP Bridge resource is scaled to the expected number of replicas. |
 | 3. | Verify the number of replicas. | The number of replicas is as expected and the observed generation is correct. |
 | 4. | Check pod naming conventions. | Pod names should match the naming convention and be consistent. |
 
@@ -131,18 +131,18 @@
 
 ## testScaleBridgeToZero
 
-**Description:** Test that scales a KafkaBridge instance to zero replicas and verifies that it is properly handled.
+**Description:** Test that scales a HTTP Bridge instance to zero replicas and verifies that it is properly handled.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create a KafkaBridge resource and wait for it to be ready. | KafkaBridge resource is created and ready with 1 replica. |
-| 2. | Fetch the current number of KafkaBridge pods. | There should be exactly 1 KafkaBridge pod initially. |
-| 3. | Scale KafkaBridge to zero replicas. | Scaling action is acknowledged. |
-| 4. | Wait for KafkaBridge to scale down to zero replicas. | KafkaBridge scales down to zero replicas correctly. |
-| 5. | Check the number of KafkaBridge pods after scaling | No KafkaBridge pods should be running |
-| 6. | Verify the status of KafkaBridge | KafkaBridge status should indicate it is ready with zero replicas |
+| 2. | Fetch the current number of HTTP Bridge pods. | There should be exactly 1 HTTP Bridge pod initially. |
+| 3. | Scale HTTP Bridge to zero replicas. | Scaling action is acknowledged. |
+| 4. | Wait for HTTP Bridge to scale down to zero replicas. | HTTP Bridge scales down to zero replicas correctly. |
+| 5. | Check the number of HTTP Bridge pods after scaling | No HTTP Bridge pods should be running |
+| 6. | Verify the status of HTTP Bridge | HTTP Bridge status should indicate it is ready with zero replicas |
 
 **Labels:**
 

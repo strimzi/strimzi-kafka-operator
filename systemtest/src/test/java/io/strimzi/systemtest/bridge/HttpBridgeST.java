@@ -121,7 +121,7 @@ class HttpBridgeST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
-        // Checking labels for KafkaBridge
+        // Checking labels for HTTP Bridge
         VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName()), LabelSelectors.bridgeLabelSelector(suiteTestStorage.getClusterName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName())));
         VerificationUtils.verifyServiceLabels(testStorage.getNamespaceName(), KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()), LabelSelectors.bridgeLabelSelector(suiteTestStorage.getClusterName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName())));
     }
@@ -171,10 +171,10 @@ class HttpBridgeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test that validates the creation, update, and verification of a HTTP Bridge with specific initial and updated configurations."),
         steps = {
-            @Step(value = "Create a HTTP Bridge resource with initial configuration.", expected = "HTTP Bridge is created and deployed with the specified initial configuration."),
+            @Step(value = "Create a KafkaBridge resource with initial configuration.", expected = "HTTP Bridge is created and deployed with the specified initial configuration."),
             @Step(value = "Remove an environment variable that is in use.", expected = "Environment variable TEST_ENV_1 is removed from the initial configuration."),
             @Step(value = "Verify initial probe values and environment variables.", expected = "The probe values and environment variables match the initial configuration."),
-            @Step(value = "Update HTTP Bridge resource with new configuration.", expected = "HTTP Bridge is updated and redeployed with the new configuration."),
+            @Step(value = "Update KafkaBridge resource with new configuration.", expected = "HTTP Bridge is updated and redeployed with the new configuration."),
             @Step(value = "Verify updated probe values and environment variables.", expected = "The probe values and environment variables match the updated configuration."),
             @Step(value = "Verify HTTP Bridge configurations for producer and consumer.", expected = "Producer and consumer configurations match the updated settings.")
         },
@@ -297,14 +297,14 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test that scales a KafkaBridge instance to zero replicas and verifies that it is properly handled."),
+        description = @Desc("Test that scales a HTTP Bridge instance to zero replicas and verifies that it is properly handled."),
         steps = {
             @Step(value = "Create a KafkaBridge resource and wait for it to be ready.", expected = "KafkaBridge resource is created and ready with 1 replica."),
-            @Step(value = "Fetch the current number of KafkaBridge pods.", expected = "There should be exactly 1 KafkaBridge pod initially."),
-            @Step(value = "Scale KafkaBridge to zero replicas.", expected = "Scaling action is acknowledged."),
-            @Step(value = "Wait for KafkaBridge to scale down to zero replicas.", expected = "KafkaBridge scales down to zero replicas correctly."),
-            @Step(value = "Check the number of KafkaBridge pods after scaling", expected = "No KafkaBridge pods should be running"),
-            @Step(value = "Verify the status of KafkaBridge", expected = "KafkaBridge status should indicate it is ready with zero replicas")
+            @Step(value = "Fetch the current number of HTTP Bridge pods.", expected = "There should be exactly 1 HTTP Bridge pod initially."),
+            @Step(value = "Scale HTTP Bridge to zero replicas.", expected = "Scaling action is acknowledged."),
+            @Step(value = "Wait for HTTP Bridge to scale down to zero replicas.", expected = "HTTP Bridge scales down to zero replicas correctly."),
+            @Step(value = "Check the number of HTTP Bridge pods after scaling", expected = "No HTTP Bridge pods should be running"),
+            @Step(value = "Verify the status of HTTP Bridge", expected = "HTTP Bridge status should indicate it is ready with zero replicas")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE)
@@ -320,7 +320,7 @@ class HttpBridgeST extends AbstractST {
 
         assertThat(bridgePods.size(), is(1));
 
-        LOGGER.info("Scaling KafkaBridge to zero replicas");
+        LOGGER.info("Scaling HTTP Bridge to zero replicas");
         KafkaBridgeUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaBridge -> kafkaBridge.getSpec().setReplicas(0));
 
         KafkaBridgeUtils.waitForKafkaBridgeReady(testStorage.getNamespaceName(), suiteTestStorage.getClusterName());
@@ -335,10 +335,10 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test checks the scaling of a KafkaBridge subresource and verifies the scaling operation."),
+        description = @Desc("Test checks the scaling of a HTTP Bridge subresource and verifies the scaling operation."),
         steps = {
-            @Step(value = "Initialize the KafkaBridge resource.", expected = "KafkaBridge resource is created in the specified namespace."),
-            @Step(value = "Scale the KafkaBridge resource to the desired replicas.", expected = "KafkaBridge resource is scaled to the expected number of replicas."),
+            @Step(value = "Initialize the HTTP Bridge resource.", expected = "KafkaBridge resource is created in the specified namespace."),
+            @Step(value = "Scale the HTTP Bridge resource to the desired replicas.", expected = "HTTP Bridge resource is scaled to the expected number of replicas."),
             @Step(value = "Verify the number of replicas.", expected = "The number of replicas is as expected and the observed generation is correct."),
             @Step(value = "Check pod naming conventions.", expected = "Pod names should match the naming convention and be consistent.")
         },
@@ -355,13 +355,13 @@ class HttpBridgeST extends AbstractST {
         long bridgeObsGen = CrdClients.kafkaBridgeClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
         String bridgeGenName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName()).get(0).getMetadata().getGenerateName();
 
-        LOGGER.info("-------> Scaling KafkaBridge subresource <-------");
+        LOGGER.info("-------> Scaling HTTP Bridge subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
         KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaBridge.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), KafkaBridgeResources.componentName(testStorage.getClusterName()), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
-        StUtils.waitUntilSupplierIsSatisfied("KafkaBridge replica is 4 and observedGeneration is lower than 4",
+        StUtils.waitUntilSupplierIsSatisfied("HTTP Bridge replica is 4 and observedGeneration is lower than 4",
             () -> {
                 List<String> bridgePods = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getBridgeSelector());
 
@@ -382,13 +382,13 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test verifies KafkaBridge deployment strategy configuration and label updates with RECREATE and ROLLING_UPDATE strategies."),
+        description = @Desc("Test verifies HTTP Bridge deployment strategy configuration and label updates with RECREATE and ROLLING_UPDATE strategies."),
         steps = {
-            @Step(value = "Create KafkaBridge resource with deployment strategy RECREATE", expected = "KafkaBridge resource is created in RECREATE strategy"),
-            @Step(value = "Add a label to KafkaBridge resource", expected = "KafkaBridge resource is recreated with new label"),
+            @Step(value = "Create HTTP Bridge resource with deployment strategy RECREATE", expected = "KafkaBridge resource is created in RECREATE strategy"),
+            @Step(value = "Add a label to HTTP Bridge resource", expected = "HTTP Bridge resource is recreated with new label"),
             @Step(value = "Check that observed generation is 1 and the label is present", expected = "Observed generation is 1 and label 'some=label' is present"),
             @Step(value = "Change deployment strategy to ROLLING_UPDATE", expected = "Deployment strategy is changed to ROLLING_UPDATE"),
-            @Step(value = "Add another label to KafkaBridge resource", expected = "Pods are rolled with new label"),
+            @Step(value = "Add another label to HTTP Bridge resource", expected = "Pods are rolled with new label"),
             @Step(value = "Check that observed generation is 2 and the new label is present", expected = "Observed generation is 2 and label 'another=label' is present")
         },
         labels = {
@@ -410,7 +410,7 @@ class HttpBridgeST extends AbstractST {
 
         String bridgeDepName = KafkaBridgeResources.componentName(bridgeName);
 
-        LOGGER.info("Adding label to KafkaBridge resource, the CR should be recreated");
+        LOGGER.info("Adding label to HTTP Bridge resource, the CR should be recreated");
         KafkaBridgeUtils.replace(Environment.TEST_SUITE_NAMESPACE, bridgeName,
             kb -> kb.getMetadata().setLabels(Collections.singletonMap("some", "label")));
         DeploymentUtils.waitForDeploymentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, bridgeDepName, 1);
@@ -427,13 +427,13 @@ class HttpBridgeST extends AbstractST {
             kb -> kb.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
         KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, bridgeName);
 
-        LOGGER.info("Adding another label to KafkaBridge resource, Pods should be rolled");
+        LOGGER.info("Adding another label to HTTP Bridge resource, Pods should be rolled");
         KafkaBridgeUtils.replace(Environment.TEST_SUITE_NAMESPACE, bridgeName, kb -> kb.getMetadata().getLabels().put("another", "label"));
         DeploymentUtils.waitForDeploymentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, bridgeDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
 
-        StUtils.waitUntilSupplierIsSatisfied("KafkaBridge observed generation and labels", () -> {
+        StUtils.waitUntilSupplierIsSatisfied("HTTP Bridge observed generation and labels", () -> {
             final KafkaBridge kB = CrdClients.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(bridgeName).get();
 
             return kB.getStatus().getObservedGeneration() == 2L &&
@@ -504,7 +504,7 @@ class HttpBridgeST extends AbstractST {
             )
             .install();
 
-        LOGGER.info("Deploying Kafka and KafkaBridge before tests");
+        LOGGER.info("Deploying Kafka and HTTP Bridge before tests");
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 1).build(),

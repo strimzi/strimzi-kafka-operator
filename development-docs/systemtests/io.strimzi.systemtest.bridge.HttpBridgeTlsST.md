@@ -7,7 +7,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Initialize test storage and context. | Test storage and context are initialized successfully. |
-| 2. | Deploy Kafka and KafkaBridge. | Kafka and KafkaBridge are deployed and running. |
+| 2. | Deploy Kafka and HTTP Bridge. | Kafka and HTTP Bridge are deployed and running. |
 | 3. | Create Kafka user with TLS configuration. | Kafka user with TLS configuration is created. |
 | 4. | Deploy HTTP bridge with TLS configuration. | HTTP bridge is deployed with TLS configuration. |
 

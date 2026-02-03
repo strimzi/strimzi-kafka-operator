@@ -110,10 +110,10 @@ public class OlmAllNamespaceST extends OlmAbstractST {
     @Order(5)
     @Tag(BRIDGE)
     @TestDoc(
-        description = @Desc("Verifies the deployment of a KafkaBridge using the OLM example when the operator watches all namespaces."),
+        description = @Desc("Verifies the deployment of a HTTP Bridge using the OLM example when the operator watches all namespaces."),
         steps = {
             @Step(value = "Deploy KafkaBridge CR using the OLM example.", expected = "KafkaBridge CR is created in Kubernetes."),
-            @Step(value = "Wait for readiness of the KafkaBridge, meaning that the operator (watching all namespaces) manages the KafkaBridge in the designated test namespace.", expected = "KafkaBridge is operational and managed by the operator.")
+            @Step(value = "Wait for readiness of the HTTP Bridge, meaning that the operator (watching all namespaces) manages the HTTP Bridge in the designated test namespace.", expected = "HTTP Bridge is operational and managed by the operator.")
         },
         labels = {
             @Label(TestDocsLabels.OLM)

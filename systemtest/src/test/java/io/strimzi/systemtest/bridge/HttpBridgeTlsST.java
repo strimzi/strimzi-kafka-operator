@@ -56,7 +56,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
     description = @Desc("Test suite for verifying TLS functionalities in the HTTP Bridge."),
     beforeTestSteps = {
         @Step(value = "Initialize test storage and context.", expected = "Test storage and context are initialized successfully."),
-        @Step(value = "Deploy Kafka and KafkaBridge.", expected = "Kafka and KafkaBridge are deployed and running."),
+        @Step(value = "Deploy Kafka and HTTP Bridge.", expected = "Kafka and HTTP Bridge are deployed and running."),
         @Step(value = "Create Kafka user with TLS configuration.", expected = "Kafka user with TLS configuration is created."),
         @Step(value = "Deploy HTTP bridge with TLS configuration.", expected = "HTTP bridge is deployed with TLS configuration.")
     },
@@ -282,7 +282,7 @@ class HttpBridgeTlsST extends AbstractST {
             .withDefaultConfiguration()
             .install();
 
-        LOGGER.info("Deploying Kafka and KafkaBridge before tests");
+        LOGGER.info("Deploying Kafka and HTTP Bridge before tests");
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 1).build(),

@@ -8,7 +8,7 @@
 | - | - | - |
 | 1. | Create TestStorage instance. | TestStorage instance is created. |
 | 2. | Create BridgeClients instance. | BridgeClients instance is created. |
-| 3. | Deploy Kafka and KafkaBridge. | Kafka and KafkaBridge are deployed successfully. |
+| 3. | Deploy Kafka and HTTP Bridge. | Kafka and HTTP Bridge are deployed successfully. |
 | 4. | Create Kafka topic. | Kafka topic is created with the given configuration. |
 | 5. | Create Kafka user with SCRAM-SHA authentication. | Kafka user is created and configured with SCRAM-SHA authentication. |
 | 6. | Deploy HTTP bridge. | HTTP bridge is deployed. |

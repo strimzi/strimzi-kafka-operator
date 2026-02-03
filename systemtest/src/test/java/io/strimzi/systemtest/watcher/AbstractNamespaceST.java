@@ -93,12 +93,12 @@ public abstract class AbstractNamespaceST extends AbstractST {
     }
 
     /**
-     * @description This test case verifies that Cluster Operator manages KafkaBridge deployed in watched namespace, which is different
+     * @description This test case verifies that Cluster Operator manages HTTP Bridge deployed in watched namespace, which is different
      * from one where Cluster Operator resides correctly.
      *
      * @steps
      *  1. - KafkaBridge CustomResource is deployed in namespace watched by Cluster Operator.
-     *     - KafkaBridge is transitioned into ready state.
+     *     - HTTP Bridge is transitioned into ready state.
      *
      * @usecase
      *  - namespaces
@@ -110,7 +110,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext, MAIN_TEST_NAMESPACE);
         final String bridgeName = testStorage.getClusterName() + "-bridge";
 
-        LOGGER.info("Creating KafkaBridge: {}/{} in Namespace different from Cluster Operator's", MAIN_TEST_NAMESPACE, bridgeName);
+        LOGGER.info("Creating HTTP Bridge: {}/{} in Namespace different from Cluster Operator's", MAIN_TEST_NAMESPACE, bridgeName);
         KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(testStorage.getNamespaceName(), bridgeName,
                 KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME), 1).build()
         );

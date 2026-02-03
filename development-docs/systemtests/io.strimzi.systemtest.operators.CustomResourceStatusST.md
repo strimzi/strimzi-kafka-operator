@@ -1,6 +1,6 @@
 # CustomResourceStatusST
 
-**Description:** Test suite containing Custom Resource status verification scenarios, ensuring proper status reporting for Kafka, KafkaConnect, KafkaBridge, KafkaUser, and KafkaMirrorMaker2 resources.
+**Description:** Test suite containing Custom Resource status verification scenarios, ensuring proper status reporting for Kafka, KafkaConnect, HTTP Bridge, KafkaUser, and KafkaMirrorMaker2 resources.
 
 **Before test execution steps:**
 
@@ -17,15 +17,15 @@
 
 ## testKafkaBridgeStatus
 
-**Description:** This test verifies that KafkaBridge status is correctly reported, including observed generation updates and URL information during ready and not ready states.
+**Description:** This test verifies that HTTP Bridge status is correctly reported, including observed generation updates and URL information during ready and not ready states.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaBridge and verify initial status. | KafkaBridge is ready with correct status information including URL. |
-| 2. | Modify KafkaBridge resource requests/limits to cause NotReady state. | KafkaBridge becomes NotReady due to insufficient CPU resources. |
-| 3. | Restore KafkaBridge resources to recover. | KafkaBridge returns to Ready state with updated observed generation. |
+| 1. | Deploy HTTP Bridge and verify initial status. | HTTP Bridge is ready with correct status information including URL. |
+| 2. | Modify HTTP Bridge resource requests/limits to cause NotReady state. | HTTP Bridge becomes NotReady due to insufficient CPU resources. |
+| 3. | Restore HTTP Bridge resources to recover. | HTTP Bridge returns to Ready state with updated observed generation. |
 
 **Labels:**
 

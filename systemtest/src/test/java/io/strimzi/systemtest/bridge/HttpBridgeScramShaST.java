@@ -49,7 +49,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
     beforeTestSteps = {
         @Step(value = "Create TestStorage instance.", expected = "TestStorage instance is created."),
         @Step(value = "Create BridgeClients instance.", expected = "BridgeClients instance is created."),
-        @Step(value = "Deploy Kafka and KafkaBridge.", expected = "Kafka and KafkaBridge are deployed successfully."),
+        @Step(value = "Deploy Kafka and HTTP Bridge.", expected = "Kafka and HTTP Bridge are deployed successfully."),
         @Step(value = "Create Kafka topic.", expected = "Kafka topic is created with the given configuration."),
         @Step(value = "Create Kafka user with SCRAM-SHA authentication.", expected = "Kafka user is created and configured with SCRAM-SHA authentication."),
         @Step(value = "Deploy HTTP bridge.", expected = "HTTP bridge is deployed.")
@@ -147,7 +147,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withDefaultConfiguration()
             .install();
 
-        LOGGER.info("Deploying Kafka and KafkaBridge before tests");
+        LOGGER.info("Deploying Kafka and HTTP Bridge before tests");
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 1).build(),

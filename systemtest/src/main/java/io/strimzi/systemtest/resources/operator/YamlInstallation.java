@@ -386,7 +386,7 @@ public class YamlInstallation implements InstallationMethod {
             );
         }
 
-        // Configure image pull secret for Deployment file of CO and for components - Kafka, KafkaBridge ...
+        // Configure image pull secret for Deployment file of CO and for components - Kafka, HTTP Bridge ...
         if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
             // For Cluster Operator
             List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));

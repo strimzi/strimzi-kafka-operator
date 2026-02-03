@@ -47,7 +47,7 @@ class HelmChartST extends AbstractST {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .build(),
-            // Deploy KafkaBridge (different image than Kafka) and wait for readiness
+            // Deploy HTTP Bridge (different image than Kafka) and wait for readiness
             KafkaBridgeTemplates.kafkaBridge(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build());
 
         KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName()).build());

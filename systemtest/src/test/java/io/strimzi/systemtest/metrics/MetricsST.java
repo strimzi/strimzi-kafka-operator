@@ -422,7 +422,7 @@ public class MetricsST extends AbstractST {
         assertMetricValue(kmm2Collector, "kafka_connect_worker_connector_count", 3.0);
         assertMetricValueHigherThanOrEqualTo(kmm2Collector, "kafka_connect_worker_task_count", 2.0);
 
-        // Check CO metrics and look for KafkaBridge
+        // Check CO metrics and look for HTTP Bridge
         clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertCoMetricResources(namespaceFirst, KafkaMirrorMaker2.RESOURCE_KIND, clusterOperatorCollector, 1.0);
         assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaMirrorMaker2.RESOURCE_KIND, clusterOperatorCollector);
@@ -434,14 +434,14 @@ public class MetricsST extends AbstractST {
     @Tag(BRIDGE)
     @Tag(ACCEPTANCE)
     @TestDoc(
-        description = @Desc("This test case checks several metrics exposed by KafkaBridge."),
+        description = @Desc("This test case checks several metrics exposed by HTTP Bridge."),
         steps = {
-            @Step(value = "Deploy KafkaBridge into {@namespaceFirst}.", expected = "KafkaBridge is deployed and Ready"),
-            @Step(value = "Attach producer and consumer clients to KafkaBridge", expected = "Clients are up and running, continuously producing and pooling messages"),
-            @Step(value = "Collect metrics from KafkaBridge pod", expected = "Metrics are collected"),
-            @Step(value = "Check that specific metric is available in collected metrics from KafkaBridge pods", expected = "Metric is available with expected value"),
+            @Step(value = "Deploy HTTP Bridge into {@namespaceFirst}.", expected = "HTTP Bridge is deployed and Ready"),
+            @Step(value = "Attach producer and consumer clients to HTTP Bridge", expected = "Clients are up and running, continuously producing and pooling messages"),
+            @Step(value = "Collect metrics from HTTP Bridge pod", expected = "Metrics are collected"),
+            @Step(value = "Check that specific metric is available in collected metrics from HTTP Bridge pods", expected = "Metric is available with expected value"),
             @Step(value = "Collect current metrics from Cluster Operator pod", expected = "Cluster Operator metrics are collected"),
-            @Step(value = "Check that CO metrics contain data about KafkaBridge in namespace namespaceFirst", expected = "CO metrics contain expected data")
+            @Step(value = "Check that CO metrics contain data about HTTP Bridge in namespace namespaceFirst", expected = "CO metrics contain expected data")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
@@ -491,7 +491,7 @@ public class MetricsST extends AbstractST {
         assertMetricValueNotNull(bridgeCollector, "strimzi_bridge_kafka_consumer_connection_count\\{.*}");
         assertThat("bridge collected data don't contain strimzi_bridge_http_server", bridgeCollector.getCollectedData().values().toString().contains("strimzi_bridge_http_server"));
 
-        // Check CO metrics and look for KafkaBridge
+        // Check CO metrics and look for HTTP Bridge
         clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
         assertCoMetricResources(namespaceFirst, KafkaBridge.RESOURCE_KIND, clusterOperatorCollector, 1.0);
         assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaBridge.RESOURCE_KIND, clusterOperatorCollector);

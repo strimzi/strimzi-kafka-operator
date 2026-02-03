@@ -108,7 +108,7 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @Order(5)
     @Tag(BRIDGE)
     @TestDoc(
-        description = @Desc("Verifies the deployment of a KafkaBridge using the OLM example in a single-namespace watch configuration."),
+        description = @Desc("Verifies the deployment of a HTTP Bridge using the OLM example in a single-namespace watch configuration."),
         steps = {
             @Step(value = "Deploy KafkaBridge CR using the OLM example in the designated single namespace.", expected = "KafkaBridge CR is created in Kubernetes within the watched namespace.."),
             @Step(value = "Verify that the Strimzi operator (watching a single namespace) correctly deploys and manages the resource in that same namespace.", expected = "The resource is operational and managed by the operator within its watched namespace.")

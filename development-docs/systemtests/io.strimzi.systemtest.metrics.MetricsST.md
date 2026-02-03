@@ -64,18 +64,18 @@
 
 ## testKafkaBridgeMetrics
 
-**Description:** This test case checks several metrics exposed by KafkaBridge.
+**Description:** This test case checks several metrics exposed by HTTP Bridge.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaBridge into {@namespaceFirst}. | KafkaBridge is deployed and Ready |
-| 2. | Attach producer and consumer clients to KafkaBridge | Clients are up and running, continuously producing and pooling messages |
-| 3. | Collect metrics from KafkaBridge pod | Metrics are collected |
-| 4. | Check that specific metric is available in collected metrics from KafkaBridge pods | Metric is available with expected value |
+| 1. | Deploy HTTP Bridge into {@namespaceFirst}. | HTTP Bridge is deployed and Ready |
+| 2. | Attach producer and consumer clients to HTTP Bridge | Clients are up and running, continuously producing and pooling messages |
+| 3. | Collect metrics from HTTP Bridge pod | Metrics are collected |
+| 4. | Check that specific metric is available in collected metrics from HTTP Bridge pods | Metric is available with expected value |
 | 5. | Collect current metrics from Cluster Operator pod | Cluster Operator metrics are collected |
-| 6. | Check that CO metrics contain data about KafkaBridge in namespace namespaceFirst | CO metrics contain expected data |
+| 6. | Check that CO metrics contain data about HTTP Bridge in namespace namespaceFirst | CO metrics contain expected data |
 
 **Labels:**
 

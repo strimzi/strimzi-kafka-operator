@@ -30,13 +30,13 @@ See the [remote cluster](#use-remote-cluster) section for more information about
 
 The following requirement is to have built the `systemtest` package dependencies, which are:
 
-* test
-* crd-annotations
-* crd-generator
-* api
-* config-model
-* operator-common
-* kafka-oauth-client
+- test
+- crd-annotations
+- crd-generator
+- api
+- config-model
+- operator-common
+- kafka-oauth-client
 
 You can achieve that with `mvn clean install -DskipTests` or `mvn clean install -am -pl systemtest -DskipTests` commands.
 These dependencies are needed because we use methods from the `test` package and the strimzi model from the `api` package.
@@ -48,25 +48,25 @@ In `main`, you can find all support classes, which are used in the tests.
 
 Notable modules:
 
-* **kafkaclients** — client implementations used in tests.
-* **matchers** — contains our matcher implementation for checking cluster operator logs. For more info see [Cluster Operator log check](#cluster-operator-log-check).
-* **utils** — many actions are the same for most of the tests, and we share them through utils class and static methods. You can find here most of the useful methods.
-* **resources** —  you can find here all methods needed for deploying and managing the lifecycle of Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and other resources using CRUD methods.
-* **templates** - predefined templates that are used on a broader basis. When creating a resource it is necessary to provide a template for instance  `resource.createResource(extensionContext, template.build())`.
+- **kafkaclients** — client implementations used in tests.
+- **matchers** — contains our matcher implementation for checking cluster operator logs. For more info see [Cluster Operator log check](#cluster-operator-log-check).
+- **utils** — many actions are the same for most of the tests, and we share them through utils class and static methods. You can find here most of the useful methods.
+- **resources** — you can find here all methods needed for deploying and managing the lifecycle of Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and other resources using CRUD methods.
+- **templates** - predefined templates that are used on a broader basis. When creating a resource it is necessary to provide a template for instance `resource.createResource(extensionContext, template.build())`.
 
 Notable classes:
 
-* **Environment** — singleton class, which loads the test environment variables (see following section) used in tests.
-* **Constants** — simple interface holding all constants used in tests.
-* **resources/ResourceManager** - singleton class which stores data about deployed resources and takes care of proper resource deletion.
-* **resources/operator/SetupClusterOperator** - encapsulates the whole installation process of Cluster Operator (i.e., `RoleBinding`, `ClusterRoleBinding`,
-* `ConfigMap`, `Deployment`, `CustomResourceDefinition`, preparation of the Namespace). The Environment class
+- **Environment** — singleton class, which loads the test environment variables (see following section) used in tests.
+- **Constants** — simple interface holding all constants used in tests.
+- **resources/ResourceManager** - singleton class which stores data about deployed resources and takes care of proper resource deletion.
+- **resources/operator/SetupClusterOperator** - encapsulates the whole installation process of Cluster Operator (i.e., `RoleBinding`, `ClusterRoleBinding`,
+- `ConfigMap`, `Deployment`, `CustomResourceDefinition`, preparation of the Namespace). The Environment class
   values decide how Cluster Operator should be installed (i.e., Olm, Helm, Bundle). Moreover, it provides `rollbackToDefaultConfiguration()`
   method, which basically re-install Cluster Operator to the default values. In case user wants to edit specific installation,
   one can use `defaultInstallation()`, which returns `SetupClusterOperatorBuilder`.
-* **storage/TestStorage** - generate and stores values in the specific `ExtensionContext`. This ensures that if one want to retrieve data from
+- **storage/TestStorage** - generate and stores values in the specific `ExtensionContext`. This ensures that if one want to retrieve data from
   `TestStorage` it can be done via `ExtensionContext` (with help of ConcurrentHashMap) inside `AbstractST`.
-* **parallel/TestSuiteNamespaceManager** - This class contains additional namespaces will are needed for test suite before the execution of `@BeforeAll`. 
+- **parallel/TestSuiteNamespaceManager** - This class contains additional namespaces will are needed for test suite before the execution of `@BeforeAll`.
   By this we can easily prepare the namespace in the `AbstractST` class and not in the children.
 
 ## Test Phases
@@ -77,12 +77,13 @@ We generally use classic test phases: `setup`, `exercise`, `test` and `teardown`
 
 In this phase, we perform:
 
-* Setup Cluster Operator 
-* Deploy the shared Kafka cluster and other components (optional)
+- Setup Cluster Operator
+- Deploy the shared Kafka cluster and other components (optional)
 
-The second point is optional because we have some test cases where you want to have a different Kafka configuration for 
+The second point is optional because we have some test cases where you want to have a different Kafka configuration for
 each test scenario, so creating the Kafka cluster and other resources is done in the test phase.
 Here is an example how to create an instance of Cluster Operator:
+
 ```java
 @BeforeAll
 void setup(ExtensionContext extensionContext){
@@ -93,16 +94,17 @@ void setup(ExtensionContext extensionContext){
 }
 ```
 
-We create resources in the Kubernetes cluster via classes in the `resources` package, which allows you to deploy all 
+We create resources in the Kubernetes cluster via classes in the `resources` package, which allows you to deploy all
 components and, if needed, change them from their default configuration using a builder.
-You can create resources anywhere you want. Our resource lifecycle implementation will handle insertion of the resource 
+You can create resources anywhere you want. Our resource lifecycle implementation will handle insertion of the resource
 on top of the stack and deletion at the end of the test method/class.
-Moreover, you should always use `Templates` classes for pre-defined resources. 
+Moreover, you should always use `Templates` classes for pre-defined resources.
 For instance, when one want deploy Kafka cluster with three nodes it can be simply done by following code:
+
 ```java
 final int numberOfKafkaBrokers = 3;
 
-KubeResourceManager.get().createResourceWithWait(extensionContext, 
+KubeResourceManager.get().createResourceWithWait(extensionContext,
     // using KafkaTemplate class for pre-defined values
     KafkaTemplates.kafka(
         clusterName,
@@ -110,11 +112,12 @@ KubeResourceManager.get().createResourceWithWait(extensionContext,
     );
 ```
 
-`ResourceManager` has `Map<String, Stack<ResourceItem>>`, which means that for each test case, we have a brand-new stack 
+`ResourceManager` has `Map<String, Stack<ResourceItem>>`, which means that for each test case, we have a brand-new stack
 that stores all resources needed for specific tests. An important aspect is also the `ExtensionContext.class` with which
 we can know which stack is associated with which test uniquely.
 
 Example of setup shared resources in scope of the test suite:
+
 ```java
 @BeforeAll
 void setUp(ExtensionContext extensionContext) {
@@ -128,13 +131,14 @@ void setUp(ExtensionContext extensionContext) {
     KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(...).build(),
     KafkaBridgeTemplates.kafkaBridgeWithMetrics(...).build()
     );
-    
+
     // sync resources (barier)
     KubeResourceManager.get().synchronizeResources(extensionContext);
 }
 ```
 
 ### Exercise
+
 In this phase, you specify all steps which you need to execute to cover some specific functionality.
 
 ### Test
@@ -145,6 +149,7 @@ When your environment is in place from the previous phase, you can add code for 
 
 Resource lifecycle implementation will ensure that all resources tied to a specific stack will be deleted in the correct order.
 The teardown is triggered in `@AfterAll` of `AbstractST`:
+
 ```
     @AfterAll
     void tearDownTestSuite(ExtensionContext extensionContext) throws Exception {
@@ -153,13 +158,14 @@ The teardown is triggered in `@AfterAll` of `AbstractST`:
 ```
 
 so if you want to change teardown from your `@AfterAll`, you must override method `afterAllMayOverride()`:
+
 ```
     @Override
     protected void tearDownTestSuite() {
         doSomethingYouNeed();
         super.afterAllMayOverride();
     }
-    
+
     // default implementation for top AbstractST.class
     protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         install.unInstall(); <- install is instance of SetupClusterOperator class
@@ -170,11 +176,12 @@ To delete all resources from a specific test case, you have to provide `Extensio
 the resource manager will know which resources he can delete.
 For instance `extensionContext.getDisplayName()` is `myNewTestName` then resource manager will delete all resources
 related to `myNewTestName` test.
+
 ```
     ResourceManager.getInstance().deleteResources(extensionContext);
 ```
 
-## Adding brand-new test suite 
+## Adding brand-new test suite
 
 When you need to create a new test suite, firstly, make sure that it has the suffix `ST` (i.e., `KafkaST`, `ConnectBuilderST`).
 
@@ -182,17 +189,20 @@ When you need to create a new test suite, firstly, make sure that it has the suf
 
 If you want to run system tests locally in parallel, you need to take a few additional steps. You have to modify
 two JUnit properties and there are two approaches how to do it:
-1) Using IDE (InteliJ)
+
+1. Using IDE (InteliJ)
    1. on the left side between build project and run buttons you click on edit configuration
    2. then only one thing is to modify VM options and add these two:
       - `-Djunit.jupiter.execution.parallel.enabled=true`
-      - `-Djunit.jupiter.execution.parallel.config.fixed.parallelism=4` 
+      - `-Djunit.jupiter.execution.parallel.config.fixed.parallelism=4`
 
-2. Using Maven
+2) Using Maven
+
 - override it in mvn command using additional parameters:
   - `-Djunit.jupiter.execution.parallel.enabled=true`
   - `-Djunit.jupiter.execution.parallel.config.fixed.parallelism=4`
-- for instance 
+- for instance
+
 ```
 // to run 4 test cases in parallel in ListenersST test class
 mvn verify -pl systemtest -P all -Dit.test=ListenersST -Djunit.jupiter.execution.parallel.enabled=true -Djunit.jupiter.execution.parallel.config.fixed.parallelism=4
@@ -201,6 +211,7 @@ mvn verify -pl systemtest -P all -Dit.test=ListenersST -Djunit.jupiter.execution
 ### Parallelism architecture
 
 Key aspects:
+
 1. [JUnit5 parallelism](https://junit.org/junit5/docs/snapshot/user-guide/#writing-tests-parallel-execution)
 2. **annotations** = overrides parallelism configuration in runtime phase (i.e., `@IsolatedTest`, `@ParallelTest`, `@ParallelNamespaceTest`).
 3. **auxiliary classes** (i.e., `SuiteThreadController`, `TestSuiteNamespaceManager`)
@@ -221,18 +232,18 @@ class spawns as many threads as we specify in the `JUnit-platform.properties`.
 #### 3. Auxiliary classes
 
 - **TestSuiteNamespaceManager** = provides complete management of namespaces for specific test suites.
-    1. **@ParallelSuite** - such a test suite creates its namespace (f.e., for TracingST creates `tracing-st` namespace).
-       This is needed because we must ensure that each parallel suite runs in a separate namespace and thus runs in isolation.
-    2. **@ParallelNamespaceTest** = responsible for creating and deleting auxiliary namespaces for such test cases.
-- **SuiteThreadController** = provides synchronization between test cases (i.e., @ParallelTest, @ParallelNamespaceTest and @IsolatedTest). 
+  1. **@ParallelSuite** - such a test suite creates its namespace (f.e., for TracingST creates `tracing-st` namespace).
+     This is needed because we must ensure that each parallel suite runs in a separate namespace and thus runs in isolation.
+  2. **@ParallelNamespaceTest** = responsible for creating and deleting auxiliary namespaces for such test cases.
+- **SuiteThreadController** = provides synchronization between test cases (i.e., @ParallelTest, @ParallelNamespaceTest and @IsolatedTest).
 - ForkJoinPool spawns additional (unnecessary) threads (because of Work-Stealing algorithm), exceeding our configured parallelism limit:
-    - synchronization provide by `waitUntilAllowedNumberTestCasesParallel()` and `notifyParallelTestToAllowExecution()` method
-    - synchronize point where test suite end it in a situation when `ForkJoinPool` spawn additional threads,
-      which can exceed the limit specified. Thus many threads can start executing test suites which could potentially
-      destroy clusters. This mechanism will put all other threads (i.e., not needed) into the waiting room.
-      After one of the `ParallelTest` is done with execution we release `notifyParallelTestToAllowExecution()`one test case
-      setting `isParallelTestReleased` flag. This ensures that only one test case will continue execution, and others
-      will still wait.
+  - synchronization provide by `waitUntilAllowedNumberTestCasesParallel()` and `notifyParallelTestToAllowExecution()` method
+  - synchronize point where test suite end it in a situation when `ForkJoinPool` spawn additional threads,
+    which can exceed the limit specified. Thus many threads can start executing test suites which could potentially
+    destroy clusters. This mechanism will put all other threads (i.e., not needed) into the waiting room.
+    After one of the `ParallelTest` is done with execution we release `notifyParallelTestToAllowExecution()`one test case
+    setting `isParallelTestReleased` flag. This ensures that only one test case will continue execution, and others
+    will still wait.
 
 ## Cluster Operator log check
 
@@ -253,7 +264,7 @@ If `-Dgroups` system property isn't defined, all tests without an explicitly dec
 The following table shows currently used tags:
 
 |       Name        |                                      Description                                      |
-|:-----------------:|:-------------------------------------------------------------------------------------:|
+| :---------------: | :-----------------------------------------------------------------------------------: |
 |    acceptance     | Acceptance tests, which guarantee that the basic functionality of Strimzi is working. |
 |    regression     |                 Regression tests, which contains all non-flaky tests.                 |
 |      upgrade      |                  Upgrade tests for specific versions of the Strimzi.                  |
@@ -296,11 +307,13 @@ System tests can be configured by several environment variables, which are loade
 Variables can be defined via environmental variables or a configuration file; this file can be located anywhere on the file system as long as a path is provided to this file.
 The path is defined by the environmental variable `ST_CONFIG_PATH`; if the `ST_CONFIG_PATH` environmental variable is not defined, the default config file location is used `systemtest/config.yaml`.
 Loading of system configuration has the following priority order:
+
 1. Environment variable
 2. Variable defined in the configuration file
 3. Default value
 
 After every systemtest test run all env variables are automatically stored into `$TEST_LOG_DIR/test-run.../config.yaml` so each test run can be easily reproduced just by running
+
 ```commandline
 ST_CONFIG_PATH="path/to/config/file/config.yaml" mvn verify ...
 ```
@@ -308,7 +321,7 @@ ST_CONFIG_PATH="path/to/config/file/config.yaml" mvn verify ...
 All environment variables are defined in [Environment](systemtest/src/main/java/io/strimzi/systemtest/Environment.java) class:
 
 | Name                                   | Description                                                                                                                                                                                                                                                          | Default                                                           |
-|:---------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------|
+| :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
 | DOCKER_ORG                             | Specify the organization/repo containing the image used in system tests                                                                                                                                                                                              | strimzi                                                           |
 | DOCKER_TAG                             | Specify the image tags used in system tests                                                                                                                                                                                                                          | latest                                                            |
 | DOCKER_REGISTRY                        | Specify the docker registry used in system tests                                                                                                                                                                                                                     | quay.io                                                           |
@@ -320,7 +333,7 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | STRIMZI_LOG_LEVEL                      | Log level for the cluster operator                                                                                                                                                                                                                                   | DEBUG                                                             |
 | STRIMZI_COMPONENTS_LOG_LEVEL           | Log level for the components                                                                                                                                                                                                                                         | INFO                                                              |
 | KUBERNETES_DOMAIN                      | Cluster domain                                                                                                                                                                                                                                                       | .nip.io                                                           |
-| TEST_CLUSTER_CONTEXT                   | context which will be used to reach the cluster*                                                                                                                                                                                                                     | currently active Kubernetes context                               |
+| TEST_CLUSTER_CONTEXT                   | context which will be used to reach the cluster\*                                                                                                                                                                                                                    | currently active Kubernetes context                               |
 | TEST_CLUSTER_USER                      | Default user which will be used for command-line admin operations                                                                                                                                                                                                    | developer                                                         |
 | TEST_CLIENTS_IMAGE                     | Image with strimzi test clients                                                                                                                                                                                                                                      | quay.io/strimzi-test-clients/test-clients:0.6.0-kafka-3.6.0       |
 | TEST_CLIENTS_VERSION                   | Version of strimzi test clients                                                                                                                                                                                                                                      | 0.6.0                                                             |
@@ -344,7 +357,7 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | CONNECT_BUILD_REGISTRY_SECRET          | Specify the registry secret used by KafkaConnect build. It has to be k8s secret deployed in `default` namespace and systemtests will handle the rest.                                                                                                                | empty                                                             |
 | CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN    | Connect image containing file sink plugin on right classpath.                                                                                                                                                                                                        | empty                                                             |
 | KAFKA_TIERED_STORAGE_IMAGE             | Kafka image already containing Tiered Storage plugin - the Aiven one. In case that this and `KAFKA_TIERED_STORAGE_BASE_IMAGE` are both configured, this env takes precedence.                                                                                        | empty                                                             |
-| KAFKA_TIERED_STORAGE_CLASSPATH         | Classpath to the libs for Tiered Storage plugin - inside the Kafka image. This is then configured inside the classpath field for Tiered Storage spec inside the Kafka CR.                                                                                            | /opt/kafka/plugins/tiered-storage/*                               |
+| KAFKA_TIERED_STORAGE_CLASSPATH         | Classpath to the libs for Tiered Storage plugin - inside the Kafka image. This is then configured inside the classpath field for Tiered Storage spec inside the Kafka CR.                                                                                            | /opt/kafka/plugins/tiered-storage/\*                              |
 | KAFKA_TIERED_STORAGE_BASE_IMAGE        | Base Kafka image that will be used for building a new custom one - adding the Aiven Tiered Storage plugin to it. If both this env variable and `KAFKA_TIERED_STORAGE_IMAGE` are configured, the `KAFKA_TIERED_STORAGE_IMAGE` takes precedence and no image is built. | quay.io/strimzi/kafka:latest-kafka-LATEST_SUPPORTED_KAFKA_VERSION |
 
 If you want to use your images with a different tag or from a separate repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
@@ -423,11 +436,12 @@ We created a simple [OLM test suite](systemtest/src/test/java/io/strimzi/systemt
 
 You have to build an image with manifests and create a new `CatalogSource` resource to run these tests, pointing to the constructed image.
 Dockerfile can have the following structure:
+
 ```
    FROM quay.io/openshift/origin-operator-registry:latest
-   
+
    COPY /manifests /manifests
-   
+
    RUN /usr/bin/initializer -m /manifests -o bundles.db
    ENTRYPOINT ["/usr/bin/registry-server"]
    CMD ["-d", "bundles.db", "-t", "termination.log"]
@@ -493,13 +507,14 @@ and to environment variables with `OLM_` prefix.
 
 ## Performance Testing
 
-### Overview 
+### Overview
 
 The performance tests in the Strimzi system test suite are categorized into two primary sets (i.e., capacity and scalability).
-All performance reports are stored in the `systemtest/target/performance` folder, which contains detailed 
+All performance reports are stored in the `systemtest/target/performance` folder, which contains detailed
 setup configurations and collected metrics, including JVM, memory, and CPU utilization (if enabled).
-Moreover, each test generates a summary report table. 
+Moreover, each test generates a summary report table.
 Below is an example for the `scalabilityUseCase`.
+
 ```
 Use Case: scalabilityUseCase
 +------------+--------------------+-------------------------+----------------------+----------------------+---------------------------+------------------+-----------------------------------+
@@ -510,6 +525,7 @@ Use Case: scalabilityUseCase
 | 4          | 2147483647         | 100                     | 125                  | 375                  | 100                       | TOPIC-CONCURRENT | 26827                             |
 +------------+--------------------+-------------------------+----------------------+----------------------+---------------------------+------------------+-----------------------------------+
 ```
+
 - **IN:** parameters represent the input configuration settings used in the test, such as queue size, batch size, and the number of topics or events.
 - **OUT:** parameters represent the resulting performance metrics, such as the reconciliation interval time in milliseconds.
 
@@ -517,11 +533,12 @@ Use Case: scalabilityUseCase
 
 #### 1. Capacity Tests
 
-Capacity tests focus on measuring the system's ability to sustain increasing workloads. 
+Capacity tests focus on measuring the system's ability to sustain increasing workloads.
 These tests provide insights into resource utilization and operational limits.
 
 **Topic Operator Capacity Test**
-- Measures the impact of different maxBatchSize and maxBatchLingerMs values on system throughput and responsiveness. 
+
+- Measures the impact of different maxBatchSize and maxBatchLingerMs values on system throughput and responsiveness.
 - Evaluates Kafka topic creation, modification, and deletion performance under different batching strategies.
 - Reports include details on:
   - Maximum batch size
@@ -532,6 +549,7 @@ These tests provide insights into resource utilization and operational limits.
 **User Operator Capacity Test**
 
 Evaluates user operator performance with different configurations, including:
+
 - Controller thread pool size
 - Cache refresh interval (ms)
 - Batch queue size
@@ -545,7 +563,7 @@ Evaluates user operator performance with different configurations, including:
 What is worth mentioning is that these capacity tests take on average **23 minutes** for the Topic Operator and **5 hours 22 minutes** for the User Operator, depending on your HW specs.
 
 > [!IMPORTANT]
-> When modifying performance attributes in test code (e.g., changing the `performanceAttributes` map in `TopicOperatorPerformance.java`, TopicOperatorScalabilityPerformance` and other performance test suites), you must also update the corresponding GitHub Actions (GHA) tests. 
+> When modifying performance attributes in test code (e.g., changing the `performanceAttributes` map in `TopicOperatorPerformance.java`, TopicOperatorScalabilityPerformance` and other performance test suites), you must also update the corresponding GitHub Actions (GHA) tests.
 
 See the [Performance Report Tests section in .github/docs/README.md](../.github/docs/README.md#performance-report-tests) for details on maintaining test input directories and expected outputs that match the constants defined in `PerformanceConstants.java`.
 
@@ -563,15 +581,17 @@ Scalability tests assess how well Strimzi scales as the workload increases and h
   - Number of topics processed
   - Number of events handled per reconciliation cycle
 
-This test case runs at most **5 minutes**. 
+This test case runs at most **5 minutes**.
 
 ### Triggering Performance Tests
 
-Performance tests can be triggered using either Testing Farm or Jenkins. 
+Performance tests can be triggered using either Testing Farm or Jenkins.
 One can also run them locally as our standard system tests using some IDE or directly by maven.
 
 #### Testing Farm
+
 Currently, there are two possible triggers:
+
 ```
 /packit test --labels performance
 /packit test --labels user-capacity
@@ -581,6 +601,7 @@ Currently, there are two possible triggers:
 #### Jenkins
 
 To run performance tests in Jenkins, execute them as standard system tests e.g., for `TopicOperatorScalabilityPerformance`:
+
 ```
 @strimzi-ci run tests --profile=performance --testcase=TopicOperatorScalabilityPerformance`
 ```

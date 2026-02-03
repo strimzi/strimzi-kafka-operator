@@ -93,7 +93,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test suite containing Custom Resource status verification scenarios, ensuring proper status reporting for Kafka, KafkaConnect, KafkaBridge, KafkaUser, and KafkaMirrorMaker2 resources."),
+    description = @Desc("Test suite containing Custom Resource status verification scenarios, ensuring proper status reporting for Kafka, KafkaConnect, HTTP Bridge, KafkaUser, and KafkaMirrorMaker2 resources."),
     beforeTestSteps = {
         @Step(value = "Deploy Cluster Operator with custom configuration.", expected = "Cluster Operator is deployed with operation timeout settings."),
         @Step(value = "Deploy shared Kafka cluster with multiple listeners.", expected = "Kafka cluster is deployed and ready with plain, TLS, and external listeners.")
@@ -207,11 +207,11 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     @TestDoc(
-        description = @Desc("This test verifies that KafkaBridge status is correctly reported, including observed generation updates and URL information during ready and not ready states."),
+        description = @Desc("This test verifies that HTTP Bridge status is correctly reported, including observed generation updates and URL information during ready and not ready states."),
         steps = {
-            @Step(value = "Deploy KafkaBridge and verify initial status.", expected = "KafkaBridge is ready with correct status information including URL."),
-            @Step(value = "Modify KafkaBridge resource requests/limits to cause NotReady state.", expected = "KafkaBridge becomes NotReady due to insufficient CPU resources."),
-            @Step(value = "Restore KafkaBridge resources to recover.", expected = "KafkaBridge returns to Ready state with updated observed generation.")
+            @Step(value = "Deploy HTTP Bridge and verify initial status.", expected = "HTTP Bridge is ready with correct status information including URL."),
+            @Step(value = "Modify HTTP Bridge resource requests/limits to cause NotReady state.", expected = "HTTP Bridge becomes NotReady due to insufficient CPU resources."),
+            @Step(value = "Restore HTTP Bridge resources to recover.", expected = "HTTP Bridge returns to Ready state with updated observed generation.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
@@ -543,8 +543,8 @@ class CustomResourceStatusST extends AbstractST {
 
     void assertKafkaBridgeStatus(long expectedObservedGeneration, String bridgeAddress) {
         KafkaBridgeStatus kafkaBridgeStatus = CrdClients.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get().getStatus();
-        assertThat("KafkaBridge cluster status has incorrect Observed Generation", kafkaBridgeStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("KafkaBridge cluster status has incorrect URL", kafkaBridgeStatus.getUrl(), is(bridgeAddress));
+        assertThat("HTTP Bridge cluster status has incorrect Observed Generation", kafkaBridgeStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("HTTP Bridge cluster status has incorrect URL", kafkaBridgeStatus.getUrl(), is(bridgeAddress));
     }
 
     void assertKafkaConnectStatus(long expectedObservedGeneration, String expectedUrl) {

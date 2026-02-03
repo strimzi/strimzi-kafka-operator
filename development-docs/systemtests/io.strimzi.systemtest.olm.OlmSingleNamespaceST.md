@@ -26,7 +26,7 @@
 
 ## testDeployExampleKafkaBridge
 
-**Description:** Verifies the deployment of a KafkaBridge using the OLM example in a single-namespace watch configuration.
+**Description:** Verifies the deployment of a HTTP Bridge using the OLM example in a single-namespace watch configuration.
 
 **Steps:**
 
