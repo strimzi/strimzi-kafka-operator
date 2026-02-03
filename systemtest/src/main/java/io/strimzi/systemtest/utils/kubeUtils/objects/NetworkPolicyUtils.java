@@ -63,7 +63,7 @@ public class NetworkPolicyUtils {
     }
 
     public static void allowNetworkPolicySettingsForBridgeClients(String namespace, String clientName, LabelSelector clientLabelSelector, String componentName) {
-        LOGGER.info("Apply NetworkPolicy access to Kafka Bridge {} from client Pods with LabelSelector {}", componentName, clientLabelSelector);
+        LOGGER.info("Apply NetworkPolicy access to HTTP Bridge {} from client Pods with LabelSelector {}", componentName, clientLabelSelector);
 
         NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, clientName, clientLabelSelector)
             .editSpec()
@@ -84,7 +84,7 @@ public class NetworkPolicyUtils {
             .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();
 
-        LOGGER.info("Apply NetworkPolicy access to Kafka Bridge {} from scraper Pods with LabelSelector {}", componentName, scraperLabelSelector);
+        LOGGER.info("Apply NetworkPolicy access to HTTP Bridge {} from scraper Pods with LabelSelector {}", componentName, scraperLabelSelector);
 
         NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, scraperPodName, scraperLabelSelector)
             .editSpec()

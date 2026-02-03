@@ -45,7 +45,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 @Tag(BRIDGE)
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test suite for validating Kafka Bridge functionality with TLS and SCRAM-SHA authentication"),
+    description = @Desc("Test suite for validating HTTP Bridge functionality with TLS and SCRAM-SHA authentication"),
     beforeTestSteps = {
         @Step(value = "Create TestStorage instance.", expected = "TestStorage instance is created."),
         @Step(value = "Create BridgeClients instance.", expected = "BridgeClients instance is created."),
@@ -68,11 +68,11 @@ class HttpBridgeScramShaST extends AbstractST {
     
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test ensuring that sending a simple message using TLS and SCRAM-SHA authentication via Kafka Bridge works as expected."),
+        description = @Desc("Test ensuring that sending a simple message using TLS and SCRAM-SHA authentication via HTTP Bridge works as expected."),
         steps = {
             @Step(value = "Create TestStorage and BridgeClients objects.", expected = "Instances of TestStorage and BridgeClients are created."),
             @Step(value = "Create topic using the resource manager.", expected = "Topic is created successfully with the specified configuration."),
-            @Step(value = "Start producing messages via Kafka Bridge.", expected = "Messages are produced successfully to the topic."),
+            @Step(value = "Start producing messages via HTTP Bridge.", expected = "Messages are produced successfully to the topic."),
             @Step(value = "Wait for producer success.", expected = "Producer finishes sending messages without errors."),
             @Step(value = "Create KafkaClients and configure with TLS and SCRAM-SHA.", expected = "Kafka client is configured with appropriate security settings."),
             @Step(value = "Start consuming messages via Kafka client.", expected = "Messages are consumed successfully from the topic."),
@@ -106,7 +106,7 @@ class HttpBridgeScramShaST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test to check the reception of a simple message via Kafka Bridge using TLS and SCRAM-SHA encryption."),
+        description = @Desc("Test to check the reception of a simple message via HTTP Bridge using TLS and SCRAM-SHA encryption."),
         steps = {
             @Step(value = "Initialize TestStorage and BridgeClientsBuilder instances.", expected = "Instances are successfully initialized."),
             @Step(value = "Create Kafka topic using ResourceManager.", expected = "Kafka topic is created and available."),

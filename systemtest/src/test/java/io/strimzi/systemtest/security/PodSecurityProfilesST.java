@@ -116,7 +116,7 @@ public class PodSecurityProfilesST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
-        // Kafka Bridge and KafkaConnect use main Kafka Cluster (one serving as source for MM1 and MM2)
+        // HTTP Bridge and KafkaConnect use main Kafka Cluster (one serving as source for MM1 and MM2)
         // MM1 and MM2 shares source Kafka Cluster and each have their own target kafka cluster
 
         LOGGER.info("Deploy all additional operands: MM1, MM2, Bridge, KafkaConnect");

@@ -764,16 +764,16 @@ class LoggingChangeST extends AbstractST {
     @Tag(BRIDGE)
     @Tag(ROLLING_UPDATE)
     @TestDoc(
-        description = @Desc("This test dynamically changes the logging levels of the Kafka Bridge and verifies that it behaves correctly in response to these changes."),
+        description = @Desc("This test dynamically changes the logging levels of the HTTP Bridge and verifies that it behaves correctly in response to these changes."),
         steps = {
-            @Step(value = "Configure the initial logging levels of the Kafka Bridge to OFF using inline logging.", expected = "Kafka Bridge logging levels are set to OFF."),
-            @Step(value = "Asynchronously deploy the Kafka Bridge with the initial logging configuration, along with the required Kafka cluster and Scraper Pod.", expected = "Kafka Bridge and all required resources become ready."),
-            @Step(value = "Verify that the Kafka Bridge logs are empty due to logging level being OFF.", expected = "Kafka Bridge logs are confirmed to be empty."),
-            @Step(value = "Change the Kafka Bridge's rootLogger level to DEBUG using inline logging and apply the changes.", expected = "Kafka Bridge logging level is updated to DEBUG and reflected in its log4j2.properties."),
-            @Step(value = "Verify that the Kafka Bridge logs now contain records at the DEBUG level.", expected = "Kafka Bridge logs contain expected DEBUG level records."),
-            @Step(value = "Switch the Kafka Bridge to use an external logging configuration from a ConfigMap with rootLogger level set to OFF.", expected = "Kafka Bridge logging levels are updated to OFF using the external ConfigMap."),
-            @Step(value = "Verify that the Kafka Bridge logs are empty again after applying the external logging configuration.", expected = "Kafka Bridge logs are confirmed to be empty."),
-            @Step(value = "Ensure that the Kafka Bridge Pod did not restart or roll during the logging level changes.", expected = "Kafka Bridge Pod maintains its original state without restarting.")
+            @Step(value = "Configure the initial logging levels of the HTTP Bridge to OFF using inline logging.", expected = "HTTP Bridge logging levels are set to OFF."),
+            @Step(value = "Asynchronously deploy the HTTP Bridge with the initial logging configuration, along with the required Kafka cluster and Scraper Pod.", expected = "HTTP Bridge and all required resources become ready."),
+            @Step(value = "Verify that the HTTP Bridge logs are empty due to logging level being OFF.", expected = "HTTP Bridge logs are confirmed to be empty."),
+            @Step(value = "Change the HTTP Bridge's rootLogger level to DEBUG using inline logging and apply the changes.", expected = "HTTP Bridge logging level is updated to DEBUG and reflected in its log4j2.properties."),
+            @Step(value = "Verify that the HTTP Bridge logs now contain records at the DEBUG level.", expected = "HTTP Bridge logs contain expected DEBUG level records."),
+            @Step(value = "Switch the HTTP Bridge to use an external logging configuration from a ConfigMap with rootLogger level set to OFF.", expected = "HTTP Bridge logging levels are updated to OFF using the external ConfigMap."),
+            @Step(value = "Verify that the HTTP Bridge logs are empty again after applying the external logging configuration.", expected = "HTTP Bridge logs are confirmed to be empty."),
+            @Step(value = "Ensure that the HTTP Bridge Pod did not restart or roll during the logging level changes.", expected = "HTTP Bridge Pod maintains its original state without restarting.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
@@ -1013,7 +1013,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @TestDoc(
-        description = @Desc("This test dynamically changes the logging levels of the Kafka Bridge and verifies the application behaves correctly with respect to these changes."),
+        description = @Desc("This test dynamically changes the logging levels of the HTTP Bridge and verifies the application behaves correctly with respect to these changes."),
         steps = {
             @Step(value = "Deploy Kafka cluster and KafkaConnect cluster, the latter with Log level Off.", expected = "Clusters are deployed with KafkaConnect log level set to Off."),
             @Step(value = "Deploy all additional resources, Scraper Pod and network policies (in order to gather the stuff from the Scraper Pod).", expected = "Additional resources, Scraper Pod and network policies are deployed."),

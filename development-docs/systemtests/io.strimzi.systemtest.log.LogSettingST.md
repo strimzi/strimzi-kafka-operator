@@ -17,13 +17,13 @@
 
 ## testBridgeLogSetting
 
-**Description:** Test verifies Kafka Bridge logging configuration including inline logging changes and enabling/disabling GC logging.
+**Description:** Test verifies HTTP Bridge logging configuration including inline logging changes and enabling/disabling GC logging.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka Bridge with custom inline logging and GC logging enabled. | Bridge is deployed with the desired log settings and GC logging on. |
+| 1. | Deploy HTTP Bridge with custom inline logging and GC logging enabled. | Bridge is deployed with the desired log settings and GC logging on. |
 | 2. | Check the associated ConfigMap to ensure logging levels match expectations. | Log levels are applied correctly in the Bridge. |
 | 3. | Update JVM options to disable GC logging for the Bridge. | Bridge configuration is updated to turn off GC logging. |
 | 4. | Confirm that pods, after any rolling updates, now run without GC logging. | Bridge runs with GC logging disabled and correct log levels. |

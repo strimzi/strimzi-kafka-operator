@@ -35,7 +35,7 @@
 
 ## testDynamicallyAndNonDynamicSetConnectLoggingLevels
 
-**Description:** This test dynamically changes the logging levels of the Kafka Bridge and verifies the application behaves correctly with respect to these changes.
+**Description:** This test dynamically changes the logging levels of the HTTP Bridge and verifies the application behaves correctly with respect to these changes.
 
 **Steps:**
 
@@ -59,20 +59,20 @@
 
 ## testDynamicallySetBridgeLoggingLevels
 
-**Description:** This test dynamically changes the logging levels of the Kafka Bridge and verifies that it behaves correctly in response to these changes.
+**Description:** This test dynamically changes the logging levels of the HTTP Bridge and verifies that it behaves correctly in response to these changes.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Configure the initial logging levels of the Kafka Bridge to OFF using inline logging. | Kafka Bridge logging levels are set to OFF. |
-| 2. | Asynchronously deploy the Kafka Bridge with the initial logging configuration, along with the required Kafka cluster and Scraper Pod. | Kafka Bridge and all required resources become ready. |
-| 3. | Verify that the Kafka Bridge logs are empty due to logging level being OFF. | Kafka Bridge logs are confirmed to be empty. |
-| 4. | Change the Kafka Bridge's rootLogger level to DEBUG using inline logging and apply the changes. | Kafka Bridge logging level is updated to DEBUG and reflected in its log4j2.properties. |
-| 5. | Verify that the Kafka Bridge logs now contain records at the DEBUG level. | Kafka Bridge logs contain expected DEBUG level records. |
-| 6. | Switch the Kafka Bridge to use an external logging configuration from a ConfigMap with rootLogger level set to OFF. | Kafka Bridge logging levels are updated to OFF using the external ConfigMap. |
-| 7. | Verify that the Kafka Bridge logs are empty again after applying the external logging configuration. | Kafka Bridge logs are confirmed to be empty. |
-| 8. | Ensure that the Kafka Bridge Pod did not restart or roll during the logging level changes. | Kafka Bridge Pod maintains its original state without restarting. |
+| 1. | Configure the initial logging levels of the HTTP Bridge to OFF using inline logging. | HTTP Bridge logging levels are set to OFF. |
+| 2. | Asynchronously deploy the HTTP Bridge with the initial logging configuration, along with the required Kafka cluster and Scraper Pod. | HTTP Bridge and all required resources become ready. |
+| 3. | Verify that the HTTP Bridge logs are empty due to logging level being OFF. | HTTP Bridge logs are confirmed to be empty. |
+| 4. | Change the HTTP Bridge's rootLogger level to DEBUG using inline logging and apply the changes. | HTTP Bridge logging level is updated to DEBUG and reflected in its log4j2.properties. |
+| 5. | Verify that the HTTP Bridge logs now contain records at the DEBUG level. | HTTP Bridge logs contain expected DEBUG level records. |
+| 6. | Switch the HTTP Bridge to use an external logging configuration from a ConfigMap with rootLogger level set to OFF. | HTTP Bridge logging levels are updated to OFF using the external ConfigMap. |
+| 7. | Verify that the HTTP Bridge logs are empty again after applying the external logging configuration. | HTTP Bridge logs are confirmed to be empty. |
+| 8. | Ensure that the HTTP Bridge Pod did not restart or roll during the logging level changes. | HTTP Bridge Pod maintains its original state without restarting. |
 
 **Labels:**
 

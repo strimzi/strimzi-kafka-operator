@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.systemtest.TestConstants;
 
 /**
- * Concrete implementation of BaseMetricsComponent for the Kafka Bridge.
+ * Concrete implementation of BaseMetricsComponent for the HTTP Bridge.
  */
 public class KafkaBridgeMetricsComponent extends BaseMetricsComponent {
 
@@ -32,8 +32,8 @@ public class KafkaBridgeMetricsComponent extends BaseMetricsComponent {
     }
 
     /**
-     * Provides the default metrics port specifically for the Kafka Bridge.
-     * @return int representing the Kafka Bridge metrics port
+     * Provides the default metrics port specifically for the HTTP Bridge.
+     * @return int representing the HTTP Bridge metrics port
      */
     @Override
     public int getDefaultMetricsPort() {
@@ -41,8 +41,8 @@ public class KafkaBridgeMetricsComponent extends BaseMetricsComponent {
     }
 
     /**
-     * Provides the label selector specific to the Kafka Bridge.
-     * @return LabelSelector for the Kafka Bridge deployment
+     * Provides the label selector specific to the HTTP Bridge.
+     * @return LabelSelector for the HTTP Bridge deployment
      */
     @Override
     public LabelSelector getLabelSelector() {

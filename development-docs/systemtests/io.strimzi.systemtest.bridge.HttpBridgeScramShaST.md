@@ -1,6 +1,6 @@
 # HttpBridgeScramShaST
 
-**Description:** Test suite for validating Kafka Bridge functionality with TLS and SCRAM-SHA authentication
+**Description:** Test suite for validating HTTP Bridge functionality with TLS and SCRAM-SHA authentication
 
 **Before test execution steps:**
 
@@ -21,7 +21,7 @@
 
 ## testReceiveSimpleMessageTlsScramSha
 
-**Description:** Test to check the reception of a simple message via Kafka Bridge using TLS and SCRAM-SHA encryption.
+**Description:** Test to check the reception of a simple message via HTTP Bridge using TLS and SCRAM-SHA encryption.
 
 **Steps:**
 
@@ -40,7 +40,7 @@
 
 ## testSendSimpleMessageTlsScramSha
 
-**Description:** Test ensuring that sending a simple message using TLS and SCRAM-SHA authentication via Kafka Bridge works as expected.
+**Description:** Test ensuring that sending a simple message using TLS and SCRAM-SHA authentication via HTTP Bridge works as expected.
 
 **Steps:**
 
@@ -48,7 +48,7 @@
 | - | - | - |
 | 1. | Create TestStorage and BridgeClients objects. | Instances of TestStorage and BridgeClients are created. |
 | 2. | Create topic using the resource manager. | Topic is created successfully with the specified configuration. |
-| 3. | Start producing messages via Kafka Bridge. | Messages are produced successfully to the topic. |
+| 3. | Start producing messages via HTTP Bridge. | Messages are produced successfully to the topic. |
 | 4. | Wait for producer success. | Producer finishes sending messages without errors. |
 | 5. | Create KafkaClients and configure with TLS and SCRAM-SHA. | Kafka client is configured with appropriate security settings. |
 | 6. | Start consuming messages via Kafka client. | Messages are consumed successfully from the topic. |

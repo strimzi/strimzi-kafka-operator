@@ -4,7 +4,7 @@
 
 These tests validate the logging configuration and behavior of Kafka and its components within the Strimzi ecosystem. 
 Logging is essential for monitoring, debugging, and maintaining Kafka clusters and associated components like Kafka Connect, 
-Kafka Bridge, and KafkaMirrorMaker2. 
+HTTP Bridge, and KafkaMirrorMaker2. 
 These tests cover scenarios such as dynamic logging level changes, logging format adjustments (e.g., JSON format), 
 external and inline logging configurations, and ensuring that logging changes do not cause unnecessary rolling updates. 
 Proper logging facilitates operational visibility and aids in troubleshooting, making it crucial for the reliability 

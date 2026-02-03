@@ -387,9 +387,9 @@ class LogSettingST extends AbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     @TestDoc(
-        description = @Desc("Test verifies Kafka Bridge logging configuration including inline logging changes and enabling/disabling GC logging."),
+        description = @Desc("Test verifies HTTP Bridge logging configuration including inline logging changes and enabling/disabling GC logging."),
         steps = {
-            @Step(value = "Deploy Kafka Bridge with custom inline logging and GC logging enabled.", expected = "Bridge is deployed with the desired log settings and GC logging on."),
+            @Step(value = "Deploy HTTP Bridge with custom inline logging and GC logging enabled.", expected = "Bridge is deployed with the desired log settings and GC logging on."),
             @Step(value = "Check the associated ConfigMap to ensure logging levels match expectations.", expected = "Log levels are applied correctly in the Bridge."),
             @Step(value = "Update JVM options to disable GC logging for the Bridge.", expected = "Bridge configuration is updated to turn off GC logging."),
             @Step(value = "Confirm that pods, after any rolling updates, now run without GC logging.", expected = "Bridge runs with GC logging disabled and correct log levels."),

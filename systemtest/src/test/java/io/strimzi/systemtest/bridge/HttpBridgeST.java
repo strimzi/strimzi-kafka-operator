@@ -65,9 +65,9 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(REGRESSION)
 @Tag(BRIDGE)
 @SuiteDoc(
-    description = @Desc("Test suite for various Kafka Bridge operations."),
+    description = @Desc("Test suite for various HTTP Bridge operations."),
     beforeTestSteps = {
-        @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge.", expected = "Kafka and Kafka Bridge are deployed with necessary configuration.")
+        @Step(value = "Initialize Test Storage and deploy Kafka and HTTP Bridge.", expected = "Kafka and HTTP Bridge are deployed with necessary configuration.")
     },
     labels = {
         @Label(TestDocsLabels.BRIDGE),
@@ -80,17 +80,17 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test validating that sending a simple message through Kafka Bridge works correctly and checks labels."),
+        description = @Desc("Test validating that sending a simple message through HTTP Bridge works correctly and checks labels."),
         steps = {
             @Step(value = "Initialize test storage.", expected = "Test storage is initialized with necessary context."),
-            @Step(value = "Create a Kafka Bridge client job.", expected = "Kafka Bridge client job is configured and instantiated."),
+            @Step(value = "Create a HTTP Bridge client job.", expected = "HTTP Bridge client job is configured and instantiated."),
             @Step(value = "Create Kafka topic.", expected = "Kafka topic is successfully created."),
-            @Step(value = "Start Kafka Bridge producer.", expected = "Kafka Bridge producer successfully begins sending messages."),
+            @Step(value = "Start HTTP Bridge producer.", expected = "HTTP Bridge producer successfully begins sending messages."),
             @Step(value = "Wait for producer success.", expected = "All messages are sent successfully."),
             @Step(value = "Start Kafka consumer.", expected = "Kafka consumer is instantiated and starts consuming messages."),
             @Step(value = "Wait for consumer success.", expected = "All messages are consumed successfully."),
-            @Step(value = "Verify Kafka Bridge pod labels.", expected = "Labels for Kafka Bridge pods are correctly set and verified."),
-            @Step(value = "Verify Kafka Bridge service labels.", expected = "Labels for Kafka Bridge service are correctly set and verified.")
+            @Step(value = "Verify HTTP Bridge pod labels.", expected = "Labels for HTTP Bridge pods are correctly set and verified."),
+            @Step(value = "Verify HTTP Bridge service labels.", expected = "Labels for HTTP Bridge service are correctly set and verified.")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE),
@@ -128,13 +128,13 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test verifying that a simple message can be received using Kafka Bridge."),
+        description = @Desc("Test verifying that a simple message can be received using HTTP Bridge."),
         steps = {
             @Step(value = "Initialize the test storage.", expected = "TestStorage instance is initialized."),
             @Step(value = "Create Kafka topic resource.", expected = "Kafka topic resource is created with specified configurations."),
-            @Step(value = "Setup and deploy Kafka Bridge consumer client.", expected = "Kafka Bridge consumer client is set up and started receiving messages."),
+            @Step(value = "Setup and deploy HTTP Bridge consumer client.", expected = "HTTP Bridge consumer client is set up and started receiving messages."),
             @Step(value = "Send messages using Kafka producer.", expected = "Messages are sent to Kafka successfully."),
-            @Step(value = "Verify message reception.", expected = "All messages are received by Kafka Bridge consumer client.")
+            @Step(value = "Verify message reception.", expected = "All messages are received by HTTP Bridge consumer client.")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE),
@@ -169,14 +169,14 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test that validates the creation, update, and verification of a Kafka Bridge with specific initial and updated configurations."),
+        description = @Desc("Test that validates the creation, update, and verification of a HTTP Bridge with specific initial and updated configurations."),
         steps = {
-            @Step(value = "Create a Kafka Bridge resource with initial configuration.", expected = "Kafka Bridge is created and deployed with the specified initial configuration."),
+            @Step(value = "Create a HTTP Bridge resource with initial configuration.", expected = "HTTP Bridge is created and deployed with the specified initial configuration."),
             @Step(value = "Remove an environment variable that is in use.", expected = "Environment variable TEST_ENV_1 is removed from the initial configuration."),
             @Step(value = "Verify initial probe values and environment variables.", expected = "The probe values and environment variables match the initial configuration."),
-            @Step(value = "Update Kafka Bridge resource with new configuration.", expected = "Kafka Bridge is updated and redeployed with the new configuration."),
+            @Step(value = "Update HTTP Bridge resource with new configuration.", expected = "HTTP Bridge is updated and redeployed with the new configuration."),
             @Step(value = "Verify updated probe values and environment variables.", expected = "The probe values and environment variables match the updated configuration."),
-            @Step(value = "Verify Kafka Bridge configurations for producer and consumer.", expected = "Producer and consumer configurations match the updated settings.")
+            @Step(value = "Verify HTTP Bridge configurations for producer and consumer.", expected = "Producer and consumer configurations match the updated settings.")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE)
@@ -276,9 +276,9 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test verifying the presence and correctness of the discovery annotation in the Kafka Bridge service."),
+        description = @Desc("Test verifying the presence and correctness of the discovery annotation in the HTTP Bridge service."),
         steps = {
-            @Step(value = "Retrieve the Kafka Bridge service using kubeClient.", expected = "Kafka Bridge service instance is obtained."),
+            @Step(value = "Retrieve the HTTP Bridge service using kubeClient.", expected = "HTTP Bridge service instance is obtained."),
             @Step(value = "Extract the discovery annotation from the service metadata.", expected = "The discovery annotation is retrieved as a string."),
             @Step(value = "Convert the discovery annotation to a JsonArray.", expected = "JsonArray representation of the discovery annotation is created."),
             @Step(value = "Validate the content of the JsonArray against expected values.", expected = "The JsonArray matches the expected service discovery information.")
@@ -444,11 +444,11 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("Test verifying if custom labels and annotations for Kafka Bridge services are properly set and validated."),
+        description = @Desc("Test verifying if custom labels and annotations for HTTP Bridge services are properly set and validated."),
         steps = {
             @Step(value = "Initialize TestStorage", expected = "TestStorage instance is created with the current test context"),
-            @Step(value = "Create Kafka Bridge resource with custom labels and annotations", expected = "Kafka Bridge resource is successfully created and available"),
-            @Step(value = "Retrieve Kafka Bridge service with custom labels", expected = "Kafka Bridge service is retrieved with specified custom labels"),
+            @Step(value = "Create HTTP Bridge resource with custom labels and annotations", expected = "HTTP Bridge resource is successfully created and available"),
+            @Step(value = "Retrieve HTTP Bridge service with custom labels", expected = "HTTP Bridge service is retrieved with specified custom labels"),
             @Step(value = "Filter and validate custom labels and annotations", expected = "Custom labels and annotations match the expected values")
         },
         labels = {

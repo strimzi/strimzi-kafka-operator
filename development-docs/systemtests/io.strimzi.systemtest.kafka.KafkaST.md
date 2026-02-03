@@ -16,7 +16,7 @@
 
 ## testAdditionalVolumes
 
-**Description:** This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and Kafka Bridge components. It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments.
+**Description:** This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and HTTP Bridge components. It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments.
 
 **Steps:**
 
@@ -24,7 +24,7 @@
 | - | - | - |
 | 1. | Setup environment prerequisites and configure test storage. | Ensure the environment is in KRaft mode. |
 | 2. | Create necessary Kafka resources with additional volumes for secrets and config maps. | Resources are correctly instantiated with specified volumes. |
-| 3. | Deploy Kafka, Kafka Connect, and Kafka Bridge with these volumes. | Components are correctly configured with additional volumes. |
+| 3. | Deploy Kafka, Kafka Connect, and HTTP Bridge with these volumes. | Components are correctly configured with additional volumes. |
 | 4. | Verify that all pods (Kafka, Connect, and Bridge) have additional volumes mounted and accessible. | Volumes are correctly mounted and usable within pods. |
 
 **Labels:**

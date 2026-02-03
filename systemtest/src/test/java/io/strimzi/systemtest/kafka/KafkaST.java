@@ -1142,11 +1142,11 @@ class KafkaST extends AbstractST {
     @Tag(CONNECT)
     @Tag(BRIDGE)
     @TestDoc(
-        description = @Desc("This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and Kafka Bridge components. It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments."),
+        description = @Desc("This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and HTTP Bridge components. It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments."),
         steps = {
             @Step(value = "Setup environment prerequisites and configure test storage.", expected = "Ensure the environment is in KRaft mode."),
             @Step(value = "Create necessary Kafka resources with additional volumes for secrets and config maps.", expected = "Resources are correctly instantiated with specified volumes."),
-            @Step(value = "Deploy Kafka, Kafka Connect, and Kafka Bridge with these volumes.", expected = "Components are correctly configured with additional volumes."),
+            @Step(value = "Deploy Kafka, Kafka Connect, and HTTP Bridge with these volumes.", expected = "Components are correctly configured with additional volumes."),
             @Step(value = "Verify that all pods (Kafka, Connect, and Bridge) have additional volumes mounted and accessible.", expected = "Volumes are correctly mounted and usable within pods.")
         },
         labels = {

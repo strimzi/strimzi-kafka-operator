@@ -75,7 +75,7 @@ class HttpBridgeTlsST extends AbstractST {
         steps = {
             @Step(value = "Initialize TestStorage and BridgeClients with TLS configuration.", expected = "TestStorage and BridgeClients are initialized with TLS configuration."),
             @Step(value = "Create Kafka topic using resource manager.", expected = "Kafka topic is successfully created."),
-            @Step(value = "Create Kafka Bridge Client job for producing messages.", expected = "Kafka Bridge Client job is created and produces messages successfully."),
+            @Step(value = "Create HTTP Bridge Client job for producing messages.", expected = "HTTP Bridge Client job is created and produces messages successfully."),
             @Step(value = "Verify that the producer successfully sends messages.", expected = "Producer successfully sends the expected number of messages."),
             @Step(value = "Create Kafka client consumer with TLS configuration.", expected = "Kafka client consumer is created with TLS configuration."),
             @Step(value = "Verify that the consumer successfully receives messages.", expected = "Consumer successfully receives the expected number of messages.")
@@ -110,12 +110,12 @@ class HttpBridgeTlsST extends AbstractST {
         description = @Desc("Test to verify that a simple message can be received using TLS in a parallel environment."),
         steps = {
             @Step(value = "Initialize the test storage instance.", expected = "TestStorage object is instantiated with the test context."),
-            @Step(value = "Configure Kafka Bridge client for consumption.", expected = "Kafka Bridge client is configured with topic and consumer names."),
+            @Step(value = "Configure HTTP Bridge client for consumption.", expected = "HTTP Bridge client is configured with topic and consumer names."),
             @Step(value = "Create Kafka topic with provided configurations.", expected = "Kafka topic resource is created and available."),
-            @Step(value = "Deploy the Kafka Bridge consumer.", expected = "Kafka Bridge consumer starts successfully and is ready to consume messages."),
+            @Step(value = "Deploy the HTTP Bridge consumer.", expected = "HTTP Bridge consumer starts successfully and is ready to consume messages."),
             @Step(value = "Initialize TLS Kafka client for message production.", expected = "TLS Kafka client is configured and initialized."),
             @Step(value = "Deploy the Kafka producer TLS client.", expected = "TLS Kafka producer client starts successfully and begins sending messages."),
-            @Step(value = "Verify message consumption.", expected = "Messages are successfully consumed by the Kafka Bridge consumer.")
+            @Step(value = "Verify message consumption.", expected = "Messages are successfully consumed by the HTTP Bridge consumer.")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE)

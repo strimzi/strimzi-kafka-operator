@@ -2,7 +2,7 @@
 
 ## Description
 
-These tests ensure that all metrics exposed by Strimzi components (including Kafka, Kafka Connect, Kafka Bridge, Kafka MirrorMaker2, and the Cluster Operator) adhere to expected behaviors and formats. 
+These tests ensure that all metrics exposed by Strimzi components (including Kafka, Kafka Connect, HTTP Bridge, Kafka MirrorMaker2, and the Cluster Operator) adhere to expected behaviors and formats. 
 They validate data correctness, confirm that metrics are exposed under various configurations, and ensure integration with external monitoring systems. 
 Proper verification of metrics is crucial for observability, debugging, and performance tuning in production environments.
 
