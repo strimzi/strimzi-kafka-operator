@@ -4,14 +4,15 @@
 = Enabling authorization on Kafka brokers
 
 [role="_abstract"]
-You can enable authorization so that Kafka brokers use information in access tokens to determine whether clients are permitted to perform specific operations.
+You can enable authorization so that Kafka brokers use information associated with access tokens to determine whether clients are permitted to perform specific operations.
 
 Authorization builds on OAuth 2.0 authentication.  
 Clients must connect through a Kafka listener that is configured for OAuth 2.0 using the `custom` authentication type.  
 Only tokens that are successfully validated by the listener are evaluated by the authorizer.
 
 To enable authorization, set the `authorization` field on the Kafka cluster resource and configure the `custom` authorization type. 
-The broker evaluates authorization decisions using token claims provided by the OAuth 2.0 authorization server.
+The broker uses a custom authorizer to obtain permissions from a token. 
+Keycloak Authorization Services is the only supported authorization mechanism.
 
 NOTE: Advanced authorization settings are described in the {oauth-project}.  
 Keycloak-specific examples for use with Strimzi are provided in the xref:config-examples-{context}[example configuration files].
