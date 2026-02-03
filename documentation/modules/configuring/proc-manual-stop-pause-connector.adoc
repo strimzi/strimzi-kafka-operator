@@ -8,7 +8,6 @@
 = Stopping or pausing Kafka Connect connectors
 
 [role="_abstract"]
-[role="_abstract"]
 If you are using `KafkaConnector` resources to manage connectors, use the `state` property to stop or pause a connector.
 
 Pausing a connector keeps the connector and tasks instantiated, allowing it to resume quickly.

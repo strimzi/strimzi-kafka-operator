@@ -8,7 +8,6 @@
 = Listing Kafka Connect connector offsets
 
 [role="_abstract"]
-[role="_abstract"]
 To list connector offsets using `KafkaConnector` resources, configure the connector to write offsets to a `ConfigMap`.
 
 Offsets track the progress of data processing.
