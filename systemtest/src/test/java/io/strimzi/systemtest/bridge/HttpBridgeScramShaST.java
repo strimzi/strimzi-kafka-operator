@@ -45,7 +45,7 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 @Tag(BRIDGE)
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test suite for validating Kafka Bridge functionality with TLS and SCRAM-SHA authentication"),
+    description = @Desc("Test suite for validating HTTP Bridge functionality with TLS and SCRAM-SHA authentication"),
     beforeTestSteps = {
         @Step(value = "Create TestStorage instance.", expected = "TestStorage instance is created."),
         @Step(value = "Create BridgeClients instance.", expected = "BridgeClients instance is created."),
