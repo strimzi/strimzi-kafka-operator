@@ -7,7 +7,7 @@ chmod 600 github_deploy_key
 eval `ssh-agent -s`
 ssh-add github_deploy_key
 
-git clone git@github.com:strimzi/strimzi.github.io.git /tmp/website
+git clone git@github.com:strimzi/strimzi.github.io.git /tmp/website --depth 1
 
 # Operator docs
 rm -rf  /tmp/website/docs/operators/in-development/images
