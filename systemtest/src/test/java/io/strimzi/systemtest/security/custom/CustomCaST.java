@@ -7,6 +7,11 @@ package io.strimzi.systemtest.security.custom;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -15,6 +20,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -53,30 +59,33 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-/**
- * Provides test cases to verify custom key-pair (public key + private key) manipulation. For instance:
- *  1. Replacing `cluster` key-pair (f.e., ca.crt and ca.key) to invoke renewal process
- *  2. Replacing `clients` key-pair (f.e., user.crt and user.key) to invoke renewal process
- *
- * @see <a href="https://strimzi.io/docs/operators/in-development/configuring.html#installing-your-own-ca-certificates-str">Installing your own ca certificates</a>
- * @see <a href="https://strimzi.io/docs/operators/in-development/configuring.html#proc-replacing-your-own-private-keys-str">Replacing your own private keys</a>
- */
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for verifying custom certificate authority (CA) key pair manipulation, including replacing cluster and clients key pairs to trigger the renewal process."),
+    labels = {
+        @Label(value = TestDocsLabels.SECURITY)
+    }
+)
 public class CustomCaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CustomCaST.class);
     private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
 
-    /**
-     * This test focuses on manual renewal of custom cluster CA.
-     * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
-     * Once everything is set up, kafka reconciliation is paused using annotation. Then a newly generated cluster CA keypair is put in place.
-     * When annotation is removed, kafka resumes and tries to renew cluster certificates using the new CA keypair.
-     * Note: There is a need to keep an old CA key in the secret and remove it only after all components successfully
-     * roll several times (due to the fact that it takes multiple rolling updates to finally update from old keypair to the new one).
-     * Test also verifies communication by producing and consuming messages.
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test verifies manual renewal of a custom cluster CA by replacing the cluster CA key pair and triggering certificate renewal through rolling updates."),
+        steps = {
+            @Step(value = "Create a custom cluster CA and deploy Kafka cluster with it.", expected = "Kafka cluster is deployed with custom cluster CA."),
+            @Step(value = "Generate a new cluster CA key pair.", expected = "New cluster CA is created."),
+            @Step(value = "Replace the old cluster CA key pair with the new one, while retaining the old certificate.", expected = "CA secrets are updated with new key pair."),
+            @Step(value = "Resume reconciliation and wait for rolling updates to complete.", expected = "All components roll to trust the new CA and use new certificates."),
+            @Step(value = "Verify message production works with renewed certificates.", expected = "Producer successfully sends messages."),
+            @Step(value = "Remove outdated certificate and trigger manual rolling update using `strimzi.io/manual-rolling-update` annotation.", expected = "Cluster no longer trusts old certificates.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // Generate root and intermediate certificate authority with cluster CA
@@ -145,17 +154,21 @@ public class CustomCaST extends AbstractST {
 
     }
 
-    /**
-     * This test focuses on manual renewal of custom clients CA.
-     * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
-     * Once everything is set up, kafka reconciliation is paused using annotation. Then a newly generated cluster CA keypair is put in place.
-     * When annotation is removed, kafka resumes and tries to renew clients certificates using the new CA keypair.
-     * Note: There is a need to keep an old CA key in the secret and remove it only after all components successfully
-     * roll several times (due to the fact that it takes multiple rolling updates to finally update from old keypair to the new one).
-     * Because this test specifically targets clients certificates, EO must NOT roll, only Kafka pods should.
-     * Test also verifies communication by producing and consuming messages.
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test verifies manual renewal of a custom clients CA by replacing the clients CA key pair and triggering certificate renewal through rolling updates. Only Kafka pods should roll, Entity Operator must not roll."),
+        steps = {
+            @Step(value = "Create custom clients CA and deploy Kafka cluster with it.", expected = "Kafka cluster is deployed with custom clients CA."),
+            @Step(value = "Generate a new clients CA key-pair.", expected = "New clients CA is created."),
+            @Step(value = "Replace the old clients CA key pair with the new one while retaining the old certificate.", expected = "CA secrets are updated with new key pair."),
+            @Step(value = "Resume reconciliation and wait for Kafka pods to roll.", expected = "Kafka pods roll to trust the new CA and use new certificates."),
+            @Step(value = "Verify Entity Operator does not roll.", expected = "Entity Operator pods remain unchanged."),
+            @Step(value = "Verify message production works with renewed certificates.", expected = "Producer successfully sends messages.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testReplacingCustomClientsKeyPairToInvokeRenewalProcess() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         // Generate root and intermediate certificate authority with clients CA
@@ -197,14 +210,20 @@ public class CustomCaST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
-    /**
-     * This tests focuses on verifying the functionality of custom cluster and clients CAs.
-     * Steps are following. Before deploying kafka a clients and cluster CAs are created and deployed as secrets.
-     * Kafka is then deployed with those, forcing it NOT to generate own certificate authority.
-     * After verification of correct certificates on user certificates are checked for correctness as well.
-     * Then a producer / consumer jos are deployed to verify communication.
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test verifies the use of custom cluster and clients CAs. Custom CAs are created and deployed as secrets before Kafka deployment, which forces Kafka to use them instead of generating its own certificate authorities."),
+        steps = {
+            @Step(value = "Create custom cluster and clients CAs and deploy them as secrets.", expected = "Both CA secrets are created."),
+            @Step(value = "Deploy Kafka cluster configured to use custom CAs.", expected = "Kafka cluster is deployed using the custom CAs."),
+            @Step(value = "Verify that Kafka broker certificates are signed by the custom cluster CA.", expected = "Broker certificates have the correct issuer."),
+            @Step(value = "Create a KafkaUser and verify that its certificate is signed by the custom clients CA.", expected = "User certificate has the correct issuer."),
+            @Step(value = "Send and receive messages over TLS.", expected = "Messages are successfully produced and consumed.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testCustomClusterCaAndClientsCaCertificates() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
@@ -265,14 +284,21 @@ public class CustomCaST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
-    /**
-     * This tests focuses on invoking certificate renewal without renewing the ClusterCA.
-     * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
-     * Once everything is set up, kafka reconciliation is paused using annotation. Then new validityDays and renewalDays are set for cluster CA.
-     * When annotation is removed, kafka resumes and tries to renew cluster certificates using the CA with different validityDays and renewalDays.
-     * Test also verifies that the CA has not been renewed, only the certificates provided by the CA.
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test verifies that changing certificate validity and renewal days triggers renewal of cluster certificates without renewing the cluster CA itself."),
+        steps = {
+            @Step(value = "Create a custom cluster CA and deploy Kafka cluster with it.", expected = "Kafka cluster is deployed with custom cluster CA."),
+            @Step(value = "Record initial CA and broker certificate dates.", expected = "Certificate dates are captured."),
+            @Step(value = "Pause Kafka reconciliation and update validity and renewal days for cluster CA.", expected = "CA configuration is updated."),
+            @Step(value = "Resume reconciliation and wait for components to roll.", expected = "Controllers, brokers, and Entity Operator roll."),
+            @Step(value = "Verify CA certificate dates remain unchanged.", expected = "Cluster CA was not renewed."),
+            @Step(value = "Verify broker certificates have been renewed with new dates.", expected = "Broker certificates have updated validity dates.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testReplaceCustomClusterCACertificateValidityToInvokeRenewalProcess() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int renewalDays = 15;
@@ -355,14 +381,21 @@ public class CustomCaST extends AbstractST {
         assertThat("Broker certificates end dates should have been renewed.", initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
     }
 
-    /**
-     * This tests focuses on invoking certificate renewal without renewing the ClientsCA.
-     * Steps are following. Create own clients CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
-     * Once everything is set up, kafka reconciliation is paused using annotation. Then new validityDays and renewalDays are set for Clients CA.
-     * When annotation is removed, kafka resumes and tries to renew user certificates using the CA with different validityDays and renewalDays.
-     * Test also verifies that the CA has not been renewed, only the certificates provided by the CA.
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test verifies that changing certificate validity and renewal days triggers renewal of user certificates without renewing the clients CA."),
+        steps = {
+            @Step(value = "Create a custom clients CA, deploy a Kafka cluster, and create a KafkaUser.", expected = "Kafka cluster and user are deployed with custom clients CA."),
+            @Step(value = "Record initial CA and user certificate dates.", expected = "Certificate dates are captured."),
+            @Step(value = "Pause Kafka reconciliation and update validity and renewal days for clients CA.", expected = "CA configuration is updated."),
+            @Step(value = "Resume reconciliation and wait for Entity Operator to roll.", expected = "Entity Operator rolls to apply new configuration."),
+            @Step(value = "Verify CA certificate dates remain unchanged.", expected = "Clients CA was not renewed."),
+            @Step(value = "Verify user certificates have been renewed with new dates.", expected = "User certificates have updated validity dates.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testReplaceCustomClientsCACertificateValidityToInvokeRenewalProcess() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int renewalDays = 15;

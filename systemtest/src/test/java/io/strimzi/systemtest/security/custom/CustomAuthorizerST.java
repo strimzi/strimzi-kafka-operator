@@ -4,6 +4,11 @@
  */
 package io.strimzi.systemtest.security.custom;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -16,6 +21,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -33,32 +39,34 @@ import org.junit.jupiter.api.Tag;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test suite for verifying custom authorization using ACLs (Access Control Lists) with simple authorization and a TLS listener."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Kafka cluster configured with custom authorization, TLS listener, and a superuser.", expected = "Kafka cluster is deployed and ready.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.SECURITY)
+    }
+)
 public class CustomAuthorizerST extends AbstractST {
     static final String ADMIN = "sre-admin";
     private TestStorage sharedTestStorage;
     private static final Logger LOGGER = LogManager.getLogger(CustomAuthorizerST.class);
 
-    /**
-     * @description This test case verifies Access Control Lists with simple authorization and tls listener.
-     *
-     * @steps
-     *  1. - Kafka with simple authorization and tls listener is deployed even before the test itself start
-     *     - Kafka with desired authorization and listener is ready
-     *  2. - Create first KafkaUser, with ACLs to write and describe specific topic
-     *     - KafkaUser authorized to produce into specific topic is ready
-     *  3. - Create second KafkaUser, with ACLs to read and describe specific topic
-     *     - KafkaUser authorized to consume from specific topic is ready
-     *  4. - Deploy Kafka clients using first KafkaUser authorized to produce data into specific topic
-     *     - Producer completes successfully whereas consumer timeouts
-     *  5. - Deploy Kafka clients using second KafkaUser authorized to consume data into specific topic
-     *     - Producer timeouts whereas consumer timeouts
-     *
-     * @usecase
-     *  - custom-authorization
-     *  - acls
-     *  - kafka-user
-     */
     @ParallelTest
+    @TestDoc(
+        description = @Desc("This test case verifies access control lists (ACLs) with simple authorization and a TLS listener."),
+        steps = {
+            @Step(value = "Create a KafkaUser with ACLs to write to and describe a specific topic.", expected = "KafkaUser authorized to produce to the topic is ready."),
+            @Step(value = "Create a second KafkaUser with ACLs to read from and describe the same topic.", expected = "KafkaUser authorized to consume from the topic is ready."),
+            @Step(value = "Deploy Kafka clients using the first KafkaUser to produce data to the topic.", expected = "The producer completes successfully, and the consumer times out."),
+            @Step(value = "Deploy Kafka clients using the second KafkaUser to consume data from the topic.", expected = "The consumer completes successfully."),
+            @Step(value = "Verify that KafkaUser with read-only ACLs cannot produce messages.", expected = "Producer times out.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testAclRuleReadAndWrite() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String kafkaUserWrite = "kafka-user-write";
@@ -128,23 +136,17 @@ public class CustomAuthorizerST extends AbstractST {
         ClientUtils.waitForInstantProducerClientTimeout(testStorage);
     }
 
-    /**
-     * @description This test case verifies Access Control Lists with simple authorization and tls listener.
-     *
-     * @steps
-     *  1. - Kafka with simple authorization and specified superuser is deployed even before the test itself start
-     *     - Kafka with desired authorization is ready
-     *  2. - Create explicit KafkaUser, with no other properties except necessary metadata and specific name referencing pre-created superuser
-     *     - Admin KafkaUser is ready
-     *  3. - Deploy Kafka clients using admin KafkaUser
-     *     - Producer and consumer complete successfully
-     *
-     * @usecase
-     *  - custom-authorization
-     *  - acls
-     *  - kafka-user
-     */
     @ParallelTest
+    @TestDoc(
+        description = @Desc("This test verifies that a superuser can produce and consume messages without explicit ACL rules."),
+        steps = {
+            @Step(value = "Create KafkaUser with TLS certificate CN matching the configured superuser DN.", expected = "The KafkaUser representing the superuser is ready."),
+            @Step(value = "Deploy Kafka clients using the superuser KafkaUser.", expected = "The producer and consumer complete successfully.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.SECURITY)
+        }
+    )
     void testAclWithSuperUser() {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 

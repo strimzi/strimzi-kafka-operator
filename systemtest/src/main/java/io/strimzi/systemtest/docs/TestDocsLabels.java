@@ -22,4 +22,5 @@ public interface TestDocsLabels {
     String OLM = "olm";
     String TOPIC_OPERATOR = "topic-operator";
     String USER_OPERATOR = "user-operator";
+    String SECURITY = "security";
 }
