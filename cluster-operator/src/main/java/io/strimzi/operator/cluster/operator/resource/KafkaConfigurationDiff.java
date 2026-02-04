@@ -328,13 +328,9 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
         if (!isIgnorableProperty(propertyName)) {
             if (KafkaConfiguration.isCustomConfigurationOption(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
-            } else if (KafkaConfiguration.isDouble(propertyName, configModel)) {
+            } else if (KafkaConfiguration.isDouble(propertyName, configModel) && areDoublesEqual(propertyName, currentMap, desiredMap)) {
                 // Double properties get special handling because Kafka might reformat them during serialization
-                if (areDoublesEqual(propertyName, desiredMap, currentMap)) {
-                    LOGGER.debugCr(reconciliation, "{} is ignorable because the doubles are equal {}=={}", propertyName, currentMap.get(propertyName), desiredMap.get(propertyName));
-                } else {
-                    updatedCE.add(new AlterConfigOp(new ConfigEntry(propertyName, desiredMap.get(propertyName)), AlterConfigOp.OpType.SET));
-                }
+                LOGGER.debugCr(reconciliation, "{} is ignorable because the doubles are equal {}=={}", propertyName, currentMap.get(propertyName), desiredMap.get(propertyName));
             } else {
                 LOGGER.traceCr(reconciliation, "property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(propertyName, desiredMap.get(propertyName)), AlterConfigOp.OpType.SET));
@@ -416,7 +412,7 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
      *
      * @return  True if the option is set in both current and desired configuration and if they are equal. False otherwise.
      */
-    /* test */ static boolean areDoublesEqual(String optionName, Map<String, String> desired, Map<String, String> current) {
+    /* test */ static boolean areDoublesEqual(String optionName, Map<String, String> current, Map<String, String> desired) {
         try {
             return current.containsKey(optionName) // Option is missing in current = they are not equal
                     && desired.containsKey(optionName) // Option is missing in desired = they are not equal

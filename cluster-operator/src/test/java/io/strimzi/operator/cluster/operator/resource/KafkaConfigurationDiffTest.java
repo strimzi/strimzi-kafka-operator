@@ -398,21 +398,21 @@ public class KafkaConfigurationDiffTest {
 
     @Test
     public void testAreDoublesEqual() {
-        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of()), is(false));
         assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of(), Map.of("test.option", "0.8")), is(false));
-        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of("test.option", "0.9")), is(false));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of()), is(false));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.9"), Map.of("test.option", "0.8")), is(false));
         assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of("test.option", "0.8")), is(true));
-        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "102400000"), Map.of("test.option", "1.024E8")), is(true));
-        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "8e-1"), Map.of("test.option", "0.8")), is(true));
-        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "8e-2"), Map.of("test.option", "0.08")), is(true));
-        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "179700000000000000000000000000000000"), Map.of("test.option", "1.797e+35")), is(true));
-        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "1797.6931348623157E305"), Map.of("test.option", "1.7976931348623157E308")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "1.024E8"), Map.of("test.option", "102400000")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of("test.option", "8e-1")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.08"), Map.of("test.option", "8e-2")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "1.797e+35"), Map.of("test.option", "179700000000000000000000000000000000")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "1.7976931348623157E308"), Map.of("test.option", "1797.6931348623157E305")), is(true));
         assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "1.7976931348623157E308"), Map.of("test.option", "1.7976931348623157E308")), is(true));
     }
 
     @Test
     public void testAreDoublesEqualFailedConversion() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0,5"), Map.of("test.option", "0.5")));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.5"), Map.of("test.option", "0,5")));
         assertThat(e.getMessage(), is("Cannot compare double property 'test.option'"));
         assertThat(e.getCause().getClass(), is(NumberFormatException.class));
         assertThat(e.getCause().getMessage(), is("For input string: \"0,5\""));
