@@ -23,7 +23,6 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hamcrest.Matchers;
 
 import java.util.Arrays;
 import java.util.Collections;
