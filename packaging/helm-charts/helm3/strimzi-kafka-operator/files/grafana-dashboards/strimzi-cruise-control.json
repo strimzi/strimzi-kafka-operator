@@ -464,7 +464,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Goal violations per anomaly detector execution. The 5-minute window matches the detector’s default run interval to preserve discrete per run counts",
+      "description": "Goal violations per anomaly detector execution. Because Cruise Control emits cumulative counts, the Prometheus query window must be set to the anomaly detector run interval to preserve discrete per run counts (5 minutes by default)",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -544,7 +544,7 @@
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
-          "expr": "round(max_over_time(increase(kafka_cruisecontrol_anomalydetector_goal_violation_rate_count{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-cruise-control-.*\"}[5m])[5m:]))",
+          "expr": "round(max_over_time(increase(kafka_cruisecontrol_anomalydetector_goal_violation_rate_count{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-cruise-control-.*\"}[10m])[10m:]))",
           "hide": false,
           "instant": false,
           "interval": "",
