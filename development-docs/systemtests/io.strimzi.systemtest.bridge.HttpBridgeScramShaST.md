@@ -1,6 +1,6 @@
 # HttpBridgeScramShaST
 
-**Description:** Test suite for validating Kafka Bridge functionality with TLS and SCRAM-SHA authentication
+**Description:** Test suite for validating HTTP Bridge functionality with TLS and SCRAM-SHA authentication
 
 **Before test execution steps:**
 

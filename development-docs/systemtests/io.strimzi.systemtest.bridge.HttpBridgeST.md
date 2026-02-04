@@ -1,6 +1,6 @@
 # HttpBridgeST
 
-**Description:** Test suite for various Kafka Bridge operations.
+**Description:** Test suite for various HTTP Bridge operations.
 
 **Before test execution steps:**
 

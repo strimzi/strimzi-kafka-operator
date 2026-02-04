@@ -65,7 +65,7 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(REGRESSION)
 @Tag(BRIDGE)
 @SuiteDoc(
-    description = @Desc("Test suite for various Kafka Bridge operations."),
+    description = @Desc("Test suite for various HTTP Bridge operations."),
     beforeTestSteps = {
         @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge.", expected = "Kafka and Kafka Bridge are deployed with necessary configuration.")
     },
