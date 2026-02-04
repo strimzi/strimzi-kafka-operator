@@ -97,7 +97,7 @@
         <strimzi-oauth.version>0.17.1</strimzi-oauth.version>
         <netty.version>4.2.9.Final</netty.version>
         <micrometer.version>1.14.5</micrometer.version>
-        <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
+        <jayway-jsonpath.version>2.10.0</jayway-jsonpath.version>
         <commons-codec.version>1.13</commons-codec.version>
         <commons-io.version>2.18.0</commons-io.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
