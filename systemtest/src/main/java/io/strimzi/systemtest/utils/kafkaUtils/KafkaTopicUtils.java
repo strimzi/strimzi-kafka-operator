@@ -640,38 +640,45 @@ public class KafkaTopicUtils {
     }
 
     /**
-     * Verifies that data has been moved off the specified disks after a rebalance.
+     * Waits until data has been moved off the specified disks after a rebalance.
      *
-     * @param initialDataDirSizes   a map of initial data directory paths to their sizes in bytes.
-     * @param finalDataDirSizes     a map of final data directory paths to their sizes in bytes.
-     * @throws AssertionError       if the size of any data directory has not been sufficiently reduced.
+     * @param testStorage               the test storage containing namespace and cluster info.
+     * @param brokersWithRemovedVolumes the list of brokers with removed volumes.
+     * @param initialDataDirSizes       a map of initial data directory paths to their sizes in bytes.
      */
-    public static void verifyDataMovedOffSpecifiedDisks(final Map<String, Long> initialDataDirSizes,
-                                                        final Map<String, Long> finalDataDirSizes) {
-        LOGGER.info("Verifying that data has been moved off the specified disks...");
+    public static void waitUntilDataMovedOffSpecifiedDisks(final TestStorage testStorage,
+                                                           final List<BrokerAndVolumeIds> brokersWithRemovedVolumes,
+                                                           final Map<String, Long> initialDataDirSizes) {
+        LOGGER.info("Waiting until data has been moved off the specified disks...");
 
-        for (final Map.Entry<String, Long> entry : initialDataDirSizes.entrySet()) {
-            final String key = entry.getKey();
-            final long initialSize = initialDataDirSizes.get(key);
-            final long finalSize = finalDataDirSizes.getOrDefault(key, 0L);
+        // Data directories
+        //  --- before rebalance
+        //
+        //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 524,437,387 bytes (~524 MB)
+        //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 524,450,596 bytes (~524 MB)
+        //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 524,436,977 bytes (~524 MB)
+        // ------
+        //  --- after rebalance
+        //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 24,982 bytes (~25 KB)
+        //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 37,416 bytes (~37 KB)
+        //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 24,983 bytes (~25 KB)
+        TestUtils.waitFor("data to be moved off specified disks", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
+            final Map<String, Long> finalDataDirSizes = getDataDirectorySizes(testStorage, brokersWithRemovedVolumes);
 
-            LOGGER.info("Data directory {}: initial size = {}, final size = {}", key, initialSize, finalSize);
+            for (final Map.Entry<String, Long> entry : initialDataDirSizes.entrySet()) {
+                final String key = entry.getKey();
+                final long initialSize = entry.getValue();
+                final long finalSize = finalDataDirSizes.getOrDefault(key, 0L);
 
-            // Assert that final size is significantly less than initial size
+                LOGGER.debug("Data directory {}: initial size = {}, final size = {}", key, initialSize, finalSize);
 
-            // Data directories
-            //  --- before rebalance
-            //
-            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 524,437,387 bytes (~524 MB)
-            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 524,450,596 bytes (~524 MB)
-            //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 524,436,977 bytes (~524 MB)
-            // ------
-            //  --- after rebalance
-            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 24,982 bytes (~25 KB)
-            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 37,416 bytes (~37 KB)
-            //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 24,983 bytes (~25 KB)
-            assertThat("Expected data directory " + key + " to have reduced size after rebalance.",
-                finalSize, Matchers.lessThan(initialSize / 100));
-        }
+                if (finalSize >= initialSize / 100) {
+                    return false;
+                }
+            }
+
+            LOGGER.info("All data directories have been sufficiently reduced");
+            return true;
+        });
     }
 }
