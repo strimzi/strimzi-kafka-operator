@@ -223,7 +223,6 @@ public class ClusterCaRenewalTest {
                 false
         );
 
-
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
 
@@ -277,7 +276,6 @@ public class ClusterCaRenewalTest {
                 false
         );
 
-
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
 
@@ -305,7 +303,6 @@ public class ClusterCaRenewalTest {
                 true,
                 false
         );
-
 
         assertThat(newCerts.get("pod0"), is(nullValue()));
 
