@@ -332,8 +332,8 @@ public class KafkaClusterTest {
         assertThat(cms.size(), is(8));
 
         for (ConfigMap cm : cms) {
-            assertThat(cm.getData().toString(), containsString("metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS));
-            assertThat(cm.getData().toString(), containsString("kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
+            assertThat(cm.getData().toString(), containsString("metric.reporters=" + StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS));
+            assertThat(cm.getData().toString(), containsString("kafka.metrics.reporters=" + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS));
             assertThat(cm.getData().toString(), containsString(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true"));
             assertThat(cm.getData().toString(), containsString(StrimziMetricsReporterConfig.LISTENER + "=http://:" + MetricsModel.METRICS_PORT));
             assertThat(cm.getData().toString(), containsString(StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_log.*,kafka_network.*"));

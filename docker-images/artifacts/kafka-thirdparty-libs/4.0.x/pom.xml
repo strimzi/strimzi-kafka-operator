@@ -17,7 +17,7 @@
 
     <properties>
         <strimzi-oauth.version>0.17.1</strimzi-oauth.version>
-        <strimzi-metrics-reporter.version>0.2.0</strimzi-metrics-reporter.version>
+        <strimzi-metrics-reporter.version>0.3.0-rc1</strimzi-metrics-reporter.version>
         <prometheus.version>1.3.6</prometheus.version>
         <cruise-control.version>2.5.146</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
@@ -273,7 +273,12 @@
         <!-- Metrics Reporter -->
         <dependency>
             <groupId>io.strimzi</groupId>
-            <artifactId>metrics-reporter</artifactId>
+            <artifactId>client-metrics-reporter</artifactId>
+            <version>${strimzi-metrics-reporter.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>server-metrics-reporter</artifactId>
             <version>${strimzi-metrics-reporter.version}</version>
         </dependency>
         <dependency>
