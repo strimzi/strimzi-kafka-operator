@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
@@ -182,28 +181,6 @@ public class StUtils {
         } catch (IOException e) {
             throw new AssertionError("Invalid Properties definition", e);
         }
-    }
-
-    /**
-     * Get a Map of properties from an environment variable in json.
-     * @param containerIndex name of the container
-     * @param json The json from which to extract properties
-     * @param envVar The environment variable name
-     * @return The properties which the variable contains
-     */
-    public static Map<String, Object> getPropertiesFromJson(int containerIndex, String json, String envVar) {
-        List<String> array = JsonPath.parse(json).read(globalVariableJsonPathBuilder(containerIndex, envVar));
-        return StUtils.loadProperties(array.get(0));
-    }
-
-    /**
-     * Get a jsonPath which can be used to extract envariable variables from a spec
-     * @param containerIndex index of the container
-     * @param envVar The environment variable name
-     * @return The json path
-     */
-    public static String globalVariableJsonPathBuilder(int containerIndex, String envVar) {
-        return "$.spec.containers[" + containerIndex + "].env[?(@.name=='" + envVar + "')].value";
     }
 
     public static Properties stringToProperties(String str) {
