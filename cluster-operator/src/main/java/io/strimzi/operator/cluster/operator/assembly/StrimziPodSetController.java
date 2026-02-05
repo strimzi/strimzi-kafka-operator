@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetStatus;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.PodDiff;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
@@ -446,7 +447,17 @@ public class StrimziPodSetController implements Runnable {
                 LOGGER.debugCr(reconciliation, "Pod {} in namespace {} reached terminal phase {} => deleting it", currentPod.getMetadata().getName(), reconciliation.namespace(), currentPod.getStatus().getPhase());
                 podOperator.client().inNamespace(reconciliation.namespace()).resource(currentPod).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
             } else if (ModelUtils.hasOwnerReference(currentPod, owner))    {
-                LOGGER.debugCr(reconciliation, "Pod {} in namespace {} already exists => nothing to do right now", pod.getMetadata().getName(), reconciliation.namespace());
+                // Check for patchable metadata changes (labels/annotations)
+                PodDiff diff = PodDiff.diff(currentPod, pod);
+                if (diff.isPatchable()) {
+                    LOGGER.debugCr(reconciliation, "Pod {} in namespace {} has patchable metadata changes => patching", pod.getMetadata().getName(), reconciliation.namespace());
+                    patchPodMetadata(reconciliation, currentPod, diff);
+                } else if (diff.getChangeType() == PodDiff.ChangeType.REQUIRES_RESTART) {
+                    LOGGER.debugCr(reconciliation, "Pod {} in namespace {} has changes requiring rolling update", pod.getMetadata().getName(), reconciliation.namespace());
+                    // Changes will be applied during next rolling update cycle (handled by PodRevision.hasChanged check)
+                } else {
+                    LOGGER.debugCr(reconciliation, "Pod {} in namespace {} already exists => nothing to do", pod.getMetadata().getName(), reconciliation.namespace());
+                }
             } else  {
                 LOGGER.debugCr(reconciliation, "Pod {} in namespace {} is missing owner reference => patching it", currentPod.getMetadata().getName(), reconciliation.namespace());
                 Pod podWithOwnerReference = new PodBuilder(currentPod).build();
@@ -462,9 +473,29 @@ public class StrimziPodSetController implements Runnable {
             if (!PodRevision.hasChanged(currentPod, pod))    {
                 podCounter.currentPods++;
             }
+        }
+    }
 
-            // TODO: Add patching of exiting pods => to be done in the future to handle selected changes to the Pods
-            //  which might not require rolling updates
+    /**
+     * Patches pod metadata (labels and annotations) in-place without triggering a restart.
+     * This is used for metadata-only changes that don't require a rolling update.
+     *
+     * @param reconciliation    Reconciliation context for logging
+     * @param currentPod        The current pod to patch
+     * @param diff              The PodDiff containing the metadata changes to apply
+     */
+    private void patchPodMetadata(Reconciliation reconciliation, Pod currentPod, PodDiff diff) {
+        try {
+            Pod patchPod = diff.createPatchPod(currentPod);
+            podOperator.client()
+                .inNamespace(reconciliation.namespace())
+                .withName(currentPod.getMetadata().getName())
+                .patch(PatchContext.of(PatchType.STRATEGIC_MERGE), patchPod);
+            LOGGER.infoCr(reconciliation, "Successfully patched pod {} metadata in namespace {} ({})", 
+                currentPod.getMetadata().getName(), reconciliation.namespace(), diff.getSummary());
+        } catch (KubernetesClientException e) {
+            LOGGER.warnCr(reconciliation, "Failed to patch pod {} metadata in namespace {}: {}", 
+                currentPod.getMetadata().getName(), reconciliation.namespace(), e.getMessage());
         }
     }
 

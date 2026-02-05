@@ -3,6 +3,9 @@
 ## 0.51.0
 
 * Allow setting the following configurations with the listener prefix (e.g. `listener.name.listener1-9900.`): `connections.max.reauth.ms`, `max.connections*` and `max.connection.creation.rate`.
+* Add support for in-place patching of Pod metadata (labels and annotations) without requiring a rolling restart.
+  Previously, any change to a Pod managed by the `StrimziPodSetController` would trigger a rolling update.
+  Now, metadata-only changes are applied via Strategic Merge Patch, improving operational efficiency.
 
 ### Major changes, deprecations, and removals
 
