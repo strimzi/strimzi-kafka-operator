@@ -4,9 +4,12 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.certmanager.api.model.v1.Certificate;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
+import io.strimzi.api.kafka.model.common.certmanager.IssuerRef;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.certs.CertAndKey;
@@ -14,6 +17,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.IpAndDnsValidation;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
@@ -22,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -54,22 +59,24 @@ public class ClusterCa extends Ca {
      * @param caKeySecret           Name of the CA private key secret
      */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
-        this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, true, null);
+        this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, true, CertificateManagerType.STRIMZI_IO, null, null);
     }
 
     /**
      * Constructor
      *
-     * @param reconciliation        Reconciliation marker
-     * @param certManager           Certificate manager instance
-     * @param passwordGenerator     Password generator instance
-     * @param clusterName           Name of the Kafka cluster
-     * @param clusterCaCert         Secret with the public key
-     * @param clusterCaKey          Secret with the private key
-     * @param validityDays          Validity days
-     * @param renewalDays           Renewal days (how many days before expiration should the CA be renewed)
-     * @param generateCa            Flag indicating if Strimzi CA should be generated or custom CA is used
-     * @param policy                Renewal policy
+     * @param reconciliation         Reconciliation marker
+     * @param certManager            Certificate manager instance
+     * @param passwordGenerator      Password generator instance
+     * @param clusterName            Name of the Kafka cluster
+     * @param clusterCaCert          Secret with the public key
+     * @param clusterCaKey           Secret with the private key
+     * @param validityDays           Validity days
+     * @param renewalDays            Renewal days (how many days before expiration should the CA be renewed)
+     * @param generateCa             Flag indicating if Strimzi CA should be generated or custom CA is used
+     * @param certificateManagerType Certificate manager type
+     * @param policy                 Renewal policy
+     * @param issuerRef              Reference to issuer for issuing certificates through other services like cert-manager
      */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager,
                      PasswordGenerator passwordGenerator,
@@ -79,13 +86,15 @@ public class ClusterCa extends Ca {
                      int validityDays,
                      int renewalDays,
                      boolean generateCa,
-                     CertificateExpirationPolicy policy) {
+                     CertificateManagerType certificateManagerType,
+                     CertificateExpirationPolicy policy,
+                     IssuerRef issuerRef) {
         super(reconciliation, certManager, passwordGenerator,
                 "cluster-ca",
                 AbstractModel.clusterCaCertSecretName(clusterName),
                 clusterCaCert,
                 AbstractModel.clusterCaKeySecretName(clusterName),
-                clusterCaKey, validityDays, renewalDays, generateCa, policy);
+                clusterCaKey, validityDays, renewalDays, generateCa, certificateManagerType, policy, issuerRef);
     }
 
     @Override
@@ -170,7 +179,43 @@ public class ClusterCa extends Ca {
             Map<Integer, Set<String>> externalAddresses,
             boolean isMaintenanceTimeWindowsSatisfied
     ) throws IOException {
-        Function<NodeRef, Subject> subjectFn = node -> {
+        LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
+        return maybeCopyOrGenerateCerts(
+                reconciliation,
+                nodes,
+                kafkaNodeCertsSubjectFn(namespace, clusterName, externalBootstrapAddresses, externalAddresses),
+                existingCertificates,
+                isMaintenanceTimeWindowsSatisfied
+        );
+    }
+
+    /**
+     * Prepares the Certificate objects for the Kafka nodes.
+     * Only used when cert-manager is issuing certificates.
+     *
+     * @param namespace                     Namespace of the Kafka cluster
+     * @param clusterName                   Name of the Kafka cluster
+     * @param nodes                         Nodes that are part of the Kafka cluster
+     * @param externalBootstrapAddresses    List of external bootstrap addresses (used for certificate SANs)
+     * @param externalAddresses             Map with external listener addresses for the different nodes (used for certificate SANs)
+     *
+     * @return Map of Certificate resources keyed on the node id
+     */
+    public Map<String, Certificate> generateKafkaNodeCertificateResources(String namespace, String clusterName, Set<NodeRef> nodes,
+                                                                          Set<String> externalBootstrapAddresses,
+                                                                          Map<Integer, Set<String>> externalAddresses) {
+        Map<String, Certificate> certificates = new HashMap<>();
+        for (NodeRef node : nodes)  {
+            certificates.put(node.podName(), getCertManagerCert(kafkaNodeCertsSubjectFn(namespace, clusterName, externalBootstrapAddresses, externalAddresses).apply(node)));
+        }
+        return certificates;
+    }
+
+    private Function<NodeRef, Subject> kafkaNodeCertsSubjectFn(String namespace, String clusterName,
+                                                               Set<String> externalBootstrapAddresses,
+                                                               Map<Integer, Set<String>> externalAddresses
+    ) {
+        return node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
                     .withCommonName(KafkaResources.kafkaComponentName(clusterName));
@@ -207,16 +252,6 @@ public class ClusterCa extends Ca {
 
             return subject.build();
         };
-
-        LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
-
-        return maybeCopyOrGenerateCerts(
-            reconciliation,
-            nodes,
-            subjectFn,
-            existingCertificates,
-            isMaintenanceTimeWindowsSatisfied
-        );
     }
 
     @Override
@@ -361,11 +396,45 @@ public class ClusterCa extends Ca {
      */
     public void maybeDeleteOldCerts() {
         // the operator doesn't have to touch Secret provided by the user with his own custom CA certificate
-        if (this.generateCa) {
+        if (this.generateCa || CertificateManagerType.CERT_MANAGER_IO.equals(this.certificateManagerType)) {
             if (removeCerts(this.caCertData, entry -> OLD_CA_CERT_PATTERN.matcher(entry.getKey()).matches())) {
                 LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", this);
                 this.caCertsRemoved = true;
             }
+        }
+    }
+
+    @Override
+    public void updateCertAndIncrementGenerations(String caCert, X509Certificate endEntityCertificate) {
+        if (endEntityCertificate == null) {
+            // Cluster operator certificate is missing, so no cert path validation to perform
+            LOGGER.warnCr(reconciliation, "Strimzi CA cert Secret containing custom cert has been created, but operator Secret is missing");
+            return;
+        }
+        X509Certificate x509CaCert;
+        try {
+            x509CaCert = x509Certificate(Util.decodeBytesFromBase64(caCert));
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        }
+        if (CertUtils.certIsTrusted(reconciliation, endEntityCertificate, x509CaCert)) {
+            // No key replacement
+            Map<String, String> newCaCertData = new HashMap<>();
+            newCaCertData.put(CA_CRT, caCert);
+            this.caCertData = newCaCertData;
+            renewalType = RenewalType.RENEW_CERT;
+            this.caCertGeneration++;
+        } else {
+            // key replacement
+            X509Certificate currentCert = currentCaCertX509();
+            String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
+            Map<String, String> newCaCertData = new HashMap<>();
+            newCaCertData.put(SecretEntry.CRT.asKey("ca-" + notAfterDate), caCertData.get(CA_CRT));
+            newCaCertData.put(CA_CRT, caCert);
+            this.caCertData = newCaCertData;
+            renewalType = RenewalType.REPLACE_KEY;
+            this.caCertGeneration++;
+            this.caKeyGeneration++;
         }
     }
 }

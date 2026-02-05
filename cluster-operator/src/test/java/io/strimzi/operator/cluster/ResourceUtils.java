@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBuilder;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
@@ -32,6 +33,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
@@ -52,8 +54,10 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.Ca;
@@ -86,6 +90,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -135,6 +141,33 @@ public class ResourceUtils {
                 .addToData("ca.crt", caCert)
                 .addToData("ca.p12", caStore)
                 .addToData("ca.password", caStorePassword)
+                .build();
+    }
+
+    public static Secret createInitialCaCertSecretForCMCa(String clusterNamespace, String clusterName, String secretName, String caCert, boolean addKeyGeneration) {
+        X509Certificate x509Certificate;
+        String certificateHash;
+        try {
+            x509Certificate = Ca.x509Certificate(Util.decodeBytesFromBase64(caCert));
+            certificateHash = CertUtils.getCertificateThumbprint(x509Certificate);
+        } catch (CertificateException e) {
+            throw new RuntimeException("Failed to compute hash of certificate in Secret "  + secretName, e);
+        }
+        Map<String, String> annotations = new HashMap<>();
+        annotations.put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0");
+        annotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, certificateHash);
+        if (addKeyGeneration) {
+            annotations.put(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0");
+        }
+
+        return new SecretBuilder()
+                .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(clusterNamespace)
+                    .withAnnotations(annotations)
+                    .withLabels(Labels.forStrimziCluster(clusterName).withStrimziKind(Kafka.RESOURCE_KIND).toMap())
+                .endMetadata()
+                .addToData("ca.crt", caCert)
                 .build();
     }
 
@@ -428,7 +461,8 @@ public class ResourceUtils {
                 adminClientProvider(),
                 mock(KubernetesRestartEventPublisher.class),
                 new MockSharedEnvironmentProvider(),
-                mock(BrokersInUseCheck.class));
+                mock(BrokersInUseCheck.class),
+                mock(CertManagerCertificateOperator.class));
 
         when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.secretOperations.getAsync(any(), or(endsWith("ca-cert"), endsWith("certs")))).thenReturn(Future.succeededFuture(

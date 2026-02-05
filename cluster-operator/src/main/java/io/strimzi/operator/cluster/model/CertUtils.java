@@ -19,8 +19,19 @@ import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,10 +69,20 @@ public class CertUtils {
     public static String getCertificateThumbprint(Secret certSecret, String key) {
         try {
             var cert = Ca.cert(certSecret, key);
-            return cert == null ? null : String.format("%040x", new BigInteger(1, Util.sha1Digest(cert.getEncoded())));
+            return cert == null ? null : getCertificateThumbprint(cert);
         } catch (CertificateEncodingException e) {
             throw new RuntimeException("Failed to get certificate thumbprint of " + key + " from Secret " + certSecret.getMetadata().getName(), e);
         }
+    }
+
+    /**
+     * Generates the full SHA1-hash of the server certificate which is used to track when the certificate changes.
+     *
+     * @param certificate   Certificate to generate the SHA1-hash for
+     * @return              SHA1-Hash of the certificate or null if certSecret contains no valid X509Certificate
+     */
+    public static String getCertificateThumbprint(X509Certificate certificate) throws CertificateEncodingException {
+        return String.format("%040x", new BigInteger(1, Util.sha1Digest(certificate.getEncoded())));
     }
 
     /**
@@ -99,14 +120,15 @@ public class CertUtils {
             }
         }
 
-        CertAndKey certAndKey = null;
+        CertAndKey certAndKey;
         if (shouldBeRegenerated) {
             LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
 
             try {
-                certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
+                certAndKey = clusterCa.getSignedCert(commonName, Ca.IO_STRIMZI);
             } catch (IOException e) {
-                LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
+                LOGGER.errorCr(reconciliation, "Error while generating certificates", e);
+                throw new RuntimeException("Error while generating certificates", e);
             }
 
             LOGGER.debugCr(reconciliation, "End generating certificates");
@@ -114,8 +136,7 @@ public class CertUtils {
             certAndKey = keyStoreCertAndKey(secret, keyCertName);
         }
 
-        Map<String, String> secretData = certAndKey == null ? Map.of() : buildSecretData(Map.of(keyCertName, certAndKey));
-
+        Map<String, String> secretData = buildSecretData(Map.of(keyCertName, certAndKey));
         return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()), emptyMap());
     }
 
@@ -365,6 +386,42 @@ public class CertUtils {
             }
 
             return certsAndKeys;
+        }
+    }
+
+    /**
+     * Validates whether the provided cert is trusted using the provide CA certificate.
+     *
+     * @param reconciliation Reconciliation marker
+     * @param certToValidate Certificate to validate. Can be a single certificate or a chain of certificates as a single certificate file.
+     * @param caCert Ca certificate to use for validation.
+     *
+     * @return True if the CA certificate can be used to validate the provided certificate or certificate chain. False otherwise.
+     */
+    public static boolean certIsTrusted(Reconciliation reconciliation, X509Certificate certToValidate, X509Certificate caCert) {
+        CertPathValidator certPathValidator;
+        CertPath eeCertPath;
+        PKIXParameters pkixParams;
+        try {
+            certPathValidator = CertPathValidator.getInstance("PKIX");
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            TrustAnchor trustAnchor = new TrustAnchor(caCert, null);
+            pkixParams = new PKIXParameters(Collections.singleton(trustAnchor));
+            pkixParams.setRevocationEnabled(false);
+            eeCertPath = factory.generateCertPath(List.of(certToValidate));
+        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException e) {
+            LOGGER.errorCr(reconciliation, "Error constructing objects to validate certificate chain.", e);
+            throw new RuntimeException(e);
+        }
+        try {
+            certPathValidator.validate(eeCertPath, pkixParams);
+            LOGGER.debugCr(reconciliation, "Certificate chain validated using supplied CA cert.");
+            return true;
+        } catch (CertPathValidatorException e) {
+            LOGGER.errorCr(reconciliation, "Certificate chain cannot be validated with supplied CA cert.", e);
+            return false;
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
         }
     }
 }

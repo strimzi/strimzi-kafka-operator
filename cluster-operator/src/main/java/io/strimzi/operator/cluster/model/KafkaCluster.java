@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.certmanager.api.model.v1.Certificate;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -40,6 +41,7 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
@@ -87,6 +89,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
@@ -97,6 +100,8 @@ import io.vertx.core.json.JsonObject;
 import org.apache.kafka.server.common.MetadataVersion;
 
 import java.io.IOException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -104,10 +109,12 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.common.model.Ca.x509Certificate;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
@@ -1227,6 +1234,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @param clusterCa                             The CA for cluster certificates
      * @param clientsCa                             The CA for clients certificates
+     * @param tlsPemIdentity                        Trust set and identity for TLS client authentication for connecting to the Kafka cluster
      * @param existingSecrets                       The existing secrets containing Kafka certificates
      * @param externalBootstrapDnsName              Map with bootstrap DNS names which should be added to the certificate
      * @param externalDnsNames                      Map with broker DNS names  which should be added to the certificate
@@ -1234,12 +1242,21 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  The generated Secrets containing Kafka node certificates
      */
-    public List<Secret> generateCertificatesSecrets(ClusterCa clusterCa, ClientsCa clientsCa, List<Secret> existingSecrets, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
+    public List<Secret> generateCertificatesSecrets(ClusterCa clusterCa, ClientsCa clientsCa, TlsPemIdentity tlsPemIdentity, List<Secret> existingSecrets, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, Secret> existingSecretWithName = existingSecrets.stream().collect(Collectors.toMap(secret -> secret.getMetadata().getName(), secret -> secret));
+        if (CertificateManagerType.CERT_MANAGER_IO.equals(clusterCa.getType())) {
+            return generateCertificateSecretsForCertManagerCA(clusterCa, clientsCa, tlsPemIdentity, existingSecretWithName);
+        } else {
+            return generateCertificateSecretsForStrimziOrUserCA(clusterCa, clientsCa, existingSecretWithName, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
+        }
+    }
+
+    private List<Secret> generateCertificateSecretsForStrimziOrUserCA(ClusterCa clusterCa, ClientsCa clientsCa, Map<String, Secret> existingSecretWithName, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
         Set<NodeRef> nodes = nodes();
         Map<String, CertAndKey> existingCerts = new HashMap<>();
         for (NodeRef node : nodes) {
             String podName = node.podName();
+
             // Reuse existing certificate if it exists and the CA cert generation hasn't changed since they were generated
             if (existingSecretWithName.get(podName) != null) {
                 if (clusterCa.hasCaCertGenerationChanged(existingSecretWithName.get(podName))) {
@@ -1271,6 +1288,75 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         ),
                         emptyMap()))
                 .toList();
+    }
+
+    private List<Secret> generateCertificateSecretsForCertManagerCA(ClusterCa clusterCa, ClientsCa clientsCa, TlsPemIdentity tlsPemIdentity, Map<String, Secret> existingSecretWithName) {
+        Set<NodeRef> nodes = nodes();
+        List<Secret> secrets = new ArrayList<>();
+        for (NodeRef node : nodes) {
+            String podName = node.podName();
+
+            // The cert-manager Secret should already exist
+            String certManagerSecretName = CertManagerUtils.certManagerSecretName(podName);
+            Objects.requireNonNull(existingSecretWithName.get(certManagerSecretName));
+            Secret certManagerSecret = existingSecretWithName.get(certManagerSecretName);
+
+            Secret newCertSecret = CertManagerUtils.buildTrustedCertificateSecretFromCertManager(
+                    clusterCa, clientsCa, certManagerSecret, namespace, podName, podName, labels, ownerReference);
+            Secret existingCertSecret = existingSecretWithName.get(podName);
+
+            if (existingCertSecret == null) {
+                secrets.add(newCertSecret);
+            } else if (CertManagerUtils.certManagerCertUpdated(existingCertSecret, newCertSecret)) {
+                if (certManagerSecretNotTrusted(tlsPemIdentity, certManagerSecret)) {
+                    LOGGER.infoCr(reconciliation, "New certificate for pod {}/{}, but not trusted yet so keeping existing certificate Secret.", namespace, podName);
+                    secrets.add(existingCertSecret);
+                } else {
+                    LOGGER.infoCr(reconciliation, "New certificate for pod {}/{}, updating Secret {}/{}", namespace, podName, namespace, podName);
+                    secrets.add(newCertSecret);
+                }
+            } else {
+                // Certificate has not changed
+                secrets.add(existingCertSecret);
+            }
+        }
+        return secrets;
+    }
+
+    /**
+     * Creates the Certificate resources for the Kafka nodes used when cert-manager is issuing certificates
+     *
+     * @param clusterCa                 The CA for cluster certificates
+     * @param externalBootstrapDnsName  Map with bootstrap DNS names which should be added to the certificate
+     * @param externalDnsNames          Map with broker DNS names  which should be added to the certificate
+     *
+     * @return List of Certificate resources
+     */
+    public List<Certificate> generateKafkaNodeCertificateResources(ClusterCa clusterCa, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames) {
+        Map<String, Certificate> initialCertificates = clusterCa.generateKafkaNodeCertificateResources(namespace, cluster, nodes(), externalBootstrapDnsName, externalDnsNames);
+        List<Certificate> certificates = new ArrayList<>();
+        initialCertificates.forEach((podName, initialCertificate) -> {
+            certificates.add(CertManagerUtils.buildCertManagerCertificate(namespace, podName, initialCertificate, labels, ownerReference));
+        });
+        return certificates;
+    }
+
+    /**
+     * Updates the cert Secret from the cert-manager Secret, but only if it trusted by the current CA cert
+     *
+     * @param certManagerSecret Secret containing cert-manager provided cert
+     * @return The existing or updated Secret if an update was required
+     */
+    private boolean certManagerSecretNotTrusted(TlsPemIdentity tlsPemIdentity, Secret certManagerSecret) {
+        X509Certificate x509CaCert;
+        X509Certificate certManagerCert;
+        try {
+            x509CaCert = x509Certificate(tlsPemIdentity.pemTrustSet().trustedCertificatesPemBytes());
+            certManagerCert = x509Certificate(Util.decodeBytesFromBase64(certManagerSecret.getData().get("tls.crt")));
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        }
+        return !CertUtils.certIsTrusted(reconciliation, certManagerCert, x509CaCert);
     }
 
     /**

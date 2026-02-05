@@ -2894,6 +2894,11 @@ spec:
                   properties:
                     generateCertificateAuthority:
                       type: boolean
+                    type:
+                      type: string
+                      enum:
+                        - strimzi.io
+                        - cert-manager.io
                     generateSecretOwnerReference:
                       type: boolean
                     validityDays:
@@ -2907,11 +2912,38 @@ spec:
                       enum:
                         - renew-certificate
                         - replace-key
+                    certManager:
+                      type: object
+                      properties:
+                        issuerRef:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            kind:
+                              type: string
+                              enum:
+                                - Issuer
+                                - ClusterIssuer
+                            group:
+                              type: string
+                        caCert:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            certificate:
+                              type: string
                 clientsCa:
                   type: object
                   properties:
                     generateCertificateAuthority:
                       type: boolean
+                    type:
+                      type: string
+                      enum:
+                        - strimzi.io
+                        - cert-manager.io
                     generateSecretOwnerReference:
                       type: boolean
                     validityDays:
@@ -2925,6 +2957,28 @@ spec:
                       enum:
                         - renew-certificate
                         - replace-key
+                    certManager:
+                      type: object
+                      properties:
+                        issuerRef:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            kind:
+                              type: string
+                              enum:
+                                - Issuer
+                                - ClusterIssuer
+                            group:
+                              type: string
+                        caCert:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            certificate:
+                              type: string
                 cruiseControl:
                   type: object
                   properties:
@@ -9516,6 +9570,11 @@ spec:
                   properties:
                     generateCertificateAuthority:
                       type: boolean
+                    type:
+                      type: string
+                      enum:
+                        - strimzi.io
+                        - cert-manager.io
                     generateSecretOwnerReference:
                       type: boolean
                     validityDays:
@@ -9529,11 +9588,38 @@ spec:
                       enum:
                         - renew-certificate
                         - replace-key
+                    certManager:
+                      type: object
+                      properties:
+                        issuerRef:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            kind:
+                              type: string
+                              enum:
+                                - Issuer
+                                - ClusterIssuer
+                            group:
+                              type: string
+                        caCert:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            certificate:
+                              type: string
                 clientsCa:
                   type: object
                   properties:
                     generateCertificateAuthority:
                       type: boolean
+                    type:
+                      type: string
+                      enum:
+                        - strimzi.io
+                        - cert-manager.io
                     generateSecretOwnerReference:
                       type: boolean
                     validityDays:
@@ -9547,6 +9633,28 @@ spec:
                       enum:
                         - renew-certificate
                         - replace-key
+                    certManager:
+                      type: object
+                      properties:
+                        issuerRef:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            kind:
+                              type: string
+                              enum:
+                                - Issuer
+                                - ClusterIssuer
+                            group:
+                              type: string
+                        caCert:
+                          type: object
+                          properties:
+                            secretName:
+                              type: string
+                            certificate:
+                              type: string
                 cruiseControl:
                   type: object
                   properties:

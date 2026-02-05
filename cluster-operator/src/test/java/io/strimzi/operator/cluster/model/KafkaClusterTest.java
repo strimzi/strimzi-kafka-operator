@@ -50,6 +50,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
@@ -262,11 +263,11 @@ public class KafkaClusterTest {
 
     private List<Secret> generateBrokerSecrets(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER, null, null);
-        clusterCa.createRenewOrReplace(true, false, false);
-        ClientsCa clientsCa = new ClientsCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), null, null, null, null, 365, 30, true, CertificateExpirationPolicy.RENEW_CERTIFICATE);
-        clientsCa.createRenewOrReplace(true, false, false);
+        clusterCa.createOrUpdateStrimziManagedCa(true, false, false);
+        ClientsCa clientsCa = new ClientsCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), null, null, null, null, 365, 30, true, CertificateManagerType.STRIMZI_IO, CertificateExpirationPolicy.RENEW_CERTIFICATE);
+        clientsCa.createOrUpdateStrimziManagedCa(true, false, false);
 
-        return KC.generateCertificatesSecrets(clusterCa, clientsCa, List.of(), externalBootstrapAddress, externalAddresses, true);
+        return KC.generateCertificatesSecrets(clusterCa, clientsCa, null, List.of(), externalBootstrapAddress, externalAddresses, true);
     }
 
     //////////

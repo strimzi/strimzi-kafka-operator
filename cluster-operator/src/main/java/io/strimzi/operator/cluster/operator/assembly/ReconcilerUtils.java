@@ -137,7 +137,7 @@ public class ReconcilerUtils {
      *
      * @return  Future containing the trust set to use for client authentication.
      */
-    private static Future<PemTrustSet> clusterCaPemTrustSet(Reconciliation reconciliation, SecretOperator secretOperator) {
+    public static Future<PemTrustSet> clusterCaPemTrustSet(Reconciliation reconciliation, SecretOperator secretOperator) {
         return getSecret(secretOperator, reconciliation.namespace(), KafkaResources.clusterCaCertificateSecretName(reconciliation.name()))
                 .map(PemTrustSet::new);
     }

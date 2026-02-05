@@ -344,6 +344,11 @@
                 <version>${fabric8.openshift-client.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>certmanager-model</artifactId>
+                <version>${fabric8.kubernetes-client.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
                 <version>${log4j.version}</version>
