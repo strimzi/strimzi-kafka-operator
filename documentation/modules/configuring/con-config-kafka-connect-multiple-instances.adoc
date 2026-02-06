@@ -5,10 +5,13 @@
 // assembly-config.adoc
 
 [id='con-config-kafka-connect-multiple-instances-{context}']
-= Configuring Kafka Connect for multiple instances
+= Running multiple Kafka Connect instances
 
 [role="_abstract"]
-When running multiple instances of Kafka Connect, you must make sure that these settings are different for each instance:
+When running multiple Kafka Connect instances against the same Kafka cluster, each instance must use a unique cluster group ID and internal topic names.
+If these settings are shared, the instances form a single logical cluster and attempt to use the same internal topics, which can lead to unexpected errors.
+
+The following example shows the properties that must be unique for each Kafka Connect instance:
 
 [source,yaml,subs="attributes+"]
 ----
@@ -17,18 +20,20 @@ kind: KafkaConnect
 metadata:
   name: my-connect
 spec:
-  groupId: my-connect-cluster # <1>
-  configStorageTopic: my-connect-cluster-configs # <2>
-  offsetStorageTopic: my-connect-cluster-offsets # <3>
-  statusStorageTopic: my-connect-cluster-status # <4>
+  groupId: my-connect-cluster
+  configStorageTopic: my-connect-cluster-configs
+  offsetStorageTopic: my-connect-cluster-offsets
+  statusStorageTopic: my-connect-cluster-status
   # ...
 ----
-<1> The Kafka Connect cluster group ID within Kafka.
-<2> Kafka topic that stores connector and task configurations.
-<3> Kafka topic that stores connector offsets.
-<4> Kafka topic that stores connector and task status updates.
+* `spec.groupId` specifies the Kafka Connect cluster group ID used within Kafka.
+* `spec.configStorageTopic` specifies the Kafka topic that stores connector and task configurations.
+* `spec.offsetStorageTopic` specifies the Kafka topic that stores connector offsets.
+* `spec.statusStorageTopic` specifies the Kafka topic that stores connector and task status updates.
 
-This requirement applies across all Kafka Connect–based deployments, including Kafka Connect and  MirrorMaker 2 instances that target the same Kafka cluster.
+Each Kafka Connect instance that targets the same Kafka cluster must use unique values for these properties.
 
-Unless you use different settings for each instance, all instances form a cluster and use the same internal topics.
-Multiple instances attempting to use the same internal topics will cause unexpected errors, so you must change the values of these properties for each instance.
+This requirement applies across all Kafka Connect–based deployments, including Kafka Connect and MirrorMaker 2 instances that target the same Kafka cluster.
+
+If multiple instances use the same cluster group ID and internal topics, they form a single logical cluster and attempt to share internal state.
+This can cause unexpected errors, so you must configure unique values for these properties for each instance.
