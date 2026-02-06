@@ -273,11 +273,6 @@
         <!-- Metrics Reporter -->
         <dependency>
             <groupId>io.strimzi</groupId>
-            <artifactId>client-metrics-reporter</artifactId>
-            <version>${strimzi-metrics-reporter.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.strimzi</groupId>
             <artifactId>server-metrics-reporter</artifactId>
             <version>${strimzi-metrics-reporter.version}</version>
         </dependency>

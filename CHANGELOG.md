@@ -3,11 +3,6 @@
 ## 0.51.0
 
 * Allow setting the following configurations with the listener prefix (e.g. `listener.name.listener1-9900.`): `connections.max.reauth.ms`, `max.connections*` and `max.connection.creation.rate`.
-* Update Strimzi Metrics Reporter to version 0.3.0.
-  This version splits the metrics reporter into separate client and server artifacts with updated class names:
-  * `io.strimzi.kafka.metrics.prometheus.ClientMetricsReporter` for Kafka clients (Bridge, Connect, MirrorMaker 2)
-  * `io.strimzi.kafka.metrics.prometheus.ServerKafkaMetricsReporter` for Kafka brokers (Kafka metrics)
-  * `io.strimzi.kafka.metrics.prometheus.ServerYammerMetricsReporter` for Kafka brokers (Yammer metrics)
 
 ### Major changes, deprecations, and removals
 

@@ -728,7 +728,6 @@ class KafkaConnectConfigurationBuilderTest {
     public void testStrimziMetricsReporterViaUserAndMetricsConfigs() {
         Map<String, Object> configMap = new HashMap<>();
         configMap.put("metric.reporters", StrimziMetricsReporterConfig.CLIENT_CLASS);
-        configMap.put("kafka.metrics.reporters", StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS);
         KafkaConfiguration userConfig = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
         
         StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(
