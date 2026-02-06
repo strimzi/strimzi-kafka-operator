@@ -7,6 +7,9 @@
 * The `ServerSideApplyPhase1` feature gate moves to beta stage and is enabled by default.
   If needed, `ServerSideApplyPhase1` can be disabled in the feature gates configuration in the Cluster Operator.
 * Fixed auto-rebalancing on scale up not running anymore when Cruise Control is not ready yet on the first attempt.
+* Update HTTP bridge to 0.34.0.
+  * `/metrics` endpoint is no longer available on the regular HTTP interface (port 8080 by default). It is now available on the HTTP management interface, 8081.
+    Users upgrading to Strimzi 0.51.0+ should check all monitoring configurations that scrape Kafka Bridge metrics and update them to use port 8081 instead of 8080 or any other non-default port before or immediately after the upgrade to avoid metrics collection failures.
 
 ### Major changes, deprecations, and removals
 
