@@ -698,16 +698,16 @@ class KafkaConnectConfigurationBuilderTest {
                         + "consumer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter"),
 
                 Arguments.of(userConfig, false, true, expectedConfig
-                        + "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                        + "admin.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                        + "producer.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                        + "consumer.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"),
+                        + "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.CLIENT_CLASS + "\n"
+                        + "admin.metric.reporters=" + StrimziMetricsReporterConfig.CLIENT_CLASS + "\n"
+                        + "producer.metric.reporters=" + StrimziMetricsReporterConfig.CLIENT_CLASS + "\n"
+                        + "consumer.metric.reporters=" + StrimziMetricsReporterConfig.CLIENT_CLASS + "\n"),
 
                 Arguments.of(userConfig, true, true, expectedConfig
-                        + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                        + "admin.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                        + "producer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                        + "consumer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n")
+                        + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.CLIENT_CLASS + "\n"
+                        + "admin.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.CLIENT_CLASS + "\n"
+                        + "producer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.CLIENT_CLASS + "\n"
+                        + "consumer.metric.reporters=org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.CLIENT_CLASS + "\n")
         );
     }
 
@@ -727,8 +727,7 @@ class KafkaConnectConfigurationBuilderTest {
     @Test
     public void testStrimziMetricsReporterViaUserAndMetricsConfigs() {
         Map<String, Object> configMap = new HashMap<>();
-        configMap.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
-        configMap.put("kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
+        configMap.put("metric.reporters", StrimziMetricsReporterConfig.CLIENT_CLASS);
         KafkaConfiguration userConfig = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
         
         StrimziMetricsReporterModel model = new StrimziMetricsReporterModel(
@@ -753,9 +752,9 @@ class KafkaConnectConfigurationBuilderTest {
                 + "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider\n"
                 + "config.providers.strimzidir.param.allowed.paths=/opt/kafka\n"
                 + "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider\n"
-                + "admin.metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter\n"
-                + "producer.metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter\n"
-                + "consumer.metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter\n"
+                + "admin.metric.reporters=io.strimzi.kafka.metrics.prometheus.ClientMetricsReporter\n"
+                + "producer.metric.reporters=io.strimzi.kafka.metrics.prometheus.ClientMetricsReporter\n"
+                + "consumer.metric.reporters=io.strimzi.kafka.metrics.prometheus.ClientMetricsReporter\n"
                 + "value.converter=org.apache.kafka.connect.json.JsonConverter\n"
                 + "key.converter=org.apache.kafka.connect.json.JsonConverter\n"
                 + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true\n"
@@ -774,6 +773,6 @@ class KafkaConnectConfigurationBuilderTest {
                 + "producer.security.protocol=PLAINTEXT\n"
                 + "consumer.security.protocol=PLAINTEXT\n"
                 + "admin.security.protocol=PLAINTEXT\n"
-                + "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS));
+                + "metric.reporters=" + StrimziMetricsReporterConfig.CLIENT_CLASS));
     }
 }

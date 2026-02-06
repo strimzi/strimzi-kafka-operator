@@ -661,8 +661,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "min.insync.replicas=1",
-                "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS,
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
+                "metric.reporters=" + StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS,
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS));
     }
 
 
@@ -683,8 +683,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "min.insync.replicas=1",
                 "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
-                        + "," + StrimziMetricsReporterConfig.KAFKA_CLASS,
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
+                        + "," + StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS,
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS));
     }
 
     @Test
@@ -704,8 +704,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
                         + ",org.apache.kafka.common.metrics.JmxReporter"
-                        + "," + StrimziMetricsReporterConfig.KAFKA_CLASS,
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
+                        + "," + StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS,
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS,
                 "min.insync.replicas=1"));
     }
 
@@ -742,24 +742,24 @@ public class KafkaBrokerConfigurationBuilderTest {
                        + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter"),
 
                Arguments.of(userConfig, false, false, true, expectedConfig
-                       + "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.YAMMER_CLASS),
+                       + "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS + "\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS),
 
                Arguments.of(userConfig, true, true, false, expectedConfig
                        + "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter,org.apache.kafka.common.metrics.JmxReporter\n"
                        + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter"),
 
                Arguments.of(userConfig, true, false, true, expectedConfig
-                       + "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.YAMMER_CLASS),
+                       + "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter," + StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS + "\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS),
 
                Arguments.of(userConfig, false, true, true, expectedConfig
-                       + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter," +  StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.YAMMER_CLASS),
+                       + "metric.reporters=my.domain.CustomMetricReporter,org.apache.kafka.common.metrics.JmxReporter," +  StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS + "\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS),
 
                Arguments.of(userConfig, true, true, true, expectedConfig
-                       + "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter,org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS + "\n"
-                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.YAMMER_CLASS)
+                       + "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter,org.apache.kafka.common.metrics.JmxReporter," + StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS + "\n"
+                       + "kafka.metrics.reporters=my.domain.CustomYammerMetricReporter," + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS)
         );
     }
 
@@ -781,8 +781,8 @@ public class KafkaBrokerConfigurationBuilderTest {
     @Test
     public void testStrimziMetricsReporterViaUserAndMetricsConfigs() {
         Map<String, Object> configMap = new HashMap<>();
-        configMap.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
-        configMap.put("kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
+        configMap.put("metric.reporters", StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS);
+        configMap.put("kafka.metrics.reporters", StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS);
         KafkaConfiguration userConfig = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, configMap.entrySet());
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
@@ -798,8 +798,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
-                "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS,
-                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
+                "metric.reporters=" + StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS,
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS,
                 "min.insync.replicas=1"));
     }
 

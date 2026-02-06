@@ -873,7 +873,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (injectCcMetricsReporter) reportersToInject.add(CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
         // JmxPrometheusExporter depends on JmxReporter, which needs to be explicitly added when having custom metrics reporters
         if (injectKafkaJmxReporter) reportersToInject.add("org.apache.kafka.common.metrics.JmxReporter");
-        if (injectStrimziMetricsReporter) reportersToInject.add(StrimziMetricsReporterConfig.KAFKA_CLASS);
+        if (injectStrimziMetricsReporter) reportersToInject.add(StrimziMetricsReporterConfig.SERVER_KAFKA_CLASS);
 
         if (!reportersToInject.isEmpty()) {
             String configKey = "metric.reporters";
@@ -915,17 +915,17 @@ public class KafkaBrokerConfigurationBuilder {
                 // handle user configuration if present and avoids duplicates
                 String configValue = userConfig.getConfigOption(configKey);
 
-                if (!configValue.contains(StrimziMetricsReporterConfig.YAMMER_CLASS)) {
+                if (!configValue.contains(StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS)) {
                     userConfig.removeConfigOption(configKey);
                     printSectionHeader(configKey + " configuration");
                     writer.println("# " + configKey + " configured by the user and by Strimzi");
-                    writer.println(configKey + "=" + configValue + "," + StrimziMetricsReporterConfig.YAMMER_CLASS);
+                    writer.println(configKey + "=" + configValue + "," + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS);
                     writer.println();
                 }
             } else {
                 printSectionHeader(configKey + " configuration");
                 writer.println("# " + configKey + " configured by Strimzi");
-                writer.println(configKey + "=" + StrimziMetricsReporterConfig.YAMMER_CLASS);
+                writer.println(configKey + "=" + StrimziMetricsReporterConfig.SERVER_YAMMER_CLASS);
                 writer.println();
             }
         }

@@ -8,11 +8,14 @@ package io.strimzi.operator.cluster.model.metrics;
  * This class holds Strimzi Metrics Reporter and related configuration keys.
  */
 public class StrimziMetricsReporterConfig {
-    /** KafkaMetricsReporter fully qualified class name. */
-    public static final String KAFKA_CLASS = "io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter";
+    /** ClientMetricsReporter fully qualified class name (for Kafka clients). */
+    public static final String CLIENT_CLASS = "io.strimzi.kafka.metrics.prometheus.ClientMetricsReporter";
 
-    /** YammerMetricsReporter fully qualified class name. */
-    public static final String YAMMER_CLASS = "io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter";
+    /** ServerKafkaMetricsReporter fully qualified class name (for Kafka servers). */
+    public static final String SERVER_KAFKA_CLASS = "io.strimzi.kafka.metrics.prometheus.ServerKafkaMetricsReporter";
+
+    /** ServerYammerMetricsReporter fully qualified class name (for Kafka servers). */
+    public static final String SERVER_YAMMER_CLASS = "io.strimzi.kafka.metrics.prometheus.ServerYammerMetricsReporter";
 
     /** Enable HTTP listener (true/false). */
     public static final String LISTENER_ENABLE = "prometheus.metrics.reporter.listener.enable";
