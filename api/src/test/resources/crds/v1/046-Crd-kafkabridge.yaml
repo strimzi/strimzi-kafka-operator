@@ -160,6 +160,31 @@ spec:
                     type: integer
                     minimum: 1023
                     description: The port which is the server listening on.
+                  tls:
+                    type: object
+                    properties:
+                      certificateAndKey:
+                        type: object
+                        properties:
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          key:
+                            type: string
+                            description: "The name of the private key in the secret. The private key must be in unencrypted PKCS #8 format. For more information, see RFC 5208: https://datatracker.ietf.org/doc/html/rfc5208."
+                        required:
+                        - secretName
+                        - certificate
+                        - key
+                        description: Reference to the `Secret` which holds the certificate and private key pair.
+                      config:
+                        x-kubernetes-preserve-unknown-fields: true
+                        type: object
+                        description: Configurations for HTTP server enabled with TLS.
+                    description: TLS configuration for clients connections to the HTTP Bridge.
                   cors:
                     type: object
                     properties:

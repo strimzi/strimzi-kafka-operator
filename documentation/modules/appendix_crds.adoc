@@ -529,7 +529,7 @@ For `loadbalancer` listeners only.
 [id='type-CertAndKeySecretSource-{context}']
 = `CertAndKeySecretSource` schema reference
 
-Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`], xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`]
+Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`], xref:type-KafkaBridgeHttpTls-{context}[`KafkaBridgeHttpTls`], xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`]
 
 
 [cols="2,2,3a",options="header"]
@@ -3924,9 +3924,29 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig.adoc[lev
 |port
 |integer
 |The port which is the server listening on.
+|tls
+|xref:type-KafkaBridgeHttpTls-{context}[`KafkaBridgeHttpTls`]
+|TLS configuration for clients connections to the HTTP Bridge.
 |cors
 |xref:type-KafkaBridgeHttpCors-{context}[`KafkaBridgeHttpCors`]
 |CORS configuration for the HTTP Bridge.
+|====
+
+[id='type-KafkaBridgeHttpTls-{context}']
+= `KafkaBridgeHttpTls` schema reference
+
+Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|certificateAndKey
+|xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
+|Reference to the `Secret` which holds the certificate and private key pair.
+|config
+|map
+|Configurations for HTTP server enabled with TLS.
 |====
 
 [id='type-KafkaBridgeHttpCors-{context}']
