@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.leaderelection.LeaderElectionManager;
@@ -33,6 +34,8 @@ import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.net.http.HttpConnectTimeoutException;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,12 +87,13 @@ public class Main {
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-cluster-operator", strimziVersion).build();
 
         startHealthServer(vertx, metricsProvider)
-                .compose(i -> leaderElection(vertx, client, config, shutdownHook))
                 .compose(i -> createPlatformFeaturesAvailability(vertx, client))
+                .compose(pfa -> leaderElection(vertx, client, config, shutdownHook).map(pfa))
                 .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config, shutdownHook))
                 .onComplete(res -> {
                     if (res.failed())   {
                         LOGGER.error("Unable to start operator for 1 or more namespace", res.cause());
+
                         vertx.executeBlocking(() -> {
                             System.exit(1);
                             return true;
@@ -117,6 +121,13 @@ public class Main {
                 promise.complete(pfa.result());
             } else {
                 LOGGER.error("Failed to gather environment facts", pfa.cause());
+
+                if (pfa.cause() instanceof KubernetesClientException
+                        && pfa.cause().getCause() != null && pfa.cause().getCause() instanceof IOException
+                        && pfa.cause().getCause().getCause() != null && pfa.cause().getCause().getCause() instanceof HttpConnectTimeoutException) {
+                    LOGGER.error("Timed out trying to connect to the Kubernetes API server. Is your Kubernetes API server reachable?");
+                }
+
                 promise.fail(pfa.cause());
             }
         });
