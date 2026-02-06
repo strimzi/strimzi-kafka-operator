@@ -343,6 +343,8 @@ public class KafkaAutoRebalancingReconciler {
                                             return Future.succeededFuture();
                                         });
                             } else {
+                                LOGGER.infoCr(reconciliation, "Rebalancing with KafkaRebalance {}/{} failed and it will be restarted.",
+                                        kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
                                 // The rebalancing scale up failed (i.e. Cruise Control not ready yet).
                                 // Transition to Idle but keep the modes to allow future reconciliations to retry (i.e. when Cruise Control becomes ready)
                                 // The operator also deletes the "actual" KafkaRebalance custom resource.
