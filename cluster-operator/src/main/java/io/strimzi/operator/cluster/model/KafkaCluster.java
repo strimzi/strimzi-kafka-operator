@@ -1881,18 +1881,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates a Secret with the given name and data in Kafka Cluster's namespace
-     *
-     * @param secretData    Secret data
-     * @param secretName    Secret name
-     *
-     * @return Secret that is generated
-     */
-    public Secret generateSecret(Map<String, String> secretData, String secretName) {
-        return ModelUtils.createSecret(secretName, namespace, labels, ownerReference, secretData, Map.of(), Map.of());
-    }
-
-    /**
      * Gets the Kafka version for this cluster.
      *
      * @return  Kafka version
