@@ -9,6 +9,7 @@ import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.ReadWriteUtils;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -24,12 +25,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class KafkaConfigurationDiffTest {
@@ -392,4 +396,62 @@ public class KafkaConfigurationDiffTest {
         assertThat(kcd.getConfigDiff(Scope.READ_ONLY).size(), is(1));
     }
 
+    @Test
+    public void testAreDoublesEqual() {
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of(), Map.of("test.option", "0.8")), is(false));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of()), is(false));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.9"), Map.of("test.option", "0.8")), is(false));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of("test.option", "0.8")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "1.024E8"), Map.of("test.option", "102400000")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.8"), Map.of("test.option", "8e-1")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.08"), Map.of("test.option", "8e-2")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "1.797e+35"), Map.of("test.option", "179700000000000000000000000000000000")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "1.7976931348623157E308"), Map.of("test.option", "1797.6931348623157E305")), is(true));
+        assertThat(KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "1.7976931348623157E308"), Map.of("test.option", "1.7976931348623157E308")), is(true));
+    }
+
+    @Test
+    public void testAreDoublesEqualFailedConversion() {
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> KafkaConfigurationDiff.areDoublesEqual("test.option", Map.of("test.option", "0.5"), Map.of("test.option", "0,5")));
+        assertThat(e.getMessage(), is("Cannot compare double property 'test.option'"));
+        assertThat(e.getCause().getClass(), is(NumberFormatException.class));
+        assertThat(e.getCause().getMessage(), is("For input string: \"0,5\""));
+    }
+
+    @Test
+    public void testDoublePropertiesAreIgnoredWhenEqual() {
+        List<ConfigEntry> current = List.of(
+                new ConfigEntry("log.cleaner.io.buffer.load.factor", "0.8"),
+                new ConfigEntry("log.cleaner.io.max.bytes.per.second", "1.024E8"),
+                new ConfigEntry("log.cleaner.min.cleanable.ratio", "0.6"),
+                new ConfigEntry("sasl.login.refresh.window.jitter", "0.06")
+        );
+        List<ConfigEntry> desired = List.of(
+                new ConfigEntry("log.cleaner.io.buffer.load.factor", "8e-1"),
+                new ConfigEntry("log.cleaner.io.max.bytes.per.second", "102400000"),
+                new ConfigEntry("log.cleaner.min.cleanable.ratio", "0.6"),
+                new ConfigEntry("sasl.login.refresh.window.jitter", "0.06")
+        );
+
+        KafkaConfigurationDiff kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(current), getDesiredConfiguration(desired), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(0));
+    }
+
+    @Test
+    public void testDoublePropertiesAreUpdatedWhenNotEqual() {
+        List<ConfigEntry> current = List.of(
+                new ConfigEntry("log.cleaner.io.buffer.load.factor", "0.8"),
+                new ConfigEntry("log.cleaner.io.max.bytes.per.second", "1.024E8")
+        );
+        List<ConfigEntry> desired = List.of(
+                new ConfigEntry("log.cleaner.io.buffer.load.factor", "8e-2"),
+                new ConfigEntry("log.cleaner.io.max.bytes.per.second", "10240000")
+        );
+
+        KafkaConfigurationDiff kcd = new KafkaConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(current), getDesiredConfiguration(desired), kafkaVersion, brokerNodeRef, false, true);
+        assertThat(kcd.getDiffSize(), is(2));
+        assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE).size(), is(2));
+        assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE), hasItem(new AlterConfigOp(new ConfigEntry("log.cleaner.io.buffer.load.factor", "8e-2"), AlterConfigOp.OpType.SET)));
+        assertThat(kcd.getConfigDiff(Scope.CLUSTER_WIDE), hasItem(new AlterConfigOp(new ConfigEntry("log.cleaner.io.max.bytes.per.second", "10240000"), AlterConfigOp.OpType.SET)));
+    }
 }

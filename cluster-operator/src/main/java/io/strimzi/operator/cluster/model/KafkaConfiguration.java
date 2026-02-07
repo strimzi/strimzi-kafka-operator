@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
+import io.strimzi.kafka.config.model.Type;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.io.IOException;
@@ -190,5 +191,17 @@ public class KafkaConfiguration extends AbstractConfiguration {
      */
     public static boolean isCustomConfigurationOption(String optionName, Map<String, ConfigModel> configModel) {
         return !configModel.containsKey(optionName);
+    }
+
+    /**
+     * Checks if the property uses the Double type
+     *
+     * @param optionName    Name of the property to check
+     * @param configModel   Configuration model for the given Kafka version
+     *
+     * @return  True if the property uses the Double type. False otherwise.
+     */
+    public static boolean isDouble(String optionName, Map<String, ConfigModel> configModel) {
+        return Type.DOUBLE.equals(configModel.get(optionName).getType());
     }
 }

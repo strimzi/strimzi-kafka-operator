@@ -11,6 +11,7 @@ import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.AbstractJsonDiff;
@@ -303,12 +304,12 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
                     isConfigUpdated = removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry);
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    isConfigUpdated = updateOrAdd(entry.name(), configModel, desiredMap, updatedCE);
+                    isConfigUpdated = updateOrAdd(entry.name(), configModel, desiredMap, currentMap, updatedCE);
                 }
             } else {
                 if ("add".equals(op)) {
                     // entry is not in the current, it is added
-                    isConfigUpdated = updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE);
+                    isConfigUpdated = updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, currentMap, updatedCE);
                 }
             }
 
@@ -323,10 +324,13 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
         return updatedCE;
     }
 
-    private boolean updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
+    private boolean updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Map<String, String> currentMap, Collection<AlterConfigOp> updatedCE) {
         if (!isIgnorableProperty(propertyName)) {
             if (KafkaConfiguration.isCustomConfigurationOption(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
+            } else if (KafkaConfiguration.isDouble(propertyName, configModel) && areDoublesEqual(propertyName, currentMap, desiredMap)) {
+                // Double properties get special handling because Kafka might reformat them during serialization
+                LOGGER.debugCr(reconciliation, "{} is ignorable because the doubles are equal {}=={}", propertyName, currentMap.get(propertyName), desiredMap.get(propertyName));
             } else {
                 LOGGER.traceCr(reconciliation, "property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(propertyName, desiredMap.get(propertyName)), AlterConfigOp.OpType.SET));
@@ -395,5 +399,28 @@ public class KafkaConfigurationDiff extends AbstractJsonDiff {
             }
         }
         return configDiff;
+    }
+
+    /**
+     * Checks if two Double properties are equal in the current and desired configuration. This method just converts
+     * the values to doubles and compares them without any tolerable difference. This is not optimal because double is
+     * not an exact representation. But it is the best we can do.
+     *
+     * @param optionName    Name of the property to check
+     * @param current       The map with the current configuration
+     * @param desired       The map with the desired configuration
+     *
+     * @return  True if the option is set in both current and desired configuration and if they are equal. False otherwise.
+     */
+    /* test */ static boolean areDoublesEqual(String optionName, Map<String, String> current, Map<String, String> desired) {
+        try {
+            return current.containsKey(optionName) // Option is missing in current = they are not equal
+                    && desired.containsKey(optionName) // Option is missing in desired = they are not equal
+                    && Double.parseDouble(current.get(optionName)) == Double.parseDouble(desired.get(optionName));
+        } catch (NumberFormatException e) {
+            // Note: We validate the input earlier during the reconciliation based on the type. So this exception should
+            //   likely never happen. But it is there to cover any edge situations when we fail to validate it properly.
+            throw new InvalidConfigurationException("Cannot compare double property '" + optionName + "'", e);
+        }
     }
 }
