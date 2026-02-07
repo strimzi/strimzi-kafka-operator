@@ -343,13 +343,14 @@ public class KafkaAutoRebalancingReconciler {
                                             return Future.succeededFuture();
                                         });
                             } else {
-                                // the rebalancing scale up failed, transition to Idle and also removing the corresponding mode and brokers list from the status.
+                                LOGGER.infoCr(reconciliation, "Rebalancing with KafkaRebalance {}/{} failed and it will be restarted.",
+                                        kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
+                                // The rebalancing scale up failed (i.e. Cruise Control not ready yet).
+                                // Transition to Idle but keep the modes to allow future reconciliations to retry (i.e. when Cruise Control becomes ready)
                                 // The operator also deletes the "actual" KafkaRebalance custom resource.
                                 return deleteKafkaRebalance(kafkaRebalance)
                                         .compose(v -> {
-                                            kafkaAutoRebalanceStatus.setState(KafkaAutoRebalanceState.Idle);
-                                            kafkaAutoRebalanceStatus.setLastTransitionTime(StatusUtils.iso8601Now());
-                                            kafkaAutoRebalanceStatus.setModes(null);
+                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, scalingNodes);
                                             return Future.succeededFuture();
                                         });
                             }
