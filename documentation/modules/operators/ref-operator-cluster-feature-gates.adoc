@@ -92,7 +92,7 @@ The following table shows the maturity of the feature gates introduced across St
 
 ¦`ServerSideApplyPhase1`
 ¦0.48
-¦0.51 (planned)
+¦0.51
 ¦0.54 (planned)
 
 ifdef::Section[]
@@ -112,18 +112,11 @@ For information on feature gates that have reached GA, see the documentation for
 
 Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
 Stable feature gates are production-ready, but they can still be disabled.
-Currently, there are no beta level feature gates.
-
-== Early access feature gates (Alpha)
-
-Early access feature gates have not yet reached the beta stage, and are disabled by default. 
-An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
-Currently, there are no alpha level feature gates.
 
 [id='ref-operator-server-side-apply-phase-1-feature-gate-{context}']
 === `ServerSideApplyPhase1` feature gate
 
-The `ServerSideApplyPhase1` feature gate has a default state of _disabled_.
+The `ServerSideApplyPhase1` feature gate has a default state of _enabled_.
 
 When enabled, the Cluster Operator uses Server-Side Apply (SSA) for creating and updating certain resources.
 SSA is a Kubernetes feature that provides better tracking of field ownership and more controlled resource updates.
@@ -146,7 +139,12 @@ The conflict and the switch to forced apply are logged by the Cluster Operator.
 
 Ownership of individual fields is tracked through the `.metadata.managedFields` property of the resource being updated.
 
-To enable the `ServerSideApplyPhase1` feature gate, specify `+ServerSideApplyPhase1` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+To disable the `ServerSideApplyPhase1` feature gate, specify `-ServerSideApplyPhase1` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+== Early access feature gates (Alpha)
+
+Early access feature gates have not yet reached the beta stage, and are disabled by default. 
+An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
 
 ifdef::Section[]
 [id='ref-operator-use-connect-build-with-buildah-feature-gate-{context}']

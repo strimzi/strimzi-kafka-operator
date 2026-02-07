@@ -28,7 +28,7 @@ public class FeatureGates {
     private static final String USE_CONNECT_BUILD_WITH_BUILDAH = "UseConnectBuildWithBuildah";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
-    private final FeatureGate serverSideApplyPhase1 = new FeatureGate(SERVER_SIDE_APPLY_PHASE_1, false);
+    private final FeatureGate serverSideApplyPhase1 = new FeatureGate(SERVER_SIDE_APPLY_PHASE_1, true);
     // private final FeatureGate dummyFeatureGate = new FeatureGate(DUMMY_FEATURE_GATE, false);
     private final FeatureGate useConnectBuildWithBuildah = new FeatureGate(USE_CONNECT_BUILD_WITH_BUILDAH, false);
 

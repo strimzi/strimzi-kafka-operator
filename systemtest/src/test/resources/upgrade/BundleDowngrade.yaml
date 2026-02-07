@@ -75,8 +75,8 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
-  fromFeatureGates: "+ServerSideApplyPhase1"
-  toFeatureGates: ""
+  fromFeatureGates: "-ServerSideApplyPhase1"
+  toFeatureGates: "+ServerSideApplyPhase1"
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"
     toKafka: "/examples/kafka/kafka-persistent.yaml"
@@ -100,7 +100,7 @@
     status: stable
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
-  fromFeatureGates: "+ServerSideApplyPhase1"
+  fromFeatureGates: ""
   toFeatureGates: "+ServerSideApplyPhase1"
   filePaths:
     fromKafka: "/examples/kafka/kafka-persistent.yaml"

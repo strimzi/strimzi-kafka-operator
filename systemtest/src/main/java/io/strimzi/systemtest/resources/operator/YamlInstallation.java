@@ -357,7 +357,7 @@ public class YamlInstallation implements InstallationMethod {
                     envVar.setValue(Long.toString(clusterOperatorConfiguration.getOperationTimeout()));
                     break;
                 case "STRIMZI_FEATURE_GATES":
-                    if (!envVar.getValue().equals(Environment.STRIMZI_FEATURE_GATES)) {
+                    if (!envVar.getValue().equals(clusterOperatorConfiguration.getFeatureGates())) {
                         envVar.setValue(clusterOperatorConfiguration.getFeatureGates());
                     }
                     break;

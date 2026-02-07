@@ -350,6 +350,9 @@ public class KafkaRebalanceAssemblyOperator
 
                     if (existingConfigMap != null) {
                         if (desiredConfigMap == null) {
+                            // we need to remove the managedFields from the metadata, as we cannot apply/update the resource
+                            // with this field configured
+                            existingConfigMap.getMetadata().setManagedFields(null);
                             desiredStatusAndMap.setLoadAndProgressConfigMap(existingConfigMap);
                             desiredConfigMap = existingConfigMap;
                         } else {
