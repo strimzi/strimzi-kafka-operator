@@ -1203,9 +1203,8 @@ public class KafkaReconciler {
     }
 
     /**
-     * Updates various fields in the Kafka CR .status section such as listener information, Kafka version, metadata
-     * state etc. This includes the parts of the status that do not need to be updated at a specific point in the
-     * reconciliation.
+     * Updates various fields in the Kafka CR .status section such as listener information, Kafka version etc.
+     * This includes the parts of the status that do not need to be updated at a specific point in the reconciliation.
      *
      * @param kafkaStatus   Kafka status where the values should be set
      *

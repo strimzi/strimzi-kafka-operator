@@ -205,7 +205,7 @@ public class KafkaBrokerConfigurationBuilder {
         List<String> quorum = nodes.stream()
                 .filter(NodeRef::controller)
                 .sorted(Comparator.comparingInt(NodeRef::nodeId))
-                .map(node -> String.format("%s@%s:9090", node.nodeId(), DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(clusterName), node.podName())))
+                .map(node -> String.format("%s@%s:%s", node.nodeId(), DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(clusterName), node.podName()), KafkaCluster.CONTROLPLANE_PORT))
                 .toList();
 
         writer.println("controller.quorum.voters=" + String.join(",", quorum));
@@ -253,11 +253,12 @@ public class KafkaBrokerConfigurationBuilder {
         ////////////////////
 
         if (node.controller()) {
-            listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
-            advertisedListeners.add(String.format("%s://%s:9090",
+            listeners.add(String.format("%s://0.0.0.0:%s", CONTROL_PLANE_LISTENER_NAME, KafkaCluster.CONTROLPLANE_PORT));
+            advertisedListeners.add(String.format("%s://%s:%s",
                     CONTROL_PLANE_LISTENER_NAME,
                     // Pod name constructed to be templatable for each individual ordinal
-                    DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName())
+                    DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName()),
+                    KafkaCluster.CONTROLPLANE_PORT
             ));
         }
 
