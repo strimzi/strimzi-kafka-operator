@@ -450,20 +450,31 @@ public abstract class Ca {
     }
 
     protected CertAndKey generateSignedCert(Subject subject,
-                                           File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
+                                           File csrFile, File keyFile, File certFile, File keyStoreFile, boolean includeCaChain) throws IOException {
         LOGGER.infoCr(reconciliation, "Generating certificate {}, signed by CA {}", subject, this);
 
         try {
+            byte[] caCertBytes = currentCaCertBytes();
             certManager.generateCsr(keyFile, csrFile, subject);
-            certManager.generateCert(csrFile, currentCaKey(), currentCaCertBytes(),
+            certManager.generateCert(csrFile, currentCaKey(), caCertBytes,
                     certFile, subject, validityDays);
 
             String keyStorePassword = passwordGenerator.generate();
             certManager.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
 
+            byte[] certChain;
+            if (includeCaChain) {
+                byte[] leafCert = Files.readAllBytes(certFile.toPath());
+                certChain = new byte[leafCert.length + caCertBytes.length];
+                System.arraycopy(leafCert, 0, certChain, 0, leafCert.length);
+                System.arraycopy(caCertBytes, 0, certChain, leafCert.length, caCertBytes.length);
+            } else {
+                certChain = Files.readAllBytes(certFile.toPath());
+            }
+
             return new CertAndKey(
                     Files.readAllBytes(keyFile.toPath()),
-                    Files.readAllBytes(certFile.toPath()),
+                    certChain,
                     null,
                     Files.readAllBytes(keyStoreFile.toPath()),
                     keyStorePassword);
@@ -506,7 +517,7 @@ public abstract class Ca {
         subject.withCommonName(commonName);
 
         CertAndKey result = generateSignedCert(subject.build(),
-                csrFile, keyFile, certFile, keyStoreFile);
+                csrFile, keyFile, certFile, keyStoreFile, false);
 
         delete(reconciliation, csrFile);
         delete(reconciliation, keyFile);
@@ -917,7 +928,9 @@ public abstract class Ca {
     }
 
     static X509Certificate x509Certificate(CertificateFactory factory, byte[] bytes) throws CertificateException {
-        Certificate certificate = factory.generateCertificate(new ByteArrayInputStream(bytes));
+        // When bytes contain a certificate chain, read only the first certificate
+        // to get thumbprints of the leaf certificate
+        Certificate certificate = factory.generateCertificates(new ByteArrayInputStream(bytes)).stream().findFirst().orElse(null);
         if (certificate instanceof X509Certificate) {
             return (X509Certificate) certificate;
         } else {

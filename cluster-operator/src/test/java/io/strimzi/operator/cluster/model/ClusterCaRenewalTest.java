@@ -50,7 +50,8 @@ public class ClusterCaRenewalTest {
                 NODES,
                 SUBJECT_FN,
                 null,
-                isMaintenanceTimeWindowsSatisfied
+                isMaintenanceTimeWindowsSatisfied,
+                false
         );
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
@@ -86,7 +87,8 @@ public class ClusterCaRenewalTest {
                 NODES,
                 SUBJECT_FN,
                 initialCerts,
-                isMaintenanceTimeWindowsSatisfied
+                isMaintenanceTimeWindowsSatisfied,
+                false
         );
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
@@ -122,7 +124,8 @@ public class ClusterCaRenewalTest {
                 NODES,
                 SUBJECT_FN,
                 initialCerts,
-                isMaintenanceTimeWindowsSatisfied
+                isMaintenanceTimeWindowsSatisfied,
+                false
         );
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
@@ -158,7 +161,8 @@ public class ClusterCaRenewalTest {
                 NODES,
                 SUBJECT_FN,
                 initialCerts,
-                isMaintenanceTimeWindowsSatisfied
+                isMaintenanceTimeWindowsSatisfied,
+                false
         );
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
@@ -187,7 +191,8 @@ public class ClusterCaRenewalTest {
                 NODES,
                 SUBJECT_FN,
                 initialCerts,
-                isMaintenanceTimeWindowsSatisfied
+                isMaintenanceTimeWindowsSatisfied,
+                false
         );
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
@@ -214,8 +219,10 @@ public class ClusterCaRenewalTest {
                 NODES,
                 SUBJECT_FN,
                 initialCerts,
-                true
+                true,
+                false
         );
+
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
@@ -239,7 +246,8 @@ public class ClusterCaRenewalTest {
                 NODES,
                 SUBJECT_FN,
                 initialCerts,
-                true
+                true,
+                false
         );
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
@@ -265,8 +273,10 @@ public class ClusterCaRenewalTest {
                 NODES,
                 SUBJECT_FN,
                 initialCerts,
-                true
+                true,
+                false
         );
+
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
@@ -292,8 +302,10 @@ public class ClusterCaRenewalTest {
                 Set.of(new NodeRef("pod1", 1, null, false, true)),
                 SUBJECT_FN,
                 initialCerts,
-                true
+                true,
+                false
         );
+
 
         assertThat(newCerts.get("pod0"), is(nullValue()));
 
@@ -320,7 +332,8 @@ public class ClusterCaRenewalTest {
                 NODES,
                 node -> new Subject.Builder().withCommonName(node.podName()).build(),
                 initialCerts,
-                isMaintenanceTimeWindowsSatisfied
+                isMaintenanceTimeWindowsSatisfied,
+                false
         );
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
@@ -331,6 +344,25 @@ public class ClusterCaRenewalTest {
 
         assertThat(new String(newCerts.get("pod2").cert()), is("new-cert2"));
         assertThat(new String(newCerts.get("pod2").key()), is("new-key2"));
+    }
+
+
+    @Test
+    public void certificatesIncludeCaChain() throws IOException {
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
+
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+                Reconciliation.DUMMY_RECONCILIATION,
+                NODES,
+                SUBJECT_FN,
+                null,
+                true,
+                true
+        );
+
+        assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0CA-CERT"));
+        assertThat(new String(newCerts.get("pod1").cert()), is("new-cert1CA-CERT"));
+        assertThat(new String(newCerts.get("pod2").cert()), is("new-cert2CA-CERT"));
     }
 
     public static class MockedClusterCa extends ClusterCa {
@@ -360,12 +392,20 @@ public class ClusterCaRenewalTest {
 
         @Override
         protected CertAndKey generateSignedCert(Subject subject,
-                                                File csrFile, File keyFile, File certFile, File keyStoreFile) {
+                                                File csrFile, File keyFile, File certFile, File keyStoreFile, boolean includeCaChain) {
             int index = invocationCount.getAndIncrement();
+
+            byte[] cert;
+            if (includeCaChain) {
+                // Simulate concatenated chain: leaf + CA
+                cert = ("new-cert" + index + "CA-CERT").getBytes();
+            } else {
+                cert = ("new-cert" + index).getBytes();
+            }
 
             return new CertAndKey(
                     ("new-key" + index).getBytes(),
-                    ("new-cert" + index).getBytes(),
+                    cert,
                     ("new-truststore" + index).getBytes(),
                     ("new-keystore" + index).getBytes(),
                     "new-password" + index

@@ -174,7 +174,8 @@ public class MockCertManager implements CertManager {
             yPlKo9idFuhf2IhFwd1ucX3S+ZWRXxzQGeLjdpqf0vBUA9uqP5bjMZHwums1s/MB
             MyngL6wecFymyjqK3kduVNKvIo/juPq0NV8u70gdHltsaJArw4sfMw/4LnR++hRD
             EgqE8p9hEapdshRN9+YQchN44URq4xwcE/fDebru+IxPbkDOCMsj5x1WcUCg7w==
-            -----END CERTIFICATE-----""";
+            -----END CERTIFICATE-----
+            """;
 
     // End entity key is used for server and user certificates
     private static final String END_ENTITY_KEY = """
@@ -229,7 +230,8 @@ public class MockCertManager implements CertManager {
             h6q/b23hDaBnL1W0wxZxNmsYDoJ1HaCFb8S6fiyovhBuFc6x1m1pTt2JGetgYoVQ
             NbnXBwcJ0kU4ABEe881ID4mAGWg7ePhBP8LoJeuzdoCDTn4X412DF6usWH3MsFCD
             UzKvfqO8LHHn+gkP6Z7GXxmD1/Eu
-            -----END PRIVATE KEY-----""";
+            -----END PRIVATE KEY-----
+            """;
 
 
     // End entity key store is used for server and user certificates.

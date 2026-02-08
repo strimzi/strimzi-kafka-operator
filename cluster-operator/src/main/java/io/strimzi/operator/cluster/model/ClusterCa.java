@@ -141,7 +141,8 @@ public class ClusterCa extends Ca {
             nodes,
             subjectFn,
             existingCertificates,
-            isMaintenanceTimeWindowsSatisfied
+            isMaintenanceTimeWindowsSatisfied,
+            false
         );
     }
 
@@ -215,7 +216,8 @@ public class ClusterCa extends Ca {
             nodes,
             subjectFn,
             existingCertificates,
-            isMaintenanceTimeWindowsSatisfied
+            isMaintenanceTimeWindowsSatisfied,
+            true
         );
     }
 
@@ -243,7 +245,8 @@ public class ClusterCa extends Ca {
             Set<NodeRef> nodes,
             Function<NodeRef, Subject> subjectFn,
             Map<String, CertAndKey> existingCertificates,
-            boolean isMaintenanceTimeWindowsSatisfied
+            boolean isMaintenanceTimeWindowsSatisfied,
+            boolean includeCaChain
     ) throws IOException {
         // Maps for storing the certificates => will be used in the new or updated certificate store. This map is filled in this method and returned at the end.
         Map<String, CertAndKey> certs = new HashMap<>();
@@ -284,7 +287,7 @@ public class ClusterCa extends Ca {
                 if (!reasons.isEmpty())  {
                     LOGGER.infoCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
 
-                    CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
+                    CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile, includeCaChain);
                     certs.put(podName, newCertAndKey);
                 }   else {
                     certs.put(podName, certAndKey);
@@ -292,7 +295,7 @@ public class ClusterCa extends Ca {
             } else {
                 // A certificate for this node does not exist or it the CA got renewed, so we will generate new certificate
                 LOGGER.debugCr(reconciliation, "Generating new certificate for node {}", node);
-                CertAndKey k = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
+                CertAndKey k = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile, includeCaChain);
                 certs.put(podName, k);
             }
         }

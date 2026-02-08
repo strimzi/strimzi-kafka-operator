@@ -1365,6 +1365,62 @@ class SecurityST extends AbstractST {
                 initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
     }
 
+    @ParallelNamespaceTest
+    void testBrokerCertificatesIncludeFullCaChain() {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
+
+        KubeResourceManager.get().createResourceWithWait(
+                KafkaNodePoolTemplates.mixedPool(testStorage.getNamespaceName(), testStorage.getMixedPoolName(), testStorage.getClusterName(), 1).build()
+        );
+
+        KubeResourceManager.get().createResourceWithWait(
+                KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1).build()
+        );
+
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getMixedSelector()).getFirst().getMetadata().getName();
+        LOGGER.info("Getting broker certificate chain from Secret: {}/{}", testStorage.getNamespaceName(), brokerPodName);
+
+        List<X509Certificate> brokerCerts = SecretUtils.getCertificatesFromSecret(
+                KubeResourceManager.get().kubeClient().getClient().secrets()
+                        .inNamespace(testStorage.getNamespaceName())
+                        .withName(brokerPodName)
+                        .get(),
+                brokerPodName + ".crt");
+
+        LOGGER.info("Verifying broker certificate chain: broker cert -> CA cert");
+
+        assertThat("Broker certificate chain should contain 2 certificates (broker cert + Ca cert)", brokerCerts.size(), is(2));
+
+        X509Certificate brokerCert = brokerCerts.get(0);
+        X509Certificate caCert = brokerCerts.get(1);
+
+        LOGGER.info("Broker cert subject: {}", brokerCert.getSubjectX500Principal().getName());
+        LOGGER.info("Broker cert issuer: {}", brokerCert.getIssuerX500Principal().getName());
+        LOGGER.info("CA cert subject: {}", caCert.getSubjectX500Principal().getName());
+        LOGGER.info("CA cert issuer: {}", caCert.getIssuerX500Principal().getName());
+
+        assertThat("Broker certificate subject should contain cluster name",
+                brokerCert.getSubjectX500Principal().getName(),
+                Matchers.containsString("CN=" + testStorage.getClusterName() + "-kafka"));
+
+        assertThat("Broker certificate should be issued by cluster-ca",
+                brokerCert.getIssuerX500Principal().getName(),
+                Matchers.containsString("CN=cluster-ca"));
+
+        assertThat("CA certificate subject should be cluster-ca",
+                caCert.getSubjectX500Principal().getName(),
+                Matchers.containsString("CN=cluster-ca"));
+
+        KubeResourceManager.get().createResourceWithWait(
+                KafkaUserTemplates.tlsUser(testStorage).build(),
+                KafkaTopicTemplates.topic(testStorage).build()
+        );
+
+        KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForInstantClientSuccess(testStorage);
+    }
+
     @BeforeAll
     void setup() {
         SetupClusterOperator
