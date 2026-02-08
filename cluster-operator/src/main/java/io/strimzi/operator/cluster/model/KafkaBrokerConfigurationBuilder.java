@@ -60,8 +60,8 @@ import java.util.stream.Collectors;
  * generate the configuration file, it is using the PrintWriter.
  */
 public class KafkaBrokerConfigurationBuilder {
-    private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-9090";
-    private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
+    private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-" + KafkaCluster.CONTROLPLANE_PORT;
+    private final static String REPLICATION_LISTENER_NAME = "REPLICATION-" + KafkaCluster.REPLICATION_PORT;
     // Names of environment variables expanded through config providers inside the Kafka node
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     // the secrets file template: <namespace>/<secret_name>:<secret_key>
