@@ -35,6 +35,7 @@ Please let us know by adding your company name and, if you want, a description o
 * [Feedzai](https://www.feedzai.com/)
 * [Pattern](https://www.pattern.com)
     * Use Strimzi to run Kafka and Kafka Connect as part of the data platform for queueing, event notifications, logging, and CDC pipelines.
+* [CERN](https://cern.ch)
 
 ### Vendors
 
