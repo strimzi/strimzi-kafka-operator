@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -264,13 +265,18 @@ public class ClusterCa extends Ca {
                     .map(existing -> existing.get(podName))
                     .orElse(null);
 
-            if (!this.certRenewed() // No CA renewal is happening
-                    && certAndKey != null // There is a public cert and private key for this pod
+            if (this.certRenewed() // The certificate needs renewal
+                    || certAndKey == null // There is no certificate for this node
             )   {
+                // A certificate for this node does not exist or it the CA got renewed, so we will generate new certificate
+                LOGGER.debugCr(reconciliation, "Generating new certificate for node {}", node);
+                CertAndKey k = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile, includeCaChain);
+                certs.put(podName, k);
+            } else {
                 // A certificate for this node already exists, so we will try to reuse it
                 LOGGER.debugCr(reconciliation, "Certificate for node {} already exists", node);
 
-                List<String> reasons = new ArrayList<>(2);
+                List<String> reasons = new ArrayList<>();
 
                 if (certSubjectChanged(certAndKey, subject, podName))   {
                     reasons.add("DNS names changed");
@@ -284,6 +290,17 @@ public class ClusterCa extends Ca {
                     reasons.add("certificate added");
                 }
 
+                // In Strimzi 0.48 we moved to using the PEM certificates directly instead of PKCS12 in the Kafka brokers.
+                // But that (unintentionally) removed the full CA chain from the server certificates. We added them back
+                // in Strimzi 0.50. But this logic is needed to actually roll out the updated Secrets with the full CA chain.
+                // For more details, see https://github.com/strimzi/strimzi-kafka-operator/issues/12364.
+                //
+                // After some time - after multiple Strimzi releases, once the CA chains are added in all clusters, we
+                // should be able to remove this logic again.
+                if (includeCaChain && !includesCaChain(certAndKey.cert(), currentCaCertBytes())) {
+                    reasons.add("CA chain added");
+                }
+                
                 if (!reasons.isEmpty())  {
                     LOGGER.infoCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
 
@@ -292,11 +309,6 @@ public class ClusterCa extends Ca {
                 }   else {
                     certs.put(podName, certAndKey);
                 }
-            } else {
-                // A certificate for this node does not exist or it the CA got renewed, so we will generate new certificate
-                LOGGER.debugCr(reconciliation, "Generating new certificate for node {}", node);
-                CertAndKey k = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile, includeCaChain);
-                certs.put(podName, k);
             }
         }
 
@@ -307,6 +319,23 @@ public class ClusterCa extends Ca {
         delete(reconciliation, brokerKeyStoreFile);
 
         return certs;
+    }
+
+    /**
+     * Checks if the CA chain is contained at the end of the certificate.
+     *
+     * @param cert      The server certificate as a byte array
+     * @param caChain   The CA chain as a byte array
+     *
+     * @return  True if the CA chain is included at the end of the certificate, false otherwise.
+     */
+    /* test */ static boolean includesCaChain(byte[] cert, byte[] caChain) {
+        if (cert == null || caChain == null || cert.length < caChain.length) {
+            // The CA chain is definitely not included
+            return false;
+        } else {
+            return Arrays.equals(Arrays.copyOfRange(cert, cert.length - caChain.length, cert.length), caChain);
+        }
     }
 
     /**
