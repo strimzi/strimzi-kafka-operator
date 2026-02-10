@@ -797,7 +797,7 @@ public class KafkaReconciler {
     private Future<Map<String, String>> collectListenerCustomCerts() {
         Map<String, String> customCertsData = new HashMap<>();
         List<Future<Object>> futures = kafka.getListeners().stream()
-                .filter(l -> l.isTls() && l.getConfiguration() != null)
+                .filter(l -> l.isTls() && l.getConfiguration() != null && l.getConfiguration().getBrokerCertChainAndKey() != null)
                 .map(l ->
                         ReconcilerUtils.getCertificateAndKeyAsync(secretOperator, reconciliation.namespace(), l.getConfiguration().getBrokerCertChainAndKey())
                                 .onSuccess(certAndKey -> {
