@@ -18,7 +18,6 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.CompletableFutureUtil;
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -28,7 +27,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.vertx.core.Future;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
@@ -219,9 +217,9 @@ public class KafkaRoller {
      * Which pods get rolled is determined by {@code podNeedsRestart}.
      * The pods may not be rolled in id order, due to the {@linkplain KafkaRoller rolling algorithm}.
      * @param podNeedsRestart Predicate for determining whether a pod should be rolled.
-     * @return A Future completed when rolling is complete.
+     * @return A CompletableFuture completed when rolling is complete.
      */
-    public Future<Void> rollingRestart(Function<Pod, RestartReasons> podNeedsRestart) {
+    public CompletableFuture<Void> rollingRestart(Function<Pod, RestartReasons> podNeedsRestart) {
         this.podNeedsRestart = podNeedsRestart;
         CompletableFuture<Void> result = new CompletableFuture<>();
         singleExecutor.submit(() -> {
@@ -292,7 +290,7 @@ public class KafkaRoller {
             }
         });
 
-        return VertxUtil.completableFutureToVertxFuture(result);
+        return result;
     }
 
     protected static class RestartContext {

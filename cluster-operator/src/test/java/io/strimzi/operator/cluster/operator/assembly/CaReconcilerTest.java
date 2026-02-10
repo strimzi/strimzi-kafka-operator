@@ -992,7 +992,8 @@ public class CaReconcilerTest {
                     .onSuccess(pods -> kafkaRestartReasons = pods.stream().collect(Collectors.toMap(
                             pod -> pod.getMetadata().getName(),
                             pod -> (RestartReasons) i.getArgument(0, Function.class).apply(pod))))
-                    .mapEmpty());
+                    .mapEmpty()
+                    .toCompletionStage().toCompletableFuture());
             return mockKafkaRoller;
         }
 

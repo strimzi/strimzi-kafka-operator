@@ -762,7 +762,7 @@ public class KafkaRollerTest {
     private void doSuccessfulConfigUpdate(TestingKafkaRoller kafkaRoller,
                                           List<Integer> expected) {
         kafkaRoller.rollingRestart(pod -> RestartReasons.empty())
-                .onComplete((v, error) -> {
+                .whenComplete((v, error) -> {
                     assertThat(restarted(), is(expected));
                     assertNoUnclosedAdminClient(kafkaRoller);
                 });
@@ -779,7 +779,7 @@ public class KafkaRollerTest {
                         return RestartReasons.empty();
                     }
                 })
-                .onComplete((v, err) -> {
+                .whenComplete((v, err) -> {
                     assertThat(restarted(), is(expected));
                     assertNoUnclosedAdminClient(kafkaRoller);
                 });
@@ -805,7 +805,7 @@ public class KafkaRollerTest {
                     return RestartReasons.empty();
                 }
             })
-            .onComplete((r, error) -> {
+            .whenComplete((r, error) -> {
                 assertThat(error.getClass() + " is not a subclass of " + exception.getName(), error, instanceOf(exception));
                 assertThat("The exception message was not as expected", error.getMessage(), is(message));
                 assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
