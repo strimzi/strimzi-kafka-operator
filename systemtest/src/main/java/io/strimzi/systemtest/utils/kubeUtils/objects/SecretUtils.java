@@ -29,9 +29,11 @@ import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SecretUtils {
@@ -206,6 +208,18 @@ public class SecretUtils {
             e.printStackTrace();
         }
         return cacert;
+    }
+
+    public static List<X509Certificate> getCertificatesFromSecret(Secret secret, String dataKey) {
+        String certs = secret.getData().get(dataKey);
+        byte[] decoded = Util.decodeBytesFromBase64(certs);
+        List<X509Certificate> certificates = new ArrayList<>();
+        try {
+            CertificateFactory.getInstance("X.509").generateCertificates(new ByteArrayInputStream(decoded)).forEach(c -> certificates.add((X509Certificate) c));
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        }
+        return certificates;
     }
 
     public static void waitForUserPasswordChange(String namespaceName, String secretName, String expectedEncodedPassword) {
