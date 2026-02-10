@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
@@ -21,6 +23,7 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpecBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
+import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -800,4 +803,80 @@ public class KafkaBridgeAssemblyOperatorTest {
                 });
     }
 
+    @Test
+    public void testTlsSecretsFetchedOnlyOncePerReference(VertxTestContext context) {
+        String kbName = "foo";
+        String kbNamespace = "test";
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        var mockBridgeOps = supplier.kafkaBridgeOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+
+        KafkaBridge bridgeWithTls = new KafkaBridgeBuilder()
+                .withNewMetadata()
+                    .withName(kbName)
+                    .withNamespace(kbNamespace)
+                .endMetadata()
+                .withNewSpec()
+                    .withBootstrapServers(BOOTSTRAP_SERVERS)
+                    .withReplicas(1)
+                    .withNewHttp(8080)
+                    .withNewTls()
+                        .withTrustedCertificates(
+                                new CertSecretSourceBuilder()
+                                        .withSecretName("shared-tls-secret")
+                                        .withCertificate("ca.crt")
+                                        .build(),
+                                new CertSecretSourceBuilder()
+                                        .withSecretName("shared-tls-secret")
+                                        .withCertificate("ca2.crt")
+                                        .build()
+                        )
+                    .endTls()
+                .endSpec()
+                .build();
+
+        when(mockBridgeOps.get(eq(kbNamespace), eq(kbName))).thenReturn(bridgeWithTls);
+        when(mockBridgeOps.getAsync(eq(kbNamespace), eq(kbName))).thenReturn(Future.succeededFuture(bridgeWithTls));
+        when(mockBridgeOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+
+        when(mockDcOps.scaleDown(any(), eq(kbNamespace), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), eq(kbNamespace), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        when(mockServiceOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets - the shared TLS secret referenced multiple times
+        Secret tlsSecret = new SecretBuilder()
+                .withNewMetadata().withName("shared-tls-secret").endMetadata()
+                .withData(Map.of(
+                        "ca.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----"),
+                        "ca2.crt", Util.encodeToBase64("-----BEGIN CERTIFICATE-----\ntest-cert-2\n-----END CERTIFICATE-----")))
+                .build();
+        when(mockSecretOps.getAsync(eq(kbNamespace), eq("shared-tls-secret"))).thenReturn(Future.succeededFuture(tlsSecret));
+
+        KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
+                new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName);
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(reconciliation)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    verify(mockSecretOps, times(2)).getAsync(eq(kbNamespace), eq("shared-tls-secret"));
+
+                    async.flag();
+                })));
+    }
 }
