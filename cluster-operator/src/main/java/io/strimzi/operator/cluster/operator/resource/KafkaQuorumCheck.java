@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.cluster.operator.CompletableFutureUtil;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.kafka.clients.admin.Admin;
@@ -140,6 +139,6 @@ class KafkaQuorumCheck {
     }
 
     private CompletableFuture<QuorumInfo> describeMetadataQuorum() {
-        return CompletableFutureUtil.kafkaFutureToCompletableFuture(reconciliation, admin.describeMetadataQuorum().quorumInfo());
+        return admin.describeMetadataQuorum().quorumInfo().toCompletionStage().toCompletableFuture();
     }
 }

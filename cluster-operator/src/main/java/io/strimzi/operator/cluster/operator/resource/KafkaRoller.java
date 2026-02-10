@@ -17,7 +17,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.operator.CompletableFutureUtil;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -647,17 +646,26 @@ public class KafkaRoller {
     /* test */ Config getConfig(NodeRef nodeRef, boolean isPureController) throws ForceableProblem, InterruptedException {
         ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(nodeRef.nodeId()));
         if (isPureController) {
-            return await(CompletableFutureUtil.kafkaFutureToCompletableFuture(reconciliation, controllerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
-                    30_000,
-                    error -> new ForceableProblem("Error getting controller config: " + error, error)
-            );
+            KafkaFuture<Config> configFuture = controllerAdminClient.describeConfigs(singletonList(resource)).values().get(resource);
+            if (configFuture != null) {
+                return await(configFuture.toCompletionStage().toCompletableFuture(),
+                        30_000,
+                        error -> new ForceableProblem("Error getting controller config: " + error, error)
+                );
+            }
+
         } else {
-            return await(CompletableFutureUtil.kafkaFutureToCompletableFuture(reconciliation, brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
-                    30_000,
-                    error -> new ForceableProblem("Error getting broker config: " + error, error)
-            );
+            KafkaFuture<Config> configFuture = brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource);
+            if (configFuture != null) {
+                return await(configFuture.toCompletionStage().toCompletableFuture(),
+                        30_000,
+                        error -> new ForceableProblem("Error getting broker config: " + error, error)
+                );
+            }
         }
 
+        LOGGER.traceCr(reconciliation, "KafkaFuture for getting Kafka configuration for pod {} is null", nodeRef);
+        return null;
     }
 
     /* test */ void dynamicUpdateKafkaConfig(NodeRef nodeRef, Admin ac, KafkaConfigurationDiff configurationDiff)
@@ -674,10 +682,14 @@ public class KafkaRoller {
             AlterConfigsResult alterBrokerConfigResult = ac.incrementalAlterConfigs(updatedPerBrokerConfig);
             KafkaFuture<Void> brokerConfigFuture = alterBrokerConfigResult.values().get(getBrokersConfig(nodeRef.nodeId()));
 
-            await(CompletableFutureUtil.kafkaFutureToCompletableFuture(reconciliation, brokerConfigFuture), 30_000, error -> {
-                LOGGER.errorCr(reconciliation, "Error updating Kafka configuration for pod {}", nodeRef, error);
-                return new ForceableProblem("Error updating Kafka configuration for pod " + nodeRef, error);
-            });
+            if (brokerConfigFuture != null) {
+                await(brokerConfigFuture.toCompletionStage().toCompletableFuture(), 30_000, error -> {
+                    LOGGER.errorCr(reconciliation, "Error updating Kafka configuration for pod {}", nodeRef, error);
+                    return new ForceableProblem("Error updating Kafka configuration for pod " + nodeRef, error);
+                });
+            } else {
+                LOGGER.traceCr(reconciliation, "KafkaFuture for updating Kafka configuration for pod {} is null", nodeRef);
+            }
 
             LOGGER.infoCr(reconciliation, "Dynamic update of pod {} was successful.", nodeRef);
         }
@@ -692,10 +704,14 @@ public class KafkaRoller {
             AlterConfigsResult alterClusterConfigResult = ac.incrementalAlterConfigs(updatedClusterWideConfig);
             KafkaFuture<Void> clusterConfigFuture = alterClusterConfigResult.values().get(getClusterWideConfig());
 
-            await(CompletableFutureUtil.kafkaFutureToCompletableFuture(reconciliation, clusterConfigFuture), 30_000, error -> {
-                LOGGER.errorCr(reconciliation, "Error updating cluster-wide configuration", error);
-                return new ForceableProblem("Error updating cluster-wide configuration", error);
-            });
+            if (clusterConfigFuture != null) {
+                await(clusterConfigFuture.toCompletionStage().toCompletableFuture(), 30_000, error -> {
+                    LOGGER.errorCr(reconciliation, "Error updating cluster-wide configuration", error);
+                    return new ForceableProblem("Error updating cluster-wide configuration", error);
+                });
+            } else {
+                LOGGER.traceCr(reconciliation, "KafkaFuture for updating cluster-wide configuration is null");
+            }
 
             LOGGER.infoCr(reconciliation, "Dynamic update of cluster-wide configuration(s)");
         }
