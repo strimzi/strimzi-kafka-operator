@@ -268,7 +268,7 @@ public class ClusterCa extends Ca {
             if (this.certRenewed() // The certificate needs renewal
                     || certAndKey == null // There is no certificate for this node
             )   {
-                // A certificate for this node does not exist or it the CA got renewed, so we will generate new certificate
+                // A certificate for this node does not exist or the CA got renewed, so we will generate a new certificate
                 LOGGER.debugCr(reconciliation, "Generating new certificate for node {}", node);
                 CertAndKey k = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile, includeCaChain);
                 certs.put(podName, k);
