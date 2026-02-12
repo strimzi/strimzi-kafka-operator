@@ -14,6 +14,7 @@ import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Base64;
@@ -146,6 +147,21 @@ public class ClusterCaTest {
         assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get(Ca.CA_STORE)).equals("dummy-p12"), is(true));
         assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get(Ca.CA_STORE_PASSWORD)).equals("dummy-password"), is(true));
         assertThat(Util.decodeFromBase64(clusterCaCertDataInSecret.get("ca-2023-03-23T09-00-00Z.crt")).equals("dummy-crt"), is(true));
+    }
+
+    @Test
+    public void testIncludesCaChain()  {
+        String cert = "CERT";
+        String caChain = "CACHAIN";
+        String caChain2 = "CA2CHAIN";
+        String certWithChain = cert + caChain;
+
+        assertThat(ClusterCa.includesCaChain(certWithChain.getBytes(StandardCharsets.US_ASCII), caChain.getBytes(StandardCharsets.US_ASCII)), is(true));
+        assertThat(ClusterCa.includesCaChain(cert.getBytes(StandardCharsets.US_ASCII), caChain.getBytes(StandardCharsets.US_ASCII)), is(false));
+        assertThat(ClusterCa.includesCaChain(certWithChain.getBytes(StandardCharsets.US_ASCII), caChain2.getBytes(StandardCharsets.US_ASCII)), is(false));
+        assertThat(ClusterCa.includesCaChain(certWithChain.getBytes(StandardCharsets.US_ASCII), cert.getBytes(StandardCharsets.US_ASCII)), is(false));
+        assertThat(ClusterCa.includesCaChain(null, caChain.getBytes(StandardCharsets.US_ASCII)), is(false));
+        assertThat(ClusterCa.includesCaChain(cert.getBytes(StandardCharsets.US_ASCII), null), is(false));
     }
 
     private Secret buildCertSecret(Ca ca) {

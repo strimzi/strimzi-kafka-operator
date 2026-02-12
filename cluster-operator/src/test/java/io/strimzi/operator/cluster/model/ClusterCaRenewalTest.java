@@ -362,6 +362,29 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod2").cert()), is("new-cert2CA-CERT"));
     }
 
+    @Test
+    public void caChainAddedToExistingCertificates() throws IOException {
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
+
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("new-key0".getBytes(), "new-cert0".getBytes()));
+        initialCerts.put("pod1", new CertAndKey("new-key1".getBytes(), "new-cert1".getBytes()));
+        initialCerts.put("pod2", new CertAndKey("new-key2".getBytes(), "new-cert2".getBytes()));
+
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
+                Reconciliation.DUMMY_RECONCILIATION,
+                NODES,
+                SUBJECT_FN,
+                initialCerts,
+                true,
+                true
+        );
+
+        assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0CA-CERT"));
+        assertThat(new String(newCerts.get("pod1").cert()), is("new-cert1CA-CERT"));
+        assertThat(new String(newCerts.get("pod2").cert()), is("new-cert2CA-CERT"));
+    }
+
     public static class MockedClusterCa extends ClusterCa {
         private final AtomicInteger invocationCount = new AtomicInteger(0);
         private boolean isCertRenewed;
@@ -369,6 +392,11 @@ public class ClusterCaRenewalTest {
 
         public MockedClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName, Secret caCertSecret, Secret caKeySecret, int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
             super(reconciliation, certManager, passwordGenerator, commonName, caCertSecret, caKeySecret, validityDays, renewalDays, generateCa, policy);
+        }
+
+        @Override
+        public byte[] currentCaCertBytes() {
+            return "CA-CERT".getBytes();
         }
 
         @Override
