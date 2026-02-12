@@ -491,10 +491,9 @@ public class ReconcilerUtils {
                 // only passwordSecret can be changed
                 return tlsFuture.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
                         .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
-            } else if (auth instanceof KafkaClientAuthenticationTls) {
+            } else if (auth instanceof KafkaClientAuthenticationTls authTls) {
                 // custom cert can be used (and changed)
-                return ((KafkaClientAuthenticationTls) auth).getCertificateAndKey() == null ? tlsFuture :
-                        tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, ((KafkaClientAuthenticationTls) auth).getCertificateAndKey())
+                return authTls.getCertificateAndKey() == null ? tlsFuture : tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, authTls.getCertificateAndKey())
                                 .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
                 List<Future<Integer>> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
