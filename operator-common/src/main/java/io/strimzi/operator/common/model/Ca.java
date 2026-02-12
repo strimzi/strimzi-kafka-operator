@@ -20,12 +20,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.time.Clock;
@@ -38,6 +44,8 @@ import java.time.format.SignStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -627,7 +635,30 @@ public abstract class Ca {
             }
             caCertData = certData;
             caKeyData = keyData;
+        } else {
+            validateUserCaCertChain();
         }
+    }
+
+    /**
+     * Validates whether the user provided CA cert has a valid chain. Any intermediate CAs should be provided first,
+     * in order, with the root CA being the last certificate.
+     */
+    protected void validateUserCaCertChain() {
+        List<X509Certificate> certChain = currentCaCertChain();
+        if (certChain == null || certChain.isEmpty()) {
+            LOGGER.errorCr(reconciliation, "Ca certificate chain is empty");
+            throw new RuntimeException("Failed to validate User supplied CA cert chain");
+        } else if (certChain.size() == 1) {
+            LOGGER.debugCr(reconciliation, "Ca certificate contains a single certificate");
+            return;
+        }
+        if (!certIsTrusted(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast())) {
+            String errorMessage = "User supplied CA cert chain is not valid. Certificates must be provided in the correct order.";
+            LOGGER.errorCr(reconciliation, errorMessage);
+            throw new RuntimeException(errorMessage);
+        }
+
     }
 
     private Subject nextCaSubject(int version) {
@@ -727,6 +758,27 @@ public abstract class Ca {
         if (caCertData.get(CA_CRT) != null) {
             try {
                 return x509Certificate(currentCaCertBytes());
+            } catch (CertificateException e) {
+                throw new RuntimeException("Failed to decode "  + CA_CRT + " in Secret " + caCertSecretName, e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    private List<X509Certificate> currentCaCertChain() {
+        if (caCertData.get(CA_CRT) != null) {
+            try {
+                Collection<? extends Certificate> certificates = certificateFactory().generateCertificates(new ByteArrayInputStream(currentCaCertBytes()));
+                List<X509Certificate> x509Certificates = new ArrayList<>(certificates.size());
+                for (Certificate certificate : certificates) {
+                    if (certificate instanceof X509Certificate) {
+                        x509Certificates.add((X509Certificate) certificate);
+                    } else {
+                        throw new CertificateException("Not an X509Certificate: " + certificate);
+                    }
+                }
+                return x509Certificates;
             } catch (CertificateException e) {
                 throw new RuntimeException("Failed to decode "  + CA_CRT + " in Secret " + caCertSecretName, e);
             }
@@ -1132,5 +1184,41 @@ public abstract class Ca {
             throw new RuntimeException(CA_CRT + " does not exist in the secret " + caCertSecretName);
         }
         return cert.getNotAfter().getTime();
+    }
+
+    /**
+     * Validates whether the provided cert is trusted using the provide CA certificate.
+     *
+     * @param reconciliation Reconciliation marker
+     * @param certChainToValidate Certificate to validate. Can be a single certificate or a chain of certificates as a single certificate file.
+     * @param caCert Ca certificate to use for validation.
+     *
+     * @return True if the CA certificate can be used to validate the provided certificate or certificate chain. False otherwise.
+     */
+    protected static boolean certIsTrusted(Reconciliation reconciliation, List<X509Certificate> certChainToValidate, X509Certificate caCert) {
+        CertPathValidator certPathValidator;
+        CertPath eeCertPath;
+        PKIXParameters pkixParams;
+        try {
+            certPathValidator = CertPathValidator.getInstance("PKIX");
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            TrustAnchor trustAnchor = new TrustAnchor(caCert, null);
+            pkixParams = new PKIXParameters(Collections.singleton(trustAnchor));
+            pkixParams.setRevocationEnabled(false);
+            eeCertPath = factory.generateCertPath(certChainToValidate);
+        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException e) {
+            LOGGER.errorCr(reconciliation, "Error constructing objects to validate certificate chain.", e);
+            throw new RuntimeException(e);
+        }
+        try {
+            certPathValidator.validate(eeCertPath, pkixParams);
+            LOGGER.debugCr(reconciliation, "Certificate chain validated using supplied CA cert.");
+            return true;
+        } catch (CertPathValidatorException e) {
+            LOGGER.errorCr(reconciliation, "Certificate chain cannot be validated with supplied CA cert.", e);
+            return false;
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

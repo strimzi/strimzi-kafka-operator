@@ -5,26 +5,41 @@
 package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CaTest {
 
@@ -123,5 +138,260 @@ class CaTest {
         X509Certificate nextX509 = Ca.x509Certificate(pem.getBytes());
         assertThat(nextX509.getSubjectX500Principal().getName(), is("CN=cluster-ca,O=Default Company Ltd,L=Default City,C=XX"));
         assertThat(nextX509.getSignature(), is(x509.getSignature()));
+    }
+
+    @Test
+    @DisplayName("When certIsTrusted is called it correctly identifies whether the end entity certificate is issued by the CA cert")
+    public void testCertIsTrust() throws IOException, CertificateException {
+        OpenSslCertManager ssl = new OpenSslCertManager();
+        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+
+        File rootKey = Files.createTempFile("key-", ".key").toFile();
+        File rootCert = Files.createTempFile("crt-", ".crt").toFile();
+        File alternateRootKey = Files.createTempFile("key-", ".key").toFile();
+        File alternateRootCert = Files.createTempFile("crt-", ".crt").toFile();
+        File key = Files.createTempFile("key-", ".key").toFile();
+        File csr = Files.createTempFile("csr-", ".csr").toFile();
+        File cert = Files.createTempFile("crt-", ".crt").toFile();
+
+        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+
+        try {
+
+            // Generate a root cert
+            Instant now = Instant.now();
+            ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+
+            // Generate alternate root cert
+            ssl.generateRootCaCert(rootSubject, alternateRootKey, alternateRootCert, notBefore, notAfter, 1);
+
+            Subject subject = new Subject.Builder()
+                    .withCommonName("MyCommonName")
+                    .withOrganizationName("MyOrganization")
+                    .addDnsName("example1.com")
+                    .addDnsName("example2.com").build();
+
+            // Generate cert
+            ssl.generateCsr(key, csr, subject);
+            ssl.generateCert(csr, rootKey, rootCert, cert, subject, 1);
+
+            X509Certificate x509RootCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(rootCert));
+            X509Certificate x509AlternateRootCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(alternateRootCert));
+            X509Certificate x509Cert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(cert));
+
+            assertTrue(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509Cert), x509RootCert));
+            assertFalse(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509Cert), x509AlternateRootCert));
+
+        } finally {
+            rootKey.delete();
+            rootCert.delete();
+            alternateRootKey.delete();
+            alternateRootCert.delete();
+            key.delete();
+            csr.delete();
+            cert.delete();
+        }
+    }
+
+    @Test
+    @DisplayName("When certIsTrusted is called it correctly identifies whether the end entity certificate is valid against a chain with intermediate certificates")
+    public void testCertChainWithIntermediateIsTrusted() throws IOException, CertificateException {
+        OpenSslCertManager ssl = new OpenSslCertManager();
+        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+
+        File rootKey = Files.createTempFile("key-", ".key").toFile();
+        File rootCert = Files.createTempFile("crt-", ".crt").toFile();
+        File intermediateKey1 = Files.createTempFile("key-", ".key").toFile();
+        File intermediateCert1 = Files.createTempFile("crt-", ".crt").toFile();
+        File intermediateKey2 = Files.createTempFile("key-", ".key").toFile();
+        File intermediateCert2 = Files.createTempFile("crt-", ".crt").toFile();
+        File leafKey = Files.createTempFile("key-", ".key").toFile();
+        File csr = Files.createTempFile("csr-", ".csr").toFile();
+        File leafCert = Files.createTempFile("crt-", ".crt").toFile();
+
+        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+
+        try {
+
+            // Generate a root cert
+            Instant now = Instant.now();
+            ZonedDateTime notBefore = now.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+
+            // Generate an intermediate cert
+            Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
+            ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+
+            // Generate an additional intermediate cert
+            Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
+            ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+
+
+            Subject subject = new Subject.Builder()
+                    .withCommonName("MyCommonName")
+                    .withOrganizationName("MyOrganization")
+                    .addDnsName("example1.com")
+                    .addDnsName("example2.com").build();
+
+            // Generate leaf cert
+            ssl.generateCsr(leafKey, csr, subject);
+            ssl.generateCert(csr, intermediateKey2, intermediateCert2, leafCert, subject, 1);
+
+            X509Certificate x509RootCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(rootCert));
+            X509Certificate x509IntermediateCert1 = (X509Certificate) certFactory.generateCertificate(new FileInputStream(intermediateCert1));
+            X509Certificate x509IntermediateCert2 = (X509Certificate) certFactory.generateCertificate(new FileInputStream(intermediateCert2));
+            X509Certificate x509LeafCert = (X509Certificate) certFactory.generateCertificate(new FileInputStream(leafCert));
+
+            assertFalse(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509LeafCert), x509RootCert));
+            assertFalse(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509LeafCert), x509IntermediateCert1));
+            assertTrue(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509LeafCert), x509IntermediateCert2));
+
+            assertTrue(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509LeafCert, x509IntermediateCert2), x509IntermediateCert1));
+            assertTrue(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509LeafCert, x509IntermediateCert2, x509IntermediateCert1), x509RootCert));
+
+            assertFalse(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509LeafCert, x509IntermediateCert1, x509IntermediateCert2), x509RootCert));
+            assertFalse(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509LeafCert, x509IntermediateCert2), x509RootCert));
+            assertFalse(Ca.certIsTrusted(Reconciliation.DUMMY_RECONCILIATION, List.of(x509IntermediateCert2, x509IntermediateCert1, x509LeafCert), x509RootCert));
+
+        } finally {
+            rootKey.delete();
+            rootCert.delete();
+            intermediateKey1.delete();
+            intermediateCert1.delete();
+            intermediateKey2.delete();
+            intermediateCert2.delete();
+            leafKey.delete();
+            csr.delete();
+            leafCert.delete();
+        }
+    }
+
+    @Test
+    @DisplayName("When the CA data is empty then validateUserCaCertChain throws an exception")
+    public void testValidateUserCaCertChainWhenEmpty() {
+        Secret certSecret = new SecretBuilder()
+                .withNewMetadata()
+                .endMetadata()
+                .withData(Map.of("ca.crt", ""))
+                .build();
+        Ca mockCa = new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), certSecret, null);
+        Exception exception = assertThrows(RuntimeException.class, mockCa::validateUserCaCertChain);
+        assertEquals("Failed to validate User supplied CA cert chain", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("When the CA data contains a single cert then validateUserCaCertChain does not throw an exception")
+    public void testValidateUserCaCertChainWhenSingleCert() throws IOException {
+        OpenSslCertManager ssl = new OpenSslCertManager();
+
+        File rootKey = Files.createTempFile("key-", ".key").toFile();
+        File rootCert = Files.createTempFile("crt-", ".crt").toFile();
+
+        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+
+        try {
+
+            // Generate a root cert
+            Instant instant = Instant.now();
+            ZonedDateTime notBefore = instant.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ZonedDateTime notAfter = instant.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+
+            Secret certSecret;
+            try (FileInputStream fis = new FileInputStream(rootCert)) {
+                certSecret = new SecretBuilder()
+                        .withNewMetadata()
+                        .endMetadata()
+                        .withData(Map.of("ca.crt", Base64.getEncoder().encodeToString(fis.readAllBytes())))
+                        .build();
+            }
+
+            Ca mockCa = new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), certSecret, null);
+            assertDoesNotThrow(mockCa::validateUserCaCertChain);
+        } finally {
+            rootKey.delete();
+            rootCert.delete();
+        }
+    }
+
+    @Test
+    @DisplayName("When the CA data contains a chain then validateUserCaCertChain throws an exception when it is invalid")
+    public void testValidateUserCaCertChain() throws IOException, CertificateException {
+        OpenSslCertManager ssl = new OpenSslCertManager();
+
+        File rootKey = Files.createTempFile("key-", ".key").toFile();
+        File rootCert = Files.createTempFile("crt-", ".crt").toFile();
+        File intermediateKey1 = Files.createTempFile("key-", ".key").toFile();
+        File intermediateCert1 = Files.createTempFile("crt-", ".crt").toFile();
+        File intermediateKey2 = Files.createTempFile("key-", ".key").toFile();
+        File intermediateCert2 = Files.createTempFile("crt-", ".crt").toFile();
+
+        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+
+        try {
+
+            // Generate a root cert
+            Instant instant = Instant.now();
+            ZonedDateTime notBefore = instant.truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ZonedDateTime notAfter = instant.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+            ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, 1);
+
+            // Generate an intermediate cert
+            Subject intermediateSubject1 = new Subject.Builder().withCommonName("IntermediateCn1").withOrganizationName("MyOrganization").build();
+            ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject1, intermediateKey1, intermediateCert1, notBefore, notAfter, 1);
+
+            // Generate an additional intermediate cert
+            Subject intermediateSubject2 = new Subject.Builder().withCommonName("IntermediateCn2").withOrganizationName("MyOrganization").build();
+            ssl.generateIntermediateCaCert(intermediateKey1, intermediateCert1, intermediateSubject2, intermediateKey2, intermediateCert2, notBefore, notAfter, 1);
+
+            // Generate Cert Secret with CA chain in correct order
+            Secret validCertSecret;
+            try (FileInputStream int2CertFis = new FileInputStream(intermediateCert2);
+                 FileInputStream int1CertFis = new FileInputStream(intermediateCert1);
+                 FileInputStream rootCertFis = new FileInputStream(rootCert)) {
+                String combined = String.join("\n",
+                        new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                        new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                        new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII));
+                validCertSecret = new SecretBuilder()
+                        .withNewMetadata()
+                        .endMetadata()
+                        .withData(Map.of("ca.crt", Base64.getEncoder().encodeToString(combined.getBytes(StandardCharsets.US_ASCII))))
+                        .build();
+            }
+
+            Ca mockCa = new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), validCertSecret, null);
+            assertDoesNotThrow(mockCa::validateUserCaCertChain);
+
+            // Generate Cert Secret with CA chain in wrong order
+            Secret invalidCertSecret;
+            try (FileInputStream rootCertFis = new FileInputStream(rootCert);
+                 FileInputStream int1CertFis = new FileInputStream(intermediateCert1);
+                 FileInputStream int2CertFis = new FileInputStream(intermediateCert2)) {
+                String combined = String.join("\n",
+                        new String(rootCertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                        new String(int1CertFis.readAllBytes(), StandardCharsets.US_ASCII),
+                        new String(int2CertFis.readAllBytes(), StandardCharsets.US_ASCII));
+                invalidCertSecret = new SecretBuilder()
+                        .withNewMetadata()
+                        .endMetadata()
+                        .withData(Map.of("ca.crt", Base64.getEncoder().encodeToString(combined.getBytes(StandardCharsets.US_ASCII))))
+                        .build();
+            }
+
+            Ca mockCawithInvalidCa = new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), invalidCertSecret, null);
+            Exception exception = assertThrows(RuntimeException.class, mockCawithInvalidCa::validateUserCaCertChain);
+            assertEquals("User supplied CA cert chain is not valid. Certificates must be provided in the correct order.", exception.getMessage());
+        } finally {
+            rootKey.delete();
+            rootCert.delete();
+            intermediateKey1.delete();
+            intermediateCert1.delete();
+            intermediateKey2.delete();
+            intermediateCert2.delete();
+        }
     }
 }
