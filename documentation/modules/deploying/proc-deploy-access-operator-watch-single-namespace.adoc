@@ -1,0 +1,45 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-access-operator.adoc
+
+[id='deploying-access-operator-{context}']
+= Deploying the Access Operator to watch a single namespace
+
+[role="_abstract"]
+This procedure shows how to deploy the Access Operator to watch Strimzi resources in a single namespace in your Kubernetes cluster.
+
+.Prerequisites
+
+* You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
+
+.Procedure
+
+. Edit the installation files to use the namespace the Access Operator is going to be installed into.
++
+For example, in this procedure the Access Operator is installed into the namespace `my-access-operator-namespace`.
++
+include::../../shared/snip-access-operator-namespace-sed.adoc[]
+
+. Deploy the Access Operator:
++
+[source,shell,subs="+quotes,attributes+"]
+kubectl create -f install -n my-access-operator-namespace
+
+. Check the status of the deployment:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get deployments -n my-access-operator-namespace
+----
++
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                      READY  UP-TO-DATE  AVAILABLE
+strimzi-access-operator  1/1    1           1
+----
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows `1`.

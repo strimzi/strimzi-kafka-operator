@@ -1,0 +1,15 @@
+:_mod-docs-content-type: SNIPPET
+
+On Linux, use:
++
+[source, subs="+quotes"]
+----
+sed -i 's/namespace: .\*/namespace: my-access-operator-namespace/' install/*RoleBinding*.yaml
+----
++
+On MacOS, use:
++
+[source, subs="+quotes"]
+----
+sed -i '' 's/namespace: .\*/namespace: my-access-operator-namespace/' install/*RoleBinding*.yaml
+----

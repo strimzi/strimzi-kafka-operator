@@ -1,0 +1,74 @@
+:_mod-docs-content-type: PROCEDURE
+
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-access-operator.adoc
+
+[id='deploying-access-operator-to-watch-whole-cluster-{context}']
+= Deploying the Access Operator to watch all namespaces
+
+[role="_abstract"]
+This procedure shows how to deploy the Access Operator to watch Strimzi resources across all namespaces in your Kubernetes cluster.
+
+When running in this mode, the Access Operator automatically manages clusters in any new namespaces that are created.
+
+.Prerequisites
+
+* You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
+
+.Procedure
+
+. Edit the installation files to use the namespace the Access Operator is going to be installed into.
++
+For example, in this procedure the Access Operator is installed into the namespace `my-access-operator-namespace`.
++
+include::../../shared/snip-access-operator-namespace-sed.adoc[]
+
+. Edit the `install/050-Deployment.yaml` file to set the value of the `STRIMZI_NAMESPACE` environment variable to `*`.
++
+[source,yaml,subs="attributes"]
+----
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  # ...
+  template:
+    spec:
+      # ...
+      serviceAccountName: strimzi-access-operator
+      containers:
+      - name: strimzi-access-operator
+        image: {DockerAccessOperator}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: STRIMZI_NAMESPACE
+          value: "*"
+        # ...
+----
+
+. Create `ClusterRoleBindings` that grant cluster-wide access for all namespaces to the Access Operator.
++
+[source,shell,subs="+quotes,attributes+"]
+kubectl create clusterrolebinding strimzi-access-operator --clusterrole=strimzi-access-operator --serviceaccount my-access-operator-namespace:strimzi-access-operator
+
+. Deploy the Access Operator to your Kubernetes cluster.
++
+[source,shell,subs="+quotes,attributes+"]
+kubectl create -f install -n my-access-operator-namespace
+
+. Check the status of the deployment:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get deployments -n my-access-operator-namespace
+----
++
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                      READY  UP-TO-DATE  AVAILABLE
+strimzi-access-operator  1/1    1           1
+----
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows `1`.
