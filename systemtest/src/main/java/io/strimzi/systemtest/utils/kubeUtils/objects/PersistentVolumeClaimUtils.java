@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.systemtest.TestConstants;

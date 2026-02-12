@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.specific;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;

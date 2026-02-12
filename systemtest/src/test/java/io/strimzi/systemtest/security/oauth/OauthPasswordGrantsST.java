@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;

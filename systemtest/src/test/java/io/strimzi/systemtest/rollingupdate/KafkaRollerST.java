@@ -17,7 +17,7 @@ import io.fabric8.kubernetes.api.model.PodAffinity;
 import io.fabric8.kubernetes.api.model.PodAffinityBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterTemplate;

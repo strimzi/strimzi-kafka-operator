@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.coordination.v1.LeaseBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;

@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.NodeAffinity;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;

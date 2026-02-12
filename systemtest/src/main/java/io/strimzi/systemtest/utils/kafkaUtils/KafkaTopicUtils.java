@@ -5,9 +5,9 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
-import io.skodjob.testframe.executor.ExecResult;
-import io.skodjob.testframe.resources.KubeResourceManager;
-import io.skodjob.testframe.utils.ResourceUtils;
+import io.skodjob.kubetest4j.executor.ExecResult;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.utils.ResourceUtils;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;

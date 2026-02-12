@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.systemtest.TestConstants;

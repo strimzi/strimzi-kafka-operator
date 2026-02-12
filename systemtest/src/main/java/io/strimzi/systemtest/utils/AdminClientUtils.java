@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;

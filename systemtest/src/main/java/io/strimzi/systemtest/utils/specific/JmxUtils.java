@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;

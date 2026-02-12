@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeList;

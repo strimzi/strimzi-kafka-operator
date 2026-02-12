@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.test.ReadWriteUtils;

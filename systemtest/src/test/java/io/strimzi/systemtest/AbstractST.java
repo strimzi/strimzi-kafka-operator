@@ -5,27 +5,27 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Namespace;
-import io.skodjob.testframe.annotations.ResourceManager;
-import io.skodjob.testframe.resources.BuildConfigType;
-import io.skodjob.testframe.resources.ClusterRoleBindingType;
-import io.skodjob.testframe.resources.ClusterRoleType;
-import io.skodjob.testframe.resources.ConfigMapType;
-import io.skodjob.testframe.resources.CustomResourceDefinitionType;
-import io.skodjob.testframe.resources.DeploymentType;
-import io.skodjob.testframe.resources.ImageStreamType;
-import io.skodjob.testframe.resources.JobType;
-import io.skodjob.testframe.resources.KubeResourceManager;
-import io.skodjob.testframe.resources.LeaseType;
-import io.skodjob.testframe.resources.NetworkPolicyType;
-import io.skodjob.testframe.resources.OperatorGroupType;
-import io.skodjob.testframe.resources.RoleBindingType;
-import io.skodjob.testframe.resources.RoleType;
-import io.skodjob.testframe.resources.SecretType;
-import io.skodjob.testframe.resources.ServiceAccountType;
-import io.skodjob.testframe.resources.ServiceType;
-import io.skodjob.testframe.resources.SubscriptionType;
-import io.skodjob.testframe.resources.ValidatingWebhookConfigurationType;
-import io.skodjob.testframe.utils.KubeUtils;
+import io.skodjob.kubetest4j.annotations.ResourceManager;
+import io.skodjob.kubetest4j.resources.BuildConfigType;
+import io.skodjob.kubetest4j.resources.ClusterRoleBindingType;
+import io.skodjob.kubetest4j.resources.ClusterRoleType;
+import io.skodjob.kubetest4j.resources.ConfigMapType;
+import io.skodjob.kubetest4j.resources.CustomResourceDefinitionType;
+import io.skodjob.kubetest4j.resources.DeploymentType;
+import io.skodjob.kubetest4j.resources.ImageStreamType;
+import io.skodjob.kubetest4j.resources.JobType;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.LeaseType;
+import io.skodjob.kubetest4j.resources.NetworkPolicyType;
+import io.skodjob.kubetest4j.resources.OperatorGroupType;
+import io.skodjob.kubetest4j.resources.RoleBindingType;
+import io.skodjob.kubetest4j.resources.RoleType;
+import io.skodjob.kubetest4j.resources.SecretType;
+import io.skodjob.kubetest4j.resources.ServiceAccountType;
+import io.skodjob.kubetest4j.resources.ServiceType;
+import io.skodjob.kubetest4j.resources.SubscriptionType;
+import io.skodjob.kubetest4j.resources.ValidatingWebhookConfigurationType;
+import io.skodjob.kubetest4j.utils.KubeUtils;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
@@ -130,7 +130,7 @@ public abstract class AbstractST implements TestSeparator {
         KubeResourceManager.get().setStoreYamlPath(Environment.TEST_LOG_DIR);
     }
 
-    // Test-Frame integration stuff, remove everything else when not needed
+    // kubetest4j integration stuff, remove everything else when not needed
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
     private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
     protected KubeClusterResource cluster;
