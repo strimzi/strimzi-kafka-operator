@@ -87,7 +87,6 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusUtils;
@@ -1226,7 +1225,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * public and private keys.
      *
      * @param clusterCa                             The CA for cluster certificates
-     * @param clientsCa                             The CA for clients certificates
      * @param existingSecrets                       The existing secrets containing Kafka certificates
      * @param externalBootstrapDnsName              Map with bootstrap DNS names which should be added to the certificate
      * @param externalDnsNames                      Map with broker DNS names  which should be added to the certificate
@@ -1234,7 +1232,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  The generated Secrets containing Kafka node certificates
      */
-    public List<Secret> generateCertificatesSecrets(ClusterCa clusterCa, ClientsCa clientsCa, List<Secret> existingSecrets, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
+    public List<Secret> generateCertificatesSecrets(ClusterCa clusterCa, List<Secret> existingSecrets, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, Secret> existingSecretWithName = existingSecrets.stream().collect(Collectors.toMap(secret -> secret.getMetadata().getName(), secret -> secret));
         Set<NodeRef> nodes = nodes();
         Map<String, CertAndKey> existingCerts = new HashMap<>();
@@ -1265,10 +1263,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 .stream()
                 .map(entry -> ModelUtils.createSecret(entry.getKey(), namespace, labels, ownerReference,
                         CertUtils.buildSecretData(entry.getKey(), entry.getValue()),
-                        Map.ofEntries(
-                                clusterCa.caCertGenerationFullAnnotation(),
-                                clientsCa.caCertGenerationFullAnnotation()
-                        ),
+                        Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()),
                         emptyMap()))
                 .toList();
     }
