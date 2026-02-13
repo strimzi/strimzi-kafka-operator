@@ -39,20 +39,6 @@
         </developer>
     </developers>
 
-    <repositories>
-        <repository>
-            <name>Central Portal Snapshots</name>
-            <id>central-portal-snapshots</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
@@ -131,7 +117,7 @@
         <testcontainer.version>2.0.2</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.kubetest4j.version>1.0.0-SNAPSHOT</skodjob.kubetest4j.version>
+        <skodjob.kubetest4j.version>1.0.0</skodjob.kubetest4j.version>
         <skodjob-doc.version>0.6.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
         <access-operator.version>0.2.0</access-operator.version>
