@@ -63,18 +63,13 @@ docker_delete_archive_default:
 .PHONY: docker_amend_manifest_default
 docker_amend_manifest_default:
 	# Create / Amend the manifest
-	$(DOCKER_CMD) manifest create $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) --amend $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX)
+	$(DOCKER_CMD) buildx imagetools create --append -t $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX)
 
 .PHONY: docker_e2e_default
 docker_e2e_default:
 	# Re-tag and push arch-specific images to latest to use it within CI only
 	$(DOCKER_CMD) tag strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
 	$(DOCKER_CMD) push $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
-
-.PHONY: docker_push_manifest_default
-docker_push_manifest_default:
-	# Push the manifest to the registry
-	$(DOCKER_CMD) manifest push $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
 
 .PHONY: docker_sign_manifest_default
 docker_sign_manifest_default:

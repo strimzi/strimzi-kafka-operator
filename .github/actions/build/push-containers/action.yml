@@ -91,13 +91,6 @@ runs:
         BUILD_REASON: "IndividualCI"
         BRANCH: ${{ github.ref }}
 
-    - name: Push container manifests
-      shell: bash
-      run: make docker_push_manifest
-      env:
-        BUILD_REASON: "IndividualCI"
-        BRANCH: ${{ github.ref }}
-
     - name: Sign container manifests
       shell: bash
       run: make docker_gha_sign_manifest
