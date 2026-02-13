@@ -1,0 +1,70 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-http-bridge-client-settings-{context}']
+= Tuning HTTP Bridge consumer and producer settings
+
+[role="_abstract"]
+Tune how the HTTP Bridge produces and consumes messages by configuring Kafka client properties.
+
+The HTTP Bridge uses Kafka producer and consumer clients internally to interact with Kafka brokers.
+
+You can adjust their behavior by setting properties in the `spec.producer.config` and `spec.consumer.config` sections of the `KafkaBridge` resource.
+
+Certain client properties are managed directly by Strimzi and cannot be set in `spec.consumer.config` or `spec.producer.config`.
+For example, connection and security-related properties with the `bootstrap.servers`, `sasl.`, `security.`, and `ssl.` prefixes are configured using other properties in the `KafkaBridge` resource.
+For more information, see the link:{BookURLConfiguring}#type-KafkaBridgeProducerSpec-reference[`KafkaBridgeProducerSpec` schema reference^] and the link:{BookURLConfiguring}#type-KafkaBridgeConsumerSpec-reference[`KafkaBridgeConsumerSpec` schema reference^].
+
+== Configuring consumer settings
+
+Configure consumer behavior using `spec.consumer.config`.
+
+Consumer configuration is defined as key-value pairs under `spec.consumer.config`.
+
+.Example consumer configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  consumer:
+    config:
+      auto.offset.reset: earliest
+      max.poll.records: 500
+      fetch.min.bytes: 1
+----
+
+* `spec.consumer.config` defines Kafka consumer properties used by the HTTP Bridge when consuming messages on behalf of HTTP clients.
+* `auto.offset.reset` defines how the consumer behaves when no committed offset is found.
+* `max.poll.records` controls the maximum number of records returned in a single poll.
+* `fetch.min.bytes` controls the minimum amount of data the broker returns for a fetch request.
+
+Choose values that match your application’s performance and reliability requirements.
+
+== Configuring producer settings
+
+Configure producer behavior using `spec.producer.config`.
+
+Producer configuration is defined as key-value pairs under `spec.producer.config`.
+
+.Example producer configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  producer:
+    config:
+      acks: all
+      delivery.timeout.ms: 300000
+      retries: 10
+----
+
+* `spec.producer.config` defines Kafka producer properties used by the HTTP Bridge when producing messages on behalf of HTTP clients.
+* `acks` controls the acknowledgment level required from Kafka brokers.
+* `delivery.timeout.ms` defines the maximum time to wait for a message to be delivered.
+* `retries` specifies the number of retry attempts for failed send requests.
+
+Adjust these settings to balance latency, throughput, and durability.
+
+Producer and consumer tuning is workload-dependent.
+Test changes in a non-production environment before applying them to production and monitor the impact.

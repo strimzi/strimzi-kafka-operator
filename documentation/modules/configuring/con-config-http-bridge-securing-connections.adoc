@@ -1,0 +1,93 @@
+:_mod-docs-content-type: CONCEPT
+
+[id='con-config-http-bridge-securing-connections-{context}']
+= Securing HTTP Bridge connections
+
+[role="_abstract"]
+Secure HTTP Bridge connections to Kafka by enabling TLS encryption and configuring authentication.
+
+The HTTP Bridge connects to Kafka brokers to produce and consume messages on behalf of HTTP clients.
+For production deployments, secure these connections to protect data in transit and restrict access to Kafka resources.
+
+You configure security settings in the `KafkaBridge` resource.
+The security options must be compatible with the listeners and authentication mechanisms configured on the Kafka cluster.
+
+This section secures connections between the HTTP Bridge and Kafka brokers.
+It does not configure TLS or authentication for HTTP clients connecting to the HTTP Bridge.
+
+== What you need to secure HTTP Bridge connections
+
+Ensure that the required Kafka configuration and credentials are in place.
+
+Review the example HTTP Bridge configuration files provided by Strimzi.
+They include examples for securing deployments using TLS or SASL-based authentication.
+
+Ensure that the Kafka cluster is configured with compatible listeners and authentication mechanisms.
+The HTTP Bridge uses the same security protocols as Kafka clients.
+
+If Kafka authorization is enabled, the HTTP Bridge requires access to the topics it produces to and consumes from.
+You must configure appropriate ACLs for the HTTP Bridge user.
+For more information, see xref:proc-config-http-bridge-user-authorization-{context}[Granting the HTTP Bridge access to Kafka resources].
+
+NOTE: By default, Strimzi generates certificates for securing connections.
+You can replace these certificates by xref:installing-your-own-ca-certificates-str[installing your own certificates].
+You can also configure a Kafka listener to xref:proc-installing-certs-per-listener-str[use a certificate managed by an external certificate authority].
+
+== Configuring TLS encryption
+
+To encrypt connections between the HTTP Bridge and Kafka brokers, configure `spec.tls` and specify one or more trusted certificates.
+
+.Example TLS configuration for HTTP Bridge
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  tls:
+    trustedCertificates:
+      - secretName: my-cluster-cluster-cert
+        pattern: "*.crt"
+----
+
+* `spec.tls.trustedCertificates` specifies one or more Kubernetes `Secret` resources containing trusted certificates in X.509 format.
+* `secretName` specifies the name of the `Secret` containing the trusted certificates.
+* `pattern` specifies which certificate files in the `Secret` are used.
+
+== Configuring authentication
+
+The HTTP Bridge supports the following authentication mechanisms:
+
+* TLS client authentication
+* SCRAM-SHA-256 and SCRAM-SHA-512
+* SASL PLAIN
+* Custom authentication
+
+To enable authentication, configure `spec.authentication` for the required mechanism.
+
+.Example TLS client authentication
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-user
+      certificate: user.crt
+      key: user.key
+----
+
+* `spec.authentication.type` specifies the authentication mechanism.
+* `spec.authentication.certificateAndKey` specifies a `Secret` containing the client certificate and private key.
+
+.Example SCRAM authentication
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  authentication:
+    type: scram-sha-512
+    username: my-user
+    passwordSecret:
+      secretName: my-user
+      password: password
+----
+
+* `spec.authentication.username` specifies the Kafka user name.
+* `spec.authentication.passwordSecret` specifies a `Secret` containing the user password.

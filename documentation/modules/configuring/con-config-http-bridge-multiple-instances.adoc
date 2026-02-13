@@ -1,0 +1,48 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-http-bridge-multiple-instances-{context}']
+= Running multiple HTTP Bridge instances
+
+[role="_abstract"]
+Run multiple HTTP Bridge instances to increase throughput and availability.
+
+Increase `spec.replicas` to scale the deployment.
+
+.Example configuration with multiple replicas
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  replicas: 3
+----
+
+Each HTTP Bridge instance runs independently.
+
+Consumer instances created through the HTTP Bridge API are stored in memory on the instance that handled the request.
+This state is not shared between instances.
+
+== Scaling producer traffic
+
+Producer requests are stateless.
+Any instance can handle a produce request.
+
+When running multiple HTTP Bridge instances, use a Kubernetes `Service` or an external load balancer to distribute producer traffic.
+This improves throughput and availability for producing records.
+
+== Scaling consumer traffic
+
+When an HTTP client creates a consumer, the corresponding Kafka consumer is created on a specific HTTP Bridge instance.
+All subsequent requests for that consumer must be routed to the same instance.
+
+If a request is routed to a different instance, the consumer state is not available and the request fails.
+
+To scale consumer workloads, your networking layer must support session affinity or another routing strategy that ensures requests for the same consumer are consistently routed to the correct instance.
+
+If an HTTP Bridge instance restarts, the consumers created on that instance are lost.
+This behavior is equivalent to a Kafka client process stopping.
+Client applications must recreate the consumers and resume processing.
+
+For more information about high-availability considerations, see {BookURLBridge}[Using the HTTP Bridge^].
