@@ -14,14 +14,14 @@ Kafka Connect connects to Kafka brokers to read and write data and to store inte
 For production deployments, secure these connections to protect data in transit and restrict access to Kafka resources.
 
 You configure security settings in the `KafkaConnect` resource.
-The security options configured for Kafka Connect must be compatible with the security options configured for the Kafka cluster it connects to.
+The security options must be compatible with the listeners and authentication mechanisms configured on the Kafka cluster.
 
 == What you need to secure Kafka Connect connections
 
 Ensure that the required Kafka configuration and credentials are in place.
 
 Review the example Kafka Connect configuration files provided by Strimzi.
-They include examples for securing Kafka Connect deployments using TLS or SCRAM-based authentication.
+They include examples for securing deployments using TLS or SASL-based authentication.
 
 Ensure that the Kafka cluster is configured with compatible listeners and authentication mechanisms.
 Kafka Connect uses the same security protocols as Kafka clients.
@@ -48,8 +48,8 @@ spec:
         pattern: "*.crt"
 ----
 
-* `spec.tls.trustedCertificates` specifies one or more Kubernetes secrets containing trusted certificates in X.509 format.
-* `secretName` specifies the name of the `Secret` that contains the trusted certificates.
+* `spec.tls.trustedCertificates` specifies one or more Kubernetes `Secret` resources containing trusted certificates in X.509 format.
+* `secretName` specifies the name of the `Secret` containing the trusted certificates.
 * `pattern` specifies which certificate files in the `Secret` are used.
 
 == Configuring authentication
