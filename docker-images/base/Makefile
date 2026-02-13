@@ -12,9 +12,6 @@ docker_amend_manifest:
 docker_e2e:
 	# Do nothing
 
-docker_push_manifest:
-	# Do nothing
-
 docker_sign_manifest:
 	# Do nothing
 
