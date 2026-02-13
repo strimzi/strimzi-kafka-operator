@@ -5,6 +5,7 @@ on:
     branches:
       - "main"
       - "release-*"
+      - "fix-docker-manifests-push"
   pull_request:
     branches:
       - "*"
@@ -99,7 +100,7 @@ jobs:
       - test-strimzi
       - build-containers
       - build-docs
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/fix-docker-manifests-push' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
