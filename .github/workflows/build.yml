@@ -97,7 +97,7 @@ jobs:
     name: Push Containers
     needs:
       - build-strimzi
-      - test-strimzi
+#      - test-strimzi
       - build-containers
       - build-docs
     if: ${{ github.ref == 'refs/heads/fix-docker-manifests-push' }}
@@ -108,7 +108,7 @@ jobs:
       id-token: write
     env:
       DOCKER_REGISTRY: "quay.io"
-      DOCKER_ORG: "strimzi"
+      DOCKER_ORG: "jstejska"
       DOCKER_TAG: "latest"
     steps:
       - uses: actions/checkout@v6
