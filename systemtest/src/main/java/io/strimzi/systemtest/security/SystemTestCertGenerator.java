@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.security;
 
-import io.skodjob.testframe.security.CertAndKey;
-import io.skodjob.testframe.security.CertAndKeyFiles;
+import io.skodjob.kubetest4j.security.CertAndKey;
+import io.skodjob.kubetest4j.security.CertAndKeyFiles;
 import io.strimzi.systemtest.storage.TestStorage;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -24,10 +24,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 
-import static io.skodjob.testframe.security.CertAndKeyBuilder.appCaCertBuilder;
-import static io.skodjob.testframe.security.CertAndKeyBuilder.endEntityCertBuilder;
-import static io.skodjob.testframe.security.CertAndKeyBuilder.intermediateCaCertBuilder;
-import static io.skodjob.testframe.security.CertAndKeyBuilder.rootCaCertBuilder;
+import static io.skodjob.kubetest4j.security.CertAndKeyBuilder.appCaCertBuilder;
+import static io.skodjob.kubetest4j.security.CertAndKeyBuilder.endEntityCertBuilder;
+import static io.skodjob.kubetest4j.security.CertAndKeyBuilder.intermediateCaCertBuilder;
+import static io.skodjob.kubetest4j.security.CertAndKeyBuilder.rootCaCertBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class SystemTestCertGenerator {

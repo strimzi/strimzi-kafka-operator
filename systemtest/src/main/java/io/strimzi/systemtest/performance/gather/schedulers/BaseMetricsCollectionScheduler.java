@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.performance.gather.schedulers;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.performance.PerformanceConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

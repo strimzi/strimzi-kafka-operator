@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.skodjob.testframe.enums.LogLevel;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.enums.LogLevel;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;

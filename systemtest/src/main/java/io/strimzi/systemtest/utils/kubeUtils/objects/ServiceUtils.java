@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;

@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;

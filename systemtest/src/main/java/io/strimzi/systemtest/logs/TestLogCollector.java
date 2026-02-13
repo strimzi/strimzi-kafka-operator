@@ -6,11 +6,11 @@ package io.strimzi.systemtest.logs;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
-import io.skodjob.testframe.LogCollector;
-import io.skodjob.testframe.LogCollectorBuilder;
-import io.skodjob.testframe.clients.KubeClient;
-import io.skodjob.testframe.clients.cmdClient.Kubectl;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.LogCollector;
+import io.skodjob.kubetest4j.LogCollectorBuilder;
+import io.skodjob.kubetest4j.clients.KubeClient;
+import io.skodjob.kubetest4j.clients.cmdClient.Kubectl;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -36,7 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Class for encapsulating Test-Frame's {@link LogCollector}.
+ * Class for encapsulating Kubetest4j's {@link LogCollector}.
  * It provides methods for collecting logs for the test-cases -> collects Namespaces that are created for
  * particular test-class and test-case and builds the whole path to the logs.
  * The structure of the logs then looks like this:

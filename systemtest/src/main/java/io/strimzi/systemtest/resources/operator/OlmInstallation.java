@@ -6,8 +6,8 @@ package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
-import io.skodjob.testframe.installation.InstallationMethod;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.installation.InstallationMethod;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.templates.openshift.SubscriptionTemplates;

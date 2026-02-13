@@ -5,13 +5,13 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.skodjob.testframe.executor.Exec;
-import io.skodjob.testframe.metrics.Counter;
-import io.skodjob.testframe.metrics.Gauge;
-import io.skodjob.testframe.metrics.Histogram;
-import io.skodjob.testframe.metrics.Metric;
-import io.skodjob.testframe.metrics.Summary;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.executor.Exec;
+import io.skodjob.kubetest4j.metrics.Counter;
+import io.skodjob.kubetest4j.metrics.Gauge;
+import io.skodjob.kubetest4j.metrics.Histogram;
+import io.skodjob.kubetest4j.metrics.Metric;
+import io.skodjob.kubetest4j.metrics.Summary;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.metrics.ClusterOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;

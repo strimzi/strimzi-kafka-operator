@@ -117,7 +117,7 @@
         <testcontainer.version>2.0.2</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.test-frame.version>1.4.0</skodjob.test-frame.version>
+        <skodjob.kubetest4j.version>1.0.0</skodjob.kubetest4j.version>
         <skodjob-doc.version>0.6.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
         <access-operator.version>0.2.0</access-operator.version>
@@ -632,29 +632,29 @@
             </dependency>
             <!-- The skodjob dependency is required at compile time, not solely in the test scope, due to the creation of custom metrics components. -->
             <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-metrics-collector</artifactId>
-                <version>${skodjob.test-frame.version}</version>
+                <groupId>io.skodjob.kubetest4j</groupId>
+                <artifactId>metrics-collector</artifactId>
+                <version>${skodjob.kubetest4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-log-collector</artifactId>
-                <version>${skodjob.test-frame.version}</version>
+                <groupId>io.skodjob.kubetest4j</groupId>
+                <artifactId>log-collector</artifactId>
+                <version>${skodjob.kubetest4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-common</artifactId>
-                <version>${skodjob.test-frame.version}</version>
+                <groupId>io.skodjob.kubetest4j</groupId>
+                <artifactId>kubetest4j</artifactId>
+                <version>${skodjob.kubetest4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-kubernetes</artifactId>
-                <version>${skodjob.test-frame.version}</version>
+                <groupId>io.skodjob.kubetest4j</groupId>
+                <artifactId>kubernetes-resources</artifactId>
+                <version>${skodjob.kubetest4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.skodjob</groupId>
-                <artifactId>test-frame-openshift</artifactId>
-                <version>${skodjob.test-frame.version}</version>
+                <groupId>io.skodjob.kubetest4j</groupId>
+                <artifactId>openshift-resources</artifactId>
+                <version>${skodjob.kubetest4j.version}</version>
                 <scope>test</scope>
             </dependency>
             <!-- Test dependencies -->

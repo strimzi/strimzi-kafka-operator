@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.performance.gather.collectors;
 
-import io.skodjob.testframe.MetricsComponent;
+import io.skodjob.kubetest4j.MetricsComponent;
 import io.strimzi.systemtest.performance.PerformanceConstants;
 
 import java.util.List;

@@ -6,7 +6,7 @@ package io.strimzi.systemtest.upgrade;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;

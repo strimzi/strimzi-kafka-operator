@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.topic.KafkaTopicSpec;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;

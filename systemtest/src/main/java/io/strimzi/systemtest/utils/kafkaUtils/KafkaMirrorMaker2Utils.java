@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
 import io.strimzi.systemtest.TestConstants;

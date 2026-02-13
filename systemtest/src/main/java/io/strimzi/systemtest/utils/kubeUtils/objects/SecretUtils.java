@@ -6,10 +6,10 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.skodjob.testframe.enums.LogLevel;
-import io.skodjob.testframe.resources.KubeResourceManager;
-import io.skodjob.testframe.security.CertAndKeyFiles;
-import io.skodjob.testframe.security.OpenSsl;
+import io.skodjob.kubetest4j.enums.LogLevel;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.security.CertAndKeyFiles;
+import io.skodjob.kubetest4j.security.OpenSsl;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;

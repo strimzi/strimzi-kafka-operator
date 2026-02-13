@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;

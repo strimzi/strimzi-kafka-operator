@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.cli;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 
 import java.util.Arrays;
 import java.util.List;

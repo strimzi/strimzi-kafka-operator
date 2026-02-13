@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.annotations;
 
 import io.fabric8.kubernetes.api.model.Node;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

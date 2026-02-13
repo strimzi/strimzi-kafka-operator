@@ -5,9 +5,9 @@
 package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.kubernetes.api.model.Namespace;
-import io.skodjob.testframe.enums.InstallType;
-import io.skodjob.testframe.installation.InstallationMethod;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.enums.InstallType;
+import io.skodjob.kubetest4j.installation.InstallationMethod;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 
