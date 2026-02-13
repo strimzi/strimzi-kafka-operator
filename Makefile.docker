@@ -50,7 +50,7 @@ docker_push_default: docker_tag
 docker_save_default:
 	# Saves the container as TGZ file
 	test -d $(ARCHIVE_DIR) || mkdir -p  $(ARCHIVE_DIR)
-	$(DOCKER_CMD) save strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) | gzip > $(ARCHIVE_DIR)/$(PROJECT_NAME)-$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX).tar.gz
+	$(DOCKER_CMD) save $(DOCKER_PLATFORM) strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) | gzip > $(ARCHIVE_DIR)/$(PROJECT_NAME)-$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX).tar.gz
 
 .PHONY: docker_load_default
 docker_load_default:
