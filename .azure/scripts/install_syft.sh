@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-readonly VERSION="0.90.0"
+readonly VERSION="1.20.0"
 
 ARCH=$1
 if [ -z "$ARCH" ]; then
