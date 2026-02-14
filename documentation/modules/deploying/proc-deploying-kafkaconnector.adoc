@@ -20,8 +20,6 @@ You remove a connector by deleting its corresponding `KafkaConnector`.
 In the configuration shown in this procedure, the `autoRestart` feature is enabled (`enabled: true`) for automatic restarts of failed connectors and tasks. 
 You can also annotate the `KafkaConnector` resource to xref:proc-manual-restart-connector-str[restart a connector] or xref:proc-manual-restart-connector-task-str[restart a connector task] manually.
 
-.Example connectors
-
 You can use your own connectors or try the examples provided by Strimzi.
 Up until Apache Kafka 3.1.0, example file connector plugins were included with Apache Kafka. 
 Starting from the 3.1.1 and 3.2.0 releases of Apache Kafka, the examples need to be xref:using-kafka-connect-with-plug-ins-str[added to the plugin path as any other connector]. 
@@ -65,6 +63,8 @@ With the `KafkaConnector` resources enabled, the Cluster Operator watches for th
 
 
 . Edit the `examples/connect/source-connector.yaml` file:
++
+Example source connector configuration:
 +
 --
 include::../../shared/snip-example-source-connector-config.adoc[]

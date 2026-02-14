@@ -5,11 +5,11 @@
 // assembly-config.adoc
 
 [id='con-kafka-connector-config-{context}']
-= Configuring Kafka Connect connectors
+= Managing Kafka Connect connector instances
 
 [role="_abstract"]
-The `KafkaConnector` resource provides a Kubernetes-native approach to management of connectors by the Cluster Operator.
-To create, delete, or reconfigure connectors with `KafkaConnector` resources, you must set the `use-connector-resources` annotation to `true`  in your `KafkaConnect` custom resource.
+The `KafkaConnector` resource provides a Kubernetes-native approach to managing connector instances in a Kafka Connect cluster.
+To create, delete, or reconfigure connectors using `KafkaConnector` resources, you must enable the `use-connector-resources` annotation in the `KafkaConnect` custom resource.
 
 .Annotation to enable KafkaConnectors
 [source,yaml,subs="attributes+"]
@@ -23,24 +23,27 @@ metadata:
   # ...
 ----
 
+Enabling `KafkaConnector` resources switches connector management from the Kafka Connect REST API to custom resources managed by the Cluster Operator.
+
 When the `use-connector-resources` annotation is enabled in your `KafkaConnect` configuration, you must define and manage connectors using `KafkaConnector` resources. 
 
 NOTE: Alternatively, you can manage connectors using the Kafka Connect REST API instead of `KafkaConnector` resources.
-To use the API, you must remove the `strimzi.io/use-connector-resources` annotation to use `KafkaConnector` resources in the `KafkaConnect` the resource.
+To use the API, you must remove the `strimzi.io/use-connector-resources` annotation from the KafkaConnect resource.
 
-`KafkaConnector` resources provide the configuration needed to create connectors within a Kafka Connect cluster, which interacts with a Kafka cluster as specified in the `KafkaConnect` configuration. 
+`KafkaConnector` resources define how connector instances are created and configured within a Kafka Connect cluster.
+The connectors interact with a Kafka cluster according to the KafkaConnect configuration.
 The Kafka cluster does not need to be managed by Strimzi or deployed to a Kubernetes cluster.
 
 .Kafka components contained in the same Kubernetes cluster
 image:overview/kafka-concepts-kafka-connector.png[Kafka and Kafka Connect clusters]
 
-The configuration also specifies how the connector instances interact with external data systems, including any required authentication methods. Additionally, you must define the data to watch. 
-For example, in a source connector that reads data from a database, the configuration might include the database name. 
-You can also define where this data should be placed in Kafka by specifying the target topic name.
+Connector configuration also defines how instances interact with external data systems, including authentication requirements and the data to watch.
+For example, a source connector that reads from a database might specify the database name, along with the Kafka topic where the data is written.
 
 Use the `tasksMax` property to specify the maximum number of tasks.
 For instance, a source connector with `tasksMax: 2` might split the import of source data into two tasks.
 
+.Example source connector configuration
 include::../../shared/snip-example-source-connector-config.adoc[]
 
 To include external connector configurations, such as user access credentials stored in a secret, use the `template` property of the `KafkaConnect` resource.

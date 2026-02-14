@@ -5,14 +5,15 @@
 // assembly-config.adoc
 
 [id='proc-resetting-connector-offsets-{context}']
-= Resetting connector offsets
+= Resetting Kafka Connect connector offsets
 
 [role="_abstract"]
-To reset connector offsets using `KafkaConnector` resources, configure the resource to stop the connector. 
+Resetting connector offsets clears the stored offset state so that Kafka Connect determines offsets again when the connector is restarted.
 
-After the connector is stopped, annotate the `KafkaConnector` resource to clear the offsets, then restart the connector.
+To reset offsets using `KafkaConnector` resources, stop the connector and annotate the resource to clear the offsets.
+After the reset is applied, restart the connector.
 
-In this procedure, we reset the offset position for a source connector named `my-source-connector`.
+In this procedure, offsets are reset for a source connector named `my-source-connector`.
 
 .Prerequisites
 
@@ -22,7 +23,8 @@ In this procedure, we reset the offset position for a source connector named `my
 
 . Edit the `KafkaConnector` resource to stop the connector.
 +
-.Example configuration to stop a connector
+Example configuration to stop a connector:
++
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaConnectorApiVersion}
@@ -32,42 +34,43 @@ metadata:
   labels:
     strimzi.io/cluster: my-connect-cluster
 spec:
+  state: stopped
   # ...
-  state: stopped # <1>
-  # ... 
 ----
-<1> Changes the state of the connector to `stopped`. The default state for the connector when this property is not set is `running`.
+* `spec.state: stopped` stops the connector before resetting offsets.
 
-. Run the command to reset the offset position by annotating the `KafkaConnector` resource:
+. Reset the offsets by adding the annotation to the `KafkaConnector` resource:
 +
 [source,shell]
 ----
 kubectl annotate kafkaconnector my-source-connector strimzi.io/connector-offsets=reset -n <namespace>
 ----
 +
-The annotation remains until either the reset operation succeeds or it is manually removed from the resource.
+The annotation remains until the reset operation succeeds or is manually removed.
 
-. Check the changes by using the procedure to xref:proc-listing-connector-offsets-{context}[list connector offsets].
+. Verify the reset by xref:proc-listing-connector-offsets-{context}[listing connector offsets].
 +
-After resetting, the `offsets.json` property is empty. 
+After the reset, the `offsets.json` property is empty.
 +
-.Example source connector offset list
+Example source connector offset list after reset:
++
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: v1
 kind: ConfigMap
 metadata:
   # ...
-data: 
+data:
   offsets.json: |-
     {
-      "offsets" : []
-    } 
+      "offsets": []
+    }
 ----
 
-. Restart the connector by changing the state to `running`.
+. Restart the connector by setting its state to `running`.
 +
-.Example configuration to start a connector
+Example configuration to restart the connector:
++
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaConnectorApiVersion}
@@ -78,5 +81,5 @@ metadata:
     strimzi.io/cluster: my-connect-cluster
 spec:
   state: running
-  # ... 
+  # ...
 ----

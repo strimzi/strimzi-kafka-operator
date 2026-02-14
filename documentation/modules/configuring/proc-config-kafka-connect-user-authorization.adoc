@@ -1,36 +1,37 @@
 :_mod-docs-content-type: PROCEDURE
 
-// Module included in the following assemblies:
-//
-// assembly-config.adoc
-
 [id='proc-configuring-kafka-connect-user-authorization-{context}']
-= Configuring Kafka Connect user authorization
+= Granting Kafka Connect access to Kafka resources
 
 [role="_abstract"]
-When using authorization in Kafka, a Kafka Connect user requires read/write access to the cluster group and internal topics of Kafka Connect. 
-This procedure outlines how access is granted using `simple` authorization and ACLs.
+When Kafka authorization is enabled, grant the Kafka Connect user access to the internal topics and consumer group used by Kafka Connect.
+This procedure shows how to configure ACLs using simple authorization.
 
-Properties for the Kafka Connect cluster group ID and internal topics are configured by Strimzi by default. 
-Alternatively, you can define them explicitly in the `spec` of the `KafkaConnect` resource. 
-This is useful when xref:con-config-kafka-connect-multiple-instances-{context}[configuring Kafka Connect for multiple instances], as the values for the group ID and topics must differ when running multiple Kafka Connect instances.
+By default, Strimzi configures the Kafka Connect cluster group ID and internal topic names.
+You can define them explicitly in the `spec` of the `KafkaConnect` resource.
+This is required when xref:con-config-kafka-connect-multiple-instances-{context}[running multiple Kafka Connect instances], because the group ID and internal topic names must be unique for each instance.
 
-Simple authorization uses ACL rules managed by the Kafka `StandardAuthorizer` plugin to ensure appropriate access levels.
-For more information on configuring a `KafkaUser` resource to use simple authorization, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
+Simple authorization uses ACL rules managed by the Kafka `StandardAuthorizer` plugin to control access to Kafka resources.
+For more information on configuring a `KafkaUser` resource, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
+
+To enforce the permissions defined in a `KafkaUser` resource, the Kafka listener must enable an authentication mechanism that allows Kafka Connect to identify as that user.
+Configure authentication on the Kafka listener in the `Kafka` resource and in the `KafkaConnect` resource.
+For more information, see xref:con-config-kafka-connect-securing-connections-{context}[Securing Kafka Connect connections].
 
 .Prerequisites
 
 * A Kubernetes cluster
 * A running Cluster Operator
+* Kafka authorization enabled for the Kafka cluster
 
 .Procedure
 
-. Edit the `authorization` property in the `KafkaUser` resource to provide access rights to the user.
+. Edit the `authorization` property in the `KafkaUser` resource to grant access to the Kafka Connect user.
 +
-Access rights are configured for the Kafka Connect topics and cluster group using `literal` name values.
-The following table shows the default names configured for the topics and cluster group ID. 
+Access rights are configured using `literal` resource names.
+The following table shows the default names used for the internal topics and cluster group.
 +
-.Names for the access rights configuration 
+.Names for the access rights configuration
 [table,stripes=none]
 |===
 |Property |Name
@@ -46,11 +47,10 @@ The following table shows the default names configured for the topics and cluste
 
 |`group`
 |`connect-cluster`
-
 |===
 +
-In this example configuration, the default names are used to specify access rights.
-If you are using different names for a Kafka Connect instance, use those names in the ACLs configuration.
+If you configured different names in the `KafkaConnect` resource, use those values when defining the ACLs. 
+In addition to the internal topics and cluster group, add ACLs for any topics or consumer groups used by your connectors.
 +
 .Example configuration for simple authorization
 [source,yaml,subs="attributes+"]
@@ -112,4 +112,4 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-USER-CONFIG-FILE_
+kubectl apply -f <kafka_user_configuration_file>

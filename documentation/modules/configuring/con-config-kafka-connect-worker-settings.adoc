@@ -1,0 +1,58 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-kafka-connect-worker-settings-{context}']
+= Tuning Kafka Connect worker settings
+
+[role="_abstract"]
+Control how Kafka Connect workers operate by configuring worker properties in the `KafkaConnect` custom resource.
+Worker configuration affects throughput, reliability, and how connectors and tasks are executed.
+
+Kafka Connect worker configuration is applied using the `spec.config` property.
+Only worker configuration properties that are not managed directly by Strimzi can be set.
+Strimzi validates and applies these properties during reconciliation.
+
+Use worker configuration to:
+
+* Control how tasks are distributed across workers
+* Tune offset, status, and configuration topic behavior
+* Improve throughput for high-volume data pipelines
+* Configure converter and transformation behavior
+* Optimize performance for specific connector workloads
+
+Kafka Connect provides many worker configuration properties.
+However, certain properties are managed directly by Strimzi and cannot be set using `spec.config`.
+For more information, see the link:{BookURLConfiguring}#type-KafkaConnectSpec-reference[`KafkaConnectSpec` schema reference^].
+
+Worker tuning is workload-dependent.
+Test changes in a non-production environment before applying them to a production deployment.
+Apply configuration changes incrementally and monitor the impact using Kafka Connect and Kafka metrics.
+
+== Adding Kafka Connect worker configuration
+
+Kafka Connect worker configuration is defined as key-value pairs under `spec.config`.
+
+.Example worker configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  config:
+    offset.flush.interval.ms: 10000
+    offset.flush.timeout.ms: 5000
+    status.storage.replication.factor: 3
+    offset.storage.replication.factor: 3
+    config.storage.replication.factor: 3
+    key.converter: org.apache.kafka.connect.json.JsonConverter
+    value.converter: org.apache.kafka.connect.json.JsonConverter
+----
+
+* `spec.config` defines Kafka Connect worker properties as key-value pairs.
+* `offset.flush.interval.ms` controls how frequently offsets are committed.
+* `offset.flush.timeout.ms` controls how long Kafka Connect waits for offset commits to complete.
+* `status.storage.replication.factor`, `offset.storage.replication.factor`, and `config.storage.replication.factor` control the replication factor of internal Kafka Connect topics.
+* `key.converter` and `value.converter` define how record keys and values are converted.
+
+WARNING: Changing internal topic replication factors after the topics are created has no effect.

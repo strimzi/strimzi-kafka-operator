@@ -1,0 +1,94 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-kafka-connect-securing-connections-{context}']
+= Securing Kafka Connect connections
+
+[role="_abstract"]
+Secure Kafka Connect connections to Kafka by enabling TLS encryption and configuring authentication.
+
+Kafka Connect connects to Kafka brokers to read and write data and to store internal configuration, offset, and status information.
+For production deployments, secure these connections to protect data in transit and restrict access to Kafka resources.
+
+You configure security settings in the `KafkaConnect` resource.
+The security options must be compatible with the listeners and authentication mechanisms configured on the Kafka cluster.
+
+== What you need to secure Kafka Connect connections
+
+Ensure that the required Kafka configuration and credentials are in place.
+
+Review the example Kafka Connect configuration files provided by Strimzi.
+They include examples for securing deployments using TLS or SASL-based authentication.
+
+Ensure that the Kafka cluster is configured with compatible listeners and authentication mechanisms.
+Kafka Connect uses the same security protocols as Kafka clients.
+
+If Kafka authorization is enabled, Kafka Connect also requires access to its internal topics and cluster group.
+You must configure appropriate ACLs for the Kafka Connect user.
+For more information, see xref:proc-configuring-kafka-connect-user-authorization-{context}[Granting Kafka Connect access to Kafka resources].
+
+NOTE: By default, Strimzi generates certificates for securing connections.
+You can replace these certificates by xref:installing-your-own-ca-certificates-str[installing your own certificates].
+You can also configure a Kafka listener to xref:proc-installing-certs-per-listener-str[use a certificate managed by an external certificate authority].
+
+== Configuring TLS encryption
+
+To encrypt connections between Kafka Connect and Kafka brokers, configure `spec.tls` and specify one or more trusted certificates.
+
+.Example TLS configuration for Kafka Connect
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  tls:
+    trustedCertificates:
+      - secretName: my-cluster-cluster-cert
+        pattern: "*.crt"
+----
+
+* `spec.tls.trustedCertificates` specifies one or more Kubernetes `Secret` resources containing trusted certificates in X.509 format.
+* `secretName` specifies the name of the `Secret` containing the trusted certificates.
+* `pattern` specifies which certificate files in the `Secret` are used.
+
+== Configuring authentication
+
+Kafka Connect supports the following authentication mechanisms:
+
+* TLS client authentication
+* SCRAM-SHA-256 and SCRAM-SHA-512
+* SASL PLAIN
+* Custom authentication
+
+To enable authentication, configure `spec.authentication` for the required mechanism.
+
+.Example TLS client authentication
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-user
+      certificate: user.crt
+      key: user.key
+----
+
+* `spec.authentication.type` specifies the authentication mechanism.
+* `spec.authentication.certificateAndKey` specifies a `Secret` containing the client certificate and private key.
+
+.Example SCRAM authentication
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  authentication:
+    type: scram-sha-512
+    username: my-user
+    passwordSecret:
+      secretName: my-user
+      password: password
+----
+
+* `spec.authentication.username` specifies the Kafka user name.
+* `spec.authentication.passwordSecret` specifies a `Secret` containing the user password.
