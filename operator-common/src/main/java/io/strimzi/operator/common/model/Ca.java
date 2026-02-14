@@ -450,7 +450,7 @@ public abstract class Ca {
     }
 
     protected CertAndKey generateSignedCert(Subject subject,
-                                           File csrFile, File keyFile, File certFile, File keyStoreFile, boolean includeCaChain) throws IOException {
+                                           File csrFile, File keyFile, File certFile, File keyStoreFile, boolean includeCaChain) {
         LOGGER.infoCr(reconciliation, "Generating certificate {}, signed by CA {}", subject, this);
 
         try {

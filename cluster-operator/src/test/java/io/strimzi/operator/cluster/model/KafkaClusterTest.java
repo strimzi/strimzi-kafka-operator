@@ -262,7 +262,7 @@ public class KafkaClusterTest {
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER, null, null);
         clusterCa.createRenewOrReplace(true, false, false);
 
-        return KC.generateCertificatesSecrets(clusterCa, List.of(), externalBootstrapAddress, externalAddresses, true);
+        return KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of(), externalBootstrapAddress, externalAddresses, true);
     }
 
     //////////
@@ -1475,6 +1475,18 @@ public class KafkaClusterTest {
                 List.of(2, "my-bootstrap"),
                 List.of(7, "123.10.125.140"),
                 List.of(7, "123.10.125.136"))));
+    }
+
+    @Test
+    public void testGenerateBrokerSecretWithCustomCerts() {
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER, null, null);
+        clusterCa.createRenewOrReplace(true, false, false);
+
+        List<Secret> secrets = KC.generateCertificatesSecrets(clusterCa, List.of(), Map.of("listener1-9999.crt", "cert", "listener1-9999.key", "key"), null, Map.of(), true);
+        secrets.forEach(secret -> {
+            assertThat(secret.getData().get("listener1-9999.crt"), is("cert"));
+            assertThat(secret.getData().get("listener1-9999.key"), is("key"));
+        });
     }
 
     @Test
