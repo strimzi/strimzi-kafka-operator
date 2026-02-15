@@ -24,8 +24,8 @@ metadata:
   name: cluster-a
 spec:
   kafka:
-    version: 4.1.1
-    metadataVersion: 4.1-IV1
+    version: 4.2.0
+    metadataVersion: 4.2-IV1
     listeners:
       - name: tls
         port: 9093
@@ -72,8 +72,8 @@ metadata:
   name: cluster-b
 spec:
   kafka:
-    version: 4.1.1
-    metadataVersion: 4.1-IV1
+    version: 4.2.0
+    metadataVersion: 4.2-IV1
     listeners:
       - name: tls
         port: 9093
@@ -213,7 +213,7 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 4.1.1
+  version: 4.2.0
   replicas: 1
   target:
     alias: cluster-b
