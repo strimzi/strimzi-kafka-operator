@@ -1182,7 +1182,7 @@ public class KafkaClusterTest {
         assertThat(config, CoreMatchers.containsString("\nlisteners=CONTROLPLANE-9090://0.0.0.0:9090\n"));
         assertThat(config, CoreMatchers.containsString("advertised.listeners=CONTROLPLANE-9090://foo-controllers-1.foo-kafka-brokers.test.svc:9090\n"));
         assertThat(config, CoreMatchers.containsString("process.roles=controller\n"));
-        assertThat(config, CoreMatchers.containsString("controller.quorum.voters=0@foo-controllers-0.foo-kafka-brokers.test.svc.cluster.local:9090,1@foo-controllers-1.foo-kafka-brokers.test.svc.cluster.local:9090,2@foo-controllers-2.foo-kafka-brokers.test.svc.cluster.local:9090,3@foo-mixed-3.foo-kafka-brokers.test.svc.cluster.local:9090,4@foo-mixed-4.foo-kafka-brokers.test.svc.cluster.local:9090\n"));
+        assertThat(config, CoreMatchers.containsString("controller.quorum.voters=0@foo-controllers-0.foo-kafka-brokers.test.svc:9090,1@foo-controllers-1.foo-kafka-brokers.test.svc:9090,2@foo-controllers-2.foo-kafka-brokers.test.svc:9090,3@foo-mixed-3.foo-kafka-brokers.test.svc:9090,4@foo-mixed-4.foo-kafka-brokers.test.svc:9090\n"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/foo-controllers-1:foo-controllers-1.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/foo-controllers-1:foo-controllers-1.key}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.type=PEM"));
@@ -1196,7 +1196,7 @@ public class KafkaClusterTest {
         assertThat(config, CoreMatchers.containsString("\nlisteners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092,TLS-9093://0.0.0.0:9093\n"));
         assertThat(config, CoreMatchers.containsString("advertised.listeners=CONTROLPLANE-9090://foo-mixed-4.foo-kafka-brokers.test.svc:9090,REPLICATION-9091://foo-mixed-4.foo-kafka-brokers.test.svc:9091,PLAIN-9092://mixed-4:9092,TLS-9093://mixed-4:10004\n"));
         assertThat(config, CoreMatchers.containsString("process.roles=broker,controller\n"));
-        assertThat(config, CoreMatchers.containsString("controller.quorum.voters=0@foo-controllers-0.foo-kafka-brokers.test.svc.cluster.local:9090,1@foo-controllers-1.foo-kafka-brokers.test.svc.cluster.local:9090,2@foo-controllers-2.foo-kafka-brokers.test.svc.cluster.local:9090,3@foo-mixed-3.foo-kafka-brokers.test.svc.cluster.local:9090,4@foo-mixed-4.foo-kafka-brokers.test.svc.cluster.local:9090\n"));
+        assertThat(config, CoreMatchers.containsString("controller.quorum.voters=0@foo-controllers-0.foo-kafka-brokers.test.svc:9090,1@foo-controllers-1.foo-kafka-brokers.test.svc:9090,2@foo-controllers-2.foo-kafka-brokers.test.svc:9090,3@foo-mixed-3.foo-kafka-brokers.test.svc:9090,4@foo-mixed-4.foo-kafka-brokers.test.svc:9090\n"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/foo-mixed-4:foo-mixed-4.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/foo-mixed-4:foo-mixed-4.key}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.type=PEM"));
@@ -1216,7 +1216,7 @@ public class KafkaClusterTest {
         assertThat(config, CoreMatchers.containsString("\nlisteners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092,TLS-9093://0.0.0.0:9093\n"));
         assertThat(config, CoreMatchers.containsString("advertised.listeners=REPLICATION-9091://foo-brokers-6.foo-kafka-brokers.test.svc:9091,PLAIN-9092://broker-6:9092,TLS-9093://broker-6:10006\n"));
         assertThat(config, CoreMatchers.containsString("process.roles=broker\n"));
-        assertThat(config, CoreMatchers.containsString("controller.quorum.voters=0@foo-controllers-0.foo-kafka-brokers.test.svc.cluster.local:9090,1@foo-controllers-1.foo-kafka-brokers.test.svc.cluster.local:9090,2@foo-controllers-2.foo-kafka-brokers.test.svc.cluster.local:9090,3@foo-mixed-3.foo-kafka-brokers.test.svc.cluster.local:9090,4@foo-mixed-4.foo-kafka-brokers.test.svc.cluster.local:9090\n"));
+        assertThat(config, CoreMatchers.containsString("controller.quorum.voters=0@foo-controllers-0.foo-kafka-brokers.test.svc:9090,1@foo-controllers-1.foo-kafka-brokers.test.svc:9090,2@foo-controllers-2.foo-kafka-brokers.test.svc:9090,3@foo-mixed-3.foo-kafka-brokers.test.svc:9090,4@foo-mixed-4.foo-kafka-brokers.test.svc:9090\n"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/foo-brokers-6:foo-brokers-6.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/foo-brokers-6:foo-brokers-6.key}"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/foo-brokers-6:foo-brokers-6.key}"));

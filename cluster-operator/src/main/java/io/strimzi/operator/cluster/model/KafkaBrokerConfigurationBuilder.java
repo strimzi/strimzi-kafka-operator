@@ -205,7 +205,7 @@ public class KafkaBrokerConfigurationBuilder {
         List<String> quorum = nodes.stream()
                 .filter(NodeRef::controller)
                 .sorted(Comparator.comparingInt(NodeRef::nodeId))
-                .map(node -> String.format("%s@%s:%s", node.nodeId(), DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(clusterName), node.podName()), KafkaCluster.CONTROLPLANE_PORT))
+                .map(node -> String.format("%s@%s:%s", node.nodeId(), DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName()), KafkaCluster.CONTROLPLANE_PORT))
                 .toList();
 
         writer.println("controller.quorum.voters=" + String.join(",", quorum));

@@ -101,7 +101,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "process.roles=broker,controller",
                 "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-kafka-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-kafka-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090"));
+                "controller.quorum.voters=0@my-cluster-kafka-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-kafka-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090"));
     }
 
     @Test
@@ -124,7 +124,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "process.roles=controller",
                 "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090"));
+                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090"));
 
         nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 11).findFirst().get();
         // Broker-only node
@@ -135,7 +135,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=11",
                 "process.roles=broker",
                 "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090"));
+                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090"));
     }
 
     @Test
@@ -1021,7 +1021,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "process.roles=broker,controller",
                 "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-kafka-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-kafka-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
+                "controller.quorum.voters=0@my-cluster-kafka-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-kafka-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.crt}",
                 "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-2:my-cluster-kafka-2.key}",
@@ -1071,7 +1071,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "process.roles=controller",
                 "advertised.listeners=CONTROLPLANE-9090://my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090",
                 "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
+                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.crt}",
                 "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.key}",
@@ -1093,7 +1093,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=11",
                 "process.roles=broker",
                 "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
+                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.crt}",
                 "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.key}",
@@ -1162,7 +1162,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "process.roles=controller",
                 "advertised.listeners=CONTROLPLANE-9090://my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090",
                 "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
+                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.crt}",
                 "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-controllers-2:my-cluster-controllers-2.key}",
@@ -1185,7 +1185,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=11",
                 "process.roles=broker",
                 "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
+                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.crt}",
                 "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-brokers-11:my-cluster-brokers-11.key}",
@@ -1222,7 +1222,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=14",
                 "process.roles=broker,controller",
                 "controller.listener.names=CONTROLPLANE-9090",
-                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090",
+                "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc:9090,13@my-cluster-kafka-13.my-cluster-kafka-brokers.my-namespace.svc:9090,14@my-cluster-kafka-14.my-cluster-kafka-brokers.my-namespace.svc:9090,15@my-cluster-kafka-15.my-cluster-kafka-brokers.my-namespace.svc:9090",
                 "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.crt}",
                 "listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/my-cluster-kafka-14:my-cluster-kafka-14.key}",
