@@ -7,10 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
@@ -19,10 +15,7 @@ import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
@@ -36,22 +29,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
 public class KafkaNodeUnregistrationTest {
-    private static Vertx vertx;
-
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
 
     @Test
-    void testUnregistration(VertxTestContext context) {
+    void testUnregistration() {
         Admin mockAdmin = ResourceUtils.adminClient();
 
         UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
@@ -61,18 +42,15 @@ public class KafkaNodeUnregistrationTest {
 
         AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
 
-        Checkpoint async = context.checkpoint();
-        KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, Set.of(1874, 1919))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
+        KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, Set.of(1874, 1919))
+                .whenComplete((v, t) -> {
                     assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
                     assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
-
-                    async.flag();
-                })));
+                });
     }
 
     @Test
-    void testFailingNodeUnregistration(VertxTestContext context) {
+    void testFailingNodeUnregistration() {
         Admin mockAdmin = ResourceUtils.adminClient();
 
         ArgumentCaptor<Integer> unregisteredNodeIdCaptor = ArgumentCaptor.forClass(Integer.class);
@@ -92,18 +70,15 @@ public class KafkaNodeUnregistrationTest {
 
         AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
 
-        Checkpoint async = context.checkpoint();
-        KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, Set.of(1874, 1919))
-                .onComplete(context.failing(v -> context.verify(() -> {
+        KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, Set.of(1874, 1919))
+                .whenComplete((v, t) -> {
                     assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
                     assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
-
-                    async.flag();
-                })));
+                });
     }
 
     @Test
-    void testListRegisteredBrokerNodes(VertxTestContext context) throws InterruptedException {
+    void testListRegisteredBrokerNodes() throws InterruptedException {
         Admin mockAdmin = ResourceUtils.adminClient();
 
         List<Node> cluster = List.of(
@@ -129,22 +104,21 @@ public class KafkaNodeUnregistrationTest {
 
         CountDownLatch latch = new CountDownLatch(2);
 
-        KafkaNodeUnregistration.listRegisteredBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, true)
-                .onComplete(context.succeeding(nodes -> context.verify(() -> {
+        KafkaNodeUnregistration.listRegisteredBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, true)
+                .whenComplete((nodes, t) -> {
                     assertThat(nodes.size(), is(5));
                     latch.countDown();
-                })));
+                });
 
-        KafkaNodeUnregistration.listRegisteredBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, vertx, mockProvider, null, null, false)
-                .onComplete(context.succeeding(nodes -> context.verify(() -> {
+        KafkaNodeUnregistration.listRegisteredBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, false)
+                .whenComplete((nodes, t) -> {
                     assertThat(nodes.size(), is(3));
                     for (Node node : nodes) {
                         assertThat(node.isFenced(), is(false));
                     }
                     latch.countDown();
-                })));
+                });
 
         latch.await(10, TimeUnit.SECONDS);
-        context.completeNow();
     }
 }

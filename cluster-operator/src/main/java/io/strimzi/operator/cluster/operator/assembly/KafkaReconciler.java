@@ -1019,7 +1019,7 @@ public class KafkaReconciler {
         List<Integer> currentBrokerIds = kafka.brokerNodes().stream().map(NodeRef::nodeId).sorted().toList();
         Promise<Void> unregistrationPromise = Promise.promise();
 
-        KafkaNodeUnregistration.listRegisteredBrokerNodes(reconciliation, vertx, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), true)
+        VertxUtil.completableFutureToVertxFuture(KafkaNodeUnregistration.listRegisteredBrokerNodes(reconciliation, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), true))
                 .onSuccess(registeredBrokerNodes -> {
 
                     // all current registered broker nodes (fenced or not)
@@ -1036,7 +1036,7 @@ public class KafkaReconciler {
                     if (!brokersIdsToUnregister.isEmpty()) {
                         LOGGER.infoCr(reconciliation, "Kafka nodes {} were removed from the Kafka cluster and will be unregistered", brokersIdsToUnregister);
 
-                        KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, vertx, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), brokersIdsToUnregister)
+                        VertxUtil.completableFutureToVertxFuture(KafkaNodeUnregistration.unregisterBrokerNodes(reconciliation, adminClientProvider, coTlsPemIdentity.pemTrustSet(), coTlsPemIdentity.pemAuthIdentity(), brokersIdsToUnregister))
                                 .onComplete(res -> {
                                     if (res.succeeded()) {
                                         LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", brokersIdsToUnregister);
