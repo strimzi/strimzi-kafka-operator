@@ -6,8 +6,6 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -23,8 +21,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.common.Util.unwrap;
 import static java.lang.Integer.parseInt;
 
 /**
@@ -39,15 +39,15 @@ class KafkaAvailability {
 
     private final Reconciliation reconciliation;
 
-    private final Future<Collection<TopicDescription>> descriptions;
+    private final CompletableFuture<Collection<TopicDescription>> descriptions;
 
     KafkaAvailability(Reconciliation reconciliation, Admin ac) {
         this.ac = ac;
         this.reconciliation = reconciliation;
         // 1. Get all topic names
-        Future<Set<String>> topicNames = topicNames();
+        CompletableFuture<Set<String>> topicNames = topicNames();
         // 2. Get topic descriptions
-        descriptions = topicNames.compose(names -> {
+        descriptions = topicNames.thenCompose(names -> {
             LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
             LOGGER.traceCr(reconciliation, "Topic names {}", names);
             return describeTopics(names);
@@ -58,37 +58,40 @@ class KafkaAvailability {
      * Determine whether the given broker can be rolled without affecting
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
      */
-    Future<Boolean> canRoll(int podId) {
+    CompletableFuture<Boolean> canRoll(int podId) {
         LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", podId);
         return canRollBroker(descriptions, podId);
     }
 
-    private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId) {
-        Future<Set<TopicDescription>> topicsOnGivenBroker = descriptions
-                .compose(topicDescriptions -> {
+    private CompletableFuture<Boolean> canRollBroker(CompletableFuture<Collection<TopicDescription>> descriptions, int podId) {
+        CompletableFuture<Set<TopicDescription>> topicsOnGivenBroker = descriptions
+                .whenComplete((r, error) -> {
+                    if (error != null) {
+                        Throwable cause = unwrap(error);
+                        LOGGER.warnCr(reconciliation, "failed to get topic descriptions", cause);
+                    }
+                }).thenApply(topicDescriptions -> {
                     LOGGER.debugCr(reconciliation, "Got {} topic descriptions", topicDescriptions.size());
-                    return Future.succeededFuture(groupTopicsByBroker(topicDescriptions, podId));
-                }).recover(error -> {
-                    LOGGER.warnCr(reconciliation, "failed to get topic descriptions", error);
-                    return Future.failedFuture(error);
+                    return groupTopicsByBroker(topicDescriptions, podId);
                 });
 
         // 4. Get topic configs (for those on $broker)
-        Future<Map<String, Config>> topicConfigsOnGivenBroker = topicsOnGivenBroker
-                .compose(td -> topicConfigs(td.stream().map(t -> t.name()).collect(Collectors.toSet())));
+        CompletableFuture<Map<String, Config>> topicConfigsOnGivenBroker = topicsOnGivenBroker
+                .thenCompose(td -> topicConfigs(td.stream().map(t -> t.name()).collect(Collectors.toSet())));
 
         // 5. join
-        return topicConfigsOnGivenBroker.map(topicNameToConfig -> {
-            Collection<TopicDescription> tds = topicsOnGivenBroker.result();
+        return topicsOnGivenBroker.thenCombine(topicConfigsOnGivenBroker, (tds, topicNameToConfig) -> {
             boolean canRoll = tds.stream().noneMatch(
                 td -> wouldAffectAvailability(podId, topicNameToConfig, td));
             if (!canRoll) {
                 LOGGER.debugCr(reconciliation, "Restart pod {} would remove it from ISR, stalling producers with acks=all", podId);
             }
             return canRoll;
-        }).recover(error -> {
-            LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart pod {}", podId, error);
-            return Future.failedFuture(error);
+        }).whenComplete((r, error) -> {
+            if (error != null) {
+                Throwable cause = unwrap(error);
+                LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart pod {}", podId, cause);
+            }
         });
     }
 
@@ -157,24 +160,24 @@ class KafkaAvailability {
         return isr.stream().anyMatch(node -> node.id() == broker);
     }
 
-    private Future<Map<String, Config>> topicConfigs(Collection<String> topicNames) {
+    private CompletableFuture<Map<String, Config>> topicConfigs(Collection<String> topicNames) {
         LOGGER.debugCr(reconciliation, "Getting topic configs for {} topics", topicNames.size());
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
-        Promise<Map<String, Config>> promise = Promise.promise();
+        CompletableFuture<Map<String, Config>> result = new CompletableFuture<>();
         ac.describeConfigs(configs).all().whenComplete((topicNameToConfig, error) -> {
             if (error != null) {
-                promise.fail(error);
+                result.completeExceptionally(unwrap(error));
             } else {
                 LOGGER.debugCr(reconciliation, "Got topic configs for {} topics", topicNames.size());
-                promise.complete(topicNameToConfig.entrySet().stream()
+                result.complete(topicNameToConfig.entrySet().stream()
                         .collect(Collectors.toMap(
                             entry -> entry.getKey().name(),
                             entry -> entry.getValue())));
             }
         });
-        return promise.future();
+        return result;
     }
 
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
@@ -192,31 +195,31 @@ class KafkaAvailability {
         return topicPartitionInfos;
     }
 
-    protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
-        Promise<Collection<TopicDescription>> descPromise = Promise.promise();
+    protected CompletableFuture<Collection<TopicDescription>> describeTopics(Set<String> names) {
+        CompletableFuture<Collection<TopicDescription>> descFuture = new CompletableFuture<>();
         ac.describeTopics(names).allTopicNames()
                 .whenComplete((tds, error) -> {
                     if (error != null) {
-                        descPromise.fail(error);
+                        descFuture.completeExceptionally(unwrap(error));
                     } else {
                         LOGGER.debugCr(reconciliation, "Got topic descriptions for {} topics", tds.size());
-                        descPromise.complete(tds.values());
+                        descFuture.complete(tds.values());
                     }
                 });
-        return descPromise.future();
+        return descFuture;
     }
 
-    protected Future<Set<String>> topicNames() {
-        Promise<Set<String>> namesPromise = Promise.promise();
+    protected CompletableFuture<Set<String>> topicNames() {
+        CompletableFuture<Set<String>> namesFuture = new CompletableFuture<>();
         ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
                 .whenComplete((names, error) -> {
                     if (error != null) {
-                        namesPromise.fail(error);
+                        namesFuture.completeExceptionally(unwrap(error));
                     } else {
                         LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
-                        namesPromise.complete(names);
+                        namesFuture.complete(names);
                     }
                 });
-        return namesPromise.future();
+        return namesFuture;
     }
 }

@@ -45,6 +45,7 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
@@ -465,9 +466,8 @@ public class KafkaReconciler {
             Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
             boolean allowReconfiguration
     ) {
-        return new KafkaRoller(
+        return VertxUtil.completableFutureToVertxFuture(new KafkaRoller(
                     reconciliation,
-                    vertx,
                     podOperator,
                     1_000,
                     operationTimeoutMs,
@@ -480,7 +480,7 @@ public class KafkaReconciler {
                     kafka.getKafkaVersion(),
                     allowReconfiguration,
                     eventsPublisher
-            ).rollingRestart(podNeedsRestart);
+            ).rollingRestart(podNeedsRestart));
     }
 
     /**

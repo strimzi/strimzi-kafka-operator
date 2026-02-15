@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.WorkloadUtils;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -73,7 +74,6 @@ public class CaReconciler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CaReconciler.class.getName());
 
     /* test */ final Reconciliation reconciliation;
-    private final Vertx vertx;
     private final long operationTimeoutMs;
 
     /* test */ final DeploymentOperator deploymentOperator;
@@ -126,7 +126,6 @@ public class CaReconciler {
             PasswordGenerator passwordGenerator
     ) {
         this.reconciliation = reconciliation;
-        this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
 
         this.deploymentOperator = supplier.deploymentOperations;
@@ -481,7 +480,7 @@ public class CaReconciler {
     }
 
     /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
-        return createKafkaRoller(nodes, coTlsPemIdentity).rollingRestart(pod -> {
+        return VertxUtil.completableFutureToVertxFuture(createKafkaRoller(nodes, coTlsPemIdentity).rollingRestart(pod -> {
             int clusterCaKeyGeneration = clusterCa.caKeyGeneration();
             int podClusterCaKeyGeneration = Annotations.intAnnotation(pod, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, clusterCaKeyGeneration);
             if (clusterCaKeyGeneration == podClusterCaKeyGeneration) {
@@ -491,12 +490,11 @@ public class CaReconciler {
                 LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
                 return podRollReasons;
             }
-        });
+        }));
     }
 
     /* test */ KafkaRoller createKafkaRoller(Set<NodeRef> nodes, TlsPemIdentity coTlsPemIdentity) {
         return new KafkaRoller(reconciliation,
-                vertx,
                 podOperator,
                 1_000,
                 operationTimeoutMs,

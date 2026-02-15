@@ -4,16 +4,17 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.QuorumInfo;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
+
+import static io.strimzi.operator.common.Util.unwrap;
 
 /**
  * Provides methods to determine whether it's safe to restart a KRaft controller and identify the quorum leader id.
@@ -26,13 +27,11 @@ class KafkaQuorumCheck {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaQuorumCheck.class.getName());
     private final Reconciliation reconciliation;
     private final Admin admin;
-    private final Vertx vertx;
     private final long controllerQuorumFetchTimeoutMs;
 
-    protected KafkaQuorumCheck(Reconciliation reconciliation, Admin ac, Vertx vertx, long controllerQuorumFetchTimeoutMs) {
+    protected KafkaQuorumCheck(Reconciliation reconciliation, Admin ac, long controllerQuorumFetchTimeoutMs) {
         this.reconciliation = reconciliation;
         this.admin = ac;
-        this.vertx = vertx;
         this.controllerQuorumFetchTimeoutMs = controllerQuorumFetchTimeoutMs;
     }
 
@@ -41,29 +40,38 @@ class KafkaQuorumCheck {
      * healthy if the majority of controllers, excluding the given node, have caught up with the quorum leader within the
      * controller.quorum.fetch.timeout.ms.
      */
-    Future<Boolean> canRollController(int nodeId) {
+    CompletableFuture<Boolean> canRollController(int nodeId) {
         LOGGER.debugCr(reconciliation, "Determining whether controller pod {} can be rolled", nodeId);
-        return describeMetadataQuorum().map(info -> {
+        return describeMetadataQuorum().whenComplete((qrmInfo, error) -> {
+            if (error != null) {
+                Throwable cause =
+                        (error instanceof CompletionException)
+                                ? error.getCause()
+                                : error;
+                LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart controller pod {}", nodeId, cause);
+            }
+        }).thenApply(info -> {
             boolean canRoll = isQuorumHealthyWithoutNode(nodeId, info);
             if (!canRoll) {
                 LOGGER.debugCr(reconciliation, "Not restarting controller pod {}. Restart would affect the quorum health", nodeId);
             }
             return canRoll;
-        }).recover(error -> {
-            LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart controller pod {}", nodeId, error);
-            return Future.failedFuture(error);
         });
     }
 
     /**
      * Returns id of the active controller/quorum leader.
      **/
-    Future<Integer> quorumLeaderId() {
+    CompletableFuture<Integer> quorumLeaderId() {
         LOGGER.debugCr(reconciliation, "Determining the active controller");
-        return describeMetadataQuorum().map(QuorumInfo::leaderId).recover(error -> {
-            LOGGER.warnCr(reconciliation, "Error determining the active controller", error);
-            return Future.failedFuture(error);
-        });
+        return describeMetadataQuorum()
+                .whenComplete((qrmInfo, error) -> {
+                    if (error != null) {
+                        Throwable cause = unwrap(error);
+                        LOGGER.warnCr(reconciliation, "Error determining the active controller", cause);
+                    }
+                })
+                .thenApply(QuorumInfo::leaderId);
     }
 
     /**
@@ -130,7 +138,7 @@ class KafkaQuorumCheck {
         }
     }
 
-    private Future<QuorumInfo> describeMetadataQuorum() {
-        return VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, admin.describeMetadataQuorum().quorumInfo());
+    private CompletableFuture<QuorumInfo> describeMetadataQuorum() {
+        return admin.describeMetadataQuorum().quorumInfo().toCompletionStage().toCompletableFuture();
     }
 }
