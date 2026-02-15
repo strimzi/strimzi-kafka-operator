@@ -1636,6 +1636,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public Role generateRole() {
         Set<String> certSecretNames = new HashSet<>();
         certSecretNames.add(KafkaResources.clusterCaCertificateSecretName(cluster));
+        certSecretNames.add(KafkaResources.trustBundleSecretName(cluster));
         certSecretNames.addAll(nodes().stream().map(NodeRef::podName).toList());
 
         for (GenericKafkaListener listener : listeners) {

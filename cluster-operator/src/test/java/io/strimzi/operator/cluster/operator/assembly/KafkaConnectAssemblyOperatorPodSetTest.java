@@ -191,13 +191,37 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock Secrets
+        // This certificate is used for testing purposes only and is not a real certificate. It is valid until 2118,
+        // so it should not cause any issues with the tests.
+        String dummyCert = """
+            -----BEGIN CERTIFICATE-----
+            MIIDhjCCAm6gAwIBAgIJANzx2pPcYgmlMA0GCSqGSIb3DQEBCwUAMFcxCzAJBgNV
+            BAYTAlhYMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQg
+            Q29tcGFueSBMdGQxEzARBgNVBAMMCmNsdXN0ZXItY2EwIBcNMTgwODIzMTYxOTU0
+            WhgPMjExODA3MzAxNjE5NTRaMFcxCzAJBgNVBAYTAlhYMRUwEwYDVQQHDAxEZWZh
+            dWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQxEzARBgNVBAMM
+            CmNsdXN0ZXItY2EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDbFnJj
+            90sKoM35VszJsfwNvO5dshoeFIb2idf7h+l0h3GMv29j+1XtmLJGzxiYy320KFZr
+            3IKWbq+DabqdlqEqZm9NZ1Kq9d7mB10zulQce5JwVZ3FqpCmLku2jHCaDXzTKC3T
+            /Xp0O9Oe8+42ysSMCTd8p8aZ4vAyJMCKcoyVCGHrUWVba40D7cQNOlhJplSzHZdL
+            FYZ13kwzpT5GpDEPhGVmtF8qV918lSxvdpuepyeFdOSYY88FEMMLLrlZG4QCPyES
+            4FpcUXMzzvZeLIlZnKNIYbao3Kx+yZv//wjC80/pqdyoZ5+K5hDxjby2+f+2dh0T
+            adKRZC2pp+j3/z63AgMBAAGjUzBRMB0GA1UdDgQWBBThuvddCb/5TPSKYNOHkCTL
+            VghhRzAfBgNVHSMEGDAWgBThuvddCb/5TPSKYNOHkCTLVghhRzAPBgNVHRMBAf8E
+            BTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBA6oTI27dJgbVtyWxQWznKrkznZ9+t
+            mQQGbpfl9zEg7/0X7fFb+m84QHro+aNnQ4kTgZ6QBvusIpwfx1F6lQrraVrPr142
+            4DqGmY9xReNu/fj+C+8lTI5PA+mE7tMrLpQvKxI+AMttvlz8eo1SITUA+kJEiWZX
+            mjvyHXmhic4K8SnnB0gnFzHN4y09wLqRMNCRH+aI+sa9Wu8cqvpTqlelVcYV83zu
+            ydx4VZkC+zTzjI418znN/NU2CMpxLZNl0/zCrspID7v34NRmJ1AHFcrn7/XhsSvz
+            D0z+vgrfionoRhyWUDh7POlWwdUOWiBDBOFrkgeKNphSC0glYFN+2IW7
+            -----END CERTIFICATE-----""";
         Secret secret = new SecretBuilder()
                 .withNewMetadata().withName("cert-secret").endMetadata()
-                .withData(Map.of("ca.crt", Util.encodeToBase64("value1"), "ca2.crt", Util.encodeToBase64("value2")))
+                .withData(Map.of("ca.crt", Util.encodeToBase64(dummyCert), "ca2.crt", Util.encodeToBase64(dummyCert)))
                 .build();
         Secret secret2 = new SecretBuilder()
                 .withNewMetadata().withName("cert-secret2").endMetadata()
-                .withData(Map.of("my-ca.crt", Util.encodeToBase64("value3"), "my-ca.pem", Util.encodeToBase64("value4")))
+                .withData(Map.of("my-ca.crt", Util.encodeToBase64(dummyCert), "my-ca.pem", Util.encodeToBase64(dummyCert)))
                 .build();
 
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -247,7 +271,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                         assertThat(pod.getMetadata().getAnnotations().size(), is(3));
                         assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue())); // We do not check the exact value -> it just describes the exact pod configuration which might change with too many unrelated code or dependency changes
                         assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is("bf2e4dfa"));
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("1621340526")); // We do not use any security in this test, so it is set but as 0
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_AUTH_HASH), is("445157059")); // We do not use any security in this test, so it is set but as 0
                     }
 
                     // Verify Secret with trusted certificates
@@ -255,7 +279,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(capturedSecrets, hasSize(1));
                     assertThat(capturedSecrets.get(0).getMetadata().getName(), is(KafkaConnectResources.internalTlsTrustedCertsSecretName(NAME)));
                     assertThat(capturedSecrets.get(0).getData().size(), is(1));
-                    assertThat(capturedSecrets.get(0).getData().get("ca.crt"), is(Util.encodeToBase64("value1\nvalue2\nvalue4")));
+                    assertThat(capturedSecrets.get(0).getData().get("ca.crt"), is(Util.encodeToBase64(dummyCert + "\n" + dummyCert + "\n" + dummyCert)));
 
                     // Verify services => one regular and one headless
                     List<Service> capturedServices = serviceCaptor.getAllValues();

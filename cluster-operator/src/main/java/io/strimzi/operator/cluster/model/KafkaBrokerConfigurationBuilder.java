@@ -120,7 +120,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_CERTIFICATE_CHAIN + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt"));
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_KEY + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key"));
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PEM");
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(clusterName), "*.crt"));
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_CERTIFICATES + "=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true");
 
             if (ccMetricsReporter.numPartitions() != null) {
@@ -370,7 +370,7 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("listener.name." + listenerName + ".ssl.keystore.certificate.chain=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt"));
         writer.println("listener.name." + listenerName + ".ssl.keystore.key=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key"));
         writer.println("listener.name." + listenerName + ".ssl.keystore.type=PEM");
-        writer.println("listener.name." + listenerName + ".ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(clusterName), "*.crt"));
+        writer.println("listener.name." + listenerName + ".ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
         writer.println("listener.name." + listenerName + ".ssl.truststore.type=PEM");
         writer.println("listener.name." + listenerName + ".ssl.client.auth=required");
         writer.println();
@@ -489,7 +489,7 @@ public class KafkaBrokerConfigurationBuilder {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, false)));
 
             writer.println(String.format("listener.name.%s.ssl.client.auth=required", listenerNameInProperty));
-            writer.println(String.format("listener.name.%s.ssl.truststore.certificates=%s", listenerNameInProperty, String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.clientsCaCertificateSecretName(clusterName), "*.crt")));
+            writer.println(String.format("listener.name.%s.ssl.truststore.certificates=%s", listenerNameInProperty, String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "clients-ca.crt")));
             writer.println(String.format("listener.name.%s.ssl.truststore.type=PEM", listenerNameInProperty));
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationCustom customAuth) {
@@ -993,7 +993,7 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.certificate.chain=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt"));
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.key=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key"));
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.type=PEM");
-        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(clusterName), "*.crt"));
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PEM");
 
         writer.println("# RSM configs set by the operator and by the user");
@@ -1055,7 +1055,7 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.certificate.chain=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".crt"));
         writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.key=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), node.podName(), node.podName() + ".key"));
         writer.println("client.quota.callback.static.kafka.admin.ssl.keystore.type=PEM");
-        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(clusterName), "*.crt"));
+        writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.certificates=" + String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaResources.trustBundleSecretName(clusterName), "cluster-ca.crt"));
         writer.println("client.quota.callback.static.kafka.admin.ssl.truststore.type=PEM");
 
         // configuration of user specified settings
