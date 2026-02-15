@@ -1,37 +1,39 @@
 :_mod-docs-content-type: PROCEDURE
 
-// Module included in the following assemblies:
-//
-// assembly-deploy-http-bridge.adoc
-
 [id='proc-exposing-http-bridge-service-local-machine-{context}']
 = Exposing the HTTP Bridge service to your local machine
 
 [role="_abstract"]
-Use port forwarding to expose the HTTP Bridge service to your local machine on http://localhost:8080.
+Use port forwarding to access the HTTP Bridge locally at \http://localhost:8080.
 
-NOTE: Port forwarding is only suitable for development and testing purposes.
+Port forwarding is suitable for development and testing only.
 
 .Procedure
 
-. List the names of the pods in your Kubernetes cluster:
+. List the pods in your Kubernetes cluster:
 +
 [source,shell,subs=attributes+]
 ----
 kubectl get pods -o name
-
-pod/kafka-consumer
-# ...
+----
++
+Identify the pod associated with your HTTP Bridge deployment, for example:
++
+----
 pod/my-bridge-bridge-<pod_id>
 ----
 
-. Connect to the HTTP Bridge pod on port `8080`:
+. Forward local port `8080` to port `8080` in the HTTP Bridge pod:
 +
 [source,shell,subs=attributes+]
 ----
-kubectl port-forward pod/my-bridge-bridge-<pod_id> 8080:8080 &
+kubectl port-forward pod/my-bridge-bridge-<pod_id> 8080:8080
 ----
 +
-NOTE: If port 8080 on your local machine is already in use, use an alternative HTTP port, such as `8008`.
+If port `8080` is already in use on your local machine, use an alternative local port, for example:
++
+----
+kubectl port-forward pod/my-bridge-bridge-<pod_id> 8008:8080
+----
 
-API requests are now forwarded from port 8080 on your local machine to port 8080 in the HTTP Bridge pod.
+Requests sent to \http://localhost:8080 are forwarded to the HTTP Bridge pod.

@@ -152,8 +152,18 @@ include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector-ta
 //configuring MM2 connector producers and consumers
 include::../../modules/configuring/con-config-mirrormaker2-producers-consumers.adoc[leveloffset=+2]
 
-//`KafkaBridge` resource config
+// `KafkaBridge` resource core configuration (includes minimal configuration)
 include::../../modules/configuring/con-config-http-bridge.adoc[leveloffset=+1]
+// Securing connections to Kafka (TLS and authentication)
+include::../../modules/configuring/con-config-http-bridge-securing-connections.adoc[leveloffset=+2]
+// Granting the HTTP Bridge access to Kafka resources
+include::../../modules/configuring/proc-config-http-bridge-user-authorization.adoc[leveloffset=+2]
+// Configuring HTTP endpoints (port, CORS, and related HTTP settings)
+include::../../modules/configuring/con-config-http-bridge-http-endpoints.adoc[leveloffset=+2]
+// Tuning consumer and producer settings
+include::../../modules/configuring/con-config-http-bridge-client-settings.adoc[leveloffset=+2]
+// Running multiple HTTP Bridge instances
+include::../../modules/configuring/con-config-http-bridge-multiple-instances.adoc[leveloffset=+2]
 
 //common config examples
 include::../../modules/configuring/con-common-configuration.adoc[leveloffset=+1]
