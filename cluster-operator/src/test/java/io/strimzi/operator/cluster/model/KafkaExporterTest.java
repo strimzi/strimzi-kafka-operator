@@ -185,7 +185,7 @@ public class KafkaExporterTest {
 
         volume = volumes.stream().filter(vol -> KafkaExporter.CLUSTER_CA_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
-        assertThat(volume.getSecret().getSecretName(), is(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)));
+        assertThat(volume.getSecret().getSecretName(), is(KafkaResources.trustBundleSecretName(CLUSTER_NAME)));
 
         volume = volumes.stream().filter(vol -> KafkaExporter.KAFKA_EXPORTER_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));

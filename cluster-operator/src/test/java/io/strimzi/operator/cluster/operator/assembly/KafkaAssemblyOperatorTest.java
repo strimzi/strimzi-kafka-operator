@@ -534,7 +534,8 @@ public class KafkaAssemblyOperatorTest {
                 KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
                 KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME),
                 KafkaResources.clusterCaKeySecretName(CLUSTER_NAME),
-                KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
+                KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME),
+                KafkaResources.trustBundleSecretName(CLUSTER_NAME));
 
         // Kafka node certificate Secrets
         kafkaCluster.nodes().forEach(node -> expectedSecrets.add(node.podName()));
