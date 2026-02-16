@@ -93,6 +93,7 @@ public class CaReconciler {
     private final CertificateAuthority clientsCaConfig;
     private final Map<String, String> caLabels;
     private final Labels clusterOperatorSecretLabels;
+    private final Labels trustBundleLabels;
     private final Map<String, String> clusterCaCertLabels;
     private final Map<String, String> clusterCaCertAnnotations;
 
@@ -155,6 +156,7 @@ public class CaReconciler {
         this.clientsCaConfig = kafkaCr.getSpec().getClientsCa();
         this.caLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, "certificate-authority", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME).toMap();
         this.clusterOperatorSecretLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, Labels.APPLICATION_NAME, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
+        this.trustBundleLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, "trust-bundle", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
         this.clusterCaCertLabels = clusterCaCertLabels(kafkaCr);
         this.clusterCaCertAnnotations = clusterCaCertAnnotations(kafkaCr);
     }
@@ -208,6 +210,7 @@ public class CaReconciler {
      */
     public Future<CaReconciliationResult> reconcile(Clock clock)    {
         return reconcileCas(clock)
+                .compose(i -> reconcileTrustBundleSecret())
                 .compose(i -> verifyClusterCaFullyTrustedAndUsed())
                 .compose(i -> reconcileClusterOperatorSecret(clock))
                 .compose(i -> maybeRollingUpdateForNewClusterCaKey())
@@ -317,6 +320,25 @@ public class CaReconciler {
 
                     return caUpdatePromise.future();
                 });
+    }
+
+    /**
+     * Creates or updates a Secret with the trust-bundles for the Cluster and Clients CAs.
+     */
+    Future<Void> reconcileTrustBundleSecret() {
+        Secret trustBundleSecret = ModelUtils.createSecret(
+                KafkaResources.trustBundleSecretName(reconciliation.name()),
+                reconciliation.namespace(),
+                trustBundleLabels,
+                ownerRef,
+                Map.of("cluster-ca.crt", Util.encodeToBase64(clusterCa.trustedCaCerts()), "clients-ca.crt", Util.encodeToBase64(clientsCa.trustedCaCerts())),
+                Map.ofEntries(clusterCa.caCertGenerationFullAnnotation(), clientsCa.caCertGenerationFullAnnotation()),
+                Map.of()
+        );
+
+        return secretOperator
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.trustBundleSecretName(reconciliation.name()), trustBundleSecret)
+                .mapEmpty();
     }
 
     /**

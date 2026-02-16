@@ -1186,7 +1186,7 @@ public class KafkaClusterTest {
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/foo-controllers-1:foo-controllers-1.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/foo-controllers-1:foo-controllers-1.key}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.type=PEM"));
-        assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/foo-cluster-ca-cert:*.crt}"));
+        assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/foo-trustbundle:cluster-ca.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.truststore.type=PEM"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.client.auth=required"));
 
@@ -1200,13 +1200,13 @@ public class KafkaClusterTest {
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.certificate.chain=${strimzisecrets:namespace/foo-mixed-4:foo-mixed-4.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.key=${strimzisecrets:namespace/foo-mixed-4:foo-mixed-4.key}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.keystore.type=PEM"));
-        assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/foo-cluster-ca-cert:*.crt}"));
+        assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.truststore.certificates=${strimzisecrets:namespace/foo-trustbundle:cluster-ca.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.truststore.type=PEM"));
         assertThat(config, CoreMatchers.containsString("listener.name.controlplane-9090.ssl.client.auth=required"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.keystore.certificate.chain=${strimzisecrets:namespace/foo-mixed-4:foo-mixed-4.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/foo-mixed-4:foo-mixed-4.key}"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.keystore.type=PEM"));
-        assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/foo-cluster-ca-cert:*.crt}"));
+        assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/foo-trustbundle:cluster-ca.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.truststore.type=PEM"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.client.auth=required"));
 
@@ -1221,7 +1221,7 @@ public class KafkaClusterTest {
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/foo-brokers-6:foo-brokers-6.key}"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.keystore.key=${strimzisecrets:namespace/foo-brokers-6:foo-brokers-6.key}"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.keystore.type=PEM"));
-        assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/foo-cluster-ca-cert:*.crt}"));
+        assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.truststore.certificates=${strimzisecrets:namespace/foo-trustbundle:cluster-ca.crt}"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.truststore.type=PEM"));
         assertThat(config, CoreMatchers.containsString("listener.name.replication-9091.ssl.client.auth=required"));
     }
@@ -1838,6 +1838,7 @@ public class KafkaClusterTest {
         assertThat(r.getRules().get(0).getResources(), is(List.of("secrets")));
         assertThat(r.getRules().get(0).getResourceNames(), is(List.of("foo-cluster-ca-cert",
                 "foo-clients-ca-cert",
+                "foo-trustbundle",
                 "foo-brokers-7",
                 "foo-brokers-6",
                 "foo-controllers-0",

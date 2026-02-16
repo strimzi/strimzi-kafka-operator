@@ -27,6 +27,7 @@ import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
@@ -76,6 +77,30 @@ public class ReconcilerUtilsTest {
             .endMetadata()
             .withData(Map.of("jmx-username", "username", "jmx-password", "password"))
             .build();
+    // This certificate is used for testing purposes only and is not a real certificate. It is valid until 2118,
+    // so it should not cause any issues with the tests.
+    private final static String DUMMY_CERT = """
+            -----BEGIN CERTIFICATE-----
+            MIIDhjCCAm6gAwIBAgIJANzx2pPcYgmlMA0GCSqGSIb3DQEBCwUAMFcxCzAJBgNV
+            BAYTAlhYMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQg
+            Q29tcGFueSBMdGQxEzARBgNVBAMMCmNsdXN0ZXItY2EwIBcNMTgwODIzMTYxOTU0
+            WhgPMjExODA3MzAxNjE5NTRaMFcxCzAJBgNVBAYTAlhYMRUwEwYDVQQHDAxEZWZh
+            dWx0IENpdHkxHDAaBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQxEzARBgNVBAMM
+            CmNsdXN0ZXItY2EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDbFnJj
+            90sKoM35VszJsfwNvO5dshoeFIb2idf7h+l0h3GMv29j+1XtmLJGzxiYy320KFZr
+            3IKWbq+DabqdlqEqZm9NZ1Kq9d7mB10zulQce5JwVZ3FqpCmLku2jHCaDXzTKC3T
+            /Xp0O9Oe8+42ysSMCTd8p8aZ4vAyJMCKcoyVCGHrUWVba40D7cQNOlhJplSzHZdL
+            FYZ13kwzpT5GpDEPhGVmtF8qV918lSxvdpuepyeFdOSYY88FEMMLLrlZG4QCPyES
+            4FpcUXMzzvZeLIlZnKNIYbao3Kx+yZv//wjC80/pqdyoZ5+K5hDxjby2+f+2dh0T
+            adKRZC2pp+j3/z63AgMBAAGjUzBRMB0GA1UdDgQWBBThuvddCb/5TPSKYNOHkCTL
+            VghhRzAfBgNVHSMEGDAWgBThuvddCb/5TPSKYNOHkCTLVghhRzAPBgNVHRMBAf8E
+            BTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBA6oTI27dJgbVtyWxQWznKrkznZ9+t
+            mQQGbpfl9zEg7/0X7fFb+m84QHro+aNnQ4kTgZ6QBvusIpwfx1F6lQrraVrPr142
+            4DqGmY9xReNu/fj+C+8lTI5PA+mE7tMrLpQvKxI+AMttvlz8eo1SITUA+kJEiWZX
+            mjvyHXmhic4K8SnnB0gnFzHN4y09wLqRMNCRH+aI+sa9Wu8cqvpTqlelVcYV83zu
+            ydx4VZkC+zTzjI418znN/NU2CMpxLZNl0/zCrspID7v34NRmJ1AHFcrn7/XhsSvz
+            D0z+vgrfionoRhyWUDh7POlWwdUOWiBDBOFrkgeKNphSC0glYFN+2IW7
+            -----END CERTIFICATE-----""";
 
     @Test
     public void testControllerNameFromPodName() {
@@ -402,16 +427,21 @@ public class ReconcilerUtilsTest {
                 .withData(Map.of("key", "dmFsdWU="))
                 .build();
 
+        Secret cssSecret = new SecretBuilder()
+                .withData(Map.of("key", Util.encodeToBase64(DUMMY_CERT)))
+                .build();
+
         SecretOperator secretOps = mock(SecretOperator.class);
         when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(cssSecret));
+
         Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(css));
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(true));
             // we are summing "value" hash four times
-            assertThat(v.result(), is("value".hashCode() + "dmFsdWU=".hashCode() * 3));
+            assertThat(v.result(), is(DUMMY_CERT.hashCode() + "dmFsdWU=".hashCode() * 3));
         });
     }
 
@@ -439,11 +469,6 @@ public class ReconcilerUtilsTest {
                 .withClientSecret(cs)
                 .build();
 
-        CertSecretSource css = new CertSecretSourceBuilder()
-                .withCertificate("key")
-                .withSecretName("css-secret")
-                .build();
-
         Secret secret = new SecretBuilder()
                 .withData(Map.of("key", "dmFsdWU="))
                 .build();
@@ -452,8 +477,8 @@ public class ReconcilerUtilsTest {
         when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
         when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(null));
-        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(secret));
-        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, singletonList(css));
+
+        Future<Integer> res = ReconcilerUtils.authTlsHash(secretOps, "ns", kcu, List.of());
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(false));
             assertThat(v.cause().getMessage(), is("Secret top-secret-cs not found"));
@@ -478,13 +503,13 @@ public class ReconcilerUtilsTest {
                 .build();
 
         Secret secret = new SecretBuilder()
-                .withData(Map.of("ca.crt", "dmFsdWU=", "ca2.crt", "dmFsdWUy"))
+                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT), "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
         Secret secret2 = new SecretBuilder()
-                .withData(Map.of("ca3.crt", "dmFsdWUz", "ca4.crt", "dmFsdWU0"))
+                .withData(Map.of("ca3.key", Util.encodeToBase64(DUMMY_CERT), "ca3.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
         Secret secret3 = new SecretBuilder()
-                .withData(Map.of("my.crt", "dmFsdWU1"))
+                .withData(Map.of("my.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
@@ -494,7 +519,7 @@ public class ReconcilerUtilsTest {
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.authTlsHash(secretOps, "ns", null, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, is("value\nvalue2".hashCode() + "value3\nvalue4".hashCode() + "value5".hashCode()));
+            assertThat(res, is((DUMMY_CERT + "\n" + DUMMY_CERT).hashCode() + DUMMY_CERT.hashCode() + DUMMY_CERT.hashCode())); // The certs from cert-secret are merged, the other two are separate
             async.flag();
         }));
     }
@@ -683,13 +708,13 @@ public class ReconcilerUtilsTest {
                 .build();
 
         Secret secret = new SecretBuilder()
-                .withData(Map.of("ca.crt", "dmFsdWU=", "ca2.crt", "dmFsdWUy"))
+                .withData(Map.of("ca.key", "dmFsdWUz", "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
         Secret secret2 = new SecretBuilder()
-                .withData(Map.of("ca3.crt", "dmFsdWUz", "ca4.crt", "dmFsdWU0"))
+                .withData(Map.of("ca3.crt", Util.encodeToBase64(DUMMY_CERT), "ca4.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
         Secret secret3 = new SecretBuilder()
-                .withData(Map.of("my.crt", "dmFsdWU1"))
+                .withData(Map.of("my.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
@@ -699,7 +724,7 @@ public class ReconcilerUtilsTest {
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2, cert3)).onComplete(context.succeeding(res -> {
-            assertThat(res, is("value\nvalue2\nvalue3\nvalue5"));
+            assertThat(res, is(DUMMY_CERT + "\n" + DUMMY_CERT + "\n" + DUMMY_CERT));
             async.flag();
         }));
     }
@@ -716,7 +741,7 @@ public class ReconcilerUtilsTest {
                 .build();
 
         Secret secret = new SecretBuilder()
-                .withData(Map.of("ca.crt", "dmFsdWU=", "ca2.crt", "dmFsdWUy"))
+                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT), "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
@@ -742,10 +767,10 @@ public class ReconcilerUtilsTest {
                 .build();
 
         Secret secret = new SecretBuilder()
-                .withData(Map.of("ca.crt", "dmFsdWU=", "ca2.crt", "dmFsdWUy"))
+                .withData(Map.of("ca.crt", Util.encodeToBase64(DUMMY_CERT), "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
         Secret secret2 = new SecretBuilder()
-                .withData(Map.of("ca3.crt", "dmFsdWUz", "ca4.crt", "dmFsdWU0"))
+                .withData(Map.of("ca3.crt", Util.encodeToBase64(DUMMY_CERT), "ca4.crt", Util.encodeToBase64(DUMMY_CERT)))
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
@@ -755,6 +780,27 @@ public class ReconcilerUtilsTest {
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1, cert2)).onComplete(context.failing(res -> {
             assertThat(res.getMessage(), is("Items with key(s) [ca.crt] are missing in Secret cert-secret2"));
+            async.flag();
+        }));
+    }
+
+    @Test
+    void testTrustedCertificatesInvalidCertificate(VertxTestContext context) {
+        CertSecretSource cert1 = new CertSecretSourceBuilder()
+                .withSecretName("cert-secret")
+                .withPattern("*.crt")
+                .build();
+
+        Secret secret = new SecretBuilder()
+                .withData(Map.of("ca.crt", Util.encodeToBase64("not-a-cert"), "ca2.crt", Util.encodeToBase64(DUMMY_CERT)))
+                .build();
+
+        SecretOperator secretOps = mock(SecretOperator.class);
+        when(secretOps.getAsync(anyString(), eq("cert-secret"))).thenReturn(Future.succeededFuture(secret));
+
+        Checkpoint async = context.checkpoint();
+        ReconcilerUtils.trustedCertificates(Reconciliation.DUMMY_RECONCILIATION, secretOps, List.of(cert1)).onComplete(context.failing(res -> {
+            assertThat(res.getMessage(), is("Failed to load certificate from Secret cert-secret from namespace namespace"));
             async.flag();
         }));
     }
