@@ -38,7 +38,7 @@ The Kafka cluster does not need to be managed by Strimzi or run on Kubernetes.
 .Minimal configuration for KafkaBridge
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaBridgeApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge
