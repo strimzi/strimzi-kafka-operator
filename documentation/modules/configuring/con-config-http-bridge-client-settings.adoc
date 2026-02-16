@@ -40,6 +40,10 @@ spec:
 * `max.poll.records` controls the maximum number of records returned in a single poll.
 * `fetch.min.bytes` controls the minimum amount of data the broker returns for a fetch request.
 
+These are example properties.
+You can configure additional Kafka consumer properties as required.
+For the full list of supported options, see {ApacheKafkaConsumerConfig}.
+
 Choose values that match your application’s performance and reliability requirements.
 
 == Configuring producer settings
@@ -63,6 +67,10 @@ spec:
 * `acks` controls the acknowledgment level required from Kafka brokers.
 * `delivery.timeout.ms` defines the maximum time to wait for a message to be delivered.
 * `retries` specifies the number of retry attempts for failed send requests.
+
+These are example properties.
+You can configure additional Kafka producer properties as required.
+For the full list of supported options, see {ApacheKafkaProducerConfig}.
 
 Adjust these settings to balance latency, throughput, and durability.
 
