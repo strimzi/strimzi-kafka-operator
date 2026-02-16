@@ -209,8 +209,8 @@ public class CaReconciler {
      */
     public Future<CaReconciliationResult> reconcile(Clock clock)    {
         return reconcileCas(clock)
-                .compose(i -> verifyClusterCaFullyTrustedAndUsed())
                 .compose(i -> reconcileTrustBundleSecret())
+                .compose(i -> verifyClusterCaFullyTrustedAndUsed())
                 .compose(i -> reconcileClusterOperatorSecret(clock))
                 .compose(i -> maybeRollingUpdateForNewClusterCaKey())
                 .compose(i -> maybeRemoveOldClusterCaCertificates())

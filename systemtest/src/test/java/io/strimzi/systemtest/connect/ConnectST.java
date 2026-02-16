@@ -553,19 +553,6 @@ class ConnectST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaUser);
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        final String encodedCertMock = Base64.getEncoder().encodeToString("certificates".getBytes());
-
-        Secret secondCertSecret = new SecretBuilder()
-                .withNewMetadata()
-                    .withName("my-secret")
-                    .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .withType("Opaque")
-                .addToData("ca2.crt", encodedCertMock)
-                .build();
-
-        KubeResourceManager.get().createResourceWithWait(secondCertSecret);
-
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
@@ -574,7 +561,6 @@ class ConnectST extends AbstractST {
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .withNewTls()
                     .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName(testStorage.getClusterName() + "-cluster-ca-cert").withCertificate("ca.crt").build())
-                    .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("ca2.crt").build())
                 .endTls()
                 .withBootstrapServers(testStorage.getClusterName() + "-kafka-bootstrap:9093")
                 .withNewKafkaClientAuthenticationTls()
