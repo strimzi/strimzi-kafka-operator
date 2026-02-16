@@ -172,6 +172,13 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             maven-
+      - name: Restore Kafka cache
+        uses: actions/cache/restore@v5
+        with:
+          path: docker-images/artifacts/binaries/kafka/archives
+          key: kafka-binaries-${{ hashFiles('kafka-versions.yaml') }}
+          restore-keys: |
+            kafka-binaries-
 
       # Build Strimzi without images => used when running the STs against releases or release candidates where the images
       # are already built, and we need only the Java build
@@ -289,6 +296,15 @@ jobs:
         with:
           name: performance-results-${{ matrix.config.pipeline }}-${{ matrix.config.profile }}-${{ matrix.config.agent }}
           path: systemtest/target/performance
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v2
+        if: always()
+        with:
+          name: 'System tests'
+          path: 'systemtest/target/failsafe-reports/**/TEST-*.xml'
+          reporter: java-junit
+          fail-on-error: false
 
       - name: Set check & commit status
         if: ${{ always() }}
