@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -42,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
@@ -102,7 +104,7 @@ public abstract class Ca {
          *
          * @return  True if the key matches. False otherwise.
          */
-        private boolean matchesType(String key) {
+        public boolean matchesType(String key) {
             return key.endsWith(suffix);
         }
 
@@ -731,6 +733,42 @@ public abstract class Ca {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Returns the certificates that a client authenticating against the CA should trust. When a chain of multiple CAs
+     * is used, only the last certificate from the chain should be included.
+     *
+     * @return  Certificates that clients authenticating against this CA should trust
+     */
+    public String trustedCaCerts() {
+        return caCertData.entrySet().stream()
+                .filter(e -> e.getKey().endsWith(SecretEntry.CRT.suffix) && e.getValue() != null && !e.getValue().isBlank())
+                .map(e -> {
+                    try {
+                        return x509CertificateToPem(x509Certificate(Util.decodeBytesFromBase64(e.getValue())));
+                    } catch (CertificateException ex) {
+                        throw new RuntimeException("Failed to decode " + e.getKey() + " in Secret " + caCertSecretName, ex);
+                    }
+                })
+                .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    /**
+     * Converts the Java X509Certificate into the proper PEM format.
+     *
+     * @param cert  X509 certificate to convert
+     *
+     * @return  String with PEM encoded certificate
+     *
+     * @throws CertificateEncodingException An exception might be thrown if the certificate encoding fails
+     */
+    public static String x509CertificateToPem(X509Certificate cert) throws CertificateEncodingException {
+        Base64.Encoder encoder = Base64.getMimeEncoder(64, System.lineSeparator().getBytes(StandardCharsets.US_ASCII));
+
+        return "-----BEGIN CERTIFICATE-----\n"
+                + new String(encoder.encode(cert.getEncoded()), StandardCharsets.US_ASCII)
+                + "\n-----END CERTIFICATE-----";
     }
 
     /**

@@ -48,6 +48,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -474,7 +475,7 @@ public class ReconcilerUtils {
         } else {
             // get all TLS trusted certs, compute hash from them
             tlsFuture = Future.join(certSecretSources.stream().map(certSecretSource ->
-                            getCertificateAsync(secretOperations, namespace, certSecretSource)
+                            getTrustedCertificateAsync(secretOperations, namespace, certSecretSource)
                                     .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
                     .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
         }
@@ -499,7 +500,7 @@ public class ReconcilerUtils {
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
                 List<Future<Integer>> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
                         new ArrayList<>() : ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
-                        getCertificateAsync(secretOperations, namespace, certSecretSource)
+                        getTrustedCertificateAsync(secretOperations, namespace, certSecretSource)
                                 .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList());
                 futureList.add(tlsFuture);
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getAccessToken()));
@@ -527,7 +528,7 @@ public class ReconcilerUtils {
         if (certificateSources != null && !certificateSources.isEmpty()) {
             return Future.join(certificateSources
                             .stream()
-                            .map(certSecretSource -> ReconcilerUtils.getCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource))
+                            .map(certSecretSource -> ReconcilerUtils.getTrustedCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource))
                             .toList())
                     .compose(certificates -> {
                         if (certificates.list().isEmpty()) {
@@ -604,17 +605,40 @@ public class ReconcilerUtils {
         }
     }
 
-    private static Future<String> getCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
+    private static Future<String> getTrustedCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
         return secretOperator.getAsync(namespace, certSecretSource.getSecretName())
                 .compose(secret -> {
                     if (certSecretSource.getCertificate() != null)  {
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret, certSecretSource.getCertificate())
-                                .compose(validatedSecret -> Future.succeededFuture(Util.decodeFromBase64(validatedSecret.getData().get(certSecretSource.getCertificate()))));
+                                .compose(validatedSecret -> {
+                                    try {
+                                        String pem = Ca.x509CertificateToPem(Ca.x509Certificate(Util.decodeFromBase64(validatedSecret.getData().get(certSecretSource.getCertificate())).getBytes(StandardCharsets.US_ASCII)));
+                                        return Future.succeededFuture(pem);
+                                    } catch (CertificateException e) {
+                                        throw new RuntimeException("Failed to load certificate from Secret " + certSecretSource.getSecretName() + " from namespace " + namespace, e);
+                                    }
+                                });
                     } else if (certSecretSource.getPattern() != null)    {
-                        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + certSecretSource.getPattern());
-
                         return validatedSecret(namespace, certSecretSource.getSecretName(), secret)
-                                .compose(validatedSecret -> Future.succeededFuture(validatedSecret.getData().entrySet().stream().filter(e -> matcher.matches(Paths.get(e.getKey()))).map(e -> Util.decodeFromBase64(e.getValue())).sorted().collect(Collectors.joining("\n"))));
+                                .compose(validatedSecret -> {
+                                    PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + certSecretSource.getPattern());
+
+                                    String pems = validatedSecret
+                                            .getData()
+                                            .entrySet()
+                                            .stream()
+                                            .filter(entry -> matcher.matches(Paths.get(entry.getKey())))
+                                            .map(entry -> {
+                                                try {
+                                                    return Ca.x509CertificateToPem(Ca.x509Certificate(Util.decodeFromBase64(validatedSecret.getData().get(entry.getKey())).getBytes(StandardCharsets.US_ASCII)));
+                                                } catch (CertificateException e) {
+                                                    throw new RuntimeException("Failed to load certificate from Secret " + certSecretSource.getSecretName() + " from namespace " + namespace, e);
+                                                }
+                                            })
+                                            .sorted()
+                                            .collect(Collectors.joining("\n"));
+                                    return Future.succeededFuture(pems);
+                                });
                     } else {
                         throw new InvalidResourceException("Certificate source does not contain the certificate or the pattern.");
                     }

@@ -305,6 +305,17 @@ public class KafkaResources {
     }
 
     /**
+     * Name of the secret with the trust bundle - the certificate bundle used as truststore in various components.
+     *
+     * @param cluster   Name of the Kafka cluster
+     *
+     * @return  Name of the trust bundle secret
+     */
+    public static String trustBundleSecretName(String cluster) {
+        return cluster + "-trustbundle";
+    }
+
+    /**
      * Compose the name of the KafkaRebalance custom resource to be used for running an auto-rebalancing in the specified mode
      * for the specified Kafka cluster
      *
