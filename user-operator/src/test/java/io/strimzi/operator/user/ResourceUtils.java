@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.api.kafka.model.user.acl.AclRule;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.user.UserOperatorConfig.UserOperatorConfigBuilder;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
@@ -160,7 +161,7 @@ public class ResourceUtils {
                     .withName(ResourceUtils.CA_CERT_NAME)
                     .withNamespace(namespace)
                 .endMetadata()
-                .addToData("ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
+                .addToData("ca.crt", MockCertManager.clientsCaCert())
                 .build();
     }
 
@@ -187,7 +188,7 @@ public class ResourceUtils {
                         .withStrimziKind(KafkaUser.RESOURCE_KIND)
                         .toMap())
                 .endMetadata()
-                .addToData("ca.crt", Base64.getEncoder().encodeToString("clients-ca-crt".getBytes()))
+                .addToData("ca.crt", MockCertManager.clientsCaCert())
                 .addToData("user.key", Base64.getEncoder().encodeToString("expected-key".getBytes()))
                 .addToData("user.crt", Base64.getEncoder().encodeToString("expected-crt".getBytes()))
                 .addToData("user.p12", Base64.getEncoder().encodeToString("expected-p12".getBytes()))

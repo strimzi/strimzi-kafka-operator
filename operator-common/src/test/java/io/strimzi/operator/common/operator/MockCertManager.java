@@ -130,6 +130,31 @@ public class MockCertManager implements CertManager {
             -----END CERTIFICATE-----
             """;
 
+    private static final String ALTERNATE_CLIENTS_CERT = """
+            -----BEGIN CERTIFICATE-----
+            MIIDuzCCAqOgAwIBAgIUMOtA77BcO8AwntGCwBh+rHA2Xe8wDQYJKoZIhvcNAQEL
+            BQAwbDELMAkGA1UEBhMCWFgxEzARBgNVBAgMClNvbWUtU3RhdGUxFTATBgNVBAcM
+            DERlZmF1bHQgQ2l0eTEcMBoGA1UECgwTRGVmYXVsdCBDb21wYW55IEx0ZDETMBEG
+            A1UEAwwKY2xpZW50cy1jYTAgFw0yNjAyMTYyMTE1NTFaGA8yMTE4MDEyNTIxMTU1
+            MVowbDELMAkGA1UEBhMCWFgxEzARBgNVBAgMClNvbWUtU3RhdGUxFTATBgNVBAcM
+            DERlZmF1bHQgQ2l0eTEcMBoGA1UECgwTRGVmYXVsdCBDb21wYW55IEx0ZDETMBEG
+            A1UEAwwKY2xpZW50cy1jYTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+            AKZt4EmbXDVwZ0yCXlJ0c3GG/gXiaVF1Y0EdL0fGtFH9vdtKQ+PER4f8liTAfj9r
+            wCcZyDA38MzE0Drm0Ja9BxZ+ExPODM5sWrNcE/FdxaIl7d0iFseUex4FgYMU6PKw
+            l3EqGUn8YiwPbr5J8T+h9I/9D2zGOjirP6AIEidTpMvv54gQUjZ1NtpShWliImgK
+            IDHmyQ+uIl1k6bu90JI2vJ432DU2wwishUYb701zmE3HHUE93893OZWdPHR8izkU
+            Ocoh55+ceZmLkpmLYS80uUBeqU5jUmsBCHWBhpjCODn2I03Qx0q0d8YlX0Kk6uMG
+            06pXW8LOerD0n+QgbCz188kCAwEAAaNTMFEwHQYDVR0OBBYEFMIhAdkCSsrsEUEm
+            5Xf/NpIoQoK8MB8GA1UdIwQYMBaAFMIhAdkCSsrsEUEm5Xf/NpIoQoK8MA8GA1Ud
+            EwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBACo1OdCj73QiTikh+CdH3IRF
+            iE5IUorP8SNPrqqwuHAnJSM7S/pxMxnsi5IjPKggW3j7AAYPaFbOWkaWFUWZWDIP
+            fQwFIOUac0HVkRp14jf1VFrQ9460ADroeTiGqlsEB7jVGK+zC+yARtcY5jG/35vI
+            dPtSP3ZC+x1hcI5Vnbw7Ty8tg7l/IGBNxKYqgPmMGuk/m559x0jh4607214iKYxb
+            RGEF8N/ean5ab6kVI28aycuRsyFboGHzWP97BHmqA7ur2nVpUsZ7Px4CRXTp9+3o
+            HWeBOAZn4ZAvB0id3OMi7K4ZRrxTCN7ASzkxTTANDPRmAZkMJDcXEcSYL2m1Rys=
+            -----END CERTIFICATE-----
+            """;
+
     private static final String CERT_STORE_PASSWORD = "123456";
 
     private static final byte[] CLUSTER_CERT_STORE;
@@ -256,6 +281,10 @@ public class MockCertManager implements CertManager {
 
     public static String clientsCaCert() {
         return Base64.getEncoder().encodeToString(CLIENTS_CERT.getBytes(Charset.defaultCharset()));
+    }
+
+    public static String alternateClientsCaCert() {
+        return Base64.getEncoder().encodeToString(ALTERNATE_CLIENTS_CERT.getBytes(Charset.defaultCharset()));
     }
 
     public static String clientsCaKey() {

@@ -198,7 +198,7 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesPartOf(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), is(MockCertManager.userKey()));
 
@@ -338,7 +338,7 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesPartOf(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), is(MockCertManager.userKey()));
 
@@ -651,7 +651,7 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesPartOf(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
-        assertThat(Util.decodeFromBase64(prefixedUserSecret.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(prefixedUserSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(prefixedUserSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
         assertThat(Util.decodeFromBase64(prefixedUserSecret.getData().get("user.key")), is(MockCertManager.userKey()));
 
@@ -721,7 +721,7 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesPartOf(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), is("expected-crt"));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), is("expected-key"));
 
@@ -794,7 +794,7 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesPartOf(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), is("expected-crt"));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), is("expected-key"));
 
@@ -899,7 +899,7 @@ public class KafkaUserOperatorMockTest {
 
         // Mock changed CA
         secretOps.resource(namespace, ResourceUtils.CA_CERT_NAME).edit(caSecret -> new SecretBuilder(caSecret)
-                .withData(Map.of("ca.crt", Base64.getEncoder().encodeToString("different-clients-ca-crt".getBytes())))
+                .withData(Map.of("ca.crt", MockCertManager.alternateClientsCaCert()))
                 .build());
 
         KafkaUser user = ResourceUtils.createKafkaUserTls(namespace);
@@ -929,7 +929,7 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesPartOf(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("ca.crt")), is("different-clients-ca-crt"));
+        assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.alternateClientsCaCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), is(MockCertManager.userCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), is(MockCertManager.userKey()));
 
@@ -996,7 +996,7 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesPartOf(ResourceUtils.NAME)
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
-        assertThat(Util.decodeFromBase64(userSecret.getData().get("ca.crt")), is("clients-ca-crt"));
+        assertThat(userSecret.getData().get("ca.crt"), is(MockCertManager.clientsCaCert()));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.crt")), startsWith("-----BEGIN CERTIFICATE-----"));
         assertThat(Util.decodeFromBase64(userSecret.getData().get("user.key")), startsWith("-----BEGIN PRIVATE KEY-----"));
 
