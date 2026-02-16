@@ -475,7 +475,7 @@ public class ReconcilerUtils {
         } else {
             // get all TLS trusted certs, compute hash from them
             tlsFuture = Future.join(certSecretSources.stream().map(certSecretSource ->
-                            getCertificateAsync(secretOperations, namespace, certSecretSource)
+                            getTrustedCertificateAsync(secretOperations, namespace, certSecretSource)
                                     .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
                     .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
         }
@@ -500,7 +500,7 @@ public class ReconcilerUtils {
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
                 List<Future<Integer>> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
                         new ArrayList<>() : ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
-                        getCertificateAsync(secretOperations, namespace, certSecretSource)
+                        getTrustedCertificateAsync(secretOperations, namespace, certSecretSource)
                                 .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList());
                 futureList.add(tlsFuture);
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getAccessToken()));
@@ -528,7 +528,7 @@ public class ReconcilerUtils {
         if (certificateSources != null && !certificateSources.isEmpty()) {
             return Future.join(certificateSources
                             .stream()
-                            .map(certSecretSource -> ReconcilerUtils.getCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource))
+                            .map(certSecretSource -> ReconcilerUtils.getTrustedCertificateAsync(secretOperations, reconciliation.namespace(), certSecretSource))
                             .toList())
                     .compose(certificates -> {
                         if (certificates.list().isEmpty()) {
@@ -605,7 +605,7 @@ public class ReconcilerUtils {
         }
     }
 
-    private static Future<String> getCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
+    private static Future<String> getTrustedCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
         return secretOperator.getAsync(namespace, certSecretSource.getSecretName())
                 .compose(secret -> {
                     if (certSecretSource.getCertificate() != null)  {
