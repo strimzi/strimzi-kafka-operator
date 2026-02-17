@@ -1,0 +1,76 @@
+:_mod-docs-content-type: PROCEDURE
+
+[id='proc-config-http-bridge-user-authorization-{context}']
+= Granting the HTTP Bridge access to Kafka resources
+
+[role="_abstract"]
+When Kafka authorization is enabled, grant the HTTP Bridge user access to the Kafka topics and consumer groups used by your applications.
+This procedure shows how to configure ACLs using simple authorization.
+
+The HTTP Bridge authenticates to Kafka using this user and performs produce and consume operations on behalf of HTTP clients.
+
+Simple authorization uses ACL rules managed by the Kafka `StandardAuthorizer` plugin to control access to Kafka resources.
+For more information on configuring a `KafkaUser` resource, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
+
+To enforce the permissions defined in a `KafkaUser` resource, the Kafka listener must enable an authentication mechanism that allows the HTTP Bridge to identify as that user.
+Configure authentication on the Kafka listener in the `Kafka` resource and in the `KafkaBridge` resource.
+For more information, see xref:con-config-http-bridge-securing-connections-{context}[Securing HTTP Bridge connections].
+
+.Prerequisites
+
+* A Kubernetes cluster
+* A running Cluster Operator
+* Kafka authorization enabled for the Kafka cluster
+
+.Procedure
+
+. Edit the `authorization` property in the `KafkaUser` resource to grant access to the HTTP Bridge user.
++
+Configure ACLs for the topics and consumer groups required by your applications.
++
+.Example configuration for simple authorization
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-bridge-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  # ...
+  authorization:
+    type: simple
+    acls:
+      # Consumer ACLs for topic my-topic using consumer group my-group
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operations:
+          - Describe
+          - Read
+        host: "*"
+      - resource:
+          type: group
+          name: my-group
+          patternType: literal
+        operations:
+          - Read
+        host: "*"
+      # Producer ACLs for topic my-topic
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operations:
+          - Create
+          - Describe
+          - Write
+        host: "*"
+----
+
+. Create or update the resource.
++
+[source,shell,subs=+quotes]
+kubectl apply -f <kafka_user_configuration_file>

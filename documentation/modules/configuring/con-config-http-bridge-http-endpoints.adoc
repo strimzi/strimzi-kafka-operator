@@ -1,0 +1,56 @@
+:_mod-docs-content-type: CONCEPT
+
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-http-bridge-http-endpoints-{context}']
+= Configuring HTTP endpoints
+
+[role="_abstract"]
+Configure the HTTP endpoint exposed by the HTTP Bridge, including the listening port and optional CORS settings.
+
+The HTTP Bridge exposes a REST API that allows HTTP clients to produce and consume messages from Kafka.
+You configure HTTP settings in the `spec.http` section of the `KafkaBridge` resource.
+
+This section configures the behavior of the HTTP endpoint.
+It does not configure how the service is exposed outside the cluster.
+For information about exposing or accessing the HTTP Bridge, see xref:http-bridge-{context}[Deploying HTTP Bridge].
+
+== Configuring the HTTP port
+
+The HTTP Bridge listens for client requests on the port defined in `spec.http.port`.
+
+.Example HTTP port configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  http:
+    port: 8080
+----
+
+* `spec.http.port` specifies the port used by the HTTP Bridge for incoming HTTP requests.
+
+Ensure that the selected port aligns with your service and networking configuration.
+
+== Configuring CORS
+
+If HTTP clients access the HTTP Bridge from web browsers running on different origins, configure Cross-Origin Resource Sharing (CORS).
+
+CORS controls which origins and HTTP methods are permitted when accessing the HTTP Bridge API.
+
+.Example CORS configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+spec:
+  http:
+    port: 8080
+    cors:
+      allowedOrigins: "https://example.com"
+      allowedMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+----
+
+* `spec.http.cors.allowedOrigins` specifies the allowed origin or origins.
+* `spec.http.cors.allowedMethods` specifies the HTTP methods permitted for cross-origin requests.
+
+Configure CORS carefully in production environments to avoid exposing the HTTP Bridge to unintended clients.
