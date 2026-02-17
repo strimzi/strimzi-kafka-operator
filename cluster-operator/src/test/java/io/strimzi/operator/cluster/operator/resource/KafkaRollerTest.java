@@ -12,6 +12,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -46,6 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.common.Util.unwrap;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -765,7 +767,7 @@ public class KafkaRollerTest {
                 .whenComplete((v, error) -> {
                     assertThat(restarted(), is(expected));
                     assertNoUnclosedAdminClient(kafkaRoller);
-                });
+                }).join();
     }
 
     private void doSuccessfulRollingRestart(TestingKafkaRoller kafkaRoller,
@@ -782,7 +784,7 @@ public class KafkaRollerTest {
                 .whenComplete((v, err) -> {
                     assertThat(restarted(), is(expected));
                     assertNoUnclosedAdminClient(kafkaRoller);
-                });
+                }).join();
     }
 
     private void assertNoUnclosedAdminClient(TestingKafkaRoller kafkaRoller) {
@@ -797,20 +799,23 @@ public class KafkaRollerTest {
                                          Collection<Integer> podsToRestart,
                                          Class<? extends Throwable> exception, String message,
                                          List<Integer> expectedRestart) {
-        kafkaRoller
-            .rollingRestart(pod -> {
-                if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
-                    return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
-                } else {
-                    return RestartReasons.empty();
-                }
-            })
-            .whenComplete((r, error) -> {
-                assertThat(error.getClass() + " is not a subclass of " + exception.getName(), error, instanceOf(exception));
-                assertThat("The exception message was not as expected", error.getMessage(), is(message));
-                assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
-                assertNoUnclosedAdminClient(kafkaRoller);
-            });
+        try {
+            kafkaRoller
+                .rollingRestart(pod -> {
+                    if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
+                        return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
+                    } else {
+                        return RestartReasons.empty();
+                    }
+                }).join();
+            throw new AssertionError("Expected exception " + exception.getName() + " but none was thrown");
+        } catch (Exception e) {
+            Throwable cause = unwrap(e);
+            assertThat(cause.getClass() + " is not a subclass of " + exception.getName(), cause, instanceOf(exception));
+            assertThat("The exception message was not as expected", cause.getMessage(), is(message));
+            assertThat("The restarted pods were not as expected", restarted(), is(expectedRestart));
+            assertNoUnclosedAdminClient(kafkaRoller);
+        }
     }
 
     public List<Integer> restarted() {
@@ -832,14 +837,25 @@ public class KafkaRollerTest {
                         .endMetadata()
                         .build()
         );
+
         when(podOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock -> {
             String podName = invocationOnMock.getArgument(2);
-            return readiness.apply(podName2Number(podName));
+            return VertxUtil.completableFutureToVertxFuture(readiness.apply(podName2Number(podName)));
         });
 
         when(podOps.isReady(anyString(), anyString())).thenAnswer(invocationOnMock -> {
             String podName = invocationOnMock.getArgument(1);
-            return readiness.apply(podName2Number(podName));
+            try {
+                readiness.apply(podName2Number(podName)).join();
+                return true;
+            } catch (Exception e) {
+                Throwable cause = unwrap(e);
+                if (cause instanceof TimeoutException) {
+                    return false;
+                } else {
+                    throw cause;
+                }
+            }
         });
         return podOps;
     }
