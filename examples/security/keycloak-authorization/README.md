@@ -14,7 +14,7 @@ Full instructions for the example are available in the [Strimzi Documentation](h
   - The Keycloak realm export file
 - [kafka-ephemeral-oauth-single-keycloak-authz.yaml](./kafka-ephemeral-oauth-single-keycloak-authz.yaml)
   - The Kafka CR that defines a single-node Kafka cluster with OAuth authentication and Keycloak authorization,
-    using the `kafka-authz` realm. See [full example instructions](https://strimzi.io/docs/operators/0.50.0/configuring.html#proc-oauth-authorization-keycloak-example_str) for proper preparation and deployment.
+    using the `kafka-authz` realm. See [full example instructions](https://strimzi.io/docs/operators/0.50.1/configuring.html#proc-oauth-authorization-keycloak-example_str) for proper preparation and deployment.
 - [kafka-ephemeral-oauth-single-keycloak-authz-metrics.yaml](./kafka-ephemeral-oauth-single-keycloak-authz-metrics.yaml)
   - The Kafka CR that defines a single-node Kafka cluster with OAuth authentication and Keycloak authorization,
     with included configuration for exporting the OAuth metrics using Prometheus JMX exporter.

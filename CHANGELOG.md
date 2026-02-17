@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.50.1
+
+* Include the full CA chain in broker certificates
+* `v1` API Conversion Tool bug fixes (handling of number conversions and empty YAML documents)
+
 ## 0.50.0
 
 * Use Java 21 as the runtime and language level
