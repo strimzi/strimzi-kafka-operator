@@ -302,7 +302,7 @@
                  So we need to include it explicitly, but we exclude its dependencies that are in Kafka already. -->
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-scala_2.13</artifactId>
-            <version>2.19.0</version>
+            <version>2.19.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.scala-lang</groupId>
