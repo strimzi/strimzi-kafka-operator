@@ -8,7 +8,7 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlanBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;

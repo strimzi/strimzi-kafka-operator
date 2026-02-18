@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentCondition;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;

@@ -5,9 +5,9 @@
 package io.strimzi.systemtest.utils.specific;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.skodjob.testframe.enums.LogLevel;
-import io.skodjob.testframe.executor.ExecResult;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.enums.LogLevel;
+import io.skodjob.kubetest4j.executor.ExecResult;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;

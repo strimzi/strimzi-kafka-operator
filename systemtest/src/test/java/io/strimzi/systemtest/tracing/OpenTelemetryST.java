@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.tracing;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.common.tracing.Tracing;

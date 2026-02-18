@@ -5,14 +5,14 @@
 package io.strimzi.systemtest.resources.types;
 
 import io.fabric8.kubernetes.api.model.Namespace;
-import io.skodjob.testframe.resources.NamespaceType;
+import io.skodjob.kubetest4j.resources.NamespaceType;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * {@link Namespace} resource type class that is extending the one from Test-Frame - {@link io.skodjob.testframe.resources.NamespaceType}.
+ * {@link Namespace} resource type class that is extending the one from Kubetest4j - {@link io.skodjob.kubetest4j.resources.NamespaceType}.
  * It changes the {@link #isDeleted(Namespace)} method to also check that the Namespace is stuck (or not) on finalizers.
  */
 public class ExtendedNamespaceType extends NamespaceType {

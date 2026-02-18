@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.crds;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 
 public class CrdUtils {
 

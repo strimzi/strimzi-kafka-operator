@@ -6,8 +6,8 @@ package io.strimzi.systemtest.kafkaclients.internalClients.admin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.skodjob.testframe.executor.ExecResult;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.executor.ExecResult;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 
 import java.util.ArrayList;
 import java.util.List;

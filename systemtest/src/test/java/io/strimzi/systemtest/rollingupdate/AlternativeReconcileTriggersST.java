@@ -7,7 +7,7 @@ package io.strimzi.systemtest.rollingupdate;
 import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.KRaftMetadataStorage;

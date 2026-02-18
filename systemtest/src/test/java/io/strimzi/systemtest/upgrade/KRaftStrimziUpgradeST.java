@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;

@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.skodjob.testframe.resources.ResourceCondition;
+import io.skodjob.kubetest4j.resources.ResourceCondition;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.systemtest.enums.ConditionStatus;

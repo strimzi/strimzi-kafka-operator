@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;

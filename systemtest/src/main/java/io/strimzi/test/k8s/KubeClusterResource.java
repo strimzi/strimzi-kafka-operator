@@ -4,7 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.test.k8s.cluster.Kind;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.Microshift;

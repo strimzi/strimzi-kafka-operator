@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
-import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
