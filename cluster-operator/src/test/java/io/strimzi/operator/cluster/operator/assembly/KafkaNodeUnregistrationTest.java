@@ -18,7 +18,6 @@ import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
