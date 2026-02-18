@@ -2,6 +2,7 @@
 
 ## 0.51.0
 
+* Add support for Kafka 4.2.0 and remove support for Kafka 4.0.0 and 4.0.1
 * Allow setting the following configurations with the listener prefix (e.g. `listener.name.listener1-9900.`): `connections.max.reauth.ms`, `max.connections*` and `max.connection.creation.rate`.
 * The `ServerSideApplyPhase1` feature gate moves to beta stage and is enabled by default.
   If needed, `ServerSideApplyPhase1` can be disabled in the feature gates configuration in the Cluster Operator.
