@@ -383,7 +383,7 @@ public class KafkaBridgeConfigurationBuilder {
             printSectionHeader("Strimzi Metrics Reporter configuration");
             writer.println("bridge.metrics=" + TYPE_STRIMZI_METRICS_REPORTER);
             // the kafka. prefix is required by the Bridge to pass Kafka client configurations
-            writer.println("kafka.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS);
+            writer.println("kafka.metric.reporters=" + StrimziMetricsReporterConfig.CLIENT_CLASS);
             writer.println("kafka." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false");
             writer.println("kafka." + StrimziMetricsReporterConfig.ALLOW_LIST + "=" + model.getAllowList());
             writer.println();

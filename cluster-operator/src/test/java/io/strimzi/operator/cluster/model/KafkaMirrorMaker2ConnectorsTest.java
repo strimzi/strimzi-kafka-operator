@@ -822,7 +822,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         expected.put("target.cluster.alias", "target");
         expected.put("target.cluster.bootstrap.servers", "target:9092");
         expected.put("target.cluster.security.protocol", "PLAINTEXT");
-        expected.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+        expected.put("metric.reporters", StrimziMetricsReporterConfig.CLIENT_CLASS);
         expected.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
         assertThat(new TreeMap<>(config), is(expected));
     }
@@ -854,7 +854,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         expected.put("target.cluster.alias", "target");
         expected.put("target.cluster.bootstrap.servers", "target:9092");
         expected.put("target.cluster.security.protocol", "PLAINTEXT");
-        expected.put("metric.reporters", "com.example.ExistingReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS);
+        expected.put("metric.reporters", "com.example.ExistingReporter," + StrimziMetricsReporterConfig.CLIENT_CLASS);
         expected.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
         assertThat(new TreeMap<>(config), is(expected));
     }
@@ -869,7 +869,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                                 .withBootstrapServers("source:9092")
                             .endSource()
                             .withNewSourceConnector()
-                                .addToConfig(Map.of("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS))
+                                .addToConfig(Map.of("metric.reporters", StrimziMetricsReporterConfig.CLIENT_CLASS))
                             .endSourceConnector()
                             .build())
                     .withMetricsConfig(new StrimziMetricsReporterBuilder().build())
@@ -886,7 +886,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         expected.put("target.cluster.alias", "target");
         expected.put("target.cluster.bootstrap.servers", "target:9092");
         expected.put("target.cluster.security.protocol", "PLAINTEXT");
-        expected.put("metric.reporters", StrimziMetricsReporterConfig.KAFKA_CLASS);
+        expected.put("metric.reporters", StrimziMetricsReporterConfig.CLIENT_CLASS);
         expected.put(StrimziMetricsReporterConfig.LISTENER_ENABLE, "false");
         assertThat(new TreeMap<>(config), is(expected));
     }

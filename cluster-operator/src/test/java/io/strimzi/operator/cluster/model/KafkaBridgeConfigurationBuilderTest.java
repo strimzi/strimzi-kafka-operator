@@ -658,7 +658,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "bridge.id=my-bridge",
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "bridge.metrics=" + StrimziMetricsReporter.TYPE_STRIMZI_METRICS_REPORTER,
-                "kafka.metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS,
+                "kafka.metric.reporters=" + StrimziMetricsReporterConfig.CLIENT_CLASS,
                 "kafka." + StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_producer_producer_metrics.*,kafka_producer_kafka_metrics_count_count",
                 "kafka." + StrimziMetricsReporterConfig.LISTENER_ENABLE + "=false",
                 "kafka.security.protocol=PLAINTEXT"
