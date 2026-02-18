@@ -5,7 +5,7 @@ All the steps mentioned bellow re-use scripts from our [azure](../../.azure) dir
 ## Build jar artifacts
 Building Strimzi is exactly the same as we have in Azure pipelines.
 Only difference is in used runners for each step.
-Strimzi jars are built on `oracle-2cpu-8gb-arm64` runner as part of [build-strimzi-binaries](../actions/build/build-strimzi-binaries) action.
+Strimzi jars are built on `ubuntu-latest` runner as part of [build-strimzi-binaries](../actions/build/build-strimzi-binaries) action.
 This runner is basically a Kubernetes pod that runs all the commands defined in the action.
 
 Action output is tar-ball with Strimzi jars that can be used by other actions and workflows.
@@ -15,7 +15,7 @@ Usage example can be like this:
 ```yaml
   build-artifacts:
     name: build-artifacts
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build/build-strimzi-binaries

@@ -32,6 +32,7 @@ jobs:
     name: Prepare Release Artifacts
     if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build/release-artifacts
@@ -48,6 +49,7 @@ jobs:
     name: Push Java artifacts to GHCR
     if: ${{ startsWith(github.ref, 'refs/heads/release-') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       packages: write
     steps:
@@ -81,6 +83,7 @@ jobs:
       - push-java-artifacts-to-ghcr
     if: ${{ startsWith(github.ref, 'refs/heads/release-') && inputs.useSuffix == true }}
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
       id-token: write
@@ -114,6 +117,7 @@ jobs:
         needs.push-containers-with-suffix.result == 'skipped')
       }}
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
       id-token: write
@@ -143,6 +147,7 @@ jobs:
         needs.push-containers.result == 'success'
       }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build/publish-helm-chart

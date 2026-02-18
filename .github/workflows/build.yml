@@ -23,6 +23,7 @@ jobs:
   build-strimzi:
     name: Build Strimzi
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6
 
@@ -49,6 +50,7 @@ jobs:
     needs:
       - build-strimzi
     runs-on: ubuntu-latest
+    timeout-minutes: 80
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build/test-strimzi
@@ -64,6 +66,7 @@ jobs:
     needs:
       - build-strimzi
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build/build-docs
@@ -84,6 +87,7 @@ jobs:
           - s390x
           - ppc64le
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build/build-containers
@@ -101,6 +105,7 @@ jobs:
       - build-docs
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
       # Required for keyless signing with GitHub OIDC
@@ -128,6 +133,7 @@ jobs:
       - build-docs
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build/publish-docs
@@ -145,6 +151,7 @@ jobs:
       - build-docs
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/build/deploy-java

@@ -34,6 +34,7 @@ jobs:
   # Parse and build parameters from comment or from workflow params
   parse-params:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
@@ -73,6 +74,7 @@ jobs:
       - parse-params
     if: ${{ needs.parse-params.outputs.shouldRun == 'true' && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
@@ -94,6 +96,7 @@ jobs:
         needs.parse-params.outputs.shouldRun == 'true'
       }}
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     permissions:
       contents: read
       pull-requests: write
@@ -139,6 +142,7 @@ jobs:
         needs.check-build.result == 'success'
       }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
@@ -208,7 +212,8 @@ jobs:
         needs.parse-params.outputs.releaseVersion == 'latest' &&
         needs.check-build.outputs.buildRunId == ''
       }}
-    runs-on: oracle-2cpu-8gb-arm64
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6
         with:
@@ -216,7 +221,7 @@ jobs:
       - uses: ./.github/actions/build/build-strimzi-binaries
         with:
           mvnArgs: "-B -DskipTests -Dmaven.javadoc.skip=true"
-          runnerArch: "arm64"
+          runnerArch: "amd64"
 
   build-images:
     name: build-images
@@ -240,6 +245,7 @@ jobs:
       matrix:
         architecture: [amd64, arm64]
     runs-on: oracle-vm-2cpu-8gb-arm64
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
         with:
@@ -301,6 +307,7 @@ jobs:
         needs.generate-matrix.outputs.isValid == 'true'
       }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
@@ -343,6 +350,7 @@ jobs:
         (contains(needs.parse-params.outputs.profileList, 'performance') || contains(needs.parse-params.outputs.pipelineList, 'performance'))
       }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
