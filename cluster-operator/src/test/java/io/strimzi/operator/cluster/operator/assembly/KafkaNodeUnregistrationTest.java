@@ -18,12 +18,13 @@ import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
+import static io.strimzi.operator.common.Util.unwrap;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -46,7 +47,7 @@ public class KafkaNodeUnregistrationTest {
                 .whenComplete((v, t) -> {
                     assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
                     assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
-                });
+                }).join();
     }
 
     @Test
@@ -70,15 +71,20 @@ public class KafkaNodeUnregistrationTest {
 
         AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
 
-        KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, Set.of(1874, 1919))
-                .whenComplete((v, t) -> {
-                    assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
-                    assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
-                });
+        try {
+            KafkaNodeUnregistration.unregisterBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, Set.of(1874, 1919))
+                    .join();
+            throw new AssertionError("Expected TimeoutException but none was thrown");
+        } catch (Exception e) {
+            Throwable cause = unwrap(e);
+            assertThat(cause, instanceOf(TimeoutException.class));
+            assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
+            assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
+        }
     }
 
     @Test
-    void testListRegisteredBrokerNodes() throws InterruptedException {
+    void testListRegisteredBrokerNodes() {
         Admin mockAdmin = ResourceUtils.adminClient();
 
         List<Node> cluster = List.of(
@@ -102,13 +108,10 @@ public class KafkaNodeUnregistrationTest {
 
         AdminClientProvider mockProvider = ResourceUtils.adminClientProvider(mockAdmin);
 
-        CountDownLatch latch = new CountDownLatch(2);
-
         KafkaNodeUnregistration.listRegisteredBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, true)
                 .whenComplete((nodes, t) -> {
                     assertThat(nodes.size(), is(5));
-                    latch.countDown();
-                });
+                }).join();
 
         KafkaNodeUnregistration.listRegisteredBrokerNodes(Reconciliation.DUMMY_RECONCILIATION, mockProvider, null, null, false)
                 .whenComplete((nodes, t) -> {
@@ -116,9 +119,6 @@ public class KafkaNodeUnregistrationTest {
                     for (Node node : nodes) {
                         assertThat(node.isFenced(), is(false));
                     }
-                    latch.countDown();
-                });
-
-        latch.await(10, TimeUnit.SECONDS);
+                }).join();
     }
 }
