@@ -15,7 +15,6 @@ import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 /**
  * A model of a particular configuration parameter.
@@ -236,7 +235,7 @@ public class ConfigModel {
 
     private List<String> validateBoolean(String configName, String value) {
         if (!value.matches("true|false")) {
-            return singletonList(configName + " has value '" + value + "' which is not a boolean");
+            return List.of(configName + " has value '" + value + "' which is not a boolean");
         }
         return emptyList();
     }
@@ -246,13 +245,13 @@ public class ConfigModel {
 
         // Check for duplicate values as within Kafka ConfigDef.ValidList
         if (Set.copyOf(l).size() != l.size()) {
-            return singletonList(configName + " contains duplicate values");
+            return List.of(configName + " contains duplicate values");
         }
 
         // Check for empty individual values as within Kafka ConfigDef.ValidList
         for (String item : l) {
             if (item.isEmpty()) {
-                return singletonList(configName + " contains empty values");
+                return List.of(configName + " contains empty values");
             }
         }
 
@@ -261,7 +260,7 @@ public class ConfigModel {
             HashSet<String> items = new HashSet<>(l);
             items.removeAll(getItems());
             if (!items.isEmpty()) {
-                return singletonList(configName + " contains values " + items + " which are not in the allowed items " + getItems());
+                return List.of(configName + " contains values " + items + " which are not in the allowed items " + getItems());
             }
         }
         return emptyList();
@@ -284,7 +283,7 @@ public class ConfigModel {
                 errors.add(maximumErrorMsg(configName, value));
             }
         } catch (NumberFormatException e) {
-            errors = singletonList(numFormatMsg(configName, value, "a double"));
+            errors = List.of(numFormatMsg(configName, value, "a double"));
         }
         return errors;
     }
@@ -306,7 +305,7 @@ public class ConfigModel {
                 errors.add(maximumErrorMsg(configName, value));
             }
         } catch (NumberFormatException e) {
-            errors = singletonList(numFormatMsg(configName, value, "a long"));
+            errors = List.of(numFormatMsg(configName, value, "a long"));
         }
         return errors;
     }
@@ -328,7 +327,7 @@ public class ConfigModel {
                 errors.add(maximumErrorMsg(configName, value));
             }
         } catch (NumberFormatException e) {
-            errors = singletonList(numFormatMsg(configName, value, "a short"));
+            errors = List.of(numFormatMsg(configName, value, "a short"));
         }
         return errors;
     }
@@ -357,7 +356,7 @@ public class ConfigModel {
                 errors.add(configName + " has value '" + value + "' which does not match the required pattern: " + getPattern());
             }
         } catch (NumberFormatException e) {
-            errors = singletonList(numFormatMsg(configName, value, "an int"));
+            errors = List.of(numFormatMsg(configName, value, "an int"));
         }
         return errors;
     }
