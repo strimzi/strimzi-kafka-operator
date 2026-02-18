@@ -120,7 +120,7 @@ class CaTest {
         String pem = Ca.x509CertificateToPem(x509);
         assertThat(pem, is(cert));
 
-        X509Certificate nextX509 = Ca.x509Certificate(cert.getBytes());
+        X509Certificate nextX509 = Ca.x509Certificate(pem.getBytes());
         assertThat(nextX509.getSubjectX500Principal().getName(), is("CN=cluster-ca,O=Default Company Ltd,L=Default City,C=XX"));
         assertThat(nextX509.getSignature(), is(x509.getSignature()));
     }
