@@ -93,7 +93,7 @@ public class KRaftMetadataManager {
             String desiredMetadataVersion,
             KafkaStatus status
     )    {
-        short desiredMetadataLevel = MetadataVersion.fromVersionString(desiredMetadataVersion).featureLevel();
+        short desiredMetadataLevel = MetadataVersion.fromVersionString(desiredMetadataVersion, false).featureLevel();
 
         return currentVersion(reconciliation, vertx, kafkaAdmin)
                 .compose(currentMetadataLevel -> {

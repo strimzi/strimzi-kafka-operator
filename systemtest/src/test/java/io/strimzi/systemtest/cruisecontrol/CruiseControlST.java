@@ -861,7 +861,9 @@ public class CruiseControlST extends AbstractST {
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.Ready);
 
         // Verify that data has been moved off the specified disks by checking data directory sizes
-        KafkaTopicUtils.verifyDataMovedOffSpecifiedDisks(initialDataDirSizes, KafkaTopicUtils.getDataDirectorySizes(testStorage, brokersWithRemovedVolumes));
+        // After partition movements, the log segments are moved asynchronously so we need to wait
+        // NOTE: further details at https://issues.apache.org/jira/browse/KAFKA-19571 (applied since Apache Kafka 4.2.0 RC3)
+        KafkaTopicUtils.waitUntilDataMovedOffSpecifiedDisks(testStorage, brokersWithRemovedVolumes, initialDataDirSizes);
 
         // Verify that partitions have been moved off the specified disks
         KafkaTopicUtils.verifyPartitionsMovedOffDisks(initialPartitionDirs, KafkaTopicUtils.getPartitionDirectories(testStorage, brokersWithRemovedVolumes));

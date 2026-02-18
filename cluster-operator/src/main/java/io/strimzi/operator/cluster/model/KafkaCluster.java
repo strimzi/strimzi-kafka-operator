@@ -544,7 +544,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     /* test */ static void validateMetadataVersion(String metadataVersion)   {
         try {
-            MetadataVersion version = MetadataVersion.fromVersionString(metadataVersion);
+            MetadataVersion version = MetadataVersion.fromVersionString(metadataVersion, false);
 
             // From Kafka 4.0.0, the oldest supported version seems to be 3.3-IV3
             if (version.isLessThan(MetadataVersion.IBP_3_3_IV3)) {

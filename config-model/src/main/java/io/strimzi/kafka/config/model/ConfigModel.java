@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -242,7 +243,21 @@ public class ConfigModel {
 
     private List<String> validateList(String configName, String value) {
         List<String> l = asList(value.trim().split(" *, *", -1));
-        if (getItems() != null) {
+
+        // Check for duplicate values as within Kafka ConfigDef.ValidList
+        if (Set.copyOf(l).size() != l.size()) {
+            return singletonList(configName + " contains duplicate values");
+        }
+
+        // Check for empty individual values as within Kafka ConfigDef.ValidList
+        for (String item : l) {
+            if (item.isEmpty()) {
+                return singletonList(configName + " contains empty values");
+            }
+        }
+
+        // Only validate against allowed items if the list is not null and not empty.
+        if (getItems() != null && !getItems().isEmpty()) {
             HashSet<String> items = new HashSet<>(l);
             items.removeAll(getItems());
             if (!items.isEmpty()) {
