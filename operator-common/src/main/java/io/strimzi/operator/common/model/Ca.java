@@ -652,14 +652,14 @@ public abstract class Ca {
                 .forEach(entry -> {
                     List<X509Certificate> certChain = extractCaCertChain(entry.getKey(), Util.decodeBytesFromBase64(entry.getValue()));
                     if (certChain.isEmpty()) {
-                        LOGGER.errorCr(reconciliation, "Ca certificate chain in {} is empty", entry.getKey());
-                        throw new RuntimeException("Failed to validate User supplied CA cert chain in " + entry.getKey());
+                        LOGGER.errorCr(reconciliation, "{} certificate chain in {} is empty", caName(), entry.getKey());
+                        throw new RuntimeException("Failed to validate User supplied " + caName() + " cert chain in " + entry.getKey());
                     } else if (certChain.size() == 1) {
-                        LOGGER.debugCr(reconciliation, "Ca certificate {} contains a single certificate", entry.getKey());
+                        LOGGER.debugCr(reconciliation, "{} certificate {} contains a single certificate", caName(), entry.getKey());
                         return;
                     }
                     if (!certIsTrusted(reconciliation, certChain.subList(0, certChain.size() - 1), certChain.getLast())) {
-                        String errorMessage = "User supplied CA cert chain " + entry.getKey() + " is not valid. Certificates must be provided in the correct order.";
+                        String errorMessage = "User supplied " + caName() + " cert chain " + entry.getKey() + " is not valid. Certificates must be provided in the correct order.";
                         LOGGER.errorCr(reconciliation, errorMessage);
                         throw new RuntimeException(errorMessage);
                     }

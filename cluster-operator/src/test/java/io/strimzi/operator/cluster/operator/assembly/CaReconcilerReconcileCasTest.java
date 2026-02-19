@@ -1226,7 +1226,7 @@ public class CaReconcilerReconcileCasTest {
         reconcileCas(vertx, certificateAuthority, certificateAuthority)
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(RuntimeException.class));
-                    assertThat(e.getMessage(), is("User supplied CA cert chain ca.crt is not valid. Certificates must be provided in the correct order."));
+                    assertThat(e.getMessage(), is("User supplied Cluster CA cert chain ca.crt is not valid. Certificates must be provided in the correct order."));
                     async.flag();
                 })));
     }

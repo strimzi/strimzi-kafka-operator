@@ -256,7 +256,7 @@ class CaTest {
                 .withData(Map.of("ca.key", "ca-key"))
                 .build();
         Exception exception = assertThrows(RuntimeException.class, () -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), certSecret, keySecret, false));
-        assertEquals("Failed to validate User supplied CA cert chain in ca.crt", exception.getMessage());
+        assertEquals("Failed to validate User supplied Mock CA cert chain in ca.crt", exception.getMessage());
     }
 
     @Test
@@ -365,7 +365,7 @@ class CaTest {
                 .withData(Map.of("ca.crt", invalidCombinedPem))
                 .build();
         Exception exception = assertThrows(RuntimeException.class, () -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), invalidCertSecret, keySecret, false));
-        assertEquals("User supplied CA cert chain ca.crt is not valid. Certificates must be provided in the correct order.", exception.getMessage());
+        assertEquals("User supplied Mock CA cert chain ca.crt is not valid. Certificates must be provided in the correct order.", exception.getMessage());
 
         Secret partiallyValidCertSecret = new SecretBuilder()
                 .withNewMetadata()
@@ -374,7 +374,7 @@ class CaTest {
                         "ca-2026-02-01T09-00-00.crt", invalidCombinedPem))
                 .build();
         Exception exception1 = assertThrows(RuntimeException.class, () -> new MockCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(now), new PasswordGenerator(10, "a", "a"), partiallyValidCertSecret, keySecret, false));
-        assertEquals("User supplied CA cert chain ca-2026-02-01T09-00-00.crt is not valid. Certificates must be provided in the correct order.", exception1.getMessage());
+        assertEquals("User supplied Mock CA cert chain ca-2026-02-01T09-00-00.crt is not valid. Certificates must be provided in the correct order.", exception1.getMessage());
     }
 
     private File createTempFile(String prefix, String suffix) throws IOException {
