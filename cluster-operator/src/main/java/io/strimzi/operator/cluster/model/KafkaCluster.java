@@ -1223,16 +1223,18 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /**
      * Generates the private keys for the Kafka nodes (if needed) and the Secrets with them which contain both the
      * public and private keys.
+     * It also merges custom certificate and key data into the Secrets.
      *
      * @param clusterCa                             The CA for cluster certificates
      * @param existingSecrets                       The existing secrets containing Kafka certificates
+     * @param customCertsData                       Custom certificate data to add to each generated Secret
      * @param externalBootstrapDnsName              Map with bootstrap DNS names which should be added to the certificate
      * @param externalDnsNames                      Map with broker DNS names  which should be added to the certificate
      * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in a maintenance window or not
      *
-     * @return  The generated Secrets containing Kafka node certificates
+     * @return  The generated Secrets containing Kafka node certificates and custom certificates
      */
-    public List<Secret> generateCertificatesSecrets(ClusterCa clusterCa, List<Secret> existingSecrets, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
+    public List<Secret> generateCertificatesSecrets(ClusterCa clusterCa, List<Secret> existingSecrets, Map<String, String> customCertsData, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, Secret> existingSecretWithName = existingSecrets.stream().collect(Collectors.toMap(secret -> secret.getMetadata().getName(), secret -> secret));
         Set<NodeRef> nodes = nodes();
         Map<String, CertAndKey> existingCerts = new HashMap<>();
@@ -1261,10 +1263,18 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         return updatedCerts.entrySet()
                 .stream()
-                .map(entry -> ModelUtils.createSecret(entry.getKey(), namespace, labels, ownerReference,
-                        CertUtils.buildSecretData(entry.getKey(), entry.getValue()),
-                        Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()),
-                        emptyMap()))
+                .map(entry -> {
+                    Map<String, String> secretData = new HashMap<>(CertUtils.buildSecretData(entry.getKey(), entry.getValue()));
+                    if (customCertsData != null && !customCertsData.isEmpty()) {
+                        secretData.putAll(customCertsData);
+                    }
+
+                    return ModelUtils.createSecret(entry.getKey(), namespace, labels, ownerReference,
+                            secretData,
+                            Map.ofEntries(
+                                    clusterCa.caCertGenerationFullAnnotation()),
+                            emptyMap());
+                })
                 .toList();
     }
 
@@ -1640,12 +1650,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         certSecretNames.addAll(nodes().stream().map(NodeRef::podName).toList());
 
         for (GenericKafkaListener listener : listeners) {
-            if (listener.isTls()) {
-                if (listener.getConfiguration() != null && listener.getConfiguration().getBrokerCertChainAndKey() != null) {
-                    certSecretNames.add(listener.getConfiguration().getBrokerCertChainAndKey().getSecretName());
-                }
-            }
-
             if (listener.getAuth() instanceof KafkaListenerAuthenticationTls) {
                 certSecretNames.add(KafkaResources.clientsCaCertificateSecretName(cluster));
             }

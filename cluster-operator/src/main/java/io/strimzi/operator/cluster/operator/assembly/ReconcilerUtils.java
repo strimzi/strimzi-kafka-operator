@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
@@ -44,7 +45,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
@@ -492,10 +492,9 @@ public class ReconcilerUtils {
                 // only passwordSecret can be changed
                 return tlsFuture.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
                         .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
-            } else if (auth instanceof KafkaClientAuthenticationTls) {
+            } else if (auth instanceof KafkaClientAuthenticationTls authTls) {
                 // custom cert can be used (and changed)
-                return ((KafkaClientAuthenticationTls) auth).getCertificateAndKey() == null ? tlsFuture :
-                        tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, (KafkaClientAuthenticationTls) auth)
+                return authTls.getCertificateAndKey() == null ? tlsFuture : tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, authTls.getCertificateAndKey())
                                 .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
                 List<Future<Integer>> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
@@ -645,9 +644,19 @@ public class ReconcilerUtils {
                 });
     }
 
-    private static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthenticationTls auth) {
-        return getValidatedSecret(secretOperator, namespace, auth.getCertificateAndKey().getSecretName(), auth.getCertificateAndKey().getCertificate(), auth.getCertificateAndKey().getKey())
-                .compose(secret -> Future.succeededFuture(new CertAndKey(secret.getData().get(auth.getCertificateAndKey().getKey()).getBytes(StandardCharsets.UTF_8), secret.getData().get(auth.getCertificateAndKey().getCertificate()).getBytes(StandardCharsets.UTF_8))));
+    /**
+     * Extracts certificate and key from the given Secret source.
+     *
+     * @param secretOperator            Secrets operator
+     * @param namespace                 namespace to get Secret in
+     * @param certAndKeySecretSource    Secret source for certificate and key
+     * @return  Certificate and Key extracted from the Secret source and decoded
+     */
+    public static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, CertAndKeySecretSource certAndKeySecretSource) {
+        return getValidatedSecret(secretOperator, namespace, certAndKeySecretSource.getSecretName(), certAndKeySecretSource.getCertificate(), certAndKeySecretSource.getKey())
+                .compose(secret -> Future.succeededFuture(new CertAndKey(
+                        Util.decodeBytesFromBase64(secret.getData().get(certAndKeySecretSource.getKey())),
+                        Util.decodeBytesFromBase64(secret.getData().get(certAndKeySecretSource.getCertificate())))));
     }
 
     private static Future<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
