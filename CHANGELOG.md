@@ -15,6 +15,11 @@
 * The `ingress` listener type is deprecated due to the archiving of the [Ingress NGINX Controller for Kubernetes](https://github.com/kubernetes/ingress-nginx) (March 2026).
   The code remains in the Strimzi codebase, but no further improvements or development are planned.
 
+## 0.50.1
+
+* Include the full CA chain in broker certificates
+* `v1` API Conversion Tool bug fixes (handling of number conversions and empty YAML documents)
+
 ## 0.50.0
 
 * Use Java 21 as the runtime and language level
