@@ -141,7 +141,7 @@ class CaTest {
 
     @Test
     @DisplayName("When certIsTrusted is called it correctly identifies whether the end entity certificate is issued by the CA cert")
-    public void testCertIsTrust() throws IOException, CertificateException {
+    public void testCertIsTrusted() throws IOException, CertificateException {
         OpenSslCertManager ssl = new OpenSslCertManager();
         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 
