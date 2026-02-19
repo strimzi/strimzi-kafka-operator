@@ -17,6 +17,8 @@
 
 ## 0.50.1
 
+* **Fixes [CVE-2026-27133](https://github.com/strimzi/strimzi-kafka-operator/security/advisories/GHSA-6x85-j2f7-4xc5)**
+* **Fixes [CVE-2026-27134](https://github.com/strimzi/strimzi-kafka-operator/security/advisories/GHSA-2qwx-rq6j-8r6j)**
 * Include the full CA chain in broker certificates
 * `v1` API Conversion Tool bug fixes (handling of number conversions and empty YAML documents)
 
